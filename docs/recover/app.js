@@ -80,9 +80,9 @@ const NAMES = [
 	[/\s*\(wbrecover\.py restart\)/g, ''],
 	[/\bwrite --new-front IMAGE\b/g, 'Try an image with another front'],
 	[/\bRun info\b/g, 'Read again'],
-	[/wbrecover\.py write --running(?: IMAGE(?:\.ldr)?)?/g, 'Write A'],
+	[/wbrecover\.py write --running(?: IMAGE(?:\.ldr)?)?/g, 'Write the running slot'],
 	[/wbrecover\.py write --new-front(?: IMAGE(?:\.ldr)?)?/g, 'Try an image with another front'],
-	[/wbrecover\.py write(?: IMAGE(?:\.ldr)?)?/g, 'Write B'],
+	[/wbrecover\.py write(?: IMAGE(?:\.ldr)?)?/g, 'Write the other slot'],
 	[/wbrecover\.py select(?: IMAGE(?:\.ldr)?)?/g, 'Select'],
 	[/wbrecover\.py put-back/g, 'Put back'],
 	[/wbrecover\.py info/g, 'Read again'],
@@ -90,6 +90,10 @@ const NAMES = [
 	[/wbrecover\.py/g, 'the Advanced tab'],
 	[/--force/g, 'Force'],
 	[/Power \+ 4/g, 'Power + M4'],
+	// where to find M4, as the installer's key screen says it
+	[/\bkey 4 \(M4\)/g, 'M4'],
+	[/\bkey 4\b/g, 'M4'],
+	[/\bM4\b(?! \(4 under)/g, 'M4 (4 under the display)'],
 ];
 const named = (text) => NAMES.reduce((t, [re, to]) => t.replace(re, to), text);
 // A refusal for a command's card: without the words every one of them carries.
@@ -522,7 +526,20 @@ function advancedPlan(cmd) {
 
 const NEEDS_IMAGE = ['write', 'write-running', 'write-new-front', 'select'];
 
+// The Advanced tab's slot words: Slot 1 or Slot 2 once the unit says which
+// it runs from, as its screens name them.
+function slotWords() {
+	const i = state.info;
+	const known = i && i.established && (i.running === 0 || i.running === 1);
+	for (const s of document.querySelectorAll('#advanced [data-slot]')) {
+		const word = s.dataset.slot === 'running' ? 'the running slot' : 'the other slot';
+		const name = known ? IW.slotName(s.dataset.slot === 'running' ? i.running : 1 - i.running) : null;
+		s.textContent = name || (s.hasAttribute('data-cap') ? cap(word) : word);
+	}
+}
+
 function renderAdvanced() {
+	slotWords();
 	for (const card of document.querySelectorAll('.cmd')) {
 		const cmd = card.dataset.cmd, plan = advancedPlan(cmd);
 		const why = card.querySelector('.why'), btn = card.querySelector('button');

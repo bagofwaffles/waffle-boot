@@ -1,5 +1,5 @@
 **Can I install waffle-boot on my OP-XY?**
-Not yet. The [installer](Install-waffle-boot) has not yet been run on a unit, and a failed install can leave a unit that needs a flash programmer.
+With caution. The [installer](Install-waffle-boot) has been tested on real hardware, but not widely, and a failed install can leave a unit that needs a flash programmer.
 See [Status and Roadmap](Status-and-Roadmap).
 
 **Does this contain Teenage Engineering's firmware?**

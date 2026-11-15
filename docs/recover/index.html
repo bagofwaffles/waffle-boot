@@ -38,7 +38,7 @@
     <button id="tab-recover" class="choice" role="tab" aria-selected="false" aria-controls="guided">
       <b>Recovery</b>
       <span>A unit that already runs waffle-boot: write, try or switch its slots from the recovery menu
-        (Power + M4).</span>
+        (Power + M4 (4 under the display)).</span>
     </button>
   </div>
   <div class="modes" id="recmodes" role="tablist" aria-label="Recovery mode" hidden>
@@ -66,7 +66,7 @@
         <div class="duo">
           <ol class="howlist">
             <li>Switch the OP-XY <b>off</b>.</li>
-            <li>Hold <b class="key">M4</b> and no other key, and switch it on.</li>
+            <li>Hold <b class="key">M4</b> (4 under the display) and no other key, and switch it on.</li>
             <li>Let go when the red <b>Recovery</b> screen shows.</li>
             <li>Connect it to this computer with a USB cable.</li>
           </ol>
@@ -171,8 +171,8 @@
   <!-- ---------------- advanced: every command ---------------- -->
   <section id="advanced" role="tabpanel" aria-labelledby="tab-advanced" hidden>
     <div class="card" style="border-top:1px solid var(--line)">
-      <p class="hint" style="margin-top:0">Every command of <code>tools/wbrecover.py</code>. <b>A</b> is the
-        slot the unit runs from, <b>B</b> the other. Each asks before it sends, and the unit counts down 15 s
+      <p class="hint" style="margin-top:0">Every command of <code>tools/wbrecover.py</code>. Once a unit is
+        read, the slots below are named Slot 1 and Slot 2 as its screens name them. Each asks before it sends, and the unit counts down 15 s
         before it writes.</p>
       <label class="check"><input type="checkbox" id="force"><span><b>Force.</b> Lifts the refusals that only
         protect you. A forced command asks for its own phrase.</span></label>
@@ -188,22 +188,22 @@
 
       <p class="mansub">Write</p>
       <div class="cmds">
-        <div class="cmd" data-cmd="write"><h3>Write B</h3><p>The image goes into the slot the unit is not
+        <div class="cmd" data-cmd="write"><h3>Write <span data-slot="other">the other slot</span></h3><p>The image goes into the slot the unit is not
           running from.</p><p class="why"></p><div class="actions"><button class="btn small">Write
-          B</button></div></div>
-        <div class="cmd" data-cmd="write-running"><h3>Write A, the running slot</h3><p>B is selected first if
-          it is good. With B bad the write is in place, with no fallback.</p><p class="why"></p><div
-          class="actions"><button class="btn small">Write A</button></div></div>
-        <div class="cmd" data-cmd="write-new-front"><h3>Try an image with another front</h3><p>Written to B
-          for one trial start. B's old image is lost.</p><p class="why"></p><div class="actions"><button
+          <span data-slot="other">the other slot</span></button></div></div>
+        <div class="cmd" data-cmd="write-running"><h3>Write <span data-slot="running">the running slot</span></h3><p><span data-slot="other" data-cap>The other slot</span> is selected first if
+          it is good. With it bad the write is in place, with no fallback.</p><p class="why"></p><div
+          class="actions"><button class="btn small">Write <span data-slot="running">the running slot</span></button></div></div>
+        <div class="cmd" data-cmd="write-new-front"><h3>Try an image with another front</h3><p>Written to <span data-slot="other">the other slot</span>
+          for one trial start. Its old image is lost.</p><p class="why"></p><div class="actions"><button
           class="btn small">Write for a trial</button></div></div>
       </div>
 
       <p class="mansub">Slots</p>
       <div class="cmds">
-        <div class="cmd" data-cmd="try"><h3>Try B once</h3><p>The next start runs B once, then A again.</p><p
-          class="why"></p><div class="actions"><button class="btn small">Try B</button></div></div>
-        <div class="cmd" data-cmd="switch"><h3>Switch to B for good</h3><p>The unit starts B from now
+        <div class="cmd" data-cmd="try"><h3>Try <span data-slot="other">the other slot</span> once</h3><p>The next start runs it once, then <span data-slot="running">the running slot</span> again.</p><p
+          class="why"></p><div class="actions"><button class="btn small">Try <span data-slot="other">the other slot</span></button></div></div>
+        <div class="cmd" data-cmd="switch"><h3>Switch to <span data-slot="other">the other slot</span> for good</h3><p>The unit starts it from now
           on.</p><p class="why"></p><div class="actions"><button class="btn small">Switch</button></div></div>
         <div class="cmd" data-cmd="keep"><h3>Keep a tried slot</h3><p>For a tried slot that came up: start it
           from now on.</p><p class="why"></p><div class="actions"><button class="btn
@@ -368,7 +368,7 @@
       <li><b>Install: the trial failed.</b> Nothing was kept: the unit starts the bootloader it had. Hold the
         key the unit names to try again, or leave it as it is.</li>
       <li><b>The unit does not start after a restart.</b> Switch it off and on with no key held. If it still
-        does not start, hold <b class="key">M4</b> again: recovery is in every image.</li>
+        does not start, hold <b class="key">M4</b> (4 under the display) again: recovery is in every image.</li>
     </ul>
     <p class="hint">More: <a href="https://github.com/bagofwaffles/waffle-boot/wiki/Recovery">the recovery
       guides</a> and the <a

@@ -6,8 +6,8 @@ the device's two processors, loads the OS, and offers menus for installs and rep
 waffle-boot is an independent project. It is not affiliated with or endorsed by Teenage Engineering, and it
 contains no code or data from the device's firmware. License: GPL-2.0-or-later.
 
-> **Do not flash anything from this project onto an OP-XY.** The [installer](Install-waffle-boot) has not yet been run on a unit, and a
-> broken bootloader can leave the device unable to start. See [Status and Roadmap](Status-and-Roadmap).
+> **Use the [installer](Install-waffle-boot) with caution.** It has been tested on real hardware, but not widely, and a
+> broken bootloader can leave a unit that only an external flash programmer brings back. See [Status and Roadmap](Status-and-Roadmap).
 
 <img src="../docs/ui/main.png" width="480" alt="The boot menu's main screen">
 

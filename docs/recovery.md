@@ -8,7 +8,7 @@ Reference for recovery in front version 15. Step-by-step guides are in the wiki
 
 | How | When |
 | --- | --- |
-| **Power + M4** | Key 4 (M4) held alone while switching on (S-15.150) |
+| **Power + M4** | Key 4 (M4 (4 under the display)) held alone while switching on (S-15.150) |
 | By itself | The rest of the image fails its check |
 | By itself | Three starts in a row ended before the boot menu or the OS (S-02.095). The next start is normal |
 
@@ -78,7 +78,7 @@ A is the slot the unit runs from, B the other.
 | `restart` | Restarts the unit | |
 | any, with `--force` | Lifts the refusals that only protect you (below) | `force the <command>` |
 
-To write a build: `make bump-version`, `make cross`, Power + M4, connect USB, `info`, then
+To write a build: `make bump-version`, `make cross`, Power + M4 (4 under the display), connect USB, `info`, then
 `write build/bf703/waffle-boot.ldr`. On `Verified`, `restart` or switch off and on without a key. Restart
 before another write.
 
@@ -116,7 +116,7 @@ of A have no countdown.
   Until a start would reach a good slot, the screen says `Keep the power on until a write has finished`,
   the power switch is held off and `restart` is refused (unless forced). Keep the cable in.
 - **A new front**: the next start runs B once and the selector returns to A. If it does not come up, switch
-  off and on. To keep it after its trial start: key 1 then `3`, `keep`, or `select IMAGE.ldr`, or hold key 4
+  off and on. To keep it after its trial start: key 1 then `3`, `keep`, or `select IMAGE.ldr`, or hold M4 (4 under the display)
   through the trial start and keep it from its own recovery. Not covered: a front that starts once and
   fails later, and, with B as Slot 2, a power cut in the selector erase at the end of the write or the first
   instant of the trial start. The same holds for `try`.
@@ -141,7 +141,7 @@ to a slot with nothing the boot ROM can start.
 | The port went away mid-transfer | Nothing was written; run the command again |
 | **FAILED** writing B, A intact | The unit starts as before; run `write` again |
 | **FAILED** writing A, or A damaged | Run `info` (see the warnings above) |
-| No answer | Replug USB. If the screen is gone and no write of A failed, Power + M4 again. During an in-place write, wait, then `info` |
+| No answer | Replug USB. If the screen is gone and no write of A failed, Power + M4 (4 under the display) again. During an in-place write, wait, then `info` |
 
 ## Protocol
 
@@ -179,7 +179,7 @@ INFO to follow a write to its end.
 
 | Reason | What to do |
 | --- | --- |
-| The running slot is not selected, or the selector is not settled | Restart once without a key, then Power + M4; or `--force` |
+| The running slot is not selected, or the selector is not settled | Restart once without a key, then Power + M4 (4 under the display); or `--force` |
 | The selected slot is bad and its front not intact | Key 1, choose the slot to start; or `try` / `switch` |
 | Not a slot image with a front, or over `0x77000` bytes | Use the image from `make cross` |
 | `--running` in place before a plain `write` failed | Run a plain `write` first |

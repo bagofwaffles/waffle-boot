@@ -8,7 +8,7 @@ key 8**. Knob clicks and other keys do nothing.
 ## Open it
 
 1. Switch the unit off.
-2. Hold **M4**, and no other key. Switch the unit on. Keep holding until the red **Recovery** screen shows.
+2. Hold **M4** (4 under the display), and no other key. Switch the unit on. Keep holding until the red **Recovery** screen shows.
 3. Let go of every key. Nothing acts until all keys are up.
 
 The top two lines show each slot: version, `good`, `bad`, `tried` or `tried, started`, and which one is
@@ -24,7 +24,7 @@ The top two lines show each slot: version, `good`, `bad`, `tried` or `tried, sta
 ## Keep the slot you tried
 
 After slot N started in its trial: open this menu again, press **1**, then **3** (`Keep slot N`), and hold
-**1** for 5 s. Or hold M4 during the trial start itself: the screen says
+**1** for 5 s. Or hold M4 (4 under the display) during the trial start itself: the screen says
 `Trial start of slot N: to keep it, 1, then 3`.
 
 ## Other choices (key 1 first)
@@ -42,7 +42,7 @@ Each asks you to hold 1 for 5 s. **8** goes back.
 
 ## If it does not work
 
-- **The normal start happens instead.** M4 must be the only key held. Try again.
+- **The normal start happens instead.** M4 (4 under the display) must be the only key held. Try again.
 - **`Slot N holds nothing the unit can start`.** Write an image to it first:
   [Recover from a Computer](Recover-from-a-Computer).
 - **`No write: the unit cannot tell which slot is running`.** Recovery can neither write nor choose: the

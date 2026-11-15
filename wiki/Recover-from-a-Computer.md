@@ -14,7 +14,7 @@ install: open the recovery menu, connect, and follow its steps.
 
 ## Steps
 
-1. Open the recovery menu: hold **M4**, switch on, let go ([Recovery Menu](Recovery-Menu)).
+1. Open the recovery menu: hold **M4** (4 under the display), switch on, let go ([Recovery Menu](Recovery-Menu)).
 2. Connect USB. The status bar shows `USB`, and the screen
    `Connected: a write from the computer replaces slot N`.
 3. From the repository's root, see what the unit reports and what each command would do:

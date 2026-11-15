@@ -1,14 +1,14 @@
-**Under development. Boots on one unit. The installer is built but not yet run on a unit.**
+**Under development. The [installer](Install-waffle-boot) has been tested on real hardware, but not widely.**
 
-> Do not flash anything from this project onto an OP-XY. A broken bootloader can leave a unit that only an
-> external SPI flash programmer brings back.
+> Use it with caution. A broken bootloader can leave a unit that only an external SPI flash programmer
+> brings back.
 
 ## Shown on a unit
 
 - A start from a committed slot through to the OP-XY's own OS: the boot ROM, the factory first stage,
   waffle-boot, the second processor, and the OS loaded from the eMMC.
 - Writing a slot over USB from recovery.
-- The [Test OS](Test-OS) installer's trial and commit.
+- The [installer](Install-waffle-boot): its checks, the trial, and keeping the new bootloader.
 
 ## Open work
 

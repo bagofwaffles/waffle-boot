@@ -9,8 +9,8 @@ code or data from the device's firmware. It is an independent project, not affil
 Teenage Engineering.
 
 > [!WARNING]
-> **Under development. Do not flash it onto your OP-XY.** The installer ([`docs/install.md`](docs/install.md))
-> has not yet been run on a unit, and a broken bootloader can leave a unit that only an external flash
+> **Under development. Use it with caution.** The installer ([`docs/install.md`](docs/install.md)) has been
+> tested on real hardware, but not widely. A broken bootloader can leave a unit that only an external flash
 > programmer brings back.
 
 **Status:** it boots on one unit. Shown there so far: a start from a committed slot through to the OP-XY's

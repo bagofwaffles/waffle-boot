@@ -1,5 +1,5 @@
-> **Under development.** The installer has not yet been run on a unit. A broken bootloader can leave a unit
-> that only an external flash programmer brings back. Try it only on a unit you are prepared to lose.
+> **Under development.** The installer has been tested on real hardware, but not widely: use it with caution.
+> A broken bootloader can leave a unit that only an external flash programmer brings back.
 
 The installer is one file, `waffle-install.ldr`. It runs as the unit's OS under whatever bootloader the unit
 has, checks the hardware, and only when every check passes it installs waffle-boot. Every write is started
@@ -35,7 +35,7 @@ can also send the installer file; nothing else.
 5. Hold **1** for 5 s to keep the new bootloader. Your OS is made active again.
 
    <img src="../docs/ui/installer-commit.png" width="480" alt="Keep the new bootloader">
-6. Switch off, then on: waffle-boot starts your OS. The [Recovery Menu](Recovery-Menu) is Power + M4.
+6. Switch off, then on: waffle-boot starts your OS. The [Recovery Menu](Recovery-Menu) is Power + M4 (4 under the display).
 
    <img src="../docs/ui/installer-done.png" width="480" alt="Done">
 

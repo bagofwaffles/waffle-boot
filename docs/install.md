@@ -1,7 +1,7 @@
 # Installing waffle-boot
 
-> **Under development.** The installer has not yet been run on a unit. A broken bootloader can leave a unit
-> that only an external flash programmer brings back. Try it only on a unit you are prepared to lose.
+> **Under development.** The installer has been tested on real hardware, but not widely: use it with caution.
+> A broken bootloader can leave a unit that only an external flash programmer brings back.
 
 The installer is one file, `waffle-install.ldr`. It runs as the unit's OS under whatever bootloader the unit
 has, checks the hardware, and only when every check passes it writes the waffle-boot image it carries.
@@ -48,7 +48,7 @@ it sends is the installer file, to a unit already on waffle-boot (step 1).
    new slot the one the unit starts, then makes your OS active again.
 
    ![Keep the new bootloader](ui/installer-commit.png)
-6. **Done.** Switch off, then on: waffle-boot starts your OS. The recovery menu is Power + M4.
+6. **Done.** Switch off, then on: waffle-boot starts your OS. The recovery menu is Power + M4 (4 under the display).
 
    ![Done](ui/installer-done.png)
 

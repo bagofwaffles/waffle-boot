@@ -13,7 +13,7 @@ lives in the front, the small first part of every image, so it runs even when th
 
 | How | When |
 | --- | --- |
-| **Power + M4** | Hold M4, and no other key, while you switch the unit on |
+| **Power + M4** | Hold M4 (4 under the display), and no other key, while you switch the unit on |
 | By itself, `This image failed its check` | The rest of the running image is damaged |
 | By itself, `Three starts in a row did not finish` | Three starts in a row ended before the boot menu or the OS came up |
 
