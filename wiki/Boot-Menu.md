@@ -20,7 +20,7 @@ key, cancels. A knob click never starts it.
 
 ## Main Menu
 
-<img src="images/main.png" width="480" alt="Main Menu">
+<img src="../docs/ui/main.png" width="480" alt="Main Menu">
 
 | Item | What it does |
 | --- | --- |
@@ -35,7 +35,7 @@ the items, the screen says when the OS could not be started, and why.
 
 ## Settings
 
-<img src="images/settings.png" width="480" alt="Settings">
+<img src="../docs/ui/settings.png" width="480" alt="Settings">
 
 | Item | What it does |
 | --- | --- |
@@ -72,7 +72,7 @@ boot menu writes the whole file to `bootloader.settings.new`, then renames it ov
 
 ## System
 
-<img src="images/system-armed.png" width="480" alt="System, factory reset held">
+<img src="../docs/ui/system-armed.png" width="480" alt="System, factory reset held">
 
 | Item | What it does |
 | --- | --- |

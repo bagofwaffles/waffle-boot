@@ -26,7 +26,7 @@ It does everything the [Recovery Menu](Recovery-Menu)'s keys do, so it also work
 6. **The countdown.** The unit shows what it is about to write and `Switch the unit off within 15 s to stop`.
    Switching off or unplugging USB in that time stops it with nothing written. Stopping the tool does not.
 
-   <img src="images/recovery-countdown.png" width="480" alt="The countdown before a write">
+   <img src="../docs/ui/recovery-countdown.png" width="480" alt="The countdown before a write">
 
 7. Wait for `Verified: Slot N holds this file`. Then restart, with no key held:
 

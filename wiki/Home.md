@@ -9,7 +9,7 @@ contains no code or data from the device's firmware. License: GPL-2.0-or-later.
 > **Do not flash anything from this project onto an OP-XY.** There is no supported install yet, and a
 > broken bootloader can leave the device unable to start. See [Status and Roadmap](Status-and-Roadmap).
 
-<img src="images/main.png" width="480" alt="The boot menu's main screen">
+<img src="../docs/ui/main.png" width="480" alt="The boot menu's main screen">
 
 ## Use it
 

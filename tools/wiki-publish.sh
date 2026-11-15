@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Copies wiki/*.md into a fresh clone of the repository's GitHub wiki, with
-# each screenshot the pages name as images/<name>.png pointed at
-# docs/ui/<name>.png in the main repository, and shows what would change.
+# each screenshot the pages show from ../docs/ui/ pointed at its address
+# in the main repository, and shows what would change.
 # Pushes only with --push.
 #
 #     tools/wiki-publish.sh WIKI_GIT_URL            clone, replace, show the diff
@@ -68,10 +68,11 @@ done
 
 cp "$src"/*.md "$dst"/
 
-# The pages name their screenshots images/<name>.png. The wiki's repository
-# holds no pictures: each name becomes the address of docs/ui/<name>.png in
-# the main repository, so a picture follows docs/ui/ and shows while that
-# repository is public.
+# The pages show screenshots as ../docs/ui/<name>.png, which is where they
+# are when a page is read in the repository. The wiki's repository holds no
+# pictures: there each becomes the address of docs/ui/<name>.png in the main
+# repository, so a picture follows docs/ui/ and shows while that repository
+# is public.
 case $url in
 *github.com[:/]*) slug=${url#*github.com[:/]} ;;
 *) slug=$(git -C "$root" config remote.origin.url || true); slug=${slug#*github.com[:/]} ;;
@@ -83,14 +84,14 @@ case $slug in
 *) echo "cannot tell OWNER/REPO from $url" >&2; exit 1 ;;
 esac
 raw=https://raw.githubusercontent.com/$slug/main/docs/ui
-images=$(grep -ho 'images/[A-Za-z0-9._-]*\.png' "$src"/*.md | sort -u)
+images=$(grep -ho '\.\./docs/ui/[A-Za-z0-9._-]*\.png' "$src"/*.md | sort -u)
 for img in $images; do
-	file=$root/docs/ui/${img#images/}
+	file=$root/docs/ui/${img#../docs/ui/}
 	[ -f "$file" ] || { echo "missing $file, named in wiki/" >&2; exit 1; }
 done
 if [ -n "$images" ]; then
 	for f in "$dst"/*.md; do
-		sed "s|images/\([A-Za-z0-9._-]*\.png\)|$raw/\1|g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+		sed "s|\.\./docs/ui/\([A-Za-z0-9._-]*\.png\)|$raw/\1|g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
 	done
 fi
 

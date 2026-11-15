@@ -19,7 +19,7 @@ lives in the front, the small first part of every image, so it runs even when th
 
 Opening recovery writes nothing to the slots. Switching off and on with no key held starts normally.
 
-<img src="images/recovery.png" width="480" alt="Recovery">
+<img src="../docs/ui/recovery.png" width="480" alt="Recovery">
 
 ## The rules it keeps
 

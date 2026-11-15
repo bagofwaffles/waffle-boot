@@ -24,7 +24,7 @@ Find what you see, then follow the action. Try the first row's steps before anyt
 | Recovery keys do nothing | Use the computer: [Recover from a Computer](Recover-from-a-Computer) |
 | Recovery: `Keep the power on until a write has finished` | Do not switch off. Write again from the computer until it ends well |
 
-<img src="images/main-failed.png" width="480" alt="The OS not started">
+<img src="../docs/ui/main-failed.png" width="480" alt="The OS not started">
 
 ## What cannot be fixed without hardware tools
 

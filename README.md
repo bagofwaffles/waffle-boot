@@ -14,7 +14,7 @@ Teenage Engineering.
 
 **Status:** it boots on one unit. Shown there so far: a start from a committed slot through to the OP-XY's
 own OS, writing a slot over USB from recovery, and the test OS installer's trial and commit.
-[Status and roadmap](wiki/Status-and-Roadmap.md) covers open work and what is out of scope.
+[Status and roadmap](https://github.com/bagofwaffles/waffle-boot/wiki/Status-and-Roadmap) covers open work and what is out of scope.
 
 <img src="docs/ui/tour.gif" width="480" alt="waffle-boot's screens on the OP-XY's display: the frame shown while the OS loads, the main menu, Settings, the developer menu, System, Device Info, an install running and the recovery menu">
 
@@ -62,18 +62,20 @@ leaving a unit that does not start, and the few writes those rules do not cover.
 
 ## Documentation
 
+The documentation is the [wiki](https://github.com/bagofwaffles/waffle-boot/wiki): the user guide, recovery, how it works, and building and
+testing. The pages below go deeper.
+
 Using it:
 
-- [User guide](wiki/Home.md): the boot menu, installs, factory reset and logs. Also published as the GitHub
-  wiki
-- [Recovering a unit](wiki/Recovery.md): what recovery is, how it opens, and which guide to follow
+- [User guide](https://github.com/bagofwaffles/waffle-boot/wiki): the boot menu, installs, factory reset and logs
+- [Recovering a unit](https://github.com/bagofwaffles/waffle-boot/wiki/Recovery): what recovery is, how it opens, and which guide to follow
 - [Recovery in full](docs/recovery.md): the recovery menu and `tools/wbrecover.py`
 
 How it works:
 
 - [What is written to the SPI flash](docs/flash-writes.md): every area, the safety rules, and wear
 - [The front and its failsafes](docs/front.md): why a write cannot remove the last image that starts
-- [Where each part is in the source](docs/source-map.md), and [the requirement labels](wiki/Specification.md)
+- [Where each part is in the source](docs/source-map.md), and [the requirement labels](https://github.com/bagofwaffles/waffle-boot/wiki/Specification)
   the code and tests cite
 - [Screen style guide](docs/ui-style-guide.md): every screen, and the rules for menus and keys
 

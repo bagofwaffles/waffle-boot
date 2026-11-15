@@ -23,7 +23,7 @@ unit.
 5. Wait for `User data removed. Please restart your OP-XY.`
 6. Switch the unit off and on.
 
-<img src="images/system-armed.png" width="480" alt="Factory reset, 7 held">
+<img src="../docs/ui/system-armed.png" width="480" alt="Factory reset, 7 held">
 
 ## To erase everything instead
 

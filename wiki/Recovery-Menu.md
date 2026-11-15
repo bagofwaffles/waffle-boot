@@ -3,7 +3,7 @@ Choose which bootloader slot the unit starts, using the unit's keys alone.
 **You need:** the unit, charged or on USB. In this menu, keys 1 to 4 are **M1 to M4**, and 8 is **sound
 key 8**. Knob clicks and other keys do nothing.
 
-<img src="images/recovery.png" width="480" alt="Recovery">
+<img src="../docs/ui/recovery.png" width="480" alt="Recovery">
 
 ## Open it
 

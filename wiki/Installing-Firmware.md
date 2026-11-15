@@ -19,7 +19,7 @@ What can be installed on a unit that runs waffle-boot, and what cannot yet.
 4. Do not switch off while it runs. Steps show as `Installed`, `Not included` or `Skipped`.
 5. At `Done!`, press **6** to restart into the OS, or switch off and on.
 
-<img src="images/upgrade-wait.png" width="480" alt="Waiting for a package">
+<img src="../docs/ui/upgrade-wait.png" width="480" alt="Waiting for a package">
 
 With **Protected writes** off (the default), a package installs content and the OS only, and never touches
 the bootloader or the first stage.
