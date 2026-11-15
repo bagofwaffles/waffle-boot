@@ -1,6 +1,10 @@
 Write a waffle-boot image into a slot over USB, or choose the slot to start, with `tools/wbrecover.py`.
 It does everything the [Recovery Menu](Recovery-Menu)'s keys do, so it also works when the keys do not.
 
+**In a browser instead:** in Chrome or Edge on a computer,
+[the recovery page](https://bagofwaffles.github.io/waffle-boot/recover/) does the same with nothing to
+install: open the recovery menu, connect, and follow its steps.
+
 **You need:**
 
 - macOS or Linux, Python 3 (no other packages), a USB cable.

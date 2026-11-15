@@ -39,6 +39,9 @@ Run them from the repository root. The Python tools need only the standard libra
 | `ui_shots.py` | Turns the raw frames into PNG files, and into the README's `tour.gif` | `ui-shots.sh` |
 | `wiki-publish.sh` | Copies `wiki/` into the GitHub wiki's repository, its screenshots pointed at `docs/ui/`; pushes only with `--push` | by hand |
 
+`docs/recover/` is the browser's counterpart of `wbrecover.py`; `tests/web/run.sh` checks it against the
+tool (Node 20 or later), and `tests/web/sim_server.py` serves it with a simulated unit.
+
 ## Running the checks
 
 `tools/ci-local.sh` runs the checks in Ubuntu 24.04 containers, on a copy of your working tree. It needs

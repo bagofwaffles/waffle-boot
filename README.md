@@ -69,7 +69,8 @@ Using it:
 
 - [User guide](https://github.com/bagofwaffles/waffle-boot/wiki): the boot menu, installs, factory reset and logs
 - [Recovering a unit](https://github.com/bagofwaffles/waffle-boot/wiki/Recovery): what recovery is, how it opens, and which guide to follow
-- [Recovery in full](docs/recovery.md): the recovery menu and `tools/wbrecover.py`
+- [Recovery in full](docs/recovery.md): the recovery menu, `tools/wbrecover.py`, and the
+  [browser page](docs/recover/README.md)
 
 How it works:
 

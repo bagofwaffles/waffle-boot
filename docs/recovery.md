@@ -48,6 +48,14 @@ refuse:
 A tried slot reads `tried` and counts as bad until kept or put back. A power cut between a record's erase
 and program leaves the slot bad with its image intact: write it again, or switch to it knowing that.
 
+## The browser page
+
+[`docs/recover/`](recover/README.md) is a page that does what the host tool does, from Chrome or Edge on
+a computer, over Web Serial: a guided write of the slot the unit does not run from, and an Advanced tab
+with every command below. It decides and says what the tool does (its tests hold it to the tool, on the
+front's own code), and the unit checks every image and counts down all the same. Published with the
+repository's pages, it is at `https://bagofwaffles.github.io/waffle-boot/recover/`.
+
 ## The host tool
 
 `tools/wbrecover.py` (Python 3 only) finds the port named `OP-XY Recovery` on macOS and Linux; elsewhere,

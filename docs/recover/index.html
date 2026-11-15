@@ -1,0 +1,276 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>waffle-boot recovery | Bag of Waffles</title>
+<meta name="description" content="Write, try or switch the bootloader slots of an OP-XY running waffle-boot,
+  from the recovery menu, in your browser over USB.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FFF6E6">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="hero-head">
+    <img class="logo" src="assets/logo.svg" alt="The Bag of Waffles logo: a brown paper bag overflowing with
+      waffles" width="118" height="118">
+    <div class="hero-title">
+      <h1>waffle-boot recovery</h1>
+      <p class="tag">Write or switch your <span style="white-space:nowrap">OP-XY</span>'s bootloader slots
+        from its recovery menu, in your browser.</p>
+    </div>
+  </div>
+  <p class="promise">Nothing is sent to a server. The page talks to the unit over USB, and the unit checks
+    every image itself before it writes.</p>
+  <p class="warnbar"><b>waffle-boot is under development.</b> This page is for units that already run it. A
+    wrong image can leave a unit that does not start.</p>
+  <div class="modes" role="tablist" aria-label="Mode">
+    <button id="tab-guided" role="tab" aria-selected="true" aria-controls="guided">Guided</button>
+    <button id="tab-advanced" role="tab" aria-selected="false" aria-controls="advanced">Advanced</button>
+  </div>
+</header>
+
+<main>
+  <!-- ---------------- connect: both modes ---------------- -->
+  <ol class="steps" id="common">
+    <li class="step active" id="s-check">
+      <div class="num"><span class="ico">1</span><span class="tick">ok</span></div>
+      <div class="sbody">
+        <h2>Browser <span class="sn" id="sn-check"></span></h2>
+        <div class="chips" id="support"></div>
+        <p class="hint" id="checkhint">Checking the browser...</p>
+      </div>
+    </li>
+
+    <li class="step pending" id="s-menu">
+      <div class="num"><span class="ico">2</span><span class="tick">ok</span></div>
+      <div class="sbody">
+        <h2>Open the recovery menu <span class="sn" id="sn-menu"></span></h2>
+        <div class="duo">
+          <ol class="howlist">
+            <li>Switch the OP-XY <b>off</b>.</li>
+            <li>Hold <b class="key">M4</b> and no other key, and switch it on.</li>
+            <li>Let go when the red <b>Recovery</b> screen shows.</li>
+            <li>Connect it to this computer with a USB cable.</li>
+          </ol>
+          <figure>
+            <img class="screen" src="../ui/recovery.png" alt="The recovery menu on the OP-XY's display: a red
+              title bar, one line for each slot, and USB in the status bar" width="480" height="222">
+            <figcaption>The recovery menu. Opening it changes nothing.</figcaption>
+          </figure>
+        </div>
+        <div class="actions">
+          <button id="connect" class="btn primary" disabled>Connect to my OP-XY</button>
+          <button id="disconnect" class="btn small" hidden>Disconnect</button>
+        </div>
+        <p class="hint" id="connhint">The browser asks which port to use: pick <b>OP-XY Recovery</b>.</p>
+      </div>
+    </li>
+
+    <li class="step pending" id="s-unit">
+      <div class="num"><span class="ico">3</span><span class="tick">ok</span></div>
+      <div class="sbody">
+        <h2>Your unit <span class="sn" id="sn-unit"></span></h2>
+        <p class="hint" id="unithint">What the unit reports shows here once it is connected.</p>
+        <div class="unit" id="unit" hidden>
+          <div id="slots"></div>
+          <div class="unitrow"><span>Battery</span><b id="u-batt"></b></div>
+          <div class="unitrow"><span>Recovery</span><b id="u-front"></b></div>
+        </div>
+        <ul class="says" id="unitnotes"></ul>
+        <div class="actions"><button id="refresh" class="btn small" hidden>Read again</button></div>
+      </div>
+    </li>
+  </ol>
+
+  <!-- ---------------- guided: install an image ---------------- -->
+  <section id="guided" role="tabpanel" aria-labelledby="tab-guided">
+    <ol class="steps" start="4">
+      <li class="step pending" id="s-image">
+        <div class="num"><span class="ico">4</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Choose the image <span class="sn" id="sn-image"></span></h2>
+          <p class="hint">A waffle-boot image, <code>waffle-boot.ldr</code>. It is checked here before
+            anything is sent.</p>
+          <label class="drop" id="drop" for="file">
+            <b>Drop the image here</b> or click to choose
+            <span class="sub" id="dropsub">.ldr, at most 487 KB</span>
+            <input type="file" id="file" accept=".ldr">
+          </label>
+          <div class="chips" id="imgchips"></div>
+          <ul class="says" id="imgnotes"></ul>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-write">
+        <div class="num"><span class="ico">5</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Write it <span class="sn" id="sn-write"></span></h2>
+          <p class="hint" id="writeplan">The image goes into the slot the unit is not running from. The
+            running slot is not touched, so the unit still starts if this is interrupted.</p>
+          <ul class="says" id="writenotes"></ul>
+          <label class="check" id="agreewrap" hidden><input type="checkbox" id="agree"><span
+            id="agreetext"></span></label>
+          <div class="actions">
+            <button id="write" class="btn primary" disabled>Write the image</button>
+            <button id="toadvanced" class="btn small" hidden>Open Advanced</button>
+          </div>
+          <div id="run" hidden>
+            <div class="duo">
+              <div>
+                <div class="count" id="count" hidden>
+                  <span class="n" id="countn">15</span>
+                  <span>The unit is counting down. <b>Switch it off now to stop</b>: nothing has been written
+                    yet.</span>
+                </div>
+                <p class="hint" id="stage"></p>
+                <div class="bar"><i id="bar"></i></div>
+              </div>
+              <figure id="countfig" hidden>
+                <img class="screen" src="../ui/recovery-countdown.png" alt="The unit's countdown screen:
+                  Switch the unit off within 9 s to stop" width="480" height="222">
+                <figcaption>What the unit shows while it counts down.</figcaption>
+              </figure>
+            </div>
+          </div>
+          <div class="result" id="writeresult" hidden></div>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-restart">
+        <div class="num"><span class="ico">6</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Restart <span class="sn" id="sn-restart"></span></h2>
+          <p class="hint">The unit starts the new image. If it does not come up, switch it off and on: it
+            starts the slot it ran before.</p>
+          <div class="actions"><button id="restart" class="btn primary" disabled>Restart the
+            unit</button></div>
+          <div class="result" id="restartresult" hidden></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ---------------- advanced: every command ---------------- -->
+  <section id="advanced" role="tabpanel" aria-labelledby="tab-advanced" hidden>
+    <div class="card" style="border-top:1px solid var(--line)">
+      <p class="hint" style="margin-top:0">Every command of <code>tools/wbrecover.py</code>. <b>A</b> is the
+        slot the unit runs from, <b>B</b> the other. Each asks before it sends, and the unit counts down 15 s
+        before it writes.</p>
+      <label class="check"><input type="checkbox" id="force"><span><b>Force.</b> Lifts the refusals that only
+        protect you. A forced command asks for its own phrase.</span></label>
+
+      <p class="mansub">Image</p>
+      <label class="drop" id="adrop" for="afile">
+        <b>Drop an image here</b> or click to choose
+        <span class="sub" id="adropsub">Needed for the write and select commands</span>
+        <input type="file" id="afile" accept=".ldr">
+      </label>
+      <div class="chips" id="aimgchips"></div>
+      <ul class="says" id="aimgnotes"></ul>
+
+      <p class="mansub">Write</p>
+      <div class="cmds">
+        <div class="cmd" data-cmd="write"><h3>Write B</h3><p>The image goes into the slot the unit is not
+          running from.</p><p class="why"></p><div class="actions"><button class="btn small">Write
+          B</button></div></div>
+        <div class="cmd" data-cmd="write-running"><h3>Write A, the running slot</h3><p>B is selected first if
+          it is good. With B bad the write is in place, with no fallback.</p><p class="why"></p><div
+          class="actions"><button class="btn small">Write A</button></div></div>
+        <div class="cmd" data-cmd="write-new-front"><h3>Try an image with another front</h3><p>Written to B
+          for one trial start. B's old image is lost.</p><p class="why"></p><div class="actions"><button
+          class="btn small">Write for a trial</button></div></div>
+      </div>
+
+      <p class="mansub">Slots</p>
+      <div class="cmds">
+        <div class="cmd" data-cmd="try"><h3>Try B once</h3><p>The next start runs B once, then A again.</p><p
+          class="why"></p><div class="actions"><button class="btn small">Try B</button></div></div>
+        <div class="cmd" data-cmd="switch"><h3>Switch to B for good</h3><p>The unit starts B from now
+          on.</p><p class="why"></p><div class="actions"><button class="btn small">Switch</button></div></div>
+        <div class="cmd" data-cmd="keep"><h3>Keep a tried slot</h3><p>For a tried slot that came up: start it
+          from now on.</p><p class="why"></p><div class="actions"><button class="btn
+          small">Keep</button></div></div>
+        <div class="cmd" data-cmd="select"><h3>Keep a tried slot, checked against the image</h3><p>As Keep,
+          after comparing the slot with the chosen image.</p><p class="why"></p><div class="actions"><button
+          class="btn small">Select</button></div></div>
+        <div class="cmd" data-cmd="put-back"><h3>Put a tried slot's record back</h3><p>A tried, unkept slot
+          reads good again. Also cancels a try not yet started.</p><p class="why"></p><div
+          class="actions"><button class="btn small">Put back</button></div></div>
+      </div>
+
+      <p class="mansub">Unit</p>
+      <div class="cmds">
+        <div class="cmd" data-cmd="restart"><h3>Restart</h3><p>Restarts the unit without a key held.</p><p
+          class="why"></p><div class="actions"><button class="btn small">Restart</button></div></div>
+      </div>
+
+      <div id="arun" hidden>
+        <div class="count" id="acount" hidden>
+          <span class="n" id="acountn">15</span>
+          <span>The unit is counting down. <b>Switch it off now to stop</b>: nothing has been written
+            yet.</span>
+        </div>
+        <p class="hint" id="astage"></p>
+        <div class="bar"><i id="abar"></i></div>
+      </div>
+      <div class="result" id="aresult" hidden></div>
+    </div>
+  </section>
+
+  <details class="card" id="d-help">
+    <summary>If something goes wrong</summary>
+    <ul class="howlist">
+      <li><b>No port named OP-XY Recovery.</b> The unit is not in the recovery menu, or the cable carries
+        power only. Check the screen, then try another cable or port.</li>
+      <li><b>Refused or Stopped.</b> Nothing was written. The message says why.</li>
+      <li><b>The connection dropped during a transfer.</b> Nothing was written. Connect and write again.</li>
+      <li><b>FAILED while writing the other slot.</b> The unit still starts as before. Write again.</li>
+      <li><b>The unit does not start after a restart.</b> Switch it off and on with no key held. If it still
+        does not start, hold <b class="key">M4</b> again: recovery is in every image.</li>
+    </ul>
+    <p class="hint">More: <a href="https://github.com/bagofwaffles/waffle-boot/wiki/Recovery">the recovery
+      guides</a> and the <a
+      href="https://github.com/bagofwaffles/waffle-boot/blob/main/docs/recovery.md">reference</a>.</p>
+  </details>
+
+  <details class="card" id="d-log">
+    <summary>Live log</summary>
+    <div class="actions">
+      <button id="clear" class="btn small">Clear</button>
+      <label class="check" style="margin:0"><input type="checkbox" id="rawlog"><span>Show the
+        bytes</span></label>
+    </div>
+    <pre id="log"></pre>
+  </details>
+</main>
+
+<dialog id="confirm">
+  <h2 id="c-title"></h2>
+  <ul class="says" id="c-lines"></ul>
+  <div id="c-phrasewrap">
+    <label for="c-phrase" id="c-label"></label>
+    <input type="text" id="c-phrase" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="actions">
+    <button id="c-go" class="btn primary" disabled>Send</button>
+    <button id="c-cancel" class="btn">Cancel</button>
+  </div>
+</dialog>
+
+<footer>
+  <p>Not affiliated with Teenage Engineering.</p>
+  <p><a href="https://github.com/bagofwaffles/waffle-boot" target="_blank"
+    rel="noopener">github.com/bagofwaffles/waffle-boot</a></p>
+</footer>
+
+</div>
+<noscript><p style="text-align:center;padding:20px">This page needs JavaScript.</p></noscript>
+<script type="module" src="app.js"></script>
+</body>
+</html>

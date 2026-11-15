@@ -279,7 +279,8 @@ $(eval $(call VEC_HEADER,wire_vectors.h,tests/vectors/wire/gen_wire_vectors.py))
 HOST_TEST_CFLAGS += -I$(GEN)
 $(HOST_TESTS): | $(VEC_HEADERS)
 
-check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check/layering check/mtpcp check/testos_mon check/wbrecover check/bump_version check/generated check/leak
+check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check/layering check/mtpcp \
+	check/testos_mon check/wbrecover check/web check/bump_version check/generated check/leak
 
 # The image tools' own tests (tests/tools/test_image_tools.py).
 .PHONY: check/image_tools
@@ -312,6 +313,12 @@ check/testos_mon:
 .PHONY: check/wbrecover
 check/wbrecover:
 	CC="$(CC)" $(PYTHON) -I -B tests/tools/test_wbrecover.py
+
+# docs/recover/'s core.js against tools/wbrecover.py, on the same models and the
+# front's own C (Node 20 or later; said and skipped without it).
+.PHONY: check/web
+check/web:
+	CC="$(CC)" sh tests/web/run.sh
 
 # tools/bump_version.py on copies of the board header.
 .PHONY: check/bump_version
