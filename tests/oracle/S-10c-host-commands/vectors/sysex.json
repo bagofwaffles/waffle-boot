@@ -1,0 +1,5585 @@
+{
+ "classify": [
+  {
+   "class": "te",
+   "message": "f00020762140600101f7",
+   "name": "classify-te"
+  },
+  {
+   "class": "te",
+   "message": "f00020767f40400001f7",
+   "name": "classify-te-device-7f"
+  },
+  {
+   "class": "identity",
+   "message": "f07e210601f7",
+   "name": "classify-identity-21"
+  },
+  {
+   "class": "identity",
+   "message": "f07e7f0601f7",
+   "name": "classify-identity-7f"
+  },
+  {
+   "class": "ignored",
+   "message": "f07e000601f7",
+   "name": "classify-identity-other"
+  },
+  {
+   "class": "carrier",
+   "message": "f000207621660000f7",
+   "name": "classify-carrier"
+  },
+  {
+   "class": "carrier",
+   "message": "f00020762166f7",
+   "name": "classify-carrier-empty"
+  },
+  {
+   "class": "ignored",
+   "message": "f00020767f6600f7",
+   "name": "classify-carrier-other-device"
+  },
+  {
+   "class": "ignored",
+   "message": "f000207621404000f7",
+   "name": "classify-te-9-bytes"
+  },
+  {
+   "class": "ignored",
+   "message": "f00020762140000001f7",
+   "name": "classify-te-reply-form-10"
+  },
+  {
+   "class": "te",
+   "message": "f0002076214000000100f7",
+   "name": "classify-te-reply-form-11"
+  },
+  {
+   "class": "ignored",
+   "message": "f0002077214040000100f7",
+   "name": "classify-other-manufacturer"
+  },
+  {
+   "class": "ignored",
+   "message": "f07e210602f7",
+   "name": "classify-universal-other"
+  }
+ ],
+ "vectors": [
+  {
+   "name": "identity-21",
+   "steps": [
+    {
+     "host": "f07e210601f7",
+     "replies": [
+      {
+       "bytes": "f07e2106020020762100010000000000f7"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "identity-7f",
+   "steps": [
+    {
+     "host": "f07e7f0601f7",
+     "replies": [
+      {
+       "bytes": "f07e2106020020762100010000000000f7"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "identity-other-device",
+   "steps": [
+    {
+     "host": "f07e000601f7",
+     "replies": []
+    }
+   ]
+  },
+  {
+   "name": "identity-long",
+   "steps": [
+    {
+     "host": "f07e21060100f7",
+     "replies": []
+    }
+   ]
+  },
+  {
+   "name": "dfu-request-ids",
+   "note": "request ids 0, 1, 127, 128, 4095 and none; the reply carries the id, bit 6 clear",
+   "steps": [
+    {
+     "host": "f00020762140600005f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020000502f7",
+       "te": {
+        "cmd": 5,
+        "payload": "",
+        "req_id": 0,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600105f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010502f7",
+       "te": {
+        "cmd": 5,
+        "payload": "",
+        "req_id": 1,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140607f05f7",
+     "replies": [
+      {
+       "bytes": "f00020762140207f0502f7",
+       "te": {
+        "cmd": 5,
+        "payload": "",
+        "req_id": 127,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140610005f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021000502f7",
+       "te": {
+        "cmd": 5,
+        "payload": "",
+        "req_id": 128,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f000207621407f7f05f7",
+     "replies": [
+      {
+       "bytes": "f000207621403f7f0502f7",
+       "te": {
+        "cmd": 5,
+        "payload": "",
+        "req_id": 4095,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140400005f7",
+     "replies": [
+      {
+       "bytes": "f0002076214000000502f7",
+       "te": {
+        "cmd": 5,
+        "payload": "",
+        "req_id": null,
+        "status": 2
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-device-7f",
+   "note": "the device byte is not checked; the reply carries 21",
+   "steps": [
+    {
+     "host": "f00020767f40600100f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010002f7",
+       "te": {
+        "cmd": 0,
+        "payload": "",
+        "req_id": 1,
+        "status": 2
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-device-00",
+   "note": "the device byte is not checked; the reply carries 21",
+   "steps": [
+    {
+     "host": "f00020760040600100f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010002f7",
+       "te": {
+        "cmd": 0,
+        "payload": "",
+        "req_id": 1,
+        "status": 2
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-device-21",
+   "note": "the device byte is not checked; the reply carries 21",
+   "steps": [
+    {
+     "host": "f00020762140600100f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010002f7",
+       "te": {
+        "cmd": 0,
+        "payload": "",
+        "req_id": 1,
+        "status": 2
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-reply-form",
+   "note": "a message in the reply form (flags bit 6 clear) of 11 bytes or more is handled; offset 9 is ignored and the payload starts at offset 10",
+   "steps": [
+    {
+     "host": "f000207621402005020000616263f7",
+     "replies": [
+      {
+       "bytes": "f000207621402005020000616263f7",
+       "te": {
+        "cmd": 2,
+        "payload": "616263",
+        "req_id": 5,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f000207621400000027ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214000000200f7",
+       "te": {
+        "cmd": 2,
+        "payload": "",
+        "req_id": null,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140000001f7",
+     "replies": []
+    }
+   ]
+  },
+  {
+   "name": "dfu-9-bytes",
+   "note": "a 9-byte TE message gets no reply",
+   "steps": [
+    {
+     "host": "f000207621404000f7",
+     "replies": []
+    },
+    {
+     "host": "f000207621406105f7",
+     "replies": []
+    }
+   ]
+  },
+  {
+   "name": "dfu-10-bytes",
+   "note": "the shortest request: command, no payload",
+   "steps": [
+    {
+     "host": "f00020762140400001f7",
+     "replies": [
+      {
+       "te": {
+        "cmd": 1,
+        "req_id": null,
+        "status": 0,
+        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-cmd-unknown",
+   "note": "commands 00 and 04-7F: status 02, no payload",
+   "steps": [
+    {
+     "host": "f00020762140600100000102f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010002f7",
+       "te": {
+        "cmd": 0,
+        "payload": "",
+        "req_id": 1,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600204000102f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020402f7",
+       "te": {
+        "cmd": 4,
+        "payload": "",
+        "req_id": 2,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600305000102f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020030502f7",
+       "te": {
+        "cmd": 5,
+        "payload": "",
+        "req_id": 3,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600440000102f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020044002f7",
+       "te": {
+        "cmd": 64,
+        "payload": "",
+        "req_id": 4,
+        "status": 2
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060057f000102f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020057f02f7",
+       "te": {
+        "cmd": 127,
+        "payload": "",
+        "req_id": 5,
+        "status": 2
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-info",
+   "steps": [
+    {
+     "host": "f00020762140600101f7",
+     "replies": [
+      {
+       "te": {
+        "cmd": 1,
+        "req_id": 1,
+        "status": 0,
+        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$"
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020100616e7920706179006c6f6164f7",
+     "replies": [
+      {
+       "te": {
+        "cmd": 1,
+        "req_id": 2,
+        "status": 0,
+        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "echo-0",
+   "steps": [
+    {
+     "host": "f00020762140600102f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010200f7",
+       "te": {
+        "cmd": 2,
+        "payload": "",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "echo-1",
+   "steps": [
+    {
+     "host": "f000207621406001020000f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200102000000f7",
+       "te": {
+        "cmd": 2,
+        "payload": "00",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "echo-242",
+   "steps": [
+    {
+     "host": "f000207621406001020000070e151c232a0031383f464d545b60626970777e050c7f131a21282f363d7f444b525960676e03757c030a11181f00262d343b42495040575e656c737a017f080f161d242b327f3940474e555c630f6a71787f060d14001b222930373e45004c535a61686f767e7d040b121920277f2e353c434a51581f5f666d747b02090010171e252c333a0041484f565d646b7c727900070e151c7f232a31383f464d7f545b626970777e00050c131a21282f00363d444b52596070676e757c030a117f181f262d343b427f4950575e656c73017a01080f161d24002b323940474e55405c636a71787f067f0d141b222930377f3e454c535a6168076f767d040b12190020272e353c434a0051585f666d747b0f02091017f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200102000000070e151c232a0031383f464d545b60626970777e050c7f131a21282f363d7f444b525960676e03757c030a11181f00262d343b42495040575e656c737a017f080f161d242b327f3940474e555c630f6a71787f060d14001b222930373e45004c535a61686f767e7d040b121920277f2e353c434a51581f5f666d747b02090010171e252c333a0041484f565d646b7c727900070e151c7f232a31383f464d7f545b626970777e00050c131a21282f00363d444b52596070676e757c030a117f181f262d343b427f4950575e656c73017a01080f161d24002b323940474e55405c636a71787f067f0d141b222930377f3e454c535a6168076f767d040b12190020272e353c434a0051585f666d747b0f02091017f7",
+       "te": {
+        "cmd": 2,
+        "payload": "00070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b82899097",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "echo-243",
+   "steps": [
+    {
+     "host": "f000207621406001020000070e151c232a0031383f464d545b60626970777e050c7f131a21282f363d7f444b525960676e03757c030a11181f00262d343b42495040575e656c737a017f080f161d242b327f3940474e555c630f6a71787f060d14001b222930373e45004c535a61686f767e7d040b121920277f2e353c434a51581f5f666d747b02090010171e252c333a0041484f565d646b7c727900070e151c7f232a31383f464d7f545b626970777e00050c131a21282f00363d444b52596070676e757c030a117f181f262d343b427f4950575e656c73017a01080f161d24002b323940474e55405c636a71787f067f0d141b222930377f3e454c535a6168076f767d040b12190020272e353c434a0051585f666d747b1f020910171ef7",
+     "replies": [
+      {
+       "bytes": "f00020762140200102010062756666657220006f766572666c6f0077f7",
+       "te": {
+        "cmd": 2,
+        "payload": "627566666572206f766572666c6f77",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "echo-256",
+   "steps": [
+    {
+     "host": "f000207621406001020000070e151c232a0031383f464d545b60626970777e050c7f131a21282f363d7f444b525960676e03757c030a11181f00262d343b42495040575e656c737a017f080f161d242b327f3940474e555c630f6a71787f060d14001b222930373e45004c535a61686f767e7d040b121920277f2e353c434a51581f5f666d747b02090010171e252c333a0041484f565d646b7c727900070e151c7f232a31383f464d7f545b626970777e00050c131a21282f00363d444b52596070676e757c030a117f181f262d343b427f4950575e656c73017a01080f161d24002b323940474e55405c636a71787f067f0d141b222930377f3e454c535a6168076f767d040b12190020272e353c434a0051585f666d747b7f020910171e252c7f333a41484f565d0f646b7279f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200102010062756666657220006f766572666c6f0077f7",
+       "te": {
+        "cmd": 2,
+        "payload": "627566666572206f766572666c6f77",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-sub-unknown",
+   "note": "status 03, no payload: an empty payload, unknown sub-commands, a begin of 17 bytes, a chunk of 1 byte",
+   "steps": [
+    {
+     "host": "f00020762140600103f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010303f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 1,
+        "status": 3
+       }
+      }
+     ]
+    },
+    {
+     "host": "f000207621406002030000f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020303f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 3
+       }
+      }
+     ]
+    },
+    {
+     "host": "f000207621406003030006f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020030303f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 3,
+        "status": 3
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600403007ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020040303f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 4,
+        "status": 3
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600503017ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020050303f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 5,
+        "status": 3
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600603000200010002000300000400000840000000000ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020060303f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 6,
+        "status": 3
+       }
+      }
+     ]
+    },
+    {
+     "host": "f000207621406007030003f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020070303f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 7,
+        "status": 3
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-start",
+   "steps": [
+    {
+     "host": "f000207621406001030001f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020300010203f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-reboot",
+   "note": "the reply comes first; the reset follows at least 10 ms later (scenario H-DFU-UPLOAD)",
+   "steps": [
+    {
+     "host": "f000207621406001030005f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200103000009f7",
+       "te": {
+        "cmd": 3,
+        "payload": "09",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-ok",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020300030055f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-long",
+   "note": "bytes from 18 on are ignored; bytes 1-9 and the length are not checked",
+   "steps": [
+    {
+     "host": "f000207621406001037e027f7f7f7f7f7f037f7f000008400070000000007f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f077f7f7ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-sku-bits",
+   "note": "bits 0-9 and 24-31 of the product word are not interpreted",
+   "steps": [
+    {
+     "host": "f000207621406001030002000100020003480004007f08437f0800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-again-before-chunk",
+   "note": "a begin while a transfer has no chunk yet changes nothing",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600203000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200203010064667520616c72006561647920696e002070726f677265007373f7",
+       "te": {
+        "cmd": 3,
+        "payload": "64667520616c726561647920696e2070726f6772657373",
+        "req_id": 2,
+        "status": 1
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060030300030055f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020030300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 3,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-after-chunk",
+   "note": "a begin after a chunk discards the transfer and starts a new one at 0",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020300030055f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060030300030155f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020030300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 3,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600403000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020040300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 4,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060050300030255f7",
+     "replies": [
+      {
+       "bytes": "f000207621402005030100756e65787065630074656420636875006e6b2032202865007870203029f7",
+       "te": {
+        "cmd": 3,
+        "payload": "756e6578706563746564206368756e6b20322028657870203029",
+        "req_id": 5,
+        "status": 1
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060060300030055f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020060300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 6,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-bad-product-34",
+   "note": "incorrect sku: and the TE code of the word",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000320000400000800000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f000207621402001030100696e636f72726500637420736b753a00205445303334410053303030f7",
+       "te": {
+        "cmd": 3,
+        "payload": "696e636f727265637420736b753a2054453033344153303030",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-bad-variant",
+   "note": "incorrect sku: and the TE code of the word",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000844000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f000207621402001030100696e636f72726500637420736b753a00205445303333580053303030f7",
+       "te": {
+        "cmd": 3,
+        "payload": "696e636f727265637420736b753a2054453033335853303030",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-bad-zero",
+   "note": "incorrect sku: and the TE code of the word",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000000000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f000207621402001030100696e636f72726500637420736b753a00205445303030410053303030f7",
+       "te": {
+        "cmd": 3,
+        "payload": "696e636f727265637420736b753a2054453030304153303030",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-bad-over-999",
+   "note": "incorrect sku: and the TE code of the word",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000330000400007f00000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f000207621402001030100696e636f72726500637420736b753a00205445303030410053303030f7",
+       "te": {
+        "cmd": 3,
+        "payload": "696e636f727265637420736b753a2054453030304153303030",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-bad-variant-f",
+   "note": "incorrect sku: and the TE code of the word",
+   "steps": [
+    {
+     "host": "f0002076214060010300020001000200034000040000087f680800000f20f7",
+     "replies": [
+      {
+       "bytes": "f000207621402001030100696e636f72726500637420736b753a002054453033335f005f303030f7",
+       "te": {
+        "cmd": 3,
+        "payload": "696e636f727265637420736b753a2054453033335f5f303030",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-begin-bad-product-keeps-transfer",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020300030055f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600303000200010002000320000400000800000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f000207621402003030100696e636f72726500637420736b753a00205445303334410053303030f7",
+       "te": {
+        "cmd": 3,
+        "payload": "696e636f727265637420736b753a2054453033344153303030",
+        "req_id": 3,
+        "status": 1
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060040300030155f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020040300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 4,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-chunk-wrap",
+   "note": "300 chunks: the numbers wrap from 255 to 0; then a repeated and a skipped number",
+   "steps": [
+    {
+     "host": "f0002076214060010300020001000200030000040000084000000000012cf7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020300030000f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060030300030101f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020030300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 3,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060040300030202f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020040300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 4,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060050300030303f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020050300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 5,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060060300030404f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020060300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 6,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060070300030505f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020070300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 7,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060080300030606f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020080300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 8,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060090300030707f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020090300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 9,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600a0300030808f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 10,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600b0300030909f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 11,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600c0300030a0af7",
+     "replies": [
+      {
+       "bytes": "f00020762140200c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 12,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600d0300030b0bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140200d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 13,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600e0300030c0cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140200e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 14,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600f0300030d0df7",
+     "replies": [
+      {
+       "bytes": "f00020762140200f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 15,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060100300030e0ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214020100300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 16,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060110300030f0ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020110300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 17,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060120300031010f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020120300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 18,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060130300031111f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020130300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 19,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060140300031212f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020140300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 20,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060150300031313f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020150300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 21,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060160300031414f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020160300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 22,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060170300031515f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020170300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 23,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060180300031616f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020180300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 24,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060190300031717f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020190300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 25,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140601a0300031818f7",
+     "replies": [
+      {
+       "bytes": "f00020762140201a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 26,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140601b0300031919f7",
+     "replies": [
+      {
+       "bytes": "f00020762140201b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 27,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140601c0300031a1af7",
+     "replies": [
+      {
+       "bytes": "f00020762140201c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 28,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140601d0300031b1bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140201d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 29,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140601e0300031c1cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140201e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 30,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140601f0300031d1df7",
+     "replies": [
+      {
+       "bytes": "f00020762140201f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 31,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060200300031e1ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214020200300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 32,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060210300031f1ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020210300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 33,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060220300032020f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020220300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 34,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060230300032121f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020230300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 35,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060240300032222f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020240300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 36,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060250300032323f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020250300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 37,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060260300032424f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020260300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 38,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060270300032525f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020270300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 39,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060280300032626f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020280300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 40,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060290300032727f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020290300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 41,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140602a0300032828f7",
+     "replies": [
+      {
+       "bytes": "f00020762140202a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 42,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140602b0300032929f7",
+     "replies": [
+      {
+       "bytes": "f00020762140202b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 43,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140602c0300032a2af7",
+     "replies": [
+      {
+       "bytes": "f00020762140202c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 44,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140602d0300032b2bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140202d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 45,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140602e0300032c2cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140202e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 46,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140602f0300032d2df7",
+     "replies": [
+      {
+       "bytes": "f00020762140202f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 47,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060300300032e2ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214020300300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 48,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060310300032f2ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020310300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 49,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060320300033030f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020320300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 50,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060330300033131f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020330300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 51,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060340300033232f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020340300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 52,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060350300033333f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020350300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 53,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060360300033434f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020360300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 54,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060370300033535f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020370300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 55,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060380300033636f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020380300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 56,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060390300033737f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020390300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 57,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140603a0300033838f7",
+     "replies": [
+      {
+       "bytes": "f00020762140203a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 58,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140603b0300033939f7",
+     "replies": [
+      {
+       "bytes": "f00020762140203b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 59,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140603c0300033a3af7",
+     "replies": [
+      {
+       "bytes": "f00020762140203c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 60,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140603d0300033b3bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140203d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 61,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140603e0300033c3cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140203e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 62,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140603f0300033d3df7",
+     "replies": [
+      {
+       "bytes": "f00020762140203f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 63,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060400300033e3ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214020400300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 64,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060410300033f3ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020410300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 65,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060420300034040f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020420300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 66,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060430300034141f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020430300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 67,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060440300034242f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020440300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 68,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060450300034343f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020450300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 69,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060460300034444f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020460300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 70,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060470300034545f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020470300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 71,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060480300034646f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020480300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 72,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060490300034747f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020490300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 73,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140604a0300034848f7",
+     "replies": [
+      {
+       "bytes": "f00020762140204a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 74,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140604b0300034949f7",
+     "replies": [
+      {
+       "bytes": "f00020762140204b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 75,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140604c0300034a4af7",
+     "replies": [
+      {
+       "bytes": "f00020762140204c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 76,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140604d0300034b4bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140204d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 77,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140604e0300034c4cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140204e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 78,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140604f0300034d4df7",
+     "replies": [
+      {
+       "bytes": "f00020762140204f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 79,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060500300034e4ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214020500300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 80,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060510300034f4ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020510300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 81,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060520300035050f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020520300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 82,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060530300035151f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020530300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 83,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060540300035252f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020540300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 84,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060550300035353f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020550300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 85,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060560300035454f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020560300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 86,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060570300035555f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020570300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 87,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060580300035656f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020580300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 88,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060590300035757f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020590300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 89,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140605a0300035858f7",
+     "replies": [
+      {
+       "bytes": "f00020762140205a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 90,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140605b0300035959f7",
+     "replies": [
+      {
+       "bytes": "f00020762140205b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 91,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140605c0300035a5af7",
+     "replies": [
+      {
+       "bytes": "f00020762140205c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 92,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140605d0300035b5bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140205d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 93,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140605e0300035c5cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140205e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 94,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140605f0300035d5df7",
+     "replies": [
+      {
+       "bytes": "f00020762140205f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 95,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060600300035e5ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214020600300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 96,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060610300035f5ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020610300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 97,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060620300036060f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020620300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 98,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060630300036161f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020630300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 99,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060640300036262f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020640300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 100,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060650300036363f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020650300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 101,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060660300036464f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020660300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 102,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060670300036565f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020670300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 103,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060680300036666f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020680300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 104,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060690300036767f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020690300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 105,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140606a0300036868f7",
+     "replies": [
+      {
+       "bytes": "f00020762140206a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 106,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140606b0300036969f7",
+     "replies": [
+      {
+       "bytes": "f00020762140206b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 107,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140606c0300036a6af7",
+     "replies": [
+      {
+       "bytes": "f00020762140206c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 108,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140606d0300036b6bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140206d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 109,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140606e0300036c6cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140206e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 110,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140606f0300036d6df7",
+     "replies": [
+      {
+       "bytes": "f00020762140206f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 111,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060700300036e6ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214020700300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 112,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060710300036f6ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214020710300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 113,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060720300037070f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020720300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 114,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060730300037171f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020730300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 115,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060740300037272f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020740300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 116,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060750300037373f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020750300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 117,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060760300037474f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020760300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 118,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060770300037575f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020770300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 119,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060780300037676f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020780300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 120,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060790300037777f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020790300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 121,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140607a0300037878f7",
+     "replies": [
+      {
+       "bytes": "f00020762140207a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 122,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140607b0300037979f7",
+     "replies": [
+      {
+       "bytes": "f00020762140207b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 123,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140607c0300037a7af7",
+     "replies": [
+      {
+       "bytes": "f00020762140207c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 124,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140607d0300037b7bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140207d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 125,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140607e0300037c7cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140207e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 126,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140607f0300037d7df7",
+     "replies": [
+      {
+       "bytes": "f00020762140207f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 127,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061000300037e7ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214021000300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 128,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061010300037f7ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214021010300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 129,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061020302030000f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 130,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061030302030101f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021030300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 131,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061040302030202f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021040300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 132,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061050302030303f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021050300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 133,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061060302030404f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021060300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 134,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061070302030505f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021070300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 135,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061080302030606f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021080300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 136,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061090302030707f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021090300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 137,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140610a0302030808f7",
+     "replies": [
+      {
+       "bytes": "f00020762140210a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 138,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140610b0302030909f7",
+     "replies": [
+      {
+       "bytes": "f00020762140210b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 139,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140610c0302030a0af7",
+     "replies": [
+      {
+       "bytes": "f00020762140210c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 140,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140610d0302030b0bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140210d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 141,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140610e0302030c0cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140210e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 142,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140610f0302030d0df7",
+     "replies": [
+      {
+       "bytes": "f00020762140210f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 143,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061100302030e0ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214021100300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 144,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061110302030f0ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214021110300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 145,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061120302031010f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021120300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 146,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061130302031111f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021130300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 147,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061140302031212f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021140300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 148,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061150302031313f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021150300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 149,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061160302031414f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021160300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 150,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061170302031515f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021170300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 151,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061180302031616f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021180300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 152,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061190302031717f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021190300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 153,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140611a0302031818f7",
+     "replies": [
+      {
+       "bytes": "f00020762140211a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 154,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140611b0302031919f7",
+     "replies": [
+      {
+       "bytes": "f00020762140211b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 155,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140611c0302031a1af7",
+     "replies": [
+      {
+       "bytes": "f00020762140211c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 156,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140611d0302031b1bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140211d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 157,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140611e0302031c1cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140211e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 158,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140611f0302031d1df7",
+     "replies": [
+      {
+       "bytes": "f00020762140211f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 159,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061200302031e1ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214021200300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 160,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061210302031f1ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214021210300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 161,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061220302032020f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021220300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 162,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061230302032121f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021230300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 163,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061240302032222f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021240300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 164,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061250302032323f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021250300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 165,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061260302032424f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021260300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 166,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061270302032525f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021270300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 167,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061280302032626f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021280300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 168,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061290302032727f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021290300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 169,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140612a0302032828f7",
+     "replies": [
+      {
+       "bytes": "f00020762140212a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 170,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140612b0302032929f7",
+     "replies": [
+      {
+       "bytes": "f00020762140212b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 171,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140612c0302032a2af7",
+     "replies": [
+      {
+       "bytes": "f00020762140212c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 172,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140612d0302032b2bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140212d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 173,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140612e0302032c2cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140212e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 174,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140612f0302032d2df7",
+     "replies": [
+      {
+       "bytes": "f00020762140212f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 175,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061300302032e2ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214021300300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 176,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061310302032f2ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214021310300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 177,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061320302033030f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021320300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 178,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061330302033131f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021330300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 179,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061340302033232f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021340300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 180,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061350302033333f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021350300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 181,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061360302033434f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021360300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 182,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061370302033535f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021370300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 183,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061380302033636f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021380300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 184,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061390302033737f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021390300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 185,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140613a0302033838f7",
+     "replies": [
+      {
+       "bytes": "f00020762140213a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 186,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140613b0302033939f7",
+     "replies": [
+      {
+       "bytes": "f00020762140213b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 187,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140613c0302033a3af7",
+     "replies": [
+      {
+       "bytes": "f00020762140213c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 188,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140613d0302033b3bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140213d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 189,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140613e0302033c3cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140213e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 190,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140613f0302033d3df7",
+     "replies": [
+      {
+       "bytes": "f00020762140213f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 191,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061400302033e3ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214021400300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 192,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061410302033f3ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214021410300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 193,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061420302034040f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021420300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 194,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061430302034141f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021430300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 195,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061440302034242f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021440300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 196,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061450302034343f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021450300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 197,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061460302034444f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021460300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 198,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061470302034545f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021470300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 199,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061480302034646f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021480300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 200,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061490302034747f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021490300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 201,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140614a0302034848f7",
+     "replies": [
+      {
+       "bytes": "f00020762140214a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 202,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140614b0302034949f7",
+     "replies": [
+      {
+       "bytes": "f00020762140214b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 203,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140614c0302034a4af7",
+     "replies": [
+      {
+       "bytes": "f00020762140214c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 204,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140614d0302034b4bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140214d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 205,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140614e0302034c4cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140214e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 206,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140614f0302034d4df7",
+     "replies": [
+      {
+       "bytes": "f00020762140214f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 207,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061500302034e4ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214021500300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 208,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061510302034f4ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214021510300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 209,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061520302035050f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021520300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 210,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061530302035151f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021530300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 211,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061540302035252f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021540300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 212,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061550302035353f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021550300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 213,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061560302035454f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021560300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 214,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061570302035555f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021570300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 215,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061580302035656f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021580300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 216,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061590302035757f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021590300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 217,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140615a0302035858f7",
+     "replies": [
+      {
+       "bytes": "f00020762140215a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 218,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140615b0302035959f7",
+     "replies": [
+      {
+       "bytes": "f00020762140215b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 219,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140615c0302035a5af7",
+     "replies": [
+      {
+       "bytes": "f00020762140215c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 220,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140615d0302035b5bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140215d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 221,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140615e0302035c5cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140215e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 222,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140615f0302035d5df7",
+     "replies": [
+      {
+       "bytes": "f00020762140215f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 223,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061600302035e5ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214021600300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 224,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061610302035f5ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214021610300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 225,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061620302036060f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021620300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 226,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061630302036161f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021630300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 227,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061640302036262f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021640300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 228,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061650302036363f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021650300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 229,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061660302036464f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021660300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 230,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061670302036565f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021670300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 231,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061680302036666f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021680300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 232,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061690302036767f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021690300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 233,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140616a0302036868f7",
+     "replies": [
+      {
+       "bytes": "f00020762140216a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 234,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140616b0302036969f7",
+     "replies": [
+      {
+       "bytes": "f00020762140216b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 235,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140616c0302036a6af7",
+     "replies": [
+      {
+       "bytes": "f00020762140216c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 236,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140616d0302036b6bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140216d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 237,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140616e0302036c6cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140216e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 238,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140616f0302036d6df7",
+     "replies": [
+      {
+       "bytes": "f00020762140216f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 239,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061700302036e6ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214021700300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 240,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061710302036f6ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214021710300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 241,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061720302037070f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021720300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 242,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061730302037171f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021730300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 243,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061740302037272f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021740300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 244,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061750302037373f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021750300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 245,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061760302037474f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021760300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 246,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061770302037575f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021770300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 247,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061780302037676f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021780300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 248,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214061790302037777f7",
+     "replies": [
+      {
+       "bytes": "f0002076214021790300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 249,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140617a0302037878f7",
+     "replies": [
+      {
+       "bytes": "f00020762140217a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 250,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140617b0302037979f7",
+     "replies": [
+      {
+       "bytes": "f00020762140217b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 251,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140617c0302037a7af7",
+     "replies": [
+      {
+       "bytes": "f00020762140217c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 252,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140617d0302037b7bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140217d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 253,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140617e0302037c7cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140217e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 254,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140617f0302037d7df7",
+     "replies": [
+      {
+       "bytes": "f00020762140217f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 255,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062000302037e7ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214022000300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 256,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062010302037f7ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214022010300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 257,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062020300030000f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 258,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062030300030101f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022030300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 259,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062040300030202f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022040300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 260,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062050300030303f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022050300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 261,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062060300030404f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022060300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 262,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062070300030505f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022070300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 263,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062080300030606f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022080300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 264,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062090300030707f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022090300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 265,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140620a0300030808f7",
+     "replies": [
+      {
+       "bytes": "f00020762140220a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 266,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140620b0300030909f7",
+     "replies": [
+      {
+       "bytes": "f00020762140220b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 267,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140620c0300030a0af7",
+     "replies": [
+      {
+       "bytes": "f00020762140220c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 268,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140620d0300030b0bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140220d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 269,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140620e0300030c0cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140220e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 270,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140620f0300030d0df7",
+     "replies": [
+      {
+       "bytes": "f00020762140220f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 271,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062100300030e0ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214022100300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 272,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062110300030f0ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214022110300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 273,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062120300031010f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022120300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 274,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062130300031111f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022130300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 275,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062140300031212f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022140300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 276,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062150300031313f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022150300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 277,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062160300031414f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022160300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 278,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062170300031515f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022170300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 279,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062180300031616f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022180300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 280,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062190300031717f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022190300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 281,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140621a0300031818f7",
+     "replies": [
+      {
+       "bytes": "f00020762140221a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 282,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140621b0300031919f7",
+     "replies": [
+      {
+       "bytes": "f00020762140221b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 283,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140621c0300031a1af7",
+     "replies": [
+      {
+       "bytes": "f00020762140221c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 284,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140621d0300031b1bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140221d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 285,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140621e0300031c1cf7",
+     "replies": [
+      {
+       "bytes": "f00020762140221e0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 286,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140621f0300031d1df7",
+     "replies": [
+      {
+       "bytes": "f00020762140221f0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 287,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062200300031e1ef7",
+     "replies": [
+      {
+       "bytes": "f0002076214022200300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 288,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062210300031f1ff7",
+     "replies": [
+      {
+       "bytes": "f0002076214022210300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 289,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062220300032020f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022220300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 290,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062230300032121f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022230300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 291,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062240300032222f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022240300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 292,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062250300032323f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022250300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 293,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062260300032424f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022260300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 294,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062270300032525f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022270300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 295,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062280300032626f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022280300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 296,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062290300032727f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022290300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 297,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140622a0300032828f7",
+     "replies": [
+      {
+       "bytes": "f00020762140222a0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 298,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140622b0300032929f7",
+     "replies": [
+      {
+       "bytes": "f00020762140222b0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 299,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140622c0300032a2af7",
+     "replies": [
+      {
+       "bytes": "f00020762140222c0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 300,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140622d0300032b2bf7",
+     "replies": [
+      {
+       "bytes": "f00020762140222d0300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 301,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140622e0300032b55f7",
+     "replies": [
+      {
+       "bytes": "f00020762140222e030100756e65787065630074656420636875006e6b20343320280065787020343429f7",
+       "te": {
+        "cmd": 3,
+        "payload": "756e6578706563746564206368756e6b203433202865787020343429",
+        "req_id": 302,
+        "status": 1
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140622f0300032e55f7",
+     "replies": [
+      {
+       "bytes": "f00020762140222f030100756e65787065630074656420636875006e6b20343620280065787020343429f7",
+       "te": {
+        "cmd": 3,
+        "payload": "756e6578706563746564206368756e6b203436202865787020343429",
+        "req_id": 303,
+        "status": 1
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214062300300032c55f7",
+     "replies": [
+      {
+       "bytes": "f0002076214022300300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 304,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-chunk-empty-data",
+   "note": "a chunk of 2 bytes appends nothing and is accepted",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600203000300f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600303000301f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020030300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 3,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-chunk-no-transfer",
+   "note": "with no transfer in progress: status 01 and one of the two texts",
+   "steps": [
+    {
+     "host": "f0002076214060010300030055f7",
+     "replies": [
+      {
+       "te": {
+        "cmd": 3,
+        "req_id": 1,
+        "status": 1,
+        "text_re": "^(unexpected error when handling chunk|unexpected chunk 0 \\(exp [0-9]+\\))$"
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020300030555f7",
+     "replies": [
+      {
+       "te": {
+        "cmd": 3,
+        "req_id": 2,
+        "status": 1,
+        "text_re": "^(unexpected error when handling chunk|unexpected chunk 5 \\(exp [0-9]+\\))$"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-finish-no-transfer",
+   "steps": [
+    {
+     "host": "f000207621406001030004f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010301006572726f7220770068656e20646f69006e67206466753a0020274e6f207570006461746520696e002070726f6772650073732127f7",
+       "te": {
+        "cmd": 3,
+        "payload": "6572726f72207768656e20646f696e67206466753a20274e6f2075706461746520696e2070726f67726573732127",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020300040102f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020301006572726f7220770068656e20646f69006e67206466753a0020274e6f207570006461746520696e002070726f6772650073732127f7",
+       "te": {
+        "cmd": 3,
+        "payload": "6572726f72207768656e20646f696e67206466753a20274e6f2075706461746520696e2070726f67726573732127",
+        "req_id": 2,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-overflow",
+   "note": "a payload of 4097 bytes: buffer overflow, and the transfer ends",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060020300030055f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600303000301000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200303010062756666657220006f766572666c6f0077f7",
+       "te": {
+        "cmd": 3,
+        "payload": "627566666572206f766572666c6f77",
+        "req_id": 3,
+        "status": 1
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060040300030155f7",
+     "replies": [
+      {
+       "te": {
+        "cmd": 3,
+        "req_id": 4,
+        "status": 1,
+        "text_re": "^(unexpected error when handling chunk|unexpected chunk 1 \\(exp [0-9]+\\))$"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-overflow-4096",
+   "note": "a payload of exactly 4096 bytes is handled",
+   "steps": [
+    {
+     "host": "f00020762140600103000200010002000300000400000840000800000f20f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020010300001000f7",
+       "te": {
+        "cmd": 3,
+        "payload": "1000",
+        "req_id": 1,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f000207621406002030003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020020300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 2,
+        "status": 0
+       }
+      }
+     ]
+    },
+    {
+     "host": "f0002076214060030300030155f7",
+     "replies": [
+      {
+       "bytes": "f0002076214020030300f7",
+       "te": {
+        "cmd": 3,
+        "payload": "",
+        "req_id": 3,
+        "status": 0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dfu-overflow-echo",
+   "note": "buffer overflow for every command, the echo and an unknown one included",
+   "steps": [
+    {
+     "host": "f00020762140600102000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200102010062756666657220006f766572666c6f0077f7",
+       "te": {
+        "cmd": 2,
+        "payload": "627566666572206f766572666c6f77",
+        "req_id": 1,
+        "status": 1
+       }
+      }
+     ]
+    },
+    {
+     "host": "f00020762140600250000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f7",
+     "replies": [
+      {
+       "bytes": "f00020762140200250010062756666657220006f766572666c6f0077f7",
+       "te": {
+        "cmd": 80,
+        "payload": "627566666572206f766572666c6f77",
+        "req_id": 2,
+        "status": 1
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

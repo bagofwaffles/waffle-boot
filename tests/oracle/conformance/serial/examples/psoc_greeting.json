@@ -1,0 +1,9 @@
+{
+ "name": "psoc-example",
+ "ignore": [{"id": ["0x70", "0x71"]}],
+ "steps": [
+  {"expect": {"id": "0x7a", "prefix": "0a0b"}, "reply": [{"id": "0x7b", "payload": "01"}], "note": "a request, answered on the swapped route"},
+  {"expect": {"id": "0x7c", "payload": "0102"}, "note": "a plain message, no reply"},
+  {"inject": [{"route": "0x41", "id": "0x7d", "payload": "000000000100"}], "note": "an unsolicited message"}
+ ]
+}

@@ -1,0 +1,90 @@
+{
+ "cases": [
+  {
+   "name": "plain",
+   "text": "{\"name\": \"Bass\"}",
+   "dir": "bass_pack",
+   "expect": "Bass",
+   "label": "Bass"
+  },
+  {
+   "name": "no_space",
+   "text": "{\"name\":\"Keys\"}",
+   "dir": "k",
+   "expect": "Keys",
+   "label": "Keys"
+  },
+  {
+   "name": "colon_runs",
+   "text": "{\"name\" \t\r\n::: \"X Y\"}",
+   "dir": "d",
+   "expect": "X Y",
+   "label": "X Y"
+  },
+  {
+   "name": "missing_quote",
+   "text": "{\"name\": Bass}",
+   "dir": "drums_v2",
+   "expect": "",
+   "label": "drums_v2"
+  },
+  {
+   "name": "escaped_quote",
+   "text": "{\"name\": \"a\\\"b\"}",
+   "dir": "d",
+   "expect": "a\\",
+   "label": "a\\"
+  },
+  {
+   "name": "seventy",
+   "text": "{\"name\": \"0123456789012345678901234567890123456789012345678901234567890123456789\"}",
+   "dir": "d",
+   "expect": "012345678901234567890123456789012345678901234567890123456789012",
+   "label": "012345678901234567890123456789012345678901234567890123456789012"
+  },
+  {
+   "name": "beyond_511",
+   "text_pad": 506,
+   "text": "\"name\": \"late\"",
+   "dir": "late_dir",
+   "expect": "",
+   "label": "late_dir"
+  },
+  {
+   "name": "cut_at_511",
+   "text_pad": 499,
+   "text": "\"name\": \"abcdefgh\"",
+   "dir": "d",
+   "expect": "abc",
+   "label": "abc"
+  },
+  {
+   "name": "first_occurrence",
+   "text": "{\"t\": \"a \"name\" b\", \"name\": \"B\"}",
+   "dir": "d",
+   "expect": "",
+   "label": "d"
+  },
+  {
+   "name": "no_file",
+   "text": null,
+   "dir": "only_dir",
+   "expect": "",
+   "label": "only_dir"
+  },
+  {
+   "name": "empty_file",
+   "text": "",
+   "dir": "e",
+   "expect": "",
+   "label": "e"
+  },
+  {
+   "name": "long_dir",
+   "text": null,
+   "dir": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+   "expect": "",
+   "label": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  }
+ ]
+}

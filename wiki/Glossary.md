@@ -1,0 +1,39 @@
+| Term | Meaning |
+| --- | --- |
+| **Boot menu** | waffle-boot's own screens, shown instead of starting the OS. The code calls it **held mode** |
+| **Recovery menu** | The red screens of the front, opened by Power + M4. Writes images and chooses the slot to start |
+| **Power + M4** | M4 held, alone, while the unit is switched on. The only key chord |
+| **Master, slave** | The two BF703 processors. The master runs the flash, PSoC, Nordic, display and USB; the slave the eMMC. Screens call the slave DSP2 |
+| **First stage** | The program at flash offset 0 that the boot ROM loads; it picks a slot on every start. Not part of waffle-boot |
+| **Slot** | One of two places in the flash for a bootloader image: **Slot 1** and **Slot 2** on screen (0 and 1 in the code) |
+| **Selector** | Two bytes in the flash: which slot to start, and `verified` |
+| **Verified** | The selector byte that says "start without a check" (`0x01`): the first stage then starts the selected slot as it is. Any other value makes the first stage check the slot and write the selector (S-02.020 to S-02.022) |
+| **Record** | One per slot: the image's length, CRC-32 and a tag |
+| **Good, bad** | A slot whose record matches its image is good |
+| **Running slot** | The slot this start came from. Usually the selected one |
+| **Front** | The small first part of every waffle-boot image: start-up to the key read, and recovery. Frozen and pinned |
+| **Front pin** | The SHA-256 of the front's bytes, kept in `src/front/front.pin` |
+| **Main image** | The rest of a waffle-boot image: the boot menu, the OS load, installs |
+| **Try, trial start** | A slot started once without being trusted. If it does not come up, the next start boots the old slot |
+| **Tried, started** | A slot under trial; `started` once its front has come up in that trial |
+| **Keep** | Select a tried slot that started, for good |
+| **Switch** | Select the other slot for good, with no trial |
+| **Put back** | Make a tried slot's record good again, undoing a try |
+| **Start log** | The last sector of a slot. Counts starts that did not finish; three in a row open recovery |
+| **Boot store** | A sector in Slot 2's area (`0xFE000`) holding **Start in boot menu** |
+| **Countdown** | The 15 s before recovery writes for a computer. Switching off in it stops the write |
+| **In-place write** | A write of the running slot while the other slot is bad. The one write with nothing to fall back on |
+| **Protected writes** | A boot menu setting, until the next restart, that lets installs write the slots and the first stage |
+| **The eMMC** | The flash memory chip soldered on the board. Holds the OS and the internal drive |
+| **Internal drive** | The yaffs2 volume on the eMMC: user data, content packs, logs, settings |
+| **Boot partitions** | Two eMMC areas holding the OS image; one is active |
+| **Hand-over** | The bootloader passing control to the OS |
+| **Test OS** | The boot menu built as an OS image, for testing on a unit |
+| **White knob** | Knob 4. Held at power-on, it opens the boot menu |
+| **com** | The key the code calls `usb` (`0x18`). Held at power-on, it opens the boot menu |
+| **Backplane** | Screens' name for the PSoC, the key and power coprocessor |
+| **BLE** | Screens' name for the Nordic Bluetooth chip |
+| **LDR stream** | The boot ROM's image format, used for the first stage, the slots and the OS |
+| **Package** | A firmware file (`.tfw`) installed from the boot menu's USB disk |
+| **Developer mode** | A setting that adds the developer menu and a USB serial port |
+| **Flash programmer** | An external tool that writes the SPI flash chip directly. The only fix for a unit with nothing that starts |

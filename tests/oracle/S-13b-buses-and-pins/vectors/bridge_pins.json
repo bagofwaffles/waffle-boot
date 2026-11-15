@@ -1,0 +1,847 @@
+{
+ "rows": [
+  {
+   "expect": [],
+   "name": "rx_then_tx",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_handover"
+   ],
+   "name": "fer_before_enable",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_handover"
+   ],
+   "name": "fer_without_master_ready",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_handover"
+   ],
+   "name": "pa4_low_as_gpio",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_CLR",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "rehand_after_spi2_error",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "ev": "spi2_error",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2123025
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_rehand"
+   ],
+   "name": "rehand_before_pb15_high_spi2_error",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "ev": "spi2_error",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2123025
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_handover",
+    "pa4_rehand"
+   ],
+   "name": "rehand_while_pb15_low_spi2_error",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "ev": "spi2_error",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2123025
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "rehand_after_give_up",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "ev": "give_up",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2123025
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_rehand"
+   ],
+   "name": "rehand_before_pb15_high_give_up",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "ev": "give_up",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2123025
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_handover",
+    "pa4_rehand"
+   ],
+   "name": "rehand_while_pb15_low_give_up",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "ev": "give_up",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2123025
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "hold_within_session",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2123025
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "server_stop_low",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "ev": "server_stop",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_CLR",
+     "val": 16
+    },
+    {
+     "ev": "os_start",
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_stop"
+   ],
+   "name": "server_stop_left_high",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "ev": "server_stop",
+     "op": "ev"
+    },
+    {
+     "ev": "os_start",
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_stop"
+   ],
+   "name": "server_stop_released_early",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "ev": "server_stop",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "ev": "os_start",
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "pa4_stop"
+   ],
+   "name": "server_stop_handed_to_spi2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 9489
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "ev": "server_stop",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_CLR",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "PORTB_DATA",
+     "val": 32768
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2123025
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "ev": "os_start",
+     "op": "ev"
+    }
+   ]
+  }
+ ]
+}

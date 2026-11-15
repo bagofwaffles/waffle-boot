@@ -1,0 +1,7 @@
+{
+ "name": "nordic-example",
+ "steps": [
+  {"inject": [{"route": "0x31", "id": "0x7a", "payload": "cc"}], "note": "the peer's opening message"},
+  {"expect": {"id": "0x7b", "route": "0x13", "payload": "dd"}, "note": "the DUT's answer"}
+ ]
+}

@@ -1,0 +1,340 @@
+{
+ "initial": "none",
+ "states": [
+  {
+   "state": "0x10",
+   "kind": "on"
+  },
+  {
+   "state": "0x12",
+   "kind": "other"
+  },
+  {
+   "state": "0x14",
+   "kind": "off"
+  },
+  {
+   "state": "0x16",
+   "kind": "charge"
+  },
+  {
+   "state": "0x18",
+   "kind": "other"
+  },
+  {
+   "state": "0x20",
+   "kind": "other"
+  }
+ ],
+ "transitions": [
+  {
+   "prev": "none",
+   "state": "0x10",
+   "power_off": 0
+  },
+  {
+   "prev": "none",
+   "state": "0x12",
+   "power_off": 0
+  },
+  {
+   "prev": "none",
+   "state": "0x14",
+   "power_off": 1
+  },
+  {
+   "prev": "none",
+   "state": "0x16",
+   "power_off": 0
+  },
+  {
+   "prev": "0x10",
+   "state": "0x10",
+   "power_off": 0
+  },
+  {
+   "prev": "0x10",
+   "state": "0x12",
+   "power_off": 0
+  },
+  {
+   "prev": "0x10",
+   "state": "0x14",
+   "power_off": 1
+  },
+  {
+   "prev": "0x10",
+   "state": "0x16",
+   "power_off": 1
+  },
+  {
+   "prev": "0x12",
+   "state": "0x10",
+   "power_off": 0
+  },
+  {
+   "prev": "0x12",
+   "state": "0x12",
+   "power_off": 0
+  },
+  {
+   "prev": "0x12",
+   "state": "0x14",
+   "power_off": 1
+  },
+  {
+   "prev": "0x12",
+   "state": "0x16",
+   "power_off": 0
+  },
+  {
+   "prev": "0x14",
+   "state": "0x10",
+   "power_off": 0
+  },
+  {
+   "prev": "0x14",
+   "state": "0x12",
+   "power_off": 0
+  },
+  {
+   "prev": "0x14",
+   "state": "0x14",
+   "power_off": 1
+  },
+  {
+   "prev": "0x14",
+   "state": "0x16",
+   "power_off": 0
+  },
+  {
+   "prev": "0x16",
+   "state": "0x10",
+   "power_off": 0
+  },
+  {
+   "prev": "0x16",
+   "state": "0x12",
+   "power_off": 0
+  },
+  {
+   "prev": "0x16",
+   "state": "0x14",
+   "power_off": 1
+  },
+  {
+   "prev": "0x16",
+   "state": "0x16",
+   "power_off": 0
+  }
+ ],
+ "battery": [
+  {
+   "payload": "00641900641068",
+   "present": 0,
+   "charging": 0,
+   "charge": 0,
+   "temp": 0,
+   "ma": 0,
+   "mv": 0,
+   "usable": 0
+  },
+  {
+   "payload": "01641900641068",
+   "present": 1,
+   "charging": 0,
+   "charge": 100,
+   "temp": 25,
+   "ma": 100,
+   "mv": 4200,
+   "usable": 1
+  },
+  {
+   "payload": "02051e01f40dad",
+   "present": 1,
+   "charging": 1,
+   "charge": 5,
+   "temp": 30,
+   "ma": 500,
+   "mv": 3501,
+   "usable": 0
+  },
+  {
+   "payload": "03061e01f40dad",
+   "present": 1,
+   "charging": 0,
+   "charge": 6,
+   "temp": 30,
+   "ma": 500,
+   "mv": 3501,
+   "usable": 1
+  },
+  {
+   "payload": "01641900640dac",
+   "present": 1,
+   "charging": 0,
+   "charge": 100,
+   "temp": 25,
+   "ma": 100,
+   "mv": 3500,
+   "usable": 0
+  },
+  {
+   "payload": "01509681f41068",
+   "present": 1,
+   "charging": 0,
+   "charge": 80,
+   "temp": 150,
+   "ma": 33268,
+   "mv": 4200,
+   "usable": 1
+  },
+  {
+   "payload": "00",
+   "present": 0,
+   "charging": 0,
+   "charge": 0,
+   "temp": 0,
+   "ma": 0,
+   "mv": 0,
+   "usable": 0
+  },
+  {
+   "payload": "02",
+   "present": 1,
+   "charging": 1,
+   "charge": 0,
+   "temp": 0,
+   "ma": 0,
+   "mv": 0,
+   "usable": 0
+  },
+  {
+   "payload": "0164",
+   "present": 1,
+   "charging": 0,
+   "charge": 100,
+   "temp": 0,
+   "ma": 0,
+   "mv": 0,
+   "usable": 0
+  },
+  {
+   "payload": "",
+   "present": 0,
+   "charging": 0,
+   "charge": 0,
+   "temp": 0,
+   "ma": 0,
+   "mv": 0,
+   "usable": 0
+  }
+ ],
+ "vbus": [
+  {
+   "applied": 0,
+   "target": 500,
+   "reply": "000a",
+   "applied_after": 500,
+   "send_34": "0032"
+  },
+  {
+   "applied": 100,
+   "target": 500,
+   "reply": "000a",
+   "applied_after": 500,
+   "send_34": "0032"
+  },
+  {
+   "applied": 0,
+   "target": 0,
+   "reply": "000a",
+   "applied_after": 100,
+   "send_34": null
+  },
+  {
+   "applied": 500,
+   "target": 500,
+   "reply": "0032",
+   "applied_after": 500,
+   "send_34": null
+  },
+  {
+   "applied": 0,
+   "target": 1000,
+   "reply": "0000",
+   "applied_after": 1000,
+   "send_34": "0064"
+  },
+  {
+   "applied": 0,
+   "target": 500,
+   "reply": "010a",
+   "applied_after": 0,
+   "send_34": null
+  },
+  {
+   "applied": 0,
+   "target": 505,
+   "reply": "0000",
+   "applied_after": 500,
+   "send_34": "0032"
+  },
+  {
+   "applied": 200,
+   "target": 100,
+   "reply": "0014",
+   "applied_after": 200,
+   "send_34": null
+  },
+  {
+   "applied": 0,
+   "target": 505,
+   "reply": "0032",
+   "applied_after": 500,
+   "send_34": null
+  },
+  {
+   "applied": 0,
+   "target": 2,
+   "reply": "0000",
+   "applied_after": 0,
+   "send_34": null
+  },
+  {
+   "applied": 0,
+   "target": 100,
+   "reply": "0000",
+   "applied_after": 100,
+   "send_34": "000a"
+  },
+  {
+   "applied": 0,
+   "target": 510,
+   "reply": "0000",
+   "applied_after": 510,
+   "send_34": "0033"
+  },
+  {
+   "applied": 0,
+   "target": 1000,
+   "reply": "",
+   "applied_after": 1000,
+   "send_34": "0064"
+  },
+  {
+   "applied": 0,
+   "target": 500,
+   "reply": "00",
+   "applied_after": 500,
+   "send_34": "0032"
+  },
+  {
+   "applied": 0,
+   "target": 500,
+   "reply": "01",
+   "applied_after": 0,
+   "send_34": null
+  }
+ ]
+}

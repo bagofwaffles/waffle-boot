@@ -1,0 +1,510 @@
+{
+ "size": "0x34",
+ "magic": "0xDEADBABE",
+ "encode": [
+  {
+   "fields": {
+    "serial": "XY000123",
+    "sku": 7,
+    "factory": 1,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     1,
+     2,
+     1,
+     42
+    ],
+    "state": "0xAB0D",
+    "cv_gain": "0x00012345",
+    "cv_zero": "0x0800",
+    "cv_pair2": [
+     "0x1111",
+     "0x2222"
+    ]
+   },
+   "bytes": "bebaadde585930303031323300000700010001000200010000000100020001002a0000000dab0000452301000008111122220000"
+  }
+ ],
+ "read": [
+  {
+   "name": "sample",
+   "bytes": "bebaadde585930303031323300000700010001000200010000000100020001002a0000000dab0000452301000008111122220000",
+   "fields": {
+    "serial": "XY000123",
+    "sku": 7,
+    "factory": 1,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     1,
+     2,
+     1,
+     42
+    ],
+    "state": "0xAB0D"
+   }
+  },
+  {
+   "name": "bad_magic",
+   "bytes": "bfbaadde585930303031323300000700010001000200010000000100020001002a0000000dab0000452301000008111122220000",
+   "fields": {
+    "serial": "",
+    "sku": 0,
+    "factory": 0,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0x0"
+   }
+  },
+  {
+   "name": "erased",
+   "bytes": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+   "fields": {
+    "serial": "",
+    "sku": 0,
+    "factory": 0,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0x0"
+   }
+  },
+  {
+   "name": "state_1",
+   "bytes": "bebaadde585930303031323300000700010001000200010000000100020001002a00000001000000452301000008111122220000",
+   "fields": {
+    "state": "0x0"
+   }
+  },
+  {
+   "name": "state_ffffffff",
+   "bytes": "bebaadde585930303031323300000700010001000200010000000100020001002a000000ffffffff452301000008111122220000",
+   "fields": {
+    "state": "0x0"
+   }
+  },
+  {
+   "name": "state_0",
+   "bytes": "bebaadde585930303031323300000700010001000200010000000100020001002a00000000000000452301000008111122220000",
+   "fields": {
+    "state": "0x0"
+   }
+  },
+  {
+   "name": "serial_no_nul",
+   "bytes": "bebaadde414243444546474849000700010001000200010000000100020001002a0000000dab0000452301000008111122220000",
+   "fields": {
+    "serial": "ABCDEFGH"
+   }
+  },
+  {
+   "name": "serial_short",
+   "bytes": "bebaadde414200000000000000000700010001000200010000000100020001002a0000000dab0000452301000008111122220000",
+   "fields": {
+    "serial": "AB"
+   }
+  }
+ ],
+ "write": [
+  {
+   "name": "clear_state",
+   "before": "bebaadde585930303031323300000700010001000200010000000100020001002a0000000dab0000452301000008111122220000",
+   "factory_mode": false,
+   "current": {
+    "serial": "ZZ999999",
+    "sku": 9,
+    "factory": 0,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     1,
+     2,
+     1,
+     42
+    ],
+    "state": "0x0"
+   },
+   "after": "bebaadde585930303031323300000700010001000200010000000100020001002a00000000000000452301000008111122220000",
+   "note": "outside factory mode the current serial, sku and factory are not stored"
+  },
+  {
+   "name": "erased_before",
+   "before": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+   "factory_mode": false,
+   "current": {
+    "serial": "",
+    "sku": 0,
+    "factory": 0,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0xAB0D"
+   },
+   "after": "bebaaddeffffffffffffffffffffffffffff00000000000000000000000000000000ffff0dab0000ffffffffffffffffffffffff",
+   "note": "raw bytes kept under an invalid magic"
+  },
+  {
+   "name": "bad_magic_before",
+   "before": "bfbaadde585930303031323300000700010001000200010000000100020001002a0000000dab0000452301000008111122220000",
+   "factory_mode": false,
+   "current": {
+    "serial": "",
+    "sku": 0,
+    "factory": 0,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0xAB0D"
+   },
+   "after": "bebaadde58593030303132330000070001000000000000000000000000000000000000000dab0000452301000008111122220000"
+  },
+  {
+   "name": "factory_fields",
+   "before": "bebaadde5859303030313233005a0700010001000200010000000100020001002a0077880dab00004523010000081111222299aa",
+   "factory_mode": true,
+   "current": {
+    "serial": "AB123456",
+    "sku": 12,
+    "factory": 3,
+    "os_version": [
+     2,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     2,
+     0,
+     0,
+     7
+    ],
+    "state": "0x0"
+   },
+   "after": "bebaadde4142313233343536005a0c000300020000000000000002000000000007007788000000004523010000081111222299aa",
+   "note": "+0x0D, the pads and the CV words are kept"
+  },
+  {
+   "name": "pads_kept",
+   "before": "bebaadde5859303030313233005a0700010001000200010000000100020001002a0077880dab00004523010000081111222299aa",
+   "factory_mode": false,
+   "current": {
+    "serial": "AB123456",
+    "sku": 12,
+    "factory": 3,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0xAB0D"
+   },
+   "after": "bebaadde5859303030313233005a070001000100020001000000000000000000000077880dab00004523010000081111222299aa"
+  }
+ ],
+ "set_metadata": [
+  {
+   "name": "not_factory",
+   "factory_mode": false,
+   "option": true,
+   "request": {
+    "serial": "AB123456"
+   },
+   "writes": false,
+   "result": {}
+  },
+  {
+   "name": "serial",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "serial": "AB123456"
+   },
+   "writes": true,
+   "result": {
+    "serial": "AB123456"
+   }
+  },
+  {
+   "name": "serial_7",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "serial": "AB12345",
+    "sku_variant": "5"
+   },
+   "writes": false,
+   "result": {}
+  },
+  {
+   "name": "serial_9",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "serial": "ABCDEFGHI"
+   },
+   "writes": false,
+   "result": {}
+  },
+  {
+   "name": "sku_999",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "sku_variant": "999"
+   },
+   "writes": true,
+   "result": {
+    "sku": 999
+   }
+  },
+  {
+   "name": "sku_1000",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "sku_variant": "1000"
+   },
+   "writes": true,
+   "result": {
+    "sku": 0
+   }
+  },
+  {
+   "name": "sku_2p31_plus_1",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "sku_variant": "2147483649"
+   },
+   "writes": true,
+   "result": {
+    "sku": 0
+   },
+   "note": "S-16.110"
+  },
+  {
+   "name": "sku_max",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "sku_variant": "4294967295"
+   },
+   "writes": true,
+   "result": {
+    "sku": 0
+   }
+  },
+  {
+   "name": "factory_mod",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "factory": "65537"
+   },
+   "writes": true,
+   "result": {
+    "factory": 1
+   }
+  },
+  {
+   "name": "sku_no_digits",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "sku_variant": "abc"
+   },
+   "writes": true,
+   "result": {
+    "sku": 0
+   },
+   "note": "no digits read 0 (S-10c.056); the request is not refused"
+  },
+  {
+   "name": "sku_trailing_text",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "sku_variant": " +12x"
+   },
+   "writes": true,
+   "result": {
+    "sku": 12
+   },
+   "note": "white space, a sign, digits up to a non-digit (S-10c.056)"
+  },
+  {
+   "name": "factory_no_leading_digit",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "factory": "x1"
+   },
+   "writes": true,
+   "result": {
+    "factory": 0
+   },
+   "note": "no leading digit reads 0"
+  },
+  {
+   "name": "no_keys",
+   "factory_mode": true,
+   "option": true,
+   "request": {},
+   "writes": true,
+   "result": {}
+  },
+  {
+   "name": "all",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "serial": "QW000001",
+    "sku_variant": "42",
+    "factory": "2"
+   },
+   "writes": true,
+   "result": {
+    "serial": "QW000001",
+    "sku": 42,
+    "factory": 2
+   }
+  },
+  {
+   "name": "option_off",
+   "note": "factory mode on, the session upgrade option off when the request is handled (S-10c.061, provisional)",
+   "factory_mode": true,
+   "option": false,
+   "request": {
+    "serial": "AB123456",
+    "sku_variant": "5",
+    "factory": "2"
+   },
+   "writes": false,
+   "result": {}
+  }
+ ],
+ "m6": {
+  "cases": [
+   {
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "writes": false
+   },
+   {
+    "sw_version": [
+     0,
+     0,
+     0,
+     5
+    ],
+    "writes": true
+   },
+   {
+    "sw_version": [
+     0,
+     0,
+     1,
+     0
+    ],
+    "writes": true
+   },
+   {
+    "sw_version": [
+     0,
+     1,
+     0,
+     0
+    ],
+    "writes": true
+   },
+   {
+    "sw_version": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "writes": true
+   },
+   {
+    "sw_version": [
+     1,
+     2,
+     1,
+     42
+    ],
+    "writes": true
+   },
+   {
+    "sw_version": [
+     0,
+     0,
+     0,
+     65535
+    ],
+    "writes": true
+   }
+  ]
+ }
+}

@@ -1,0 +1,628 @@
+{
+ "cases": [
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 0,
+   "offset": 0,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "03",
+   "data_len": 1,
+   "max": 1,
+   "offset": 0,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "030a",
+   "data_len": 2,
+   "max": 2,
+   "offset": 0,
+   "params": [
+    2
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 16384,
+   "data_sha256": "ab571d12466f75ae481bdbbbfec70a0c53bf78e2849862addfa9a049d8f6fbc0",
+   "max": 16384,
+   "offset": 0,
+   "params": [
+    16384
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 49229,
+   "data_sha256": "62c16672596bd1011f11e61218cae214746ac20fe0e51e191a207e750311a534",
+   "max": 4294967295,
+   "offset": 0,
+   "params": [
+    49229
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 0,
+   "offset": 1,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "0a",
+   "data_len": 1,
+   "max": 1,
+   "offset": 1,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "0a11",
+   "data_len": 2,
+   "max": 2,
+   "offset": 1,
+   "params": [
+    2
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 16384,
+   "data_sha256": "a1b5222dcad581d2581cee16aa59ef1004a609a0982d0c41b7ba5162d89f0147",
+   "max": 16384,
+   "offset": 1,
+   "params": [
+    16384
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 49228,
+   "data_sha256": "ed3b115a27f806e3427c792321eba38b63d037b205cefb70e6a19e0488cec13b",
+   "max": 4294967295,
+   "offset": 1,
+   "params": [
+    49228
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 0,
+   "offset": 16383,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "fc",
+   "data_len": 1,
+   "max": 1,
+   "offset": 16383,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "fc03",
+   "data_len": 2,
+   "max": 2,
+   "offset": 16383,
+   "params": [
+    2
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 16384,
+   "data_sha256": "da3648d249e6eb261b40addfebe950c16d45a4f38daf702a8dc55ac2d413906e",
+   "max": 16384,
+   "offset": 16383,
+   "params": [
+    16384
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 32846,
+   "data_sha256": "2e0e71205ee2ecdb7fe492b434790ac6830efdf96495b469bcafd8b42f77a31e",
+   "max": 4294967295,
+   "offset": 16383,
+   "params": [
+    32846
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 0,
+   "offset": 16384,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "03",
+   "data_len": 1,
+   "max": 1,
+   "offset": 16384,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "030a",
+   "data_len": 2,
+   "max": 2,
+   "offset": 16384,
+   "params": [
+    2
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 16384,
+   "data_sha256": "ab571d12466f75ae481bdbbbfec70a0c53bf78e2849862addfa9a049d8f6fbc0",
+   "max": 16384,
+   "offset": 16384,
+   "params": [
+    16384
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 32845,
+   "data_sha256": "e6d2f19b7f6b1a020b417854ecffd3dbdbdf5d7eaad276483ba7f44426eacb29",
+   "max": 4294967295,
+   "offset": 16384,
+   "params": [
+    32845
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 0,
+   "offset": 32769,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "0a",
+   "data_len": 1,
+   "max": 1,
+   "offset": 32769,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "0a11",
+   "data_len": 2,
+   "max": 2,
+   "offset": 32769,
+   "params": [
+    2
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 16384,
+   "data_sha256": "a1b5222dcad581d2581cee16aa59ef1004a609a0982d0c41b7ba5162d89f0147",
+   "max": 16384,
+   "offset": 32769,
+   "params": [
+    16384
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data_len": 16460,
+   "data_sha256": "febf608210780c56635d251176d01d4bf5d5543b1b1708273cabac3e16509b84",
+   "max": 4294967295,
+   "offset": 32769,
+   "params": [
+    16460
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 0,
+   "offset": 49228,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "17",
+   "data_len": 1,
+   "max": 1,
+   "offset": 49228,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "17",
+   "data_len": 1,
+   "max": 2,
+   "offset": 49228,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "17",
+   "data_len": 1,
+   "max": 16384,
+   "offset": 49228,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "17",
+   "data_len": 1,
+   "max": 4294967295,
+   "offset": 49228,
+   "params": [
+    1
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 0,
+   "offset": 49229,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 1,
+   "offset": 49229,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 2,
+   "offset": 49229,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 16384,
+   "offset": 49229,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 4294967295,
+   "offset": 49229,
+   "params": [
+    0
+   ],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8221,
+   "max": 0,
+   "offset": 49230,
+   "params": [],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8221,
+   "max": 1,
+   "offset": 49230,
+   "params": [],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8221,
+   "max": 2,
+   "offset": 49230,
+   "params": [],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8221,
+   "max": 16384,
+   "offset": 49230,
+   "params": [],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8221,
+   "max": 4294967295,
+   "offset": 49230,
+   "params": [],
+   "path": "/big.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 0,
+   "offset": 0,
+   "params": [
+    0
+   ],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 1,
+   "offset": 0,
+   "params": [
+    0
+   ],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 2,
+   "offset": 0,
+   "params": [
+    0
+   ],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 16384,
+   "offset": 0,
+   "params": [
+    0
+   ],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8193,
+   "data": "",
+   "data_len": 0,
+   "max": 4294967295,
+   "offset": 0,
+   "params": [
+    0
+   ],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 0,
+   "offset": 1,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 1,
+   "offset": 1,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 2,
+   "offset": 1,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 16384,
+   "offset": 1,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 4294967295,
+   "offset": 1,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 0,
+   "offset": 16383,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 1,
+   "offset": 16383,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 2,
+   "offset": 16383,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 16384,
+   "offset": 16383,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 4294967295,
+   "offset": 16383,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 0,
+   "offset": 16384,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 1,
+   "offset": 16384,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 2,
+   "offset": 16384,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 16384,
+   "offset": 16384,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 4294967295,
+   "offset": 16384,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 0,
+   "offset": 32769,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 1,
+   "offset": 32769,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 2,
+   "offset": 32769,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 16384,
+   "offset": 32769,
+   "params": [],
+   "path": "/empty.bin"
+  },
+  {
+   "code": 8221,
+   "max": 4294967295,
+   "offset": 32769,
+   "params": [],
+   "path": "/empty.bin"
+  }
+ ],
+ "files": {
+  "/big.bin": {
+   "sha256": "62c16672596bd1011f11e61218cae214746ac20fe0e51e191a207e750311a534",
+   "size": 49229
+  },
+  "/empty.bin": {
+   "size": 0
+  }
+ }
+}

@@ -1,0 +1,15 @@
+/build/
+build-cross/
+build-linux/
+/tests/conformance/COVERAGE.md
+.DS_Store
+__pycache__/
+*.pyc
+/.claude/*
+!/.claude/settings.json
+/spec/
+# Local build settings and private notes: never tracked
+/local.mk
+CLAUDE.local.md
+.claude/settings.local.json
+/.wt/

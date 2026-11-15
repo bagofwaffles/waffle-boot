@@ -1,0 +1,312 @@
+{
+ "requirements": [
+  "S-14.011",
+  "S-14.012",
+  "S-14.013"
+ ],
+ "initial": {
+  "threshold": 3,
+  "psoc": true,
+  "cdc": false
+ },
+ "requests": [
+  {
+   "payload": "",
+   "note": "empty payload: nothing changes",
+   "before": {
+    "threshold": 3,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 3,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "a0",
+   "note": "threshold 1",
+   "before": {
+    "threshold": 3,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 1,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "a3",
+   "note": "threshold 4",
+   "before": {
+    "threshold": 1,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "a4",
+   "note": "not a level byte: unchanged",
+   "before": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "9f",
+   "note": "not a level byte: unchanged",
+   "before": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "00",
+   "note": "not a level byte: unchanged",
+   "before": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "a1",
+   "note": "threshold 2",
+   "before": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 2,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "a203",
+   "note": "threshold 3, both sinks on",
+   "before": {
+    "threshold": 2,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 3,
+    "psoc": true,
+    "cdc": true
+   }
+  },
+  {
+   "payload": "ff00",
+   "note": "threshold unchanged, both sinks off",
+   "before": {
+    "threshold": 3,
+    "psoc": true,
+    "cdc": true
+   },
+   "after": {
+    "threshold": 3,
+    "psoc": false,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "a101",
+   "note": "threshold 2, PSoC on, CDC off",
+   "before": {
+    "threshold": 3,
+    "psoc": false,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 2,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "a102",
+   "note": "PSoC off, CDC on",
+   "before": {
+    "threshold": 2,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 2,
+    "psoc": false,
+    "cdc": true
+   }
+  },
+  {
+   "payload": "a1fe",
+   "note": "bit 0 clear, bit 1 set: PSoC off, CDC on; other bits ignored",
+   "before": {
+    "threshold": 2,
+    "psoc": false,
+    "cdc": true
+   },
+   "after": {
+    "threshold": 2,
+    "psoc": false,
+    "cdc": true
+   }
+  },
+  {
+   "payload": "a3fd0102",
+   "note": "bit 0 set, bit 1 clear; bytes after byte 1 ignored",
+   "before": {
+    "threshold": 2,
+    "psoc": false,
+    "cdc": true
+   },
+   "after": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   }
+  },
+  {
+   "payload": "a2",
+   "note": "one byte: sinks keep their state",
+   "before": {
+    "threshold": 4,
+    "psoc": true,
+    "cdc": false
+   },
+   "after": {
+    "threshold": 3,
+    "psoc": true,
+    "cdc": false
+   }
+  }
+ ],
+ "filter": [
+  {
+   "level": 0,
+   "threshold": 1,
+   "emitted": true
+  },
+  {
+   "level": 1,
+   "threshold": 1,
+   "emitted": true
+  },
+  {
+   "level": 2,
+   "threshold": 1,
+   "emitted": false
+  },
+  {
+   "level": 3,
+   "threshold": 1,
+   "emitted": false
+  },
+  {
+   "level": 4,
+   "threshold": 1,
+   "emitted": false
+  },
+  {
+   "level": 0,
+   "threshold": 2,
+   "emitted": true
+  },
+  {
+   "level": 1,
+   "threshold": 2,
+   "emitted": true
+  },
+  {
+   "level": 2,
+   "threshold": 2,
+   "emitted": true
+  },
+  {
+   "level": 3,
+   "threshold": 2,
+   "emitted": false
+  },
+  {
+   "level": 4,
+   "threshold": 2,
+   "emitted": false
+  },
+  {
+   "level": 0,
+   "threshold": 3,
+   "emitted": true
+  },
+  {
+   "level": 1,
+   "threshold": 3,
+   "emitted": true
+  },
+  {
+   "level": 2,
+   "threshold": 3,
+   "emitted": true
+  },
+  {
+   "level": 3,
+   "threshold": 3,
+   "emitted": true
+  },
+  {
+   "level": 4,
+   "threshold": 3,
+   "emitted": false
+  },
+  {
+   "level": 0,
+   "threshold": 4,
+   "emitted": true
+  },
+  {
+   "level": 1,
+   "threshold": 4,
+   "emitted": true
+  },
+  {
+   "level": 2,
+   "threshold": 4,
+   "emitted": true
+  },
+  {
+   "level": 3,
+   "threshold": 4,
+   "emitted": true
+  },
+  {
+   "level": 4,
+   "threshold": 4,
+   "emitted": true
+  }
+ ]
+}

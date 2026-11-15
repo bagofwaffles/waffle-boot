@@ -1,0 +1,95 @@
+keys,chord,selector,slot0,slot1,boot,slave_slot,announce,recovery_target,recovery_refusal,running,running_front,recovery_running_way,recovery_trial
+-,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+1,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+2,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+4,recovery,00 00,good,good,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,00 00,good,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,00 00,good,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,00 00,good,badcrc,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,00 00,good,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,00 00,good,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,00 00,badcrc,good,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,00 00,badcrc,good,recovery,-,recovery,none,unverified,selected,damaged,refused,refused
+4,recovery,00 00,badcrc,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,00 00,badcrc,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,00 00,badcrc,badcrc,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,00 00,badcrc,badcrc,recovery,-,recovery,none,unverified,selected,damaged,refused,refused
+4,recovery,00 00,badcrc,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,00 00,badcrc,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,00 01,good,good,recovery,-,recovery,1,none,selected,intact,select_first,trial
+4,recovery,00 01,good,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,00 01,good,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,00 01,good,badcrc,recovery,-,recovery,1,none,selected,intact,refused,trial
+4,recovery,00 01,good,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,00 01,good,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,00 01,badcrc,good,recovery,-,recovery,1,none,selected,intact,select_first,trial_state
+4,recovery,00 01,badcrc,good,recovery,-,recovery,none,selected_bad,selected,damaged,refused,refused
+4,recovery,00 01,badcrc,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,00 01,badcrc,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,00 01,badcrc,badcrc,recovery,-,recovery,1,none,selected,intact,refused,trial_state
+4,recovery,00 01,badcrc,badcrc,recovery,-,recovery,none,selected_bad,selected,damaged,refused,refused
+4,recovery,00 01,badcrc,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,00 01,badcrc,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,01 00,good,good,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,01 00,good,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,01 00,good,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,01 00,good,badcrc,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,01 00,good,badcrc,recovery,-,recovery,none,unverified,selected,damaged,refused,refused
+4,recovery,01 00,good,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,01 00,good,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,01 00,badcrc,good,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,01 00,badcrc,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,01 00,badcrc,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,01 00,badcrc,badcrc,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,01 00,badcrc,badcrc,recovery,-,recovery,none,unverified,selected,damaged,refused,refused
+4,recovery,01 00,badcrc,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,01 00,badcrc,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,01 01,good,good,recovery,-,recovery,0,none,selected,intact,select_first,trial
+4,recovery,01 01,good,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,01 01,good,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,01 01,good,badcrc,recovery,-,recovery,0,none,selected,intact,select_first,trial_state
+4,recovery,01 01,good,badcrc,recovery,-,recovery,none,selected_bad,selected,damaged,refused,refused
+4,recovery,01 01,good,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,01 01,good,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,01 01,badcrc,good,recovery,-,recovery,0,none,selected,intact,refused,trial
+4,recovery,01 01,badcrc,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,01 01,badcrc,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,01 01,badcrc,badcrc,recovery,-,recovery,0,none,selected,intact,refused,trial_state
+4,recovery,01 01,badcrc,badcrc,recovery,-,recovery,none,selected_bad,selected,damaged,refused,refused
+4,recovery,01 01,badcrc,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,01 01,badcrc,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,02 01,good,good,recovery,-,recovery,0,none,selected,intact,select_first,trial
+4,recovery,02 01,good,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,02 01,good,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,02 01,good,badcrc,recovery,-,recovery,0,none,selected,intact,select_first,trial_state
+4,recovery,02 01,good,badcrc,recovery,-,recovery,none,selected_bad,selected,damaged,refused,refused
+4,recovery,02 01,good,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,02 01,good,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,02 01,badcrc,good,recovery,-,recovery,0,none,selected,intact,refused,trial
+4,recovery,02 01,badcrc,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,02 01,badcrc,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,02 01,badcrc,badcrc,recovery,-,recovery,0,none,selected,intact,refused,trial_state
+4,recovery,02 01,badcrc,badcrc,recovery,-,recovery,none,selected_bad,selected,damaged,refused,refused
+4,recovery,02 01,badcrc,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,02 01,badcrc,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,ff ff,good,good,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,ff ff,good,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,ff ff,good,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,ff ff,good,badcrc,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,ff ff,good,badcrc,recovery,-,recovery,none,unverified,selected,damaged,refused,refused
+4,recovery,ff ff,good,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,ff ff,good,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,ff ff,badcrc,good,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,ff ff,badcrc,good,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,ff ff,badcrc,good,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+4,recovery,ff ff,badcrc,badcrc,recovery,-,recovery,none,unverified,selected,intact,refused,refused
+4,recovery,ff ff,badcrc,badcrc,recovery,-,recovery,none,unverified,selected,damaged,refused,refused
+4,recovery,ff ff,badcrc,badcrc,recovery,-,recovery,none,not_selected,other,-,refused,refused
+4,recovery,ff ff,badcrc,badcrc,recovery,-,recovery,none,not_running,unknown,-,refused,refused
+1+2,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+1+4,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+2+4,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+1+2+4,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+3,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+1+3,none,-,-,-,by_selector,running,none,-,-,-,-,-,-
+unreadable,none,-,-,-,by_selector,running,none,-,-,-,-,-,-

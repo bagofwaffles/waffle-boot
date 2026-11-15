@@ -1,0 +1,133 @@
+{
+ "cases": [
+  {
+   "format": 14337,
+   "path": "/a.jpg"
+  },
+  {
+   "format": 14337,
+   "path": "/a.JPEG"
+  },
+  {
+   "format": 14337,
+   "path": "/a.Jpeg"
+  },
+  {
+   "format": 14349,
+   "path": "/b.tif"
+  },
+  {
+   "format": 14349,
+   "path": "/b.TIFF"
+  },
+  {
+   "format": 14340,
+   "path": "/c.bmp"
+  },
+  {
+   "format": 14347,
+   "path": "/d.png"
+  },
+  {
+   "format": 14343,
+   "path": "/e.gif"
+  },
+  {
+   "format": 14343,
+   "path": "/e.GIF"
+  },
+  {
+   "format": 12291,
+   "path": "/f.exe"
+  },
+  {
+   "format": 12292,
+   "path": "/g.txt"
+  },
+  {
+   "format": 12293,
+   "path": "/h.htm"
+  },
+  {
+   "format": 12293,
+   "path": "/h.html"
+  },
+  {
+   "format": 12296,
+   "path": "/kick.wav"
+  },
+  {
+   "format": 12296,
+   "path": "/kick.WAV"
+  },
+  {
+   "format": 12296,
+   "path": "/kick.wav.bak"
+  },
+  {
+   "format": 12295,
+   "path": "/i.aiff"
+  },
+  {
+   "format": 12297,
+   "path": "/j.mp3"
+  },
+  {
+   "format": 12298,
+   "path": "/k.avi"
+  },
+  {
+   "format": 12299,
+   "path": "/l.mpeg"
+  },
+  {
+   "format": 12300,
+   "path": "/m.asf"
+  },
+  {
+   "format": 12288,
+   "path": "/x.aif"
+  },
+  {
+   "format": 12288,
+   "path": "/x.mpg"
+  },
+  {
+   "format": 12288,
+   "path": "/x.jpe"
+  },
+  {
+   "format": 12288,
+   "path": "/noext"
+  },
+  {
+   "format": 14347,
+   "path": "/a.png.txt"
+  },
+  {
+   "format": 14347,
+   "path": "/a.txt.png"
+  },
+  {
+   "format": 12292,
+   "path": "/a.txt/b"
+  },
+  {
+   "format": 12296,
+   "path": "/a.wav/b.mp3"
+  },
+  {
+   "format": 12296,
+   "path": "/.wav"
+  },
+  {
+   "format": 12288,
+   "path": "/wav"
+  },
+  {
+   "format": 12296,
+   "path": "/a.WaV"
+  }
+ ],
+ "folder": 12289
+}

@@ -1,0 +1,5713 @@
+{
+ "image_length": 4933,
+ "resets_per_cut": 3,
+ "sequences": [
+  {
+   "id": "C-01",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "00 01",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "slot 0 in use, trusted"
+   },
+   "precondition": true,
+   "selected": 0,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x88000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": true,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-02",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "01 01",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "slot 1 in use, trusted (the factory state)"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": true,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-03",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "02 01",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "odd index, trusted"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": true,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-04",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "ff 01",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "erased selector after the first stage verified slot 1"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": true,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-05",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "ff ff",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "erased selector"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": false,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-06",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "00 00",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "selected slot 0 not yet checked (second upgrade in one session)"
+   },
+   "precondition": true,
+   "selected": 0,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x88000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": false,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": false,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-07",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "01 00",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "selected slot 1 not yet checked (second upgrade in one session)"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": false,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-08",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "00 01",
+    "slot0": "good",
+    "slot1": "erased",
+    "note": "slot 1 never written"
+   },
+   "precondition": true,
+   "selected": 0,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x88000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": true,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-09",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "01 01",
+    "slot0": "badcrc",
+    "slot1": "good",
+    "note": "reached from {00 00} with slot 0 bad: the first stage wrote {01 01} and runs slot 0 (S-02.023)"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": true,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "C-10",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "01 01",
+    "slot0": "good",
+    "slot1": "badcrc",
+    "note": "precondition violated: selected slot corrupted after it was trusted"
+   },
+   "precondition": false,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": false,
+   "safe": {
+    "factory": true,
+    "conforming": false
+   },
+   "safe_multicut": {
+    "factory": "n/a",
+    "conforming": "n/a"
+   }
+  },
+  {
+   "id": "C-11",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "00 01",
+    "slot0": "badcrc",
+    "slot1": "good",
+    "note": "precondition violated: selected slot corrupted after it was trusted"
+   },
+   "precondition": false,
+   "selected": 0,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x88000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": false,
+   "safe": {
+    "factory": true,
+    "conforming": false
+   },
+   "safe_multicut": {
+    "factory": "n/a",
+    "conforming": "n/a"
+   }
+  },
+  {
+   "id": "C-12",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "ff ff",
+    "slot0": "good",
+    "slot1": "badcrc",
+    "note": "precondition violated: erased selector, slot 1 bad"
+   },
+   "precondition": false,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": false,
+   "safe": {
+    "factory": false,
+    "conforming": false
+   },
+   "safe_multicut": {
+    "factory": "n/a",
+    "conforming": "n/a"
+   }
+  },
+  {
+   "id": "C-13",
+   "writer_rule": "conforming",
+   "start": {
+    "selector": "01 01",
+    "slot0": "badcrc",
+    "slot1": "badcrc",
+    "note": "precondition violated, Q7 state: reached from {00 00} with slot 0 bad; the first stage wrote {01 01} without reading slot 1, which is bad too, and runs slot 0 (S-02.023)"
+   },
+   "precondition": false,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 25,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 26,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 27,
+     "class": "readback",
+     "op": "read",
+     "offset": "0x10000",
+     "length": 4933
+    },
+    {
+     "n": 28,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 29,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": false,
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": "n/a",
+    "conforming": "n/a"
+   }
+  },
+  {
+   "id": "R-01",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "00 01",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "slot 0 in use, trusted"
+   },
+   "precondition": true,
+   "selected": 0,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-02",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "01 01",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "slot 1 in use, trusted (the factory state)"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-03",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "02 01",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "odd index, trusted"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": false,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": false,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": false,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-04",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "ff 01",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "erased selector after the first stage verified slot 1"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": false,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": false,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": false,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-05",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "ff ff",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "erased selector"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": false,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": false,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": false,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-06",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "00 00",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "selected slot 0 not yet checked (second upgrade in one session)"
+   },
+   "precondition": true,
+   "selected": 0,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": false,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-07",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "01 00",
+    "slot0": "good",
+    "slot1": "good",
+    "note": "selected slot 1 not yet checked (second upgrade in one session)"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-08",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "00 01",
+    "slot0": "good",
+    "slot1": "erased",
+    "note": "slot 1 never written"
+   },
+   "precondition": true,
+   "selected": 0,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-09",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "01 01",
+    "slot0": "badcrc",
+    "slot1": "good",
+    "note": "reached from {00 00} with slot 0 bad: the first stage wrote {01 01} and runs slot 0 (S-02.023)"
+   },
+   "precondition": true,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": true,
+    "conforming": true
+   }
+  },
+  {
+   "id": "R-10",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "01 01",
+    "slot0": "good",
+    "slot1": "badcrc",
+    "note": "precondition violated: selected slot corrupted after it was trusted"
+   },
+   "precondition": false,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": false
+   },
+   "safe_multicut": {
+    "factory": "n/a",
+    "conforming": "n/a"
+   }
+  },
+  {
+   "id": "R-11",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "00 01",
+    "slot0": "badcrc",
+    "slot1": "good",
+    "note": "precondition violated: selected slot corrupted after it was trusted"
+   },
+   "precondition": false,
+   "selected": 0,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": false
+   },
+   "safe_multicut": {
+    "factory": "n/a",
+    "conforming": "n/a"
+   }
+  },
+  {
+   "id": "R-12",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "ff ff",
+    "slot0": "good",
+    "slot1": "badcrc",
+    "note": "precondition violated: erased selector, slot 1 bad"
+   },
+   "precondition": false,
+   "selected": 1,
+   "target": 1,
+   "selector_written": "01 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x88000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x88f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x89000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x89300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0f000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": false,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": "n/a",
+    "conforming": "n/a"
+   }
+  },
+  {
+   "id": "R-13",
+   "writer_rule": "stock_rule",
+   "start": {
+    "selector": "01 01",
+    "slot0": "badcrc",
+    "slot1": "badcrc",
+    "note": "precondition violated, Q7 state: reached from {00 00} with slot 0 bad; the first stage wrote {01 01} without reading slot 1, which is bad too, and runs slot 0 (S-02.023)"
+   },
+   "precondition": false,
+   "selected": 1,
+   "target": 0,
+   "selector_written": "00 00",
+   "image_length": 4933,
+   "ops": [
+    {
+     "n": 1,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x10000",
+     "length": 4096
+    },
+    {
+     "n": 2,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10000",
+     "length": 256
+    },
+    {
+     "n": 3,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10100",
+     "length": 256
+    },
+    {
+     "n": 4,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10200",
+     "length": 256
+    },
+    {
+     "n": 5,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10300",
+     "length": 256
+    },
+    {
+     "n": 6,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10400",
+     "length": 256
+    },
+    {
+     "n": 7,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10500",
+     "length": 256
+    },
+    {
+     "n": 8,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10600",
+     "length": 256
+    },
+    {
+     "n": 9,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10700",
+     "length": 256
+    },
+    {
+     "n": 10,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10800",
+     "length": 256
+    },
+    {
+     "n": 11,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10900",
+     "length": 256
+    },
+    {
+     "n": 12,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10a00",
+     "length": 256
+    },
+    {
+     "n": 13,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10b00",
+     "length": 256
+    },
+    {
+     "n": 14,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10c00",
+     "length": 256
+    },
+    {
+     "n": 15,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10d00",
+     "length": 256
+    },
+    {
+     "n": 16,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10e00",
+     "length": 256
+    },
+    {
+     "n": 17,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x10f00",
+     "length": 256
+    },
+    {
+     "n": 18,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x11000",
+     "length": 4096
+    },
+    {
+     "n": 19,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11000",
+     "length": 256
+    },
+    {
+     "n": 20,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11100",
+     "length": 256
+    },
+    {
+     "n": 21,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11200",
+     "length": 256
+    },
+    {
+     "n": 22,
+     "class": "slot_program",
+     "op": "program",
+     "offset": "0x11300",
+     "length": 69
+    },
+    {
+     "n": 23,
+     "class": "record_erase",
+     "op": "erase",
+     "offset": "0x0e000",
+     "length": 4096
+    },
+    {
+     "n": 24,
+     "class": "record_program",
+     "op": "program",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 25,
+     "class": "selector_erase",
+     "op": "erase",
+     "offset": "0x0d000",
+     "length": 4096
+    },
+    {
+     "n": 26,
+     "class": "selector_program",
+     "op": "program",
+     "offset": "0x0d000",
+     "length": 2
+    }
+   ],
+   "footprint_ok": true,
+   "start_allowed": "n/a",
+   "safe": {
+    "factory": true,
+    "conforming": true
+   },
+   "safe_multicut": {
+    "factory": "n/a",
+    "conforming": "n/a"
+   }
+  }
+ ]
+}

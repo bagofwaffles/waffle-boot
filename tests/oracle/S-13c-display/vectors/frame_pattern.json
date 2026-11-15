@@ -1,0 +1,20 @@
+{
+ "requirement": "S-13c.015, S-13c.016",
+ "window": {
+  "columns": [
+   49,
+   272
+  ],
+  "rows": [
+   0,
+   479
+  ]
+ },
+ "pixel": "value(r, c) for row r in 0..479 and column index c in 0..223 of the window: (0,0)=F800, (0,223)=07E0, (479,0)=001F, (479,223)=FFFF; otherwise (r*0x0133 + c*0x2B5D + ((r XOR c) AND 0xFF)) AND 0xFFFF",
+ "stream": "rows 0..479 in order; within a row columns 0..223; each pixel high byte then low byte",
+ "length": 215040,
+ "sha256": "b446722a5a4d5072315d9a09e81fa2f74e6f455f21d397c57ea28e987bd4d8b8",
+ "head_hex": "f8002b5e56bc821aad78d8d604342f92",
+ "tail_hex": "d4ec00482ba45700825cadb8d914ffff",
+ "sha256_bytes_swapped": "b6ea3039f97ffe7aa5b966a59e64952d118ee4397c32b1b9cef7a2cb10f33750"
+}

@@ -1,0 +1,4962 @@
+{
+ "device": {
+  "dsp_serial": "ZZ0123456789ABCDEF",
+  "fsn_words": [
+   "0x33221100",
+   "0x77665544",
+   "0xbbaa9988",
+   "0xffeeddcc"
+  ],
+  "hw_rev": 255,
+  "meta": {
+   "factory": 1,
+   "os": [
+    1,
+    2,
+    3,
+    45
+   ],
+   "serial": "AB123456",
+   "sku": 7,
+   "sw": [
+    1,
+    2,
+    3,
+    0
+   ]
+  }
+ },
+ "vectors": [
+  {
+   "link": "cdc",
+   "name": "ping-empty-cdc",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "ping-empty-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "ping-249-cdc",
+   "note": "the longest payload; on MIDI the pong spans two carrier messages",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "ping-249-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e8184878a8d909396999c9fa2a5a8abaeb1b4b7babdc0c3c6c9cccfd2d5d8dbdee1e4e7eaedf0f3f6f9fcff0205080b0e1114171a1d202326292c2f3235383b3e4144474a4d505356595c5f6265686b6e7174777a7d808386898c8f9295989b9ea1a4a7aaadb0b3b6b9bcbfc2c5c8cbced1d4d7dadde0e3e6e9",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e8184878a8d909396999c9fa2a5a8abaeb1b4b7babdc0c3c6c9cccfd2d5d8dbdee1e4e7eaedf0f3f6f9fcff0205080b0e1114171a1d202326292c2f3235383b3e4144474a4d505356595c5f6265686b6e7174777a7d808386898c8f9295989b9ea1a4a7aaadb0b3b6b9bcbfc2c5c8cbced1d4d7dadde0e3e6e9",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "ping-route-slot-source-cdc",
+   "note": "a ping from a reply-slot source: the pong goes back to it",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "ping-route-slot-source-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "01",
+        "route": "0x91",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "01",
+       "route": "0x19"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "02",
+        "route": "0xb1",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "02",
+       "route": "0x1b"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "ping-route-slot-destination-cdc",
+   "note": "destination 8-15 reaches the master (S-10c.040)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "ping-route-slot-destination-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "03",
+        "route": "0x2a",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "03",
+       "route": "0xa2"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "info-cdc",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "info-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "010203",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fsn",
+   "note": "the FSN words, each least significant byte first; any payload",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fsn",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x1f",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x20",
+       "payload": "00112233445566778899aabbccddeeff",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x1f",
+        "payload": "99",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x20",
+       "payload": "00112233445566778899aabbccddeeff",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-begin-ok-cdc",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-begin-ok-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "03",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      },
+      "note": "a chunk with no bytes"
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x21",
+        "seq": 3
+       }
+      ],
+      "note": "a begin discards the transfer and starts another"
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-reboot-os-cdc",
+   "note": "no reply; the reset follows (scenario H-FW-REBOOT)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-reboot-os-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "18",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-reboot-mode-cdc",
+   "note": "no reply; the reset follows (scenario H-FW-REBOOT)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-reboot-mode-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "ee01",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-continue-cdc",
+   "note": "continue to the OS: 54, then the restart; nothing more is served (scenario H-CONTINUE)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-continue-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "190102",
+        "route": "0x21",
+        "seq": 0
+       }
+      ],
+      "note": "bytes after the sub-command are ignored"
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x21",
+        "seq": 1
+       }
+      ],
+      "note": "a ping after it: no pong"
+     }
+    ]
+   },
+   "state": {
+    "reset": 80
+   }
+  },
+  {
+   "link": "midi",
+   "name": "ping-empty-midi",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "ping-empty-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "ping-249-midi",
+   "note": "the longest payload; on MIDI the pong spans two carrier messages",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "ping-249-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e8184878a8d909396999c9fa2a5a8abaeb1b4b7babdc0c3c6c9cccfd2d5d8dbdee1e4e7eaedf0f3f6f9fcff0205080b0e1114171a1d202326292c2f3235383b3e4144474a4d505356595c5f6265686b6e7174777a7d808386898c8f9295989b9ea1a4a7aaadb0b3b6b9bcbfc2c5c8cbced1d4d7dadde0e3e6e9",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e8184878a8d909396999c9fa2a5a8abaeb1b4b7babdc0c3c6c9cccfd2d5d8dbdee1e4e7eaedf0f3f6f9fcff0205080b0e1114171a1d202326292c2f3235383b3e4144474a4d505356595c5f6265686b6e7174777a7d808386898c8f9295989b9ea1a4a7aaadb0b3b6b9bcbfc2c5c8cbced1d4d7dadde0e3e6e9",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "ping-route-slot-source-midi",
+   "note": "a ping from a reply-slot source: the pong goes back to it",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "ping-route-slot-source-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "01",
+        "route": "0x91",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "01",
+       "route": "0x19"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "02",
+        "route": "0xb1",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "02",
+       "route": "0x1b"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "ping-route-slot-destination-midi",
+   "note": "destination 8-15 reaches the master (S-10c.040)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "ping-route-slot-destination-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "03",
+        "route": "0x2a",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "03",
+       "route": "0xa2"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "info-midi",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "info-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "010203",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "fsn-midi",
+   "note": "the FSN words, each least significant byte first; any payload",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fsn-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x1f",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x20",
+       "payload": "00112233445566778899aabbccddeeff",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x1f",
+        "payload": "99",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x20",
+       "payload": "00112233445566778899aabbccddeeff",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "fw-begin-ok-midi",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-begin-ok-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "03",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      },
+      "note": "a chunk with no bytes"
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x21",
+        "seq": 3
+       }
+      ],
+      "note": "a begin discards the transfer and starts another"
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "fw-reboot-os-midi",
+   "note": "no reply; the reset follows (scenario H-FW-REBOOT)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-reboot-os-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "18",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "fw-reboot-mode-midi",
+   "note": "no reply; the reset follows (scenario H-FW-REBOOT)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-reboot-mode-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "ee01",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "link": "midi",
+   "name": "fw-continue-midi",
+   "note": "continue to the OS: 54, then the restart; nothing more is served (scenario H-CONTINUE)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-continue-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "190102",
+        "route": "0x21",
+        "seq": 0
+       }
+      ],
+      "note": "bytes after the sub-command are ignored"
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x21",
+        "seq": 1
+       }
+      ],
+      "note": "a ping after it: no pong"
+     }
+    ]
+   },
+   "state": {
+    "reset": 80
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "info-from-slot-source",
+   "note": "every reply but the pong has route 12",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "info-from-slot-source",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x91",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x05",
+        "payload": "",
+        "route": "0x81",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x06",
+       "payload": "40",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "handshake",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "handshake",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x05",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x06",
+       "payload": "40",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x05",
+        "payload": "0102",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x06",
+       "payload": "40",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "fsn_readable": false
+   },
+   "link": "cdc",
+   "name": "fsn-unreadable",
+   "note": "the FSN cannot be read: an empty 20 reply, also after another reply",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fsn-unreadable",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "01020304",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "01020304",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x1f",
+        "payload": "",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x20",
+       "payload": "",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "factory-unlock",
+   "note": "with the session upgrade option on",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "factory-unlock",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "factory-wrong",
+   "note": "any other payload: 04, and factory mode off",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "factory-wrong",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabf",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafeba",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe00",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "bebafeca",
+        "route": "0x21",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "factory-off-again",
+   "note": "a wrong unlock after a right one turns factory mode off",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "factory-off-again",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "00",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "factory-option-off",
+   "note": "S-10c.061 (provisional): with the session upgrade option off, the right unlock is answered 04 and a set-metadata request 04, and the record is unchanged",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "factory-option-off",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a43443635343332313b736b755f76617269616e743a35",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-not-factory",
+   "note": "outside factory mode: 04, nothing changes",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-not-factory",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a35",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-serial",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-serial",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-serial-refused",
+   "note": "a serial of other than 8 characters refuses the whole request",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-serial-refused",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a43443635343332",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a434436353433323130",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a393b73657269616c3a58",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-sku",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-sku",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a3432",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS042;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-sku-999",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-sku-999",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a393939",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS999;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-sku-1000",
+   "note": "over 999 stores 0",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-sku-1000",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a31303030",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-sku-2-31",
+   "note": "unsigned: 2^31 stores 0",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-sku-2-31",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a32313437343833363438",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-sku-negative",
+   "note": "a minus negates modulo 2^32: over 999, stores 0",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-sku-negative",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a2d31",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-sku-spaces-sign",
+   "note": "white space, a sign, then digits up to a non-digit",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-sku-spaces-sign",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a20202b313278",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS012;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-sku-no-digits",
+   "note": "no digits read as 0",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-sku-no-digits",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a616263",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-factory",
+   "note": "stored modulo 2^16",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-factory",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "666163746f72793a3635353337",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-factory-huge",
+   "note": "beyond 32 bits reads 2^32-1, stored modulo 2^16",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-factory-huge",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "666163746f72793a3939393939393939393939",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:65535$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-factory-huge-negative",
+   "note": "beyond 32 bits reads 2^32-1 whatever the sign, stored modulo 2^16",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-factory-huge-negative",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "666163746f72793a2d3939393939393939393939",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:65535$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-sku-space-after-sign",
+   "note": "one sign only: white space or a second sign after it leaves no digits, 0",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-sku-space-after-sign",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a2d2035",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "666163746f72793a2b2d35",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:0$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-all",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-all",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a51513030303030313b736b755f76617269616e743a31323b666163746f72793a33",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:QQ000001;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS012;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:3$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-first-entry",
+   "note": "the first entry with the key is taken",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-first-entry",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a31313b736b755f76617269616e743a3232",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS011;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-exact-key",
+   "note": "keys match exactly",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-exact-key",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b753a31313b536b755f76617269616e743a333b736b755f76617269616e74323a343b666163746f72793a37",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:7$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-colon-in-value",
+   "note": "a value with a colon: the key is absent",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-colon-in-value",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a41423a31323334353b666163746f72793a39",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:9$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-empty-tail",
+   "note": "an entry ending the text with nothing after the colon: absent",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-empty-tail",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a353b73657269616c3a",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS005;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-empty-value-mid",
+   "note": "an empty serial before a ; is present and refused",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-empty-value-mid",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a3b736b755f76617269616e743a35",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-23",
+   "note": "the first 23 characters of a value are used",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-23",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "666163746f72793a303030303030303030303030303030303030303030303239",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:2$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-nul",
+   "note": "the text ends at the first 00",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-nul",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231003b736b755f76617269616e743a35",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-249",
+   "note": "a payload of 249 bytes counts as having no keys",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-249",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a353b78787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-248",
+   "note": "one byte shorter: the key is read",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-248",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "736b755f76617269616e743a353b787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS005;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-no-keys",
+   "note": "no keys: applied, the record written, nothing changes",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-no-keys",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "68656c6c6f",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "613a62",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-empty-first",
+   "note": "an empty first entry is skipped: the serial is found",
+   "quirk_outcome": {
+    "differs": true,
+    "reply": "0x03",
+    "serial": "AB123456"
+   },
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-empty-first",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "3b73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-empty-two",
+   "note": "two empty entries are skipped",
+   "quirk_outcome": {
+    "differs": false,
+    "reply": "0x03",
+    "serial": "CD654321"
+   },
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-empty-two",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "3b3b73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-empty-mid",
+   "note": "an empty entry after another entry is skipped",
+   "quirk_outcome": {
+    "differs": true,
+    "reply": "0x03",
+    "serial": "AB123456"
+   },
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-empty-mid",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "613a313b3b73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-empty-mid-later",
+   "note": "an empty entry, then two more entries",
+   "quirk_outcome": {
+    "differs": false,
+    "reply": "0x03",
+    "serial": "CD654321"
+   },
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-empty-mid-later",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "613a313b3b783a313b73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "cdc",
+   "name": "setmeta-no-colon-entry",
+   "note": "an entry with no colon has no key; the next entry is taken",
+   "quirk_outcome": {
+    "differs": false,
+    "reply": "0x03",
+    "serial": "CD654321"
+   },
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "setmeta-no-colon-entry",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3b73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "silent-cdc",
+   "note": "pong, greeting, log lines and log configuration get no reply on CDC",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "silent-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x02",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x06",
+        "payload": "40",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x03",
+        "payload": "0074657374",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x04",
+        "payload": "0074657374",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xb0",
+        "payload": "",
+        "route": "0x21",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x21",
+        "seq": 5
+       }
+      ],
+      "note": "a ping: the next frame is its pong, so nothing came in between"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "5001",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "unserved-cdc",
+   "note": "ids outside the catalog get no reply",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "unserved-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x00",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x08",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0a",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0c",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0e",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x20",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 5
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x7a",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 6
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xac",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 7
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xad",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 8
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xaf",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 9
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xb1",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 10
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xff",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 11
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x21",
+        "seq": 12
+       }
+      ],
+      "note": "a ping: the next frame is its pong, so nothing came in between"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "5001",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "midi",
+   "name": "unserved-midi",
+   "note": "not served on the MIDI carrier: no effect, no reply (the session upgrade option on, so the unlock would succeed on CDC)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "unserved-midi",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x05",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x03",
+        "payload": "0074",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x04",
+        "payload": "0074",
+        "route": "0x21",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x06",
+        "payload": "40",
+        "route": "0x21",
+        "seq": 5
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xb0",
+        "payload": "",
+        "route": "0x21",
+        "seq": 6
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xac",
+        "payload": "",
+        "route": "0x21",
+        "seq": 7
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x7a",
+        "payload": "",
+        "route": "0x21",
+        "seq": 8
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x21",
+        "seq": 9
+       }
+      ],
+      "note": "a ping: the next frame is its pong, so nothing came in between"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "5001",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 10
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "order-cdc",
+   "note": "commands in one write: answered one at a time, in order",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "order-cdc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x05",
+        "payload": "",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "02",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "01",
+       "route": "0x12"
+      }
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x12"
+      }
+     },
+     {
+      "expect": {
+       "id": "0x06",
+       "payload": "40",
+       "route": "0x12"
+      }
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "02",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-begin-bad-product",
+   "note": "a failing product word: 84 PRODUCT...; a transfer in progress is kept",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-begin-bad-product",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008800000000fa0",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "8450524f44554354",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008440000000fa0",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "8450524f44554354",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000000000000000fa0",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "8450524f44554354",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "0301",
+        "route": "0x21",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      },
+      "note": "the transfer is still in progress"
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-begin-short",
+   "note": "a begin shorter than 14 bytes has product word 0",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-begin-short",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "02000100020003000400000840",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "8450524f44554354",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "0200010002000300040000084000",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-chunk-no-transfer",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-chunk-no-transfer",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "030102",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "844e6f2075706461746520696e2070726f677265737321",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-finish-no-transfer",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-finish-no-transfer",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "05",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "844e6f2075706461746520696e2070726f677265737321",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-not-implemented",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-not-implemented",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "aa",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "84636f6d70726573736564206669726d7761726573206e6f7420696d706c656d656e746564",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "ab0102",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "847369676e6564206669726d7761726573206e6f7420696d706c656d656e746564",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-continue-busy",
+   "note": "continue to the OS while a host transfer is in progress: 84, no effect",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-continue-busy",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "19",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "0301",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      },
+      "note": "the transfer is still in progress"
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "slave": false
+   },
+   "link": "cdc",
+   "name": "fw-continue-no-slave",
+   "note": "continue to the OS with the slave absent (S-09.008): 54, then the restart; nothing more is served",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-continue-no-slave",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "19",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x21",
+        "seq": 1
+       }
+      ],
+      "note": "a ping after it: no pong"
+     }
+    ]
+   },
+   "state": {
+    "reset": 20
+   }
+  },
+  {
+   "link": "cdc",
+   "name": "fw-other",
+   "note": "an empty payload and other sub-commands: 84 and any text",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "fw-other",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "",
+        "route": "0x21",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "00",
+        "route": "0x21",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "01",
+        "route": "0x21",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "04",
+        "route": "0x21",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "06",
+        "route": "0x21",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "1a",
+        "route": "0x21",
+        "seq": 5
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "ef",
+        "route": "0x21",
+        "seq": 6
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "ff",
+        "route": "0x21",
+        "seq": 7
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x12"
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

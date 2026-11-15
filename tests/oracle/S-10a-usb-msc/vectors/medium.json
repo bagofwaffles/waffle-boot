@@ -1,0 +1,762 @@
+{
+ "bus_reset": [
+  {
+   "event": "bus_reset",
+   "name": "event: bus reset before any access"
+  },
+  {
+   "name": "released",
+   "releases": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready (acquired)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "event": "bus_reset",
+   "name": "event: bus reset"
+  },
+  {
+   "name": "released",
+   "releases": 1
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR after the reset",
+   "sense": null,
+   "status": 0
+  }
+ ],
+ "eject_start": [
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready (acquired)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1b0000000200",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "START STOP UNIT eject",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "name": "released",
+   "releases": 1
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR after eject",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "120000002400",
+   "data_in": "008002021f0000007465656e616765204f502d5859204469736b20202020202020202020",
+   "data_in_len": 36,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "INQUIRY after eject",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "28000000000000000100",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) after eject",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "1b0000000100",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "START STOP UNIT start",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready again",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "name": "released",
+   "releases": 1
+  }
+ ],
+ "no_medium": [
+  {
+   "cdb": "120000002400",
+   "data_in": "008002021f0000007465656e616765204f502d5859204469736b20202020202020202020",
+   "data_in_len": 36,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "INQUIRY",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TEST UNIT READY",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "25000000000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ CAPACITY(10)",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "28000000000000000100",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10)",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "1a003f00ff00",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "MODE SENSE(6)",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "1b0000000100",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "START STOP UNIT start",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "030000001200",
+   "data_in": "700002000000000a000000003a0000000000",
+   "data_in_len": 18,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REQUEST SENSE",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TEST UNIT READY again",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  }
+ ],
+ "own_write_withdraw": [
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "28000000000000000100",
+   "data_in": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+   "data_in_len": 512,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) acquires",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "event": "withdraw_own_write",
+   "name": "event: withdraw for an own write"
+  },
+  {
+   "name": "released",
+   "releases": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR while withdrawn",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "event": "offer",
+   "name": "event: offer"
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR after the re-offer: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "28000000000000000100",
+   "data_in": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+   "data_in_len": 512,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) acquires again",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "name": "released",
+   "releases": 0
+  }
+ ],
+ "reselect": [
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready (acquired)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1b0000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "START STOP UNIT stop",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "event": "set_configuration_same",
+   "name": "event: SET_CONFIGURATION, current value"
+  },
+  {
+   "name": "released",
+   "releases": 1
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready again, no unit attention",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "event": "set_configuration_0",
+   "name": "event: SET_CONFIGURATION(0)"
+  },
+  {
+   "name": "released",
+   "releases": 2
+  }
+ ],
+ "stop_eject_states": [
+  {
+   "cdb": "1b0000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "no medium: START STOP UNIT stop",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1b0000000200",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "no medium: START STOP UNIT eject",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "name": "released",
+   "releases": 0
+  },
+  {
+   "event": "offer",
+   "name": "event: offer"
+  },
+  {
+   "cdb": "1b0000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "unit attention owed: START STOP UNIT stop",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready: the stop was not done",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "event": "withdraw",
+   "name": "event: withdraw"
+  },
+  {
+   "event": "offer",
+   "name": "event: offer"
+  },
+  {
+   "cdb": "1b0000000200",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "unit attention owed: START STOP UNIT eject",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready: the eject was not done",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "name": "released",
+   "releases": 1
+  },
+  {
+   "cdb": "1b0000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "ready: START STOP UNIT stop",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1b0000000200",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "stopped: START STOP UNIT eject",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "name": "released",
+   "releases": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR still stopped",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  }
+ ],
+ "stop_start": [
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready (acquired)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1b0000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "START STOP UNIT stop",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR while stopped",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "name": "released",
+   "releases": 0
+  },
+  {
+   "cdb": "1b0000001000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "START STOP UNIT power condition (ignored)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1b0000000100",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "START STOP UNIT start",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR",
+   "sense": null,
+   "status": 0
+  }
+ ],
+ "ua_by_request_sense": [
+  {
+   "cdb": "030000001200",
+   "data_in": "700006000000000a00000000280000000000",
+   "data_in_len": 18,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REQUEST SENSE reports the unit attention",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready",
+   "sense": null,
+   "status": 0
+  }
+ ],
+ "withdraw_reoffer": [
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "first TUR: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "28000000000000000100",
+   "data_in": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+   "data_in_len": 512,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) acquires",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "event": "withdraw",
+   "name": "event: withdraw"
+  },
+  {
+   "name": "released",
+   "releases": 1
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR while withdrawn",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "28000000000000000100",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) while withdrawn",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "120000002400",
+   "data_in": "008002021f0000007465656e616765204f502d5859204469736b20202020202020202020",
+   "data_in_len": 36,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "INQUIRY while withdrawn",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR while withdrawn",
+   "sense": [
+    2,
+    58,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "event": "offer",
+   "name": "event: offer"
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR after the re-offer: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "TUR ready",
+   "sense": null,
+   "status": 0
+  }
+ ]
+}

@@ -1,0 +1,36 @@
+# S-13c.008
+step	cmd	params	gap_us	when
+1	11		5000	always
+2	28		0	always
+3	F0	C3	0	always
+4	F0	96	0	always
+5	36	98	0	always
+6	3A	55	0	always
+7	B4	01	0	always
+8	B6	8A 07 3B	0	always
+9	B7	C6	0	always
+10	B9	02 E0	0	always
+11	C0	C0 64	0	always
+12	C1	1D	0	always
+13	C2	A7	0	always
+14	C5	18	0	always
+15	E8	40 8A 00 00 29 19 A5 33	0	always
+16	E0	F0 0B 12 09 0A 26 39 54 4E 38 13 13 2E 34	0	always
+17	E1	F0 10 15 0D 0C 07 38 43 4D 3A 16 15 30 35	0	always
+18	F0	3C	0	always
+19	F0	69	0	always
+20	35	00	0	always
+21	21		0	always
+22	F0	C3	0	gamma
+23	F0	96	0	gamma
+24	E2	GAMMA_R	0	gamma
+25	E3	GAMMA_B	0	gamma
+26	B9	42 E0	0	gamma
+27	F0	3C	0	gamma
+28	F0	69	0	gamma
+29	2A	00 31 01 0E	0	always
+30	2B	00 00 01 DF	0	always
+31	2C	FILL	0	always
+32	2A	00 31 01 10	0	always
+33	2B	00 00 01 DF	0	always
+34	29		0	always

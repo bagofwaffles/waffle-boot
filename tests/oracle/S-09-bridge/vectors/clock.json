@@ -1,0 +1,51 @@
+[
+ {
+  "clk": "0x00000000",
+  "datetime": "1970-01-01 00:00:00",
+  "payload_hex": "00000000",
+  "register_days": 0,
+  "value": 0
+ },
+ {
+  "clk": "0x55997efb",
+  "datetime": "1999-12-31 23:59:59",
+  "payload_hex": "7f436d38",
+  "register_days": 10956,
+  "value": 946684799
+ },
+ {
+  "clk": "0x5870c000",
+  "datetime": "2000-12-29 12:00:00",
+  "payload_hex": "c07c4c3a",
+  "register_days": 11320,
+  "value": 978091200
+ },
+ {
+  "clk": "0x58720000",
+  "datetime": "2001-01-01 00:00:00",
+  "payload_hex": "80c84f3a",
+  "register_days": 11321,
+  "value": 978307200
+ },
+ {
+  "clk": "0x58740001",
+  "datetime": "2001-01-02 00:00:01",
+  "payload_hex": "011a513a",
+  "register_days": 11322,
+  "value": 978393601
+ },
+ {
+  "clk": "0x9f38c8b8",
+  "datetime": "2025-10-21 12:34:56",
+  "payload_hex": "f07df768",
+  "register_days": 20380,
+  "value": 1761050096
+ },
+ {
+  "clk": "0xffff7efb",
+  "datetime": "2059-09-20 23:59:59",
+  "payload_hex": "ffa2c2a8",
+  "register_days": 32767,
+  "value": 2831327999
+ }
+]

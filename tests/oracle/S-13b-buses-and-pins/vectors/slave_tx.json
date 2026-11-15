@@ -1,0 +1,1583 @@
+{
+ "rows": [
+  {
+   "expect": [],
+   "name": "reply",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 4
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reply_no_tf",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "status",
+     "spif": true
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 4,
+     "spif": true,
+     "twc_zero": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reply_with_hold",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "status",
+     "spif": true,
+     "tfifo_empty": true
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "status",
+     "spif": true,
+     "tfifo_empty": true
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 4
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reply_master_gave_up",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "pb15_high"
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reply_underrun",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "status",
+     "tur": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reply_collision",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "status",
+     "tc": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reply_underrun_with_finish",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "status",
+     "tf": true,
+     "tur": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reply_collision_last_word",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "tc": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    },
+    {
+     "ev": "end",
+     "word": 3
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "rx_count_before_last_word",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "status",
+     "rx_words": 3
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "rx_count_stale_word",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "status",
+     "rx_words": 4
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "end_on_fifo_empty",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "status",
+     "tfifo_empty": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "end_on_fifo_empty_spif",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "status",
+     "spif": true,
+     "tfifo_empty": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "end_on_spif_at_hand_over",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "status",
+     "spif": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "end_on_twc_zero",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "twc_zero": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    },
+    {
+     "ev": "end",
+     "word": 3
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "end_before_last_word",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "status",
+     "spif": true,
+     "tfifo_empty": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "stop_within_last_word",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "stop"
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 4
+    },
+    {
+     "ev": "take"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_missing"
+   ],
+   "name": "never_ends",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "spif": true,
+     "tfifo_empty": true
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_missing"
+   ],
+   "name": "rx_count_short",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 3
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "overrun_end",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "status",
+     "ror": true,
+     "rx_words": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "t_us": 100,
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "quiet_us": 500,
+     "ror": true,
+     "rx_words": 3,
+     "twc_zero": true
+    },
+    {
+     "ev": "take",
+     "t_us": 610
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_no_count"
+   ],
+   "name": "overrun_end_too_soon",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "status",
+     "ror": true,
+     "rx_words": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "quiet_us": 50,
+     "ror": true,
+     "rx_words": 3,
+     "twc_zero": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_no_count"
+   ],
+   "name": "quiet_without_overrun",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "quiet_us": 500,
+     "rx_words": 3,
+     "twc_zero": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "overrun_end_before_last_word",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "status",
+     "ror": true,
+     "rx_words": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "status",
+     "quiet_us": 500,
+     "ror": true,
+     "rx_words": 2,
+     "twc_zero": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_no_stop"
+   ],
+   "name": "take_without_stop",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 4
+    },
+    {
+     "ev": "take"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_no_count"
+   ],
+   "name": "end_on_tf",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "tf": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "name": "end_on_tf_early",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "status",
+     "tf": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_late"
+   ],
+   "name": "waits_for_tf_to_bound",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "t_us": 100,
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 4
+    },
+    {
+     "ev": "take",
+     "t_us": 500100
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_error_ignored"
+   ],
+   "name": "underrun_ignored",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "status",
+     "tur": true
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 4
+    },
+    {
+     "ev": "take"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "io": "quad",
+   "name": "tf_after_dma",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "dma_done"
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "tf": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_early"
+   ],
+   "io": "quad",
+   "name": "quad_tf_early",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "status",
+     "tf": true
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_end_no_count",
+    "tx_quad_rx_channel"
+   ],
+   "io": "quad",
+   "name": "quad_rx_channel_on",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "rx_words": 4
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_error_ignored"
+   ],
+   "name": "collision_ignored",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "status",
+     "tc": true
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "spif": true,
+     "tfifo_empty": true
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_error_ignored"
+   ],
+   "name": "underrun_ignored_no_finish",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "status",
+     "tur": true
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "tx_error_ignored"
+   ],
+   "name": "last_word_error_waited",
+   "trace": [
+    {
+     "ev": "hand"
+    },
+    {
+     "ev": "start",
+     "word": 0
+    },
+    {
+     "ev": "end",
+     "word": 0
+    },
+    {
+     "ev": "start",
+     "word": 1
+    },
+    {
+     "ev": "end",
+     "word": 1
+    },
+    {
+     "ev": "start",
+     "word": 2
+    },
+    {
+     "ev": "end",
+     "word": 2
+    },
+    {
+     "ev": "start",
+     "word": 3
+    },
+    {
+     "ev": "status",
+     "tc": true
+    },
+    {
+     "ev": "end",
+     "word": 3
+    },
+    {
+     "ev": "take"
+    },
+    {
+     "ev": "stop"
+    }
+   ]
+  }
+ ],
+ "words": 4
+}

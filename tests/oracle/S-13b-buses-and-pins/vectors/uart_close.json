@@ -1,0 +1,261 @@
+{
+ "rows": [
+  {
+   "expect": [],
+   "name": "drained",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 126
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 1
+    },
+    {
+     "op": "r",
+     "reg": "UART0_STAT",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "UART0_STAT",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "nothing_sent",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "r",
+     "reg": "UART0_STAT",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "wait_ran_out",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART1_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "UART1_THR",
+     "val": 126
+    },
+    {
+     "op": "w",
+     "reg": "UART1_THR",
+     "val": 1
+    },
+    {
+     "op": "r",
+     "reg": "UART1_STAT",
+     "val": 0
+    },
+    {
+     "ev": "tx_wait_expired",
+     "op": "ev",
+     "uart": "UART1"
+    },
+    {
+     "op": "w",
+     "reg": "UART1_CTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "never_enabled",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART1_CTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "disabled_twice",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "r",
+     "reg": "UART0_STAT",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [
+    "uart_cut"
+   ],
+   "name": "cut_mid_byte",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 126
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 1
+    },
+    {
+     "op": "r",
+     "reg": "UART0_STAT",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [
+    "uart_cut"
+   ],
+   "name": "no_status_read",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 126
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [
+    "uart_cut"
+   ],
+   "name": "byte_after_empty",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "r",
+     "reg": "UART0_STAT",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 126
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [
+    "uart_cut"
+   ],
+   "name": "other_uart_read",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 126
+    },
+    {
+     "op": "w",
+     "reg": "UART0_THR",
+     "val": 1
+    },
+    {
+     "op": "r",
+     "reg": "UART1_STAT",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 0
+    }
+   ]
+  }
+ ]
+}

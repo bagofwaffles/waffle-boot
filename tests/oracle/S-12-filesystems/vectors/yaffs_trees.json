@@ -1,0 +1,950 @@
+{
+ "requirements": [
+  "S-12.040",
+  "S-12.043",
+  "S-12.044",
+  "S-12.046",
+  "S-12.047",
+  "S-12.049",
+  "S-12.050",
+  "S-12.052",
+  "S-12.053",
+  "S-12.055",
+  "S-12.057",
+  "S-12.058"
+ ],
+ "params": {
+  "n_blocks": 8,
+  "first_seq": 4097,
+  "first_obj_id": 257
+ },
+ "cases": [
+  {
+   "name": "empty",
+   "requirements": [
+    "S-12.043",
+    "S-12.057"
+   ],
+   "ops": [],
+   "refused": false,
+   "tree": {
+    "lost+found": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {}
+  },
+  {
+   "name": "basic",
+   "requirements": [
+    "S-12.044",
+    "S-12.045",
+    "S-12.050"
+   ],
+   "ops": [
+    [
+     "mkdir",
+     "user"
+    ],
+    [
+     "mkdir",
+     "logs"
+    ],
+    [
+     "file",
+     "user/a.txt",
+     5,
+     1
+    ],
+    [
+     "file",
+     "logs/boot.log",
+     10000,
+     2
+    ],
+    [
+     "file",
+     "user/empty",
+     0,
+     0
+    ],
+    [
+     "symlink",
+     "user/link",
+     "a.txt"
+    ],
+    [
+     "hardlink",
+     "user/hl",
+     "user/a.txt"
+    ],
+    [
+     "mkdir",
+     "content"
+    ],
+    [
+     "mkdir",
+     "content/dlc"
+    ],
+    [
+     "file",
+     "bootloader.settings",
+     0,
+     0
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "bootloader.settings": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "content": {
+     "type": "dir"
+    },
+    "content/dlc": {
+     "type": "dir"
+    },
+    "logs": {
+     "type": "dir"
+    },
+    "logs/boot.log": {
+     "type": "file",
+     "len": 10000,
+     "sha256": "4530385d06271d30ea0b6c08164781cf52478acef1d5bf3b9a0fcd52d31735b6"
+    },
+    "lost+found": {
+     "type": "dir"
+    },
+    "user": {
+     "type": "dir"
+    },
+    "user/a.txt": {
+     "type": "file",
+     "len": 5,
+     "sha256": "9bd7abda3405cf987d067870c68ac01c5371272b8df8389e10b403556b2604cf"
+    },
+    "user/empty": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "user/hl": {
+     "type": "hardlink",
+     "target": "user/a.txt"
+    },
+    "user/link": {
+     "type": "symlink",
+     "alias": "a.txt"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   }
+  },
+  {
+   "name": "deleted",
+   "requirements": [
+    "S-12.046",
+    "S-12.050"
+   ],
+   "ops": [
+    [
+     "mkdir",
+     "user"
+    ],
+    [
+     "file",
+     "user/x",
+     9000,
+     3
+    ],
+    [
+     "file",
+     "user/y",
+     10,
+     4
+    ],
+    [
+     "delete",
+     "user/x"
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "lost+found": {
+     "type": "dir"
+    },
+    "user": {
+     "type": "dir"
+    },
+    "user/y": {
+     "type": "file",
+     "len": 10,
+     "sha256": "77c3bb369fcd370e57520289ed10c4c681caf98a870159f4c45c0c04df737778"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   }
+  },
+  {
+   "name": "shadows",
+   "requirements": [
+    "S-12.050"
+   ],
+   "ops": [
+    [
+     "file",
+     "a",
+     100,
+     5
+    ],
+    [
+     "file",
+     "b",
+     200,
+     6
+    ],
+    [
+     "rename_over",
+     "a",
+     "b"
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "b": {
+     "type": "file",
+     "len": 100,
+     "sha256": "f90edbbb60efe29714a69f98a3e407562d869352c8ec223e01f144a6cef98494"
+    },
+    "lost+found": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   }
+  },
+  {
+   "name": "shrink",
+   "requirements": [
+    "S-12.045",
+    "S-12.050"
+   ],
+   "ops": [
+    [
+     "file",
+     "f",
+     10000,
+     7
+    ],
+    [
+     "shrink",
+     "f",
+     100
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "f": {
+     "type": "file",
+     "len": 100,
+     "sha256": "98da6f42bc8f2307a9d4652545c401ba8e9fd3978d7c75e139ff35b7b6e09b85"
+    },
+    "lost+found": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   }
+  },
+  {
+   "name": "shrink_extend",
+   "requirements": [
+    "S-12.050"
+   ],
+   "ops": [
+    [
+     "file",
+     "f",
+     10000,
+     7
+    ],
+    [
+     "shrink",
+     "f",
+     100
+    ],
+    [
+     "resize",
+     "f",
+     5000
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "f": {
+     "type": "file",
+     "len": 5000,
+     "sha256": "8bdc36b24def8aae03703af0056fb555be1607515dc3bdf713fb7c72c02fdafd"
+    },
+    "lost+found": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   }
+  },
+  {
+   "name": "orphan",
+   "requirements": [
+    "S-12.050",
+    "S-12.053"
+   ],
+   "ops": [
+    [
+     "header",
+     336,
+     1,
+     2457,
+     "stray",
+     0
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "lost+found": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [
+    {
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+   ],
+   "check": [
+    "object 336: parent 2457 is not a live directory (shown in lost+found)"
+   ],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   }
+  },
+  {
+   "name": "summary_bad",
+   "requirements": [
+    "S-12.049"
+   ],
+   "ops": [
+    [
+     "file",
+     "big",
+     514080,
+     8
+    ],
+    [
+     "file",
+     "small",
+     10,
+     9
+    ],
+    [
+     "corrupt_summary",
+     0
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "big": {
+     "type": "file",
+     "len": 514080,
+     "sha256": "4b834e2473aa3c98249b220c0bf621b5003a28288bf1844522c0a20ebbb5e764"
+    },
+    "lost+found": {
+     "type": "dir"
+    },
+    "small": {
+     "type": "file",
+     "len": 10,
+     "sha256": "0d6be78fdce514dc518a9160f880e28c37b9cd792fb39762064ca8aec2708a72"
+    }
+   },
+   "lost_found_files": [],
+   "check": [
+    "block 0: summary rejected (checksum); chunk tags used"
+   ],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    },
+    "1": {
+     "state": "data",
+     "seq": 4098
+    }
+   }
+  },
+  {
+   "name": "seq_classes",
+   "requirements": [
+    "S-12.047",
+    "S-12.055"
+   ],
+   "ops": [
+    [
+     "file",
+     "kept",
+     10,
+     10
+    ],
+    [
+     "raw_header_block",
+     3,
+     33
+    ],
+    [
+     "raw_header_block",
+     4,
+     4294901760
+    ],
+    [
+     "raw_header_block",
+     5,
+     4026531840
+    ],
+    [
+     "raw_header_block",
+     6,
+     4095
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "kept": {
+     "type": "file",
+     "len": 10,
+     "sha256": "ebed051b211cb0a57d718c0fd615f26c4f4c10795065a0af4f2cbbc26ed01868"
+    },
+    "lost+found": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    },
+    "3": {
+     "state": "skipped",
+     "seq": 33
+    },
+    "4": {
+     "state": "skipped",
+     "seq": 4294901760
+    },
+    "5": {
+     "state": "skipped",
+     "seq": 4026531840
+    },
+    "6": {
+     "state": "skipped",
+     "seq": 4095
+    }
+   }
+  },
+  {
+   "name": "names",
+   "requirements": [
+    "S-12.058"
+   ],
+   "ops": [
+    [
+     "file",
+     "Upper",
+     1,
+     1
+    ],
+    [
+     "file",
+     "upper",
+     2,
+     2
+    ],
+    [
+     "file",
+     "müsik.wav",
+     3,
+     3
+    ],
+    [
+     "file",
+     "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+     4,
+     4
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "Upper": {
+     "type": "file",
+     "len": 1,
+     "sha256": "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a"
+    },
+    "lost+found": {
+     "type": "dir"
+    },
+    "müsik.wav": {
+     "type": "file",
+     "len": 3,
+     "sha256": "6ab0dba1f4f1dfbb37b4f9eeb092c09fca4900ad32bdcd147d8dde35d6c87c35"
+    },
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn": {
+     "type": "file",
+     "len": 4,
+     "sha256": "cc91969ee8b9da49f3933da02bec0a0d76371ef157f714b13631bb2f407a4973"
+    },
+    "upper": {
+     "type": "file",
+     "len": 2,
+     "sha256": "4b2871da34670fde248604e0f18fd3e4f7e1e6dfddb85875ce4813a6612953bb"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   }
+  },
+  {
+   "name": "big_endian",
+   "requirements": [
+    "S-12.052"
+   ],
+   "ops": [
+    [
+     "mkdir",
+     "user",
+     256
+    ],
+    [
+     "file",
+     "user/a.txt",
+     5000,
+     11
+    ]
+   ],
+   "refused": true,
+   "big_endian": true,
+   "le_consistent_headers": 0,
+   "swapped_consistent_headers": 2,
+   "rule2_kept_chunks": 1,
+   "note": "refused by S-12.052: not mounted, so there is no tree; rule2_kept_chunks counts the swapped chunks that rule 2 would still keep"
+  },
+  {
+   "name": "big_endian_filled",
+   "requirements": [
+    "S-12.052"
+   ],
+   "ops": [
+    [
+     "mkdir",
+     "user"
+    ],
+    [
+     "file",
+     "user/big",
+     510000,
+     14
+    ],
+    [
+     "file",
+     "user/s",
+     10,
+     15
+    ]
+   ],
+   "refused": true,
+   "big_endian": true,
+   "le_consistent_headers": 0,
+   "swapped_consistent_headers": 3,
+   "rule2_kept_chunks": 0,
+   "note": "refused by S-12.052: not mounted, so there is no tree; rule2_kept_chunks counts the swapped chunks that rule 2 would still keep"
+  },
+  {
+   "name": "summary_loose",
+   "requirements": [
+    "S-12.049",
+    "S-12.050"
+   ],
+   "ops": [
+    [
+     "file",
+     "big",
+     514080,
+     8
+    ],
+    [
+     "file",
+     "small",
+     10,
+     9
+    ],
+    [
+     "summary_loose",
+     0,
+     5
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "big": {
+     "type": "file",
+     "len": 514080,
+     "sha256": "f15006440c7264c22ac6ba82deb74d524e04eaf1908bdadb898cb17451e9a26b"
+    },
+    "lost+found": {
+     "type": "dir"
+    },
+    "small": {
+     "type": "file",
+     "len": 10,
+     "sha256": "0d6be78fdce514dc518a9160f880e28c37b9cd792fb39762064ca8aec2708a72"
+    }
+   },
+   "lost_found_files": [],
+   "check": [
+    "block 0 chunk 127: seq 0x1fff, block seq 0x1001",
+    "block 0 chunk 5: summary disagrees with the chunk tags"
+   ],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    },
+    "1": {
+     "state": "data",
+     "seq": 4098
+    }
+   },
+   "expect": {
+    "big": "pattern(126 * 4080, 8) with bytes 20400..24479 (data chunk 6, chunk 5) zero",
+    "small": "pattern(10, 9)"
+   }
+  },
+  {
+   "name": "summary_obj0",
+   "requirements": [
+    "S-12.049"
+   ],
+   "ops": [
+    [
+     "file",
+     "big",
+     514080,
+     8
+    ],
+    [
+     "summary_obj0",
+     0,
+     [
+      [
+       3,
+       "zero"
+      ],
+      [
+       4,
+       "keep"
+      ]
+     ]
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "big": {
+     "type": "file",
+     "len": 514080,
+     "sha256": "4b834e2473aa3c98249b220c0bf621b5003a28288bf1844522c0a20ebbb5e764"
+    },
+    "lost+found": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   },
+   "expect": {
+    "big": "pattern(126 * 4080, 8), whole"
+   }
+  },
+  {
+   "name": "seq_top",
+   "requirements": [
+    "S-12.047"
+   ],
+   "ops": [
+    [
+     "file",
+     "kept",
+     10,
+     10
+    ],
+    [
+     "raw_header_block",
+     3,
+     4026531584,
+     "ghost",
+     511
+    ],
+    [
+     "raw_header_block",
+     4,
+     4026531583,
+     "top",
+     510
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "kept": {
+     "type": "file",
+     "len": 10,
+     "sha256": "ebed051b211cb0a57d718c0fd615f26c4f4c10795065a0af4f2cbbc26ed01868"
+    },
+    "lost+found": {
+     "type": "dir"
+    },
+    "top": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    },
+    "3": {
+     "state": "skipped",
+     "seq": 4026531584
+    },
+    "4": {
+     "state": "data",
+     "seq": 4026531583
+    }
+   },
+   "expect": {
+    "present": [
+     "kept",
+     "top"
+    ],
+    "absent": [
+     "ghost"
+    ]
+   }
+  },
+  {
+   "name": "chunk_id_bound",
+   "requirements": [
+    "S-12.044",
+    "S-12.050"
+   ],
+   "ops": [
+    [
+     "file",
+     "f",
+     12240,
+     13
+    ],
+    [
+     "data",
+     "f",
+     268435458,
+     4080,
+     14
+    ],
+    [
+     "resize",
+     "f",
+     12240
+    ]
+   ],
+   "refused": false,
+   "tree": {
+    "f": {
+     "type": "file",
+     "len": 12240,
+     "sha256": "dfc2a233108b0c0f31d49ddaab9d82114876e99fc20f8cdd771abf5489d4f4f2"
+    },
+    "lost+found": {
+     "type": "dir"
+    }
+   },
+   "lost_found_files": [],
+   "check": [],
+   "blocks": {
+    "0": {
+     "state": "data",
+     "seq": 4097
+    }
+   },
+   "expect": {
+    "f": "pattern(3 * 4080, 13), whole"
+   }
+  },
+  {
+   "name": "erased_ff",
+   "requirements": [
+    "S-12.043",
+    "S-12.047",
+    "S-12.052"
+   ],
+   "ops": [
+    [
+     "mkdir",
+     "user"
+    ],
+    [
+     "mkdir",
+     "logs"
+    ],
+    [
+     "file",
+     "user/a.txt",
+     5,
+     1
+    ],
+    [
+     "file",
+     "logs/boot.log",
+     10000,
+     2
+    ],
+    [
+     "file",
+     "user/empty",
+     0,
+     0
+    ],
+    [
+     "symlink",
+     "user/link",
+     "a.txt"
+    ],
+    [
+     "hardlink",
+     "user/hl",
+     "user/a.txt"
+    ],
+    [
+     "mkdir",
+     "content"
+    ],
+    [
+     "mkdir",
+     "content/dlc"
+    ],
+    [
+     "file",
+     "bootloader.settings",
+     0,
+     0
+    ]
+   ],
+   "erased_byte": 255,
+   "refused": false,
+   "note": "the basic case written on flash that erases to 0xFF: unused blocks read as sequence 0xFFFFFFFF (hold nothing) and unused chunks of written blocks as chunks of the wrong sequence (ignored), so the tree is the basic tree and nothing is taken as erased",
+   "tree": {
+    "bootloader.settings": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "content": {
+     "type": "dir"
+    },
+    "content/dlc": {
+     "type": "dir"
+    },
+    "logs": {
+     "type": "dir"
+    },
+    "logs/boot.log": {
+     "type": "file",
+     "len": 10000,
+     "sha256": "4530385d06271d30ea0b6c08164781cf52478acef1d5bf3b9a0fcd52d31735b6"
+    },
+    "lost+found": {
+     "type": "dir"
+    },
+    "user": {
+     "type": "dir"
+    },
+    "user/a.txt": {
+     "type": "file",
+     "len": 5,
+     "sha256": "9bd7abda3405cf987d067870c68ac01c5371272b8df8389e10b403556b2604cf"
+    },
+    "user/empty": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "user/hl": {
+     "type": "hardlink",
+     "target": "user/a.txt"
+    },
+    "user/link": {
+     "type": "symlink",
+     "alias": "a.txt"
+    }
+   },
+   "lost_found_files": []
+  }
+ ]
+}

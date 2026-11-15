@@ -1,0 +1,18 @@
+{
+ "end": "slot_end",
+ "no_open_session_hex": "030f0f0f0f0f0f0f0f0f0f0f",
+ "sessions": [
+  {
+   "head_hex": "03",
+   "len": 1,
+   "sha256": "084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5"
+  },
+  {
+   "head_hex": "040030ad0000a01128000000000000006a3cea0f",
+   "len": 56,
+   "sha256": "21f9ef56ff3554eab1d5fedc3487a0c54056beebd558fd6113fbbd4abbee58c1"
+  }
+ ],
+ "slot": "slave_stream_truncated.bin",
+ "slot_sha256": "260db81c32c99a8b3387775d28e1df25ec2234a30a64e32139922eec04852a2f"
+}

@@ -1,0 +1,84 @@
+{
+ "emmc": {
+  "sectors": 30375936,
+  "erase_group_sectors": 1024,
+  "write_size_divides": 8,
+  "refused": [
+   {
+    "sectors": 30601216,
+    "erase_group_sectors": 1024,
+    "opt_write": 8
+   },
+   {
+    "sectors": 30375936,
+    "erase_group_sectors": 512,
+    "opt_write": 8
+   },
+   {
+    "sectors": 30375936,
+    "erase_group_sectors": 1024,
+    "opt_write": 16
+   }
+  ],
+  "accepted_opt_write": [
+   1,
+   2,
+   4,
+   8
+  ]
+ },
+ "map": [
+  {
+   "region": "yaffs2",
+   "first": 0,
+   "last": 4718591
+  },
+  {
+   "region": "unused",
+   "first": 4718592,
+   "last": 13598719
+  },
+  {
+   "region": "fat",
+   "first": 13598720,
+   "last": 30375935
+  }
+ ],
+ "yaffs2": {
+  "first_block": 0,
+  "last_block": 4607,
+  "sectors_per_block": 1024,
+  "sectors_per_chunk": 8
+ },
+ "fat_map": [
+  {
+   "volume_sector": 0,
+   "user_sector": 16777216
+  },
+  {
+   "volume_sector": 1,
+   "user_sector": 16777217
+  },
+  {
+   "volume_sector": 13598719,
+   "user_sector": 30375935
+  },
+  {
+   "volume_sector": 13598720,
+   "user_sector": 13598720
+  },
+  {
+   "volume_sector": 13598721,
+   "user_sector": 13598721
+  },
+  {
+   "volume_sector": 16777215,
+   "user_sector": 16777215
+  }
+ ],
+ "factory_reset_erase": {
+  "group": 16384,
+  "first": 16777216,
+  "last": 16778239
+ }
+}

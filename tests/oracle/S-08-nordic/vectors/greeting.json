@@ -1,0 +1,296 @@
+{
+ "rows": [
+  {
+   "state": null,
+   "payload": "",
+   "answer": null,
+   "revision": null
+  },
+  {
+   "state": null,
+   "payload": "00",
+   "answer": null,
+   "revision": null
+  },
+  {
+   "state": null,
+   "payload": "aa",
+   "answer": null,
+   "revision": null
+  },
+  {
+   "state": null,
+   "payload": "ab",
+   "answer": null,
+   "revision": null
+  },
+  {
+   "state": null,
+   "payload": "ba",
+   "answer": null,
+   "revision": null
+  },
+  {
+   "state": null,
+   "payload": "bb",
+   "answer": null,
+   "revision": null
+  },
+  {
+   "state": null,
+   "payload": "ff",
+   "answer": null,
+   "revision": null
+  },
+  {
+   "state": 0,
+   "payload": "",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": 0,
+   "payload": "00",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": 0,
+   "payload": "aa",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": 0,
+   "payload": "ab",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": 0,
+   "payload": "ba",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": 0,
+   "payload": "bb",
+   "answer": {
+    "id": "0x0d",
+    "payload": "18"
+   },
+   "revision": null
+  },
+  {
+   "state": 0,
+   "payload": "ff",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "00",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "aa",
+   "answer": {
+    "id": "0x0d",
+    "payload": "ee"
+   },
+   "revision": null
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "ab",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "ba",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "bb",
+   "answer": {
+    "id": "0x0d",
+    "payload": "ee"
+   },
+   "revision": null
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "ff",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": null
+  },
+  {
+   "state": 0,
+   "payload": "bb02",
+   "answer": {
+    "id": "0x0d",
+    "payload": "18"
+   },
+   "revision": 2
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "aa5a",
+   "answer": {
+    "id": "0x0d",
+    "payload": "ee"
+   },
+   "revision": 90
+  },
+  {
+   "state": 0,
+   "payload": "aaff010203",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": 255
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "0007",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "revision": 7
+  },
+  {
+   "state": null,
+   "payload": "bb02",
+   "answer": null,
+   "revision": null
+  },
+  {
+   "state": null,
+   "payload": "aa09ffff",
+   "answer": null,
+   "revision": null
+  }
+ ],
+ "sequence": [
+  {
+   "state": 0,
+   "payload": "bb02",
+   "answer": {
+    "id": "0x0d",
+    "payload": "18"
+   },
+   "note": "held mode"
+  },
+  {
+   "state": "0xAB0D",
+   "payload": "bb02",
+   "answer": {
+    "id": "0x0d",
+    "payload": "ee"
+   },
+   "note": "after M1"
+  },
+  {
+   "state": 0,
+   "payload": "bb02",
+   "answer": {
+    "id": "0x0d",
+    "payload": "18"
+   },
+   "note": "after M3"
+  },
+  {
+   "state": 0,
+   "payload": "aa02",
+   "answer": {
+    "id": "0x06",
+    "payload": "40"
+   },
+   "note": "application greeting"
+  }
+ ],
+ "accept": [
+  {
+   "id": "0x06",
+   "payload": "40",
+   "counts": true
+  },
+  {
+   "id": "0x06",
+   "payload": "4041",
+   "counts": true
+  },
+  {
+   "id": "0x06",
+   "payload": "40ffffff",
+   "counts": true
+  },
+  {
+   "id": "0x06",
+   "payload": "",
+   "counts": false,
+   "previous_byte0": "40"
+  },
+  {
+   "id": "0x06",
+   "payload": "41",
+   "counts": false
+  },
+  {
+   "id": "0x06",
+   "payload": "0040",
+   "counts": false
+  },
+  {
+   "id": "0x0a",
+   "payload": "40",
+   "counts": false
+  }
+ ]
+}

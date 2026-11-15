@@ -1,0 +1,44 @@
+{
+ "frames": {
+  "enter": {
+   "route": "0x13",
+   "seq": 0,
+   "id": "0x0d",
+   "payload": "ee",
+   "raw": "13000d01ee5c",
+   "wire": "0213050d01ee5c00"
+  },
+  "exit": {
+   "route": "0x13",
+   "seq": 0,
+   "id": "0x0d",
+   "payload": "18",
+   "raw": "13000d0118e2",
+   "wire": "0213050d0118e200"
+  },
+  "accept": {
+   "route": "0x13",
+   "seq": 0,
+   "id": "0x06",
+   "payload": "40",
+   "raw": "13000601403f",
+   "wire": "0213050601403f00"
+  },
+  "info_request_slot0": {
+   "route": "0x83",
+   "seq": 0,
+   "id": "0x09",
+   "payload": "",
+   "raw": "83000900a4",
+   "wire": "0283020902a400"
+  },
+  "link_greeting_slot0": {
+   "route": "0x83",
+   "seq": 0,
+   "id": "0x05",
+   "payload": "0103",
+   "raw": "830005020103dd",
+   "wire": "02830605020103dd00"
+  }
+ }
+}

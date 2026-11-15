@@ -1,0 +1,1190 @@
+{
+ "rows": [
+  {
+   "expect": [],
+   "name": "reset_after_last_word",
+   "trace": [
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reset_after_select_rises",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reset_before_next_select",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "long_session",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    }
+   ]
+  },
+  {
+   "expect": [
+    "spi0_not_reset"
+   ],
+   "name": "no_reset",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [
+    "spi0_not_reset"
+   ],
+   "name": "no_reset_after_receive",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [
+    "spi0_reset_in_session"
+   ],
+   "name": "reset_within_session",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [
+    "spi0_not_reset",
+    "spi0_word_disabled"
+   ],
+   "name": "word_while_disabled",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "enable_last",
+   "trace": [
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TXCTL"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "reset_then_enable_last",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [
+    "enable_last"
+   ],
+   "name": "setup_after_reset_single",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RWC"
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "enable_last_quad",
+   "trace": [
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TXCTL"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RWC"
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RXCTL"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "quad_in_parts",
+   "trace": [
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RWC"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "quad_request_single_reply",
+   "trace": [
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 0,
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [
+    "enable_last"
+   ],
+   "name": "quad_setup_after_en",
+   "trace": [
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": false
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_TWC"
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "setup",
+     "reg": "SPI_RWC"
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [
+    "miom_while_enabled"
+   ],
+   "name": "miom_while_enabled",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [
+    "miom_while_enabled"
+   ],
+   "name": "miom_with_en",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  },
+  {
+   "expect": [
+    "miom_while_enabled"
+   ],
+   "name": "quad_reset_written_zero",
+   "trace": [
+    {
+     "ev": "en",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": false
+    },
+    {
+     "ev": "en",
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "tx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 0,
+     "on": false
+    },
+    {
+     "ev": "en",
+     "miom": 2,
+     "on": true
+    },
+    {
+     "ev": "select",
+     "on": true
+    },
+    {
+     "dir": "rx",
+     "ev": "word"
+    },
+    {
+     "ev": "select",
+     "on": false
+    }
+   ]
+  }
+ ]
+}

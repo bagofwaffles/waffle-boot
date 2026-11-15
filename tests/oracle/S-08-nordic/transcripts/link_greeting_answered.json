@@ -1,0 +1,50 @@
+{
+ "name": "link_greeting_answered",
+ "requirements": [
+  "S-08.002"
+ ],
+ "procedure": "link_greeting",
+ "state": 0,
+ "peer": {
+  "rules": [
+   {
+    "on": {
+     "id": "0x05"
+    },
+    "skip": 2,
+    "times": 1,
+    "send": [
+     {
+      "kind": "reply",
+      "id": "0x06",
+      "payload": "40",
+      "delay_ms": 2
+     }
+    ]
+   }
+  ]
+ },
+ "expect": [
+  {
+   "dut": {
+    "id": "0x05",
+    "payload": "0103",
+    "kind": "request"
+   },
+   "count": 3,
+   "t_ms": [
+    0,
+    0
+   ],
+   "gap_ms": [
+    5,
+    6
+   ]
+  }
+ ],
+ "result": true,
+ "end_ms": [
+  12,
+  14
+ ]
+}

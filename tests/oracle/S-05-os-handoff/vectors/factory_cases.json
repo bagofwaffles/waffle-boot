@@ -1,0 +1,81 @@
+{
+ "cases": [
+  {
+   "image": "factory_good.ldr",
+   "os": true,
+   "os_factory": true,
+   "os_factory_seen": true,
+   "fails_on": null
+  },
+  {
+   "image": "factory_ddr_at_reserve_end.ldr",
+   "os": true,
+   "os_factory": false,
+   "os_factory_seen": false,
+   "fails_on": "factory_keep_out"
+  },
+  {
+   "image": "factory_ddr_stack_top.ldr",
+   "os": true,
+   "os_factory": false,
+   "os_factory_seen": false,
+   "fails_on": "factory_keep_out"
+  },
+  {
+   "image": "factory_ddr_just_clear.ldr",
+   "os": true,
+   "os_factory": true,
+   "os_factory_seen": false,
+   "fails_on": "destinations_seen"
+  },
+  {
+   "image": "factory_l2_above_reserve.ldr",
+   "os": true,
+   "os_factory": false,
+   "os_factory_seen": false,
+   "fails_on": "factory_keep_out"
+  },
+  {
+   "image": "factory_l2_just_clear.ldr",
+   "os": true,
+   "os_factory": true,
+   "os_factory_seen": true,
+   "fails_on": null
+  },
+  {
+   "image": "factory_too_short.ldr",
+   "os": true,
+   "os_factory": false,
+   "os_factory_seen": false,
+   "fails_on": "factory_writer_length"
+  },
+  {
+   "image": "factory_first_not_final.ldr",
+   "os": true,
+   "os_factory": false,
+   "os_factory_seen": false,
+   "fails_on": "entry_first_is_final"
+  },
+  {
+   "image": "factory_final_argument.ldr",
+   "os": true,
+   "os_factory": true,
+   "os_factory_seen": false,
+   "fails_on": "final_argument_zero"
+  },
+  {
+   "image": "factory_l1_code_not_by_8.ldr",
+   "os": true,
+   "os_factory": true,
+   "os_factory_seen": false,
+   "fails_on": "l1_code_blocks_by_8"
+  },
+  {
+   "image": "factory_entry_in_ddr.ldr",
+   "os": true,
+   "os_factory": true,
+   "os_factory_seen": false,
+   "fails_on": "entry_seen"
+  }
+ ]
+}

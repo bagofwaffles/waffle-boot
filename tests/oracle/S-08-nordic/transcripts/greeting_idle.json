@@ -1,0 +1,49 @@
+{
+ "name": "greeting_idle",
+ "requirements": [
+  "S-08.011",
+  "S-08.014"
+ ],
+ "procedure": "idle",
+ "state": 0,
+ "peer": {
+  "greet": [
+   {
+    "at_ms": 10,
+    "payload": "aa02"
+   },
+   {
+    "at_ms": 50,
+    "payload": "bb02"
+   }
+  ]
+ },
+ "expect": [
+  {
+   "dut": {
+    "id": "0x06",
+    "payload": "40",
+    "kind": "message"
+   },
+   "t_ms": [
+    10,
+    60
+   ]
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "payload": "18",
+    "kind": "message"
+   },
+   "t_ms": [
+    50,
+    100
+   ]
+  }
+ ],
+ "result": true,
+ "args": {
+  "ms": 120
+ }
+}

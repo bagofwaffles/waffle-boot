@@ -1,0 +1,362 @@
+{
+ "requirement": "S-04.032",
+ "cases": [
+  {
+   "name": "w7_good",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@15 slave_arm",
+    "@16 report",
+    "@17 report",
+    "@18 record",
+    "@18 arm",
+    "@215 slave_reset",
+    "@218 reset",
+    "@330 boot_link"
+   ],
+   "broken": []
+  },
+  {
+   "name": "w1_good_nordic_step",
+   "writer": "W1",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@15 slave_arm",
+    "@16 report",
+    "@17 report",
+    "@18 link",
+    "@60 record",
+    "@60 arm",
+    "@215 slave_reset",
+    "@260 reset",
+    "@370 boot_link"
+   ],
+   "broken": []
+  },
+  {
+   "name": "w4_good_no_times",
+   "writer": "W4",
+   "trace": [
+    "event",
+    "poweroff",
+    "answer",
+    "report",
+    "report",
+    "link",
+    "record",
+    "arm",
+    "reset"
+   ],
+   "broken": []
+  },
+  {
+   "name": "w7_no_request",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@1 report",
+    "@2 report",
+    "@3 record",
+    "@3 arm",
+    "@203 reset",
+    "@320 boot_link"
+   ],
+   "broken": [
+    "no_request"
+   ]
+  },
+  {
+   "name": "w3_no_request",
+   "writer": "W3",
+   "trace": [
+    "@0 event",
+    "@1 report",
+    "@2 report",
+    "@3 link",
+    "@13 record",
+    "@13 arm",
+    "@213 reset"
+   ],
+   "broken": [
+    "no_request"
+   ]
+  },
+  {
+   "name": "w7_reports_before_request",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@1 report",
+    "@5 poweroff",
+    "@15 answer",
+    "@16 report",
+    "@18 record",
+    "@18 arm",
+    "@218 reset"
+   ],
+   "broken": [
+    "reports_before_request",
+    "reports_before_answer"
+   ]
+  },
+  {
+   "name": "w7_reports_before_answer",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@6 report",
+    "@15 answer",
+    "@16 report",
+    "@18 record",
+    "@18 arm",
+    "@218 reset"
+   ],
+   "broken": [
+    "reports_before_answer"
+   ]
+  },
+  {
+   "name": "w7_report_missing",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@16 report",
+    "@18 record",
+    "@18 arm",
+    "@218 reset"
+   ],
+   "broken": [
+    "reports_count"
+   ]
+  },
+  {
+   "name": "w7_report_twice",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@16 report",
+    "@17 report",
+    "@17 report",
+    "@18 record",
+    "@18 arm",
+    "@218 reset"
+   ],
+   "broken": [
+    "reports_count"
+   ]
+  },
+  {
+   "name": "w7_does_not_wait",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@6 report",
+    "@7 report",
+    "@8 record",
+    "@8 arm",
+    "@208 reset"
+   ],
+   "broken": [
+    "no_wait_for_answer"
+   ]
+  },
+  {
+   "name": "w7_silent",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@1005 report",
+    "@1006 report",
+    "@1007 record",
+    "@1007 arm",
+    "@1207 reset"
+   ],
+   "broken": []
+  },
+  {
+   "name": "w7_output_after_record",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@16 report",
+    "@17 report",
+    "@18 record",
+    "@19 link",
+    "@20 arm",
+    "@220 reset"
+   ],
+   "broken": [
+    "link_after_record"
+   ]
+  },
+  {
+   "name": "w7_arm_before_record",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@16 report",
+    "@17 report",
+    "@18 arm",
+    "@19 record",
+    "@218 reset"
+   ],
+   "broken": [
+    "record_then_arm"
+   ]
+  },
+  {
+   "name": "w7_slave_still_running",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@16 report",
+    "@17 report",
+    "@18 record",
+    "@18 arm",
+    "@118 reset",
+    "@218 boot_link",
+    "@245 slave_reset"
+   ],
+   "broken": [
+    "slave_not_reset"
+   ]
+  },
+  {
+   "name": "w7_absent",
+   "writer": "W7",
+   "trace": [
+    "@0 absent",
+    "@1 event",
+    "@2 report",
+    "@3 report",
+    "@4 record",
+    "@4 arm",
+    "@204 reset"
+   ],
+   "broken": []
+  },
+  {
+   "name": "w7_request_while_absent",
+   "writer": "W7",
+   "trace": [
+    "@0 absent",
+    "@1 event",
+    "@2 poweroff",
+    "@1100 report",
+    "@1101 report",
+    "@1102 record",
+    "@1102 arm",
+    "@1302 reset"
+   ],
+   "broken": [
+    "request_while_absent"
+   ]
+  },
+  {
+   "name": "w7_absent_after_reset",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@1 report",
+    "@2 report",
+    "@5 record",
+    "@5 arm",
+    "@205 reset",
+    "@320 boot_link",
+    "@1500 absent"
+   ],
+   "broken": [
+    "no_request"
+   ]
+  },
+  {
+   "name": "w7_master_delay_short",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@15 slave_arm",
+    "@16 report",
+    "@17 report",
+    "@18 record",
+    "@18 arm",
+    "@118 reset",
+    "@215 slave_reset"
+   ],
+   "broken": [
+    "master_delay_short"
+   ]
+  },
+  {
+   "name": "w7_slave_arm_late",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@46 slave_arm",
+    "@16 report",
+    "@17 report",
+    "@18 record",
+    "@18 arm",
+    "@218 reset",
+    "@246 slave_reset"
+   ],
+   "broken": [
+    "slave_arm_late"
+   ]
+  },
+  {
+   "name": "w7_no_reset",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@16 report",
+    "@17 report",
+    "@18 record",
+    "@18 arm"
+   ],
+   "broken": [
+    "no_reset_after_arm"
+   ]
+  },
+  {
+   "name": "w7_reset_before_arm",
+   "writer": "W7",
+   "trace": [
+    "@0 event",
+    "@5 poweroff",
+    "@15 answer",
+    "@16 report",
+    "@17 report",
+    "@18 record",
+    "@19 reset",
+    "@20 arm"
+   ],
+   "broken": [
+    "no_reset_after_arm"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,75 @@
+{
+  "document": "S-01",
+  "spaces": [
+    {"name": "l2",          "start": "0x08000000", "end": "0x08040000", "req": "S-01.012"},
+    {"name": "l1_data_a",   "start": "0x11800000", "end": "0x11808000", "req": "S-01.012"},
+    {"name": "l1_data_b",   "start": "0x11900000", "end": "0x11908000", "req": "S-01.012"},
+    {"name": "l1_code",     "start": "0x11a00000", "end": "0x11a0c000", "req": "S-01.012"},
+    {"name": "l1_scratch",  "start": "0x11b00000", "end": "0x11b02000", "req": "S-01.012"},
+    {"name": "ddr",         "start": "0x80000000", "end": "0x90000000", "req": "S-01.012"}
+  ],
+  "mmr": {
+    "core_mmr_base": "0x1fc00000",
+    "L1DM_DCTL":     "0x1fc00004",
+    "core_mmr": {
+      "L1DM_DCTL": "0x1fc00004", "L1DM_DCPLB_DFLT": "0x1fc00010",
+      "L1DM_DCPLB_ADDR0": "0x1fc00100", "L1DM_DCPLB_DATA0": "0x1fc00200",
+      "L1IM_ICTL": "0x1fc01004", "L1IM_ICPLB_DFLT": "0x1fc01010",
+      "L1IM_ICPLB_ADDR0": "0x1fc01100", "L1IM_ICPLB_DATA0": "0x1fc01200",
+      "EVT0": "0x1fc02000", "EVT15": "0x1fc0203c",
+      "EVT_OVERRIDE": "0x1fc02100", "IMASK": "0x1fc02104", "IPEND": "0x1fc02108", "ILAT": "0x1fc0210c",
+      "TCNTL": "0x1fc03000", "TPERIOD": "0x1fc03004", "TSCALE": "0x1fc03008", "TCOUNT": "0x1fc0300c",
+      "prm_evt_misprint": "0x1fe02000"
+    },
+    "system_mmr":    {"start": "0x20000000", "end": "0x30000000"},
+    "RCU0_SVECT0":   "0x20000020",
+    "spi2_mmap_window": "0x40000000",
+    "smc_bank0_display": "0x70000000",
+    "req": "S-01.012"
+  },
+  "rom": {
+    "base": "0x04000000",
+    "boot_kernel": "0x04000008",
+    "boot": "0x0400000c",
+    "otp_get": "0x04000048",
+    "otp_cfg": "0x04000054",
+    "first_stage_boot_command": "0x207",
+    "rom_reset_sp": "0x08000bec",
+    "rom_reset_stack": {"start": "0x08000000", "end": "0x08000c00"},
+    "rom_l2_entry_sp_min": "0x080000e8",
+    "rom_l1_entry_sp": "0x11b01ff0",
+    "entry_stack_budget": "0xe8",
+    "req": ["S-01.001", "S-01.004", "S-01.007"]
+  },
+  "factory_load": {
+    "keep_out": [
+      {"name": "l2",  "start": "0x0803c000", "end": "0x0803f000"},
+      {"name": "ddr", "start": "0x8803d000", "end": "0x88a66000"}
+    ],
+    "seen_on_a_unit": [
+      {"name": "l1_code",    "start": "0x11a00000", "end": "0x11a0c000"},
+      {"name": "l1_data_a",  "start": "0x11800000", "end": "0x11802000"},
+      {"name": "l1_data_b",  "start": "0x11900000", "end": "0x11905000"},
+      {"name": "l1_scratch", "start": "0x11b00000", "end": "0x11b01000"},
+      {"name": "l2",         "start": "0x0803f000", "end": "0x0803fff8"},
+      {"name": "ddr",        "start": "0x84000000", "end": "0x86c00000"}
+    ],
+    "entry_seen_on_a_unit": "0x11a00000",
+    "writer_min_length": 9488,
+    "req": "S-05.028"
+  },
+  "rom_boot_reserve":     {"start": "0x08000000", "end": "0x08002000", "req": ["S-01.007", "S-01.008"]},
+  "record_and_rom_stack": {"start": "0x11b01f00", "end": "0x11b02000", "req": "S-01.008"},
+  "reboot_record":        {"start": "0x11b01f00", "end": "0x11b01f08", "req": ["S-01.007", "S-04"]},
+  "record_floor": "0x11b01f08",
+  "boot_call_stack": {"start": "0x11807000", "end": "0x11808000", "sp_floor": "0x11807c00",
+                      "req": ["S-01.022", "S-02.091"]},
+  "spi_master_bcode": {"value": "0x4", "req": "S-01.020"},
+  "handover_reserve": [
+    {"name": "l2_reserve",  "start": "0x0803c000", "end": "0x0803e000", "req": "S-01.013"},
+    {"name": "ddr_reserve", "start": "0x8803d000", "end": "0x88a65000", "req": "S-01.013"}
+  ],
+  "staging": {"start": "0x8a000000", "end": "0x8a800000", "max_bytes": "0x800000", "req": "S-01.014"},
+  "fatal_record": {"start": "0x0803dfd4", "end": "0x0803dfe4", "req": ["S-04"]},
+  "display_record": {"start": "0x8fffff00", "end": "0x8fffff2c", "req": ["S-01.018", "S-01.019", "S-13c.021"]}
+}

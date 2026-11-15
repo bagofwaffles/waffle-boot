@@ -1,0 +1,526 @@
+{
+ "ranges": [
+  {
+   "name": "L1 data A",
+   "range": [
+    "0x11800000",
+    "0x11808000"
+   ]
+  },
+  {
+   "name": "L1 data B",
+   "range": [
+    "0x11900000",
+    "0x11908000"
+   ]
+  },
+  {
+   "name": "L1 scratch",
+   "range": [
+    "0x11B00000",
+    "0x11B02000"
+   ]
+  }
+ ],
+ "states": {
+  "entry": {
+   "dctl": "0x203",
+   "dflt": "0xF00",
+   "entries": []
+  },
+  "cplbs_off": {
+   "dctl": "0x0",
+   "dflt": "0x0",
+   "entries": []
+  },
+  "entry_enx": {
+   "dctl": "0x10202",
+   "dflt": "0xF00",
+   "entries": []
+  },
+  "entry_a_only_miss": {
+   "dctl": "0x202",
+   "dflt": "0x0",
+   "entries": [
+    [
+     "0x11800000",
+     "0x11808000"
+    ]
+   ]
+  },
+  "no_write_default": {
+   "dctl": "0x202",
+   "dflt": "0x700",
+   "entries": []
+  },
+  "entry_model": {
+   "dctl": "0x202",
+   "dflt": "0xF00",
+   "entries": []
+  }
+ },
+ "cases": [
+  {
+   "state": "entry",
+   "addr": "0x11800000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11800000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11800000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11800000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11804000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11804000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11804000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11804000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11807FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11807FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11807FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11807FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11900000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11900000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11900000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11900000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11907FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11907FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11907FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11907FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11B00000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11B00000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11B00000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11B00000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11B01FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11B01FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11B01FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11B01FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry",
+   "addr": "0x11A00000",
+   "write": false,
+   "dag": 0,
+   "expect": 35
+  },
+  {
+   "state": "entry_enx",
+   "addr": "0x11A00000",
+   "write": false,
+   "dag": 0,
+   "expect": null
+  },
+  {
+   "state": "entry_enx",
+   "addr": "0x11A00000",
+   "write": false,
+   "dag": 1,
+   "expect": 35
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11A00000",
+   "write": false,
+   "dag": 0,
+   "expect": 35
+  },
+  {
+   "state": "entry_a_only_miss",
+   "addr": "0x11800000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_a_only_miss",
+   "addr": "0x11900000",
+   "write": false,
+   "dag": 1,
+   "expect": 38
+  },
+  {
+   "state": "entry_a_only_miss",
+   "addr": "0x11B00000",
+   "write": false,
+   "dag": 1,
+   "expect": 38
+  },
+  {
+   "state": "entry",
+   "addr": "0x11A00000",
+   "write": true,
+   "dag": 0,
+   "expect": 35
+  },
+  {
+   "state": "entry_enx",
+   "addr": "0x11A00000",
+   "write": true,
+   "dag": 0,
+   "expect": null
+  },
+  {
+   "state": "entry_enx",
+   "addr": "0x11A00000",
+   "write": true,
+   "dag": 1,
+   "expect": 35
+  },
+  {
+   "state": "cplbs_off",
+   "addr": "0x11A00000",
+   "write": true,
+   "dag": 0,
+   "expect": 35
+  },
+  {
+   "state": "entry_a_only_miss",
+   "addr": "0x11800000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_a_only_miss",
+   "addr": "0x11900000",
+   "write": true,
+   "dag": 1,
+   "expect": 38
+  },
+  {
+   "state": "entry_a_only_miss",
+   "addr": "0x11B00000",
+   "write": true,
+   "dag": 1,
+   "expect": 38
+  },
+  {
+   "state": "no_write_default",
+   "addr": "0x11900000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "no_write_default",
+   "addr": "0x11900000",
+   "write": true,
+   "dag": 1,
+   "expect": 35
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11800000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11800000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11804000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11804000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11807FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11807FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11900000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11900000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11907FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11907FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11B00000",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11B00000",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11B01FFC",
+   "write": false,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11B01FFC",
+   "write": true,
+   "dag": 1,
+   "expect": null
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11A00000",
+   "write": false,
+   "dag": 0,
+   "expect": 35
+  },
+  {
+   "state": "entry_model",
+   "addr": "0x11A00000",
+   "write": true,
+   "dag": 0,
+   "expect": 35
+  }
+ ],
+ "first_stage": [
+  {
+   "dctl": "0x0",
+   "dflt": "0x0",
+   "ok": true
+  },
+  {
+   "dctl": "0x202",
+   "dflt": "0xF00",
+   "ok": true
+  },
+  {
+   "dctl": "0x203",
+   "dflt": "0xF00",
+   "ok": true
+  },
+  {
+   "dctl": "0x2",
+   "dflt": "0x900",
+   "ok": true
+  },
+  {
+   "dctl": "0x2",
+   "dflt": "0x0",
+   "ok": false
+  },
+  {
+   "dctl": "0x2",
+   "dflt": "0x100",
+   "ok": false
+  },
+  {
+   "dctl": "0x2",
+   "dflt": "0x800",
+   "ok": false
+  },
+  {
+   "dctl": "0x6",
+   "dflt": "0xF00",
+   "ok": false
+  }
+ ]
+}

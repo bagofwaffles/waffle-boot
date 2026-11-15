@@ -1,0 +1,98 @@
+{
+ "growth": [
+  {
+   "creates": [
+    {
+     "before": [
+      8191,
+      262112
+     ],
+     "name_len": 32,
+     "outcome": "listed"
+    }
+   ],
+   "name": "reach_floor",
+   "start": [
+    8191,
+    262112
+   ]
+  },
+  {
+   "creates": [
+    {
+     "before": [
+      8192,
+      262143
+     ],
+     "name_len": 1,
+     "outcome": "listed_or_refused"
+    }
+   ],
+   "name": "past_floor_objects",
+   "start": [
+    8192,
+    262143
+   ]
+  },
+  {
+   "creates": [
+    {
+     "before": [
+      8100,
+      262100
+     ],
+     "name_len": 45,
+     "outcome": "listed_or_refused"
+    }
+   ],
+   "name": "past_floor_bytes",
+   "start": [
+    8100,
+    262100
+   ]
+  },
+  {
+   "creates": [
+    {
+     "before": [
+      8190,
+      262000
+     ],
+     "name_len": 40,
+     "outcome": "listed"
+    },
+    {
+     "before": [
+      8191,
+      262040
+     ],
+     "name_len": 40,
+     "outcome": "listed"
+    },
+    {
+     "before": [
+      8192,
+      262080
+     ],
+     "name_len": 40,
+     "outcome": "listed_or_refused"
+    }
+   ],
+   "name": "reach_then_pass",
+   "start": [
+    8190,
+    262000
+   ]
+  }
+ ],
+ "handles": 8192,
+ "level1": [
+  65
+ ],
+ "name_bytes": 262144,
+ "num_objects": [
+  8192
+ ],
+ "objects": 8192,
+ "paths_sha256": "9a3b14ca00c54d32916dc48856e441a0e43d3ba46d4810c9326a05400998414a"
+}

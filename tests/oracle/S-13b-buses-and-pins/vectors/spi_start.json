@@ -1,0 +1,741 @@
+{
+ "rows": [
+  {
+   "expect": [],
+   "name": "reference_first_writes",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_DLY",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 268
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 269
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 9
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 2
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 514
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "ctl_zero_first",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "fast_mode_later",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 262195
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [
+    "first_ctl"
+   ],
+   "name": "first_ctl_keeps_enable",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [
+    "first_ctl"
+   ],
+   "name": "first_ctl_keeps_window",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2147483650
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [
+    "first_ctl"
+   ],
+   "name": "first_ctl_keeps_fast_mode",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 262146
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [
+    "first_ctl"
+   ],
+   "name": "first_ctl_keeps_quad",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 2097154
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [
+    "first_ctl"
+   ],
+   "name": "frame_before_ctl",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [
+    "slvsel_twice"
+   ],
+   "name": "select_written_once",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CLK",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 51
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [
+    "slvsel_twice"
+   ],
+   "name": "select_two_values",
+   "spi": "SPI2",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 64514
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_SLVSEL",
+     "val": 65026
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "boot_link_select",
+   "spi": "SPI0",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI0_CLK",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_DLY",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 2056
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 2056
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 18
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 8
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 2056
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 2056
+    }
+   ]
+  },
+  {
+   "expect": [
+    "slvsel_twice"
+   ],
+   "name": "boot_link_select_once",
+   "spi": "SPI0",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 18
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 8
+    },
+    {
+     "op": "frame"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 2056
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_SLVSEL",
+     "val": 2056
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,498 @@
+# S-11.066-S-11.073, S-11.096
+step	conditions	result
+content	"{""content_dir"": 0, ""files"": 0, ""move_fails"": 0}"	Not found
+content	"{""content_dir"": 1, ""files"": 0, ""move_fails"": 0}"	Not found
+content	"{""content_dir"": 1, ""files"": 3, ""move_fails"": 0}"	OK
+content	"{""content_dir"": 1, ""files"": 3, ""move_fails"": 1}"	Failure
+os	"{""option"": 0, ""present"": 0, ""write_ok"": 1}"	Not found
+os	"{""option"": 1, ""present"": 0, ""write_ok"": 1}"	Not found
+os	"{""option"": 0, ""present"": 0, ""write_ok"": 0}"	Not found
+os	"{""option"": 1, ""present"": 0, ""write_ok"": 0}"	Not found
+os	"{""option"": 0, ""present"": 1, ""write_ok"": 1}"	OK
+os	"{""option"": 1, ""present"": 1, ""write_ok"": 1}"	OK
+os	"{""option"": 0, ""present"": 1, ""write_ok"": 0}"	Internal error
+os	"{""option"": 1, ""present"": 1, ""write_ok"": 0}"	Internal error
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""older"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""equal"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 0, ""rel"": ""newer"", ""write_ok"": 0}"	Not found
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Skipped
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""older"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""equal"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	OK
+bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Failure
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 0, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 0, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""write_ok"": 0}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""write_ok"": 0}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""write_ok"": 1}"	OK
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""write_ok"": 0}"	Failure
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 1, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 1, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 1}"	OK
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""slot"": 255, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+keyboard	"{""forced"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+keyboard	"{""forced"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+keyboard	"{""forced"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+keyboard	"{""forced"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+keyboard	"{""forced"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+keyboard	"{""forced"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+keyboard	"{""forced"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+keyboard	"{""forced"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Already installed
+keyboard	"{""forced"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	OK
+keyboard	"{""forced"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	OK
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+keyboard	"{""forced"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 1}"	OK
+keyboard	"{""forced"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1, ""write_ok"": 0}"	Failure
+keyboard	"{""forced"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+keyboard	"{""forced"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+keyboard	"{""forced"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+keyboard	"{""forced"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+keyboard	"{""forced"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+keyboard	"{""forced"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+keyboard	"{""forced"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Not found
+keyboard	"{""forced"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Not found
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+keyboard	"{""forced"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+keyboard	"{""forced"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+keyboard	"{""forced"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+keyboard	"{""forced"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+os	"{""option"": 0, ""present"": 1, ""staged"": ""bad"", ""write_ok"": 1}"	Bad file
+os	"{""option"": 0, ""present"": 1, ""staged"": ""bad"", ""write_ok"": 0}"	Bad file
+os	"{""option"": 0, ""present"": 0, ""staged"": ""bad"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""write_ok"": 1}"	Bad file
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""staged"": ""bad"", ""write_ok"": 1}"	Bad file
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""staged"": ""bad"", ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""staged"": ""bad"", ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Bad file
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Bad file
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""staged"": ""bad"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Bad file
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""equal"", ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+os	"{""option"": 0, ""present"": 1, ""staged"": ""read_error"", ""write_ok"": 1}"	Internal error
+os	"{""option"": 0, ""present"": 1, ""staged"": ""read_error"", ""write_ok"": 0}"	Internal error
+os	"{""option"": 0, ""present"": 0, ""staged"": ""read_error"", ""write_ok"": 1}"	Not found
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""write_ok"": 1}"	Internal error
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""write_ok"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""staged"": ""read_error"", ""write_ok"": 1}"	Internal error
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""staged"": ""read_error"", ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""staged"": ""read_error"", ""write_ok"": 1}"	Skipped
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Internal error
+ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""equal"", ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Internal error
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 1, ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 255, ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Failure
+ble bootloader	"{""forced"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""staged"": ""read_error"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Internal error
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""equal"", ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Already installed
+keyboard	"{""forced"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped

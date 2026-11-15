@@ -1,0 +1,588 @@
+{
+ "sequences": [
+  {
+   "name": "strap_only_00",
+   "events": [
+    [
+     "power_on",
+     0,
+     0
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:255"
+   ],
+   "requirements": [
+    "S-17.010",
+    "S-17.013"
+   ]
+  },
+  {
+   "name": "strap_only_01",
+   "events": [
+    [
+     "power_on",
+     0,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:4"
+   ],
+   "requirements": [
+    "S-17.010",
+    "S-17.013"
+   ]
+  },
+  {
+   "name": "strap_only_10",
+   "events": [
+    [
+     "power_on",
+     1,
+     0
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:5"
+   ],
+   "requirements": [
+    "S-17.010",
+    "S-17.013"
+   ]
+  },
+  {
+   "name": "strap_only_11",
+   "events": [
+    [
+     "power_on",
+     1,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:6"
+   ],
+   "requirements": [
+    "S-17.010",
+    "S-17.013"
+   ]
+  },
+  {
+   "name": "backplane_overwrites",
+   "events": [
+    [
+     "power_on",
+     0,
+     0
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      2
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:255",
+    "hw_rev:2"
+   ],
+   "requirements": [
+    "S-17.011",
+    "S-17.013"
+   ]
+  },
+  {
+   "name": "flag_byte_irrelevant",
+   "events": [
+    [
+     "power_on",
+     1,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "greeting",
+     [
+      170,
+      7
+     ]
+    ],
+    [
+     "info"
+    ],
+    [
+     "greeting",
+     [
+      0,
+      3
+     ]
+    ],
+    [
+     "info"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      255
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:7",
+    "hw_rev:3",
+    "hw_rev:255"
+   ],
+   "requirements": [
+    "S-17.011"
+   ]
+  },
+  {
+   "name": "latest_wins",
+   "events": [
+    [
+     "power_on",
+     1,
+     0
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      2
+     ]
+    ],
+    [
+     "greeting",
+     [
+      187,
+      5
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:5"
+   ],
+   "requirements": [
+    "S-17.011"
+   ]
+  },
+  {
+   "name": "short_greeting",
+   "events": [
+    [
+     "power_on",
+     1,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "greeting",
+     [
+      187
+     ]
+    ],
+    [
+     "info"
+    ],
+    [
+     "greeting",
+     []
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:6",
+    "hw_rev:6"
+   ],
+   "requirements": [
+    "S-17.011"
+   ]
+  },
+  {
+   "name": "short_after_long",
+   "events": [
+    [
+     "power_on",
+     1,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      2
+     ]
+    ],
+    [
+     "greeting",
+     [
+      170
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:2"
+   ],
+   "requirements": [
+    "S-17.011"
+   ]
+  },
+  {
+   "name": "long_greeting",
+   "events": [
+    [
+     "power_on",
+     0,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      3,
+      153,
+      136
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:3"
+   ],
+   "requirements": [
+    "S-17.011"
+   ]
+  },
+  {
+   "name": "zero_byte",
+   "events": [
+    [
+     "power_on",
+     1,
+     0
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      0
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:0"
+   ],
+   "requirements": [
+    "S-17.011",
+    "S-17.013"
+   ]
+  },
+  {
+   "name": "before_metadata_ignored",
+   "events": [
+    [
+     "power_on",
+     1,
+     0
+    ],
+    [
+     "greeting",
+     [
+      187,
+      2
+     ]
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:5"
+   ],
+   "requirements": [
+    "S-17.011"
+   ]
+  },
+  {
+   "name": "reset_forgets_backplane",
+   "events": [
+    [
+     "power_on",
+     0,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      2
+     ]
+    ],
+    [
+     "info"
+    ],
+    [
+     "power_on",
+     0,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:2",
+    "hw_rev:4"
+   ],
+   "requirements": [
+    "S-17.012"
+   ]
+  },
+  {
+   "name": "record_read_failed",
+   "events": [
+    [
+     "power_on",
+     1,
+     1
+    ],
+    [
+     "metadata_read_failed",
+     "record"
+    ],
+    [
+     "info"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      2
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:0",
+    "hw_rev:0"
+   ],
+   "requirements": [
+    "S-17.015"
+   ]
+  },
+  {
+   "name": "serial_read_failed",
+   "events": [
+    [
+     "power_on",
+     1,
+     1
+    ],
+    [
+     "metadata_read_failed",
+     "serial"
+    ],
+    [
+     "info"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      2
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:0",
+    "hw_rev:2"
+   ],
+   "requirements": [
+    "S-17.015"
+   ]
+  },
+  {
+   "name": "read_fail_then_reset",
+   "events": [
+    [
+     "power_on",
+     1,
+     0
+    ],
+    [
+     "metadata_read_failed",
+     "record"
+    ],
+    [
+     "info"
+    ],
+    [
+     "power_on",
+     1,
+     0
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:0",
+    "hw_rev:5"
+   ],
+   "requirements": [
+    "S-17.012",
+    "S-17.015"
+   ]
+  },
+  {
+   "name": "reset_new_strap",
+   "events": [
+    [
+     "power_on",
+     0,
+     0
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ],
+    [
+     "power_on",
+     1,
+     1
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:255",
+    "hw_rev:6"
+   ],
+   "requirements": [
+    "S-17.001",
+    "S-17.012"
+   ]
+  }
+ ],
+ "backplane_log": [
+  [
+   0,
+   "00"
+  ],
+  [
+   2,
+   "02"
+  ],
+  [
+   3,
+   "03"
+  ],
+  [
+   7,
+   "07"
+  ],
+  [
+   90,
+   "5a"
+  ],
+  [
+   156,
+   "9c"
+  ],
+  [
+   255,
+   "ff"
+  ]
+ ]
+}

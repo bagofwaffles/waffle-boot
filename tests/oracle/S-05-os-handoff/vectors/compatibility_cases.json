@@ -1,0 +1,97 @@
+{
+ "cases": [
+  {
+   "image": "refuse_l2_reserve.ldr",
+   "refuse": true,
+   "reason": "reserve"
+  },
+  {
+   "image": "refuse_ddr_reserve.ldr",
+   "refuse": true,
+   "reason": "reserve"
+  },
+  {
+   "image": "refuse_staging.ldr",
+   "refuse": true,
+   "reason": "staging"
+  },
+  {
+   "image": "refuse_checksum.ldr",
+   "refuse": true,
+   "reason": "parse"
+  },
+  {
+   "image": "refuse_no_final.ldr",
+   "refuse": true,
+   "reason": "parse"
+  },
+  {
+   "image": "refuse_record.ldr",
+   "refuse": true,
+   "reason": "record"
+  },
+  {
+   "image": "refuse_rom_stack.ldr",
+   "refuse": true,
+   "reason": "record"
+  },
+  {
+   "image": "refuse_mmr.ldr",
+   "refuse": true,
+   "reason": "space"
+  },
+  {
+   "image": "refuse_rom.ldr",
+   "refuse": true,
+   "reason": "space"
+  },
+  {
+   "image": "refuse_unmapped.ldr",
+   "refuse": true,
+   "reason": "space"
+  },
+  {
+   "image": "refuse_flag_init.ldr",
+   "refuse": true,
+   "reason": "flags"
+  },
+  {
+   "image": "refuse_flag_callback.ldr",
+   "refuse": true,
+   "reason": "flags"
+  },
+  {
+   "image": "refuse_flag_indirect.ldr",
+   "refuse": true,
+   "reason": "flags"
+  },
+  {
+   "image": "refuse_flag_quickboot.ldr",
+   "refuse": true,
+   "reason": "flags"
+  },
+  {
+   "image": "refuse_flag_aux.ldr",
+   "refuse": true,
+   "reason": "flags"
+  },
+  {
+   "image": "refuse_flag_save.ldr",
+   "refuse": true,
+   "reason": "flags"
+  },
+  {
+   "image": "refuse_rom_boot_reserve.ldr",
+   "refuse": true,
+   "reason": "boot reserve"
+  },
+  {
+   "image": "synthetic_os_a.ldr",
+   "refuse": false
+  },
+  {
+   "image": "synthetic_os_b.ldr",
+   "refuse": false
+  }
+ ]
+}

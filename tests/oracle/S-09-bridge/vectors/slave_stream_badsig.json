@@ -1,0 +1,23 @@
+{
+ "end": "badsig",
+ "no_open_session_hex": "030f0f0f0f0f0f0f0f0f0f0f",
+ "sessions": [
+  {
+   "head_hex": "03",
+   "len": 1,
+   "sha256": "084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5"
+  },
+  {
+   "head_hex": "045048ad0000a0110000000000000000",
+   "len": 16,
+   "sha256": "fcc89fe01c584c9a23fd028cf140cb8ffe960d61cc66dcc1c1a7087648ae5da5"
+  },
+  {
+   "head_hex": "04007cad0000a0116400000000000000b675fbf3",
+   "len": 116,
+   "sha256": "7055499666526edb71c17ba5a9b6c9b4c6de2ced595d533cab40a0d62e229cd3"
+  }
+ ],
+ "slot": "slave_stream_badsig.bin",
+ "slot_sha256": "b153915a02c28b9b4a32a8c2e2d605fb4609a0cf3d8ae0f17f9ad3c437ed07f2"
+}

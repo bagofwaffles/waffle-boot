@@ -1,0 +1,303 @@
+{
+ "info": [
+  {
+   "fields": {
+    "bl_version": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "dsp_otp": "5a5a30313233343536373839414243444546",
+    "factory": 1,
+    "hw_rev": 255,
+    "os_version": [
+     1,
+     2,
+     3,
+     45
+    ],
+    "serial": "AB123456",
+    "sku": 7,
+    "sw_version": [
+     1,
+     2,
+     3,
+     0
+    ]
+   },
+   "name": "typical",
+   "text": "mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP-XY;sku:TE033AS007;sw_version:1.2.3;bl_version:1.0.0;os_version:1.2.3+45;factory:1"
+  },
+  {
+   "fields": {
+    "bl_version": [
+     65535,
+     65535,
+     65535,
+     65535
+    ],
+    "dsp_otp": "7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e",
+    "factory": 65535,
+    "hw_rev": 255,
+    "os_version": [
+     65535,
+     65535,
+     65535,
+     65535
+    ],
+    "serial": "ZZZZZZZZ",
+    "sku": 999,
+    "sw_version": [
+     65535,
+     65535,
+     65535,
+     65535
+    ]
+   },
+   "name": "maxima",
+   "text": "mode:bootloader;serial:ZZZZZZZZ;dsp_serial:~~~~~~~~~~~~~~~~~~;hw_rev:255;product:OP-XY;sku:TE033AS999;sw_version:65535.65535.65535+65535;bl_version:65535.65535.65535+65535;os_version:65535.65535.65535+65535;factory:65535"
+  },
+  {
+   "fields": {
+    "bl_version": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "dsp_otp": "310000000000000000000000000000000000",
+    "factory": 0,
+    "hw_rev": 0,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "serial": "A",
+    "sku": 0,
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "name": "minima",
+   "text": "mode:bootloader;serial:A;dsp_serial:1;hw_rev:0;product:OP-XY;sku:TE033AS000;sw_version:0.0.0;bl_version:1.0.0;os_version:0.0.0;factory:0"
+  },
+  {
+   "fields": {
+    "bl_version": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "dsp_otp": "5a5a30313233343536373839414243444546",
+    "factory": 10,
+    "hw_rev": 3,
+    "os_version": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "serial": "AB123456",
+    "sku": 1000,
+    "sw_version": [
+     1,
+     0,
+     0,
+     0
+    ]
+   },
+   "name": "sku-1000",
+   "text": "mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:3;product:OP-XY;sku:TE033AS000;sw_version:1.0.0;bl_version:1.0.0;os_version:1.0.0;factory:10"
+  },
+  {
+   "fields": {
+    "bl_version": [
+     1,
+     2,
+     0,
+     300
+    ],
+    "dsp_otp": "5a5a30313233343536373839414243444546",
+    "factory": 2,
+    "hw_rev": 17,
+    "os_version": [
+     0,
+     9,
+     0,
+     0
+    ],
+    "serial": "AB123456",
+    "sku": 42,
+    "sw_version": [
+     1,
+     0,
+     5,
+     1
+    ]
+   },
+   "name": "build-number",
+   "text": "mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:17;product:OP-XY;sku:TE033AS042;sw_version:1.0.5+1;bl_version:1.2.0+300;os_version:0.9.0;factory:2"
+  },
+  {
+   "fields": {
+    "bl_version": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "dsp_otp": "5a5a30313233343536373839414243444546",
+    "factory": 0,
+    "hw_rev": 255,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "serial": "",
+    "sku": 0,
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "name": "invalid-record",
+   "text": "mode:bootloader;serial:;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP-XY;sku:TE033AS000;sw_version:0.0.0;bl_version:1.0.0;os_version:0.0.0;factory:0"
+  },
+  {
+   "fields": {
+    "bl_version": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "dsp_otp": null,
+    "factory": 1,
+    "hw_rev": 255,
+    "os_version": [
+     1,
+     2,
+     3,
+     45
+    ],
+    "serial": "AB123456",
+    "sku": 7,
+    "sw_version": [
+     1,
+     2,
+     3,
+     0
+    ]
+   },
+   "name": "otp-unreadable",
+   "text": "mode:bootloader;serial:AB123456;dsp_serial:;hw_rev:255;product:OP-XY;sku:TE033AS007;sw_version:1.2.3;bl_version:1.0.0;os_version:1.2.3+45;factory:1"
+  },
+  {
+   "fields": {
+    "bl_version": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "dsp_otp": "5a5a30313233003435363738394142434445",
+    "factory": 1,
+    "hw_rev": 255,
+    "os_version": [
+     1,
+     2,
+     3,
+     45
+    ],
+    "serial": "AB123456",
+    "sku": 7,
+    "sw_version": [
+     1,
+     2,
+     3,
+     0
+    ]
+   },
+   "name": "otp-nul-inside",
+   "text": "mode:bootloader;serial:AB123456;dsp_serial:ZZ0123;hw_rev:255;product:OP-XY;sku:TE033AS007;sw_version:1.2.3;bl_version:1.0.0;os_version:1.2.3+45;factory:1"
+  }
+ ],
+ "te_code": [
+  {
+   "code": "TE033AS000",
+   "passes": true,
+   "word": "0x00084000"
+  },
+  {
+   "code": "TE033AS000",
+   "passes": true,
+   "word": "0x000843ff"
+  },
+  {
+   "code": "TE033AS000",
+   "passes": true,
+   "word": "0xff084000"
+  },
+  {
+   "code": "TE033XS000",
+   "passes": false,
+   "word": "0x00084400"
+  },
+  {
+   "code": "TE034AS000",
+   "passes": false,
+   "word": "0x00088000"
+  },
+  {
+   "code": "TE000AS000",
+   "passes": false,
+   "word": "0x00000000"
+  },
+  {
+   "code": "TE000AS000",
+   "passes": false,
+   "word": "0x00ff8000"
+  },
+  {
+   "code": "TE033__000",
+   "passes": false,
+   "word": "0x00087c00"
+  },
+  {
+   "code": "TE033AS000",
+   "passes": true,
+   "word": "0x000843e8"
+  },
+  {
+   "code": "TE033AS999",
+   "passes": true,
+   "word": "0x000843e7"
+  },
+  {
+   "code": "TE039AS000",
+   "passes": false,
+   "word": "0x0009c000"
+  },
+  {
+   "code": "TE999AS999",
+   "passes": false,
+   "word": "0x00f9c3e7"
+  },
+  {
+   "code": "TE999__000",
+   "passes": false,
+   "word": "0x00f9c800"
+  }
+ ]
+}

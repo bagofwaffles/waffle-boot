@@ -1,0 +1,186 @@
+{
+ "crc16_check": {
+  "input": "123456789",
+  "crc16": "0x31c3"
+ },
+ "prepare": [
+  {
+   "version": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "type": "0xb0",
+   "product_word": "0x00084005",
+   "payload": "020001000200030004b000084005"
+  },
+  {
+   "version": [
+    1000,
+    0,
+    10,
+    0
+   ],
+   "type": "0xb1",
+   "product_word": "0x00084000",
+   "payload": "0203e80000000a0000b100084000"
+  },
+  {
+   "version": [
+    65535,
+    1,
+    0,
+    65535
+   ],
+   "type": "0xb0",
+   "product_word": "0x000843e7",
+   "payload": "02ffff00010000ffffb0000843e7"
+  }
+ ],
+ "header": [
+  {
+   "image_len": 500,
+   "version": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "product_word": "0x00084000",
+   "crc16": "0x3495",
+   "header": "beefcafe03000001f4349500020000000000000001f0000008400000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "image_len": 1,
+   "version": [
+    1,
+    0,
+    1,
+    0
+   ],
+   "product_word": "0x000843e7",
+   "crc16": "0x3063",
+   "header": "beefcafe0300000001306300010000000100000001f000000843e700000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "image_len": 248,
+   "version": [
+    1,
+    1,
+    0,
+    7
+   ],
+   "product_word": "0x00084001",
+   "crc16": "0x206a",
+   "header": "beefcafe03000000f8206a00010001000000070001f0000008400100000000000000000000000000000000000000000000000000000000000000000000000000"
+  }
+ ],
+ "product_word": [
+  {
+   "sku": 0,
+   "read_ok": true,
+   "word": "0x00084000"
+  },
+  {
+   "sku": 1,
+   "read_ok": true,
+   "word": "0x00084001"
+  },
+  {
+   "sku": 999,
+   "read_ok": true,
+   "word": "0x000843e7"
+  },
+  {
+   "sku": 1000,
+   "read_ok": true,
+   "word": "0x00084000"
+  },
+  {
+   "sku": 65535,
+   "read_ok": true,
+   "word": "0x00084000"
+  },
+  {
+   "sku": 5,
+   "read_ok": false,
+   "failure": "record",
+   "word": "0x00000000"
+  },
+  {
+   "sku": 5,
+   "read_ok": false,
+   "failure": "chip_serial",
+   "word": "0x00000000"
+  }
+ ],
+ "product_word_power_ons": [
+  {
+   "power_on": 1,
+   "boot_sku": 3,
+   "set_sku_during": 7,
+   "word": "0x00084003",
+   "prepare": "020001000100000000b000084003"
+  },
+  {
+   "power_on": 2,
+   "boot_sku": 7,
+   "set_sku_during": null,
+   "word": "0x00084007",
+   "prepare": "020001000100000000b000084007"
+  }
+ ],
+ "chunks": [
+  {
+   "image_len": 1,
+   "chunk_payload_lens": [
+    2
+   ]
+  },
+  {
+   "image_len": 247,
+   "chunk_payload_lens": [
+    248
+   ]
+  },
+  {
+   "image_len": 248,
+   "chunk_payload_lens": [
+    249
+   ]
+  },
+  {
+   "image_len": 249,
+   "chunk_payload_lens": [
+    249,
+    2
+   ]
+  },
+  {
+   "image_len": 496,
+   "chunk_payload_lens": [
+    249,
+    249
+   ]
+  },
+  {
+   "image_len": 500,
+   "chunk_payload_lens": [
+    249,
+    249,
+    5
+   ]
+  },
+  {
+   "image_len": 1000,
+   "chunk_payload_lens": [
+    249,
+    249,
+    249,
+    249,
+    9
+   ]
+  }
+ ]
+}

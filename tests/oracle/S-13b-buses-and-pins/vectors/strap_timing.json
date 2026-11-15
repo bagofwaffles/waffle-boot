@@ -1,0 +1,193 @@
+{
+ "inen_ns": 1000,
+ "rows": [
+  {
+   "expect": [],
+   "name": "settled",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "t_ns": 0,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 10,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "t_ns": 20000,
+     "val": 261
+    },
+    {
+     "op": "r",
+     "reg": "PORTA_DATA",
+     "t_ns": 21000,
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 21010,
+     "val": 261
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "enable_early_settled",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "t_ns": 0,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 10,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "t_ns": 50,
+     "val": 261
+    },
+    {
+     "op": "r",
+     "reg": "PORTA_DATA",
+     "t_ns": 12000,
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 12010,
+     "val": 261
+    }
+   ]
+  },
+  {
+   "expect": [
+    "strap_settle"
+   ],
+   "name": "sample_too_soon_after_release",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "t_ns": 0,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 10,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "t_ns": 4000,
+     "val": 261
+    },
+    {
+     "op": "r",
+     "reg": "PORTA_DATA",
+     "t_ns": 5000,
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 5010,
+     "val": 261
+    }
+   ]
+  },
+  {
+   "expect": [
+    "strap_inen_floor"
+   ],
+   "name": "sample_right_after_enable",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "t_ns": 0,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 10,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "t_ns": 25000,
+     "val": 261
+    },
+    {
+     "op": "r",
+     "reg": "PORTA_DATA",
+     "t_ns": 25010,
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 25020,
+     "val": 261
+    }
+   ]
+  },
+  {
+   "expect": [
+    "strap_inen_floor",
+    "strap_settle"
+   ],
+   "name": "no_settle_at_all",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "t_ns": 0,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 10,
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "t_ns": 20,
+     "val": 261
+    },
+    {
+     "op": "r",
+     "reg": "PORTA_DATA",
+     "t_ns": 30,
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "t_ns": 40,
+     "val": 261
+    }
+   ]
+  }
+ ],
+ "settle_ns": 10000
+}

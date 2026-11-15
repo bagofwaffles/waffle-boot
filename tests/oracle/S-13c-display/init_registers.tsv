@@ -1,0 +1,17 @@
+# S-13c.008, S-13c.009, S-13c.012
+cmd	params	set2	alt	name	source	req
+36	98	no		MADCTL	module	S-13c.008
+3A	55	no		COLMOD	datasheet	S-13c.008
+B4	01	yes		DIC	module	S-13c.008
+B6	8A 07 3B	yes		DFC	module	S-13c.008
+B7	C6	yes		EM	module	S-13c.008
+B9	02 E0	yes	42 E0	undocumented	module	S-13c.008
+C0	C0 64	yes		PWR1	module	S-13c.008
+C1	1D	yes		PWR2	module	S-13c.008
+C2	A7	yes		PWR3	module	S-13c.008
+C5	18	yes		VCMPCTL	module	S-13c.008
+E8	40 8A 00 00 29 19 A5 33	yes		DOCA	module	S-13c.008
+E0	F0 0B 12 09 0A 26 39 54 4E 38 13 13 2E 34	yes		PGC	module	S-13c.008
+E1	F0 10 15 0D 0C 07 38 43 4D 3A 16 15 30 35	yes		NGC	module	S-13c.008
+35	00	no		TEON	datasheet	S-13c.008
+21		no		INVON	datasheet	S-13c.008

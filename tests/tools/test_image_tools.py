@@ -1,0 +1,887 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""Host tests of tools/mkldr.py and tools/layout.py on a synthetic ELF32 file
+laid out like the bootloader image (bf703.ld), and of tools/testos_layout.py
+and mkldr.py --no-init on one laid out like the test OS (bf703_testos.ld,
+docs/test-os.md). The streams and layouts they write are
+judged by tests/oracle/S-01-boot-chain's checkers. Also tools/png2logo.py on PNG files made here
+(S-15.132). Python 3, standard library only.
+
+    test_image_tools.py
+"""
+import contextlib
+import io
+import json
+import os
+import struct
+import sys
+import tempfile
+import unittest
+import zlib
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+TOP = os.path.dirname(os.path.dirname(HERE))
+TOOLS = os.path.join(TOP, 'tools')
+sys.path.insert(0, TOOLS)
+sys.path.insert(0, os.path.join(TOP, 'tests', 'oracle', 'S-01-boot-chain'))
+import elf32  # noqa: E402
+import layout  # noqa: E402
+import mkldr  # noqa: E402
+import png2logo  # noqa: E402
+import testos_layout  # noqa: E402
+import testos_regs  # noqa: E402
+import check_layout  # noqa: E402
+import check_stream  # noqa: E402
+import check_stack  # noqa: E402
+
+LD = os.path.join(TOP, 'src', 'drivers', 'bf70x', 'bf703.ld')
+TESTOS_LD = os.path.join(TOP, 'src', 'testos', 'bf703_testos.ld')
+BOARD = os.path.join(TOP, 'src', 'include', 'waffle', 'board', 'opxy.h')
+FLASH = os.path.join(TOP, 'src', 'include', 'waffle', 's02_flash.h')
+MEMMAP = os.path.join(TOP, 'src', 'include', 'waffle', 's01_memmap.h')
+# The Makefile's FIRST_STAGE_STACK (S-01.009, S-02.091 rule 4).
+FIRST_STAGE_STACK = (0x11807000, 0x11808000)
+
+AX = elf32.SHF_ALLOC | elf32.SHF_EXECINSTR
+WA = elf32.SHF_ALLOC | elf32.SHF_WRITE
+R_BFIN_BYTE4_DATA = 0x0A
+
+
+def build_elf(sections, symbols, relocs, entry, lma=None):
+    """sections: [(name, type, flags, addr, bytes or size)]; symbols:
+    [(name, value, section name[, size])]; relocs: {section name: [(offset, symbol
+    name, addend)]}; lma: {section name: load address} for a section loaded
+    somewhere other than its run address, which gets a PT_LOAD program header
+    saying so (the others have none, so their load address is their run
+    address). Returns the bytes of an ET_EXEC little-endian ELF32."""
+    lma = lma or {}
+    secs = [('', 0, 0, 0, b'')] + list(sections)
+    names = [s[0] for s in secs]
+    for target in relocs:
+        secs.append(('.rela' + target, elf32.SHT_RELA, 0, 0, None))
+    secs += [('.symtab', elf32.SHT_SYMTAB, 0, 0, None), ('.strtab', elf32.SHT_STRTAB, 0, 0, None),
+             ('.shstrtab', elf32.SHT_STRTAB, 0, 0, None)]
+    allnames = [s[0] for s in secs]
+    isym, istr, ishstr = len(secs) - 3, len(secs) - 2, len(secs) - 1
+
+    strtab = bytearray(b'\0')
+    symtab = bytearray(bytes(16))
+    symidx = {}
+    for i, sym in enumerate(symbols, 1):
+        n, v, sec = sym[:3]
+        symidx[n] = i
+        off = len(strtab)
+        strtab += n.encode() + b'\0'
+        symtab += struct.pack('<IIIBBH', off, v, sym[3] if len(sym) > 3 else 0, 0x12, 0,
+                              names.index(sec))
+    shstr = bytearray(b'\0')
+    name_off = []
+    for n in allnames:
+        name_off.append(len(shstr) if n else 0)
+        if n:
+            shstr += n.encode() + b'\0'
+
+    body = bytearray()
+    headers = []
+    phdrs = []
+    base = 52
+    for i, (n, t, fl, addr, data) in enumerate(secs):
+        link = info = entsize = 0
+        if t == elf32.SHT_RELA:
+            target = n[len('.rela'):]
+            data = b''.join(struct.pack('<IIi', off, (symidx[s] << 8) | R_BFIN_BYTE4_DATA, a)
+                            for off, s, a in relocs[target])
+            link, info, entsize = isym, names.index(target), 12
+        elif i == isym:
+            data, link, info, entsize = bytes(symtab), istr, 1, 16
+        elif i == istr:
+            data = bytes(strtab)
+        elif i == ishstr:
+            data = bytes(shstr)
+        if t == elf32.SHT_NOBITS:
+            size, off = data, 0
+        else:
+            off, size = base + len(body), len(data)
+            body += data
+            body += bytes(-len(body) & 3)
+        if n in lma:
+            phdrs.append(struct.pack('<IIIIIIII', elf32.PT_LOAD, off, addr, lma[n], size, size, 5, 4))
+        headers.append(struct.pack('<IIIIIIIIII', name_off[i], t, fl, addr, off if i else 0,
+                                   size if i else 0, link, info, 4 if i else 0, entsize))
+    shoff = base + len(body)
+    phoff = shoff + 40 * len(secs) if phdrs else 0
+    ident = b'\x7fELF' + bytes([1, 1, 1]) + bytes(9)
+    eh = ident + struct.pack('<HHIIIIIHHHHHH', 2, 106, 1, entry, phoff, shoff, 0, 52,
+                             32 if phdrs else 0, len(phdrs), 40, len(secs), ishstr)
+    return eh + bytes(body) + b''.join(headers) + b''.join(phdrs)
+
+
+TEXT = bytes(range(1, 31))           # 30 bytes: not a multiple of 4
+
+
+def image(handover_reloc=None, ddr_size=None, l2=None, extra=(), symbols_extra=()):
+    sections = [
+        ('.l1.code', elf32.SHT_PROGBITS, AX, 0x11A00000, b'\x11' * 0x40),
+        ('.l1.text', elf32.SHT_PROGBITS, AX, 0x11A00040, b'\x22' * 0x22),
+        ('.l1.data', elf32.SHT_PROGBITS, WA, 0x11800000, b'\x33' * 8),
+        ('.l1.stack', elf32.SHT_NOBITS, WA, 0x11800008, 0x400),
+        ('.l1.bss', elf32.SHT_NOBITS, WA, 0x11900000, 0x100),
+        ('.handover.text', elf32.SHT_PROGBITS, AX, 0x0803C000, b'\x44' * 0x20),
+        ('.handover.stack', elf32.SHT_NOBITS, WA, 0x0803C020, 0x1000),
+        ('.handover.data', elf32.SHT_PROGBITS, WA, 0x0803D020, bytes(0x268)),
+        ('.text', elf32.SHT_PROGBITS, AX, 0x8803D010, TEXT),
+        ('.rodata', elf32.SHT_PROGBITS, elf32.SHF_ALLOC, 0x8803D02E, b'\x55' * 3),
+        ('.bss', elf32.SHT_NOBITS, WA, 0x8803D040, ddr_size or 0x1000),
+    ]
+    if l2 is not None:
+        sections.append(('.l2.data', elf32.SHT_PROGBITS, WA, l2, b'\x66' * 8))
+    sections += list(extra)
+    symbols = [('_init', 0x11A00000, '.l1.code'), ('_wb_reset', 0x11A00040, '.l1.text'),
+               ('_far', 0x8803D010, '.text'), ('_l1_data', 0x11800000, '.l1.data'),
+               ('_ho', 0x0803C010, '.handover.text'),
+               ('_ho_stack', 0x0803C020, '.handover.stack', 0x1000),
+               ('_config_block', 0x0803D020, '.handover.data', 0x258),
+               ('_header_buffer', 0x0803D278, '.handover.data', 0x10)]
+    symbols += list(symbols_extra)
+    relocs = {'.l1.code': [(0x11A00004, '_l1_data', 0)],
+              '.handover.text': [(0x0803C004, handover_reloc or '_ho', 0)],
+              '.text': [(0x8803D014, '_init', 0)]}
+    return build_elf(sections, symbols, relocs, 0x11A00040)
+
+
+def front(l2=0x08002000):
+    """A front as src/front/front.ld lays one out."""
+    sections = [
+        ('.fr_l1code', elf32.SHT_PROGBITS, AX, 0x11A04000, b'\x71' * 0x40),
+        ('.fr_l1data', elf32.SHT_PROGBITS, WA, 0x11802000, b'\x72' * 8),
+        ('.fr_l2', elf32.SHT_PROGBITS, AX, l2, b'\x73' * 0x30),
+        ('.fr_bss', elf32.SHT_NOBITS, WA, l2 + 0x30, 0x100),
+    ]
+    symbols = [('_fr_init', 0x11A04000, '.fr_l1code'), ('_fr_entry', l2, '.fr_l2')]
+    return build_elf(sections, symbols, {}, l2)
+
+
+VERSION = struct.pack('<4H', 1, 2, 3, 4)
+
+
+def fimage(version=True, **kw):
+    """image() with the bootloader's version in it, as the descriptor needs."""
+    extra = list(kw.pop('extra', ()))
+    symbols = []
+    if version:
+        extra.append(('.wb.version', elf32.SHT_PROGBITS, elf32.SHF_ALLOC, 0x8803D034, VERSION))
+        symbols.append(('_opxy_bl_version', 0x8803D034, '.wb.version'))
+    return image(extra=extra, symbols_extra=symbols, **kw)
+
+
+class FrontMerge(unittest.TestCase):
+    """tools/mkldr.py --front: the front's blocks, its INIT and entry, and
+    the descriptor (src/front/fr_handoff.h)."""
+
+    def merged(self):
+        return mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()))
+
+    def test_entry_init_and_rules(self):
+        data = self.merged()
+        blocks = check_stream.ldr.parse(data)
+        first = [b for b in blocks if b['flags'] & check_stream.ldr.FIRST]
+        final = [b for b in blocks if b['flags'] & check_stream.ldr.FINAL]
+        init = [b for b in blocks if b['flags'] & check_stream.ldr.INIT]
+        self.assertEqual(first[0]['target'], 0x08002000)
+        self.assertEqual(final[-1]['target'], 0x08002000)
+        self.assertEqual([b['target'] for b in init], [0x11A04000])
+        res = check_stream.check('bootloader', data, FIRST_STAGE_STACK)
+        self.assertTrue(all(ok for _, ok, _ in res), res)
+
+    def test_descriptor(self):
+        data = self.merged()
+        blocks = check_stream.ldr.parse(data)
+        main = elf32.Elf(fimage())
+        desc = [b for b in blocks if b['target'] == mkldr.FR_DESC_ADDR]
+        self.assertEqual(len(desc), 1)
+        off = data.index(mkldr.header(0, mkldr.FR_DESC_ADDR, desc[0]['count'], 0)) + 16
+        d = data[off:off + desc[0]['count']]
+        magic, ver, size, entry, n, crc, fcrc = struct.unpack_from('<IHHIIII', d)
+        self.assertEqual((magic, ver), (mkldr.FR_DESC_MAGIC, mkldr.FR_DESC_VERSION))
+        self.assertEqual(entry, 0x11A00040)              # the image's _wb_reset
+        self.assertEqual(zlib.crc32(d[:size - 4]), struct.unpack_from('<I', d, size - 4)[0])
+        runs = mkldr.checked(mkldr.ordered(mkldr.runs(main)))
+        # S-01.023, S-13a.040: no region in L1 code, which the front cannot
+        # read as data; the L1 data run is listed.
+        self.assertFalse(any(0x11A00000 <= a < 0x11A0C000 for a, _ in runs))
+        self.assertIn(0x11800000, [a for a, _ in runs])
+        self.assertEqual(n, len(runs))
+        want = 0
+        for i, (a, b) in enumerate(runs):
+            self.assertEqual(struct.unpack_from('<II', d, 0x40 + 8 * i), (a, len(b)))
+            want = zlib.crc32(b, want)
+        self.assertEqual(crc, want)
+        self.assertEqual(d[0x18:0x20], VERSION)          # the image's _opxy_bl_version
+        self.assertEqual(d[0x20:0x40], mkldr.front_pin(elf32.Elf(front())))
+        fwant = 0
+        for _, b in mkldr.front_runs(elf32.Elf(front())):
+            fwant = zlib.crc32(b, fwant)
+        self.assertEqual(fcrc, fwant)
+
+    def test_image_without_a_version_refused(self):
+        # The front shows the descriptor's version with the early logo: an
+        # image that does not carry one is not streamed with zeros.
+        with self.assertRaises(SystemExit):
+            mkldr.merged(elf32.Elf(fimage(version=False)), elf32.Elf(front()))
+        bss = ('.wb.version', elf32.SHT_NOBITS, WA, 0x8803D034, 8)
+        with self.assertRaises(SystemExit):
+            mkldr.merged(elf32.Elf(image(extra=[bss], symbols_extra=[
+                ('_opxy_bl_version', 0x8803D034, '.wb.version')])), elf32.Elf(front()))
+
+    def test_pin_follows_every_byte(self):
+        a = mkldr.front_pin(elf32.Elf(front()))
+        self.assertEqual(a, mkldr.front_pin(elf32.Elf(front())))
+        self.assertNotEqual(a, mkldr.front_pin(elf32.Elf(front(l2=0x08002100))))
+
+    def test_image_meeting_the_front_refused(self):
+        with self.assertRaises(SystemExit):
+            mkldr.merged(elf32.Elf(fimage(l2=0x08002800)), elf32.Elf(front()))
+        with self.assertRaises(SystemExit):
+            mkldr.merged(elf32.Elf(fimage(l2=0x08030400)), elf32.Elf(front()))
+        with self.assertRaises(SystemExit):
+            mkldr.front_runs(elf32.Elf(front(l2=0x08031000)))
+
+    def test_run_spanning_a_window_refused(self):
+        # Both ends outside the front's L1 data window, the window inside.
+        span = ('.l1.big', elf32.SHT_PROGBITS, WA, 0x11801000, b'\x67' * 0x4000)
+        with self.assertRaises(SystemExit):
+            mkldr.merged(elf32.Elf(fimage(extra=[span])), elf32.Elf(front()))
+
+    def test_noload_over_the_front_refused(self):
+        for addr in (0x08030800, 0x08030000, 0x08002000, 0x11803000):
+            bss = ('.l2.bss', elf32.SHT_NOBITS, WA, addr, 0x100)
+            with self.assertRaises(SystemExit, msg='%08x' % addr):
+                mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()))
+        # Next to the shared block, not in it: accepted.
+        bss = ('.l2.bss', elf32.SHT_NOBITS, WA, 0x08031000, 0x100)
+        mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()))
+
+    def test_image_over_the_start_log_refused(self):
+        # S-02.095: the slot's last sector is the start log. A stream one
+        # word over that limit is refused for it; the run costs its block
+        # header and its descriptor entry too.
+        n = len(self.merged())
+        fill = lambda k: ('.fill', elf32.SHT_PROGBITS, WA, 0x8803E000, b'\x69' * k)
+        k = mkldr.FR_LOG_IMAGE_MAX - n - 16 - 8
+        with self.assertRaises(SystemExit) as cm:
+            mkldr.merged(elf32.Elf(fimage(extra=[fill(k + 4)])), elf32.Elf(front()))
+        self.assertIn('start log (S-02.095)', str(cm.exception))
+        self.assertIn('0x77000', str(cm.exception))
+        self.assertEqual(mkldr.FR_LOG_IMAGE_MAX, 0x77000)
+
+    def test_image_reaching_the_boot_store_refused(self):
+        # The build's own slot image stops below the boot store's sector
+        # (0xFE000 in slot 1): the limit builds, one word more does not.
+        n = len(self.merged())
+        fill = lambda k: ('.fill', elf32.SHT_PROGBITS, WA, 0x8803E000, b'\x69' * k)
+        k = mkldr.STORE_IMAGE_MAX - n - 16 - 8
+        self.assertEqual(len(mkldr.merged(elf32.Elf(fimage(extra=[fill(k)])), elf32.Elf(front()))),
+                         mkldr.STORE_IMAGE_MAX)
+        with self.assertRaises(SystemExit) as cm:
+            mkldr.merged(elf32.Elf(fimage(extra=[fill(k + 4)])), elf32.Elf(front()))
+        self.assertIn('boot store', str(cm.exception))
+        self.assertIn('0x76000', str(cm.exception))
+        self.assertEqual(mkldr.STORE_IMAGE_MAX, 0x76000)
+        self.assertEqual(0x88000 + mkldr.STORE_IMAGE_MAX, 0xFE000)
+
+    def test_run_where_the_front_does_not_read_refused(self):
+        far = ('.far', elf32.SHT_PROGBITS, WA, 0x88400000, b'\x68' * 8)
+        with self.assertRaises(SystemExit):
+            mkldr.merged(elf32.Elf(fimage(extra=[far])), elf32.Elf(front()))
+
+
+class Tmp:
+    def __enter__(self):
+        self.d = tempfile.TemporaryDirectory()
+        return self
+
+    def __exit__(self, *a):
+        self.d.cleanup()
+
+    def path(self, name):
+        return os.path.join(self.d.name, name)
+
+    def write(self, name, data):
+        p = self.path(name)
+        with open(p, 'wb') as f:
+            f.write(data)
+        return p
+
+
+def run_layout(elf_path, *extra):
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = layout.main(['layout.py', elf_path, '--ld', LD, '--board', BOARD,
+                          '--flash', FLASH, '--memmap', MEMMAP] + list(extra))
+    return rc, out.getvalue()
+
+
+class Stream(unittest.TestCase):
+    def setUp(self):
+        self.elf = elf32.Elf(image())
+        self.data = mkldr.stream(self.elf, '_init')
+        self.blocks = check_stream.ldr.parse(self.data)
+
+    def test_s01_bootloader_profile(self):
+        res = check_stream.check('bootloader', self.data)
+        self.assertTrue(all(ok for _, ok, _ in res), res)
+
+    def test_first_final_init(self):
+        b = self.blocks
+        self.assertEqual(b[0]['flags'], check_stream.ldr.FIRST | check_stream.ldr.IGNORE)
+        self.assertEqual(b[0]['target'], 0x11A00040)
+        self.assertEqual(b[0]['argument'], len(self.data) - 16)
+        self.assertEqual(b[-1]['flags'], check_stream.ldr.FINAL)
+        self.assertEqual(b[-1]['target'], 0x11A00040)
+        inits = [x for x in b if x['flags'] & check_stream.ldr.INIT]
+        self.assertEqual(len(inits), 1)
+        self.assertEqual((inits[0]['target'], inits[0]['count']), (0x11A00000, 0))
+
+    def test_words_and_dma_code(self):
+        for x in self.blocks:
+            self.assertEqual(x['target'] % 4, 0)
+            self.assertEqual(x['count'] % 4, 0)
+            self.assertEqual(x['code'] & 0xF, 4)
+
+    def test_loaded_bytes(self):
+        mem = {}
+        for x in self.blocks:
+            if x['count'] and not x['flags'] & check_stream.ldr.IGNORE:
+                p = x['payload_offset']
+                for i, v in enumerate(self.data[p:p + x['count']]):
+                    mem[x['target'] + i] = v
+        for i, v in enumerate(TEXT):
+            self.assertEqual(mem[0x8803D010 + i], v)
+        self.assertEqual(mem[0x8803D02E], 0x55)
+        self.assertEqual(mem[0x11A00040 + 0x21], 0x22)
+        # Nothing for the sections that are not loaded.
+        self.assertNotIn(0x11800008, mem)
+        self.assertNotIn(0x11900000, mem)
+        self.assertNotIn(0x8803D040, mem)
+
+    def test_l1_before_init_rest_after(self):
+        k = next(i for i, x in enumerate(self.blocks) if x['flags'] & check_stream.ldr.INIT)
+        for x in self.blocks[1:k]:
+            self.assertTrue(mkldr.in_l1(x['target']))
+        for x in self.blocks[k + 1:-1]:
+            self.assertFalse(mkldr.in_l1(x['target']))
+
+    def test_missing_init_symbol(self):
+        with self.assertRaises(SystemExit):
+            mkldr.stream(self.elf, '_nope')
+
+
+class InitStack(unittest.TestCase):
+    """S-01.007: the Makefile's check_stack.py declaration matches the
+    INIT entry that mkldr.py streams (the front's, src/front/fr_entry.S)."""
+    ENTRY_S = os.path.join(TOP, 'src', 'front', 'fr_entry.S')
+    DECL = os.path.join(TOP, 'src', 'front', 'fr_entry.stack.json')
+    FRONT_LD = os.path.join(TOP, 'src', 'front', 'front.ld')
+
+    def test_declaration_passes(self):
+        with open(self.DECL) as f:
+            decl = json.load(f)
+        res = check_stack.check(decl)
+        self.assertTrue(all(ok for _, ok, _ in res), res)
+        self.assertEqual('_' + decl['entry'], '_fr_init')   # mkldr.py --front
+        self.assertEqual(decl['frames'], {'fr_init': 0})
+
+    def test_nothing_on_the_entry_stack(self):
+        # Every instruction of _fr_init before SP moves leaves SP and
+        # the memory below it alone and calls nothing.
+        with open(self.ENTRY_S) as f:
+            text = f.read()
+        body = text.split('_fr_init:', 1)[1].split('SP.L =', 1)[0]
+        lines = [x.split('/*')[0].strip() for x in body.splitlines()]
+        lines = [x for x in lines if x]
+        self.assertTrue(lines)
+        for x in lines:
+            self.assertNotRegex(x, r'\[\s*--\s*SP|SP\s*[-+]?=|\bLINK\b|\bCALL\b|\bRTS\b', x)
+
+    def test_stack_in_l1_data_a_with_cplbs_off(self):
+        # S-01.021: the stack section is .fr_init_stack, which
+        # front.ld places in fr_l1data (0x11802000-0x11804000, so clear of
+        # the first stage's 0x11807000-0x11808000), 1 KiB, 8-byte aligned
+        # and not loaded; and L1DM_DCTL.ENCPLB (bit 1) is cleared before the
+        # first store and the saved value written back before the RTS.
+        with open(self.ENTRY_S) as f:
+            text = f.read()
+        self.assertRegex(text, r'\.section\s+\.fr_init_stack,\s*"aw",\s*@nobits\s*\n\s*\.p2align 3\s*\n'
+                               r'_fr_init_stack:\s*\n\s*\.space 1024\s*\n_fr_init_stack_end:')
+        self.assertNotIn('.l1.bss', text)
+        with open(self.FRONT_LD) as f:
+            ld = f.read()
+        self.assertRegex(ld, r'\.fr_l1stack \(NOLOAD\) :\s*\{[^}]*KEEP\(\*\(\.fr_init_stack\)\)[^}]*\}\s*> fr_l1data')
+        self.assertRegex(ld, r'fr_l1data \(rw\)\s+:\s+ORIGIN = 0x11802000, LENGTH = 0x2000')
+        body = text.split('_fr_init:', 1)[1].split('.size _fr_init', 1)[0]
+        before, after = body.split('SP.L =', 1)
+        self.assertRegex(before, r'P0\.L = DCTL_LO;\s*\n\s*P0\.H = CTL_HI;\s*\n\s*SSYNC;\s*\n\s*R1 = \[P0\];'
+                                 r'\s*\n\s*R2 = R1;\s*\n\s*BITCLR\(R2, ENCPLB_BIT\);\s*\n\s*\[P0\] = R2;'
+                                 r'\s*\n\s*SSYNC;\s*\n\s*CSYNC;')
+        self.assertLess(before.index('[P0] = R2;'), before.index('[P0] = SP;'))
+        self.assertIn('#define CTL_HI     0x1FC0', text)
+        self.assertIn('#define DCTL_LO    0x0004', text)
+        self.assertIn('#define ENCPLB_BIT 1', text)
+        tail = after.split('RETS = [SP++];', 1)[1]
+        self.assertRegex(tail, r'R1 = \[P0\];\s*\n\s*P0\.L = DCTL_LO;\s*\n\s*P0\.H = CTL_HI;\s*\n\s*SSYNC;'
+                               r'\s*\n\s*\[P0\] = R1;\s*\n\s*SSYNC;\s*\n\s*CSYNC;\s*\n\s*RTS;')
+        self.assertLess(tail.index('SP = [P0];'), tail.index('RTS;'))
+        self.assertNotRegex(tail.split('SP = [P0];', 1)[1], r'\[\s*--\s*SP|SP\s*[-+]?=|\bCALL\b')
+
+
+class Layout(unittest.TestCase):
+    def test_good(self):
+        with Tmp() as t:
+            e = t.write('a.elf', image())
+            s = t.write('a.ldr', mkldr.stream(elf32.read(e), '_init'))
+            rc, out = run_layout(e, '--stream', s, '--json', t.path('a.json'))
+            self.assertEqual(rc, 0, out)
+            with open(t.path('a.json')) as f:
+                lay = json.load(f)
+        res = check_layout.check(lay)
+        self.assertTrue(all(ok for r, ok, _ in res if r not in check_layout.INFORMATIVE), res)
+        kinds = {r['name']: (r['kind'], r['handover']) for r in lay['ranges']}
+        self.assertEqual(kinds['.handover.text'], ('code', True))
+        self.assertEqual(kinds['.handover.stack'], ('stack', True))
+        roles = {r['role']: r['name'] for r in lay['ranges'] if 'role' in r}
+        self.assertEqual(roles, {'kernel_stack': 'ho_stack', 'config_block': 'config_block',
+                                 'header_buffer': 'header_buffer'})
+        self.assertTrue(dict((r, ok) for r, ok, _ in res)['handover_stack'])
+        self.assertEqual(kinds['heap'], ('heap', False))
+        self.assertEqual(kinds['ramdisk_0'], ('held_buffer', False))
+        self.assertEqual(kinds['ramdisk_1'], ('held_buffer', False))
+        self.assertEqual(kinds['frame_buffers'], ('held_buffer', False))
+        self.assertTrue(dict((r, ok) for r, ok, _ in res)['held_room'])
+
+    def test_handover_reaching_out(self):
+        with Tmp() as t:
+            rc, out = run_layout(t.write('a.elf', image(handover_reloc='_l1_data')))
+        self.assertEqual(rc, 1)
+        self.assertIn('handover: .handover.text+0x4 -> 0x11800000', out)
+
+    def test_handover_reaching_ddr_reserve(self):
+        # opxy_hard_reset() on a failed kernel call, in the image's DDR
+        with Tmp() as t:
+            rc, out = run_layout(t.write('a.elf', image(handover_reloc='_far')))
+        self.assertEqual(rc, 0, out)
+
+    def test_ddr_into_heap(self):
+        with Tmp() as t:
+            rc, out = run_layout(t.write('a.elf', image(ddr_size=0x00300000)))
+        self.assertEqual(rc, 1)
+        self.assertIn('ddr overrun', out)
+        self.assertIn('outside the DDR image range', out)
+
+    def test_stream_over_slot(self):
+        with Tmp() as t:
+            e = t.write('a.elf', image())
+            s = t.write('a.ldr', bytes(0x77001))
+            rc, out = run_layout(e, '--stream', s)
+        self.assertEqual(rc, 1)
+        self.assertIn('a slot holds 487424 before its start log', out)
+        with Tmp() as t:
+            e = t.write('a.elf', image())
+            rc, out = run_layout(e, '--stream', t.write('a.ldr', bytes(0x77000)))
+        self.assertNotIn('a slot holds', out)
+
+    def test_rom_boot_reserve(self):
+        with Tmp() as t:
+            e = t.write('a.elf', image(l2=0x08001FFC))
+            s = t.write('a.ldr', mkldr.stream(elf32.read(e), '_init'))
+            rc, out = run_layout(e, '--stream', s)
+        self.assertEqual(rc, 1)
+        self.assertIn('.l2.data at 0x08001ffc-0x08002004 meets the ROM boot reserve', out)
+
+    def test_l2_above_the_front(self):
+        # L2 from the ROM boot reserve up to 0x08031000 is the front's
+        # (src/front/fr_handoff.h): the image's lowest L2 is just above it.
+        with Tmp() as t:
+            e = t.write('a.elf', image(l2=0x08031000))
+            s = t.write('a.ldr', mkldr.stream(elf32.read(e), '_init'))
+            rc, out = run_layout(e, '--stream', s)
+        self.assertEqual(rc, 0, out)
+        with Tmp() as t:
+            e = t.write('a.elf', image(l2=0x08002000))
+            rc, out = run_layout(e)
+        self.assertEqual(rc, 1)
+        self.assertIn('sections outside every region: .l2.data', out)
+
+    def test_stream_rules_of_the_build(self):
+        # The Makefile's check_stream.py call: the ROM boot reserve
+        # (S-01.008) and the first stage's stack (S-01.009) refuse a block.
+        def fails(l2):
+            data = mkldr.stream(elf32.Elf(image(l2=l2)), '_init')
+            res = check_stream.check('bootloader', data, FIRST_STAGE_STACK)
+            return sorted(r for r, ok, _ in res if not ok)
+        self.assertEqual(fails(0x08002000), [])
+        self.assertEqual(fails(0x08001FFC), ['rom_boot_reserve'])
+        self.assertEqual(fails(0x11806FFC), ['spares_first_stage_stack'])
+        # S-01.020: the bootloader profile checks every block's BCODE.
+        data = mkldr.stream(elf32.Elf(image()), '_init')
+        res = dict((r, ok) for r, ok, _ in check_stream.check('bootloader', data))
+        self.assertTrue(res['bcode'])
+
+    def test_regions_from_link_map(self):
+        names = [r[0] for r in layout.memory_regions(LD)]
+        self.assertEqual(names, ['l1_code', 'l1_data_a', 'l1_data_b', 'l2', 'handover', 'ddr'])
+
+
+L1_TEXT = b'\x22' * 0x60
+
+
+def testos_image(ddr_at=0x89000000, extra=None, entry=None, l1_lma=True):
+    """A test-OS image (bf703_testos.ld): everything loaded in DDR above the
+    handover reserve, in one run of bytes, the entry _wb_testos_entry its first
+    byte; .l1.text runs in L1 but is loaded in the DDR run (its LMA right after
+    .data), as the entry shim copies it; no INIT stage. With l1_lma False the
+    .l1.text section is loaded at its run address in L1 (the layout the
+    test OS must not have)."""
+    sections = [
+        ('.text', elf32.SHT_PROGBITS, AX, ddr_at, TEXT),
+        ('.rodata', elf32.SHT_PROGBITS, elf32.SHF_ALLOC, ddr_at + 0x20, b'\x55' * 3),
+        ('.data', elf32.SHT_PROGBITS, WA, ddr_at + 0x24, b'\x33' * 16),
+        ('.l1.text', elf32.SHT_PROGBITS, AX, 0x11A00000, L1_TEXT),
+        ('.bss', elf32.SHT_NOBITS, WA, ddr_at + 0x100, 0x1000),
+        ('.stack', elf32.SHT_NOBITS, WA, ddr_at + 0x2000, 0x1000),
+    ]
+    if extra:
+        sections += extra
+    symbols = [('_wb_testos_entry', ddr_at, '.text'), ('_main', ddr_at + 8, '.text'),
+               ('_opxy_testos_entry', ddr_at + 0x24, '.data'), ('_wb_cplb_setup', 0x11A00000, '.l1.text')]
+    relocs = {'.text': [(ddr_at + 4, '_opxy_testos_entry', 0)]}
+    return build_elf(sections, symbols, relocs, ddr_at if entry is None else entry,
+                     lma={'.l1.text': ddr_at + 0x34} if l1_lma else None)
+
+
+def run_testos_layout(elf_path, *extra):
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = testos_layout.main(['testos_layout.py', elf_path, '--ld', TESTOS_LD, '--board', BOARD,
+                                 '--memmap', MEMMAP] + list(extra))
+    return rc, out.getvalue()
+
+
+class TestOs(unittest.TestCase):
+    """The test OS's stream (mkldr.py --no-init) and layout (testos_layout.py)
+    against S-01's os profile and S-05.024 (docs/test-os.md)."""
+
+    def test_stream_has_no_init_and_passes_os_profile(self):
+        elf = elf32.Elf(testos_image())
+        data = mkldr.stream(elf, None)
+        blocks = check_stream.ldr.parse(data)
+        self.assertEqual(blocks[0]['flags'], check_stream.ldr.FIRST | check_stream.ldr.IGNORE)
+        self.assertEqual(blocks[0]['target'], 0x89000000)
+        self.assertEqual(blocks[-1]['flags'], check_stream.ldr.FINAL)
+        self.assertFalse([b for b in blocks if b['flags'] & check_stream.ldr.INIT])
+        # S-05.024's flags: only FIRST, IGNORE and FINAL appear
+        for b in blocks:
+            self.assertFalse(b['flags'] & ~(check_stream.ldr.FIRST | check_stream.ldr.IGNORE |
+                                           check_stream.ldr.FINAL) & 0xFFF0)
+        res = check_stream.check('os', data)
+        self.assertTrue(all(ok for _, ok, _ in res), res)
+        testos_layout.kernel_model.compatibility_check(data)
+        # one data block, the DDR image, with .l1.text's bytes at its load address
+        self.assertEqual([(b['flags'], b['target'], b['count']) for b in blocks[1:-1]],
+                         [(0, 0x89000000, 0x94)])
+        self.assertEqual(data[32 + 0x34:32 + 0x34 + 0x60], L1_TEXT)
+        self.assertEqual(testos_layout.check_blocks(data, (0x89000000, 0x89300000)), [])
+
+    def test_section_load_addresses(self):
+        """elf32 reads a section's load address from the program headers: .l1.text runs in L1 and
+        loads in DDR; the rest, with no header, load where they run."""
+        elf = elf32.Elf(testos_image())
+        l1 = elf.section('.l1.text')
+        self.assertEqual((l1.addr, l1.lma, l1.lma_end), (0x11A00000, 0x89000034, 0x89000094))
+        self.assertEqual([(s.name, s.lma == s.addr) for s in elf.sections if s.alloc and s.size],
+                         [('.text', True), ('.rodata', True), ('.data', True), ('.l1.text', False),
+                          ('.bss', True), ('.stack', True)])
+        self.assertEqual(elf.segments, [(l1.offset, 0x11A00000, 0x89000034, 0x60, 0x60)])
+        self.assertEqual(elf32.Elf(image()).segments, [])
+        # a stream of the same image with .l1.text loaded in L1: an L1 block
+        data = mkldr.stream(elf32.Elf(testos_image(l1_lma=False)), None)
+        blocks = check_stream.ldr.parse(data)
+        self.assertEqual([(b['target'], b['count']) for b in blocks[1:-1]], [(0x11A00000, 0x60), (0x89000000, 0x34)])
+        fails = testos_layout.check_blocks(data, (0x89000000, 0x89300000))
+        self.assertTrue(any('is in L1 or L2' in f for f in fails), fails)
+        self.assertTrue(any('2 data blocks, wanted one' in f for f in fails), fails)
+
+    def test_no_init_drops_only_the_init_block(self):
+        elf = elf32.Elf(image())
+        with_init = check_stream.ldr.parse(mkldr.stream(elf, '_init'))
+        without = check_stream.ldr.parse(mkldr.stream(elf, None))
+        kept = [(b['flags'], b['target'], b['count']) for b in with_init
+                if not b['flags'] & check_stream.ldr.INIT]
+        self.assertEqual([(b['flags'], b['target'], b['count']) for b in without], kept)
+        self.assertEqual(len(with_init), len(without) + 1)
+
+    def test_entry_in_first_and_final_blocks(self):
+        """S-05.013 by every reading: the FIRST target (RCU0_SVECT0 as the kernel
+        sets it), the FINAL target (kernel_model.py) and, with --no-init, the
+        FINAL argument are the entry; the bootloader's FINAL argument stays 0."""
+        data = mkldr.stream(elf32.Elf(testos_image()), None)
+        first, final, arg = testos_layout.stream_entries(data)
+        self.assertEqual((first, final, arg), (0x89000000, 0x89000000, 0x89000000))
+        self.assertEqual(testos_layout.kernel_model.load(data, 0x0803C000)['svect0'], 0x89000000)
+        normal = mkldr.stream(elf32.Elf(image()), '_init')
+        self.assertEqual(testos_layout.stream_entries(normal)[2], 0)
+        self.assertIsNone(testos_layout.stream_entries(data[:-16]))
+
+    def test_layout_checks_the_entry(self):
+        """The ELF entry must be the first byte of the DDR image, OPXY_TESTOS_IMAGE_START, where
+        the lowest loaded byte is, and the stream's FIRST and FINAL blocks must name it."""
+        good = testos_image()
+        with Tmp() as t:
+            rc, out = run_testos_layout(t.write('m.elf', testos_image(entry=0x89000010)))
+            self.assertEqual(rc, 1)
+            self.assertIn('the ELF entry 0x89000010 is not the first byte of the DDR image 0x89000000', out)
+            # the entry right, but something loaded below it
+            below = testos_image(extra=[('.early', elf32.SHT_PROGBITS, AX, 0x88FFF000, b'\x11' * 8)])
+            rc, out = run_testos_layout(t.write('b.elf', below))
+            self.assertEqual(rc, 1)
+            self.assertIn('the lowest loaded byte 0x88fff000 is not the entry 0x89000000', out)
+            e = t.write('g.elf', good)
+            data = bytearray(mkldr.stream(elf32.read(e), None))
+            # the FINAL block's target moved, its checksum fixed
+            h = bytearray(data[-16:])
+            h[4:8] = struct.pack('<I', 0x89000040)
+            h[2] = 0
+            x = 0
+            for b in h:
+                x ^= b
+            h[2] = x
+            data[-16:] = h
+            rc, out = run_testos_layout(e, '--stream', t.write('g.ldr', bytes(data)))
+            self.assertEqual(rc, 1)
+            self.assertIn("FINAL block target 0x89000040 is not the entry 0x89000000", out)
+            rc, out = run_testos_layout(e, '--stream', t.write('ok.ldr', mkldr.stream(elf32.read(e), None)))
+            self.assertEqual(rc, 0, out)
+            self.assertIn('entry      0x89000000', out)
+            self.assertIn('.l1.text             0x11a00000       96 (loaded at 0x89000034)', out)
+
+    def test_layout_refuses_a_stream_over_the_staging_area(self):
+        """A test OS's stream is written as os.ldr: one longer than 0x800000 bytes, the most
+        a unit loads (S-01.014, S-03.042), fails every variant's layout check."""
+        with Tmp() as t:
+            e = t.write('g.elf', testos_image())
+            data = mkldr.stream(elf32.read(e), None)
+            big = data + bytes(0x800001 - len(data))
+            rc, out = run_testos_layout(e, '--stream', t.write('big.ldr', big))
+            self.assertEqual(rc, 1)
+            self.assertIn('the stream would be refused by S-05.024: image longer than the staging area',
+                          out)
+            self.assertEqual(testos_layout.check_stream_file(t.write('ok.ldr', data)), [])
+
+    def test_layout_refuses_l1_and_l2_loads(self):
+        """No block of the stream may have an L1 or L2 destination (a loading bootloader's
+        hand-over may run there): a section loaded in L1 or in L2 fails the layout
+        and the stream check."""
+        with Tmp() as t:
+            e = t.write('l1.elf', testos_image(l1_lma=False))
+            rc, out = run_testos_layout(e, '--stream', t.write('l1.ldr', mkldr.stream(elf32.read(e), None)))
+            self.assertEqual(rc, 1)
+            self.assertIn('.l1.text loads at 0x11a00000-0x11a00060, outside the DDR image range', out)
+            self.assertIn('block destination 0x11a00000-0x11a00060 is in L1 or L2', out)
+            self.assertIn('2 data blocks, wanted one', out)
+            self.assertIn('the lowest loaded byte 0x11a00000 is not the entry 0x89000000', out)
+            extra = [('.l2.data', elf32.SHT_PROGBITS, WA, 0x08002000, b'\x66' * 8)]
+            e = t.write('l2.elf', testos_image(extra=extra))
+            rc, out = run_testos_layout(e, '--stream', t.write('l2.ldr', mkldr.stream(elf32.read(e), None)))
+            self.assertEqual(rc, 1)
+            self.assertIn('.l2.data loads at 0x08002000-0x08002008, outside the DDR image range', out)
+            self.assertIn('block destination 0x08002000-0x08002008 is in L1 or L2', out)
+            # a second DDR block, apart from the image
+            extra = [('.far', elf32.SHT_PROGBITS, WA, 0x89200000, b'\x66' * 8)]
+            e = t.write('far.elf', testos_image(extra=extra))
+            rc, out = run_testos_layout(e, '--stream', t.write('far.ldr', mkldr.stream(elf32.read(e), None)))
+            self.assertEqual(rc, 1)
+            self.assertIn('2 data blocks, wanted one', out)
+            self.assertNotIn('is in L1 or L2', out)
+
+    def test_layout_good(self):
+        with Tmp() as t:
+            e = t.write('t.elf', testos_image())
+            s = t.write('t.ldr', mkldr.stream(elf32.read(e), None))
+            rc, out = run_testos_layout(e, '--stream', s, '--json', t.path('t.json'))
+            self.assertEqual(rc, 0, out)
+            with open(t.path('t.json')) as f:
+                lay = json.load(f)
+        res = check_layout.check(lay)
+        self.assertTrue(all(ok for r, ok, _ in res if r not in check_layout.INFORMATIVE), res)
+        kinds = {r['name']: (r['kind'], r['handover']) for r in lay['ranges']}
+        self.assertEqual(kinds['.text'], ('code', False))
+        self.assertEqual(kinds['.l1.text'], ('code', False))
+        self.assertEqual(kinds['.stack'], ('stack', False))
+        self.assertEqual(kinds['heap'], ('heap', False))
+        self.assertFalse(any(h for _, h in kinds.values()))
+
+    def test_layout_in_the_reserve(self):
+        with Tmp() as t:
+            rc, out = run_testos_layout(t.write('t.elf', testos_image(ddr_at=0x8803D000)))
+        self.assertEqual(rc, 1)
+        self.assertIn('meets the DDR handover reserve', out)
+        self.assertIn('outside the test OS image range', out)
+
+    def test_layout_refuses_init_stage(self):
+        extra = [('.init.text', elf32.SHT_PROGBITS, AX, 0x11A01000, b'\x11' * 0x10)]
+        with Tmp() as t:
+            rc, out = run_testos_layout(t.write('t.elf', testos_image(extra=extra)))
+        self.assertEqual(rc, 1)
+        self.assertIn('an INIT stage in an OS image', out)
+
+    def test_layout_not_loaded_section_in_staging(self):
+        extra = [('.scratch', elf32.SHT_NOBITS, WA, 0x8A000000, 0x100)]
+        with Tmp() as t:
+            rc, out = run_testos_layout(t.write('t.elf', testos_image(extra=extra)))
+        self.assertEqual(rc, 1)
+        self.assertIn('meets the staging area', out)
+
+    def test_layout_record_and_l2_reserve(self):
+        extra = [('.rec', elf32.SHT_PROGBITS, WA, 0x11B01F00, b'\x77' * 8),
+                 ('.l2', elf32.SHT_PROGBITS, WA, 0x0803C000, b'\x77' * 8)]
+        with Tmp() as t:
+            rc, out = run_testos_layout(t.write('t.elf', testos_image(extra=extra)))
+        self.assertEqual(rc, 1)
+        self.assertIn('meets the reboot record', out)
+        self.assertIn('meets the L2 handover reserve', out)
+
+    def test_stream_with_refused_flag(self):
+        elf = elf32.Elf(testos_image())
+        data = bytearray(mkldr.stream(elf, None))
+        # the first data block's header: set CALLBACK (bit 13) and fix the checksum
+        h = bytearray(data[16:32])
+        h[1] |= 0x20
+        h[2] = 0
+        x = 0
+        for b in h:
+            x ^= b
+        h[2] = x
+        data[16:32] = h
+        with Tmp() as t:
+            e = t.write('t.elf', testos_image())
+            s = t.write('t.ldr', bytes(data))
+            rc, out = run_testos_layout(e, '--stream', s)
+        self.assertEqual(rc, 1)
+        self.assertIn('refused by S-05.024', out)
+
+    def test_regions_from_link_map(self):
+        names = [r[0] for r in layout.memory_regions(TESTOS_LD)]
+        self.assertEqual(names, ['l1_code', 'ddr'])
+        ddr = [r for r in layout.memory_regions(TESTOS_LD) if r[0] == 'ddr'][0]
+        board = layout.defines(BOARD)
+        self.assertEqual((ddr[1], ddr[2]), (board['OPXY_TESTOS_IMAGE_START'], board['OPXY_TESTOS_IMAGE_END']))
+        s01 = layout.defines(MEMMAP)
+        self.assertEqual(board['OPXY_TESTOS_IMAGE_START'], 0x89000000)     # well above the handover reserve
+        self.assertGreater(board['OPXY_TESTOS_IMAGE_START'], s01['S01_RESERVE_DDR_END'])
+        self.assertEqual(board['OPXY_TESTOS_HEAP_END'], s01['S01_STAGING_START'])
+
+    def test_register_table(self):
+        rows = testos_regs.rows()
+        regs = {r[0] for r in rows}
+        self.assertTrue({'CGU0_CTL', 'CGU0_DIV', 'DMC0_CFG', 'DMC0_TR0'} <= regs, regs)
+        self.assertNotIn('RTC0_INIT', regs)          # a HELD-only row
+        src = testos_regs.c_source(rows)
+        self.assertIn('const unsigned opxy_testos_regs_n = %d;' % len(rows), src)
+        self.assertEqual(src.count('OPXY_TESTOS_RULE_'), len(rows))
+        self.assertIn('"S-13a.003"', src)
+        tr1 = [r for r in rows if r[0] == 'DMC0_TR1' and r[2] == 'TREF'][0]
+        self.assertEqual((tr1[5], tr1[6], tr1[7]), ('in', 1, 1560))
+
+
+def make_png(width, height, ctype, depth, rows, plte=None, trns=None, interlace=0, filt=0):
+    """A PNG file; rows are each row's bytes, written with filter type filt."""
+    def chunk(kind, body):
+        return struct.pack('>I', len(body)) + kind + body + struct.pack('>I', zlib.crc32(kind + body))
+    raw = b''.join(bytes((filt,)) + r for r in rows)
+    if filt == 1:                               # Sub on 8-bit samples of bpp bytes
+        bpp = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[ctype] * depth // 8
+        raw = b''
+        for r in rows:
+            raw += bytes((1,)) + bytes((r[k] - (r[k - bpp] if k >= bpp else 0)) & 0xFF for k in range(len(r)))
+    out = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, depth, ctype, 0, 0,
+                                                              interlace))
+    if plte:
+        out += chunk(b'PLTE', plte)
+    if trns:
+        out += chunk(b'tRNS', trns)
+    return out + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
+
+
+def shown(png):
+    """The frame's visible pixels as png2logo's records decode, by screen position: {(x, y): rgb565}."""
+    data = png2logo.encode(png2logo.frame_pixels(png2logo.read_png(png)))
+    px = png2logo.decode(data, 480 * 222)
+    return lambda x, y: px[(479 - x) * 222 + y]
+
+
+class Png2Logo(unittest.TestCase):
+    W, H = 480, 222
+
+    def rgb_rows(self, color, marks=()):
+        rows = [bytearray(bytes(color) * self.W) for _ in range(self.H)]
+        for (x, y), c in marks:
+            rows[y][3 * x:3 * x + 3] = bytes(c)
+        return [bytes(r) for r in rows]
+
+    def test_positions(self):
+        rows = self.rgb_rows((0, 0, 0), [((0, 0), (255, 0, 0)), ((479, 221), (0, 255, 0)), ((10, 200), (0, 0, 255))])
+        for filt in (0, 1):
+            px = shown(make_png(self.W, self.H, 2, 8, rows, filt=filt))
+            self.assertEqual(px(0, 0), 0xF800)
+            self.assertEqual(px(479, 221), 0x07E0)
+            self.assertEqual(px(10, 200), 0x001F)
+            self.assertEqual(px(1, 0), 0)
+
+    def test_rounding(self):
+        # 8C8C8C and 5A5A5A are the style guide's 8C71 and 5ACB
+        for c, want in (((0x8C, 0x8C, 0x8C), 0x8C71), ((0x5A, 0x5A, 0x5A), 0x5ACB), ((0xFF, 0xB0, 0x20), 0xFD84)):
+            self.assertEqual(shown(make_png(self.W, self.H, 2, 8, self.rgb_rows(c)))(5, 5), want)
+
+    def test_alpha_on_black(self):
+        row = bytes((255, 255, 255, 128)) * self.W        # white at half alpha: half gray
+        self.assertEqual(shown(make_png(self.W, self.H, 6, 8, [row] * self.H))(0, 0),
+                         png2logo.rgb565((128, 128, 128, 255, 255)))
+        row16 = struct.pack('>HHHH', 65535, 0, 0, 0) * self.W   # transparent red: black
+        self.assertEqual(shown(make_png(self.W, self.H, 6, 16, [row16] * self.H))(3, 3), 0)
+
+    def test_palette_and_gray(self):
+        plte = bytes((0, 0, 0, 255, 255, 255, 0, 0, 255))
+        row = bytes((0x12,)) * (self.W // 2)            # 4-bit indices 1, 2
+        px = shown(make_png(self.W, self.H, 3, 4, [row] * self.H, plte=plte, trns=bytes((255, 255, 0))))
+        self.assertEqual((px(0, 0), px(1, 0)), (0xFFFF, 0))   # index 2 transparent: black
+        gray = bytes((0xAA,)) * (self.W // 4)           # 2-bit gray 2, 2, 2, 2: 2/3 of white
+        self.assertEqual(shown(make_png(self.W, self.H, 0, 2, [gray] * self.H))(7, 7),
+                         png2logo.rgb565((2, 2, 2, 3, 3)))
+
+    def test_refused(self):
+        bad = [(make_png(479, 222, 2, 8, [bytes(3 * 479)] * 222), '479 x 222'),
+               (make_png(self.W, self.H, 2, 8, self.rgb_rows((0, 0, 0)), interlace=1), 'interlac'),
+               (b'GIF89a', 'not a PNG')]
+        noisy = [bytes((x * 7 + y * 13) & 0xFF for x in range(3 * self.W)) for y in range(self.H)]
+        bad.append((make_png(self.W, self.H, 2, 8, noisy), 'fewer colors'))
+        for png, msg in bad:
+            with self.assertRaises(png2logo.PngError) as e:
+                png2logo.convert(png, 'x.png')
+            self.assertIn(msg, str(e.exception))
+
+    def test_records(self):
+        pixels = [0] * 300 + [1, 2, 3] + [5] * 129 + list(range(200)) + [7, 7]
+        data = png2logo.encode(pixels)
+        self.assertEqual(png2logo.decode(data, len(pixels)), pixels)
+        self.assertEqual(data[:3], bytes((0xFF, 0, 0)))  # 128 black pixels in one record
+        self.assertEqual(png2logo.decode(data[:-1], len(pixels))[-2:], [0, 0])   # cut short: black
+
+    def test_c_source(self):
+        src = png2logo.convert(make_png(self.W, self.H, 2, 8, self.rgb_rows((0, 0, 0))), 'logo.png')
+        self.assertIn('const struct wb_display_image wb_display_boot_image = {', src)
+        self.assertIn('from logo.png', src)
+        n = int(src.split('data[')[1].split(']')[0])
+        self.assertEqual(n, 3 * (480 * 222 // 128) + 3)   # black in repeats of 128 and one of 64
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=1)

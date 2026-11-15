@@ -1,0 +1,9 @@
+{
+ "name": "s06-request-reply",
+ "steps": [
+  {"expect": {"id": "0x7a", "dst": 4, "src": [8, 9, 10, 11], "payload": "0a0b"}, "reply": [{"id": "0x7b", "payload": "01"}], "note": "a request: source nibble 8 + slot; the peer answers on the exchanged route"},
+  {"expect": {"route": "0x14", "id": "0x7c", "payload": "0102"}, "note": "an ordinary message: the defaults, source 1 and destination 4"},
+  {"inject": [{"route": "0x41", "seq": 17, "id": "0x7d", "payload": "00ff00"}], "note": "an unsolicited message from the peer"},
+  {"expect": {"route": "0x14", "id": "0x7e"}, "note": "a further message from the device (synthetic: no catalog message answers 0x7d with 0x7e; this checks seq and the defaults only)"}
+ ]
+}

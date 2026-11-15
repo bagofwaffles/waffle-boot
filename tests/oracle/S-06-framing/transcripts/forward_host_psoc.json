@@ -1,0 +1,6 @@
+{
+ "name": "s06-forward-host-psoc",
+ "steps": [
+  {"expect": {"route": "0x24", "seq": 33, "id": "0x7a", "payload": "0a0b"}, "reply": [{"route": "0x42", "seq": 5, "id": "0x7b", "payload": "01"}], "note": "the host's frame arrives unchanged; the PSoC answers to destination 2"}
+ ]
+}

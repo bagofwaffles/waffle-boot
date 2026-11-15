@@ -1,0 +1,11799 @@
+{
+ "slot": [
+  "0x10000",
+  "0x88000"
+ ],
+ "record": [
+  "0xe000",
+  "0xf000"
+ ],
+ "selector": "0xd000",
+ "cases": [
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "good",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xff000",
+     "length": 1,
+     "value": "fd"
+    },
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "trial_mark"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": true,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "good_nolog",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "trial_mark"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "good_nolog"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": true,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "good_pending",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xff000",
+     "length": 1,
+     "value": "fd"
+    },
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "trial_mark"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": true,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "tried",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xff000",
+     "length": 1,
+     "value": "fd"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": true,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "started",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xff000",
+     "length": 1,
+     "value": "fd"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": true,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "badcrc",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "empty",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "empty"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "badlen",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "badlen"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 0,
+   "b_kind": "erased",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "good",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "01 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 00",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "good_nolog",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "01 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "good_nolog"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "good_nolog"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "good_nolog"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "good_nolog"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good_nolog"
+     ],
+     "selectors": 1,
+     "selector": "01 00",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "good_pending",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "01 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good_pending"
+     ],
+     "selectors": 1,
+     "selector": "01 00",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "tried",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 21,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "01 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 00",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "started",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "01 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 00",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "badcrc",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "01"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 1,
+     "selector": "01 ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "badcrc"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "empty",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "01"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "empty"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "empty"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "empty"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "empty"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "empty"
+     ],
+     "selectors": 1,
+     "selector": "01 ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "empty"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "empty"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "badlen",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "01"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "badlen"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badlen"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "badlen"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badlen"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "badlen"
+     ],
+     "selectors": 1,
+     "selector": "01 ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "badlen"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "badlen"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 0,
+   "b_kind": "erased",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "01"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "01 ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    }
+   ]
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "good",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "good_nolog",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "good_pending",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "tried",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 21,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "01 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 00",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "started",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "01 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 00",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "badcrc",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "empty",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "badlen",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "erased",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 0,
+   "b_kind": "good",
+   "start": "trial_start",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "program",
+     "offset": "0x87000",
+     "length": 1,
+     "value": "fc"
+    },
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "00 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 65536,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 00",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "good",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "good_nolog",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "good_pending",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "tried",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "record"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "started",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "record"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "started"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "badcrc",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "empty",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "badlen",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "erased",
+   "start": "at_home",
+   "selector": "00 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 0,
+   "b_kind": "tried",
+   "start": "after_try",
+   "selector": "ff ff",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    },
+    {
+     "op": "erase",
+     "offset": "0xff000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "record"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 ff",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "good",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0x87000",
+     "length": 1,
+     "value": "fd"
+    },
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "trial_mark"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 6,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 6,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 7,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "good_nolog",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "trial_mark"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good_nolog",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "good_pending",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0x87000",
+     "length": 1,
+     "value": "fd"
+    },
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "trial_mark"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 6,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 6,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 7,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "tried",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0x87000",
+     "length": 1,
+     "value": "fd"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "started",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0x87000",
+     "length": 1,
+     "value": "fd"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "badcrc",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "empty",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "empty",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "badlen",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "badlen",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "try",
+   "a": 1,
+   "b_kind": "erased",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "fe"
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 2,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff fe",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "good",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "00 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 65536,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 00",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "good_nolog",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "00 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good_nolog",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good_nolog",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good_nolog",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good_nolog",
+      "good"
+     ],
+     "selectors": 65536,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good_nolog",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 00",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "good_pending",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "00 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 65536,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good_pending",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 00",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "tried",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 21,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "00 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 65536,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 00",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "started",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "00 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 65536,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 00",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "badcrc",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 ff",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "badcrc",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "empty",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "empty",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "empty",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "empty",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "empty",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "empty",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 ff",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "empty",
+      "good"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "empty",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "badlen",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "badlen",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badlen",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "badlen",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badlen",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "badlen",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 ff",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badlen",
+      "good"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "badlen",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    }
+   ]
+  },
+  {
+   "act": "switch",
+   "a": 1,
+   "b_kind": "erased",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 23,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "00"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 256,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 ff",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": true
+    }
+   ]
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "good",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "good_nolog",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "good_pending",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "tried",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 21,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "00 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 65536,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 00",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "started",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "00 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 16384,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 65536,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 00",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "badcrc",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "empty",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "badlen",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "erased",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "keep",
+   "a": 1,
+   "b_kind": "good",
+   "start": "trial_start",
+   "selector": "00 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 1,
+   "ops": [
+    {
+     "op": "program",
+     "offset": "0xff000",
+     "length": 1,
+     "value": "fc"
+    },
+    {
+     "op": "erase",
+     "offset": "0xf000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xf000",
+     "length": 12,
+     "value": "record"
+    },
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 2,
+     "value": "01 00"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "good",
+      "tried"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "erased"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "good",
+      "badtag"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 01",
+     "factory_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 32768,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 00",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "good",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "good_nolog",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "good_pending",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "tried",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "record"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "started",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "record"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "started",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "badcrc",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "empty",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "badlen",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "erased",
+   "start": "at_home",
+   "selector": "01 01",
+   "status": 20,
+   "status_forced": 20,
+   "target": null,
+   "ops": []
+  },
+  {
+   "act": "put_back",
+   "a": 1,
+   "b_kind": "tried",
+   "start": "after_try",
+   "selector": "00 fe",
+   "status": 0,
+   "status_forced": 0,
+   "target": 0,
+   "ops": [
+    {
+     "op": "erase",
+     "offset": "0xd000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xd000",
+     "length": 1,
+     "value": "01"
+    },
+    {
+     "op": "program",
+     "offset": "0xd001",
+     "length": 1,
+     "value": "01"
+    },
+    {
+     "op": "erase",
+     "offset": "0x87000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "erase",
+     "offset": "0xe000",
+     "length": 4096,
+     "value": ""
+    },
+    {
+     "op": "program",
+     "offset": "0xe000",
+     "length": 12,
+     "value": "record"
+    }
+   ],
+   "cuts": [
+    {
+     "after": 0,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "00 fe",
+     "factory_boots": [
+      [
+       0,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 0,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 512,
+     "selector": "many",
+     "factory_boots": [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "ff ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 1,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 ff",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 2,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 128,
+     "selector": "many",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 3,
+     "torn": true,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": false,
+     "records": [
+      "tried",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 4,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": false,
+     "records": [
+      "erased",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 5,
+     "torn": true,
+     "records": [
+      "badtag",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    },
+    {
+     "after": 6,
+     "torn": false,
+     "records": [
+      "good",
+      "good"
+     ],
+     "selectors": 1,
+     "selector": "01 01",
+     "factory_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "conforming_boots": [
+      [
+       1,
+       1
+      ]
+     ],
+     "trusts_tried": false,
+     "trusts_bad": false
+    }
+   ]
+  }
+ ]
+}

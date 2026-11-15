@@ -1,0 +1,154 @@
+{
+ "cases": [
+  {
+   "name": "none",
+   "payload": "0000000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "power_1_no_chord",
+   "payload": "4000000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "power_2_no_chord",
+   "payload": "8000000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "power_4",
+   "payload": "0002000000000000",
+   "chord": "4"
+  },
+  {
+   "name": "keys_1_and_2",
+   "payload": "c000000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "keys_1_and_4",
+   "payload": "4002000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "keys_2_and_4",
+   "payload": "8002000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "key_1_with_hold",
+   "payload": "4020000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "key_4_with_hold_byte3",
+   "payload": "0002000100000000",
+   "chord": "none"
+  },
+  {
+   "name": "key_4_with_debug",
+   "payload": "0006000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "knob_4_click_alone",
+   "payload": "0020000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "key_0x0e_digit_1_not_a_chord_key",
+   "payload": "0040000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "key_4_with_precomp",
+   "payload": "0002800000000000",
+   "chord": "4"
+  },
+  {
+   "name": "key_1_with_precomp",
+   "payload": "4000800000000000",
+   "chord": "none"
+  },
+  {
+   "name": "key_4_with_other_key_0x20",
+   "payload": "0002000001000000",
+   "chord": "none"
+  },
+  {
+   "name": "short_payload_key_4",
+   "payload": "0002",
+   "chord": "4"
+  },
+  {
+   "name": "short_payload_key_1",
+   "payload": "40",
+   "chord": "none"
+  },
+  {
+   "name": "reply_10_bytes_key_4",
+   "payload": "00020000000000000000",
+   "chord": "4"
+  },
+  {
+   "name": "reply_10_bytes_key_1",
+   "payload": "40000000000000000000",
+   "chord": "none"
+  },
+  {
+   "name": "key_4_with_key_0x3f",
+   "payload": "00020000000000800000",
+   "chord": "none"
+  },
+  {
+   "name": "key_4_with_step_9",
+   "payload": "00020000000000000100",
+   "chord": "none"
+  },
+  {
+   "name": "key_4_with_step_16",
+   "payload": "00020000000000008000",
+   "chord": "none"
+  },
+  {
+   "name": "key_1_with_step_12",
+   "payload": "40000000000000000800",
+   "chord": "none"
+  },
+  {
+   "name": "step_9_alone",
+   "payload": "00000000000000000100",
+   "chord": "none"
+  },
+  {
+   "name": "key_4_byte_9_set_not_read",
+   "payload": "000200000000000000ff",
+   "chord": "4"
+  },
+  {
+   "name": "reply_9_bytes_key_4",
+   "payload": "000200000000000000",
+   "chord": "4"
+  },
+  {
+   "name": "reply_9_bytes_key_4_step_9",
+   "payload": "000200000000000001",
+   "chord": "none"
+  },
+  {
+   "name": "reply_8_bytes_key_4",
+   "payload": "0002000000000000",
+   "chord": "4"
+  },
+  {
+   "name": "reply_8_bytes_key_4_key_0x3f",
+   "payload": "0002000000000080",
+   "chord": "none"
+  },
+  {
+   "name": "unreadable",
+   "payload": "none",
+   "chord": "unreadable"
+  }
+ ]
+}

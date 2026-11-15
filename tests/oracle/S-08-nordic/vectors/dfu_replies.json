@@ -1,0 +1,116 @@
+{
+ "rows": [
+  {
+   "command": 2,
+   "reply_id": "0x0e",
+   "payload": "54",
+   "class": "ok",
+   "error_text": null
+  },
+  {
+   "command": 3,
+   "reply_id": "0x0e",
+   "payload": "54",
+   "class": "ok",
+   "error_text": null
+  },
+  {
+   "command": 5,
+   "reply_id": "0x0e",
+   "payload": "54",
+   "class": "ok",
+   "error_text": null
+  },
+  {
+   "command": 3,
+   "reply_id": "0x0e",
+   "payload": "54ffff",
+   "class": "ok",
+   "error_text": null
+  },
+  {
+   "command": 2,
+   "reply_id": "0x0e",
+   "payload": "92",
+   "class": "busy",
+   "error_text": null
+  },
+  {
+   "command": 5,
+   "reply_id": "0x0e",
+   "payload": "92",
+   "class": "busy",
+   "error_text": null
+  },
+  {
+   "command": 2,
+   "reply_id": "0x05",
+   "payload": "92",
+   "class": "busy",
+   "error_text": null
+  },
+  {
+   "command": 3,
+   "reply_id": "0x0e",
+   "payload": "92",
+   "class": "fail",
+   "error_text": null
+  },
+  {
+   "command": 3,
+   "reply_id": "0x0e",
+   "payload": "46666c617368206572726f72",
+   "class": "fail",
+   "error_text": "666c617368206572726f72"
+  },
+  {
+   "command": 2,
+   "reply_id": "0x0e",
+   "payload": "4662616420257320256e",
+   "class": "fail",
+   "error_text": "62616420257320256e"
+  },
+  {
+   "command": 3,
+   "reply_id": "0x0a",
+   "payload": "54",
+   "class": "fail",
+   "error_text": null
+  },
+  {
+   "command": 3,
+   "reply_id": "0x06",
+   "payload": "40",
+   "class": "fail",
+   "error_text": null
+  },
+  {
+   "command": 2,
+   "reply_id": "0x0e",
+   "payload": "",
+   "class": "fail",
+   "error_text": null
+  },
+  {
+   "command": 3,
+   "reply_id": "0x0e",
+   "payload": "",
+   "class": "fail",
+   "error_text": null
+  },
+  {
+   "command": 5,
+   "reply_id": "0x0e",
+   "payload": "",
+   "class": "fail",
+   "error_text": null
+  },
+  {
+   "command": 5,
+   "reply_id": "0x0e",
+   "payload": "46",
+   "class": "fail",
+   "error_text": null
+  }
+ ]
+}

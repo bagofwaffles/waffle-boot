@@ -1,0 +1,175 @@
+{
+ "requirements": [
+  "S-12.019",
+  "S-12.020",
+  "S-12.021"
+ ],
+ "read": [
+  {
+   "kind": "fat32_preset",
+   "read": true,
+   "note": "a host reformat as FAT32 (MBR, partition at 63, type 0x0C)",
+   "volume_start": 63,
+   "fat_type": 32,
+   "tree": {
+    "cdc_please": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "firmware": {
+     "type": "dir"
+    },
+    "firmware/notes.txt": {
+     "type": "file",
+     "len": 100,
+     "sha256": "f90edbbb60efe29714a69f98a3e407562d869352c8ec223e01f144a6cef98494"
+    },
+    "op-xy_1.1.2.tfw": {
+     "type": "file",
+     "len": 5000,
+     "sha256": "179985a337ef5eaa877f5a5f6ef37eea412c43108fcc31f21c9f9b1248db3113"
+    }
+   },
+   "check": []
+  },
+  {
+   "kind": "fat12_superfloppy",
+   "read": true,
+   "note": "FAT12, 128-sector clusters, no partition table",
+   "volume_start": 0,
+   "fat_type": 12,
+   "tree": {
+    "cdc_please": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "firmware": {
+     "type": "dir"
+    },
+    "firmware/notes.txt": {
+     "type": "file",
+     "len": 100,
+     "sha256": "f90edbbb60efe29714a69f98a3e407562d869352c8ec223e01f144a6cef98494"
+    },
+    "op-xy_1.1.2.tfw": {
+     "type": "file",
+     "len": 5000,
+     "sha256": "179985a337ef5eaa877f5a5f6ef37eea412c43108fcc31f21c9f9b1248db3113"
+    }
+   },
+   "check": []
+  },
+  {
+   "kind": "fat16_two_fats",
+   "read": true,
+   "note": "FAT16, two FATs, partition at 2048",
+   "volume_start": 2048,
+   "fat_type": 16,
+   "tree": {
+    "cdc_please": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "firmware": {
+     "type": "dir"
+    },
+    "firmware/notes.txt": {
+     "type": "file",
+     "len": 100,
+     "sha256": "f90edbbb60efe29714a69f98a3e407562d869352c8ec223e01f144a6cef98494"
+    },
+    "op-xy_1.1.2.tfw": {
+     "type": "file",
+     "len": 5000,
+     "sha256": "179985a337ef5eaa877f5a5f6ef37eea412c43108fcc31f21c9f9b1248db3113"
+    }
+   },
+   "check": []
+  },
+  {
+   "kind": "fat16_superfloppy",
+   "read": true,
+   "note": "FAT16, two FATs, no partition table",
+   "volume_start": 0,
+   "fat_type": 16,
+   "tree": {
+    "cdc_please": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "firmware": {
+     "type": "dir"
+    },
+    "firmware/notes.txt": {
+     "type": "file",
+     "len": 100,
+     "sha256": "f90edbbb60efe29714a69f98a3e407562d869352c8ec223e01f144a6cef98494"
+    },
+    "op-xy_1.1.2.tfw": {
+     "type": "file",
+     "len": 5000,
+     "sha256": "179985a337ef5eaa877f5a5f6ef37eea412c43108fcc31f21c9f9b1248db3113"
+    }
+   },
+   "check": []
+  },
+  {
+   "kind": "fat32_second_partition",
+   "read": true,
+   "note": "entry 1 points at a sector that is not a FAT boot sector; entry 2 is the volume",
+   "volume_start": 4096,
+   "fat_type": 32,
+   "tree": {
+    "cdc_please": {
+     "type": "file",
+     "len": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "firmware": {
+     "type": "dir"
+    },
+    "firmware/notes.txt": {
+     "type": "file",
+     "len": 100,
+     "sha256": "f90edbbb60efe29714a69f98a3e407562d869352c8ec223e01f144a6cef98494"
+    },
+    "op-xy_1.1.2.tfw": {
+     "type": "file",
+     "len": 5000,
+     "sha256": "179985a337ef5eaa877f5a5f6ef37eea412c43108fcc31f21c9f9b1248db3113"
+    }
+   },
+   "check": []
+  }
+ ],
+ "unreadable": [
+  {
+   "kind": "exfat",
+   "read": false,
+   "note": "the partition holds an exFAT boot sector (need not be read)",
+   "volume_start": null
+  },
+  {
+   "kind": "gpt",
+   "read": false,
+   "note": "a protective MBR and a GUID partition table (need not be read)",
+   "volume_start": null
+  },
+  {
+   "kind": "blank",
+   "read": false,
+   "note": "all zero: no signature at sector 0",
+   "volume_start": null
+  },
+  {
+   "kind": "bad_jump",
+   "read": false,
+   "note": "a FAT16 boot sector at 0 whose first byte is 0x00",
+   "volume_start": null
+  }
+ ]
+}

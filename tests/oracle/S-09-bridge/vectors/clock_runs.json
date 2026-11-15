@@ -1,0 +1,59 @@
+[
+ {
+  "name": "ticking",
+  "payloads_hex": [
+   "cc7df768",
+   "cd7df768",
+   "ce7df768",
+   "cf7df768"
+  ],
+  "reads": [
+   "0x9f38c894",
+   "0x9f38c895",
+   "0x9f38c896",
+   "0x9f38c897"
+  ]
+ },
+ {
+  "name": "stopped",
+  "payloads_hex": [
+   "cc7df768"
+  ],
+  "reads": [
+   "0x9f38c894",
+   "0x9f38c894",
+   "0x9f38c894",
+   "0x9f38c894",
+   "0x9f38c894",
+   "0x9f38c894"
+  ]
+ },
+ {
+  "name": "stopped_at_zero",
+  "payloads_hex": [
+   "00000000"
+  ],
+  "reads": [
+   "0x00000000",
+   "0x00000000",
+   "0x00000000",
+   "0x00000000",
+   "0x00000000",
+   "0x00000000"
+  ]
+ },
+ {
+  "name": "stopped_then_set",
+  "payloads_hex": [
+   "cc7df768",
+   "05000000"
+  ],
+  "reads": [
+   "0x9f38c894",
+   "0x9f38c894",
+   "0x9f38c894",
+   "0x00000005",
+   "0x00000005"
+  ]
+ }
+]

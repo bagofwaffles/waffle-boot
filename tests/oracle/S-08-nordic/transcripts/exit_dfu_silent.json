@@ -1,0 +1,38 @@
+{
+ "name": "exit_dfu_silent",
+ "requirements": [
+  "S-08.020",
+  "S-08.033"
+ ],
+ "procedure": "exit_dfu",
+ "state": 0,
+ "peer": {},
+ "expect": [
+  {
+   "dut": {
+    "id": "0x0d",
+    "payload": "18",
+    "kind": "message"
+   }
+  },
+  {
+   "dut": {
+    "id": "0x09",
+    "kind": "request",
+    "payload": ""
+   },
+   "count": 120,
+   "gap_ms": [
+    100,
+    103
+   ]
+  }
+ ],
+ "result": false,
+ "precondition": "Before t = 0 the last info reply the bootloader received from any peer is the PSoC's reply to 0x09, with the entry mode:application (prior_info): the PSoC responder answers 0x09 with a mode entry, and the Nordic sent no info reply after the PSoC's last one. Only then does a bootloader that reads a query without a reply from the last info reply (N1) fail this check.",
+ "prior_info": "mode:application;sw_version:1.0.7;serial:PSOC0001",
+ "end_ms": [
+  12000,
+  12300
+ ]
+}

@@ -1,0 +1,64 @@
+[
+ {
+  "arg1": 0,
+  "emmc_commands": [
+   [
+    35,
+    2048
+   ],
+   [
+    36,
+    2048
+   ],
+   [
+    38,
+    0
+   ]
+  ],
+  "name": "erase",
+  "reply_hex": "140100000000000000000000",
+  "request_hex": "140100000008000000000000"
+ },
+ {
+  "arg1": 1,
+  "emmc_commands": [],
+  "name": "trim",
+  "reply_hex": "14010000ffffffff00000000",
+  "request_hex": "140100000008000001000000"
+ },
+ {
+  "arg1": 3,
+  "emmc_commands": [],
+  "name": "discard",
+  "reply_hex": "14010000ffffffff00000000",
+  "request_hex": "140100000008000003000000"
+ },
+ {
+  "arg1": 2147483648,
+  "emmc_commands": [],
+  "name": "secure_erase",
+  "reply_hex": "14010000ffffffff00000000",
+  "request_hex": "140100000008000000000080"
+ },
+ {
+  "arg1": 2147516416,
+  "emmc_commands": [],
+  "name": "secure_trim_2",
+  "reply_hex": "14010000ffffffff00000000",
+  "request_hex": "140100000008000000800080"
+ },
+ {
+  "arg1": 305419896,
+  "emmc_commands": [],
+  "name": "undefined",
+  "reply_hex": "14010000ffffffff00000000",
+  "request_hex": "140100000008000078563412"
+ },
+ {
+  "arg1": 4294967295,
+  "emmc_commands": [],
+  "name": "all_ones",
+  "reply_hex": "14010000ffffffff00000000",
+  "request_hex": "1401000000080000ffffffff"
+ }
+]

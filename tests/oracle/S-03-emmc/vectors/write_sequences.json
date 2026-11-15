@@ -1,0 +1,14206 @@
+{
+ "B": 4194304,
+ "cases": [
+  {
+   "name": "p1_active_12288",
+   "start": "p1_active",
+   "length": 12288,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     24
+    ],
+    [
+     "read",
+     2,
+     1,
+     24
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 25,
+   "header": "0300000000300000de70bc4f01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_active_12544",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_inactive_p2_active_12288",
+   "start": "p1_inactive_p2_active",
+   "length": 12288,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     24
+    ],
+    [
+     "read",
+     1,
+     1,
+     24
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 25,
+   "header": "0300000000300000de70bc4f01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      24
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      24
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_inactive_p2_active_12544",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "both_active_12288",
+   "start": "both_active",
+   "length": 12288,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     24
+    ],
+    [
+     "read",
+     2,
+     1,
+     24
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 25,
+   "header": "0300000000300000de70bc4f01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "both_active_12544",
+   "start": "both_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "neither_12288",
+   "start": "neither",
+   "length": 12288,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "none",
+   "result": "ok",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     24
+    ],
+    [
+     "read",
+     1,
+     1,
+     24
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 25,
+   "header": "0300000000300000de70bc4f01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      24
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      24
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "neither_12544",
+   "start": "neither",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "none",
+   "result": "ok",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_bad_12288",
+   "start": "p1_bad",
+   "length": 12288,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "none",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     24
+    ],
+    [
+     "read",
+     2,
+     1,
+     24
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 25,
+   "header": "0300000000300000de70bc4f01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_bad_12544",
+   "start": "p1_bad",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "none",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_inactive_p2_active_rewrite_erase",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite_erase",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 6,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    },
+    {
+     "op_index": 6,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_active_rewrite_erase",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite_erase",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 6,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 6,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "large_two_groups",
+   "start": "p1_active",
+   "length": 528384,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "erase",
+     2,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     1032
+    ],
+    [
+     "read",
+     2,
+     1,
+     1032
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 1033,
+   "header": "03000000001008005270f40601000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "erase",
+      2,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      1,
+      1032
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 6,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "erase",
+      2,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      1,
+      1032
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 6,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "corrupt_sector5",
+   "start": "p1_active",
+   "length": 12288,
+   "corrupt_sector": 5,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     24
+    ],
+    [
+     "read",
+     2,
+     1,
+     24
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 25,
+   "header": "0300000000300000de70bc4f01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "corrupt_last_sector_512_multiple",
+   "start": "p1_active",
+   "length": 12288,
+   "corrupt_sector": 24,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     24
+    ],
+    [
+     "read",
+     2,
+     1,
+     24
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 25,
+   "header": "0300000000300000de70bc4f01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      24
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "corrupt_last_partial_sector",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": 25,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "corrupt_sector5_target_p1",
+   "start": "p1_inactive_p2_active",
+   "length": 12288,
+   "corrupt_sector": 5,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     24
+    ],
+    [
+     "read",
+     1,
+     1,
+     24
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 25,
+   "header": "0300000000300000de70bc4f01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      24
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      24
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "corrupt_header",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": "inactive",
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "corrupt_header_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": "active",
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "corrupt_header_target_p2",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": "inactive",
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "corrupt_header_active_target_p2",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": "active",
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "refused_too_small",
+   "start": "p1_active",
+   "length": 9484,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "refused",
+   "target": null,
+   "ops": []
+  },
+  {
+   "name": "accepted_min",
+   "start": "p1_active",
+   "length": 9488,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     19
+    ],
+    [
+     "read",
+     2,
+     1,
+     19
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 20,
+   "header": "0300000010250000c44fdbf901000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      19
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      19
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "refused_past_partition",
+   "start": "p1_active",
+   "length": 4193793,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "refused",
+   "target": null,
+   "ops": []
+  },
+  {
+   "name": "accepted_partition_full",
+   "start": "p1_active",
+   "length": 4193792,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "erase",
+     2,
+     1
+    ],
+    [
+     "erase",
+     2,
+     2
+    ],
+    [
+     "erase",
+     2,
+     3
+    ],
+    [
+     "erase",
+     2,
+     4
+    ],
+    [
+     "erase",
+     2,
+     5
+    ],
+    [
+     "erase",
+     2,
+     6
+    ],
+    [
+     "erase",
+     2,
+     7
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     8191
+    ],
+    [
+     "read",
+     2,
+     1,
+     8191
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 8191,
+   "header": "0300000000fe3f007007b54a01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "erase",
+      2,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "erase",
+      2,
+      2
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "erase",
+      2,
+      3
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "erase",
+      2,
+      4
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 6,
+     "op": [
+      "erase",
+      2,
+      5
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 7,
+     "op": [
+      "erase",
+      2,
+      6
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 8,
+     "op": [
+      "erase",
+      2,
+      7
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 9,
+     "op": [
+      "write",
+      2,
+      1,
+      8191
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 10,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 11,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 12,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ]
+  },
+  {
+   "name": "extra_sector_group_edge",
+   "start": "p1_active",
+   "length": 523776,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     1023
+    ],
+    [
+     "read",
+     2,
+     1,
+     1023
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 1023,
+   "header": "0300000000fe07008497589e01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      1023
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      1023
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_active_long",
+   "start": "p1_active",
+   "length": 131772,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     258
+    ],
+    [
+     "read",
+     2,
+     1,
+     258
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 259,
+   "header": "03000000bc020200da47c8ab01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      258
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      258
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "p1_inactive_p2_active_long",
+   "start": "p1_inactive_p2_active",
+   "length": 131772,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": null,
+   "boots_before": "old",
+   "result": "ok",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     258
+    ],
+    [
+     "read",
+     1,
+     1,
+     258
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 259,
+   "header": "03000000bc020200da47c8ab01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      258
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      258
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_select1__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select1",
+   "boots_before": "old",
+   "result": "failed",
+   "target": null,
+   "ops": [
+    [
+     "select",
+     1,
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [],
+   "torn": []
+  },
+  {
+   "name": "fail_select1__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select1",
+   "boots_before": "old",
+   "result": "failed",
+   "target": null,
+   "ops": [
+    [
+     "select",
+     1,
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [],
+   "torn": []
+  },
+  {
+   "name": "fail_read_header1__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_header1",
+   "boots_before": "old",
+   "result": "failed",
+   "target": null,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [],
+   "torn": []
+  },
+  {
+   "name": "fail_read_header1__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_header1",
+   "boots_before": "old",
+   "result": "failed",
+   "target": null,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [],
+   "torn": []
+  },
+  {
+   "name": "fail_select2__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select2",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2,
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [],
+   "torn": []
+  },
+  {
+   "name": "fail_erase__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "erase",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0,
+     "error"
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_erase__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "erase",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0,
+     "error"
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_write_image__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "write_image",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25,
+     "error"
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_write_image__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "write_image",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25,
+     "error"
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_image__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_image",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25,
+     "error"
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_image__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_image",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25,
+     "error"
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_write_header__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "write_header",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_write_header__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "write_header",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_header__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_header",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_header__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_header",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_write_header_active__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "write_header_active",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_write_header_active__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "write_header_active",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_header_active__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_header_active",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_header_active__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_header_active",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_select_other__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select_other",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_select_other__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select_other",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_other__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_other",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_other__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_other",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_deactivate__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "deactivate",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_deactivate__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "deactivate",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_erase_other__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite_erase",
+   "fail": "erase_other",
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 6,
+     "op": [
+      "erase",
+      1,
+      0,
+      "error"
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 6,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_erase_other__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite_erase",
+   "fail": "erase_other",
+   "boots_before": "old",
+   "result": "ok",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "erase",
+     2,
+     0,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 6,
+     "op": [
+      "erase",
+      2,
+      0,
+      "error"
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    },
+    {
+     "op_index": 6,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_select0__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select0",
+   "boots_before": "old",
+   "result": "ok",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0,
+     "error"
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_select0__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select0",
+   "boots_before": "old",
+   "result": "ok",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0,
+     "error"
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_flush_image__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "flush_image",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush",
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_flush_image__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "flush_image",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush",
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_flush_header__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "flush_header",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush",
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_flush_header__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "flush_header",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush",
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_flush_final__p1_active",
+   "start": "p1_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "flush_final",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush",
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": false,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_flush_final__p1_inactive_p2_active",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "flush_final",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush",
+     "error"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_select_other__both_active",
+   "start": "both_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select_other",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_select_other__neither",
+   "start": "neither",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select_other",
+   "boots_before": "none",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_select_other__p1_bad",
+   "start": "p1_bad",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "select_other",
+   "boots_before": "none",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "none",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_other__both_active",
+   "start": "both_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_other",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_other__neither",
+   "start": "neither",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_other",
+   "boots_before": "none",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_read_other__p1_bad",
+   "start": "p1_bad",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "read_other",
+   "boots_before": "none",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "none",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_deactivate__both_active",
+   "start": "both_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "deactivate",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "old",
+    "boots_if_fallback": "old"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_deactivate__neither",
+   "start": "neither",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "deactivate",
+   "boots_before": "none",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": false,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_deactivate__p1_bad",
+   "start": "p1_bad",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite",
+   "fail": "deactivate",
+   "boots_before": "none",
+   "result": "failed",
+   "target": 2,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "erase",
+     2,
+     0
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     1,
+     25
+    ],
+    [
+     "read",
+     2,
+     1,
+     25
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     2,
+     0,
+     1
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "none",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "none"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": "none",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "none",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      2,
+      0
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      2,
+      1,
+      25
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "none"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "none"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "none"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fail_deactivate__p1_inactive_p2_active_rewrite_erase",
+   "start": "p1_inactive_p2_active",
+   "length": 12544,
+   "corrupt_sector": null,
+   "corrupt_header": null,
+   "deactivate": "rewrite_erase",
+   "fail": "deactivate",
+   "boots_before": "old",
+   "result": "failed",
+   "target": 1,
+   "ops": [
+    [
+     "select",
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "erase",
+     1,
+     0
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "write",
+     1,
+     1,
+     25
+    ],
+    [
+     "read",
+     1,
+     1,
+     25
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "write",
+     1,
+     0,
+     1
+    ],
+    [
+     "read",
+     1,
+     0,
+     1
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     2
+    ],
+    [
+     "read",
+     2,
+     0,
+     1
+    ],
+    [
+     "write",
+     2,
+     0,
+     1,
+     "error"
+    ],
+    [
+     "flush"
+    ],
+    [
+     "select",
+     0
+    ]
+   ],
+   "last_writable_sector": 26,
+   "header": "0300000000310000ba867add01000000",
+   "final": {
+    "p1_active": true,
+    "p2_active": true,
+    "boots": "new",
+    "boots_if_fallback": "new"
+   },
+   "cuts": [
+    {
+     "after": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "old",
+     "boots_if_fallback": "old"
+    },
+    {
+     "after": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    },
+    {
+     "after": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1,
+      "error"
+     ],
+     "boots": "new",
+     "boots_if_fallback": "new"
+    }
+   ],
+   "torn": [
+    {
+     "op_index": 1,
+     "op": [
+      "erase",
+      1,
+      0
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 2,
+     "op": [
+      "write",
+      1,
+      1,
+      25
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 3,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "old"
+     ],
+     "boots_if_fallback": [
+      "old"
+     ]
+    },
+    {
+     "op_index": 4,
+     "op": [
+      "write",
+      1,
+      0,
+      1
+     ],
+     "boots": [
+      "new",
+      "old"
+     ],
+     "boots_if_fallback": [
+      "new",
+      "old"
+     ]
+    },
+    {
+     "op_index": 5,
+     "op": [
+      "write",
+      2,
+      0,
+      1
+     ],
+     "boots": [
+      "new"
+     ],
+     "boots_if_fallback": [
+      "new"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,34 @@
+[
+ {
+  "word": "00084000",
+  "passes": true
+ },
+ {
+  "word": "000843FF",
+  "passes": true
+ },
+ {
+  "word": "FF084000",
+  "passes": true
+ },
+ {
+  "word": "00084400",
+  "passes": false
+ },
+ {
+  "word": "00088000",
+  "passes": false
+ },
+ {
+  "word": "00000000",
+  "passes": false
+ },
+ {
+  "word": "00FF8000",
+  "passes": false
+ },
+ {
+  "word": "10084000",
+  "passes": true
+ }
+]

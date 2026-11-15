@@ -1,0 +1,180 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Which jobs run when:
+#
+#   draft pull request   host build and tests (gcc), the cross build with the
+#                        image and size checks, the conformance suite (gcc)
+#   ready pull request,  everything: those with gcc and clang, static
+#   push to main,        analysis, the reproducible builds, fuzzing
+#   workflow_dispatch
+#
+# Changes to Markdown alone run nothing, except under tests/.
+# tools/ci-local.sh runs the same jobs in a local container (tools/README.md).
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['**', '!**.md', 'tests/**']
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths: ['**', '!**.md', 'tests/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# A full run is anything but a draft pull request; the jobs below test
+# !github.event.pull_request.draft, which is also true outside pull requests.
+jobs:
+  host:
+    name: Host build and tests (${{ matrix.cc }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: ${{ fromJSON(github.event.pull_request.draft && '["gcc"]' || '["gcc", "clang"]') }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: ${{ matrix.cc }} --version
+      - run: make -j"$(nproc)" CC=${{ matrix.cc }} check
+
+  static-analysis:
+    name: Static analysis (clang analyzer, cppcheck)
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install cppcheck
+        run: sudo apt-get update -q && sudo apt-get install -y -q cppcheck
+      - run: clang --version && cppcheck --version
+      - run: make -j"$(nproc)" analyze
+      - run: make -j"$(nproc)" cppcheck
+
+  repro-host:
+    name: Reproducible build (host, ${{ matrix.cc }})
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: MAKEFLAGS="-j$(nproc) $MAKEFLAGS" tools/repro-check.sh host
+        env:
+          MAKEFLAGS: CC=${{ matrix.cc }}
+
+  # Restores the bfin-elf toolchain from the cache (keyed on the pinned
+  # commit and the build script), building and saving it on a miss.
+  toolchain:
+    name: bfin-elf toolchain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    outputs:
+      key: ${{ steps.key.outputs.key }}
+      prefix: ${{ steps.key.outputs.prefix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: key
+        name: Cache key
+        run: |
+          echo "key=bfin-elf-$(tools/toolchain/build.sh --print-commit)-${{ runner.os }}-${{ hashFiles('tools/toolchain/build.sh') }}" >> "$GITHUB_OUTPUT"
+          echo "prefix=$(tools/toolchain/build.sh --print-prefix)" >> "$GITHUB_OUTPUT"
+      - id: cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.key.outputs.prefix }}
+          key: ${{ steps.key.outputs.key }}
+          lookup-only: true
+      - name: Install build prerequisites
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: sudo apt-get update -q && sudo apt-get install -y -q libgmp-dev libmpfr-dev libmpc-dev flex bison
+      - name: Build toolchain
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: tools/toolchain/build.sh
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.key.outputs.prefix }}
+          key: ${{ steps.key.outputs.key }}
+
+  # make cross includes the image, and make size fails when a component or
+  # a memory region is over its limit; make test-os builds the test OS with
+  # its gates (docs/test-os.md). Drafts skip the reproducibility check.
+  cross:
+    name: Cross build and reproducibility (ADSP-BF703)
+    needs: toolchain
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ needs.toolchain.outputs.prefix }}
+          key: ${{ needs.toolchain.outputs.key }}
+          fail-on-cache-miss: true
+      - run: make -j"$(nproc)" cross
+      - run: $(tools/toolchain/build.sh --print-prefix)/bin/bfin-elf-objdump -d build/bf703/libwaffle.a
+      - name: Target size of each vendored component
+        run: make size
+      - name: The test OS and its gates
+        run: make -j"$(nproc)" test-os test-os-mon test-os-install
+      - name: A development image and its installer
+        run: make -j"$(nproc)" image test-os-install BOOT_CRUMBS=1 BOOT_TIMING=1 LOG_DEBUG=1 BUILD=build/dev
+      - if: ${{ !github.event.pull_request.draft }}
+        run: MAKEFLAGS=-j"$(nproc)" tools/repro-check.sh cross
+
+  # Every parser of untrusted input, for a bounded time (tests/fuzz/README.md).
+  fuzz:
+    name: Fuzzing (libFuzzer, bounded)
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the libFuzzer runtime
+        run: sudo apt-get update -q && sudo apt-get install -y -q libclang-rt-18-dev
+      - run: clang --version
+      - run: make -j"$(nproc)" fuzz
+      - run: make -j"$(nproc)" fuzz-run FUZZ_TIME=60
+      - name: Keep the findings
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-findings
+          path: |
+            build/fuzz/*-crash-*
+            build/fuzz/*-leak-*
+            build/fuzz/*-timeout-*
+            build/fuzz/*-oom-*
+          if-no-files-found: ignore
+
+  # The tests/oracle/conformance self-tests, the spec/ checks (when spec/ is present) and
+  # the host harness of tests/conformance/ (tools/conformance.sh); with clang,
+  # only the harness, the one part that depends on the compiler.
+  conformance:
+    name: Conformance suite (${{ matrix.cc }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: ${{ fromJSON(github.event.pull_request.draft && '["gcc"]' || '["gcc", "clang"]') }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: python3 --version && ${{ matrix.cc }} --version
+      - run: MAKEFLAGS=-j"$(nproc)" tools/conformance.sh ${{ matrix.cc == 'gcc' && 'all' || 'harness' }}
+        env:
+          CC: ${{ matrix.cc }}
+      # The coverage table does not depend on the compiler: once is enough.
+      - name: Coverage in the job summary
+        if: matrix.cc == 'gcc'
+        run: cat tests/conformance/COVERAGE.md >> "$GITHUB_STEP_SUMMARY"
+      - if: matrix.cc == 'gcc'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: conformance-coverage
+          path: tests/conformance/COVERAGE.md

@@ -1,0 +1,292 @@
+{
+ "devprop_set_battery": [
+  {
+   "args": [
+    20481
+   ],
+   "code": 8207,
+   "op": 4118,
+   "params": []
+  }
+ ],
+ "devprop_set_unknown": [
+  {
+   "args": [
+    54527
+   ],
+   "code": 8202,
+   "op": 4118,
+   "params": []
+  }
+ ],
+ "get_object_sizes": [
+  {
+   "code": 8193,
+   "container_length": 12,
+   "path": "/s0000000.bin",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "zlp_at_512": false,
+   "zlp_at_64": false
+  },
+  {
+   "code": 8193,
+   "container_length": 13,
+   "path": "/s0000001.bin",
+   "sha256": "e52d9c508c502347344d8c07ad91cbd6068afc75ff6292f062a09ca381c89e71",
+   "size": 1,
+   "zlp_at_512": false,
+   "zlp_at_64": false
+  },
+  {
+   "code": 8193,
+   "container_length": 64,
+   "path": "/s0000052.bin",
+   "sha256": "bc3bd1eff7c705f93612f0188b930e7642849aab8e6191f17fd59102a08fc8f5",
+   "size": 52,
+   "zlp_at_512": false,
+   "zlp_at_64": true
+  },
+  {
+   "code": 8193,
+   "container_length": 128,
+   "path": "/s0000116.bin",
+   "sha256": "fc9b9c6082bc9767378ad93304750d60241e2af2ba2cae410544a0477247bf2b",
+   "size": 116,
+   "zlp_at_512": false,
+   "zlp_at_64": true
+  },
+  {
+   "code": 8193,
+   "container_length": 511,
+   "path": "/s0000499.bin",
+   "sha256": "dd27838fdf2812bdcf49f03c142f93fa3ec171ee469cc9a54f3ad9717178d3f9",
+   "size": 499,
+   "zlp_at_512": false,
+   "zlp_at_64": false
+  },
+  {
+   "code": 8193,
+   "container_length": 512,
+   "path": "/s0000500.bin",
+   "sha256": "7dd15ccc877b66a0e84a71f7936337f620fde452a160867dbe93583131bedba0",
+   "size": 500,
+   "zlp_at_512": true,
+   "zlp_at_64": true
+  },
+  {
+   "code": 8193,
+   "container_length": 1024,
+   "path": "/s0001012.bin",
+   "sha256": "b864dd4bb6a2c3d5f67ebd245d5476a3895e02e32fcd0782a93afc5cf3e9ee32",
+   "size": 1012,
+   "zlp_at_512": true,
+   "zlp_at_64": true
+  },
+  {
+   "code": 8193,
+   "container_length": 1036,
+   "path": "/s0001024.bin",
+   "sha256": "e9183d9a79aad8a047b8e67981210d50b01fc75b1edba5bc32ba3d3ec4d5056d",
+   "size": 1024,
+   "zlp_at_512": false,
+   "zlp_at_64": false
+  },
+  {
+   "code": 8193,
+   "container_length": 16384,
+   "path": "/s0016372.bin",
+   "sha256": "71068043b9ff503c4ae6086bc6acf747685d670c056a34d03f591d693897cc10",
+   "size": 16372,
+   "zlp_at_512": true,
+   "zlp_at_64": true
+  },
+  {
+   "code": 8193,
+   "container_length": 16396,
+   "path": "/s0016384.bin",
+   "sha256": "ab571d12466f75ae481bdbbbfec70a0c53bf78e2849862addfa9a049d8f6fbc0",
+   "size": 16384,
+   "zlp_at_512": false,
+   "zlp_at_64": false
+  },
+  {
+   "code": 8193,
+   "container_length": 49241,
+   "path": "/s0049229.bin",
+   "sha256": "50feb16aea13e2f40c6f95f9ddab18b06eae579d5010ae141d42b86b9e24a99e",
+   "size": 49229,
+   "zlp_at_512": false,
+   "zlp_at_64": false
+  },
+  {
+   "code": 8193,
+   "container_length": 1048588,
+   "path": "/s1048576.bin",
+   "sha256": "172c15dc2e12b50e523d8e657cbe7fbb11c1053252bbf1e1431077d57d8128fd",
+   "size": 1048576,
+   "zlp_at_512": false,
+   "zlp_at_64": false
+  },
+  {
+   "code": 8201,
+   "path": "/folder"
+  },
+  {
+   "code": 8201,
+   "path": null
+  }
+ ],
+ "session_closed_ops": [
+  {
+   "code": 8195,
+   "op": 4099,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4100,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4101,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4102,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4103,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4104,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4105,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4116,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4117,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4118,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 4123,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 38913,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 38914,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 38915,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 38917,
+   "params": []
+  },
+  {
+   "code": 8195,
+   "op": 38928,
+   "params": []
+  }
+ ],
+ "session_open_close": [
+  {
+   "args": [],
+   "code": 8193,
+   "data": "6400060000006400146d006900630072006f0073006f00660074002e0063006f006d003a00200031002e0030003b0000000000120000000110021003100410051006100710081009101410151016101b100198029803980598109800000000020000000150115006000000003001300730083000b9043005000000003001300730083000b90d4d0061006e007500660061006300740075007200650072000000064d006f00640065006c0000000631002e0030002e00300000000b530045005200490041004c0030003000300031000000",
+   "data_len": 209,
+   "op": 4097,
+   "params": [],
+   "step": "GetDeviceInfo"
+  },
+  {
+   "args": [],
+   "code": 8195,
+   "op": 4099,
+   "params": [],
+   "step": "CloseSession"
+  },
+  {
+   "args": [
+    0
+   ],
+   "code": 8221,
+   "op": 4098,
+   "params": [],
+   "step": "OpenSession0"
+  },
+  {
+   "args": [
+    7
+   ],
+   "code": 8193,
+   "op": 4098,
+   "params": [],
+   "step": "OpenSession"
+  },
+  {
+   "args": [
+    8
+   ],
+   "code": 8222,
+   "op": 4098,
+   "params": [
+    7
+   ],
+   "step": "OpenAgain"
+  },
+  {
+   "args": [],
+   "code": 8193,
+   "op": 4099,
+   "params": [],
+   "step": "CloseSession"
+  },
+  {
+   "args": [],
+   "code": 8195,
+   "op": 4099,
+   "params": [],
+   "step": "CloseAgain"
+  }
+ ],
+ "storage_ids": [
+  {
+   "code": 8193,
+   "data": "0100000001000100",
+   "data_len": 8,
+   "op": 4100,
+   "params": []
+  }
+ ]
+}

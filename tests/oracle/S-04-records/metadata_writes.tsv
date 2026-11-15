@@ -1,0 +1,13 @@
+# S-04.045
+id	event	change
+M1	upgrade run starts (at step 0) and installs more than content	state=0xAB0D
+M2	OS-image step succeeds	sw_version=package_os_image_version
+M3	upgrade run completes every step, not content-only, before the progress record is cleared	os_version=package_version;state=0
+M4	a boot finds state 0xAB0D (S-11.080), or a run that is not content-only fails (S-11.064)	state=0
+M5	withdrawn: a boot that finds state 0xAB0D clears it whatever the keys (M4)	none
+M6	OS load fails and sw_version is not 0.0.0 (any field nonzero, build included)	sw_version=0.0.0.0
+M7	set-metadata request in factory mode	serial;sku;factory
+N1	withdrawn: a run that stops at a failed step makes M4	none
+N2	content-only installation, completed or failed	none
+N3	OS load fails and sw_version is 0.0.0.0	none
+N4	set-metadata request outside factory mode	none

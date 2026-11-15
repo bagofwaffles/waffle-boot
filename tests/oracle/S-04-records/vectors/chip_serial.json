@@ -1,0 +1,140 @@
+{
+ "requirement": "S-04.047",
+ "cases": [
+  {
+   "name": "padded",
+   "note": "NUL-padded serial",
+   "item1_hex": "4f5058592d303132330000000000000000000000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "OPXY-0123",
+   "read": "made"
+  },
+  {
+   "name": "full_18",
+   "note": "no 00 in the first 18 bytes; bytes 18 on are not part of it",
+   "item1_hex": "5445535453455249414c30303030303030314558545241425954455330313233",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "TESTSERIAL00000001",
+   "read": "made"
+  },
+  {
+   "name": "nul_inside",
+   "note": "ends at the first 00 byte",
+   "item1_hex": "414200434445464748494a4b4c4d4e4f50000000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "AB",
+   "read": "made"
+  },
+  {
+   "name": "printable_punct",
+   "note": "space, colon, slash and tilde are printable",
+   "item1_hex": "5445203033333a412f427e303030303121000000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "TE 033:A/B~00001!",
+   "read": "made"
+  },
+  {
+   "name": "after_nul_ignored",
+   "note": "bytes after the first 00 are not part of it, whatever they are",
+   "item1_hex": "4f5058590001023b09ff00000000000000000000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "OPXY",
+   "read": "made"
+  },
+  {
+   "name": "after_18_ignored",
+   "note": "bytes after the 18th are not part of it, whatever they are",
+   "item1_hex": "5445535453455249414c3030303030303032013b090aff000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "TESTSERIAL00000002",
+   "read": "made"
+  },
+  {
+   "name": "semicolon",
+   "note": "a ; in the serial",
+   "item1_hex": "5445535453455249414c3b303030303030310000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "",
+   "read": "made"
+  },
+  {
+   "name": "tab",
+   "note": "a tab in the serial",
+   "item1_hex": "544553540953455249414c303030303030310000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "",
+   "read": "made"
+  },
+  {
+   "name": "lf",
+   "note": "a line feed in the serial",
+   "item1_hex": "5445535453455249414c3030303030300a310000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "",
+   "read": "made"
+  },
+  {
+   "name": "del",
+   "note": "0x7F in the serial",
+   "item1_hex": "5445535453455249414c303030303030307f0000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "",
+   "read": "made"
+  },
+  {
+   "name": "high_byte",
+   "note": "a byte over 0x7F in the serial",
+   "item1_hex": "5445535453455249414c30303030303030e90000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "",
+   "read": "made"
+  },
+  {
+   "name": "control",
+   "note": "0x01 in the serial",
+   "item1_hex": "0145535453455249414c30303030303030310000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "",
+   "read": "made"
+  },
+  {
+   "name": "all_zero",
+   "note": "item 1 reads, all 00: the empty text, read made",
+   "item1_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": true,
+   "chip_serial": "",
+   "read": "made"
+  },
+  {
+   "name": "unreadable",
+   "note": "item 1 cannot be read",
+   "item1_hex": "5445535453455249414c30303030303030330000000000000000000000000000",
+   "item1_reads": false,
+   "record_reads": true,
+   "chip_serial": "",
+   "read": "failed"
+  },
+  {
+   "name": "record_unreadable",
+   "note": "the metadata record cannot be read at start-up: the chip serial is not read",
+   "item1_hex": "5445535453455249414c30303030303030340000000000000000000000000000",
+   "item1_reads": true,
+   "record_reads": false,
+   "chip_serial": "",
+   "read": "not made"
+  }
+ ]
+}

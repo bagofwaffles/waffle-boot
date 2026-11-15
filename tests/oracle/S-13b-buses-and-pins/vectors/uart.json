@@ -1,0 +1,60 @@
+{
+ "rows": [
+  {
+   "clk": 2147483748,
+   "ctl": 769,
+   "link": "uart0",
+   "name": "uart0",
+   "ok": true
+  },
+  {
+   "clk": 2147483748,
+   "ctl": 402653953,
+   "link": "uart1",
+   "name": "uart1",
+   "ok": true
+  },
+  {
+   "clk": 2147483748,
+   "ctl": 134218497,
+   "link": "uart1",
+   "name": "uart1_no_acts",
+   "ok": false
+  },
+  {
+   "clk": 2147483748,
+   "ctl": 402653953,
+   "link": "uart0",
+   "name": "uart0_flow",
+   "ok": false
+  },
+  {
+   "clk": 100,
+   "ctl": 769,
+   "link": "uart0",
+   "name": "uart0_x16",
+   "ok": false
+  },
+  {
+   "clk": 2147483748,
+   "ctl": 17153,
+   "link": "uart0",
+   "name": "uart0_parity",
+   "ok": false
+  },
+  {
+   "clk": 2147483748,
+   "ctl": 513,
+   "link": "uart0",
+   "name": "uart0_7bit",
+   "ok": false
+  },
+  {
+   "clk": 2147483748,
+   "ctl": 4865,
+   "link": "uart0",
+   "name": "uart0_two_stop",
+   "ok": false
+  }
+ ]
+}

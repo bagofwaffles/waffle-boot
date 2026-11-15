@@ -1,0 +1,173 @@
+{
+ "requirements": [
+  "S-12.010",
+  "S-12.011",
+  "S-12.012"
+ ],
+ "cp850": [
+  {
+   "byte": 128,
+   "char": "Ç"
+  },
+  {
+   "byte": 129,
+   "char": "ü"
+  },
+  {
+   "byte": 154,
+   "char": "Ü"
+  },
+  {
+   "byte": 225,
+   "char": "ß"
+  },
+  {
+   "byte": 229,
+   "char": "Õ"
+  },
+  {
+   "byte": 164,
+   "char": "ñ"
+  },
+  {
+   "byte": 255,
+   "char": " "
+  }
+ ],
+ "display": {
+  "entries": [
+   "4649524d57415245544657200000000000000000000000000000000000000000",
+   "4f50585920202020544657201000000000000000000000000000000000000000",
+   "524541444d452020202020200800000000000000000000000000000000000000",
+   "4d9a53494b202020545854200800000000000000000000000000000000000000",
+   "0542432020202020545854200000000000000000000000000000000000000000",
+   "4265002e007400660077000f00750000ffffffffffffffffffff0000ffffffff",
+   "016f0070002d00780079000f007520006600690072006d007700000061007200",
+   "4f502d5859467e31544657200000000000000000000000000000000000000000",
+   "426d002e007400660077000f00a60000ffffffffffffffffffff0000ffffffff",
+   "01770072006f006e0067000f00a6200063006800650063006b00000073007500",
+   "4f54484552202020544657200000000000000000000000000000000000000000",
+   "e54f4e4520202020544657200000000000000000000000000000000000000000",
+   "4c4142454c202020202020080000000000000000000000000000000000000000",
+   "4344435f504c7e31202020100000000000000000000000000000000000000000"
+  ],
+  "names": [
+   "FIRMWARE.TFW",
+   "OPXY.tfw",
+   "readme",
+   "mÜsik.TXT",
+   "ÕBC.TXT",
+   "op-xy firmware.tfw",
+   "OTHER.TFW",
+   "CDC_PL~1"
+  ]
+ },
+ "create": [
+  {
+   "name": "VERSION.TXT",
+   "forms": [
+    "sfn"
+   ]
+  },
+  {
+   "name": "version.txt",
+   "forms": [
+    "sfn_nt",
+    "lfn"
+   ]
+  },
+  {
+   "name": "boot.log",
+   "forms": [
+    "sfn_nt",
+    "lfn"
+   ]
+  },
+  {
+   "name": "logs",
+   "forms": [
+    "sfn_nt",
+    "lfn"
+   ]
+  },
+  {
+   "name": "systeminfo",
+   "forms": [
+    "lfn"
+   ]
+  },
+  {
+   "name": "licenses.txt",
+   "forms": [
+    "sfn_nt",
+    "lfn"
+   ]
+  },
+  {
+   "name": "Readme.txt",
+   "forms": [
+    "lfn"
+   ]
+  },
+  {
+   "name": "boot 2026-10-26.log",
+   "forms": [
+    "lfn"
+   ]
+  },
+  {
+   "name": "müsik.wav",
+   "forms": [
+    "lfn"
+   ]
+  },
+  {
+   "name": "a:b.log",
+   "forms": [
+    "refused"
+   ]
+  },
+  {
+   "name": "q?.log",
+   "forms": [
+    "refused"
+   ]
+  },
+  {
+   "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "forms": [
+    "refused"
+   ]
+  },
+  {
+   "name": "tab\there",
+   "forms": [
+    "refused"
+   ]
+  },
+  {
+   "name": "boot.log.",
+   "forms": [
+    "refused"
+   ]
+  },
+  {
+   "name": "trailing ",
+   "forms": [
+    "refused"
+   ]
+  },
+  {
+   "name": "dots..",
+   "forms": [
+    "refused"
+   ]
+  },
+  {
+   "name": "...",
+   "forms": [
+    "refused"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "image": "synthetic_os_b.ldr",
+ "length": 112,
+ "sha256": "66c3ea608b75aec8ab80f46e99e6e4b467326e1e9f87f75f05c68a0bae8ad82a",
+ "entry": "0x11a00000",
+ "header_buffer": "0x88a34d5c",
+ "calls": [
+  [
+   "0x0",
+   "0x88a34d5c",
+   "0x10"
+  ],
+  [
+   "0x10",
+   "0x88a34d5c",
+   "0x10"
+  ],
+  [
+   "0x20",
+   "0x11a00000",
+   "0x40"
+  ],
+  [
+   "0x60",
+   "0x88a34d5c",
+   "0x10"
+  ]
+ ],
+ "final_psource": "0x70",
+ "memory": [
+  {
+   "start": "0x11a00000",
+   "length": "0x40",
+   "sha256": "11f9069a8065bbf67bb3ad787e08a15c9a6c87fb85e255a131e234ea46d744cc"
+  }
+ ]
+}

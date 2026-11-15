@@ -1,0 +1,14 @@
+name	min	unit	source	req
+reset_low	10000	ns	datasheet tRW	S-13c.005
+reset_to_first_transaction	120000000	ns	datasheet reset-complete time	S-13c.006
+slpout_to_next_command	5000000	ns	datasheet Sleep Out	S-13c.007
+wr_low	15	ns	datasheet tWRL	S-13c.003
+wr_cycle	66	ns	datasheet tWC	S-13c.003
+rd_low	45	ns	datasheet tRDL (register read)	S-13c.003
+frame_byte_period	66	ns	datasheet tWC	S-13c.018
+dc_setup	15	ns	best guess (tAST; at or above the ST7796S-class figure)	S-13c.003
+dc_hold	15	ns	best guess (tAHT; at or above the ST7796S-class figure)	S-13c.003
+data_setup	15	ns	best guess (tDST; at or above the ST7796S-class figure)	S-13c.003
+data_hold	15	ns	best guess (tDHT; at or above the ST7796S-class figure)	S-13c.003
+te_period_min	15400000	ns	best guess (65 Hz; the assumed TE range, not a bootloader limit)	S-13c.018
+te_miss_min	40000000	ns	provisional (T_TE_MISS floor: twice the longest assumed TE period)	S-13c.017

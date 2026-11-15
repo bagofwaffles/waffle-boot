@@ -1,0 +1,3073 @@
+[
+ {
+  "expect": [],
+  "name": "master_strap_000",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [],
+  "name": "master_strap_001",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 5
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [],
+  "name": "master_strap_100",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 260
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [],
+  "name": "master_strap_101",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [],
+  "name": "slave_strap_000",
+  "role": "slave",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 89827840
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65280
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 16368
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DATA_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 32768
+   }
+  ]
+ },
+ {
+  "expect": [],
+  "name": "slave_strap_001",
+  "role": "slave",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 89827840
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65280
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 16368
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DATA_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 32768
+   }
+  ]
+ },
+ {
+  "expect": [],
+  "name": "slave_strap_100",
+  "role": "slave",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 256
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 89827840
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65280
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 16368
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DATA_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 32768
+   }
+  ]
+ },
+ {
+  "expect": [],
+  "name": "slave_strap_101",
+  "role": "slave",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 257
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 89827840
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65280
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 16368
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DATA_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 32768
+   }
+  ]
+ },
+ {
+  "expect": [
+   "mux_before_fer"
+  ],
+  "name": "fer_before_mux",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [
+   "strap_before_mux"
+  ],
+  "name": "strap_after_mux",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [
+   "mux_before_fer"
+  ],
+  "name": "no_pb10_input",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [
+   "mux_before_fer",
+   "pinmux_end_state"
+  ],
+  "name": "wrong_mux",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314561
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [
+   "gpio_directions"
+  ],
+  "name": "pa7_dropped_by_whole_write",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [
+   "gpio_directions"
+  ],
+  "name": "master_pa3_high",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DATA_SET",
+    "val": 8
+   }
+  ]
+ },
+ {
+  "expect": [
+   "gpio_directions"
+  ],
+  "name": "master_pc11_low",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_CLR",
+    "val": 2048
+   }
+  ]
+ },
+ {
+  "expect": [
+   "pinmux_end_state"
+  ],
+  "name": "master_no_mark",
+  "role": "master",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 805314560
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 335609855
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 8737024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 16448
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65535
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 3027
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DATA_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 32
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 32
+   }
+  ]
+ },
+ {
+  "expect": [
+   "gpio_directions"
+  ],
+  "name": "slave_pc2_low",
+  "role": "slave",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 261
+   },
+   {
+    "op": "r",
+    "reg": "PORTA_DATA",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 261
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_MUX",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_MUX",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_MUX",
+    "val": 89827840
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_FER",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_FER",
+    "val": 65280
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_FER",
+    "val": 16368
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 8
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 512
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 1024
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 2048
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 2
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_SET",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 128
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_DIR_CLR",
+    "val": 16384
+   },
+   {
+    "op": "w",
+    "reg": "PORTC_INEN_SET",
+    "val": 16384
+   },
+   {
+    "op": "mark"
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DATA_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_DIR_SET",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTA_INEN_CLR",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DATA_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_SET",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_CLR",
+    "val": 4
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_DIR_CLR",
+    "val": 32768
+   },
+   {
+    "op": "w",
+    "reg": "PORTB_INEN_SET",
+    "val": 32768
+   }
+  ]
+ }
+]

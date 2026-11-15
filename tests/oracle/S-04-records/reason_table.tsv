@@ -1,0 +1,19 @@
+# S-04.006, S-04.030
+row	record	reason_taken	boots	screen	cdc	transport	os_writes	record_after
+0	0df0adde00000000	0	yes	main	no	-	yes	0000000000000000
+10	0df0adde0a000000	10	no	main	yes	-	yes	000000000a000000
+20	0df0adde14000000	20	yes	main	no	-	yes	0000000014000000
+30	0df0adde1e000000	30	no	upgrade	no	msc	yes	000000001e000000
+40	0df0adde28000000	40	no	upgrade	no	midi	yes	0000000028000000
+50	0df0adde32000000	50	yes	main	no	-	no	0000000032000000
+60	0df0adde3c000000	60	no	main	no	-	no	000000003c000000
+70	0df0adde46000000	70	yes	main	no	-	no	0000000046000000
+80	0df0adde50000000	80	yes	main	no	-	no	0000000050000000
+absent	ffffffffffffffff	20	yes	main	no	-	-	ffffffffffffffff
+magic0	000000001e000000	20	yes	main	no	-	-	000000001e000000
+magicC	0cf0adde28000000	20	yes	main	no	-	-	0cf0adde28000000
+pad	0df0adde1e00a55a	30	no	upgrade	no	msc	yes	000000001e00a55a
+other:0x01	0df0adde01000000	1	yes	main	no	-	no	0000000001000000
+other:0x3d	0df0adde3d000000	61	yes	main	no	-	no	000000003d000000
+other:0x10a	0df0adde0a010000	266	yes	main	no	-	no	000000000a010000
+other:0xffff	0df0addeffff0000	65535	yes	main	no	-	no	00000000ffff0000

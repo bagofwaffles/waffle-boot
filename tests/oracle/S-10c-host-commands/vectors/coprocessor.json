@@ -1,0 +1,3603 @@
+{
+ "progress": [
+  {
+   "form": "s06",
+   "link": "cdc",
+   "route": "0x12",
+   "submitted_by": "cdc"
+  },
+  {
+   "form": "s06",
+   "link": "midi",
+   "route": "0x12",
+   "submitted_by": "midi"
+  },
+  {
+   "form": "s06",
+   "link": "psoc",
+   "route": "0x14",
+   "submitted_by": "psoc"
+  },
+  {
+   "form": "s06",
+   "link": "nordic",
+   "route": "0x13",
+   "submitted_by": "nordic"
+  },
+  {
+   "form": "te",
+   "link": "midi",
+   "route": null,
+   "submitted_by": "dfu"
+  },
+  {
+   "form": "s06",
+   "link": "cdc",
+   "route": "0x12",
+   "submitted_by": "ramdisk"
+  }
+ ],
+ "service": [
+  {
+   "id": "0x00",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x01",
+   "link": "psoc",
+   "service": "yes"
+  },
+  {
+   "id": "0x02",
+   "link": "psoc",
+   "service": "silent"
+  },
+  {
+   "id": "0x03",
+   "link": "psoc",
+   "service": "silent"
+  },
+  {
+   "id": "0x04",
+   "link": "psoc",
+   "service": "silent"
+  },
+  {
+   "id": "0x05",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x06",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x07",
+   "link": "psoc",
+   "service": "yes"
+  },
+  {
+   "id": "0x08",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x09",
+   "link": "psoc",
+   "service": "yes"
+  },
+  {
+   "id": "0x0a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x0b",
+   "link": "psoc",
+   "service": "yes"
+  },
+  {
+   "id": "0x0c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x0d",
+   "link": "psoc",
+   "service": "yes"
+  },
+  {
+   "id": "0x0e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x0f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x10",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x11",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x12",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x13",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x14",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x15",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x16",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x17",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x18",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x19",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x1a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x1b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x1c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x1d",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x1e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x1f",
+   "link": "psoc",
+   "service": "yes"
+  },
+  {
+   "id": "0x20",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x21",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x22",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x23",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x24",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x25",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x26",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x27",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x28",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x29",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x2a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x2b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x2c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x2d",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x2e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x2f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x30",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x31",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x32",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x33",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x34",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x35",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x36",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x37",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x38",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x39",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x3a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x3b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x3c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x3d",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x3e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x3f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x40",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x41",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x42",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x43",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x44",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x45",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x46",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x47",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x48",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x49",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x4a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x4b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x4c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x4d",
+   "link": "psoc",
+   "service": "claimed"
+  },
+  {
+   "id": "0x4e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x4f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x50",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x51",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x52",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x53",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x54",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x55",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x56",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x57",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x58",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x59",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x5a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x5b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x5c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x5d",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x5e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x5f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x60",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x61",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x62",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x63",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x64",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x65",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x66",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x67",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x68",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x69",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x6a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x6b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x6c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x6d",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x6e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x6f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x70",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x71",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x72",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x73",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x74",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x75",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x76",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x77",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x78",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x79",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x7a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x7b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x7c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x7d",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x7e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x7f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x80",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x81",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x82",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x83",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x84",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x85",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x86",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x87",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x88",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x89",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x8a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x8b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x8c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x8d",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x8e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x8f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x90",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x91",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x92",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x93",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x94",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x95",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x96",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x97",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x98",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x99",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x9a",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x9b",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x9c",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x9d",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x9e",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x9f",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa0",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa1",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa2",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa3",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa4",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa5",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa6",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa7",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa8",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xa9",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xaa",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xab",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xac",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xad",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xae",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xaf",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb0",
+   "link": "psoc",
+   "service": "silent"
+  },
+  {
+   "id": "0xb1",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb2",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb3",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb4",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb5",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb6",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb7",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb8",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xb9",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xba",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xbb",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xbc",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xbd",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xbe",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xbf",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc0",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc1",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc2",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc3",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc4",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc5",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc6",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc7",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc8",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xc9",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xca",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xcb",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xcc",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xcd",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xce",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xcf",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd0",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd1",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd2",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd3",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd4",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd5",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd6",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd7",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd8",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xd9",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xda",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xdb",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xdc",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xdd",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xde",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xdf",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe0",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe1",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe2",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe3",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe4",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe5",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe6",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe7",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe8",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xe9",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xea",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xeb",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xec",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xed",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xee",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xef",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf0",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf1",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf2",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf3",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf4",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf5",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf6",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf7",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf8",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xf9",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xfa",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xfb",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xfc",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xfd",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xfe",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0xff",
+   "link": "psoc",
+   "service": "no"
+  },
+  {
+   "id": "0x00",
+   "link": "nordic",
+   "service": "claimed"
+  },
+  {
+   "id": "0x01",
+   "link": "nordic",
+   "service": "yes"
+  },
+  {
+   "id": "0x02",
+   "link": "nordic",
+   "service": "silent"
+  },
+  {
+   "id": "0x03",
+   "link": "nordic",
+   "service": "silent"
+  },
+  {
+   "id": "0x04",
+   "link": "nordic",
+   "service": "silent"
+  },
+  {
+   "id": "0x05",
+   "link": "nordic",
+   "service": "claimed"
+  },
+  {
+   "id": "0x06",
+   "link": "nordic",
+   "service": "silent"
+  },
+  {
+   "id": "0x07",
+   "link": "nordic",
+   "service": "yes"
+  },
+  {
+   "id": "0x08",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x09",
+   "link": "nordic",
+   "service": "yes"
+  },
+  {
+   "id": "0x0a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x0b",
+   "link": "nordic",
+   "service": "yes"
+  },
+  {
+   "id": "0x0c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x0d",
+   "link": "nordic",
+   "service": "yes"
+  },
+  {
+   "id": "0x0e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x0f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x10",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x11",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x12",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x13",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x14",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x15",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x16",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x17",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x18",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x19",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x1a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x1b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x1c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x1d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x1e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x1f",
+   "link": "nordic",
+   "service": "yes"
+  },
+  {
+   "id": "0x20",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x21",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x22",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x23",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x24",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x25",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x26",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x27",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x28",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x29",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x2a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x2b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x2c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x2d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x2e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x2f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x30",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x31",
+   "link": "nordic",
+   "service": "claimed"
+  },
+  {
+   "id": "0x32",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x33",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x34",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x35",
+   "link": "nordic",
+   "service": "claimed"
+  },
+  {
+   "id": "0x36",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x37",
+   "link": "nordic",
+   "service": "claimed"
+  },
+  {
+   "id": "0x38",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x39",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x3a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x3b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x3c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x3d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x3e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x3f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x40",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x41",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x42",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x43",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x44",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x45",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x46",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x47",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x48",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x49",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x4a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x4b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x4c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x4d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x4e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x4f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x50",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x51",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x52",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x53",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x54",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x55",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x56",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x57",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x58",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x59",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x5a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x5b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x5c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x5d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x5e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x5f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x60",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x61",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x62",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x63",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x64",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x65",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x66",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x67",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x68",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x69",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x6a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x6b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x6c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x6d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x6e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x6f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x70",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x71",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x72",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x73",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x74",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x75",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x76",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x77",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x78",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x79",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x7a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x7b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x7c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x7d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x7e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x7f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x80",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x81",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x82",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x83",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x84",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x85",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x86",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x87",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x88",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x89",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x8a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x8b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x8c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x8d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x8e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x8f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x90",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x91",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x92",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x93",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x94",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x95",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x96",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x97",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x98",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x99",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x9a",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x9b",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x9c",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x9d",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x9e",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0x9f",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa0",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa1",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa2",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa3",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa4",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa5",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa6",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa7",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa8",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xa9",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xaa",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xab",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xac",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xad",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xae",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xaf",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb0",
+   "link": "nordic",
+   "service": "silent"
+  },
+  {
+   "id": "0xb1",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb2",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb3",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb4",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb5",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb6",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb7",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb8",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xb9",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xba",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xbb",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xbc",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xbd",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xbe",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xbf",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc0",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc1",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc2",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc3",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc4",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc5",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc6",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc7",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc8",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xc9",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xca",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xcb",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xcc",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xcd",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xce",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xcf",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd0",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd1",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd2",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd3",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd4",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd5",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd6",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd7",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd8",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xd9",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xda",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xdb",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xdc",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xdd",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xde",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xdf",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe0",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe1",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe2",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe3",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe4",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe5",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe6",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe7",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe8",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xe9",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xea",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xeb",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xec",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xed",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xee",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xef",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf0",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf1",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf2",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf3",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf4",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf5",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf6",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf7",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf8",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xf9",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xfa",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xfb",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xfc",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xfd",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xfe",
+   "link": "nordic",
+   "service": "no"
+  },
+  {
+   "id": "0xff",
+   "link": "nordic",
+   "service": "no"
+  }
+ ],
+ "vectors": [
+  {
+   "link": "psoc",
+   "name": "coproc-served-psoc",
+   "note": "the CDC set: every reply but the pong from 1 to the coprocessor",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-served-psoc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "11",
+        "route": "0x81",
+        "seq": 0
+       }
+      ],
+      "note": "a ping from a reply slot: the pong to that slot"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "11",
+       "route": "0x18"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x81",
+        "seq": 1
+       }
+      ],
+      "note": "an info request with a slot source: the reply to the coprocessor"
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x41",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x1f",
+        "payload": "",
+        "route": "0x41",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x20",
+       "payload": "00112233445566778899aabbccddeeff",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "aa",
+        "route": "0x41",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x41",
+        "seq": 5
+       }
+      ],
+      "note": "S-10c.061: the option off, so 04 here too"
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231",
+        "route": "0x41",
+        "seq": 6
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x02",
+        "payload": "01",
+        "route": "0x41",
+        "seq": 7
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xb0",
+        "payload": "",
+        "route": "0x41",
+        "seq": 8
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xac",
+        "payload": "",
+        "route": "0x41",
+        "seq": 9
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x7a",
+        "payload": "01",
+        "route": "0x41",
+        "seq": 10
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0a",
+        "payload": "",
+        "route": "0x41",
+        "seq": 11
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0e",
+        "payload": "",
+        "route": "0x41",
+        "seq": 12
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x41",
+        "seq": 13
+       }
+      ],
+      "note": "pong, log configuration and unknown ids: no reply"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "5001",
+       "route": "0x14"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "psoc",
+   "name": "coproc-firmware-psoc",
+   "note": "the firmware command as on CDC (forced, S-10c.075)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-firmware-psoc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x41",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "route": "0x41",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008800000000fa0",
+        "route": "0x41",
+        "seq": 2
+       }
+      ],
+      "note": "a product word that fails: 84 PRODUCT"
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "8450524f44554354",
+       "route": "0x14"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "psoc",
+   "name": "coproc-unlock-psoc",
+   "note": "S-10c.061 holds on this link: with the option on, the unlock and set metadata act as on CDC",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-unlock-psoc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x41",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231",
+        "route": "0x41",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x41",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x14"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "nordic",
+   "name": "coproc-served-nordic",
+   "note": "the CDC set: every reply but the pong from 1 to the coprocessor",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-served-nordic",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "11",
+        "route": "0x81",
+        "seq": 0
+       }
+      ],
+      "note": "a ping from a reply slot: the pong to that slot"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "11",
+       "route": "0x18"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x81",
+        "seq": 1
+       }
+      ],
+      "note": "an info request with a slot source: the reply to the coprocessor"
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x31",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x1f",
+        "payload": "",
+        "route": "0x31",
+        "seq": 3
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x20",
+       "payload": "00112233445566778899aabbccddeeff",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "aa",
+        "route": "0x31",
+        "seq": 4
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x31",
+        "seq": 5
+       }
+      ],
+      "note": "S-10c.061: the option off, so 04 here too"
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "04",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231",
+        "route": "0x31",
+        "seq": 6
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "04",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x02",
+        "payload": "01",
+        "route": "0x31",
+        "seq": 7
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xb0",
+        "payload": "",
+        "route": "0x31",
+        "seq": 8
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0xac",
+        "payload": "",
+        "route": "0x31",
+        "seq": 9
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x7a",
+        "payload": "01",
+        "route": "0x31",
+        "seq": 10
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0a",
+        "payload": "",
+        "route": "0x31",
+        "seq": 11
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0e",
+        "payload": "",
+        "route": "0x31",
+        "seq": 12
+       }
+      ]
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x31",
+        "seq": 13
+       }
+      ],
+      "note": "pong, log configuration and unknown ids: no reply"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "5001",
+       "route": "0x13"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "link": "nordic",
+   "name": "coproc-firmware-nordic",
+   "note": "the firmware command as on CDC (forced, S-10c.075)",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-firmware-nordic",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x31",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "route": "0x31",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "54",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008800000000fa0",
+        "route": "0x31",
+        "seq": 2
+       }
+      ],
+      "note": "a product word that fails: 84 PRODUCT"
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "8450524f44554354",
+       "route": "0x13"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "option": true
+   },
+   "link": "nordic",
+   "name": "coproc-unlock-nordic",
+   "note": "S-10c.061 holds on this link: with the option on, the unlock and set metadata act as on CDC",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-unlock-nordic",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x07",
+        "payload": "cafebabe",
+        "route": "0x31",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x08",
+       "payload": "03",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0b",
+        "payload": "73657269616c3a4344363534333231",
+        "route": "0x31",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0c",
+       "payload": "03",
+       "route": "0x13"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x09",
+        "payload": "",
+        "route": "0x31",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0a",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "route": "0x13"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device": {
+    "held": false
+   },
+   "link": "psoc",
+   "name": "coproc-early-psoc",
+   "note": "before held mode (S-07.023 steps 1-6a): no transfer starts, no reboot runs",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-early-psoc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008400000000fa0",
+        "route": "0x41",
+        "seq": 0
+       }
+      ],
+      "note": "a product word that passes: 84, the transfer cannot start"
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "route": "0x41",
+        "seq": 1
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "844e6f2075706461746520696e2070726f677265737321",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "05",
+        "route": "0x41",
+        "seq": 2
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "payload": "844e6f2075706461746520696e2070726f677265737321",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "020001000200030004000008800000000fa0",
+        "route": "0x41",
+        "seq": 3
+       }
+      ],
+      "note": "a product word that fails: 84 PRODUCT, as in held mode"
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "8450524f44554354",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "ee02",
+        "route": "0x41",
+        "seq": 4
+       }
+      ],
+      "note": "a reboot with mode 2: no effect"
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "18",
+        "route": "0x41",
+        "seq": 5
+       }
+      ],
+      "note": "a reboot to the OS: no effect"
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x41",
+        "seq": 6
+       }
+      ],
+      "note": "the pong: no reboot ran, so the link is still served"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "5001",
+       "route": "0x14"
+      }
+     }
+    ]
+   },
+   "state": {
+    "reset": null
+   }
+  },
+  {
+   "device": {
+    "held": false
+   },
+   "link": "psoc",
+   "name": "coproc-early-continue-psoc",
+   "note": "continue to the OS before held mode (S-10c.045, S-10c.076): 84, no effect",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-early-continue-psoc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "19",
+        "route": "0x41",
+        "seq": 0
+       }
+      ]
+     },
+     {
+      "expect": {
+       "id": "0x0e",
+       "prefix": "84",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x41",
+        "seq": 1
+       }
+      ],
+      "note": "the pong: no restart ran, so the link is still served"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "5001",
+       "route": "0x14"
+      }
+     }
+    ]
+   },
+   "state": {
+    "reset": null
+   }
+  },
+  {
+   "link": "psoc",
+   "name": "coproc-held-psoc",
+   "note": "the same reboot in held mode: it runs",
+   "script": {
+    "ignore": [
+     {
+      "id": [
+       "0x03",
+       "0x04"
+      ]
+     },
+     {
+      "id": "0x0e",
+      "prefix": "92"
+     }
+    ],
+    "name": "coproc-held-psoc",
+    "steps": [
+     {
+      "inject": [
+       {
+        "id": "0x01",
+        "payload": "5001",
+        "route": "0x41",
+        "seq": 0
+       }
+      ],
+      "note": "a ping: the next frame is its pong, so nothing came in between"
+     },
+     {
+      "expect": {
+       "id": "0x02",
+       "payload": "5001",
+       "route": "0x14"
+      }
+     },
+     {
+      "inject": [
+       {
+        "id": "0x0d",
+        "payload": "ee02",
+        "route": "0x41",
+        "seq": 1
+       }
+      ],
+      "note": "a reboot with mode 2: reason 10 (S-04.021), no reply"
+     }
+    ]
+   },
+   "state": {
+    "reset": 10
+   }
+  }
+ ]
+}

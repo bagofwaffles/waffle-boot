@@ -1,0 +1,689 @@
+{
+ "vectors": [
+  {
+   "name": "deliver-empty-payload",
+   "wire": "0241020102a800",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 0,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ]
+  },
+  {
+   "name": "deliver-own-address",
+   "wire": "09210709036162639f00",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x21",
+      "seq": 7,
+      "id": "0x09",
+      "payload": "616263"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "deliver-reply-slot-8",
+   "wire": "0748010201014d00",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x48",
+      "seq": 1,
+      "id": "0x02",
+      "payload": "01"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "deliver-reply-slot-11",
+   "wire": "044b0202029b00",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x4b",
+      "seq": 2,
+      "id": "0x02",
+      "payload": ""
+     }
+    ]
+   ]
+  },
+  {
+   "name": "deliver-dst-12",
+   "wire": "074c037e01ff4300",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x4c",
+      "seq": 3,
+      "id": "0x7e",
+      "payload": "ff"
+     }
+    ]
+   ],
+   "note": "12..15 are local (S-06.013)"
+  },
+  {
+   "name": "deliver-dst-15",
+   "wire": "054fff7f01022a00",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x4f",
+      "seq": 255,
+      "id": "0x7f",
+      "payload": "00"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "deliver-max-payload",
+   "wire": "ff411055f90102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f97b00",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 16,
+      "id": "0x55",
+      "payload": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "deliver-max-payload-zeros",
+   "wire": "05411155f90101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101024800",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 17,
+      "id": "0x55",
+      "payload": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "deliver-any-seq",
+   "wire": "0441c80102fe000441030102f0000441030102f000",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 200,
+      "id": "0x01",
+      "payload": ""
+     }
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 3,
+      "id": "0x01",
+      "payload": ""
+     }
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 3,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ],
+   "note": "seq gaps and repeats do not matter (S-06.021)"
+  },
+  {
+   "name": "leading-delimiters",
+   "wire": "00000741050101786e00",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 5,
+      "id": "0x01",
+      "payload": "78"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "back-to-back",
+   "wire": "08410301026162d700084104010263646300",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 3,
+      "id": "0x01",
+      "payload": "6162"
+     }
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 4,
+      "id": "0x01",
+      "payload": "6364"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "no-delimiter-between-frames",
+   "wire": "0241050101072904410101024300",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 0,
+      "id": "0x01",
+      "payload": "07"
+     }
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 1,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ],
+   "quirk": "Q-EARLYDONE",
+   "factory": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 0,
+      "id": "0x01",
+      "payload": "07"
+     }
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 1,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ],
+   "note": "both frames are delivered (S-06.041)"
+  },
+  {
+   "name": "no-delimiter-after-zero-check",
+   "wire": "0641200901100104410101024300",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 32,
+      "id": "0x09",
+      "payload": "10"
+     }
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 1,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ],
+   "quirk": "Q-EARLYDONE",
+   "factory": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 32,
+      "id": "0x09",
+      "payload": "10"
+     }
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 1,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ],
+   "note": "the first frame ends in a lone 01 group (its check byte is 00); both frames are delivered"
+  },
+  {
+   "name": "extra-bytes-for-other-node",
+   "wire": "02410701010729334400",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 0,
+      "id": "0x01",
+      "payload": "07"
+     }
+    ],
+    [
+     "forward",
+     "334400"
+    ]
+   ],
+   "quirk": "Q-EARLYDONE",
+   "factory": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 0,
+      "id": "0x01",
+      "payload": "07"
+     }
+    ],
+    [
+     "forward",
+     "334400"
+    ]
+   ],
+   "note": "the frame is delivered; the extra bytes start a frame whose route byte 0x44 sends it on"
+  },
+  {
+   "name": "extra-bytes-local",
+   "wire": "02410701010729333100",
+   "address": 1,
+   "required": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 0,
+      "id": "0x01",
+      "payload": "07"
+     }
+    ],
+    [
+     "drop"
+    ]
+   ],
+   "quirk": "Q-EARLYDONE",
+   "factory": [
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 0,
+      "id": "0x01",
+      "payload": "07"
+     }
+    ],
+    [
+     "drop"
+    ]
+   ],
+   "note": "the frame is delivered; the extra bytes are a partial frame the delimiter drops"
+  },
+  {
+   "name": "bad-crc",
+   "wire": "0241067a020a0b6400",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ]
+   ]
+  },
+  {
+   "name": "bad-crc-then-good",
+   "wire": "0241067a020a0b640004410101024300",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 1,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ]
+  },
+  {
+   "name": "truncated",
+   "wire": "0241067a020a00",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ]
+   ]
+  },
+  {
+   "name": "short-raw",
+   "wire": "0241020500",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ]
+   ]
+  },
+  {
+   "name": "len-field-longer-than-data",
+   "wire": "024106050301021800",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ]
+   ]
+  },
+  {
+   "name": "len-field-255-short",
+   "wire": "02410e05ff01010101010101010101d900",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ]
+   ]
+  },
+  {
+   "name": "len-field-250",
+   "wire": "0241fe05fa0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa600004410901024500",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 9,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ],
+   "quirk": "Q-EARLYDELIM",
+   "factory": [
+    [
+     "drop"
+    ],
+    [
+     "forward",
+     "600004410901024500"
+    ]
+   ],
+   "note": "overflow at 254 bytes; the leftover byte and the delimiter end a partial frame; the next frame is delivered (compatibility preset: the next frame is dropped)"
+  },
+  {
+   "name": "cobs-group-past-end",
+   "wire": "05410100",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ]
+   ]
+  },
+  {
+   "name": "lone-delimiter",
+   "wire": "00",
+   "address": 1,
+   "required": []
+  },
+  {
+   "name": "stray-byte-then-frame",
+   "wire": "03000241020102a800",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x41",
+      "seq": 0,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ],
+   "quirk": "Q-EARLYDELIM",
+   "factory": [
+    [
+     "forward",
+     "03000241020102a800"
+    ]
+   ],
+   "note": "a stray byte and a delimiter are dropped; the next frame is delivered (compatibility preset: the next frame is dropped)"
+  },
+  {
+   "name": "bad-crc-zero-len",
+   "wire": "0241020102a900",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ]
+   ]
+  },
+  {
+   "name": "forward-dst-4",
+   "wire": "0814017e0201029d00",
+   "address": 1,
+   "required": [
+    [
+     "forward",
+     "0814017e0201029d00"
+    ]
+   ]
+  },
+  {
+   "name": "forward-bad-crc-unchecked",
+   "wire": "0814017e0201029c00",
+   "address": 1,
+   "required": [
+    [
+     "forward",
+     "0814017e0201029c00"
+    ]
+   ],
+   "note": "forwarded frames are not checked"
+  },
+  {
+   "name": "forward-max",
+   "wire": "ff240255f90102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f99c00",
+   "address": 1,
+   "required": [
+    [
+     "forward",
+     "ff240255f90102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f99c00"
+    ]
+   ],
+   "note": "a 256-byte forward"
+  },
+  {
+   "name": "forward-max-ff-group",
+   "wire": "ff240155f90102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f99800",
+   "address": 1,
+   "required": [
+    [
+     "forward",
+     "ff240155f90102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f99800"
+    ]
+   ]
+  },
+  {
+   "name": "forward-dst-2-then-local",
+   "wire": "0412017e02ea000421027e028600",
+   "address": 1,
+   "required": [
+    [
+     "forward",
+     "0412017e02ea00"
+    ],
+    [
+     "deliver",
+     {
+      "route": "0x21",
+      "seq": 2,
+      "id": "0x7e",
+      "payload": ""
+     }
+    ]
+   ]
+  },
+  {
+   "name": "forward-overflow",
+   "wire": "ff2401010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010100",
+   "address": 1,
+   "required": [
+    [
+     "drop"
+    ],
+    [
+     "forward",
+     "0101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010100"
+    ]
+   ],
+   "quirk": "Q-ROUTE0",
+   "factory": [
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ],
+    [
+     "drop"
+    ]
+   ],
+   "note": "256 bytes without a delimiter are dropped; the rest starts a new frame whose route byte is 0 (code bytes 01 01), so it is collected for forwarding (compatibility preset: the rest is dropped)"
+  },
+  {
+   "name": "route-00",
+   "wire": "0101020102db00",
+   "address": 1,
+   "required": [
+    [
+     "forward",
+     "0101020102db00"
+    ]
+   ],
+   "quirk": "Q-ROUTE0",
+   "factory": [
+    [
+     "deliver",
+     {
+      "route": "0x00",
+      "seq": 0,
+      "id": "0x01",
+      "payload": ""
+     }
+    ]
+   ],
+   "note": "destination 0 is not local and no link takes it (S-06.047, S-06.050). Route 00 with seq 00 always encodes as 01 01 ...; the compatibility preset (address 1) delivers such a frame (S-16.142, design; S-06 question 2)"
+  },
+  {
+   "name": "route-00-seq-21",
+   "wire": "01032101022800",
+   "address": 1,
+   "required": [
+    [
+     "forward",
+     "01032101022800"
+    ]
+   ],
+   "note": "route 0x00 again; here the compatibility preset reaches the same verdict"
+  },
+  {
+   "name": "route-10",
+   "wire": "0210020102b600",
+   "address": 1,
+   "required": [
+    [
+     "forward",
+     "0210020102b600"
+    ]
+   ],
+   "note": "destination 0 with a non-zero source: not local"
+  }
+ ]
+}

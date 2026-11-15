@@ -1,0 +1,241 @@
+[
+ {
+  "cmd": 1,
+  "kind": "immediate",
+  "name": "imm_init",
+  "reply_hex": "01000000dabedefe",
+  "reply_len": 8,
+  "slot": 0,
+  "value": 4276010714
+ },
+ {
+  "cmd": 10,
+  "kind": "immediate",
+  "name": "imm_echo",
+  "reply_hex": "0a00000087a9cbed",
+  "reply_len": 8,
+  "slot": 0,
+  "value": 3989547399
+ },
+ {
+  "cmd": 3,
+  "kind": "immediate",
+  "name": "imm_erase_group",
+  "reply_hex": "0301000000040000",
+  "reply_len": 8,
+  "slot": 1,
+  "value": 1024
+ },
+ {
+  "cmd": 5,
+  "kind": "immediate",
+  "name": "imm_boot_size",
+  "reply_hex": "0501000000004000",
+  "reply_len": 8,
+  "slot": 1,
+  "value": 4194304
+ },
+ {
+  "cmd": 7,
+  "kind": "immediate",
+  "name": "imm_release_ok",
+  "reply_hex": "0701000000000000",
+  "reply_len": 8,
+  "slot": 1,
+  "value": 0
+ },
+ {
+  "cmd": 7,
+  "kind": "immediate",
+  "name": "imm_release_noos",
+  "reply_hex": "0701000001000000",
+  "reply_len": 8,
+  "slot": 1,
+  "value": 1
+ },
+ {
+  "cmd": 27,
+  "fell": 2,
+  "got": 32756,
+  "kind": "status",
+  "len": 32768,
+  "mode": 2,
+  "name": "imm_status",
+  "reply_hex": "1b01000002000000042b020000800000f47f0000fdffffff000006000010000007000000",
+  "reply_len": 36,
+  "slot": 1,
+  "why": 4,
+  "why_cmd": 43,
+  "words": [
+   4294967293,
+   393216,
+   4096,
+   7
+  ]
+ },
+ {
+  "kind": "poll_none",
+  "name": "poll_none",
+  "reply_hex": "06ff0000",
+  "reply_len": 4
+ },
+ {
+  "cmd": 24,
+  "errno": 0,
+  "kind": "deferred",
+  "name": "poll_select",
+  "reply_hex": "180100000000000000000000",
+  "reply_len": 12,
+  "result": 0,
+  "slot": 1
+ },
+ {
+  "cmd": 33,
+  "errno": 2,
+  "kind": "deferred",
+  "name": "poll_access_enoent",
+  "reply_hex": "21010000ffffffff02000000",
+  "reply_len": 12,
+  "result": -1,
+  "slot": 1
+ },
+ {
+  "cmd": 39,
+  "errno": 93,
+  "kind": "deferred",
+  "name": "poll_rmdir_notempty",
+  "reply_hex": "27020000ffffffff5d000000",
+  "reply_len": 12,
+  "result": -1,
+  "slot": 2
+ },
+ {
+  "cmd": 17,
+  "data_hex": "000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e8184878a8d909396999c9fa2a5a8abaeb1b4b7babdc0c3c6c9cccfd2d5d8dbdee1e4e7eaedf0f3f6f9fcff0205080b0e1114171a1d202326292c2f3235383b3e4144474a4d505356595c5f6265686b6e7174777a7d808386898c8f9295989b9ea1a4a7aaadb0b3b6b9bcbfc2c5c8cbced1d4d7dadde0e3e6e9eceff2f5f8fbfe0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e8184878a8d909396999c9fa2a5a8abaeb1b4b7babdc0c3c6c9cccfd2d5d8dbdee1e4e7eaedf0f3f6f9fcff0205080b0e1114171a1d202326292c2f3235383b3e4144474a4d505356595c5f6265686b6e7174777a7d808386898c8f9295989b9ea1a4a7aaadb0b3b6b9bcbfc2c5c8cbced1d4d7dadde0e3e6e9eceff2f5f8fbfe0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd",
+  "errno": 0,
+  "kind": "deferred",
+  "name": "poll_read_sector",
+  "reply_hex": "110100000000000000000000000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e8184878a8d909396999c9fa2a5a8abaeb1b4b7babdc0c3c6c9cccfd2d5d8dbdee1e4e7eaedf0f3f6f9fcff0205080b0e1114171a1d202326292c2f3235383b3e4144474a4d505356595c5f6265686b6e7174777a7d808386898c8f9295989b9ea1a4a7aaadb0b3b6b9bcbfc2c5c8cbced1d4d7dadde0e3e6e9eceff2f5f8fbfe0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e8184878a8d909396999c9fa2a5a8abaeb1b4b7babdc0c3c6c9cccfd2d5d8dbdee1e4e7eaedf0f3f6f9fcff0205080b0e1114171a1d202326292c2f3235383b3e4144474a4d505356595c5f6265686b6e7174777a7d808386898c8f9295989b9ea1a4a7aaadb0b3b6b9bcbfc2c5c8cbced1d4d7dadde0e3e6e9eceff2f5f8fbfe0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd",
+  "reply_len": 524,
+  "result": 0,
+  "slot": 1
+ },
+ {
+  "arg1": 2,
+  "cmd": 18,
+  "data_hex": "00050a0f14191e23282d32373c41464b50555a5f64696e73787d82878c91969ba0a5aaafb4b9bec3c8cdd2d7dce1e6ebf0f5faff04090e13181d22272c31363b40454a4f54595e63686d72777c81868b90959a9fa4a9aeb3b8bdc2c7ccd1d6dbe0e5eaeff4f9fe03080d12171c21262b30353a3f44494e53585d62676c71767b80858a8f94999ea3a8adb2b7bcc1c6cbd0d5dadfe4e9eef3f8fd02070c11161b20252a2f34393e43484d52575c61666b70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7fc01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979ca1a6abb0b5babfc4c9ced3d8dde2e7ecf1f6fb00050a0f14191e23282d32373c41464b50555a5f64696e73787d82878c91969ba0a5aaafb4b9bec3c8cdd2d7dce1e6ebf0f5faff04090e13181d22272c31363b40454a4f54595e63686d72777c81868b90959a9fa4a9aeb3b8bdc2c7ccd1d6dbe0e5eaeff4f9fe03080d12171c21262b30353a3f44494e53585d62676c71767b80858a8f94999ea3a8adb2b7bcc1c6cbd0d5dadfe4e9eef3f8fd02070c11161b20252a2f34393e43484d52575c61666b70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7fc01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979ca1a6abb0b5babfc4c9ced3d8dde2e7ecf1f6fb00050a0f14191e23282d32373c41464b50555a5f64696e73787d82878c91969ba0a5aaafb4b9bec3c8cdd2d7dce1e6ebf0f5faff04090e13181d22272c31363b40454a4f54595e63686d72777c81868b90959a9fa4a9aeb3b8bdc2c7ccd1d6dbe0e5eaeff4f9fe03080d12171c21262b30353a3f44494e53585d62676c71767b80858a8f94999ea3a8adb2b7bcc1c6cbd0d5dadfe4e9eef3f8fd02070c11161b20252a2f34393e43484d52575c61666b70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7fc01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979ca1a6abb0b5babfc4c9ced3d8dde2e7ecf1f6fb00050a0f14191e23282d32373c41464b50555a5f64696e73787d82878c91969ba0a5aaafb4b9bec3c8cdd2d7dce1e6ebf0f5faff04090e13181d22272c31363b40454a4f54595e63686d72777c81868b90959a9fa4a9aeb3b8bdc2c7ccd1d6dbe0e5eaeff4f9fe03080d12171c21262b30353a3f44494e53585d62676c71767b80858a8f94999ea3a8adb2b7bcc1c6cbd0d5dadfe4e9eef3f8fd02070c11161b20252a2f34393e43484d52575c61666b70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7fc01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979ca1a6abb0b5babfc4c9ced3d8dde2e7ecf1f6fb",
+  "errno": 0,
+  "kind": "deferred",
+  "name": "poll_read_2",
+  "reply_hex": "12010000000000000000000000050a0f14191e23282d32373c41464b50555a5f64696e73787d82878c91969ba0a5aaafb4b9bec3c8cdd2d7dce1e6ebf0f5faff04090e13181d22272c31363b40454a4f54595e63686d72777c81868b90959a9fa4a9aeb3b8bdc2c7ccd1d6dbe0e5eaeff4f9fe03080d12171c21262b30353a3f44494e53585d62676c71767b80858a8f94999ea3a8adb2b7bcc1c6cbd0d5dadfe4e9eef3f8fd02070c11161b20252a2f34393e43484d52575c61666b70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7fc01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979ca1a6abb0b5babfc4c9ced3d8dde2e7ecf1f6fb00050a0f14191e23282d32373c41464b50555a5f64696e73787d82878c91969ba0a5aaafb4b9bec3c8cdd2d7dce1e6ebf0f5faff04090e13181d22272c31363b40454a4f54595e63686d72777c81868b90959a9fa4a9aeb3b8bdc2c7ccd1d6dbe0e5eaeff4f9fe03080d12171c21262b30353a3f44494e53585d62676c71767b80858a8f94999ea3a8adb2b7bcc1c6cbd0d5dadfe4e9eef3f8fd02070c11161b20252a2f34393e43484d52575c61666b70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7fc01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979ca1a6abb0b5babfc4c9ced3d8dde2e7ecf1f6fb00050a0f14191e23282d32373c41464b50555a5f64696e73787d82878c91969ba0a5aaafb4b9bec3c8cdd2d7dce1e6ebf0f5faff04090e13181d22272c31363b40454a4f54595e63686d72777c81868b90959a9fa4a9aeb3b8bdc2c7ccd1d6dbe0e5eaeff4f9fe03080d12171c21262b30353a3f44494e53585d62676c71767b80858a8f94999ea3a8adb2b7bcc1c6cbd0d5dadfe4e9eef3f8fd02070c11161b20252a2f34393e43484d52575c61666b70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7fc01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979ca1a6abb0b5babfc4c9ced3d8dde2e7ecf1f6fb00050a0f14191e23282d32373c41464b50555a5f64696e73787d82878c91969ba0a5aaafb4b9bec3c8cdd2d7dce1e6ebf0f5faff04090e13181d22272c31363b40454a4f54595e63686d72777c81868b90959a9fa4a9aeb3b8bdc2c7ccd1d6dbe0e5eaeff4f9fe03080d12171c21262b30353a3f44494e53585d62676c71767b80858a8f94999ea3a8adb2b7bcc1c6cbd0d5dadfe4e9eef3f8fd02070c11161b20252a2f34393e43484d52575c61666b70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7fc01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979ca1a6abb0b5babfc4c9ced3d8dde2e7ecf1f6fb",
+  "reply_len": 1036,
+  "result": 0,
+  "slot": 1
+ },
+ {
+  "cmd": 50,
+  "data_hex": "0028488f00000000",
+  "errno": 0,
+  "kind": "deferred",
+  "name": "poll_totalspace",
+  "reply_hex": "3201000000000000000000000028488f00000000",
+  "reply_len": 20,
+  "result": 0,
+  "slot": 1
+ },
+ {
+  "cmd": 34,
+  "data_hex": "0000000001010000ff810000010000000000000000000000000000000d000000000200000100000000105e5f00105e5f00105e5f",
+  "errno": 0,
+  "kind": "deferred",
+  "name": "poll_stat",
+  "reply_hex": "2201000000000000000000000000000001010000ff810000010000000000000000000000000000000d000000000200000100000000105e5f00105e5f00105e5f",
+  "reply_len": 64,
+  "result": 0,
+  "slot": 1
+ },
+ {
+  "cmd": 35,
+  "data_hex": "0002000014a4470000001000",
+  "errno": 0,
+  "kind": "deferred",
+  "name": "poll_statfs",
+  "reply_hex": "2301000000000000000000000002000014a4470000001000",
+  "reply_len": 24,
+  "result": 0,
+  "slot": 1
+ },
+ {
+  "data_hex": "",
+  "kind": "pull",
+  "name": "pull_none",
+  "overflow": false,
+  "reply_hex": "2000000000000000",
+  "reply_len": 8,
+  "slot": 0
+ },
+ {
+  "data_hex": "0251000201aa21",
+  "kind": "pull",
+  "name": "pull_now",
+  "overflow": false,
+  "reply_hex": "20000000070000000251000201aa2100",
+  "reply_len": 16,
+  "slot": 0
+ },
+ {
+  "data_hex": "0251000201aa21",
+  "kind": "pull",
+  "name": "pull_later",
+  "note": "the same bytes as the reply a poll returns for a parked pull",
+  "overflow": false,
+  "reply_hex": "20000000070000000251000201aa2100",
+  "reply_len": 16,
+  "slot": 0
+ },
+ {
+  "data_hex": "0251000201aa21",
+  "kind": "pull",
+  "name": "pull_overflow",
+  "overflow": true,
+  "reply_hex": "20000000070001000251000201aa2100",
+  "reply_len": 16,
+  "slot": 0
+ },
+ {
+  "data_hex": "0001020304",
+  "kind": "read_piece",
+  "name": "read_piece_5",
+  "r": 5,
+  "reply_hex": "2a010000050000000001020304000000",
+  "reply_len": 16,
+  "slot": 1
+ },
+ {
+  "data_hex": "",
+  "kind": "read_piece",
+  "name": "read_piece_eof",
+  "r": 0,
+  "reply_hex": "2a01000000000000",
+  "reply_len": 8,
+  "slot": 1
+ },
+ {
+  "data_hex": "",
+  "errno": 19,
+  "kind": "read_piece",
+  "name": "read_piece_err",
+  "r": -1,
+  "reply_hex": "2a010000ffffffff13000000",
+  "reply_len": 12,
+  "slot": 1
+ },
+ {
+  "kind": "clock_sync",
+  "name": "clock_sync",
+  "reply_hex": "0b010000000000009a78563412000000",
+  "reply_len": 16,
+  "sample": 78187493530,
+  "slot": 1
+ }
+]

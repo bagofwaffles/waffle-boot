@@ -1,0 +1,36 @@
+{
+ "reports": {
+  "start":         {"messages": [{"id": "0x51", "payload": "000000"}], "once_per_boot": true,
+                    "after": "display-reset handshake read (S-01.006)", "before": "key-status request (S-05.001)"},
+  "held":          {"messages": [{"id": "0x51", "payload": "3cff02"}, {"id": "0x40", "payload": "01"}, {"id": "0x40", "payload": "0200"}], "once_per_boot": false, "note": "the 0x40 01 and the first bar message 0x40 02 00, sent after the first held screen, are once per boot (S-07.043; later bar messages may repeat 02 00); 3cff02 recurs on a re-greeting",
+                    "after": "held mode starts", "before": "first screen of S-04.006 (for the 0x51)"},
+  "handover":      {"messages": [{"id": "0x51", "payload": "3cff32"}],
+                    "after": "boot-logo frame (S-05.004)", "before": "first storage request for the OS image"},
+  "shutdown":      {"messages": [{"id": "0x51", "payload": "000002"}, {"id": "0x40", "payload": "01"}],
+                    "before": "the reset of W1-W4, W6, W7, W10, W11, or the idle after a power-off"},
+  "regreet":       {"messages": [{"id": "0x51", "payload": "3cff02"}, {"id": "0x43", "payload": "0101"}],
+                    "after": "the PSoC's repeated greeting and the master's greeting back"},
+  "reset_request": {"messages": [{"id": "0x97", "payload": "deadbeef"}, {"id": "0x51", "payload": "000002"}, {"id": "0x40", "payload": "01"}],
+                    "before": "the reason-20 write of W2"}
+ },
+ "streams": [
+  {"name": "boot_held", "about": "a held boot: start report, then held report",
+   "messages": [["0x05", "0104"], ["0x51", "000000"], ["0x41", ""], ["0x51", "3cff02"], ["0x40", "0300c800"], ["0x40", "01"], ["0x40", "0200"]],
+   "contains": ["start", "held"], "lacks": ["handover", "shutdown"]},
+  {"name": "held_no_bar", "about": "nonconforming: a held boot without the first bar message",
+   "messages": [["0x05", "0104"], ["0x51", "000000"], ["0x41", ""], ["0x51", "3cff02"], ["0x40", "0300c800"], ["0x40", "01"]],
+   "contains": ["start"], "lacks": ["held", "handover", "shutdown"]},
+  {"name": "os_boot", "about": "an OS boot: start report, PMIC sequence, hand-over report",
+   "messages": [["0x05", "0104"], ["0x51", "000000"], ["0x41", ""], ["0x70", "01"], ["0x73", "0310"], ["0x71", "031060"], ["0x70", "00"], ["0x51", "3cff32"]],
+   "contains": ["start", "handover"], "lacks": ["held", "shutdown"]},
+  {"name": "reboot_to_os", "about": "host reboot-to-OS from held mode",
+   "messages": [["0x51", "000000"], ["0x51", "3cff02"], ["0x40", "01"], ["0x40", "0200"], ["0x97", "deadbeef"], ["0x51", "000002"], ["0x40", "01"]],
+   "contains": ["start", "held", "reset_request", "shutdown"], "lacks": []},
+  {"name": "shutdown_swapped", "about": "nonconforming: the LED message before the 0x51",
+   "messages": [["0x51", "000000"], ["0x51", "3cff02"], ["0x40", "01"], ["0x40", "0200"], ["0x40", "01"], ["0x51", "000002"]],
+   "contains": ["start", "held"], "lacks": ["shutdown"]},
+  {"name": "regreet", "about": "the PSoC greets again while held",
+   "messages": [["0x51", "000000"], ["0x51", "3cff02"], ["0x40", "01"], ["0x40", "0200"], ["0x05", "0104"], ["0x51", "3cff02"], ["0x43", "0101"]],
+   "contains": ["start", "held", "regreet"], "lacks": ["shutdown"]}
+ ]
+}

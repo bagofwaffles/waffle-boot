@@ -1,0 +1,655 @@
+{
+ "hold_ms": 5000,
+ "timeout_ms": 60000,
+ "cases": [
+  {
+   "case": "hold_m1_5s",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": "install",
+   "at_ms": 6000
+  },
+  {
+   "case": "hold_sound1_5s",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x0E",
+     "down"
+    ]
+   ],
+   "end_ms": 5000,
+   "expect": "install",
+   "at_ms": 5000
+  },
+  {
+   "case": "hold_4999ms_waits",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 5999,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "released_early",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     5999,
+     "0x06",
+     "up"
+    ]
+   ],
+   "end_ms": 20000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "released_then_again",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     4000,
+     "0x06",
+     "up"
+    ],
+    [
+     5000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": "install",
+   "at_ms": 10000
+  },
+  {
+   "case": "released_then_again_short",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     4000,
+     "0x06",
+     "up"
+    ],
+    [
+     5000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 9999,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "released_after_5s",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     6500,
+     "0x06",
+     "up"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": "install",
+   "at_ms": 6000
+  },
+  {
+   "case": "knob1_click_no_effect",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x0A",
+     "down"
+    ]
+   ],
+   "end_ms": 20000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "knob_clicks_no_effect",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x0A",
+     "down"
+    ],
+    [
+     10,
+     "0x0B",
+     "down"
+    ],
+    [
+     20,
+     "0x0C",
+     "down"
+    ],
+    [
+     30,
+     "0x0D",
+     "down"
+    ]
+   ],
+   "end_ms": 59999,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "digit8_skips",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     2500,
+     "0x15",
+     "down"
+    ]
+   ],
+   "end_ms": 3000,
+   "expect": "skip",
+   "at_ms": 2500
+  },
+  {
+   "case": "digit8_during_hold",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x06",
+     "down"
+    ],
+    [
+     4000,
+     "0x15",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": "skip",
+   "at_ms": 4000
+  },
+  {
+   "case": "other_keys_no_effect",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x00",
+     "down"
+    ],
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     0,
+     "0x09",
+     "down"
+    ],
+    [
+     0,
+     "0x12",
+     "down"
+    ],
+    [
+     0,
+     "0x14",
+     "down"
+    ],
+    [
+     0,
+     "0x18",
+     "down"
+    ],
+    [
+     0,
+     "0x37",
+     "down"
+    ]
+   ],
+   "end_ms": 59999,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "timeout",
+   "readable": true,
+   "down_at_open": [],
+   "events": [],
+   "end_ms": 60000,
+   "expect": "skip",
+   "at_ms": 60000
+  },
+  {
+   "case": "timeout_not_before",
+   "readable": true,
+   "down_at_open": [],
+   "events": [],
+   "end_ms": 59999,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "hold_reaches_5s_at_60s",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     55000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 60000,
+   "expect": "install",
+   "at_ms": 60000
+  },
+  {
+   "case": "hold_reaches_5s_after_60s",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     55001,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 61000,
+   "expect": "skip",
+   "at_ms": 60000
+  },
+  {
+   "case": "hold_late_after_timeout",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     59000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 65000,
+   "expect": "skip",
+   "at_ms": 60000
+  },
+  {
+   "case": "stale_key_ignored",
+   "readable": true,
+   "down_at_open": [
+    "0x06"
+   ],
+   "events": [],
+   "end_ms": 20000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "stale_key_up_then_down",
+   "readable": true,
+   "down_at_open": [
+    "0x06"
+   ],
+   "events": [
+    [
+     1000,
+     "0x06",
+     "up"
+    ],
+    [
+     2000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": "install",
+   "at_ms": 7000
+  },
+  {
+   "case": "stale_digit8_ignored",
+   "readable": true,
+   "down_at_open": [
+    "0x15"
+   ],
+   "events": [
+    [
+     1000,
+     "0x15",
+     "up"
+    ],
+    [
+     1500,
+     "0x0E",
+     "down"
+    ]
+   ],
+   "end_ms": 6500,
+   "expect": "install",
+   "at_ms": 6500
+  },
+  {
+   "case": "stale_digit8_still_down_blocks_hold",
+   "readable": true,
+   "down_at_open": [
+    "0x15"
+   ],
+   "events": [
+    [
+     1000,
+     "0x0E",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "stale_digit8_up_then_down",
+   "readable": true,
+   "down_at_open": [
+    "0x15"
+   ],
+   "events": [
+    [
+     1000,
+     "0x15",
+     "up"
+    ],
+    [
+     1500,
+     "0x15",
+     "down"
+    ]
+   ],
+   "end_ms": 2000,
+   "expect": "skip",
+   "at_ms": 1500
+  },
+  {
+   "case": "second_digit1_key_ends_hold",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x06",
+     "down"
+    ],
+    [
+     1000,
+     "0x0E",
+     "down"
+    ],
+    [
+     2000,
+     "0x0E",
+     "up"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "knob_click_ends_hold",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x06",
+     "down"
+    ],
+    [
+     1000,
+     "0x0A",
+     "down"
+    ],
+    [
+     1500,
+     "0x0A",
+     "up"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "step_key_ends_hold",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x06",
+     "down"
+    ],
+    [
+     2000,
+     "0x40",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "step_key_down_blocks_hold",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x47",
+     "down"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "other_key_released_then_hold",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     500,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": "install",
+   "at_ms": 6000
+  },
+  {
+   "case": "hold_again_after_break",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x06",
+     "down"
+    ],
+    [
+     1000,
+     "0x07",
+     "down"
+    ],
+    [
+     1500,
+     "0x07",
+     "up"
+    ],
+    [
+     2000,
+     "0x06",
+     "up"
+    ],
+    [
+     3000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 8000,
+   "expect": "install",
+   "at_ms": 8000
+  },
+  {
+   "case": "stale_other_key_blocks_hold",
+   "readable": true,
+   "down_at_open": [
+    "0x07"
+   ],
+   "events": [
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": null,
+   "at_ms": null
+  },
+  {
+   "case": "precomp_key_ignored",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x17",
+     "down"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     2000,
+     "0x17",
+     "up"
+    ],
+    [
+     3000,
+     "0x17",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": "install",
+   "at_ms": 6000
+  },
+  {
+   "case": "unreadable",
+   "readable": false,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": "skip",
+   "at_ms": 0
+  },
+  {
+   "case": "after_choice_ignored",
+   "readable": true,
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x15",
+     "down"
+    ],
+    [
+     10,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": "skip",
+   "at_ms": 0
+  }
+ ]
+}

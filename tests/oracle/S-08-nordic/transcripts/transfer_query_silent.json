@@ -1,0 +1,102 @@
+{
+ "name": "transfer_query_silent",
+ "requirements": [
+  "S-08.042"
+ ],
+ "procedure": "transfer",
+ "state": "0xAB0D",
+ "peer": {
+  "rules": [
+   {
+    "on": {
+     "id": "0x09"
+    },
+    "send": [],
+    "times": 2
+   },
+   {
+    "on": {
+     "id": "0x09",
+     "kind": "request"
+    },
+    "send": [
+     {
+      "kind": "reply",
+      "id": "0x0a",
+      "text": "mode:bootloader;sw_version:1.0.1;bl_version:1000.0.10;boot_slot:0",
+      "delay_ms": 1.0
+     }
+    ]
+   },
+   {
+    "on": {
+     "id": "0x0d",
+     "kind": "request"
+    },
+    "send": [
+     {
+      "kind": "reply",
+      "id": "0x0e",
+      "payload": "54",
+      "delay_ms": 2
+     }
+    ]
+   }
+  ]
+ },
+ "expect": [
+  {
+   "dut": {
+    "id": "0x09",
+    "kind": "request",
+    "payload": ""
+   },
+   "count": 3
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "prefix": "02",
+    "len": 14,
+    "kind": "request"
+   }
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "prefix": "03beefcafe03",
+    "len": 65,
+    "kind": "request"
+   }
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "prefix": "03",
+    "len": 2,
+    "kind": "request"
+   }
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "payload": "05",
+    "kind": "request"
+   }
+  }
+ ],
+ "result": true,
+ "precondition": "Before t = 0 the last info reply the bootloader received from any peer is the PSoC's reply to 0x09, with the entry mode:application (prior_info): the PSoC responder answers 0x09 with a mode entry, and the Nordic sent no info reply after the PSoC's last one. Only then does a bootloader that reads a query without a reply from the last info reply (N1) fail this check.",
+ "prior_info": "mode:application;sw_version:1.0.7;serial:PSOC0001",
+ "args": {
+  "image_len": 1,
+  "version": [
+   1,
+   1,
+   0,
+   0
+  ],
+  "type": "0xb0",
+  "product_word": "0x00084000"
+ }
+}

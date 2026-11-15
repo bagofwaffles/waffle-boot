@@ -1,0 +1,683 @@
+{
+ "initial": {
+  "psoc_version": "0.0.0",
+  "psoc_serial": "",
+  "nordic_app": "0.0.0",
+  "nordic_bl": "0.0.0"
+ },
+ "values": [
+  [
+   "1.0.7",
+   "1.0.7"
+  ],
+  [
+   "1.0.1+0",
+   "1.0.1"
+  ],
+  [
+   "1000.0.10",
+   "1000.0.10"
+  ],
+  [
+   "1.2.3+4",
+   "1.2.3+4"
+  ],
+  [
+   "1.2",
+   null
+  ],
+  [
+   "abc",
+   null
+  ],
+  [
+   "",
+   null
+  ],
+  [
+   "1.2.x",
+   "1.2.0"
+  ],
+  [
+   " 1.2.3",
+   "1.2.3"
+  ],
+  [
+   "70000.1.2",
+   "4464.1.2"
+  ],
+  [
+   "1.2.3+",
+   "1.2.3"
+  ],
+  [
+   "1.2.3.4",
+   "1.2.3"
+  ],
+  [
+   "1+5.2.3",
+   "1.2.3"
+  ],
+  [
+   "\t1.\t2.3+\t9",
+   "1.2.3+9"
+  ],
+  [
+   "..",
+   "0.0.0"
+  ],
+  [
+   "1.2.3+000000000000000000000000000000000000000000000000000012345",
+   "1.2.3+12345"
+  ],
+  [
+   "1.2.3+0000000000000000000000000000000000000000000000000000012345",
+   "1.2.3+1234"
+  ],
+  [
+   "1.0000000000000000000000000000000000000000000000000000000000000.3+777",
+   null
+  ]
+ ],
+ "replies": [
+  {
+   "name": "psoc_stock",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "mode:application;sw_version:1.0.7;serial:PSOC0001",
+   "after": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "PSOC0001",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "nordic_stock",
+   "step": 1,
+   "peer": "nordic",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "mode:application;sw_version:1.0.1;bl_version:1000.0.10;boot_slot:0;serial:NRF00001",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "app_sw_version_fallback",
+   "step": 1,
+   "peer": "nordic",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "mode:application;app_sw_version:1.0.1",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "sw_version_preferred",
+   "step": 1,
+   "peer": "nordic",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "app_sw_version:2.0.0;sw_version:1.0.1",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "exact_key_not_prefix",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "sw_version_old:0.9.0;sw_version:1.0.7",
+   "after": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "prefix_only_is_missing",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "sw_versionx:0.9.0",
+   "after": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "serial_exact_key",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "serialnumber:XYZ;serial:PSOC0001",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "PSOC0001",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "serial_18_chars",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "serial:ABCDEFGHIJKLMNOPQR",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "ABCDEFGHIJKLMNOPQR",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "serial_19_chars",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "serial:ABCDEFGHIJKLMNOPQRS",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "ABCDEFGHIJKLMNOPQR",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "serial_26_chars",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "serial:ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "ABCDEFGHIJKLMNOPQR",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "version_64_chars",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "sw_version:1.2.3+0000000000000000000000000000000000000000000000000000012345;serial:PSOC0001",
+   "after": {
+    "psoc_version": "1.2.3+1234",
+    "psoc_serial": "PSOC0001",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "version_69_chars_keeps",
+   "step": 1,
+   "peer": "nordic",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "sw_version:1.0000000000000000000000000000000000000000000000000000000000000.3+777",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "unparseable_keeps",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "sw_version:1.0",
+   "after": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "missing_keeps",
+   "step": 1,
+   "peer": "nordic",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "mode:application",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "no_reply_keeps",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "PSOC0001",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": null,
+   "after": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "PSOC0001",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "value_with_colon",
+   "step": 1,
+   "peer": "psoc",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "sw_version:1.0.7:extra",
+   "after": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "step1_never_sets_nordic_bl",
+   "step": 1,
+   "peer": "nordic",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "payload": "sw_version:1.0.1;bl_version:1000.0.10",
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "dfu_both",
+   "step": 2,
+   "mode_reply": "mode:bootloader;sw_version:1.0.1",
+   "payload": "mode:bootloader;sw_version:1.0.1;bl_version:1000.0.10",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "1000.0.10"
+   }
+  },
+  {
+   "name": "dfu_not_in_dfu",
+   "step": 2,
+   "mode_reply": "mode:application;sw_version:1.0.1",
+   "payload": "mode:application;sw_version:1.0.1;bl_version:1000.0.10",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "dfu_mode_prefix",
+   "step": 2,
+   "mode_reply": "mode:bootloaderx",
+   "payload": "sw_version:1.0.1;bl_version:1000.0.10",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "dfu_mode_key_exact",
+   "step": 2,
+   "mode_reply": "modex:bootloader;mode:application",
+   "payload": "sw_version:1.0.1;bl_version:1000.0.10",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "dfu_no_mode_reply",
+   "step": 2,
+   "mode_reply": null,
+   "payload": "sw_version:1.0.1;bl_version:1000.0.10",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "dfu_sw_missing",
+   "step": 2,
+   "mode_reply": "mode:bootloader",
+   "payload": "mode:bootloader;bl_version:1000.0.10",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "dfu_app_sw_version_not_used",
+   "step": 2,
+   "mode_reply": "mode:bootloader",
+   "payload": "app_sw_version:1.0.1;bl_version:1000.0.10",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "dfu_bl_missing",
+   "step": 2,
+   "mode_reply": "mode:bootloader",
+   "payload": "mode:bootloader;sw_version:1.0.2",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "0.0.0",
+    "nordic_bl": "1000.0.10"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.2",
+    "nordic_bl": "1000.0.10"
+   }
+  },
+  {
+   "name": "dfu_no_versions_reply",
+   "step": 2,
+   "mode_reply": "mode:bootloader",
+   "payload": null,
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   },
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   }
+  }
+ ],
+ "run_end": [
+  {
+   "name": "both_answer",
+   "before": {
+    "psoc_version": "1.0.7",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "1000.0.10"
+   },
+   "s11_sets": {
+    "nordic_app": "1.1.0"
+   },
+   "nordic_reply": "sw_version:1.1.0",
+   "psoc_reply": "sw_version:1.0.8;serial:PSOC0001",
+   "after": {
+    "psoc_version": "1.0.8",
+    "psoc_serial": "PSOC0001",
+    "nordic_app": "1.1.0",
+    "nordic_bl": "1000.0.10"
+   }
+  },
+  {
+   "name": "nordic_reports_other",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   },
+   "s11_sets": {
+    "nordic_app": "1.1.0"
+   },
+   "nordic_reply": "sw_version:1.0.1",
+   "psoc_reply": null,
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   }
+  },
+  {
+   "name": "silent_keeps_run_value",
+   "before": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.0.1",
+    "nordic_bl": "0.0.0"
+   },
+   "s11_sets": {
+    "nordic_app": "1.1.0"
+   },
+   "nordic_reply": null,
+   "psoc_reply": null,
+   "after": {
+    "psoc_version": "0.0.0",
+    "psoc_serial": "",
+    "nordic_app": "1.1.0",
+    "nordic_bl": "0.0.0"
+   }
+  }
+ ],
+ "sinks": {
+  "metadata": {
+   "os_version": "1.2.0",
+   "sw_version": "1.2.0+3",
+   "serial": "UNIT0001",
+   "dsp_serial": "CHIPSERIAL00000042"
+  },
+  "strap_index": "11",
+  "nordic_greeting": [
+   187,
+   156
+  ],
+  "info_reply_hw_rev": "hw_rev:156",
+  "bootloader_version": "<own>",
+  "psoc_reply": "mode:application;sw_version:1.0.7;serial:PSOC0001",
+  "nordic_reply": "mode:application;sw_version:1.0.1;bl_version:1000.0.10",
+  "info_screen_contains": [
+   "1.2.0",
+   "1.2.0+3",
+   "<own>",
+   "1.0.1",
+   "1.0.7",
+   "UNIT0001",
+   "CHIPSERIAL00000042",
+   "PSOC0001"
+  ],
+  "info_screen_excludes": [
+   "1000.0.10",
+   "hw_rev",
+   "156",
+   "9c",
+   "9C"
+  ],
+  "version_txt": {
+   "C": "<own>",
+   "D": "1.0.7",
+   "E": "1.0.1"
+  },
+  "serial_txt": {
+   "P": "PSOC0001"
+  },
+  "info_reply_excludes": [
+   "1.0.7",
+   "1.0.1",
+   "1000.0.10",
+   "PSOC0001"
+  ],
+  "info_reply_bl_version": "<own>"
+ },
+ "own_version": {
+  "first": "0.9.13",
+  "never": "0.1.0",
+  "accept": [
+   "0.9.9",
+   "0.9.13",
+   "1.0.0",
+   "1.0.0+3",
+   "1.0.1",
+   "1.2.3",
+   "2.0.0"
+  ],
+  "reject": [
+   "0.1.0",
+   "0.1.0+7",
+   "1.0",
+   "abc",
+   ""
+  ]
+ }
+}

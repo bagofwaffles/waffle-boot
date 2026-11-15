@@ -1,0 +1,363 @@
+{
+ "init_spi2_clk": 1,
+ "rows": [
+  {
+   "clk": 3,
+   "ctl": 3,
+   "kind": "flash",
+   "name": "flash_25mhz",
+   "ok": true
+  },
+  {
+   "clk": 1,
+   "ctl": 3,
+   "kind": "flash",
+   "name": "flash_50mhz",
+   "ok": true
+  },
+  {
+   "clk": 1,
+   "ctl": 51,
+   "kind": "flash",
+   "name": "flash_mode3",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 3,
+   "kind": "flash",
+   "name": "flash_100mhz",
+   "ok": false
+  },
+  {
+   "clk": 3,
+   "ctl": 4099,
+   "kind": "flash",
+   "name": "flash_lsb_first",
+   "ok": false
+  },
+  {
+   "clk": 3,
+   "ctl": 19,
+   "kind": "flash",
+   "name": "flash_mode1",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 2,
+   "kind": "flash",
+   "name": "flash_disabled_clk0",
+   "ok": true
+  },
+  {
+   "clk": 2,
+   "ctl": 19,
+   "kind": "slave_boot",
+   "name": "slave_boot",
+   "ok": true
+  },
+  {
+   "clk": 2,
+   "ctl": 3,
+   "kind": "slave_boot",
+   "name": "slave_boot_mode0",
+   "ok": false
+  },
+  {
+   "clk": 1,
+   "ctl": 19,
+   "kind": "slave_boot",
+   "name": "slave_boot_50mhz",
+   "ok": false
+  },
+  {
+   "clk": 2,
+   "ctl": 8211,
+   "kind": "slave_boot",
+   "name": "slave_boot_fc",
+   "ok": true
+  },
+  {
+   "clk": 2,
+   "ctl": 40979,
+   "kind": "slave_boot",
+   "name": "slave_boot_fc_active_high",
+   "ok": false
+  },
+  {
+   "clk": 3,
+   "ctl": 9619,
+   "kind": "bridge_master_pre",
+   "name": "bridge_master_pre",
+   "ok": true
+  },
+  {
+   "clk": 3,
+   "ctl": 9619,
+   "kind": "bridge_master_post",
+   "name": "bridge_master_post",
+   "ok": true
+  },
+  {
+   "clk": 1,
+   "ctl": 2368915,
+   "kind": "bridge_master_post",
+   "name": "bridge_master_post_quad",
+   "ok": false
+  },
+  {
+   "clk": 1,
+   "ctl": 9619,
+   "kind": "bridge_master_post",
+   "name": "bridge_master_post_fast",
+   "ok": false
+  },
+  {
+   "clk": 1,
+   "ctl": 9619,
+   "kind": "bridge_master_pre",
+   "name": "bridge_master_pre_fast",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 9489,
+   "kind": "bridge_slave_pre",
+   "name": "bridge_slave_pre",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 9489,
+   "kind": "bridge_slave_post",
+   "name": "bridge_slave_post",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 2106641,
+   "kind": "bridge_slave_post",
+   "name": "bridge_slave_post_quad",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 8465,
+   "kind": "bridge_slave_pre",
+   "name": "bridge_slave_8bit",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 25873,
+   "kind": "bridge_slave_reply_pre",
+   "name": "bridge_slave_reply_pre",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 25873,
+   "kind": "bridge_slave_reply_post",
+   "name": "bridge_slave_reply_post",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 140561,
+   "kind": "bridge_slave_request_pre",
+   "name": "bridge_slave_request_pre",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 140561,
+   "kind": "bridge_slave_request_post",
+   "name": "bridge_slave_request_post",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 9489,
+   "kind": "bridge_slave_reply_post",
+   "name": "bridge_slave_reply_rx_channel",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 9489,
+   "kind": "bridge_slave_reply_pre",
+   "name": "bridge_slave_reply_rx_channel_pre",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 156945,
+   "kind": "bridge_slave_reply_post",
+   "name": "bridge_slave_reply_half_empty",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 58641,
+   "kind": "bridge_slave_reply_post",
+   "name": "bridge_slave_reply_active_high",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 25873,
+   "kind": "bridge_slave_request_post",
+   "name": "bridge_slave_request_tx_channel",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 9489,
+   "kind": "bridge_slave_request_post",
+   "name": "bridge_slave_request_full",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 2123025,
+   "kind": "bridge_slave_reply_post",
+   "name": "bridge_slave_reply_quad",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 2237713,
+   "kind": "bridge_slave_request_post",
+   "name": "bridge_slave_request_quad",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 25872,
+   "kind": "bridge_slave_reply_post",
+   "name": "bridge_slave_reply_disabled",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 9489,
+   "kind": "bridge_slave_request_pre",
+   "name": "bridge_slave_request_rx_full_pre",
+   "ok": false
+  },
+  {
+   "clk": 1,
+   "ctl": 2368915,
+   "kind": "bridge_master_quad_opt",
+   "name": "bridge_master_quad_opt",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 2368915,
+   "kind": "bridge_master_quad_opt",
+   "name": "bridge_master_quad_opt_100mhz",
+   "ok": false
+  },
+  {
+   "clk": 1,
+   "ctl": 2106771,
+   "kind": "bridge_master_quad_opt",
+   "name": "bridge_master_quad_opt_no_fast_mode",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 2106641,
+   "kind": "bridge_slave_quad_opt",
+   "name": "bridge_slave_quad_opt",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 9489,
+   "kind": "bridge_slave_quad_opt",
+   "name": "bridge_slave_quad_opt_single",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 2123025,
+   "kind": "bridge_slave_reply_quad_opt",
+   "name": "bridge_slave_reply_quad_opt",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 2237713,
+   "kind": "bridge_slave_request_quad_opt",
+   "name": "bridge_slave_request_quad_opt",
+   "ok": true
+  },
+  {
+   "clk": 3,
+   "ctl": 9619,
+   "kind": "bridge_master_rung1",
+   "name": "bridge_master_rung1",
+   "ok": true
+  },
+  {
+   "clk": 1,
+   "ctl": 9619,
+   "kind": "bridge_master_rung1",
+   "name": "bridge_master_rung1_50mhz",
+   "ok": false
+  },
+  {
+   "clk": 1,
+   "ctl": 271763,
+   "kind": "bridge_master_rung2",
+   "name": "bridge_master_rung2",
+   "ok": true
+  },
+  {
+   "clk": 1,
+   "ctl": 9619,
+   "kind": "bridge_master_rung2",
+   "name": "bridge_master_rung2_no_fast_mode",
+   "ok": false
+  },
+  {
+   "clk": 3,
+   "ctl": 2368915,
+   "kind": "bridge_master_rung3",
+   "name": "bridge_master_rung3",
+   "ok": true
+  },
+  {
+   "clk": 3,
+   "ctl": 271763,
+   "kind": "bridge_master_rung3",
+   "name": "bridge_master_rung3_single",
+   "ok": false
+  },
+  {
+   "clk": 1,
+   "ctl": 2368915,
+   "kind": "bridge_master_rung4",
+   "name": "bridge_master_rung4",
+   "ok": true
+  },
+  {
+   "clk": 1,
+   "ctl": 2106771,
+   "kind": "bridge_master_rung4",
+   "name": "bridge_master_rung4_no_fast_mode",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 2368915,
+   "kind": "bridge_master_rung4",
+   "name": "bridge_master_rung4_100mhz",
+   "ok": false
+  }
+ ],
+ "sclk0_hz": 100000000
+}

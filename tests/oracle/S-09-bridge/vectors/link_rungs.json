@@ -1,0 +1,211 @@
+[
+ {
+  "bad": [],
+  "ceiling": 4,
+  "fell": 0,
+  "kept": 4,
+  "name": "all_good",
+  "tried": [
+   4
+  ]
+ },
+ {
+  "bad": [
+   4
+  ],
+  "ceiling": 4,
+  "fell": 1,
+  "kept": 3,
+  "name": "top_corrupt",
+  "tried": [
+   4,
+   3
+  ]
+ },
+ {
+  "bad": [
+   4,
+   3
+  ],
+  "ceiling": 4,
+  "fell": 2,
+  "kept": 2,
+  "name": "quad_deaf",
+  "tried": [
+   4,
+   3,
+   2
+  ]
+ },
+ {
+  "bad": [
+   4,
+   3,
+   2,
+   1
+  ],
+  "ceiling": 4,
+  "fell": 4,
+  "kept": 0,
+  "name": "none_above_plain",
+  "tried": [
+   4,
+   3,
+   2,
+   1
+  ]
+ },
+ {
+  "bad": [
+   4,
+   3,
+   2
+  ],
+  "ceiling": 4,
+  "fell": 3,
+  "kept": 1,
+  "name": "only_rung_1",
+  "tried": [
+   4,
+   3,
+   2,
+   1
+  ]
+ },
+ {
+  "bad": [],
+  "ceiling": 2,
+  "fell": 0,
+  "kept": 2,
+  "name": "ceiling_2",
+  "tried": [
+   2
+  ]
+ },
+ {
+  "bad": [],
+  "ceiling": 1,
+  "fell": 0,
+  "kept": 1,
+  "name": "ceiling_1",
+  "tried": [
+   1
+  ]
+ },
+ {
+  "bad": [
+   1
+  ],
+  "ceiling": 1,
+  "fell": 1,
+  "kept": 0,
+  "name": "ceiling_1_bad",
+  "tried": [
+   1
+  ]
+ },
+ {
+  "bad": [],
+  "ceiling": 4,
+  "fell": 0,
+  "kept": 3,
+  "name": "top_slow",
+  "slow": [
+   4
+  ],
+  "tried": [
+   4,
+   3
+  ]
+ },
+ {
+  "bad": [],
+  "ceiling": 4,
+  "fell": 0,
+  "kept": 1,
+  "name": "all_slow",
+  "slow": [
+   4,
+   3,
+   2
+  ],
+  "tried": [
+   4,
+   3,
+   2,
+   1
+  ]
+ },
+ {
+  "bad": [],
+  "ceiling": 4,
+  "fell": 0,
+  "kept": 4,
+  "name": "after_fall_back",
+  "then": {
+   "fall_back_from": 4,
+   "kept": 3,
+   "tried": [
+    3
+   ]
+  },
+  "tried": [
+   4
+  ]
+ },
+ {
+  "bad": [],
+  "ceiling": 4,
+  "fell": 0,
+  "kept": 4,
+  "name": "after_fall_back_slow",
+  "slow": [
+   3
+  ],
+  "then": {
+   "fall_back_from": 4,
+   "kept": 2,
+   "tried": [
+    3,
+    2
+   ]
+  },
+  "tried": [
+   4
+  ]
+ },
+ {
+  "bad": [],
+  "ceiling": 2,
+  "fell": 0,
+  "kept": 2,
+  "name": "after_fall_back_2",
+  "then": {
+   "fall_back_from": 2,
+   "kept": 1,
+   "tried": [
+    1
+   ]
+  },
+  "tried": [
+   2
+  ]
+ },
+ {
+  "bad": [],
+  "ceiling": 1,
+  "fell": 0,
+  "kept": 1,
+  "name": "after_fall_back_1",
+  "then": {
+   "fall_back_from": 1,
+   "kept": 1,
+   "tried": [
+    1
+   ]
+  },
+  "tried": [
+   1
+  ]
+ }
+]

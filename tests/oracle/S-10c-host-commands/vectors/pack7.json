@@ -1,0 +1,143 @@
+{
+ "pack": [
+  {
+   "data": "",
+   "name": "pack-empty",
+   "packed": ""
+  },
+  {
+   "data": "00",
+   "name": "pack-one-00",
+   "packed": "0000"
+  },
+  {
+   "data": "7f",
+   "name": "pack-one-7f",
+   "packed": "007f"
+  },
+  {
+   "data": "80",
+   "name": "pack-one-80",
+   "packed": "0100"
+  },
+  {
+   "data": "ff",
+   "name": "pack-one-ff",
+   "packed": "017f"
+  },
+  {
+   "data": "ffffffffffffff",
+   "name": "pack-seven-ff",
+   "packed": "7f7f7f7f7f7f7f7f"
+  },
+  {
+   "data": "80018203840586",
+   "name": "pack-seven-alternating",
+   "packed": "5500010203040506"
+  },
+  {
+   "data": "f0010203040506f7",
+   "name": "pack-eight",
+   "packed": "01700102030405060177"
+  },
+  {
+   "data": "808182838485868788898a8b8c8d",
+   "name": "pack-fourteen",
+   "packed": "7f000102030405067f0708090a0b0c0d"
+  },
+  {
+   "data": "f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+   "name": "pack-fifteen",
+   "packed": "7f717273747576777f78797a7b7c7d7e017f"
+  },
+  {
+   "data": "6d6f64653a626f6f746c6f61646572",
+   "name": "pack-text",
+   "packed": "006d6f64653a626f006f746c6f6164650072"
+  },
+  {
+   "data": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+   "name": "pack-all-256",
+   "packed": "0000010203040506000708090a0b0c0d000e0f10111213140015161718191a1b001c1d1e1f2021220023242526272829002a2b2c2d2e2f3000313233343536370038393a3b3c3d3e003f40414243444500464748494a4b4c004d4e4f50515253005455565758595a005b5c5d5e5f6061006263646566676800696a6b6c6d6e6f0070717273747576007778797a7b7c7d7c7e7f00010203047f05060708090a0b7f0c0d0e0f1011127f131415161718197f1a1b1c1d1e1f207f212223242526277f28292a2b2c2d2e7f2f3031323334357f363738393a3b3c7f3d3e3f404142437f4445464748494a7f4b4c4d4e4f50517f525354555657587f595a5b5c5d5e5f7f606162636465667f6768696a6b6c6d7f6e6f70717273747f75767778797a7b0f7c7d7e7f"
+  }
+ ],
+ "unpack": [
+  {
+   "data": "",
+   "name": "unpack-empty",
+   "packed": ""
+  },
+  {
+   "data": "00",
+   "name": "unpack-one-00",
+   "packed": "0000"
+  },
+  {
+   "data": "7f",
+   "name": "unpack-one-7f",
+   "packed": "007f"
+  },
+  {
+   "data": "80",
+   "name": "unpack-one-80",
+   "packed": "0100"
+  },
+  {
+   "data": "ff",
+   "name": "unpack-one-ff",
+   "packed": "017f"
+  },
+  {
+   "data": "ffffffffffffff",
+   "name": "unpack-seven-ff",
+   "packed": "7f7f7f7f7f7f7f7f"
+  },
+  {
+   "data": "80018203840586",
+   "name": "unpack-seven-alternating",
+   "packed": "5500010203040506"
+  },
+  {
+   "data": "f0010203040506f7",
+   "name": "unpack-eight",
+   "packed": "01700102030405060177"
+  },
+  {
+   "data": "808182838485868788898a8b8c8d",
+   "name": "unpack-fourteen",
+   "packed": "7f000102030405067f0708090a0b0c0d"
+  },
+  {
+   "data": "f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+   "name": "unpack-fifteen",
+   "packed": "7f717273747576777f78797a7b7c7d7e017f"
+  },
+  {
+   "data": "6d6f64653a626f6f746c6f61646572",
+   "name": "unpack-text",
+   "packed": "006d6f64653a626f006f746c6f6164650072"
+  },
+  {
+   "data": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+   "name": "unpack-all-256",
+   "packed": "0000010203040506000708090a0b0c0d000e0f10111213140015161718191a1b001c1d1e1f2021220023242526272829002a2b2c2d2e2f3000313233343536370038393a3b3c3d3e003f40414243444500464748494a4b4c004d4e4f50515253005455565758595a005b5c5d5e5f6061006263646566676800696a6b6c6d6e6f0070717273747576007778797a7b7c7d7c7e7f00010203047f05060708090a0b7f0c0d0e0f1011127f131415161718197f1a1b1c1d1e1f207f212223242526277f28292a2b2c2d2e7f2f3031323334357f363738393a3b3c7f3d3e3f404142437f4445464748494a7f4b4c4d4e4f50517f525354555657587f595a5b5c5d5e5f7f606162636465667f6768696a6b6c6d7f6e6f70717273747f75767778797a7b0f7c7d7e7f"
+  },
+  {
+   "data": "81028304850687",
+   "name": "header-only-tail",
+   "note": "a last group of a header byte alone adds nothing",
+   "packed": "550102030405060701"
+  },
+  {
+   "data": "8102",
+   "name": "bit7-set-ignored",
+   "note": "bit 7 of the header and of the data bytes is ignored (packing 81 02 gives 01 01 02)",
+   "packed": "818182"
+  },
+  {
+   "data": "0102",
+   "name": "partial-group",
+   "packed": "000102"
+  }
+ ]
+}

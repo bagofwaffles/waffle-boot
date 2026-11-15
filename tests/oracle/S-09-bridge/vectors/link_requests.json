@@ -1,0 +1,109 @@
+[
+ {
+  "check_hex": "",
+  "mode": 0,
+  "name": "link_mode_try_quad",
+  "note": "quad I/O, on trial",
+  "request_len": 12,
+  "session_hex": "190100000200000000000000",
+  "session_len": 12
+ },
+ {
+  "check_hex": "",
+  "mode": 0,
+  "name": "link_mode_keep_checked",
+  "note": "single I/O with the check, kept",
+  "request_len": 12,
+  "session_hex": "190100000100000001000000",
+  "session_len": 12
+ },
+ {
+  "check_hex": "",
+  "mode": 0,
+  "name": "link_mode_plain",
+  "note": "back to the plain mode",
+  "request_len": 12,
+  "session_hex": "190200000000000000000000",
+  "session_len": 12
+ },
+ {
+  "check_hex": "",
+  "mode": 0,
+  "name": "link_test_4",
+  "note": "n = 4",
+  "request_len": 16,
+  "session_hex": "1a0104000000000004000000a55a0ff0",
+  "session_len": 16
+ },
+ {
+  "check_hex": "",
+  "mode": 0,
+  "name": "link_test_61",
+  "note": "n = 61, three pad bytes",
+  "request_len": 76,
+  "session_hex": "1a013d00050000003d0000000b30557a9fc4e90e33587da2c7ec11365b80a5caef14395e83a8cdf2173c6186abd0f51a3f6489aed3f81d42678cb1d6fb20456a8fb4d9fe23486d92b7000000",
+  "session_len": 76
+ },
+ {
+  "check_hex": "000000007e364241",
+  "mode": 1,
+  "name": "echo_checked",
+  "note": "a header alone, checked mode, no number",
+  "request_len": 12,
+  "seq": 0,
+  "session_hex": "0a0100007856341200000000000000007e364241",
+  "session_len": 20
+ },
+ {
+  "check_hex": "07000000c0df2141",
+  "mode": 2,
+  "name": "poll_quad",
+  "note": "a poll in quad I/O, number 7",
+  "request_len": 12,
+  "seq": 7,
+  "session_hex": "06020000000000000000000007000000c0df2141",
+  "session_len": 20
+ },
+ {
+  "check_hex": "00000000724be241",
+  "mode": 2,
+  "name": "keep_quad",
+  "note": "0x19 keep, on its trial",
+  "request_len": 12,
+  "seq": 0,
+  "session_hex": "19010000020000000100000000000000724be241",
+  "session_len": 20
+ },
+ {
+  "check_hex": "0000000053c0089a",
+  "mode": 2,
+  "name": "test_61",
+  "note": "a padded payload: 61 bytes and three zeros, then the trailer",
+  "request_len": 76,
+  "seq": 0,
+  "session_hex": "1a013d00050000003d0000000b30557a9fc4e90e33587da2c7ec11365b80a5caef14395e83a8cdf2173c6186abd0f51a3f6489aed3f81d42678cb1d6fb20456a8fb4d9fe23486d92b70000000000000053c0089a",
+  "session_len": 84
+ },
+ {
+  "check_hex": "01000000e17a05cf",
+  "mode": 1,
+  "name": "write_44",
+  "note": "payload 0x44: not lengthened to 0x4C outside the plain mode; number 1",
+  "request_len": 80,
+  "seq": 1,
+  "session_hex": "2b01440004000000440000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a01000000e17a05cf",
+  "session_len": 88
+ },
+ {
+  "check_hex": "78563412253d9b9d",
+  "data_rule": "(i*7)&0xff",
+  "mode": 2,
+  "name": "write_8000",
+  "note": "a file write of 0x8000 bytes: 12 + 0x8000 + 8; number 0x12345678",
+  "request_len": 32780,
+  "seq": 305419896,
+  "session_head_hex": "2b010080040000000080000000070e15",
+  "session_len": 32788,
+  "session_sha256": "47c2aa2db4ce2afcee862a226055f7ca90a1502b7d2e17b050ba59dba8d020d8"
+ }
+]

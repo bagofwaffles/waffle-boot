@@ -1,0 +1,3866 @@
+{
+ "busy_end": [
+  {
+   "events": [
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 3584,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "switch_status"
+  },
+  {
+   "events": [
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "switch_dat0"
+  },
+  {
+   "events": [
+    {
+     "arg": 8192,
+     "ev": "cmd",
+     "idx": 25,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 12,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 3584,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 8192,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "write_status"
+  },
+  {
+   "events": [
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2432,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "fail"
+    }
+   ],
+   "expect": [],
+   "name": "switch_error_fails"
+  },
+  {
+   "events": [
+    {
+     "arg": 16,
+     "ev": "cmd",
+     "idx": 24,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 3840,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 16,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_busy_end"
+   ],
+   "name": "ready_in_programming_state"
+  },
+  {
+   "events": [
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 3840,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_busy_end"
+   ],
+   "name": "switch_ready_in_programming_state"
+  },
+  {
+   "events": [
+    {
+     "arg": 1024,
+     "ev": "cmd",
+     "idx": 35,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1024,
+     "ev": "cmd",
+     "idx": 36,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 38,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 3840,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1024,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_busy_end"
+   ],
+   "name": "erase_ready_in_programming_state"
+  },
+  {
+   "events": [
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2432,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_switch_error"
+   ],
+   "name": "switch_error_ignored"
+  }
+ ],
+ "clocks": {
+  "hs_clkdiv": 0,
+  "ident_clkdiv": 63,
+  "ident_clkdiv_too_fast": 62,
+  "source_hz": 50000000
+ },
+ "ocr_arg": 1073741952,
+ "power_off": [
+  {
+   "events": [
+    {
+     "arg": 61014016,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560640,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    }
+   ],
+   "expect": [],
+   "name": "dat0_wait"
+  },
+  {
+   "events": [
+    {
+     "arg": 61014016,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560640,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "power_off_quiet"
+   ],
+   "name": "status_and_read_back"
+  },
+  {
+   "events": [
+    {
+     "arg": 61014016,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560640,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "power_off_quiet"
+   ],
+   "name": "status_poll_only"
+  }
+ ],
+ "rca": 23166,
+ "sequences": [
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "reference"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "no_high_speed_emmc"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    }
+   ],
+   "expect": [
+    "emmc_init"
+   ],
+   "name": "no_cmd1_retry"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 16744448,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 16744448,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 16744448,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_init"
+   ],
+   "name": "wrong_ocr"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "bus_width_match"
+   ],
+   "name": "width_after_ext_csd"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "ext_csd_before_width"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_init"
+   ],
+   "name": "no_csd_read"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 25000000
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "ident_clock"
+   ],
+   "name": "fast_clock_in_ident"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "compat_clock"
+   ],
+   "name": "fast_clock_after_select"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "clock",
+     "hz": 25000000
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "clock_26_after_select"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_init"
+   ],
+   "name": "no_width_switch"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 100.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 300.0
+    },
+    {
+     "ev": "fail"
+    }
+   ],
+   "expect": [
+    "cmd1_bound"
+   ],
+   "name": "cmd1_gives_up_early"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 600.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1200.0
+    },
+    {
+     "ev": "fail"
+    }
+   ],
+   "expect": [],
+   "name": "cmd1_gives_up_after_1s"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_switch"
+   ],
+   "name": "switch_no_busy_wait"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61800704,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_switch"
+   ],
+   "name": "switch_other_index"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "compat_clock"
+   ],
+   "name": "clock_before_hs_busy_end"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "wake_from_step_1"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "bits": 1,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "ident_clock"
+   ],
+   "name": "wake_clock_kept"
+  },
+  {
+   "events": [
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "ev": "clock",
+     "hz": 396825
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 0,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 1.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 16744576,
+     "t_ms": 2.0
+    },
+    {
+     "arg": 1073741952,
+     "ev": "cmd",
+     "idx": 1,
+     "resp": 3237970048,
+     "t_ms": 3.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 2,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 3,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 9,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 7,
+     "resp": 1792,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62325248,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "bits": 8,
+     "ev": "width"
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 62456064,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "ev": "busy_end"
+    },
+    {
+     "ev": "clock",
+     "hz": 50000000
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52560128,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 52494592,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 61014528,
+     "ev": "cmd",
+     "idx": 6,
+     "resp": 2048,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 8,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "ident_width"
+   ],
+   "name": "wake_width_kept"
+  }
+ ],
+ "switch_indexes": [
+  32,
+  33,
+  34,
+  163,
+  179,
+  183,
+  185
+ ],
+ "timing": [
+  {
+   "clock_hz": 50000000,
+   "device_type": 87,
+   "driver_strength": 15,
+   "expect": [],
+   "hs_timing": 50,
+   "name": "hs200_driver3"
+  },
+  {
+   "clock_hz": 50000000,
+   "device_type": 87,
+   "driver_strength": 15,
+   "expect": [],
+   "hs_timing": 1,
+   "name": "hs200_emmc_as_high_speed"
+  },
+  {
+   "clock_hz": 50000000,
+   "device_type": 87,
+   "driver_strength": 1,
+   "expect": [
+    "timing_vs_clock"
+   ],
+   "hs_timing": 50,
+   "name": "hs200_without_driver3"
+  },
+  {
+   "clock_hz": 50000000,
+   "device_type": 3,
+   "driver_strength": 15,
+   "expect": [
+    "timing_vs_clock"
+   ],
+   "hs_timing": 50,
+   "name": "hs200_without_device_bit"
+  },
+  {
+   "clock_hz": 52000000,
+   "device_type": 87,
+   "driver_strength": 15,
+   "expect": [
+    "timing_vs_clock"
+   ],
+   "hs_timing": 50,
+   "name": "hs200_above_50"
+  },
+  {
+   "clock_hz": 50000000,
+   "device_type": 87,
+   "driver_strength": 1,
+   "expect": [],
+   "hs_timing": 1,
+   "name": "high_speed_52"
+  },
+  {
+   "clock_hz": 50000000,
+   "device_type": 1,
+   "driver_strength": 1,
+   "expect": [
+    "timing_vs_clock"
+   ],
+   "hs_timing": 1,
+   "name": "high_speed_26_only"
+  },
+  {
+   "clock_hz": 396825,
+   "device_type": 0,
+   "driver_strength": 0,
+   "expect": [],
+   "hs_timing": null,
+   "name": "no_switch_slow"
+  },
+  {
+   "clock_hz": 50000000,
+   "device_type": 0,
+   "driver_strength": 0,
+   "expect": [
+    "timing_vs_clock"
+   ],
+   "hs_timing": null,
+   "name": "no_switch_fast"
+  },
+  {
+   "clock_hz": 100000000,
+   "device_type": 87,
+   "driver_strength": 1,
+   "expect": [
+    "timing_vs_clock"
+   ],
+   "hs_timing": 1,
+   "name": "above_50"
+  },
+  {
+   "clock_hz": 25000000,
+   "device_type": 1,
+   "driver_strength": 1,
+   "expect": [],
+   "hs_timing": 1,
+   "name": "high_speed_26_only_25"
+  },
+  {
+   "clock_hz": 50000000,
+   "device_type": 16,
+   "driver_strength": 1,
+   "expect": [],
+   "hs_timing": 1,
+   "name": "hs200_only_driver1"
+  }
+ ],
+ "transfer": [
+  {
+   "events": [
+    {
+     "arg": 4096,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "read_single"
+  },
+  {
+   "events": [
+    {
+     "arg": 4097,
+     "ev": "cmd",
+     "idx": 18,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 12,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "read_multi"
+  },
+  {
+   "events": [
+    {
+     "arg": 8192,
+     "ev": "cmd",
+     "idx": 25,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 12,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 3584,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 8192,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "write_multi"
+  },
+  {
+   "events": [
+    {
+     "arg": 2147483776,
+     "ev": "cmd",
+     "idx": 23,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 8192,
+     "ev": "cmd",
+     "idx": 25,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "write_reliable"
+  },
+  {
+   "events": [
+    {
+     "arg": 1024,
+     "ev": "cmd",
+     "idx": 35,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1024,
+     "ev": "cmd",
+     "idx": 36,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 38,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [],
+   "name": "erase_group"
+  },
+  {
+   "events": [
+    {
+     "arg": 4097,
+     "ev": "cmd",
+     "idx": 18,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_transfer"
+   ],
+   "name": "read_multi_unended"
+  },
+  {
+   "events": [
+    {
+     "arg": 1024,
+     "ev": "cmd",
+     "idx": 35,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 2047,
+     "ev": "cmd",
+     "idx": 36,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 0,
+     "ev": "cmd",
+     "idx": 38,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 1518206976,
+     "ev": "cmd",
+     "idx": 13,
+     "resp": 2304,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_transfer"
+   ],
+   "name": "erase_range"
+  },
+  {
+   "events": [
+    {
+     "arg": 16,
+     "ev": "cmd",
+     "idx": 24,
+     "resp": 0,
+     "t_ms": 0.0
+    },
+    {
+     "arg": 16,
+     "ev": "cmd",
+     "idx": 17,
+     "resp": 0,
+     "t_ms": 0.0
+    }
+   ],
+   "expect": [
+    "emmc_transfer"
+   ],
+   "name": "read_after_write_busy"
+  }
+ ]
+}

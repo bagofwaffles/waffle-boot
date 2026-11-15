@@ -1,0 +1,26 @@
+{
+ "document": "S-05",
+ "requirement": "S-05.008",
+ "boot_kernel_entry": "0x04000008",
+ "config_size": "0x258",
+ "config_nonzero_fields": {
+  "pHeader": "0x7c",
+  "bootRegistry.pLoadFunction": "0xc0"
+ },
+ "load_function_reads": {
+  "pSource": "0x00",
+  "pDestination": "0x04",
+  "dByteCount": "0x08"
+ },
+ "load_function_writes": {
+  "pSource": "0x00"
+ },
+ "header_buffer_size": "0x10",
+ "header_fields": {
+  "block_code": "0x00",
+  "target_address": "0x04",
+  "byte_count": "0x08",
+  "argument": "0x0c"
+ },
+ "entry_register": "RCU0_SVECT0 at 0x20000020"
+}

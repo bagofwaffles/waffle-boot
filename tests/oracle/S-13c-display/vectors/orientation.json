@@ -1,0 +1,15 @@
+{
+ "requirement": "S-13c.023",
+ "mark": "screen positions (x, y), x 0..479 from the left, y 0..221 from the top: x = 10 for y = 10..49; y = 10 for x = 10..39; y = 30 for x = 10..29; white FFFF, every other pixel 0000",
+ "map": "screen (x, y) = window row 479 - x, window column index y (panel column 49 + y)",
+ "window_samples": {
+  "row 469 col 10": "FFFF",
+  "row 469 col 49": "FFFF",
+  "row 440 col 10": "FFFF",
+  "row 450 col 30": "FFFF",
+  "row 10 col 10": "0000"
+ },
+ "white_pixels": 88,
+ "sha256": "bcbcc90784c60c625c6e9bf3d1cac21f642f3d14b1ce372a329444554f8d4bef",
+ "sha256_mirrored": "bce3a14e1975ef922ebcd0d8314f1b7b9e250a7f861f6342bf1a3e633ccfa3a6"
+}

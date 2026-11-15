@@ -1,0 +1,1209 @@
+{
+ "vectors": [
+  {
+   "name": "empty-payload",
+   "wire": "02120201029700",
+   "frame": {
+    "route": 18,
+    "seq": 0,
+    "id": 1,
+    "payload": ""
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 0,
+      "id": 1,
+      "payload": ""
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 0,
+      "id": 1,
+      "payload": ""
+     }
+    ]
+   ]
+  },
+  {
+   "name": "one-zero-byte",
+   "wire": "051201010102cf00",
+   "frame": {
+    "route": 18,
+    "seq": 1,
+    "id": 1,
+    "payload": "00"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 1,
+      "id": 1,
+      "payload": "00"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 1,
+      "id": 1,
+      "payload": "00"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "zeros-in-header",
+   "wire": "0242010102eb00",
+   "frame": {
+    "route": 66,
+    "seq": 0,
+    "id": 0,
+    "payload": ""
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 66,
+      "seq": 0,
+      "id": 0,
+      "payload": ""
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 66,
+      "seq": 0,
+      "id": 0,
+      "payload": ""
+     }
+    ]
+   ]
+  },
+  {
+   "name": "reply-slot-dst",
+   "wire": "09480702030102036d00",
+   "frame": {
+    "route": 72,
+    "seq": 7,
+    "id": 2,
+    "payload": "010203"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 72,
+      "seq": 7,
+      "id": 2,
+      "payload": "010203"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 72,
+      "seq": 7,
+      "id": 2,
+      "payload": "010203"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "reply-mask-dst-15",
+   "wire": "074fff7f01ff3f00",
+   "frame": {
+    "route": 79,
+    "seq": 255,
+    "id": 127,
+    "payload": "ff"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 79,
+      "seq": 255,
+      "id": 127,
+      "payload": "ff"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 79,
+      "seq": 255,
+      "id": 127,
+      "payload": "ff"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "payload-zeros",
+   "wire": "05320940060201010202021c00",
+   "frame": {
+    "route": 50,
+    "seq": 9,
+    "id": 64,
+    "payload": "000100000200"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 50,
+      "seq": 9,
+      "id": 64,
+      "payload": "000100000200"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 50,
+      "seq": 9,
+      "id": 64,
+      "payload": "000100000200"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "max-payload-nonzero",
+   "wire": "ff121155f90102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9b700",
+   "frame": {
+    "route": 18,
+    "seq": 17,
+    "id": 85,
+    "payload": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 17,
+      "id": 85,
+      "payload": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 17,
+      "id": 85,
+      "payload": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "max-payload-zero",
+   "wire": "05121255f90101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101025f00",
+   "frame": {
+    "route": 18,
+    "seq": 18,
+    "id": 85,
+    "payload": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 18,
+      "id": 85,
+      "payload": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 18,
+      "id": 85,
+      "payload": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-0",
+   "wire": "04120f42025200",
+   "frame": {
+    "route": 18,
+    "seq": 15,
+    "id": 66,
+    "payload": ""
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 15,
+      "id": 66,
+      "payload": ""
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 15,
+      "id": 66,
+      "payload": ""
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-1",
+   "wire": "088bdea6643fc48f040e6bcc02a80a0ce98e81cac912329c04b396b2010d84e1a42da0b4b544ae471073010cd25cca93ca80ae01994ffb0eb3146345e408fd75fbc6c2f18e0107decc96c0fd8c0711d03cf61ab801040306a80c5c5879581a88868d96c7dc0215034d4a00",
+   "frame": {
+    "route": 139,
+    "seq": 222,
+    "id": 166,
+    "payload": "3fc48f000e6bcc00a8000ce98e81cac912329c00b396b2000084e1a42da0b4b544ae4710730000d25cca93ca80ae01994ffb00b3146345e408fd75fbc6c2f18e0000decc96c0fd8c0011d03cf61ab800000306a8005c5879581a88868d96c7dc0015004d"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 139,
+      "seq": 222,
+      "id": 166,
+      "payload": "3fc48f000e6bcc00a8000ce98e81cac912329c00b396b2000084e1a42da0b4b544ae4710730000d25cca93ca80ae01994ffb00b3146345e408fd75fbc6c2f18e0000decc96c0fd8c0011d03cf61ab800000306a8005c5879581a88868d96c7dc0015004d"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 139,
+      "seq": 222,
+      "id": 166,
+      "payload": "3fc48f000e6bcc00a8000ce98e81cac912329c00b396b2000084e1a42da0b4b544ae4710730000d25cca93ca80ae01994ffb00b3146345e408fd75fbc6c2f18e0000decc96c0fd8c0011d03cf61ab800000306a8005c5879581a88868d96c7dc0015004d"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-2",
+   "wire": "0aa26058c892ffd6d5de09f4842eb8cef9a65e0106c7bfe74b8703e8f9038e9b033495060a473f2fc001021e0101010bfd493f747cb818e9a266021b0108a1d1735b5144b6028c03fa1d04d61da2010417cd8c0650823f567d068f967119e8058e5d3c1e049fccea01034f2508e8bc5389c8932b010118833e3652dab41d2381a692db77f579a97df5a23dff0b191074d84d5b3e66f3eb076d6fc870b8cc04e14409065fbb47a9c40ac0722736549245e5d70103c290048732ba01021309e672fb51af53c0500207065775db67e600",
+   "frame": {
+    "route": 162,
+    "seq": 96,
+    "id": 88,
+    "payload": "92ffd6d5de00f4842eb8cef9a65e0000c7bfe74b8700e8f9008e9b003495000a473f2fc000001e00000000fd493f747cb818e9a266001b0000a1d1735b5144b6008c00fa1d00d61da2000017cd8c0050823f567d008f967119e8008e5d3c1e009fccea00004f2500e8bc5389c8932b000000833e3652dab41d2381a692db77f579a97df5a23dff0b190074d84d5b3e66f3eb076d6fc870b8cc00e14409005fbb47a9c400c0722736549245e5d70000c290008732ba00001300e672fb51af53c0500007005775db67"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 162,
+      "seq": 96,
+      "id": 88,
+      "payload": "92ffd6d5de00f4842eb8cef9a65e0000c7bfe74b8700e8f9008e9b003495000a473f2fc000001e00000000fd493f747cb818e9a266001b0000a1d1735b5144b6008c00fa1d00d61da2000017cd8c0050823f567d008f967119e8008e5d3c1e009fccea00004f2500e8bc5389c8932b000000833e3652dab41d2381a692db77f579a97df5a23dff0b190074d84d5b3e66f3eb076d6fc870b8cc00e14409005fbb47a9c400c0722736549245e5d70000c290008732ba00001300e672fb51af53c0500007005775db67"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 162,
+      "seq": 96,
+      "id": 88,
+      "payload": "92ffd6d5de00f4842eb8cef9a65e0000c7bfe74b8700e8f9008e9b003495000a473f2fc000001e00000000fd493f747cb818e9a266001b0000a1d1735b5144b6008c00fa1d00d61da2000017cd8c0050823f567d008f967119e8008e5d3c1e009fccea00004f2500e8bc5389c8932b000000833e3652dab41d2381a692db77f579a97df5a23dff0b190074d84d5b3e66f3eb076d6fc870b8cc00e14409005fbb47a9c400c0722736549245e5d70000c290008732ba00001300e672fb51af53c0500007005775db67"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-3",
+   "wire": "0628b37107b003f2ec040c642f00",
+   "frame": {
+    "route": 40,
+    "seq": 179,
+    "id": 113,
+    "payload": "b000f2ec000c64"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 40,
+      "seq": 179,
+      "id": 113,
+      "payload": "b000f2ec000c64"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 40,
+      "seq": 179,
+      "id": 113,
+      "payload": "b000f2ec000c64"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-4",
+   "wire": "0509ea3607083bbca9b2a8915300",
+   "frame": {
+    "route": 9,
+    "seq": 234,
+    "id": 54,
+    "payload": "003bbca9b2a891"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 9,
+      "seq": 234,
+      "id": 54,
+      "payload": "003bbca9b2a891"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 9,
+      "seq": 234,
+      "id": 54,
+      "payload": "003bbca9b2a891"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-5",
+   "wire": "059b7c45f907785fa549615803043606f75cf5a1d01367972397bd9407edaeaddf85e4ebe2fd2c4703ee66039ec40103d99f059c227ee0010103cabc0814f77d4b0b1658035f6f131fc0a10d6e226491af90849c6669832a8753084c80ec9c858443059e087c2a02c10c420a2d8cf9604e41a7e793069667b780dc0548b3bc7f010de24018ae59e5303008d3de1d0330bf07dea96e8c4bcd0434212a0af16acaa3ab3dca157e0101041e11d102e8022002de10c89fb0f85bc0a5923f145a7feb69570ec0b8a43dbae5a08dad064247a7066b1b0af8b7022e03fb45026007ff972938359d010354af05e9e2a223027106f864ef23f5037855076a75f74d5ac000",
+   "frame": {
+    "route": 155,
+    "seq": 124,
+    "id": 69,
+    "payload": "00785fa549615800043600f75cf5a1d00067972397bd9407edaeaddf85e4ebe2fd2c4700ee66009ec40000d99f009c227ee0000000cabc0014f77d4b0b1658005f6f001fc0a10d6e226491af90849c6669832a8753004c80ec9c858443009e087c2a00c100420a2d8cf9604e41a7e793009667b780dc0048b3bc7f0000e24018ae59e5303008d3de1d0030bf00dea96e8c4bcd0034212a00f16acaa3ab3dca157e0000001e11d100e8002000de00c89fb0f85bc0a5923f145a7feb695700c0b8a43dbae5a08dad064247a7006b1b0af8b7002e00fb45006000ff972938359d000054af00e9e2a223007100f864ef23f5007855006a75f74d5a"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 155,
+      "seq": 124,
+      "id": 69,
+      "payload": "00785fa549615800043600f75cf5a1d00067972397bd9407edaeaddf85e4ebe2fd2c4700ee66009ec40000d99f009c227ee0000000cabc0014f77d4b0b1658005f6f001fc0a10d6e226491af90849c6669832a8753004c80ec9c858443009e087c2a00c100420a2d8cf9604e41a7e793009667b780dc0048b3bc7f0000e24018ae59e5303008d3de1d0030bf00dea96e8c4bcd0034212a00f16acaa3ab3dca157e0000001e11d100e8002000de00c89fb0f85bc0a5923f145a7feb695700c0b8a43dbae5a08dad064247a7006b1b0af8b7002e00fb45006000ff972938359d000054af00e9e2a223007100f864ef23f5007855006a75f74d5a"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 155,
+      "seq": 124,
+      "id": 69,
+      "payload": "00785fa549615800043600f75cf5a1d00067972397bd9407edaeaddf85e4ebe2fd2c4700ee66009ec40000d99f009c227ee0000000cabc0014f77d4b0b1658005f6f001fc0a10d6e226491af90849c6669832a8753004c80ec9c858443009e087c2a00c100420a2d8cf9604e41a7e793009667b780dc0048b3bc7f0000e24018ae59e5303008d3de1d0030bf00dea96e8c4bcd0034212a00f16acaa3ab3dca157e0000001e11d100e8002000de00c89fb0f85bc0a5923f145a7feb695700c0b8a43dbae5a08dad064247a7006b1b0af8b7002e00fb45006000ff972938359d000054af00e9e2a223007100f864ef23f5007855006a75f74d5a"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-6",
+   "wire": "0fc8a90f64e95d474d8ae40f635ae806a31dfcd1b00108281ee874711d1d06a31ffdacfa01052f3ab61d0401e98403a4fb0390d309c718e5825496549a02400dbd91906462b2b64c7e692fea07b005ba323cbb021a0107a91de8ae05a703b6de04d7982402390103206f00",
+   "frame": {
+    "route": 200,
+    "seq": 169,
+    "id": 15,
+    "payload": "e95d474d8ae40f635ae800a31dfcd1b00000281ee874711d1d00a31ffdacfa00002f3ab61d0001e98400a4fb0090d300c718e5825496549a004000bd91906462b2b64c7e692fea00b005ba323cbb001a0000a91de8ae05a700b6de00d798240039000020"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 200,
+      "seq": 169,
+      "id": 15,
+      "payload": "e95d474d8ae40f635ae800a31dfcd1b00000281ee874711d1d00a31ffdacfa00002f3ab61d0001e98400a4fb0090d300c718e5825496549a004000bd91906462b2b64c7e692fea00b005ba323cbb001a0000a91de8ae05a700b6de00d798240039000020"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 200,
+      "seq": 169,
+      "id": 15,
+      "payload": "e95d474d8ae40f635ae800a31dfcd1b00000281ee874711d1d00a31ffdacfa00002f3ab61d0001e98400a4fb0090d300c718e5825496549a004000bd91906462b2b64c7e692fea00b005ba323cbb001a0000a91de8ae05a700b6de00d798240039000020"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-7",
+   "wire": "081b8d84f8ef61fa03a1d4080b63eb1377241f0345030348c70496709c0ae458cb5ab2fd280360094dd65cbdd1e0f944096931fdc355839d740edecf161034b358f65df8155ba6027808f93fef481d1eaa06346c8c9d97010525c98ddd021602e71a1c554036eac29506294194daa78e55be3c259e87fb04fcf33d0aea63282afc143b666802b903672701010a981546a8d2033e764c05f924ec150379db043d63f5039e020cea17ea195e6688aca5ca21010e4e4eb6df6f4e87fbcacbe8fb9a0459a38b047aae670349690a93d8c6f1c804c607720406045307bc49209f95c1010271083fe88137d20f1602c806ad5e4870f20836df9458a82deb03466b00",
+   "frame": {
+    "route": 27,
+    "seq": 141,
+    "id": 132,
+    "payload": "ef61fa00a1d4000b63eb1377241f0045030048c70096709c00e458cb5ab2fd280360004dd65cbdd1e0f944006931fdc355839d7400decf161034b358f65df8155ba6007800f93fef481d1eaa00346c8c9d97000025c98ddd001600e7001c554036eac29506294194daa78e55be3c259e87fb04fcf33d00ea63282afc143b666800b9006727000000981546a8d2033e764c00f924ec150079db003d63f5009e0200ea17ea195e6688aca5ca2100004e4eb6df6f4e87fbcacbe8fb9a0059a38b007aae670049690093d8c6f1c804c607720006045300bc49209f95c1000071003fe88137d20f1600c800ad5e4870f20036df9458a82deb0046"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 27,
+      "seq": 141,
+      "id": 132,
+      "payload": "ef61fa00a1d4000b63eb1377241f0045030048c70096709c00e458cb5ab2fd280360004dd65cbdd1e0f944006931fdc355839d7400decf161034b358f65df8155ba6007800f93fef481d1eaa00346c8c9d97000025c98ddd001600e7001c554036eac29506294194daa78e55be3c259e87fb04fcf33d00ea63282afc143b666800b9006727000000981546a8d2033e764c00f924ec150079db003d63f5009e0200ea17ea195e6688aca5ca2100004e4eb6df6f4e87fbcacbe8fb9a0059a38b007aae670049690093d8c6f1c804c607720006045300bc49209f95c1000071003fe88137d20f1600c800ad5e4870f20036df9458a82deb0046"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 27,
+      "seq": 141,
+      "id": 132,
+      "payload": "ef61fa00a1d4000b63eb1377241f0045030048c70096709c00e458cb5ab2fd280360004dd65cbdd1e0f944006931fdc355839d7400decf161034b358f65df8155ba6007800f93fef481d1eaa00346c8c9d97000025c98ddd001600e7001c554036eac29506294194daa78e55be3c259e87fb04fcf33d00ea63282afc143b666800b9006727000000981546a8d2033e764c00f924ec150079db003d63f5009e0200ea17ea195e6688aca5ca2100004e4eb6df6f4e87fbcacbe8fb9a0059a38b007aae670049690093d8c6f1c804c607720006045300bc49209f95c1000071003fe88137d20f1600c800ad5e4870f20036df9458a82deb0046"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-8",
+   "wire": "055a99c1c803026003b683010c32ba8aed02765a609310a702f5065dac8040ad02b50654992aef501071acd680e2bd8f522c0ca83da4cc9e033d5b0108dcd962a6a9d3e1027e0514cd21c911fdd0e1dc0313486ba42406fdfa21f11b05da242490084c06f9336d79c20285020f0856c27f81d5a30c07f7fefbc62fac024705f44ae71c05dca71d56058c2fd45b06524b08926b0c96c1518f0bcc7b62c395c307c69f4d17c8de027502e00102ce02b80976fc2a72ab3eec7602ff0334ad08d7cb6ec1a657cc02360291033a1a022700",
+   "frame": {
+    "route": 90,
+    "seq": 153,
+    "id": 193,
+    "payload": "00026000b683000032ba8aed02765a609310a700f5005dac8040ad00b50054992aef500071acd680e2bd8f522c0ca83da4cc9e003d5b0000dcd962a6a9d3e1007e0014cd21c900fdd0e1dc0313486ba42406fdfa21f11b00da242490004c06f9336d79c20085000f0056c27f81d5a30c00f7fefbc62fac004700f44ae71c00dca71d56008c2fd45b00524b08926b0096c1518f0bcc7b62c395c300c69f4d17c8de007500e00000ce00b80076fc2a72ab3eec7600ff0034ad00d7cb6ec1a657cc00360091003a1a00"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 90,
+      "seq": 153,
+      "id": 193,
+      "payload": "00026000b683000032ba8aed02765a609310a700f5005dac8040ad00b50054992aef500071acd680e2bd8f522c0ca83da4cc9e003d5b0000dcd962a6a9d3e1007e0014cd21c900fdd0e1dc0313486ba42406fdfa21f11b00da242490004c06f9336d79c20085000f0056c27f81d5a30c00f7fefbc62fac004700f44ae71c00dca71d56008c2fd45b00524b08926b0096c1518f0bcc7b62c395c300c69f4d17c8de007500e00000ce00b80076fc2a72ab3eec7600ff0034ad00d7cb6ec1a657cc00360091003a1a00"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 90,
+      "seq": 153,
+      "id": 193,
+      "payload": "00026000b683000032ba8aed02765a609310a700f5005dac8040ad00b50054992aef500071acd680e2bd8f522c0ca83da4cc9e003d5b0000dcd962a6a9d3e1007e0014cd21c900fdd0e1dc0313486ba42406fdfa21f11b00da242490004c06f9336d79c20085000f0056c27f81d5a30c00f7fefbc62fac004700f44ae71c00dca71d56008c2fd45b00524b08926b0096c1518f0bcc7b62c395c300c69f4d17c8de007500e00000ce00b80076fc2a72ab3eec7600ff0034ad00d7cb6ec1a657cc00360091003a1a00"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-9",
+   "wire": "06098719c8d502390105e59db0600361220101057cf64ba90104d75821029c0220034bd601010f27b29032eba2623373fac435f00801049dd2e1055cae719809d74a444aa81441960415fdc20119f0811330c44f485054c2505874d99e721c73b6024c58a18a06f7b376477007871e203f0f1902b506727ba0b3b2010312a203fbc406b17dbbcb67037b9703b103020804ae6a71098af026e9e358b9d10104080c71119d3092ff7eb3ef8d3c28b775da50d0500c593ef1c8594363c0f33671057af8d1600349dc075ddb7023aeef00",
+   "frame": {
+    "route": 9,
+    "seq": 135,
+    "id": 25,
+    "payload": "d500390000e59db0600061220000007cf64ba90000d75821009c0020004bd600000027b29032eba2623373fac435f00800009dd2e1005cae719800d74a444aa81441960015fdc20000f0811330c44f485054c2505874d99e721c73b6024c58a18a00f7b376477000871e203f0f1900b500727ba0b3b2000012a200fbc400b17dbbcb67007b9700b103000800ae6a71008af026e9e358b9d10000080c71009d3092ff7eb3ef8d3c28b775da50d05000593ef1c8594363c0f33671007af8d1600049dc005ddb7023ae"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 9,
+      "seq": 135,
+      "id": 25,
+      "payload": "d500390000e59db0600061220000007cf64ba90000d75821009c0020004bd600000027b29032eba2623373fac435f00800009dd2e1005cae719800d74a444aa81441960015fdc20000f0811330c44f485054c2505874d99e721c73b6024c58a18a00f7b376477000871e203f0f1900b500727ba0b3b2000012a200fbc400b17dbbcb67007b9700b103000800ae6a71008af026e9e358b9d10000080c71009d3092ff7eb3ef8d3c28b775da50d05000593ef1c8594363c0f33671007af8d1600049dc005ddb7023ae"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 9,
+      "seq": 135,
+      "id": 25,
+      "payload": "d500390000e59db0600061220000007cf64ba90000d75821009c0020004bd600000027b29032eba2623373fac435f00800009dd2e1005cae719800d74a444aa81441960015fdc20000f0811330c44f485054c2505874d99e721c73b6024c58a18a00f7b376477000871e203f0f1900b500727ba0b3b2000012a200fbc400b17dbbcb67007b9700b103000800ae6a71008af026e9e358b9d10000080c71009d3092ff7eb3ef8d3c28b775da50d05000593ef1c8594363c0f33671007af8d1600049dc005ddb7023ae"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-10",
+   "wire": "0969b541644718a12504f2d4d10102e30238078d9f70c5fb380d7edc028f25332c3889e63a0e02a9010102f40715be81214b5003543602a502020102fd03614b0109011251bfc312f31301028f0102270980f52b6e8bf6bc260a9c9cbe636b58c04e1802570104cb2d4800",
+   "frame": {
+    "route": 105,
+    "seq": 181,
+    "id": 65,
+    "payload": "4718a12500f2d4d10000e30038008d9f70c5fb38007edc028f25332c3889e63a0e00a9000000f40015be81214b5000543600a500020000fd00614b0000011251bfc312f31300008f0000270080f52b6e8bf6bc26009c9cbe636b58c04e1800570000cb2d"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 105,
+      "seq": 181,
+      "id": 65,
+      "payload": "4718a12500f2d4d10000e30038008d9f70c5fb38007edc028f25332c3889e63a0e00a9000000f40015be81214b5000543600a500020000fd00614b0000011251bfc312f31300008f0000270080f52b6e8bf6bc26009c9cbe636b58c04e1800570000cb2d"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 105,
+      "seq": 181,
+      "id": 65,
+      "payload": "4718a12500f2d4d10000e30038008d9f70c5fb38007edc028f25332c3889e63a0e00a9000000f40015be81214b5000543600a500020000fd00614b0000011251bfc312f31300008f0000270080f52b6e8bf6bc26009c9cbe636b58c04e1800570000cb2d"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "random-11",
+   "wire": "08997658020ba75000",
+   "frame": {
+    "route": 153,
+    "seq": 118,
+    "id": 88,
+    "payload": "0ba7"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 153,
+      "seq": 118,
+      "id": 88,
+      "payload": "0ba7"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 153,
+      "seq": 118,
+      "id": 88,
+      "payload": "0ba7"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "check-byte-zero",
+   "wire": "0612740901100100",
+   "frame": {
+    "route": 18,
+    "seq": 116,
+    "id": 9,
+    "payload": "10"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 116,
+      "id": 9,
+      "payload": "10"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 116,
+      "id": 9,
+      "payload": "10"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "ff-group-no-final-code",
+   "wire": "ff120155f90102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f95400",
+   "frame": {
+    "route": 18,
+    "seq": 1,
+    "id": 85,
+    "payload": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 1,
+      "id": 85,
+      "payload": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 1,
+      "id": 85,
+      "payload": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "two-frames",
+   "wire": "08120301026162fc00081204010263644800",
+   "frame": {
+    "route": 18,
+    "seq": 3,
+    "id": 1,
+    "payload": "6162"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 3,
+      "id": 1,
+      "payload": "6162"
+     }
+    ],
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 4,
+      "id": 1,
+      "payload": "6364"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 3,
+      "id": 1,
+      "payload": "6162"
+     }
+    ],
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 4,
+      "id": 1,
+      "payload": "6364"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "leading-delimiters",
+   "wire": "00000712050101789000",
+   "frame": {
+    "route": 18,
+    "seq": 5,
+    "id": 1,
+    "payload": "78"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 5,
+      "id": 1,
+      "payload": "78"
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 5,
+      "id": 1,
+      "payload": "78"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "bad-crc",
+   "wire": "0212067a020a0b4f00",
+   "frame": {
+    "route": 18,
+    "seq": 0,
+    "id": 122,
+    "payload": "0a0b"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "crc",
+   "receiver": [
+    [
+     "crc"
+    ]
+   ],
+   "factory": [
+    [
+     "crc"
+    ]
+   ]
+  },
+  {
+   "name": "truncated",
+   "wire": "0212067a020a00",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "cobs-truncated-group",
+   "receiver": [
+    [
+     "partial"
+    ]
+   ],
+   "factory": [
+    [
+     "partial"
+    ]
+   ]
+  },
+  {
+   "name": "short-raw",
+   "wire": "0212020500",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "short",
+   "receiver": [
+    [
+     "partial"
+    ]
+   ],
+   "factory": [
+    [
+     "partial"
+    ]
+   ]
+  },
+  {
+   "name": "len-field-250",
+   "wire": "0212fe05fa0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa6d00",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "too-long",
+   "receiver": [
+    [
+     "overflow"
+    ],
+    [
+     "partial"
+    ]
+   ],
+   "factory": [
+    [
+     "overflow"
+    ]
+   ],
+   "quirk": "Q-EARLYDELIM"
+  },
+  {
+   "name": "len-field-255-short",
+   "wire": "02120e05ff01010101010101010101c600",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "too-long",
+   "receiver": [
+    [
+     "partial"
+    ]
+   ],
+   "factory": [
+    [
+     "partial"
+    ]
+   ]
+  },
+  {
+   "name": "len-field-longer-than-data",
+   "wire": "021206050301023300",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "length",
+   "receiver": [
+    [
+     "partial"
+    ]
+   ],
+   "factory": [
+    [
+     "partial"
+    ]
+   ]
+  },
+  {
+   "name": "cobs-group-past-end",
+   "wire": "05120100",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "cobs-truncated-group",
+   "receiver": [
+    [
+     "partial"
+    ]
+   ],
+   "factory": [
+    [
+     "partial"
+    ]
+   ]
+  },
+  {
+   "name": "empty-frame",
+   "wire": "00",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "cobs-empty",
+   "receiver": [],
+   "factory": []
+  },
+  {
+   "name": "extra-bytes-before-delimiter",
+   "wire": "021207010107d7334400",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "length",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 0,
+      "id": 1,
+      "payload": "07"
+     }
+    ],
+    [
+     "forward"
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 0,
+      "id": 1,
+      "payload": "07"
+     }
+    ],
+    [
+     "forward"
+    ]
+   ],
+   "quirk": "Q-EARLYDONE"
+  },
+  {
+   "name": "extra-bytes-local-dst",
+   "wire": "021207010107d7333200",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "length",
+   "receiver": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 0,
+      "id": 1,
+      "payload": "07"
+     }
+    ],
+    [
+     "partial"
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 0,
+      "id": 1,
+      "payload": "07"
+     }
+    ],
+    [
+     "partial"
+    ]
+   ],
+   "quirk": "Q-EARLYDONE"
+  },
+  {
+   "name": "forward-other-dst",
+   "wire": "0824017e0201029200",
+   "frame": {
+    "route": 36,
+    "seq": 1,
+    "id": 126,
+    "payload": "0102"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "forward"
+    ]
+   ],
+   "factory": [
+    [
+     "forward"
+    ]
+   ]
+  },
+  {
+   "name": "forward-bad-crc-unchecked",
+   "wire": "0824017e0201029300",
+   "frame": {
+    "route": 36,
+    "seq": 1,
+    "id": 126,
+    "payload": "0102"
+   },
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "crc",
+   "receiver": [
+    [
+     "forward"
+    ]
+   ],
+   "factory": [
+    [
+     "forward"
+    ]
+   ]
+  },
+  {
+   "name": "forward-overflow",
+   "wire": "ff2401010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010100",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "too-long",
+   "receiver": [
+    [
+     "route-overflow"
+    ],
+    [
+     "forward"
+    ]
+   ],
+   "factory": [
+    [
+     "route-overflow"
+    ],
+    [
+     "forward"
+    ]
+   ]
+  },
+  {
+   "name": "route-zero",
+   "wire": "0101020102db00",
+   "frame": {
+    "route": 0,
+    "seq": 0,
+    "id": 1,
+    "payload": ""
+   },
+   "address": 1,
+   "reply_mask": 8,
+   "decode": "ok",
+   "receiver": [
+    [
+     "forward"
+    ]
+   ],
+   "factory": [
+    [
+     "message",
+     {
+      "route": 0,
+      "seq": 0,
+      "id": 1,
+      "payload": ""
+     }
+    ]
+   ],
+   "quirk": "Q-ROUTE0"
+  },
+  {
+   "name": "delimiter-after-first-code",
+   "wire": "030002120201029700",
+   "frame": null,
+   "address": 2,
+   "reply_mask": 8,
+   "decode": "cobs-truncated-group",
+   "receiver": [
+    [
+     "partial"
+    ],
+    [
+     "message",
+     {
+      "route": 18,
+      "seq": 0,
+      "id": 1,
+      "payload": ""
+     }
+    ]
+   ],
+   "factory": [
+    [
+     "forward"
+    ]
+   ],
+   "quirk": "Q-EARLYDELIM"
+  }
+ ]
+}

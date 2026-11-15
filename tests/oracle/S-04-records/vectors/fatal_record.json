@@ -1,0 +1,13 @@
+{
+ "address": {"start": "0x0803DFD4", "size": 16},
+ "records": [
+  {"cause": "ddr_check", "words": ["0xB", 1, "0x84000000", "0x80001000"], "bytes": "0b000000010000000000008400100080"}
+ ],
+ "ddr_check": {
+  "words": ["0xB", 1, "0x84000000"],
+  "not": [
+   {"reading": "unhandled event with the aliasing address", "words": [8, "0xB", "0x84000000"]},
+   {"reading": "unhandled event with no event", "words": [8, "0xB", 0]}
+  ]
+ }
+}

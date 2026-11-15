@@ -1,0 +1,495 @@
+{
+ "dfu": [
+  {
+   "done": 0,
+   "label": "",
+   "message": "f00020762140200903400000f7",
+   "outcome": false,
+   "payload": "00",
+   "req_id": 9,
+   "total": 0
+  },
+  {
+   "done": 0,
+   "label": "[done]",
+   "message": "f000207621402009034000645b646f6e655df7",
+   "outcome": true,
+   "payload": "645b646f6e655d",
+   "req_id": 9,
+   "total": 0
+  },
+  {
+   "done": 0,
+   "label": "[nothing to do]",
+   "message": "f000207621400000034000645b6e6f746869006e6720746f2064006f5df7",
+   "outcome": true,
+   "payload": "645b6e6f7468696e6720746f20646f5d",
+   "req_id": null,
+   "total": 0
+  },
+  {
+   "done": 0,
+   "label": "[content]",
+   "message": "f000207621402009034000005b636f6e7465006e745df7",
+   "outcome": false,
+   "payload": "005b636f6e74656e745d",
+   "req_id": 9,
+   "total": 0
+  },
+  {
+   "done": 1,
+   "label": "[main dsp]",
+   "message": "f000207621403f7f034000215b6d61696e20006473705df7",
+   "outcome": false,
+   "payload": "215b6d61696e206473705d",
+   "req_id": 4095,
+   "total": 3
+  },
+  {
+   "done": 2,
+   "label": "[ble bootloader]",
+   "message": "f000207621402100034000435b626c652062006f6f746c6f61640065725df7",
+   "outcome": false,
+   "payload": "435b626c6520626f6f746c6f616465725d",
+   "req_id": 128,
+   "total": 3
+  },
+  {
+   "done": 5,
+   "label": "[content]",
+   "message": "f000207621402007034000645b636f6e7465006e745df7",
+   "outcome": false,
+   "payload": "645b636f6e74656e745d",
+   "req_id": 7,
+   "total": 0
+  },
+  {
+   "done": 0,
+   "label": "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",
+   "message": "f000207621402007034000004c4c4c4c4c4c004c4c4c4c4c4c4c004c4c4c4c4c4c4c004c4c4c4c4c4c4c004c4c4c4c4c4c4c004c4c4c4c4c4c4c004c4c4c4c4c4c4c004c4c4c4c4c4c4c004c4c4c4c4c4c4cf7",
+   "outcome": false,
+   "payload": "004c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c",
+   "req_id": 7,
+   "total": 10
+  },
+  {
+   "done": 10,
+   "label": "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+   "message": "f000207621402007034000644d4d4d4d4d4d004d4d4d4d4d4d4d004d4d4d4d4d4d4d004d4d4d4d4d4d4d004d4d4d4d4d4d4d004d4d4d4d4d4d4d004d4d4d4d4d4d4d004d4d4d4d4d4d4d004d4d4d4d4d4d4df7",
+   "outcome": false,
+   "payload": "644d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d",
+   "req_id": 7,
+   "total": 10
+  }
+ ],
+ "errors": [
+  {
+   "kind": "refused",
+   "reason": "MAGIC",
+   "text": "MAGIC",
+   "valid": true
+  },
+  {
+   "kind": "refused",
+   "reason": "HASH",
+   "text": "HASH: payload digest differs",
+   "valid": true
+  },
+  {
+   "kind": "refused",
+   "reason": "SPACEQUERY",
+   "text": "SPACEQUERY free space unknown",
+   "valid": true
+  },
+  {
+   "kind": "refused",
+   "reason": "HASH",
+   "text": "MAGIC",
+   "valid": false
+  },
+  {
+   "kind": "refused",
+   "reason": "HASH",
+   "text": "bad file",
+   "valid": false
+  },
+  {
+   "kind": "failed",
+   "result": 2,
+   "step": 3,
+   "text": "step 3 (ble) result 2",
+   "valid": true
+  },
+  {
+   "kind": "failed",
+   "result": 12,
+   "step": 1,
+   "text": "step 1: main dsp failed, result 12",
+   "valid": true
+  },
+  {
+   "kind": "failed",
+   "result": 2,
+   "step": 3,
+   "text": "error occurred",
+   "valid": false
+  },
+  {
+   "kind": "failed",
+   "result": 2,
+   "step": 3,
+   "text": "step 31 result 2",
+   "valid": false
+  },
+  {
+   "kind": "failed",
+   "result": 2,
+   "step": 3,
+   "text": "step 3 result 21",
+   "valid": false
+  },
+  {
+   "kind": "product",
+   "text": "PRODUCT",
+   "valid": true
+  },
+  {
+   "kind": "product",
+   "text": "PRODUCT 0x00088000",
+   "valid": true
+  },
+  {
+   "kind": "product",
+   "text": "bad product",
+   "valid": false
+  },
+  {
+   "kind": "no-transfer",
+   "text": "No update in progress!",
+   "valid": true
+  },
+  {
+   "kind": "no-transfer",
+   "text": "No update in progress",
+   "valid": false
+  },
+  {
+   "kind": "other",
+   "text": "",
+   "valid": true
+  },
+  {
+   "kind": "other",
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "valid": true
+  },
+  {
+   "kind": "other",
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "valid": false
+  },
+  {
+   "kind": "other",
+   "text": "tab\there",
+   "valid": false
+  },
+  {
+   "kind": "other",
+   "text": "nul\u0000",
+   "valid": false
+  },
+  {
+   "kind": "other",
+   "text": "caf\u00e9",
+   "valid": false
+  }
+ ],
+ "labels": [
+  {
+   "label": "[decrypting firmware]",
+   "phase": "reading an encrypted package file"
+  },
+  {
+   "label": "[extracting firmware]",
+   "phase": "reading an unencrypted package file; extracting the zip"
+  },
+  {
+   "label": "[content]",
+   "phase": "step 0"
+  },
+  {
+   "label": "[main dsp]",
+   "phase": "step 1, the OS"
+  },
+  {
+   "label": "[bootloader]",
+   "phase": "step 2"
+  },
+  {
+   "label": "[ble]",
+   "phase": "step 3"
+  },
+  {
+   "label": "[ble bootloader]",
+   "phase": "step 4"
+  },
+  {
+   "label": "[backplane]",
+   "phase": "step 5"
+  },
+  {
+   "label": "[spiboot]",
+   "phase": "step 6"
+  },
+  {
+   "label": "[done]",
+   "phase": "outcome"
+  },
+  {
+   "label": "[nothing to do]",
+   "phase": "outcome"
+  },
+  {
+   "label": "[failed] ",
+   "phase": "outcome, followed by an error text"
+  },
+  {
+   "label": "[skipped] ",
+   "phase": "a step that reported Skipped, followed by the step and the reason"
+  },
+  {
+   "label": "",
+   "phase": "a report with no counts between two phases"
+  }
+ ],
+ "percent": [
+  {
+   "done": 0,
+   "percent": 0,
+   "te_percent": 0,
+   "total": 100
+  },
+  {
+   "done": 1,
+   "percent": 1,
+   "te_percent": 1,
+   "total": 100
+  },
+  {
+   "done": 100,
+   "percent": 100,
+   "te_percent": 100,
+   "total": 100
+  },
+  {
+   "done": 1,
+   "percent": 13,
+   "te_percent": 13,
+   "total": 8
+  },
+  {
+   "done": 3,
+   "percent": 38,
+   "te_percent": 38,
+   "total": 8
+  },
+  {
+   "done": 1,
+   "percent": 33,
+   "te_percent": 33,
+   "total": 3
+  },
+  {
+   "done": 2,
+   "percent": 67,
+   "te_percent": 67,
+   "total": 3
+  },
+  {
+   "done": 1,
+   "percent": 1,
+   "te_percent": 1,
+   "total": 200
+  },
+  {
+   "done": 199,
+   "percent": 100,
+   "te_percent": 100,
+   "total": 200
+  },
+  {
+   "done": 5,
+   "percent": 1,
+   "te_percent": 1,
+   "total": 1000
+  },
+  {
+   "done": 4,
+   "percent": 0,
+   "te_percent": 0,
+   "total": 1000
+  },
+  {
+   "done": 4294967295,
+   "percent": 100,
+   "te_percent": 100,
+   "total": 4294967295
+  },
+  {
+   "done": 2147483647,
+   "percent": 50,
+   "te_percent": 50,
+   "total": 4294967295
+  },
+  {
+   "done": 1,
+   "percent": 0,
+   "te_percent": 0,
+   "total": 4294967295
+  },
+  {
+   "done": 0,
+   "percent": 100,
+   "te_percent": 0,
+   "total": 0
+  },
+  {
+   "done": 7,
+   "percent": 100,
+   "te_percent": 100,
+   "total": 0
+  }
+ ],
+ "reasons": [
+  "SHORT",
+  "PREAMBLE",
+  "TYPE",
+  "MAGIC",
+  "PRODUCT",
+  "DEVICE",
+  "CRC",
+  "FORMAT",
+  "SKU",
+  "LENGTH",
+  "HASH",
+  "KEY",
+  "NOKEY",
+  "NAME",
+  "ZIPLEN",
+  "ZIP",
+  "MEMBER",
+  "SPACE",
+  "SPACEQUERY",
+  "SIZE",
+  "STREAM"
+ ],
+ "s06": [
+  {
+   "done": 0,
+   "frame_seq0": "0212050e0192b100",
+   "label": "",
+   "payload": "92",
+   "total": 0
+  },
+  {
+   "done": 0,
+   "frame_seq0": "02120b0e07925b646f6e655d6500",
+   "label": "[done]",
+   "payload": "925b646f6e655d",
+   "total": 0
+  },
+  {
+   "done": 0,
+   "frame_seq0": "0212140e10925b6e6f7468696e6720746f20646f5d4600",
+   "label": "[nothing to do]",
+   "payload": "925b6e6f7468696e6720746f20646f5d",
+   "total": 0
+  },
+  {
+   "done": 50,
+   "frame_seq0": "0212120e0e923530255b6d61696e206473705d9800",
+   "label": "[main dsp]",
+   "payload": "923530255b6d61696e206473705d",
+   "total": 100
+  },
+  {
+   "done": 1,
+   "frame_seq0": "0212110e0d923133255b636f6e74656e745dfc00",
+   "label": "[content]",
+   "payload": "923133255b636f6e74656e745d",
+   "total": 8
+  },
+  {
+   "done": 7,
+   "frame_seq0": "02120e0e0a92313030255b626c655deb00",
+   "label": "[ble]",
+   "payload": "92313030255b626c655d",
+   "total": 0
+  },
+  {
+   "done": 100,
+   "frame_seq0": "0212120e0e92313030255b737069626f6f745d6e00",
+   "label": "[spiboot]",
+   "payload": "92313030255b737069626f6f745d",
+   "total": 100
+  },
+  {
+   "done": 0,
+   "frame_seq0": "02121c0e189230255b64656372797074696e67206669726d776172655d1100",
+   "label": "[decrypting firmware]",
+   "payload": "9230255b64656372797074696e67206669726d776172655d",
+   "total": 4096
+  },
+  {
+   "done": 0,
+   "frame_seq0": "0212210e1d925b6661696c65645d2073746570203320726573756c74203220626c65fe00",
+   "label": "[failed] step 3 result 2 ble",
+   "payload": "925b6661696c65645d2073746570203320726573756c74203220626c65",
+   "total": 0
+  },
+  {
+   "done": 0,
+   "frame_seq0": "0212fc0ef8925b6661696c65645d20787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878788b00",
+   "label": "[failed] xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "payload": "925b6661696c65645d2078787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+   "total": 0
+  }
+ ],
+ "skipped": [
+  {
+   "label": "[skipped] bootloader: option off",
+   "reason": "option off",
+   "step": 2
+  },
+  {
+   "label": "[skipped] bootloader: not confirmed",
+   "reason": "not confirmed",
+   "step": 2
+  },
+  {
+   "label": "[skipped] spiboot: option off",
+   "reason": "option off",
+   "step": 6
+  },
+  {
+   "label": "[skipped] spiboot: not confirmed",
+   "reason": "not confirmed",
+   "step": 6
+  },
+  {
+   "label": "[skipped] ble: switched off",
+   "reason": "switched off",
+   "step": 3
+  },
+  {
+   "label": "[skipped] ble bootloader: switched off",
+   "reason": "switched off",
+   "step": 4
+  },
+  {
+   "label": "[skipped] backplane: switched off",
+   "reason": "switched off",
+   "step": 5
+  }
+ ]
+}

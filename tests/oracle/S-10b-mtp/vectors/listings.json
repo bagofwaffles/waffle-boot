@@ -1,0 +1,1116 @@
+{
+ "big_folder": {
+  "container_length": 20016,
+  "count": 5000,
+  "files": 5000,
+  "num": 5000
+ },
+ "tree_basic": {
+  "every": [
+   "/a",
+   "/a/b",
+   "/a/b/deep.txt",
+   "/a/empty",
+   "/a/kick.wav",
+   "/lost+found",
+   "/notes.txt",
+   "/song.aiff",
+   "/zero.bin"
+  ],
+  "failures": [
+   {
+    "code": 8218,
+    "num_code": 8218,
+    "parent": "/a/b/deep.txt",
+    "want": 8218
+   },
+   {
+    "code": 8201,
+    "num_code": 8201,
+    "parent": 2147418112,
+    "want": 8201
+   }
+  ],
+  "handles": [
+   {
+    "count": 5,
+    "format": 0,
+    "parent": "/",
+    "paths": [
+     "/a",
+     "/lost+found",
+     "/notes.txt",
+     "/song.aiff",
+     "/zero.bin"
+    ]
+   },
+   {
+    "count": 2,
+    "format": 12289,
+    "parent": "/",
+    "paths": [
+     "/a",
+     "/lost+found"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/",
+    "paths": []
+   },
+   {
+    "count": 1,
+    "format": 12292,
+    "parent": "/",
+    "paths": [
+     "/notes.txt"
+    ]
+   },
+   {
+    "count": 3,
+    "format": 0,
+    "parent": "/a",
+    "paths": [
+     "/a/b",
+     "/a/empty",
+     "/a/kick.wav"
+    ]
+   },
+   {
+    "count": 2,
+    "format": 12289,
+    "parent": "/a",
+    "paths": [
+     "/a/b",
+     "/a/empty"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12296,
+    "parent": "/a",
+    "paths": [
+     "/a/kick.wav"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/a",
+    "paths": []
+   },
+   {
+    "count": 1,
+    "format": 0,
+    "parent": "/a/b",
+    "paths": [
+     "/a/b/deep.txt"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/a/b",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/a/b",
+    "paths": []
+   },
+   {
+    "count": 1,
+    "format": 12292,
+    "parent": "/a/b",
+    "paths": [
+     "/a/b/deep.txt"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 0,
+    "parent": "/a/empty",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/a/empty",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/a/empty",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/a/empty",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 0,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/lost+found",
+    "paths": []
+   }
+  ],
+  "listed": [
+   "/a",
+   "/a/b",
+   "/a/b/deep.txt",
+   "/a/empty",
+   "/a/kick.wav",
+   "/lost+found",
+   "/notes.txt",
+   "/song.aiff",
+   "/zero.bin"
+  ],
+  "reads_back": {
+   "/a/b/deep.txt": true,
+   "/a/kick.wav": true,
+   "/notes.txt": true,
+   "/song.aiff": true,
+   "/zero.bin": true
+  },
+  "references": {
+   "/a": [
+    "/a/b",
+    "/a/empty",
+    "/a/kick.wav"
+   ],
+   "/a/b": [
+    "/a/b/deep.txt"
+   ],
+   "/a/b/deep.txt": [],
+   "/a/empty": [],
+   "/a/kick.wav": [],
+   "/lost+found": [],
+   "/notes.txt": [],
+   "/song.aiff": [],
+   "/zero.bin": []
+  },
+  "storage_forms": [
+   {
+    "code": 8193,
+    "storage": 65537
+   },
+   {
+    "code": 8193,
+    "storage": 4294967295
+   },
+   {
+    "code": 8200,
+    "storage": 65538
+   }
+  ],
+  "volume": {
+   "a": null,
+   "a/b": null,
+   "a/b/deep.txt": 10,
+   "a/empty": null,
+   "a/kick.wav": 1012,
+   "notes.txt": 1024,
+   "song.aiff": 500,
+   "zero.bin": 0
+  }
+ },
+ "tree_deep": {
+  "every": [
+   "/d1",
+   "/d1/d2",
+   "/d1/d2/d3",
+   "/d1/d2/d3/d4",
+   "/d1/d2/d3/d4/d5",
+   "/d1/d2/d3/d4/d5/d6",
+   "/d1/d2/d3/d4/d5/d6/d7",
+   "/d1/d2/d3/d4/d5/d6/d7/d8",
+   "/d1/d2/d3/d4/d5/d6/d7/d8/d9",
+   "/d1/d2/d3/d4/d5/d6/d7/d8/f9",
+   "/d1/d2/d3/d4/d5/d6/d7/f8",
+   "/d1/d2/d3/d4/d5/d6/f7",
+   "/d1/d2/d3/d4/d5/f6",
+   "/d1/d2/d3/d4/f5",
+   "/d1/d2/d3/f4",
+   "/d1/d2/f3",
+   "/d1/f2",
+   "/f1",
+   "/lost+found"
+  ],
+  "failures": [
+   {
+    "code": 8218,
+    "num_code": 8218,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8/f9",
+    "want": 8218
+   },
+   {
+    "code": 8201,
+    "num_code": 8201,
+    "parent": 2147418112,
+    "want": 8201
+   }
+  ],
+  "handles": [
+   {
+    "count": 3,
+    "format": 0,
+    "parent": "/",
+    "paths": [
+     "/d1",
+     "/f1",
+     "/lost+found"
+    ]
+   },
+   {
+    "count": 2,
+    "format": 12289,
+    "parent": "/",
+    "paths": [
+     "/d1",
+     "/lost+found"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/",
+    "paths": []
+   },
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/d1",
+    "paths": [
+     "/d1/d2",
+     "/d1/f2"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12289,
+    "parent": "/d1",
+    "paths": [
+     "/d1/d2"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1",
+    "paths": []
+   },
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/d1/d2",
+    "paths": [
+     "/d1/d2/d3",
+     "/d1/d2/f3"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12289,
+    "parent": "/d1/d2",
+    "paths": [
+     "/d1/d2/d3"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1/d2",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1/d2",
+    "paths": []
+   },
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/d1/d2/d3",
+    "paths": [
+     "/d1/d2/d3/d4",
+     "/d1/d2/d3/f4"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12289,
+    "parent": "/d1/d2/d3",
+    "paths": [
+     "/d1/d2/d3/d4"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1/d2/d3",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1/d2/d3",
+    "paths": []
+   },
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/d1/d2/d3/d4",
+    "paths": [
+     "/d1/d2/d3/d4/d5",
+     "/d1/d2/d3/d4/f5"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12289,
+    "parent": "/d1/d2/d3/d4",
+    "paths": [
+     "/d1/d2/d3/d4/d5"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1/d2/d3/d4",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1/d2/d3/d4",
+    "paths": []
+   },
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/d1/d2/d3/d4/d5",
+    "paths": [
+     "/d1/d2/d3/d4/d5/d6",
+     "/d1/d2/d3/d4/d5/f6"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12289,
+    "parent": "/d1/d2/d3/d4/d5",
+    "paths": [
+     "/d1/d2/d3/d4/d5/d6"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1/d2/d3/d4/d5",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1/d2/d3/d4/d5",
+    "paths": []
+   },
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/d1/d2/d3/d4/d5/d6",
+    "paths": [
+     "/d1/d2/d3/d4/d5/d6/d7",
+     "/d1/d2/d3/d4/d5/d6/f7"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12289,
+    "parent": "/d1/d2/d3/d4/d5/d6",
+    "paths": [
+     "/d1/d2/d3/d4/d5/d6/d7"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1/d2/d3/d4/d5/d6",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1/d2/d3/d4/d5/d6",
+    "paths": []
+   },
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7",
+    "paths": [
+     "/d1/d2/d3/d4/d5/d6/d7/d8",
+     "/d1/d2/d3/d4/d5/d6/d7/f8"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12289,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7",
+    "paths": [
+     "/d1/d2/d3/d4/d5/d6/d7/d8"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7",
+    "paths": []
+   },
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8",
+    "paths": [
+     "/d1/d2/d3/d4/d5/d6/d7/d8/d9",
+     "/d1/d2/d3/d4/d5/d6/d7/d8/f9"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 12289,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8",
+    "paths": [
+     "/d1/d2/d3/d4/d5/d6/d7/d8/d9"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 0,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8/d9",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8/d9",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8/d9",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/d1/d2/d3/d4/d5/d6/d7/d8/d9",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 0,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/lost+found",
+    "paths": []
+   }
+  ],
+  "listed": [
+   "/d1",
+   "/d1/d2",
+   "/d1/d2/d3",
+   "/d1/d2/d3/d4",
+   "/d1/d2/d3/d4/d5",
+   "/d1/d2/d3/d4/d5/d6",
+   "/d1/d2/d3/d4/d5/d6/d7",
+   "/d1/d2/d3/d4/d5/d6/d7/d8",
+   "/d1/d2/d3/d4/d5/d6/d7/d8/d9",
+   "/d1/d2/d3/d4/d5/d6/d7/d8/f9",
+   "/d1/d2/d3/d4/d5/d6/d7/f8",
+   "/d1/d2/d3/d4/d5/d6/f7",
+   "/d1/d2/d3/d4/d5/f6",
+   "/d1/d2/d3/d4/f5",
+   "/d1/d2/d3/f4",
+   "/d1/d2/f3",
+   "/d1/f2",
+   "/f1",
+   "/lost+found"
+  ],
+  "reads_back": {
+   "/d1/d2/d3/d4/d5/d6/d7/d8/f9": true,
+   "/d1/d2/d3/d4/d5/d6/d7/f8": true,
+   "/d1/d2/d3/d4/d5/d6/f7": true,
+   "/d1/d2/d3/d4/d5/f6": true,
+   "/d1/d2/d3/d4/f5": true,
+   "/d1/d2/d3/f4": true,
+   "/d1/d2/f3": true,
+   "/d1/f2": true,
+   "/f1": true
+  },
+  "references": {
+   "/d1": [
+    "/d1/d2",
+    "/d1/f2"
+   ],
+   "/d1/d2": [
+    "/d1/d2/d3",
+    "/d1/d2/f3"
+   ],
+   "/d1/d2/d3": [
+    "/d1/d2/d3/d4",
+    "/d1/d2/d3/f4"
+   ],
+   "/d1/d2/d3/d4": [
+    "/d1/d2/d3/d4/d5",
+    "/d1/d2/d3/d4/f5"
+   ],
+   "/d1/d2/d3/d4/d5": [
+    "/d1/d2/d3/d4/d5/d6",
+    "/d1/d2/d3/d4/d5/f6"
+   ],
+   "/d1/d2/d3/d4/d5/d6": [
+    "/d1/d2/d3/d4/d5/d6/d7",
+    "/d1/d2/d3/d4/d5/d6/f7"
+   ],
+   "/d1/d2/d3/d4/d5/d6/d7": [
+    "/d1/d2/d3/d4/d5/d6/d7/d8",
+    "/d1/d2/d3/d4/d5/d6/d7/f8"
+   ],
+   "/d1/d2/d3/d4/d5/d6/d7/d8": [
+    "/d1/d2/d3/d4/d5/d6/d7/d8/d9",
+    "/d1/d2/d3/d4/d5/d6/d7/d8/f9"
+   ],
+   "/d1/d2/d3/d4/d5/d6/d7/d8/d9": [],
+   "/d1/d2/d3/d4/d5/d6/d7/d8/f9": [],
+   "/d1/d2/d3/d4/d5/d6/d7/f8": [],
+   "/d1/d2/d3/d4/d5/d6/f7": [],
+   "/d1/d2/d3/d4/d5/f6": [],
+   "/d1/d2/d3/d4/f5": [],
+   "/d1/d2/d3/f4": [],
+   "/d1/d2/f3": [],
+   "/d1/f2": [],
+   "/f1": [],
+   "/lost+found": []
+  },
+  "storage_forms": [
+   {
+    "code": 8193,
+    "storage": 65537
+   },
+   {
+    "code": 8193,
+    "storage": 4294967295
+   },
+   {
+    "code": 8200,
+    "storage": 65538
+   }
+  ],
+  "volume": {
+   "d1": null,
+   "d1/d2": null,
+   "d1/d2/d3": null,
+   "d1/d2/d3/d4": null,
+   "d1/d2/d3/d4/d5": null,
+   "d1/d2/d3/d4/d5/d6": null,
+   "d1/d2/d3/d4/d5/d6/d7": null,
+   "d1/d2/d3/d4/d5/d6/d7/d8": null,
+   "d1/d2/d3/d4/d5/d6/d7/d8/d9": null,
+   "d1/d2/d3/d4/d5/d6/d7/d8/d9/d10": null,
+   "d1/d2/d3/d4/d5/d6/d7/d8/d9/d10/d11": null,
+   "d1/d2/d3/d4/d5/d6/d7/d8/d9/d10/f11": 11,
+   "d1/d2/d3/d4/d5/d6/d7/d8/d9/f10": 10,
+   "d1/d2/d3/d4/d5/d6/d7/d8/f9": 9,
+   "d1/d2/d3/d4/d5/d6/d7/f8": 8,
+   "d1/d2/d3/d4/d5/d6/f7": 7,
+   "d1/d2/d3/d4/d5/f6": 6,
+   "d1/d2/d3/d4/f5": 5,
+   "d1/d2/d3/f4": 4,
+   "d1/d2/f3": 3,
+   "d1/f2": 2,
+   "f1": 1
+  }
+ },
+ "tree_long": {
+  "every": [
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sibling.txt",
+   "/lost+found",
+   "/top.txt"
+  ],
+  "failures": [
+   {
+    "code": 8218,
+    "num_code": 8218,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f",
+    "want": 8218
+   },
+   {
+    "code": 8201,
+    "num_code": 8201,
+    "parent": 2147418112,
+    "want": 8201
+   }
+  ],
+  "handles": [
+   {
+    "count": 3,
+    "format": 0,
+    "parent": "/",
+    "paths": [
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "/lost+found",
+     "/top.txt"
+    ]
+   },
+   {
+    "count": 2,
+    "format": 12289,
+    "parent": "/",
+    "paths": [
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "/lost+found"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/",
+    "paths": []
+   },
+   {
+    "count": 1,
+    "format": 12292,
+    "parent": "/",
+    "paths": [
+     "/top.txt"
+    ]
+   },
+   {
+    "count": 3,
+    "format": 0,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "paths": [
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sibling.txt"
+    ]
+   },
+   {
+    "count": 2,
+    "format": 12289,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "paths": [
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "paths": []
+   },
+   {
+    "count": 1,
+    "format": 12292,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "paths": [
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sibling.txt"
+    ]
+   },
+   {
+    "count": 1,
+    "format": 0,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "paths": [
+     "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 0,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 0,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/lost+found",
+    "paths": []
+   }
+  ],
+  "listed": [
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sibling.txt",
+   "/lost+found",
+   "/top.txt"
+  ],
+  "reads_back": {
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f": true,
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sibling.txt": true,
+   "/top.txt": true
+  },
+  "references": {
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": [
+    "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sibling.txt"
+   ],
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": [
+    "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f"
+   ],
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f": [],
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc": [],
+   "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sibling.txt": [],
+   "/lost+found": [],
+   "/top.txt": []
+  },
+  "storage_forms": [
+   {
+    "code": 8193,
+    "storage": 65537
+   },
+   {
+    "code": 8193,
+    "storage": 4294967295
+   },
+   {
+    "code": 8200,
+    "storage": 65538
+   }
+  ],
+  "volume": {
+   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": null,
+   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": null,
+   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f": 3,
+   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc": null,
+   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc/f": 4,
+   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sibling.txt": 5,
+   "top.txt": 6
+  }
+ },
+ "tree_names": {
+  "every": [
+   "/dir",
+   "/dir/.hidden",
+   "/dir/Kick",
+   "/dir/[x]",
+   "/dir/kick",
+   "/dir/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+   "/dir/star*",
+   "/dir/what?",
+   "/dir/with space",
+   "/dir/x",
+   "/lost+found"
+  ],
+  "failures": [
+   {
+    "code": 8218,
+    "num_code": 8218,
+    "parent": "/dir/.hidden",
+    "want": 8218
+   },
+   {
+    "code": 8201,
+    "num_code": 8201,
+    "parent": 2147418112,
+    "want": 8201
+   }
+  ],
+  "handles": [
+   {
+    "count": 2,
+    "format": 0,
+    "parent": "/",
+    "paths": [
+     "/dir",
+     "/lost+found"
+    ]
+   },
+   {
+    "count": 2,
+    "format": 12289,
+    "parent": "/",
+    "paths": [
+     "/dir",
+     "/lost+found"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/",
+    "paths": []
+   },
+   {
+    "count": 9,
+    "format": 0,
+    "parent": "/dir",
+    "paths": [
+     "/dir/.hidden",
+     "/dir/Kick",
+     "/dir/[x]",
+     "/dir/kick",
+     "/dir/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+     "/dir/star*",
+     "/dir/what?",
+     "/dir/with space",
+     "/dir/x"
+    ]
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/dir",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/dir",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/dir",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 0,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12289,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12296,
+    "parent": "/lost+found",
+    "paths": []
+   },
+   {
+    "count": 0,
+    "format": 12292,
+    "parent": "/lost+found",
+    "paths": []
+   }
+  ],
+  "listed": [
+   "/dir",
+   "/dir/.hidden",
+   "/dir/Kick",
+   "/dir/[x]",
+   "/dir/kick",
+   "/dir/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+   "/dir/star*",
+   "/dir/what?",
+   "/dir/with space",
+   "/dir/x",
+   "/lost+found"
+  ],
+  "reads_back": {
+   "/dir/.hidden": true,
+   "/dir/Kick": true,
+   "/dir/[x]": true,
+   "/dir/kick": true,
+   "/dir/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn": true,
+   "/dir/star*": true,
+   "/dir/what?": true,
+   "/dir/with space": true,
+   "/dir/x": true
+  },
+  "references": {
+   "/dir": [
+    "/dir/.hidden",
+    "/dir/Kick",
+    "/dir/[x]",
+    "/dir/kick",
+    "/dir/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "/dir/star*",
+    "/dir/what?",
+    "/dir/with space",
+    "/dir/x"
+   ],
+   "/dir/.hidden": [],
+   "/dir/Kick": [],
+   "/dir/[x]": [],
+   "/dir/kick": [],
+   "/dir/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn": [],
+   "/dir/star*": [],
+   "/dir/what?": [],
+   "/dir/with space": [],
+   "/dir/x": [],
+   "/lost+found": []
+  },
+  "storage_forms": [
+   {
+    "code": 8193,
+    "storage": 65537
+   },
+   {
+    "code": 8193,
+    "storage": 4294967295
+   },
+   {
+    "code": 8200,
+    "storage": 65538
+   }
+  ],
+  "volume": {
+   "dir": null,
+   "dir/.hidden": 0,
+   "dir/Kick": 4,
+   "dir/[x]": 3,
+   "dir/kick": 4,
+   "dir/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn": 3,
+   "dir/star*": 5,
+   "dir/what?": 5,
+   "dir/with space": 3,
+   "dir/x": 1
+  }
+ }
+}

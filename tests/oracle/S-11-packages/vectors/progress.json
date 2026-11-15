@@ -1,0 +1,42 @@
+[
+ {
+  "step": 0,
+  "count": 0,
+  "file_hex": "0000"
+ },
+ {
+  "step": 1,
+  "count": 0,
+  "file_hex": "0100"
+ },
+ {
+  "step": 2,
+  "count": 0,
+  "file_hex": "0200"
+ },
+ {
+  "step": 3,
+  "count": 0,
+  "file_hex": "0300"
+ },
+ {
+  "step": 4,
+  "count": 0,
+  "file_hex": "0400"
+ },
+ {
+  "step": 5,
+  "count": 0,
+  "file_hex": "0500"
+ },
+ {
+  "step": 6,
+  "count": 0,
+  "file_hex": "0600"
+ },
+ {
+  "step": 7,
+  "count": 0,
+  "file_hex": "0700"
+ }
+]

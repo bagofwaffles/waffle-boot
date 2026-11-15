@@ -1,0 +1,180 @@
+{
+ "requirements": [
+  "S-12.012",
+  "S-12.015",
+  "S-12.016",
+  "S-12.017",
+  "S-12.019"
+ ],
+ "inputs": {
+  "os_version": [
+   1,
+   1,
+   2,
+   0
+  ],
+  "sw_version": [
+   1,
+   1,
+   2,
+   4512
+  ],
+  "bl_version": [
+   2,
+   0,
+   0,
+   0
+  ],
+  "psoc_version": [
+   3,
+   4,
+   0,
+   0
+  ],
+  "nordic_version": [
+   1,
+   2,
+   3,
+   7
+  ],
+  "unit_serial": "XY123456",
+  "dsp_serial": "0123456789ABCDEF",
+  "psoc_serial": "PS000001",
+  "rtc_utc": [
+   2026,
+   10,
+   26,
+   10,
+   0,
+   0
+  ],
+  "logs": [
+   {
+    "name": "boot.log",
+    "mtime_utc": [
+     2026,
+     10,
+     25,
+     9,
+     8,
+     7
+    ],
+    "pattern": 3000
+   }
+  ],
+  "licenses": "Third-party notices (synthetic).\n"
+ },
+ "files": {
+  "systeminfo/version.txt": "[firmware: v. 1.1.2]\nblackfin: v. 1.1.2+4512\nbootloader: v. 2.0.0\nbackplane: v. 3.4.0\nnordic: v. 1.2.3+7\n",
+  "systeminfo/serial.txt": "unit: XY123456\ndsp: 0123456789ABCDEF\nbackplane: PS000001\n"
+ },
+ "tree": {
+  "logs": {
+   "type": "dir"
+  },
+  "logs/boot.log": {
+   "type": "file",
+   "len": 3000,
+   "sha256": "338559513cd7ebcd999ab9fd21f43f8787e1c39f11beb44076a07b5b16bed651"
+  },
+  "systeminfo": {
+   "type": "dir"
+  },
+  "systeminfo/licenses.txt": {
+   "type": "file",
+   "len": 33,
+   "sha256": "39629085e4823c7d6cb8ddd87a83f586a85b52012126d384cfe1b323ccc6231b"
+  },
+  "systeminfo/serial.txt": {
+   "type": "file",
+   "len": 57,
+   "sha256": "366073e53ab6379932b8e718f307b37e8a8017bf94b1e8fed32f64c0ba3bb764"
+  },
+  "systeminfo/version.txt": {
+   "type": "file",
+   "len": 105,
+   "sha256": "071bdc292983bf13cf69c082b73f111a3e0edcb7d206d0be9d3d8fcd660f0e84"
+  }
+ },
+ "entries": [
+  {
+   "path": "systeminfo",
+   "sfn": "SYSTEM~1   ",
+   "attr": 16,
+   "nt": 0,
+   "crt_tenths": 0,
+   "crt_time": 0,
+   "crt_date": 0,
+   "acc_date": 0,
+   "wrt_time": 0,
+   "wrt_date": 33,
+   "size": 0
+  },
+  {
+   "path": "logs",
+   "sfn": "LOGS       ",
+   "attr": 16,
+   "nt": 8,
+   "crt_tenths": 0,
+   "crt_time": 0,
+   "crt_date": 0,
+   "acc_date": 0,
+   "wrt_time": 0,
+   "wrt_date": 33,
+   "size": 0
+  },
+  {
+   "path": "systeminfo/version.txt",
+   "sfn": "VERSION TXT",
+   "attr": 32,
+   "nt": 24,
+   "crt_tenths": 0,
+   "crt_time": 0,
+   "crt_date": 33,
+   "acc_date": 0,
+   "wrt_time": 20480,
+   "wrt_date": 23898,
+   "size": 105
+  },
+  {
+   "path": "systeminfo/serial.txt",
+   "sfn": "SERIAL  TXT",
+   "attr": 32,
+   "nt": 24,
+   "crt_tenths": 0,
+   "crt_time": 0,
+   "crt_date": 33,
+   "acc_date": 0,
+   "wrt_time": 20480,
+   "wrt_date": 23898,
+   "size": 57
+  },
+  {
+   "path": "systeminfo/licenses.txt",
+   "sfn": "LICENSESTXT",
+   "attr": 32,
+   "nt": 24,
+   "crt_tenths": 0,
+   "crt_time": 0,
+   "crt_date": 33,
+   "acc_date": 0,
+   "wrt_time": 20480,
+   "wrt_date": 23898,
+   "size": 33
+  },
+  {
+   "path": "logs/boot.log",
+   "sfn": "BOOT    LOG",
+   "attr": 32,
+   "nt": 24,
+   "crt_tenths": 0,
+   "crt_time": 0,
+   "crt_date": 33,
+   "acc_date": 0,
+   "wrt_time": 18691,
+   "wrt_date": 23897,
+   "size": 3000
+  }
+ ],
+ "check": []
+}

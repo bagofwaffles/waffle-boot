@@ -1,0 +1,1716 @@
+selector,slot0,slot1,factory_checks,factory_result,factory_boot,factory_sel_after,factory_writes,factory_reset2_boot,factory_reset2_sel_after,conforming_checks,conforming_result,conforming_boot,conforming_sel_after,conforming_writes,conforming_reset2_boot,conforming_reset2_sel_after
+00 00,good,good,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 00,good,badcrc,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 00,good,badtag,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 00,good,erased,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 00,good,badlen,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 00,good,hugelen,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 00,good,empty,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 00,badcrc,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 00,badcrc,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badcrc,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badcrc,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badcrc,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badcrc,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badcrc,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badtag,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 00,badtag,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badtag,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badtag,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badtag,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badtag,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badtag,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,erased,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 00,erased,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,erased,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,erased,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,erased,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,erased,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,erased,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badlen,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 00,badlen,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badlen,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badlen,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badlen,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badlen,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,badlen,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,hugelen,good,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,1,01 01,1,1,01 01
+00 00,hugelen,badcrc,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,hugelen,badtag,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,hugelen,erased,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,hugelen,badlen,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,hugelen,hugelen,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,hugelen,empty,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,empty,good,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 00,empty,badcrc,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,empty,badtag,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,empty,erased,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,empty,badlen,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,empty,hugelen,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 00,empty,empty,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 01,good,good,none,-,0,00 01,0,0,00 01,slot0,pass,0,00 01,0,0,00 01
+00 01,good,badcrc,none,-,0,00 01,0,0,00 01,slot0,pass,0,00 01,0,0,00 01
+00 01,good,badtag,none,-,0,00 01,0,0,00 01,slot0,pass,0,00 01,0,0,00 01
+00 01,good,erased,none,-,0,00 01,0,0,00 01,slot0,pass,0,00 01,0,0,00 01
+00 01,good,badlen,none,-,0,00 01,0,0,00 01,slot0,pass,0,00 01,0,0,00 01
+00 01,good,hugelen,none,-,0,00 01,0,0,00 01,slot0,pass,0,00 01,0,0,00 01
+00 01,good,empty,none,-,0,00 01,0,0,00 01,slot0,pass,0,00 01,0,0,00 01
+00 01,badcrc,good,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 01,badcrc,badcrc,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badcrc,badtag,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badcrc,erased,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badcrc,badlen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badcrc,hugelen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badcrc,empty,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badtag,good,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 01,badtag,badcrc,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badtag,badtag,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badtag,erased,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badtag,badlen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badtag,hugelen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badtag,empty,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,erased,good,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 01,erased,badcrc,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,erased,badtag,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,erased,erased,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,erased,badlen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,erased,hugelen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,erased,empty,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badlen,good,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 01,badlen,badcrc,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badlen,badtag,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badlen,erased,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badlen,badlen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badlen,hugelen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,badlen,empty,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,hugelen,good,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 01,hugelen,badcrc,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,hugelen,badtag,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,hugelen,erased,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,hugelen,badlen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,hugelen,hugelen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,hugelen,empty,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,empty,good,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 01,empty,badcrc,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,empty,badtag,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,empty,erased,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,empty,badlen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,empty,hugelen,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 01,empty,empty,none,-,0,00 01,0,0,00 01,slot0+slot1,fail,0,00 01,0,0,00 01
+00 02,good,good,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 02,good,badcrc,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 02,good,badtag,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 02,good,erased,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 02,good,badlen,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 02,good,hugelen,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 02,good,empty,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 02,badcrc,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 02,badcrc,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badcrc,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badcrc,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badcrc,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badcrc,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badcrc,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badtag,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 02,badtag,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badtag,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badtag,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badtag,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badtag,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badtag,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,erased,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 02,erased,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,erased,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,erased,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,erased,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,erased,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,erased,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badlen,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 02,badlen,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badlen,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badlen,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badlen,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badlen,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,badlen,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,hugelen,good,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,1,01 01,1,1,01 01
+00 02,hugelen,badcrc,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,hugelen,badtag,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,hugelen,erased,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,hugelen,badlen,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,hugelen,hugelen,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,hugelen,empty,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,empty,good,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 02,empty,badcrc,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,empty,badtag,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,empty,erased,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,empty,badlen,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,empty,hugelen,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 02,empty,empty,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,good,good,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 fe,good,badcrc,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 fe,good,badtag,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 fe,good,erased,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 fe,good,badlen,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 fe,good,hugelen,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 fe,good,empty,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 fe,badcrc,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 fe,badcrc,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badcrc,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badcrc,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badcrc,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badcrc,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badcrc,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badtag,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 fe,badtag,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badtag,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badtag,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badtag,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badtag,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badtag,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,erased,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 fe,erased,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,erased,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,erased,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,erased,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,erased,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,erased,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badlen,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 fe,badlen,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badlen,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badlen,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badlen,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badlen,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,badlen,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,hugelen,good,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,1,01 01,1,1,01 01
+00 fe,hugelen,badcrc,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,hugelen,badtag,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,hugelen,erased,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,hugelen,badlen,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,hugelen,hugelen,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,hugelen,empty,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,empty,good,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 fe,empty,badcrc,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,empty,badtag,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,empty,erased,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,empty,badlen,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,empty,hugelen,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 fe,empty,empty,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,good,good,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 ff,good,badcrc,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 ff,good,badtag,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 ff,good,erased,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 ff,good,badlen,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 ff,good,hugelen,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 ff,good,empty,slot0,pass,0,00 01,1,0,00 01,slot0,pass,0,00 01,1,0,00 01
+00 ff,badcrc,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 ff,badcrc,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badcrc,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badcrc,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badcrc,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badcrc,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badcrc,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badtag,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 ff,badtag,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badtag,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badtag,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badtag,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badtag,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badtag,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,erased,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 ff,erased,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,erased,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,erased,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,erased,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,erased,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,erased,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badlen,good,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 ff,badlen,badcrc,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badlen,badtag,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badlen,erased,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badlen,badlen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badlen,hugelen,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,badlen,empty,slot0,fail,0,01 01,1,1,01 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,hugelen,good,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,1,01 01,1,1,01 01
+00 ff,hugelen,badcrc,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,hugelen,badtag,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,hugelen,erased,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,hugelen,badlen,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,hugelen,hugelen,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,hugelen,empty,slot0,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,empty,good,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,1,01 01,1,1,01 01
+00 ff,empty,badcrc,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,empty,badtag,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,empty,erased,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,empty,badlen,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,empty,hugelen,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+00 ff,empty,empty,slot0,pass,0,00 01,1,0,00 01,slot0+slot1,fail,0,00 01,1,0,00 01
+01 00,good,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 00,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 00,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 00,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 00,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 00,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+01 00,good,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 00,badcrc,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 00,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badcrc,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badtag,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 00,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badtag,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,erased,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 00,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,erased,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badlen,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 00,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,badlen,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,hugelen,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 00,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,hugelen,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,empty,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 00,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 00,empty,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 01,good,good,none,-,1,01 01,0,1,01 01,slot1,pass,1,01 01,0,1,01 01
+01 01,good,badcrc,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 01,good,badtag,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 01,good,erased,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 01,good,badlen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 01,good,hugelen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 01,good,empty,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 01,badcrc,good,none,-,1,01 01,0,1,01 01,slot1,pass,1,01 01,0,1,01 01
+01 01,badcrc,badcrc,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badcrc,badtag,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badcrc,erased,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badcrc,badlen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badcrc,hugelen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badcrc,empty,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badtag,good,none,-,1,01 01,0,1,01 01,slot1,pass,1,01 01,0,1,01 01
+01 01,badtag,badcrc,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badtag,badtag,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badtag,erased,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badtag,badlen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badtag,hugelen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badtag,empty,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,erased,good,none,-,1,01 01,0,1,01 01,slot1,pass,1,01 01,0,1,01 01
+01 01,erased,badcrc,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,erased,badtag,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,erased,erased,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,erased,badlen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,erased,hugelen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,erased,empty,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badlen,good,none,-,1,01 01,0,1,01 01,slot1,pass,1,01 01,0,1,01 01
+01 01,badlen,badcrc,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badlen,badtag,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badlen,erased,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badlen,badlen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badlen,hugelen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,badlen,empty,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,hugelen,good,none,-,1,01 01,0,1,01 01,slot1,pass,1,01 01,0,1,01 01
+01 01,hugelen,badcrc,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,hugelen,badtag,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,hugelen,erased,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,hugelen,badlen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,hugelen,hugelen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,hugelen,empty,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,empty,good,none,-,1,01 01,0,1,01 01,slot1,pass,1,01 01,0,1,01 01
+01 01,empty,badcrc,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,empty,badtag,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,empty,erased,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,empty,badlen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,empty,hugelen,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 01,empty,empty,none,-,1,01 01,0,1,01 01,slot1+slot0,fail,1,01 01,0,1,01 01
+01 02,good,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 02,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 02,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 02,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 02,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 02,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+01 02,good,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 02,badcrc,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 02,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badcrc,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badtag,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 02,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badtag,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,erased,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 02,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,erased,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badlen,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 02,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,badlen,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,hugelen,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 02,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,hugelen,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,empty,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 02,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 02,empty,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,good,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 fe,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 fe,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 fe,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 fe,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 fe,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+01 fe,good,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 fe,badcrc,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 fe,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badcrc,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badtag,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 fe,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badtag,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,erased,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 fe,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,erased,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badlen,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 fe,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,badlen,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,hugelen,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 fe,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,hugelen,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,empty,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 fe,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 fe,empty,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,good,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 ff,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 ff,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 ff,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 ff,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 ff,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+01 ff,good,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,0,00 01,1,0,00 01
+01 ff,badcrc,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 ff,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badcrc,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badtag,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 ff,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badtag,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,erased,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 ff,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,erased,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badlen,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 ff,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,badlen,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,hugelen,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 ff,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,hugelen,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,empty,good,slot1,pass,1,01 01,1,1,01 01,slot1,pass,1,01 01,1,1,01 01
+01 ff,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,01 01,1,1,01 01
+01 ff,empty,empty,slot1,pass,1,01 01,1,1,01 01,slot1+slot0,fail,1,01 01,1,1,01 01
+02 00,good,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 00,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 00,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 00,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 00,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 00,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+02 00,good,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 00,badcrc,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 00,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badcrc,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badtag,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 00,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badtag,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,erased,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 00,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,erased,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badlen,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 00,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,badlen,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,hugelen,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 00,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,hugelen,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,empty,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 00,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 00,empty,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 01,good,good,none,-,1,02 01,0,1,02 01,slot1,pass,1,02 01,0,1,02 01
+02 01,good,badcrc,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 01,good,badtag,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 01,good,erased,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 01,good,badlen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 01,good,hugelen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 01,good,empty,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 01,badcrc,good,none,-,1,02 01,0,1,02 01,slot1,pass,1,02 01,0,1,02 01
+02 01,badcrc,badcrc,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badcrc,badtag,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badcrc,erased,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badcrc,badlen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badcrc,hugelen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badcrc,empty,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badtag,good,none,-,1,02 01,0,1,02 01,slot1,pass,1,02 01,0,1,02 01
+02 01,badtag,badcrc,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badtag,badtag,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badtag,erased,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badtag,badlen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badtag,hugelen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badtag,empty,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,erased,good,none,-,1,02 01,0,1,02 01,slot1,pass,1,02 01,0,1,02 01
+02 01,erased,badcrc,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,erased,badtag,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,erased,erased,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,erased,badlen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,erased,hugelen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,erased,empty,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badlen,good,none,-,1,02 01,0,1,02 01,slot1,pass,1,02 01,0,1,02 01
+02 01,badlen,badcrc,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badlen,badtag,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badlen,erased,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badlen,badlen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badlen,hugelen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,badlen,empty,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,hugelen,good,none,-,1,02 01,0,1,02 01,slot1,pass,1,02 01,0,1,02 01
+02 01,hugelen,badcrc,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,hugelen,badtag,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,hugelen,erased,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,hugelen,badlen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,hugelen,hugelen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,hugelen,empty,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,empty,good,none,-,1,02 01,0,1,02 01,slot1,pass,1,02 01,0,1,02 01
+02 01,empty,badcrc,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,empty,badtag,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,empty,erased,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,empty,badlen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,empty,hugelen,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 01,empty,empty,none,-,1,02 01,0,1,02 01,slot1+slot0,fail,1,02 01,0,1,02 01
+02 02,good,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 02,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 02,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 02,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 02,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 02,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+02 02,good,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 02,badcrc,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 02,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badcrc,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badtag,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 02,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badtag,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,erased,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 02,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,erased,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badlen,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 02,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,badlen,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,hugelen,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 02,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,hugelen,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,empty,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 02,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 02,empty,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,good,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 fe,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 fe,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 fe,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 fe,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 fe,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+02 fe,good,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 fe,badcrc,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 fe,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badcrc,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badtag,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 fe,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badtag,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,erased,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 fe,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,erased,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badlen,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 fe,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,badlen,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,hugelen,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 fe,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,hugelen,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,empty,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 fe,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 fe,empty,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,good,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 ff,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 ff,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 ff,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 ff,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 ff,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+02 ff,good,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,0,00 01,1,0,00 01
+02 ff,badcrc,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 ff,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badcrc,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badtag,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 ff,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badtag,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,erased,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 ff,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,erased,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badlen,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 ff,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,badlen,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,hugelen,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 ff,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,hugelen,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,empty,good,slot1,pass,1,02 01,1,1,02 01,slot1,pass,1,02 01,1,1,02 01
+02 ff,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,02 01,1,1,02 01
+02 ff,empty,empty,slot1,pass,1,02 01,1,1,02 01,slot1+slot0,fail,1,02 01,1,1,02 01
+7f 00,good,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 00,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 00,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 00,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 00,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 00,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 00,good,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 00,badcrc,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 00,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badcrc,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badtag,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 00,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badtag,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,erased,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 00,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,erased,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badlen,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 00,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,badlen,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,hugelen,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 00,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,hugelen,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,empty,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 00,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 00,empty,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 01,good,good,none,-,1,7f 01,0,1,7f 01,slot1,pass,1,7f 01,0,1,7f 01
+7f 01,good,badcrc,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 01,good,badtag,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 01,good,erased,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 01,good,badlen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 01,good,hugelen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 01,good,empty,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 01,badcrc,good,none,-,1,7f 01,0,1,7f 01,slot1,pass,1,7f 01,0,1,7f 01
+7f 01,badcrc,badcrc,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badcrc,badtag,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badcrc,erased,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badcrc,badlen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badcrc,hugelen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badcrc,empty,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badtag,good,none,-,1,7f 01,0,1,7f 01,slot1,pass,1,7f 01,0,1,7f 01
+7f 01,badtag,badcrc,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badtag,badtag,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badtag,erased,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badtag,badlen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badtag,hugelen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badtag,empty,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,erased,good,none,-,1,7f 01,0,1,7f 01,slot1,pass,1,7f 01,0,1,7f 01
+7f 01,erased,badcrc,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,erased,badtag,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,erased,erased,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,erased,badlen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,erased,hugelen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,erased,empty,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badlen,good,none,-,1,7f 01,0,1,7f 01,slot1,pass,1,7f 01,0,1,7f 01
+7f 01,badlen,badcrc,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badlen,badtag,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badlen,erased,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badlen,badlen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badlen,hugelen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,badlen,empty,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,hugelen,good,none,-,1,7f 01,0,1,7f 01,slot1,pass,1,7f 01,0,1,7f 01
+7f 01,hugelen,badcrc,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,hugelen,badtag,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,hugelen,erased,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,hugelen,badlen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,hugelen,hugelen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,hugelen,empty,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,empty,good,none,-,1,7f 01,0,1,7f 01,slot1,pass,1,7f 01,0,1,7f 01
+7f 01,empty,badcrc,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,empty,badtag,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,empty,erased,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,empty,badlen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,empty,hugelen,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 01,empty,empty,none,-,1,7f 01,0,1,7f 01,slot1+slot0,fail,1,7f 01,0,1,7f 01
+7f 02,good,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 02,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 02,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 02,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 02,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 02,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 02,good,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f 02,badcrc,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 02,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badcrc,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badtag,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 02,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badtag,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,erased,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 02,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,erased,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badlen,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 02,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,badlen,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,hugelen,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 02,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,hugelen,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,empty,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f 02,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f 02,empty,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,good,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f fe,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f fe,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f fe,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f fe,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f fe,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+7f fe,good,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f fe,badcrc,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f fe,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badcrc,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badtag,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f fe,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badtag,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,erased,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f fe,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,erased,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badlen,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f fe,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,badlen,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,hugelen,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f fe,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,hugelen,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,empty,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f fe,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f fe,empty,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,good,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f ff,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f ff,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f ff,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f ff,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f ff,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+7f ff,good,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,0,00 01,1,0,00 01
+7f ff,badcrc,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f ff,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badcrc,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badtag,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f ff,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badtag,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,erased,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f ff,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,erased,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badlen,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f ff,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,badlen,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,hugelen,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f ff,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,hugelen,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,empty,good,slot1,pass,1,7f 01,1,1,7f 01,slot1,pass,1,7f 01,1,1,7f 01
+7f ff,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,7f 01,1,1,7f 01
+7f ff,empty,empty,slot1,pass,1,7f 01,1,1,7f 01,slot1+slot0,fail,1,7f 01,1,1,7f 01
+80 00,good,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 00,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 00,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 00,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 00,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 00,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+80 00,good,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 00,badcrc,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 00,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badcrc,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badtag,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 00,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badtag,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,erased,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 00,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,erased,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badlen,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 00,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,badlen,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,hugelen,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 00,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,hugelen,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,empty,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 00,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 00,empty,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 01,good,good,none,-,1,80 01,0,1,80 01,slot1,pass,1,80 01,0,1,80 01
+80 01,good,badcrc,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 01,good,badtag,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 01,good,erased,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 01,good,badlen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 01,good,hugelen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 01,good,empty,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 01,badcrc,good,none,-,1,80 01,0,1,80 01,slot1,pass,1,80 01,0,1,80 01
+80 01,badcrc,badcrc,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badcrc,badtag,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badcrc,erased,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badcrc,badlen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badcrc,hugelen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badcrc,empty,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badtag,good,none,-,1,80 01,0,1,80 01,slot1,pass,1,80 01,0,1,80 01
+80 01,badtag,badcrc,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badtag,badtag,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badtag,erased,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badtag,badlen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badtag,hugelen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badtag,empty,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,erased,good,none,-,1,80 01,0,1,80 01,slot1,pass,1,80 01,0,1,80 01
+80 01,erased,badcrc,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,erased,badtag,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,erased,erased,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,erased,badlen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,erased,hugelen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,erased,empty,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badlen,good,none,-,1,80 01,0,1,80 01,slot1,pass,1,80 01,0,1,80 01
+80 01,badlen,badcrc,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badlen,badtag,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badlen,erased,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badlen,badlen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badlen,hugelen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,badlen,empty,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,hugelen,good,none,-,1,80 01,0,1,80 01,slot1,pass,1,80 01,0,1,80 01
+80 01,hugelen,badcrc,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,hugelen,badtag,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,hugelen,erased,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,hugelen,badlen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,hugelen,hugelen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,hugelen,empty,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,empty,good,none,-,1,80 01,0,1,80 01,slot1,pass,1,80 01,0,1,80 01
+80 01,empty,badcrc,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,empty,badtag,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,empty,erased,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,empty,badlen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,empty,hugelen,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 01,empty,empty,none,-,1,80 01,0,1,80 01,slot1+slot0,fail,1,80 01,0,1,80 01
+80 02,good,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 02,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 02,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 02,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 02,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 02,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+80 02,good,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 02,badcrc,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 02,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badcrc,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badtag,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 02,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badtag,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,erased,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 02,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,erased,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badlen,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 02,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,badlen,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,hugelen,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 02,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,hugelen,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,empty,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 02,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 02,empty,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,good,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 fe,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 fe,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 fe,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 fe,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 fe,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+80 fe,good,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 fe,badcrc,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 fe,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badcrc,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badtag,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 fe,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badtag,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,erased,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 fe,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,erased,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badlen,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 fe,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,badlen,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,hugelen,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 fe,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,hugelen,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,empty,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 fe,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 fe,empty,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,good,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 ff,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 ff,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 ff,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 ff,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 ff,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+80 ff,good,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,0,00 01,1,0,00 01
+80 ff,badcrc,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 ff,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badcrc,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badtag,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 ff,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badtag,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,erased,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 ff,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,erased,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badlen,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 ff,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,badlen,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,hugelen,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 ff,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,hugelen,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,empty,good,slot1,pass,1,80 01,1,1,80 01,slot1,pass,1,80 01,1,1,80 01
+80 ff,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,80 01,1,1,80 01
+80 ff,empty,empty,slot1,pass,1,80 01,1,1,80 01,slot1+slot0,fail,1,80 01,1,1,80 01
+fe 00,good,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 00,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 00,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 00,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 00,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 00,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 00,good,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 00,badcrc,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 00,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badcrc,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badtag,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 00,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badtag,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,erased,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 00,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,erased,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badlen,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 00,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,badlen,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,hugelen,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 00,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,hugelen,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,empty,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 00,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 00,empty,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 01,good,good,none,-,1,fe 01,0,1,fe 01,slot1,pass,1,fe 01,0,1,fe 01
+fe 01,good,badcrc,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 01,good,badtag,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 01,good,erased,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 01,good,badlen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 01,good,hugelen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 01,good,empty,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 01,badcrc,good,none,-,1,fe 01,0,1,fe 01,slot1,pass,1,fe 01,0,1,fe 01
+fe 01,badcrc,badcrc,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badcrc,badtag,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badcrc,erased,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badcrc,badlen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badcrc,hugelen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badcrc,empty,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badtag,good,none,-,1,fe 01,0,1,fe 01,slot1,pass,1,fe 01,0,1,fe 01
+fe 01,badtag,badcrc,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badtag,badtag,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badtag,erased,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badtag,badlen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badtag,hugelen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badtag,empty,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,erased,good,none,-,1,fe 01,0,1,fe 01,slot1,pass,1,fe 01,0,1,fe 01
+fe 01,erased,badcrc,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,erased,badtag,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,erased,erased,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,erased,badlen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,erased,hugelen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,erased,empty,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badlen,good,none,-,1,fe 01,0,1,fe 01,slot1,pass,1,fe 01,0,1,fe 01
+fe 01,badlen,badcrc,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badlen,badtag,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badlen,erased,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badlen,badlen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badlen,hugelen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,badlen,empty,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,hugelen,good,none,-,1,fe 01,0,1,fe 01,slot1,pass,1,fe 01,0,1,fe 01
+fe 01,hugelen,badcrc,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,hugelen,badtag,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,hugelen,erased,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,hugelen,badlen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,hugelen,hugelen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,hugelen,empty,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,empty,good,none,-,1,fe 01,0,1,fe 01,slot1,pass,1,fe 01,0,1,fe 01
+fe 01,empty,badcrc,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,empty,badtag,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,empty,erased,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,empty,badlen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,empty,hugelen,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 01,empty,empty,none,-,1,fe 01,0,1,fe 01,slot1+slot0,fail,1,fe 01,0,1,fe 01
+fe 02,good,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 02,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 02,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 02,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 02,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 02,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 02,good,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe 02,badcrc,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 02,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badcrc,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badtag,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 02,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badtag,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,erased,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 02,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,erased,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badlen,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 02,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,badlen,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,hugelen,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 02,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,hugelen,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,empty,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe 02,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe 02,empty,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,good,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe fe,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe fe,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe fe,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe fe,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe fe,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+fe fe,good,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe fe,badcrc,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe fe,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badcrc,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badtag,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe fe,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badtag,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,erased,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe fe,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,erased,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badlen,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe fe,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,badlen,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,hugelen,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe fe,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,hugelen,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,empty,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe fe,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe fe,empty,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,good,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe ff,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe ff,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe ff,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe ff,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe ff,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+fe ff,good,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,0,00 01,1,0,00 01
+fe ff,badcrc,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe ff,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badcrc,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badtag,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe ff,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badtag,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,erased,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe ff,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,erased,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badlen,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe ff,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,badlen,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,hugelen,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe ff,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,hugelen,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,empty,good,slot1,pass,1,fe 01,1,1,fe 01,slot1,pass,1,fe 01,1,1,fe 01
+fe ff,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,fe 01,1,1,fe 01
+fe ff,empty,empty,slot1,pass,1,fe 01,1,1,fe 01,slot1+slot0,fail,1,fe 01,1,1,fe 01
+ff 00,good,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 00,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 00,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 00,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 00,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 00,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 00,good,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 00,badcrc,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 00,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badcrc,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badtag,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 00,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badtag,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,erased,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 00,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,erased,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badlen,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 00,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,badlen,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,hugelen,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 00,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,hugelen,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,empty,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 00,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 00,empty,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 01,good,good,none,-,1,ff 01,0,1,ff 01,slot1,pass,1,ff 01,0,1,ff 01
+ff 01,good,badcrc,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 01,good,badtag,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 01,good,erased,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 01,good,badlen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 01,good,hugelen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 01,good,empty,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 01,badcrc,good,none,-,1,ff 01,0,1,ff 01,slot1,pass,1,ff 01,0,1,ff 01
+ff 01,badcrc,badcrc,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badcrc,badtag,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badcrc,erased,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badcrc,badlen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badcrc,hugelen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badcrc,empty,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badtag,good,none,-,1,ff 01,0,1,ff 01,slot1,pass,1,ff 01,0,1,ff 01
+ff 01,badtag,badcrc,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badtag,badtag,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badtag,erased,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badtag,badlen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badtag,hugelen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badtag,empty,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,erased,good,none,-,1,ff 01,0,1,ff 01,slot1,pass,1,ff 01,0,1,ff 01
+ff 01,erased,badcrc,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,erased,badtag,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,erased,erased,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,erased,badlen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,erased,hugelen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,erased,empty,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badlen,good,none,-,1,ff 01,0,1,ff 01,slot1,pass,1,ff 01,0,1,ff 01
+ff 01,badlen,badcrc,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badlen,badtag,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badlen,erased,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badlen,badlen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badlen,hugelen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,badlen,empty,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,hugelen,good,none,-,1,ff 01,0,1,ff 01,slot1,pass,1,ff 01,0,1,ff 01
+ff 01,hugelen,badcrc,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,hugelen,badtag,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,hugelen,erased,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,hugelen,badlen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,hugelen,hugelen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,hugelen,empty,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,empty,good,none,-,1,ff 01,0,1,ff 01,slot1,pass,1,ff 01,0,1,ff 01
+ff 01,empty,badcrc,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,empty,badtag,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,empty,erased,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,empty,badlen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,empty,hugelen,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 01,empty,empty,none,-,1,ff 01,0,1,ff 01,slot1+slot0,fail,1,ff 01,0,1,ff 01
+ff 02,good,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 02,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 02,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 02,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 02,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 02,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 02,good,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff 02,badcrc,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 02,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badcrc,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badtag,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 02,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badtag,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,erased,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 02,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,erased,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badlen,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 02,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,badlen,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,hugelen,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 02,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,hugelen,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,empty,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff 02,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff 02,empty,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,good,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff fe,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff fe,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff fe,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff fe,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff fe,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+ff fe,good,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff fe,badcrc,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff fe,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badcrc,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badtag,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff fe,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badtag,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,erased,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff fe,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,erased,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badlen,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff fe,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,badlen,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,hugelen,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff fe,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,hugelen,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,empty,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff fe,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff fe,empty,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,good,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff ff,good,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff ff,good,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff ff,good,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff ff,good,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff ff,good,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,0,00 01,1,0,00 01
+ff ff,good,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,0,00 01,1,0,00 01
+ff ff,badcrc,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff ff,badcrc,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badcrc,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badcrc,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badcrc,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badcrc,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badcrc,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badtag,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff ff,badtag,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badtag,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badtag,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badtag,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badtag,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badtag,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,erased,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff ff,erased,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,erased,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,erased,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,erased,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,erased,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,erased,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badlen,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff ff,badlen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badlen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badlen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badlen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badlen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,badlen,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,hugelen,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff ff,hugelen,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,hugelen,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,hugelen,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,hugelen,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,hugelen,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,hugelen,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,empty,good,slot1,pass,1,ff 01,1,1,ff 01,slot1,pass,1,ff 01,1,1,ff 01
+ff ff,empty,badcrc,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,empty,badtag,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,empty,erased,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,empty,badlen,slot1,fail,1,00 01,1,0,00 01,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,empty,hugelen,slot1,unspecified,unspecified,unspecified,unspecified,unspecified,unspecified,slot1+slot0,fail,1,ff 01,1,1,ff 01
+ff ff,empty,empty,slot1,pass,1,ff 01,1,1,ff 01,slot1+slot0,fail,1,ff 01,1,1,ff 01

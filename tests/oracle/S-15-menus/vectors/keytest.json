@@ -1,0 +1,17 @@
+{
+ "colors": {"untested": ["4A49", "1082"], "down": ["FE06", "ED04"], "tested": ["EF5D", "BDD7"]},
+ "sequences": [
+  {"name": "lone_press", "events": [[6, 1], [6, 0]], "tested": [6], "end": false},
+  {"name": "down_only", "events": [[6, 1]], "tested": [], "end": false},
+  {"name": "overlap", "events": [[6, 1], [7, 1], [7, 0], [6, 0]], "tested": [], "end": false},
+  {"name": "overlap_then_lone", "events": [[6, 1], [7, 1], [7, 0], [6, 0], [7, 1], [7, 0]], "tested": [7], "end": false},
+  {"name": "release_order", "events": [[6, 1], [7, 1], [6, 0], [7, 0]], "tested": [], "end": false},
+  {"name": "shift_15", "events": [[55, 1], [21, 1]], "tested": [], "end": true},
+  {"name": "shift_15_key_first", "events": [[21, 1], [55, 1]], "tested": [], "end": true},
+  {"name": "shift_09", "events": [[55, 1], [9, 1]], "tested": [], "end": false},
+  {"name": "shift_0d", "events": [[55, 1], [13, 1]], "tested": [], "end": false},
+  {"name": "shift_lone_tested", "events": [[55, 1], [55, 0]], "tested": [55], "end": false},
+  {"name": "shift_15_released", "events": [[55, 1], [55, 0], [21, 1]], "tested": [55], "end": false}
+ ],
+ "all_keys": {"events": "every key 0..71 pressed and released alone, in order", "end": true}
+}

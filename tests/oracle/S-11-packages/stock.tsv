@@ -1,0 +1,12 @@
+# S-11.091, S-11.092, S-11.096
+option	te_signed	bootloader_present	bootloader_confirmed	return_to_stock	os_form
+0	0	0	0	0	plaintext
+0	0	1	0	0	plaintext
+0	1	0	0	0	plaintext
+0	1	1	0	0	plaintext
+1	0	0	0	0	plaintext
+1	0	1	0	0	plaintext
+1	0	1	1	0	plaintext
+1	1	0	0	0	plaintext
+1	1	1	0	0	plaintext
+1	1	1	1	1	plaintext

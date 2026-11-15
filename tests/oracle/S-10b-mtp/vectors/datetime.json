@@ -1,0 +1,177 @@
+{
+ "battery_set": 8207,
+ "cases": [
+  {
+   "code": 8193,
+   "count": 2719924224,
+   "reads_back": "20261027T120000",
+   "value": "20261027T120000"
+  },
+  {
+   "code": 8193,
+   "count": 2719924224,
+   "reads_back": "20261027T120000",
+   "value": "20261027T120000.5"
+  },
+  {
+   "code": 8193,
+   "count": 2719924224,
+   "reads_back": "20261027T120000",
+   "value": "20261027T120000Z"
+  },
+  {
+   "code": 8193,
+   "count": 2719924224,
+   "reads_back": "20261027T120000",
+   "value": "20261027T120000.0Z"
+  },
+  {
+   "code": 8193,
+   "count": 2719924224,
+   "reads_back": "20261027T120000",
+   "value": "20261027T120000+0100"
+  },
+  {
+   "code": 8193,
+   "count": 2719924224,
+   "reads_back": "20261027T120000",
+   "value": "20261027T120000-0830"
+  },
+  {
+   "code": 8193,
+   "count": 2719924224,
+   "reads_back": "20261027T120000",
+   "value": "20261027T120000.5+0100"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20261327T120000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20260027T120000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20261000T120000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20230229T000000"
+  },
+  {
+   "code": 8193,
+   "count": 2592604160,
+   "reads_back": "20240229T000000",
+   "value": "20240229T000000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20240230T000000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20261027T240000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20261027T126000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20261027T120060"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "2026102AT120000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "2026102T120000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "202610277T120000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20261027t120000"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "19691231T235959"
+  },
+  {
+   "code": 8193,
+   "count": 0,
+   "reads_back": "19700101T000000",
+   "value": "19700101T000000"
+  },
+  {
+   "code": 8193,
+   "count": 4294934267,
+   "reads_back": "20590920T235959",
+   "value": "20590920T235959"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20590921T000000"
+  },
+  {
+   "code": 8193,
+   "count": 1483866112,
+   "reads_back": "20010101T000000",
+   "value": "20001230T000000"
+  },
+  {
+   "code": 8193,
+   "count": 1484095227,
+   "reads_back": "20010102T235959",
+   "value": "20001231T235959"
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": ""
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20261027T120000."
+  },
+  {
+   "clock_unchanged": true,
+   "code": 8220,
+   "value": "20261027T120000Z0"
+  }
+ ],
+ "clock_unwritable": [
+  {
+   "code": 8193,
+   "count_after": 17,
+   "reads_back": "19700101T000017",
+   "value": "20261027T120000"
+  },
+  {
+   "code": 8220,
+   "count_after": 17,
+   "reads_back": "19700101T000017",
+   "value": "20261327T120000"
+  }
+ ],
+ "unknown_set": 8202
+}

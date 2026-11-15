@@ -1,0 +1,24 @@
+{
+ "name": "run_end_silent",
+ "requirements": [
+  "S-08.035"
+ ],
+ "procedure": "run_end",
+ "state": 0,
+ "peer": {},
+ "expect": [
+  {
+   "dut": {
+    "id": "0x09",
+    "kind": "request",
+    "payload": ""
+   },
+   "count": 1
+  }
+ ],
+ "result": true,
+ "end_ms": [
+  100,
+  103
+ ]
+}

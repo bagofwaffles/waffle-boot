@@ -1,0 +1,384 @@
+[
+ {
+  "name": "init",
+  "note": "",
+  "req": {
+   "cmd": 1,
+   "slot": 0
+  },
+  "session_hex": "010000000000000000000000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "echo",
+  "note": "",
+  "req": {
+   "arg0": 305419896,
+   "cmd": 10,
+   "slot": 0
+  },
+  "session_hex": "0a0000007856341200000000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "poll",
+  "note": "",
+  "req": {
+   "cmd": 6,
+   "slot": 2
+  },
+  "session_hex": "060200000000000000000000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "release",
+  "note": "",
+  "req": {
+   "cmd": 7,
+   "slot": 1
+  },
+  "session_hex": "070100000000000000000000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "select_bp1",
+  "note": "",
+  "req": {
+   "arg0": 1,
+   "cmd": 24,
+   "slot": 1
+  },
+  "session_hex": "180100000100000000000000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "read_sectors",
+  "note": "",
+  "req": {
+   "arg0": 129,
+   "arg1": 128,
+   "cmd": 18,
+   "slot": 1
+  },
+  "session_hex": "120100008100000080000000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "pull",
+  "note": "len is the capacity",
+  "req": {
+   "cmd": 32,
+   "len": 4096,
+   "slot": 0
+  },
+  "session_hex": "200000100000000000000000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "lseek_end",
+  "note": "len is whence",
+  "req": {
+   "arg0": 3,
+   "arg1": -16,
+   "cmd": 44,
+   "len": 2,
+   "slot": 1
+  },
+  "session_hex": "2c01020003000000f0ffffff",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "read_file",
+  "note": "len is the chunk size",
+  "req": {
+   "arg0": 3,
+   "arg1": 10240,
+   "cmd": 42,
+   "len": 4096,
+   "slot": 1
+  },
+  "session_hex": "2a0100100300000000280000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "access",
+  "note": "path length 15 incl. NUL",
+  "req": {
+   "arg0": 0,
+   "cmd": 33,
+   "path": "user/empty.bin",
+   "slot": 1
+  },
+  "session_hex": "21010f000000000000000000757365722f656d7074792e62696e0000",
+  "session_len": 28,
+  "slave_rx_len": 28,
+  "slave_session_len": 28
+ },
+ {
+  "name": "opendir",
+  "note": "",
+  "req": {
+   "cmd": 46,
+   "path": "logs",
+   "slot": 1
+  },
+  "session_hex": "2e01050000000000000000006c6f677300000000",
+  "session_len": 20,
+  "slave_rx_len": 20,
+  "slave_session_len": 20
+ },
+ {
+  "name": "open_creat",
+  "note": "",
+  "req": {
+   "arg0": 577,
+   "cmd": 41,
+   "path": "/yaffs2/x",
+   "slot": 1
+  },
+  "session_hex": "29010a0041020000000000002f7961666673322f78000000",
+  "session_len": 24,
+  "slave_rx_len": 24,
+  "slave_session_len": 24
+ },
+ {
+  "name": "open_path_64",
+  "note": "path length 0x41 incl. NUL: master session 0x58, request 0x50, 8 trailing bytes",
+  "req": {
+   "arg0": 0,
+   "cmd": 41,
+   "path": "dir/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+   "slot": 1
+  },
+  "session_hex": "2901410000000000000000006469722f6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e000000000000000000000000",
+  "session_len": 88,
+  "slave_rx_len": 80,
+  "slave_session_len": 88
+ },
+ {
+  "name": "rename",
+  "note": "arg1 = old length, len = total",
+  "req": {
+   "cmd": 36,
+   "new": "bc",
+   "old": "a",
+   "slot": 1
+  },
+  "session_hex": "2401050000000000020000006100626300000000",
+  "session_len": 20,
+  "slave_rx_len": 20,
+  "slave_session_len": 20
+ },
+ {
+  "name": "write_sector",
+  "note": "",
+  "req": {
+   "arg0": 7,
+   "cmd": 21,
+   "data_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+   "slot": 1
+  },
+  "session_hex": "150100020700000000000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+  "session_len": 524,
+  "slave_rx_len": 524,
+  "slave_session_len": 524
+ },
+ {
+  "name": "write_128_reliable",
+  "note": "len = 128*512 mod 2^16 = 0",
+  "req": {
+   "arg0": 4096,
+   "cmd": 19,
+   "count": 128,
+   "data_rule": "(i*7)&0xff",
+   "slot": 1
+  },
+  "session_head_hex": "13010000001000008000000000070e15",
+  "session_len": 65548,
+  "session_sha256": "c7ddd1dc9e3e4cf1ae43f45a160223b8cc2910a2fd1969ce0b750392b7523c8b",
+  "slave_rx_len": 65548,
+  "slave_session_len": 65548
+ },
+ {
+  "name": "write_128",
+  "note": "len = 128*512 mod 2^16 = 0; the slave takes 128*512 payload bytes from arg1",
+  "req": {
+   "arg0": 8192,
+   "cmd": 22,
+   "count": 128,
+   "data_rule": "(i*7)&0xff",
+   "slot": 1
+  },
+  "session_head_hex": "16010000002000008000000000070e15",
+  "session_len": 65548,
+  "session_sha256": "3ab352980414de9da956f02fd93b1257a77b3350a5b76ace3d8985cfc48289f7",
+  "slave_rx_len": 65548,
+  "slave_session_len": 65548
+ },
+ {
+  "name": "write_2",
+  "note": "len = 0x400",
+  "req": {
+   "arg0": 16,
+   "cmd": 22,
+   "count": 2,
+   "data_rule": "(i*7)&0xff",
+   "slot": 1
+  },
+  "session_head_hex": "16010004100000000200000000070e15",
+  "session_len": 1036,
+  "session_sha256": "698715cb064e3e8784a7e98fa82a8f3f7399a6f31f7a50dc9d27d7751fdbe847",
+  "slave_rx_len": 1036,
+  "slave_session_len": 1036
+ },
+ {
+  "name": "push",
+  "note": "",
+  "req": {
+   "cmd": 30,
+   "data_hex": "00010203040506070809",
+   "slot": 3
+  },
+  "session_hex": "1e030a000000000000000000000102030405060708090000",
+  "session_len": 24,
+  "slave_rx_len": 24,
+  "slave_session_len": 24
+ },
+ {
+  "name": "erase",
+  "note": "",
+  "req": {
+   "arg0": 16777216,
+   "arg1": 0,
+   "cmd": 20,
+   "slot": 1
+  },
+  "session_hex": "140100000000000100000000",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
+  "name": "pad_40",
+  "note": "payload 0x40: master sends 0x40, slave takes 0x40 as the request and ignores 0 trailing bytes",
+  "req": {
+   "arg0": 4,
+   "arg1": 64,
+   "cmd": 43,
+   "data_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+   "slot": 1
+  },
+  "session_hex": "2b01400004000000400000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+  "session_len": 76,
+  "slave_rx_len": 76,
+  "slave_session_len": 76
+ },
+ {
+  "name": "pad_41",
+  "note": "payload 0x41: master sends 0x4c, slave takes 0x44 as the request and ignores 8 trailing bytes",
+  "req": {
+   "arg0": 4,
+   "arg1": 65,
+   "cmd": 43,
+   "data_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+   "slot": 1
+  },
+  "session_hex": "2b01410004000000410000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a0000000000000000000000",
+  "session_len": 88,
+  "slave_rx_len": 80,
+  "slave_session_len": 88
+ },
+ {
+  "name": "pad_44",
+  "note": "payload 0x44: master sends 0x4c, slave takes 0x44 as the request and ignores 8 trailing bytes",
+  "req": {
+   "arg0": 4,
+   "arg1": 68,
+   "cmd": 43,
+   "data_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+   "slot": 1
+  },
+  "session_hex": "2b01440004000000440000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a0000000000000000",
+  "session_len": 88,
+  "slave_rx_len": 80,
+  "slave_session_len": 88
+ },
+ {
+  "name": "pad_45",
+  "note": "payload 0x45: master sends 0x4c, slave takes 0x48 as the request and ignores 4 trailing bytes",
+  "req": {
+   "arg0": 4,
+   "arg1": 69,
+   "cmd": 43,
+   "data_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+   "slot": 1
+  },
+  "session_hex": "2b01450004000000450000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a00000000000000",
+  "session_len": 88,
+  "slave_rx_len": 84,
+  "slave_session_len": 88
+ },
+ {
+  "name": "pad_48",
+  "note": "payload 0x48: master sends 0x4c, slave takes 0x48 as the request and ignores 4 trailing bytes",
+  "req": {
+   "arg0": 4,
+   "arg1": 72,
+   "cmd": 43,
+   "data_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+   "slot": 1
+  },
+  "session_hex": "2b01480004000000480000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a00000000",
+  "session_len": 88,
+  "slave_rx_len": 84,
+  "slave_session_len": 88
+ },
+ {
+  "name": "pad_49",
+  "note": "payload 0x49: master sends 0x4c, slave takes 0x4c as the request and ignores 0 trailing bytes",
+  "req": {
+   "arg0": 4,
+   "arg1": 73,
+   "cmd": 43,
+   "data_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+   "slot": 1
+  },
+  "session_hex": "2b01490004000000490000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a000000",
+  "session_len": 88,
+  "slave_rx_len": 88,
+  "slave_session_len": 88
+ },
+ {
+  "name": "pad_4c",
+  "note": "payload 0x4c: master sends 0x4c, slave takes 0x4c as the request and ignores 0 trailing bytes",
+  "req": {
+   "arg0": 4,
+   "arg1": 76,
+   "cmd": 43,
+   "data_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+   "slot": 1
+  },
+  "session_hex": "2b014c00040000004c0000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+  "session_len": 88,
+  "slave_rx_len": 88,
+  "slave_session_len": 88
+ }
+]

@@ -1,0 +1,77 @@
+{
+ "expect": {
+  "fail": [
+   "staging_clear"
+  ]
+ },
+ "ranges": [
+  {
+   "name": "l1_code",
+   "start": "0x11a00000",
+   "end": "0x11a0c000",
+   "kind": "code",
+   "handover": false
+  },
+  {
+   "name": "l1_data",
+   "start": "0x11800000",
+   "end": "0x11803000",
+   "kind": "data",
+   "handover": false
+  },
+  {
+   "name": "l1_scratch",
+   "start": "0x11b00000",
+   "end": "0x11b01f00",
+   "kind": "data",
+   "handover": false
+  },
+  {
+   "name": "handover_code",
+   "start": "0x0803c000",
+   "end": "0x0803d800",
+   "kind": "code",
+   "handover": true
+  },
+  {
+   "name": "ddr_image",
+   "start": "0x8803d000",
+   "end": "0x88400000",
+   "kind": "data",
+   "handover": true
+  },
+  {
+   "name": "stack",
+   "start": "0x88400000",
+   "end": "0x88420000",
+   "kind": "stack",
+   "handover": true
+  },
+  {
+   "name": "heap",
+   "start": "0x88b00000",
+   "end": "0x89c00000",
+   "kind": "heap",
+   "handover": false
+  },
+  {
+   "name": "ramdisk_0",
+   "start": "0x80100000",
+   "end": "0x86100000",
+   "kind": "held_buffer"
+  },
+  {
+   "name": "ramdisk_1",
+   "start": "0x89e00000",
+   "end": "0x8b200000",
+   "kind": "held_buffer"
+  },
+  {
+   "name": "buffer_in_staging",
+   "start": "0x8a400000",
+   "end": "0x8a420000",
+   "kind": "data",
+   "handover": false
+  }
+ ]
+}

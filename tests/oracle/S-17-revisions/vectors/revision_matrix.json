@@ -1,0 +1,140 @@
+{
+ "rows": [
+  {
+   "role": "master",
+   "pa2": 1,
+   "pa8": 0,
+   "pa0": 0,
+   "strap_index": "00",
+   "decoded": 255,
+   "reported_before_greeting": 255,
+   "info_entry_before_greeting": "hw_rev:255",
+   "pinmux": {
+    "ref": "S-13b-buses-and-pins/vectors/pinmux.json",
+    "variant": "master"
+   },
+   "panel_reset": "bootloader_release",
+   "refused": false
+  },
+  {
+   "role": "master",
+   "pa2": 1,
+   "pa8": 0,
+   "pa0": 1,
+   "strap_index": "01",
+   "decoded": 4,
+   "reported_before_greeting": 4,
+   "info_entry_before_greeting": "hw_rev:4",
+   "pinmux": {
+    "ref": "S-13b-buses-and-pins/vectors/pinmux.json",
+    "variant": "master"
+   },
+   "panel_reset": "bootloader_release",
+   "refused": false
+  },
+  {
+   "role": "master",
+   "pa2": 1,
+   "pa8": 1,
+   "pa0": 0,
+   "strap_index": "10",
+   "decoded": 5,
+   "reported_before_greeting": 5,
+   "info_entry_before_greeting": "hw_rev:5",
+   "pinmux": {
+    "ref": "S-13b-buses-and-pins/vectors/pinmux.json",
+    "variant": "master"
+   },
+   "panel_reset": "handshake_or_pulse",
+   "refused": false
+  },
+  {
+   "role": "master",
+   "pa2": 1,
+   "pa8": 1,
+   "pa0": 1,
+   "strap_index": "11",
+   "decoded": 6,
+   "reported_before_greeting": 6,
+   "info_entry_before_greeting": "hw_rev:6",
+   "pinmux": {
+    "ref": "S-13b-buses-and-pins/vectors/pinmux.json",
+    "variant": "master"
+   },
+   "panel_reset": "handshake_or_pulse",
+   "refused": false
+  },
+  {
+   "role": "slave",
+   "pa2": 0,
+   "pa8": 0,
+   "pa0": 0,
+   "strap_index": "00",
+   "decoded": 255,
+   "reported_before_greeting": null,
+   "info_entry_before_greeting": null,
+   "pinmux": {
+    "ref": "S-13b-buses-and-pins/vectors/pinmux.json",
+    "variant": "slave"
+   },
+   "panel_reset": null,
+   "refused": false
+  },
+  {
+   "role": "slave",
+   "pa2": 0,
+   "pa8": 0,
+   "pa0": 1,
+   "strap_index": "01",
+   "decoded": 4,
+   "reported_before_greeting": null,
+   "info_entry_before_greeting": null,
+   "pinmux": {
+    "ref": "S-13b-buses-and-pins/vectors/pinmux.json",
+    "variant": "slave"
+   },
+   "panel_reset": null,
+   "refused": false
+  },
+  {
+   "role": "slave",
+   "pa2": 0,
+   "pa8": 1,
+   "pa0": 0,
+   "strap_index": "10",
+   "decoded": 5,
+   "reported_before_greeting": null,
+   "info_entry_before_greeting": null,
+   "pinmux": {
+    "ref": "S-13b-buses-and-pins/vectors/pinmux.json",
+    "variant": "slave"
+   },
+   "panel_reset": null,
+   "refused": false
+  },
+  {
+   "role": "slave",
+   "pa2": 0,
+   "pa8": 1,
+   "pa0": 1,
+   "strap_index": "11",
+   "decoded": 6,
+   "reported_before_greeting": null,
+   "info_entry_before_greeting": null,
+   "pinmux": {
+    "ref": "S-13b-buses-and-pins/vectors/pinmux.json",
+    "variant": "slave"
+   },
+   "panel_reset": null,
+   "refused": false
+  }
+ ],
+ "differs_only_in": [
+  "the hw_rev entry of the info reply (S-17.013)",
+  "the panel reset path selected by PA8, master only (S-17.003)"
+ ],
+ "panel_reset_paths": {
+  "bootloader_release": "RESET was low >= 10 us in the strap interval; the panel counts as reset at the bootloader's own release (S-13c.004 second case)",
+  "handshake_or_pulse": "RESET stayed high; the first stage's handshake is honored when present and valid, else one reset pulse (S-13c.004)"
+ }
+}

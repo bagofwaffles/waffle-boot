@@ -1,0 +1,357 @@
+{
+ "requirements": [
+  "S-14.051",
+  "S-14.052"
+ ],
+ "limit": 5242880,
+ "groups": [
+  {
+   "note": "newest first, all fit",
+   "entries": [
+    {
+     "name": "a.log",
+     "type": "file",
+     "mtime": 100,
+     "size": 10
+    },
+    {
+     "name": "b.log",
+     "type": "file",
+     "mtime": 300,
+     "size": 20
+    },
+    {
+     "name": "c.log",
+     "type": "file",
+     "mtime": 200,
+     "size": 30
+    }
+   ],
+   "fails": [],
+   "copied": [
+    "b.log",
+    "c.log",
+    "a.log"
+   ]
+  },
+  {
+   "note": "limit reached exactly: still copied",
+   "entries": [
+    {
+     "name": "new.log",
+     "type": "file",
+     "mtime": 3,
+     "size": 3145728
+    },
+    {
+     "name": "mid.log",
+     "type": "file",
+     "mtime": 2,
+     "size": 2097152
+    },
+    {
+     "name": "old.log",
+     "type": "file",
+     "mtime": 1,
+     "size": 1
+    }
+   ],
+   "fails": [],
+   "copied": [
+    "new.log",
+    "mid.log"
+   ]
+  },
+  {
+   "note": "first candidate over the limit ends the export, a smaller older one is not copied",
+   "entries": [
+    {
+     "name": "new.log",
+     "type": "file",
+     "mtime": 3,
+     "size": 4194304
+    },
+    {
+     "name": "big.log",
+     "type": "file",
+     "mtime": 2,
+     "size": 2097152
+    },
+    {
+     "name": "tiny.log",
+     "type": "file",
+     "mtime": 1,
+     "size": 100
+    }
+   ],
+   "fails": [],
+   "copied": [
+    "new.log"
+   ]
+  },
+  {
+   "note": "newest alone over the limit: nothing copied",
+   "entries": [
+    {
+     "name": "huge.log",
+     "type": "file",
+     "mtime": 9,
+     "size": 6291456
+    },
+    {
+     "name": "old.log",
+     "type": "file",
+     "mtime": 1,
+     "size": 5
+    }
+   ],
+   "fails": [],
+   "copied": []
+  },
+  {
+   "note": "empty files are not copied and count nothing",
+   "entries": [
+    {
+     "name": "e1.log",
+     "type": "file",
+     "mtime": 5,
+     "size": 0
+    },
+    {
+     "name": "x.log",
+     "type": "file",
+     "mtime": 4,
+     "size": 7
+    },
+    {
+     "name": "e2.log",
+     "type": "file",
+     "mtime": 3,
+     "size": 0
+    }
+   ],
+   "fails": [],
+   "copied": [
+    "x.log"
+   ]
+  },
+  {
+   "note": "directories and dot entries are not candidates; short dot names are",
+   "entries": [
+    {
+     "name": ".",
+     "type": "dir",
+     "mtime": 50,
+     "size": 0
+    },
+    {
+     "name": "..",
+     "type": "dir",
+     "mtime": 51,
+     "size": 0
+    },
+    {
+     "name": "sub",
+     "type": "dir",
+     "mtime": 40,
+     "size": 0
+    },
+    {
+     "name": ".a",
+     "type": "file",
+     "mtime": 30,
+     "size": 9
+    },
+    {
+     "name": ".b.log",
+     "type": "file",
+     "mtime": 20,
+     "size": 9
+    },
+    {
+     "name": "z.log",
+     "type": "file",
+     "mtime": 10,
+     "size": 9
+    }
+   ],
+   "fails": [],
+   "copied": [
+    ".a",
+    ".b.log",
+    "z.log"
+   ]
+  },
+  {
+   "note": "a failed copy is skipped and counts nothing",
+   "entries": [
+    {
+     "name": "n.log",
+     "type": "file",
+     "mtime": 3,
+     "size": 3145728
+    },
+    {
+     "name": "bad.log",
+     "type": "file",
+     "mtime": 2,
+     "size": 2097152
+    },
+    {
+     "name": "o.log",
+     "type": "file",
+     "mtime": 1,
+     "size": 2097152
+    }
+   ],
+   "fails": [
+    "bad.log"
+   ],
+   "copied": [
+    "n.log",
+    "o.log"
+   ]
+  },
+  {
+   "note": "a failing candidate over the limit still ends the export",
+   "entries": [
+    {
+     "name": "n.log",
+     "type": "file",
+     "mtime": 3,
+     "size": 4194304
+    },
+    {
+     "name": "bad.log",
+     "type": "file",
+     "mtime": 2,
+     "size": 2097152
+    },
+    {
+     "name": "o.log",
+     "type": "file",
+     "mtime": 1,
+     "size": 10
+    }
+   ],
+   "fails": [
+    "bad.log"
+   ],
+   "copied": [
+    "n.log"
+   ]
+  },
+  {
+   "note": "no candidates",
+   "entries": [
+    {
+     "name": "sub",
+     "type": "dir",
+     "mtime": 1,
+     "size": 0
+    }
+   ],
+   "fails": [],
+   "copied": []
+  },
+  {
+   "note": "equal modification times: all exported, ties in ascending name order",
+   "entries": [
+    {
+     "name": "b.log",
+     "type": "file",
+     "mtime": 5,
+     "size": 10
+    },
+    {
+     "name": "d.log",
+     "type": "file",
+     "mtime": 4,
+     "size": 10
+    },
+    {
+     "name": "a.log",
+     "type": "file",
+     "mtime": 5,
+     "size": 10
+    },
+    {
+     "name": "c.log",
+     "type": "file",
+     "mtime": 6,
+     "size": 10
+    }
+   ],
+   "fails": [],
+   "copied": [
+    "c.log",
+    "a.log",
+    "b.log",
+    "d.log"
+   ]
+  },
+  {
+   "note": "a tie across the limit: the name order decides which is copied",
+   "entries": [
+    {
+     "name": "b.log",
+     "type": "file",
+     "mtime": 7,
+     "size": 3145728
+    },
+    {
+     "name": "a.log",
+     "type": "file",
+     "mtime": 7,
+     "size": 3145728
+    },
+    {
+     "name": "old.log",
+     "type": "file",
+     "mtime": 1,
+     "size": 10
+    }
+   ],
+   "fails": [],
+   "copied": [
+    "a.log"
+   ]
+  },
+  {
+   "note": "ties compare bytes: upper case before lower case, a prefix before a longer name",
+   "entries": [
+    {
+     "name": "a.log",
+     "type": "file",
+     "mtime": 2,
+     "size": 10
+    },
+    {
+     "name": "B.log",
+     "type": "file",
+     "mtime": 2,
+     "size": 10
+    },
+    {
+     "name": "a.log.1",
+     "type": "file",
+     "mtime": 2,
+     "size": 10
+    },
+    {
+     "name": "_x.log",
+     "type": "file",
+     "mtime": 2,
+     "size": 10
+    }
+   ],
+   "fails": [],
+   "copied": [
+    "B.log",
+    "_x.log",
+    "a.log",
+    "a.log.1"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,233 @@
+{
+ "cases": [
+  {
+   "case": "digit_0x06",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x06",
+     "down"
+    ]
+   ],
+   "expect": "start"
+  },
+  {
+   "case": "digit_0x0A",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x0A",
+     "down"
+    ]
+   ],
+   "expect": "start"
+  },
+  {
+   "case": "digit_0x0E",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x0E",
+     "down"
+    ]
+   ],
+   "expect": "start"
+  },
+  {
+   "case": "digit_0x07",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x07",
+     "down"
+    ]
+   ],
+   "expect": "held"
+  },
+  {
+   "case": "digit_0x0B",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x0B",
+     "down"
+    ]
+   ],
+   "expect": "held"
+  },
+  {
+   "case": "digit_0x0F",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x0F",
+     "down"
+    ]
+   ],
+   "expect": "held"
+  },
+  {
+   "case": "no_key",
+   "down_at_open": [],
+   "events": [],
+   "expect": null
+  },
+  {
+   "case": "up_only",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x06",
+     "up"
+    ]
+   ],
+   "expect": null
+  },
+  {
+   "case": "other_keys_then_1",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x08",
+     "down"
+    ],
+    [
+     "0x08",
+     "up"
+    ],
+    [
+     "0x09",
+     "down"
+    ],
+    [
+     "0x12",
+     "down"
+    ],
+    [
+     "0x15",
+     "down"
+    ],
+    [
+     "0x00",
+     "down"
+    ],
+    [
+     "0x06",
+     "down"
+    ]
+   ],
+   "expect": "start"
+  },
+  {
+   "case": "other_keys_only",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x08",
+     "down"
+    ],
+    [
+     "0x09",
+     "down"
+    ],
+    [
+     "0x10",
+     "down"
+    ],
+    [
+     "0x15",
+     "down"
+    ]
+   ],
+   "expect": null
+  },
+  {
+   "case": "down_at_open_reported_again",
+   "down_at_open": [
+    "0x06"
+   ],
+   "events": [
+    [
+     "0x06",
+     "down"
+    ]
+   ],
+   "expect": null
+  },
+  {
+   "case": "down_at_open_goes_up",
+   "down_at_open": [
+    "0x06"
+   ],
+   "events": [
+    [
+     "0x06",
+     "up"
+    ]
+   ],
+   "expect": null
+  },
+  {
+   "case": "down_at_open_up_and_down",
+   "down_at_open": [
+    "0x06"
+   ],
+   "events": [
+    [
+     "0x06",
+     "up"
+    ],
+    [
+     "0x06",
+     "down"
+    ]
+   ],
+   "expect": "start"
+  },
+  {
+   "case": "down_at_open_other_digit",
+   "down_at_open": [
+    "0x06"
+   ],
+   "events": [
+    [
+     "0x07",
+     "down"
+    ]
+   ],
+   "expect": "held"
+  },
+  {
+   "case": "key_2_down_at_open_up_and_down",
+   "down_at_open": [
+    "0x07"
+   ],
+   "events": [
+    [
+     "0x07",
+     "up"
+    ],
+    [
+     "0x07",
+     "down"
+    ]
+   ],
+   "expect": "held"
+  },
+  {
+   "case": "first_digit_wins",
+   "down_at_open": [],
+   "events": [
+    [
+     "0x07",
+     "down"
+    ],
+    [
+     "0x06",
+     "down"
+    ]
+   ],
+   "expect": "held"
+  }
+ ]
+}

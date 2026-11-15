@@ -1,0 +1,25 @@
+{
+ "revisions": [],
+ "entry_fields": [
+  "strap_index",
+  "decoded",
+  "reported_without_nordic",
+  "reported_with_nordic",
+  "run",
+  "evidence"
+ ],
+ "coprocessors": [
+  {
+   "coprocessor": "PSoC (backplane)",
+   "version": "1.0.7"
+  },
+  {
+   "coprocessor": "Nordic application",
+   "version": "1.0.1"
+  },
+  {
+   "coprocessor": "Nordic bootloader",
+   "version": "1000.0.10"
+  }
+ ]
+}

@@ -1,0 +1,242 @@
+[
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 100,
+  "file_seed": 700,
+  "n": 0,
+  "name": "n_0",
+  "pieces": [
+   {
+    "r": 0,
+    "reply_len": 8,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   }
+  ],
+  "pos": 0,
+  "result": [
+   0,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 100,
+  "file_seed": 701,
+  "n": 1,
+  "name": "n_1",
+  "pieces": [
+   {
+    "r": 1,
+    "reply_len": 12,
+    "sha256": "5e37305c587caf07e99a08e1efd0749fd3bbbb855752e4d568ac2dbfc2025464"
+   }
+  ],
+  "pos": 0,
+  "result": [
+   1,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 12288,
+  "file_seed": 90111,
+  "n": 4095,
+  "name": "n_fff",
+  "pieces": [
+   {
+    "r": 4095,
+    "reply_len": 4104,
+    "sha256": "11a23cdea0f45d919c61c28c0e1aa7bb1ce394813ef237ceab971931a422d777"
+   }
+  ],
+  "pos": 0,
+  "result": [
+   4095,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 12288,
+  "file_seed": 90112,
+  "n": 4096,
+  "name": "n_1000",
+  "pieces": [
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "eb4cefbd258caf2bc0799e6da1fd8dfb38717b031f1a29e477d29074167046bf"
+   }
+  ],
+  "pos": 0,
+  "result": [
+   4096,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 12288,
+  "file_seed": 90113,
+  "n": 4097,
+  "name": "n_1001",
+  "pieces": [
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "c35e37e28a40971dd40ac822d474a26675fccc8ed7d9a191af1bc25b71048f83"
+   },
+   {
+    "r": 1,
+    "reply_len": 12,
+    "sha256": "e632b7095b0bf32c260fa4c539e9fd7b852d0de454e9be26f24d0d6f91d069d3"
+   }
+  ],
+  "pos": 0,
+  "result": [
+   4097,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 12288,
+  "file_seed": 96256,
+  "n": 10240,
+  "name": "n_2800",
+  "pieces": [
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "8016b3b5614a719d646859bf39ff57c75c9493cd2b3e3d4d399c8fd5a08736aa"
+   },
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "fe21d13122f6446c1c661d156eef1f63c4326c6c71fd70d17ec8a2a2a74c00f8"
+   },
+   {
+    "r": 2048,
+    "reply_len": 2056,
+    "sha256": "a5fe81805045fa47826fd3ac38a44caded5dffeacd1b0d8aa7bab36aad67a34b"
+   }
+  ],
+  "pos": 0,
+  "result": [
+   10240,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 8192,
+  "file_seed": 69632,
+  "n": 12288,
+  "name": "eof_on_boundary",
+  "pieces": [
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "5a2f82274157e9860360173ec5e131f89e0fada151bcc47b90f45ccb4c1c7a8f"
+   },
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "543edf05b108d0d33c511c65ddefbeb62cc6d8cd27660d556a8d2ad0f98d0ae3"
+   },
+   {
+    "r": 0,
+    "reply_len": 8,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   }
+  ],
+  "pos": 0,
+  "result": [
+   8192,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 4660,
+  "file_seed": 44908,
+  "n": 12288,
+  "name": "eof_short",
+  "pieces": [
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "02e41f7882eb79fb3b48c685967787595c81e4bfee95f063f9439c506ac37f89"
+   },
+   {
+    "r": 564,
+    "reply_len": 572,
+    "sha256": "1f145ea20a0a7505240fe8b9c5197495de39e9a24309376b528d24bcf5f039d1"
+   }
+  ],
+  "pos": 0,
+  "result": [
+   4660,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": null,
+  "file_len": 12288,
+  "file_seed": 92160,
+  "n": 6144,
+  "name": "from_pos",
+  "pieces": [
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "4d109441bdf736d9a8165fcf98085104c98bda685612f7e399cfe6a2fc9e7d66"
+   },
+   {
+    "r": 2048,
+    "reply_len": 2056,
+    "sha256": "54ff9883099f8792c339c92069f2f92d2fde77fab689eb8ad04506776e3efcfc"
+   }
+  ],
+  "pos": 2304,
+  "result": [
+   6144,
+   0
+  ]
+ },
+ {
+  "chunk": 4096,
+  "fail_piece": 1,
+  "file_len": 12288,
+  "file_seed": 96256,
+  "n": 10240,
+  "name": "error_second_piece",
+  "pieces": [
+   {
+    "r": 4096,
+    "reply_len": 4104,
+    "sha256": "8016b3b5614a719d646859bf39ff57c75c9493cd2b3e3d4d399c8fd5a08736aa"
+   },
+   {
+    "errno": 19,
+    "r": -1,
+    "reply_len": 12
+   }
+  ],
+  "pos": 0,
+  "result": [
+   -1,
+   19
+  ]
+ }
+]

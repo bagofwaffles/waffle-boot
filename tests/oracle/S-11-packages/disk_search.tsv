@@ -1,0 +1,14 @@
+# S-11.046-S-11.048, S-04.024
+case	entries_in_directory_order	package	forced	cdc_reset	installed_zip
+first_of_two	"[[""a.tfw"", 0], [""b.tfw"", 0]]"	a.tfw	0	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7
+dot_skipped	"[["".x.tfw"", 0], [""b.tfw"", 0]]"	b.tfw	0	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7
+upper_not_package	"[[""TFW.BIN"", 0], [""cdc_please"", 0]]"		0	1	none
+dir_skipped	"[[""dir.tfw"", 1], [""c.tfw"", 0]]"	c.tfw	0	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7
+subdir_not_found	"[[""sub"", 1], [""sub/x.tfw"", 0]]"		0	0	none
+substring_anywhere	"[[""notes_tfw.txt"", 0]]"	notes_tfw.txt	0	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7
+forced_by_name	"[[""op-xy_force.tfw"", 0]]"	op-xy_force.tfw	1	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7
+upper_force_not_forced	"[[""FORCE.tfw"", 0]]"	FORCE.tfw	0	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7
+decoy_zip_before	"[[""firmware_a.zip"", 0], [""op-xy.tfw"", 0]]"	op-xy.tfw	0	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7
+decoy_firmware_zip_present	"[[""firmware.zip"", 0], [""op-xy.tfw"", 0]]"	op-xy.tfw	0	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7
+decoy_zip_alone	"[[""firmware.zip"", 0]]"		0	0	none
+cdc_beside_package	"[[""cdc_please"", 0], [""junk.tfw"", 0]]"	junk.tfw	0	0	23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7

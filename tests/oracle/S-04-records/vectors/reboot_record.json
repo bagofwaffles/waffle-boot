@@ -1,0 +1,37 @@
+{
+ "address": {"start": "0x11B01F00", "size": 8, "used": 6},
+ "magic": "0xDEADF00D",
+ "encode": [
+  {"reason": 0,     "bytes6": "0df0adde0000"},
+  {"reason": 10,    "bytes6": "0df0adde0a00"},
+  {"reason": 20,    "bytes6": "0df0adde1400"},
+  {"reason": 30,    "bytes6": "0df0adde1e00"},
+  {"reason": 40,    "bytes6": "0df0adde2800"},
+  {"reason": 50,    "bytes6": "0df0adde3200"},
+  {"reason": 60,    "bytes6": "0df0adde3c00"},
+  {"reason": 266,   "bytes6": "0df0adde0a01"},
+  {"reason": 65535, "bytes6": "0df0addeffff"}
+ ],
+ "decode": [
+  {"bytes": "0df0adde1e000000", "present": true,  "reason": 30},
+  {"bytes": "0df0adde1e00ffff", "present": true,  "reason": 30, "note": "pad bytes ignored"},
+  {"bytes": "000000001e000000", "present": false},
+  {"bytes": "0cf0adde1e000000", "present": false, "note": "0xDEADF00C"},
+  {"bytes": "deadf00d1e000000", "present": false, "note": "big-endian magic is not the magic"},
+  {"bytes": "ffffffffffffffff", "present": false}
+ ],
+ "write": [
+  {"before": "ffffffffffffffff", "reason": 20, "after": "0df0adde1400ffff"},
+  {"before": "000000001e00a55a", "reason": 40, "after": "0df0adde2800a55a"},
+  {"before": "0df0adde3c000000", "reason": 0,  "after": "0df0adde00000000"}
+ ],
+ "consume": [
+  {"before": "0df0adde0a000000", "taken": 10, "after": "000000000a000000"},
+  {"before": "0df0adde28001234", "taken": 40, "after": "0000000028001234"},
+  {"before": "0df0adde00000000", "taken": 0,  "after": "0000000000000000"},
+  {"before": "000000000a000000", "taken": 20, "after": "000000000a000000", "note": "a consumed record stays consumed"},
+  {"before": "0cf0adde28000000", "taken": 20, "after": "0cf0adde28000000"},
+  {"before": "ffffffffffffffff", "taken": 20, "after": "ffffffffffffffff"},
+  {"before": "0df0addeffff0000", "taken": 65535, "after": "00000000ffff0000"}
+ ]
+}

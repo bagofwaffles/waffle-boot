@@ -1,0 +1,17 @@
+{
+ "_doc": "Console cases: ops applied in order to an empty console; shown = the rows displayed, top first, as screens.json writes lines. Hand-written.",
+ "cases": [
+  {"name": "three_lines", "ops": [["append", "a"], ["append", ""], ["append", "b"]], "shown": ["a", "", "b"]},
+  {"name": "scroll_at_10", "ops": [["append_n", 10]], "shown": ["L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10"]},
+  {"name": "exactly_9", "ops": [["append_n", 9]], "shown": ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9"]},
+  {"name": "keep_80", "ops": [["append", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]], "shown": ["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]},
+  {"name": "keep_80_of_81", "ops": [["append", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy"]], "shown": ["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]},
+  {"name": "non_printable", "ops": [["append", "ab\u0000cÃd"]], "shown": ["a?b?c?d"]},
+  {"name": "tab_in_text", "ops": [["append", "a\tb"]], "shown": ["a?b"]},
+  {"name": "styled", "ops": [["append", "1 Go\tNow", "item"], ["append", "Done.", "ok"]], "shown": ["item:1 Go\tNow", "ok:Done."]},
+  {"name": "replace_last", "ops": [["append", "x"], ["append", "BLE", "step-run"], ["replace", "BLE\t5%", "step-run"], ["replace", "BLE\tInstalled 1.0.2", "step-ok"]], "shown": ["x", "step-ok:BLE\tInstalled 1.0.2"]},
+  {"name": "replace_three_parts", "ops": [["append", "Hold 1\t0%\t60 s", "step-run"], ["replace", "Hold 1\t40%\t52 s", "step-run"]], "shown": ["step-run:Hold 1\t40%\t52 s"]},
+  {"name": "replace_empty", "ops": [["replace", "p"]], "shown": ["p"]},
+  {"name": "clear", "ops": [["append", "a"], ["clear"], ["append", "b"]], "shown": ["b"]}
+ ]
+}

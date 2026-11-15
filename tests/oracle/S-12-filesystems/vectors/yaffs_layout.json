@@ -1,0 +1,144 @@
+{
+ "requirements": [
+  "S-12.041",
+  "S-12.042",
+  "S-12.044",
+  "S-12.045",
+  "S-12.049"
+ ],
+ "geometry": {
+  "chunk_bytes": 4096,
+  "chunk_sectors": 8,
+  "data_bytes": 4080,
+  "tags_offset": 4080,
+  "chunks_per_block": 128,
+  "block_sectors": 1024,
+  "blocks": 4608,
+  "last_chunk": 589823,
+  "last_sector": 4718591,
+  "summary_block_number_offset": 1
+ },
+ "tags": [
+  {
+   "what": "data chunk 3 of object 0x101, 100 bytes",
+   "seq": 4097,
+   "hex": "01100000010100000300000064000000",
+   "decoded": {
+    "seq": 4097,
+    "raw_obj_id": 257,
+    "raw_chunk_id": 3,
+    "n_bytes": 100,
+    "is_header": false,
+    "obj_id": 257,
+    "type": null,
+    "chunk_id": 3,
+    "parent": null,
+    "shrink": false,
+    "shadows": false
+   }
+  },
+  {
+   "what": "header of file 0x101 in root, size 10000",
+   "seq": 4097,
+   "hex": "01100000010100100100008010270000",
+   "decoded": {
+    "seq": 4097,
+    "raw_obj_id": 268435713,
+    "raw_chunk_id": 2147483649,
+    "n_bytes": 10000,
+    "is_header": true,
+    "obj_id": 257,
+    "type": 1,
+    "chunk_id": 0,
+    "parent": 1,
+    "shrink": false,
+    "shadows": false
+   }
+  },
+  {
+   "what": "shrink header of file 0x101, deleted (parent 4), size 0",
+   "hex": "0210000001010010040000c000000000",
+   "decoded": {
+    "seq": 4098,
+    "raw_obj_id": 268435713,
+    "raw_chunk_id": 3221225476,
+    "n_bytes": 0,
+    "is_header": true,
+    "obj_id": 257,
+    "type": 1,
+    "chunk_id": 0,
+    "parent": 4,
+    "shrink": true,
+    "shadows": false
+   }
+  },
+  {
+   "what": "header of directory 0x102 in 0x105, shadowing",
+   "hex": "0310000002010030050100a000000000",
+   "decoded": {
+    "seq": 4099,
+    "raw_obj_id": 805306626,
+    "raw_chunk_id": 2684354821,
+    "n_bytes": 0,
+    "is_header": true,
+    "obj_id": 258,
+    "type": 3,
+    "chunk_id": 0,
+    "parent": 261,
+    "shrink": false,
+    "shadows": true
+   }
+  },
+  {
+   "what": "header of hard link 0x103 to 0x101",
+   "hex": "03100000030100400100008001010000",
+   "decoded": {
+    "seq": 4099,
+    "raw_obj_id": 1073742083,
+    "raw_chunk_id": 2147483649,
+    "n_bytes": 257,
+    "is_header": true,
+    "obj_id": 259,
+    "type": 4,
+    "chunk_id": 0,
+    "parent": 1,
+    "shrink": false,
+    "shadows": false
+   }
+  }
+ ],
+ "header": {
+  "offsets": {
+   "type": 0,
+   "parent": 4,
+   "name": 10,
+   "mode": 268,
+   "uid": 272,
+   "gid": 276,
+   "atime": 280,
+   "mtime": 284,
+   "ctime": 288,
+   "size_low": 292,
+   "equiv": 296,
+   "alias": 300,
+   "inband_shadowed": 488,
+   "inband_is_shrink": 492,
+   "size_high": 496,
+   "shadows": 504,
+   "is_shrink": 508,
+   "record_size": 512
+  },
+  "sample_file_header_first_0x200": "0100000001000000ffff612e7478740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffb6810000000000000000000001000000020000000300000010270000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffff00000000ffffffff0000000000000000"
+ },
+ "summary": {
+  "block": 0,
+  "seq": 4097,
+  "chunk_127_tags": "01100000100000000100000004060000",
+  "chunk_127_head": "010000000100000001100000519f0000",
+  "entries_digest": {
+   "len": 1524,
+   "sha256": "aa288e076634c87f19bcbf29309cf9217066212e37f96120a398cb3dda39a2dc"
+  },
+  "byte_sum": 40785
+ }
+}

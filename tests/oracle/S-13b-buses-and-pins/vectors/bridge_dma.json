@@ -1,0 +1,5762 @@
+{
+ "rows": [
+  {
+   "expect": [],
+   "kind": "master_send",
+   "name": "send",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [],
+   "kind": "master_send",
+   "name": "send_quad_rung",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CLK",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 2368914
+    },
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 2368915
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 2368914
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [],
+   "kind": "master_send",
+   "name": "send_one_buffer",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      76
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "dma_core",
+    "dma_desc",
+    "dma_order",
+    "send_end",
+    "send_txctl"
+   ],
+   "kind": "master_send",
+   "name": "send_word_at_a_time",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 29
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 28
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "dma_cfg",
+    "dma_enable_last",
+    "dma_order",
+    "send_end"
+   ],
+   "kind": "master_send",
+   "name": "send_first_unit",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      76
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 1049125
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 29
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 28
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "dma_cfg"
+   ],
+   "kind": "master_send",
+   "name": "send_sync_set",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217125
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "dma_cfg"
+   ],
+   "kind": "master_send",
+   "name": "send_register_mode",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 33
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "send_txctl"
+   ],
+   "kind": "master_send",
+   "name": "send_no_watermark",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 29
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "send_twc"
+   ],
+   "kind": "master_send",
+   "name": "send_twc_short",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 18
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "dma_desc"
+   ],
+   "kind": "master_send",
+   "name": "send_desc_short",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      60
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "dma_enable_last",
+    "dma_order"
+   ],
+   "kind": "master_send",
+   "name": "send_en_first",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "dma_order"
+   ],
+   "kind": "master_send",
+   "name": "send_twc_before_dma",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "dma_order"
+   ],
+   "kind": "master_send",
+   "name": "send_no_stat_clear",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "tf_unmask"
+   ],
+   "kind": "master_send",
+   "name": "send_tf_unmasked_at_start",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "send_end"
+   ],
+   "kind": "master_send",
+   "name": "send_end_on_dma_done",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "send_end"
+   ],
+   "kind": "master_send",
+   "name": "send_end_on_twc_zero",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_TWC",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "send_end"
+   ],
+   "kind": "master_send",
+   "name": "send_en_before_ten",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "send_end"
+   ],
+   "kind": "master_send",
+   "name": "send_select_first",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_ILAT",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 2048
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [
+    "send_end"
+   ],
+   "kind": "master_send",
+   "name": "send_never_ends",
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      12,
+      64
+     ],
+     "ch": 4,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TWC",
+     "val": 19
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_TXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA4_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_IMSK_SET",
+     "val": 2048
+    }
+   ],
+   "words": 19
+  },
+  {
+   "expect": [],
+   "kind": "master_receive",
+   "name": "receive",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "kind": "master_receive",
+   "name": "receive_in_parts",
+   "parts": [
+    4,
+    520
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      4
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "bytes": [
+      520
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 130
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "kind": "master_receive",
+   "name": "receive_parts_en_written_again",
+   "parts": [
+    4,
+    520
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      4
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "bytes": [
+      520
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 130
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_core",
+    "dma_desc",
+    "dma_order",
+    "recv_part",
+    "recv_rxctl"
+   ],
+   "kind": "master_receive",
+   "name": "receive_word_at_a_time",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 13
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI0_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 12
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_cfg"
+   ],
+   "kind": "master_receive",
+   "name": "receive_sync_set",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217127
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_rxctl"
+   ],
+   "kind": "master_receive",
+   "name": "receive_no_count",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_rwc"
+   ],
+   "kind": "master_receive",
+   "name": "receive_rwc_wrong",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_enable_last",
+    "dma_order"
+   ],
+   "kind": "master_receive",
+   "name": "receive_en_first",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_order"
+   ],
+   "kind": "master_receive",
+   "name": "receive_rwc_before_dma",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_part"
+   ],
+   "kind": "master_receive",
+   "name": "receive_en_cleared_between_parts",
+   "parts": [
+    4,
+    520
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      4
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "bytes": [
+      520
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 130
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_part"
+   ],
+   "kind": "master_receive",
+   "name": "receive_miom_between_parts",
+   "parts": [
+    4,
+    520
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      4
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 2368915
+    },
+    {
+     "bytes": [
+      520
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 130
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_part"
+   ],
+   "kind": "master_receive",
+   "name": "receive_ren_left_set",
+   "parts": [
+    4,
+    520
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      4
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      520
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 130
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_desc",
+    "recv_part",
+    "recv_rwc"
+   ],
+   "kind": "master_receive",
+   "name": "receive_one_part_for_two",
+   "parts": [
+    4,
+    520
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_end",
+    "recv_part"
+   ],
+   "kind": "master_receive",
+   "name": "receive_en_before_ren",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_end"
+   ],
+   "kind": "master_receive",
+   "name": "receive_select_first",
+   "parts": [
+    8
+   ],
+   "trace": [
+    {
+     "ev": "select",
+     "on": true,
+     "op": "ev"
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 5,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9619
+    },
+    {
+     "op": "r",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA5_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_RXCTL",
+     "val": 65564
+    },
+    {
+     "ev": "select",
+     "on": false,
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 9618
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "kind": "slave_receive",
+   "name": "request",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "kind": "slave_receive",
+   "name": "request_header_alone",
+   "parts": [
+    12
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "kind": "slave_receive",
+   "name": "request_with_trailer",
+   "parts": [
+    12,
+    72
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      72
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "kind": "slave_receive",
+   "name": "request_en_already_set",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25873
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_core",
+    "dma_desc",
+    "dma_order",
+    "recv_end",
+    "recv_part",
+    "recv_rxctl"
+   ],
+   "kind": "slave_receive",
+   "name": "request_word_at_a_time",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 0
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_desc",
+    "recv_end",
+    "recv_header",
+    "recv_part"
+   ],
+   "kind": "slave_receive",
+   "name": "request_one_part",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      76
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_desc",
+    "recv_header"
+   ],
+   "kind": "slave_receive",
+   "name": "request_header_8",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      68
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_rxctl"
+   ],
+   "kind": "slave_receive",
+   "name": "request_word_count",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RWC",
+     "val": 3
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65565
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_cfg"
+   ],
+   "kind": "slave_receive",
+   "name": "request_sync_set",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217127
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_order",
+    "recv_part"
+   ],
+   "kind": "slave_receive",
+   "name": "request_pa4_before_dma",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_order"
+   ],
+   "kind": "slave_receive",
+   "name": "request_en_mid_setup",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "dma_order"
+   ],
+   "kind": "slave_receive",
+   "name": "request_dma_not_stopped",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_part"
+   ],
+   "kind": "slave_receive",
+   "name": "request_pa4_taken_between_parts",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_part"
+   ],
+   "kind": "slave_receive",
+   "name": "request_en_cleared_between_parts",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_part"
+   ],
+   "kind": "slave_receive",
+   "name": "request_ren_cleared_between_parts",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_end"
+   ],
+   "kind": "slave_receive",
+   "name": "request_en_left_set",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    }
+   ]
+  },
+  {
+   "expect": [
+    "recv_end"
+   ],
+   "kind": "slave_receive",
+   "name": "request_en_before_pa4",
+   "parts": [
+    12,
+    64
+   ],
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_IMSK_CLR",
+     "val": 1024
+    },
+    {
+     "bytes": [
+      12
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65557
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140561
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      64
+     ],
+     "ch": 9,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_CFG",
+     "val": 217123
+    },
+    {
+     "op": "r",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "DMA9_STAT",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 140560
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 65556
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "kind": "slave_reply",
+   "name": "reply_feed",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25872
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      8,
+      8
+     ],
+     "ch": 8,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65821
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25873
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65820
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 0
+    }
+   ],
+   "words": 2
+  },
+  {
+   "expect": [
+    "dma_desc"
+   ],
+   "kind": "slave_reply",
+   "name": "reply_feed_data",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25872
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      8,
+      512,
+      8
+     ],
+     "ch": 8,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65821
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25873
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65820
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 0
+    }
+   ],
+   "words": 2
+  },
+  {
+   "expect": [
+    "dma_core",
+    "dma_desc"
+   ],
+   "kind": "slave_reply",
+   "name": "reply_core_feed",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25872
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65821
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25873
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65820
+    }
+   ],
+   "words": 2
+  },
+  {
+   "expect": [
+    "dma_desc"
+   ],
+   "kind": "slave_reply",
+   "name": "reply_nothing_queued",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25872
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      8
+     ],
+     "ch": 8,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65821
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25873
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65820
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 0
+    }
+   ],
+   "words": 2
+  },
+  {
+   "expect": [
+    "dma_cfg"
+   ],
+   "kind": "slave_reply",
+   "name": "reply_sync_set",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25872
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      8,
+      8
+     ],
+     "ch": 8,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 217125
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65821
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25873
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65820
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 0
+    }
+   ],
+   "words": 2
+  },
+  {
+   "expect": [
+    "dma_core"
+   ],
+   "kind": "slave_reply",
+   "name": "reply_core_tops_up",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25872
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_STAT",
+     "val": 4294967295
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_STAT",
+     "val": 1
+    },
+    {
+     "bytes": [
+      8,
+      8
+     ],
+     "ch": 8,
+     "ev": "desc",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_DSCPTR_CUR",
+     "val": 293601536
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 217121
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TWC",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65821
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_RXCTL",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_CTL",
+     "val": 25873
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "r",
+     "reg": "SPI2_RFIFO",
+     "val": 0
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "SPI2_TXCTL",
+     "val": 65820
+    },
+    {
+     "op": "w",
+     "reg": "DMA8_CFG",
+     "val": 0
+    }
+   ],
+   "words": 2
+  }
+ ]
+}

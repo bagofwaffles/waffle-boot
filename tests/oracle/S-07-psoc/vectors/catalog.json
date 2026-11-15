@@ -1,0 +1,206 @@
+{
+ "table1": [
+  {
+   "id": "0x01",
+   "kind": "request",
+   "payloads": [
+    ""
+   ]
+  },
+  {
+   "id": "0x05",
+   "kind": "plain",
+   "payloads": [
+    "0104"
+   ]
+  },
+  {
+   "id": "0x06",
+   "kind": "plain",
+   "payloads": [
+    "40"
+   ]
+  },
+  {
+   "id": "0x09",
+   "kind": "request",
+   "payloads": [
+    ""
+   ]
+  },
+  {
+   "id": "0x30",
+   "kind": "plain or request",
+   "payloads": [
+    ""
+   ]
+  },
+  {
+   "id": "0x32",
+   "kind": "plain",
+   "payloads": [
+    "10",
+    "14",
+    "16"
+   ]
+  },
+  {
+   "id": "0x33",
+   "kind": "request",
+   "payloads": [
+    ""
+   ]
+  },
+  {
+   "id": "0x34",
+   "kind": "plain",
+   "payloads": [
+    "00.."
+   ]
+  },
+  {
+   "id": "0x36",
+   "kind": "plain or request",
+   "payloads": [
+    ""
+   ]
+  },
+  {
+   "id": "0x40",
+   "kind": "plain",
+   "payloads": [
+    "00......",
+    "01",
+    "02..",
+    "03......"
+   ]
+  },
+  {
+   "id": "0x41",
+   "kind": "request",
+   "payloads": [
+    ""
+   ]
+  },
+  {
+   "id": "0x43",
+   "kind": "plain",
+   "payloads": [
+    "0101"
+   ]
+  },
+  {
+   "id": "0x48",
+   "kind": "plain",
+   "payloads": [
+    "01"
+   ]
+  },
+  {
+   "id": "0x51",
+   "kind": "plain",
+   "payloads": [
+    "000000",
+    "3cff02",
+    "3cff32",
+    "000002"
+   ]
+  },
+  {
+   "id": "0x70",
+   "kind": "plain",
+   "payloads": [
+    "01",
+    "00"
+   ]
+  },
+  {
+   "id": "0x71",
+   "kind": "plain",
+   "payloads": [
+    "03...."
+   ]
+  },
+  {
+   "id": "0x73",
+   "kind": "request",
+   "payloads": [
+    "03.."
+   ]
+  },
+  {
+   "id": "0x97",
+   "kind": "plain",
+   "payloads": [
+    "deadbeef"
+   ]
+  },
+  {
+   "id": "0xee",
+   "kind": "plain",
+   "payloads": [
+    ""
+   ]
+  }
+ ],
+ "table2": [
+  "0x00",
+  "0x05",
+  "0x06",
+  "0x31",
+  "0x32",
+  "0x35",
+  "0x37",
+  "0x42",
+  "0x45",
+  "0x4d"
+ ],
+ "psoc_accepts": [
+  "0x01",
+  "0x02",
+  "0x05",
+  "0x07",
+  "0x09",
+  "0x0b",
+  "0x30",
+  "0x31",
+  "0x32",
+  "0x33",
+  "0x34",
+  "0x36",
+  "0x40",
+  "0x41",
+  "0x43",
+  "0x44",
+  "0x46",
+  "0x48",
+  "0x4a",
+  "0x4c",
+  "0x4e",
+  "0x4f",
+  "0x51",
+  "0x52",
+  "0x53",
+  "0x54",
+  "0x55",
+  "0x57",
+  "0x60",
+  "0x64",
+  "0x65",
+  "0x66",
+  "0x67",
+  "0x6b",
+  "0x70",
+  "0x71",
+  "0x73",
+  "0x80",
+  "0x89",
+  "0x8a",
+  "0x90",
+  "0x91",
+  "0x95",
+  "0x96",
+  "0x97",
+  "0xee"
+ ]
+}

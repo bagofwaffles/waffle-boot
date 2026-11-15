@@ -1,0 +1,381 @@
+{
+ "rows": [
+  {
+   "expect": [],
+   "name": "reply_pre",
+   "setup": {
+    "ctl": 25873,
+    "link": "pre",
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [],
+   "name": "reply_post",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [],
+   "name": "reply_long",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 258,
+    "txctl": 65821,
+    "words": 258
+   }
+  },
+  {
+   "expect": [
+    "reply_no_pad",
+    "reply_txctl"
+   ],
+   "name": "unit_line_stuck",
+   "setup": {
+    "ctl": 25873,
+    "link": "pre",
+    "queued": 0,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 9,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_no_pad",
+    "reply_rx_off",
+    "reply_twc",
+    "reply_txctl"
+   ],
+   "name": "ctl_only",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "queued": 0,
+    "rxctl": 0,
+    "twc": 0,
+    "txctl": 0,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_no_pad"
+   ],
+   "name": "no_pad",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "queued": 0,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_no_pad"
+   ],
+   "name": "pad_long",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "queued": 3,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_twc"
+   ],
+   "name": "pad_counted",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 4,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_txctl"
+   ],
+   "name": "tti_clear",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65817,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_rx_off"
+   ],
+   "name": "rx_off",
+   "setup": {
+    "ctl": 25873,
+    "link": "pre",
+    "queued": 2,
+    "rxctl": 65556,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_ctl",
+    "reply_rx_off"
+   ],
+   "name": "quad_post",
+   "setup": {
+    "ctl": 2123025,
+    "link": "post",
+    "queued": 2,
+    "rxctl": 65556,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_ctl",
+    "reply_no_pad",
+    "reply_txctl"
+   ],
+   "name": "withdrawn_fallback",
+   "setup": {
+    "ctl": 9489,
+    "link": "pre",
+    "queued": 0,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 9,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_ctl",
+    "reply_no_pad",
+    "reply_rx_off",
+    "reply_txctl"
+   ],
+   "name": "withdrawn_fallback_tti",
+   "setup": {
+    "ctl": 2106641,
+    "link": "post",
+    "queued": 0,
+    "rxctl": 0,
+    "twc": 2,
+    "txctl": 13,
+    "words": 2
+   }
+  },
+  {
+   "expect": [],
+   "name": "enable_last",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "stat",
+     "feed",
+     "twc",
+     "txctl",
+     "rxctl",
+     "en"
+    ],
+    "queued": 2,
+    "rxctl": 0,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [],
+   "name": "dma_tf_order",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "stat",
+     "dma",
+     "twc",
+     "txctl",
+     "rxctl",
+     "en",
+     "dma_done",
+     "tf_unmask"
+    ],
+    "queued": 2,
+    "rxctl": 0,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [],
+   "name": "single_enable_last",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "order": [
+     "stat",
+     "feed",
+     "twc",
+     "txctl",
+     "rxctl",
+     "en"
+    ],
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [],
+   "name": "single_enable_first",
+   "setup": {
+    "ctl": 25873,
+    "link": "post",
+    "order": [
+     "en",
+     "stat",
+     "twc",
+     "txctl",
+     "rxctl"
+    ],
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_enable_last"
+   ],
+   "name": "quad_enable_first",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "en",
+     "stat",
+     "twc",
+     "txctl",
+     "rxctl"
+    ],
+    "queued": 2,
+    "rxctl": 0,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_order"
+   ],
+   "name": "quad_twc_before_dma",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "stat",
+     "twc",
+     "dma",
+     "txctl",
+     "rxctl",
+     "en"
+    ],
+    "queued": 2,
+    "rxctl": 0,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_tf_unmask"
+   ],
+   "name": "quad_tf_before_dma_done",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "stat",
+     "dma",
+     "twc",
+     "txctl",
+     "rxctl",
+     "en",
+     "tf_unmask",
+     "dma_done"
+    ],
+    "queued": 2,
+    "rxctl": 0,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  },
+  {
+   "expect": [
+    "reply_rx_quad"
+   ],
+   "name": "quad_rx_on",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "stat",
+     "feed",
+     "twc",
+     "txctl",
+     "rxctl",
+     "en"
+    ],
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
+  }
+ ]
+}

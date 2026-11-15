@@ -1,0 +1,221 @@
+{
+ "mode": [
+  {
+   "reply": "mode:bootloader",
+   "previous_reply": null,
+   "expected": "dfu"
+  },
+  {
+   "reply": "mode:application",
+   "previous_reply": null,
+   "expected": "not"
+  },
+  {
+   "reply": "mode:",
+   "previous_reply": null,
+   "expected": "not"
+  },
+  {
+   "reply": "mode:Bootloader",
+   "previous_reply": null,
+   "expected": "not"
+  },
+  {
+   "reply": "mode:bootloader ",
+   "previous_reply": null,
+   "expected": "not"
+  },
+  {
+   "reply": "mode:bootloader;sw_version:1.0.1;bl_version:1000.0.10;boot_slot:0",
+   "previous_reply": null,
+   "expected": "dfu"
+  },
+  {
+   "reply": "modex:bootloader;mode:application",
+   "previous_reply": null,
+   "expected": "not"
+  },
+  {
+   "reply": "modex:bootloader",
+   "previous_reply": null,
+   "expected": null
+  },
+  {
+   "reply": "mod:bootloader",
+   "previous_reply": null,
+   "expected": null
+  },
+  {
+   "reply": "x:1;mode:bootloader",
+   "previous_reply": null,
+   "expected": "dfu"
+  },
+  {
+   "reply": "mode:application;mode:bootloader",
+   "previous_reply": null,
+   "expected": "not"
+  },
+  {
+   "reply": "sw_version:1.0.1",
+   "previous_reply": null,
+   "expected": null
+  },
+  {
+   "reply": "",
+   "previous_reply": null,
+   "expected": null
+  },
+  {
+   "reply": null,
+   "previous_reply": "mode:application;sw_version:1.0.7;serial:PSOC0001",
+   "expected": null
+  },
+  {
+   "reply": null,
+   "previous_reply": "mode:bootloader",
+   "expected": null
+  }
+ ],
+ "boot_slot": [
+  {
+   "reply": "boot_slot:0",
+   "after_failure": false,
+   "expected": 0
+  },
+  {
+   "reply": "boot_slot:1",
+   "after_failure": false,
+   "expected": 1
+  },
+  {
+   "reply": "boot_slot:2",
+   "after_failure": false,
+   "expected": 2
+  },
+  {
+   "reply": "boot_slot:7",
+   "after_failure": false,
+   "expected": 7
+  },
+  {
+   "reply": "boot_slot:00",
+   "after_failure": false,
+   "expected": 0
+  },
+  {
+   "reply": "boot_slot:01",
+   "after_failure": false,
+   "expected": 1
+  },
+  {
+   "reply": "boot_slot:10",
+   "after_failure": false,
+   "expected": 10
+  },
+  {
+   "reply": "boot_slot:255",
+   "after_failure": false,
+   "expected": 255
+  },
+  {
+   "reply": "boot_slot:",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slot:x",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slot:-1",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slot:+1",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slot: 1",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slot:1 ",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slot:1:2",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slotx:0",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "mode:bootloader;sw_version:1.2.3",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": null,
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "serial:NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN;boot_slot:1",
+   "after_failure": false,
+   "expected": 1
+  },
+  {
+   "reply": "boot_slot:000000000000000000001",
+   "after_failure": false,
+   "expected": 1
+  },
+  {
+   "reply": "boot_slot:4294967296",
+   "after_failure": false,
+   "expected": "other"
+  },
+  {
+   "reply": "boot_slot:4294967297",
+   "after_failure": false,
+   "expected": "other"
+  },
+  {
+   "reply": "boot_slot:999999999999999999999999999999",
+   "after_failure": false,
+   "expected": "other"
+  },
+  {
+   "reply": "boot_slot:- 1",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slot:+-1",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "boot_slot:0x",
+   "after_failure": false,
+   "expected": null
+  },
+  {
+   "reply": "mode:bootloader;sw_version:1.2.3;bl_version:0.4.5;boot_slot:0;serial:NRF00001",
+   "after_failure": true,
+   "expected": 0
+  },
+  {
+   "reply": "boot_slot:1",
+   "after_failure": true,
+   "expected": 1
+  }
+ ]
+}

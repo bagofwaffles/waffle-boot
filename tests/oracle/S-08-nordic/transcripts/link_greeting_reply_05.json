@@ -1,0 +1,41 @@
+{
+ "name": "link_greeting_reply_05",
+ "requirements": [
+  "S-08.002",
+  "S-08.010"
+ ],
+ "procedure": "link_greeting",
+ "state": 0,
+ "peer": {
+  "rules": [
+   {
+    "on": {
+     "id": "0x05"
+    },
+    "send": [
+     {
+      "kind": "reply",
+      "id": "0x05",
+      "payload": "bb02",
+      "delay_ms": 1
+     }
+    ]
+   }
+  ]
+ },
+ "expect": [
+  {
+   "dut": {
+    "id": "0x05",
+    "payload": "0103",
+    "kind": "request"
+   },
+   "count": 1
+  }
+ ],
+ "result": true,
+ "end_ms": [
+  1,
+  3
+ ]
+}

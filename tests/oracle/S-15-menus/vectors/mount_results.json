@@ -1,0 +1,11 @@
+{
+ "cases": [
+  {"cause": "mounted", "result_hex": "00000000", "refused": false, "format_screen": "format"},
+  {"cause": "mounted earlier", "result_hex": "00000000", "refused": false, "format_screen": "format"},
+  {"cause": "big-endian (S-12.052)", "result_hex": "ffffffff", "refused": true, "format_screen": "format_refused"},
+  {"cause": "eMMC refused (S-03.002)", "result_hex": "ffffffff", "refused": true, "format_screen": "format_refused"},
+  {"cause": "eMMC error after retries (S-03.010)", "result_hex": "fffffffb", "refused": true, "format_screen": "format_refused"},
+  {"cause": "other failure", "result_hex": "ffffffed", "refused": true, "format_screen": "format_refused"},
+  {"cause": "other failure", "result_hex": "80000000", "refused": true, "format_screen": "format_refused"}
+ ]
+}

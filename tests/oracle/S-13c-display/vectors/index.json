@@ -1,0 +1,576 @@
+{
+ "bad_boot_prompt_bright_first": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_boot_prompt_dark": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_boot_prompt_last": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_byte_in_reset": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "bus",
+  "requirement": "S-13c.002"
+ },
+ "bad_cmd_after_frame": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "handover",
+  "requirement": "S-13c.020"
+ },
+ "bad_cs_high": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "bus",
+  "requirement": "S-13c.002"
+ },
+ "bad_dispoff_at_poweroff": {
+  "expect": [
+   "held",
+   "poweroff"
+  ],
+  "fails_rule": "poweroff",
+  "requirement": "S-13c.022"
+ },
+ "bad_dispon_early": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "prefill",
+  "requirement": "S-13c.010"
+ },
+ "bad_double_init": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "once",
+  "requirement": "S-13c.013"
+ },
+ "bad_early_logo_dark": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_early_logo_image": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-05.004"
+ },
+ "bad_early_logo_lit_first": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_early_logo_missing": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-05.004, S-13c.019"
+ },
+ "bad_frame_after_poweroff": {
+  "expect": [
+   "held",
+   "poweroff"
+  ],
+  "fails_rule": "poweroff",
+  "requirement": "S-13c.022"
+ },
+ "bad_frame_byte_rate": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "byte_rate",
+  "requirement": "S-13c.018"
+ },
+ "bad_frame_overruns_te": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "te",
+  "requirement": "S-13c.018"
+ },
+ "bad_gamma_no_tables": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "gamma",
+  "requirement": "S-13c.012"
+ },
+ "bad_gamma_short": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "gamma",
+  "requirement": "S-13c.012"
+ },
+ "bad_held_extra_frame": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "held_start",
+  "requirement": "S-13c.019"
+ },
+ "bad_held_no_te": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "te",
+  "requirement": "S-13c.017"
+ },
+ "bad_held_te_frozen": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "te",
+  "requirement": "S-13c.017"
+ },
+ "bad_held_te_miss_long": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "te",
+  "requirement": "S-13c.017"
+ },
+ "bad_held_te_miss_short": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "te",
+  "requirement": "S-13c.017"
+ },
+ "bad_logo_first_dark": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_logo_first_dispon_early": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "prefill",
+  "requirement": "S-13c.010"
+ },
+ "bad_logo_first_frame_after_off": {
+  "expect": [
+   "poweroff"
+  ],
+  "fails_rule": "poweroff",
+  "requirement": "S-13c.022"
+ },
+ "bad_logo_first_lit_before_dispon": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_logo_first_lit_first": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_logo_first_other_frame": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-05.004, S-13c.019"
+ },
+ "bad_logo_first_twice": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "prefill",
+  "requirement": "S-13c.010, S-13c.019"
+ },
+ "bad_logo_first_window": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "prefill",
+  "requirement": "S-13c.010"
+ },
+ "bad_missing_e8": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "registers",
+  "requirement": "S-13c.008"
+ },
+ "bad_msg51_early": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_off_in_start_dispoff": {
+  "expect": [
+   "poweroff"
+  ],
+  "fails_rule": "poweroff",
+  "requirement": "S-13c.022"
+ },
+ "bad_poweroff_msg_in_frame": {
+  "expect": [
+   "held",
+   "poweroff"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_prefill_byte_rate": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "byte_rate",
+  "requirement": "S-13c.003"
+ },
+ "bad_prefill_partial": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "prefill",
+  "requirement": "S-13c.010"
+ },
+ "bad_prompt_then_held_dark": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "msg51",
+  "requirement": "S-13c.019"
+ },
+ "bad_read_with_write": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reads",
+  "requirement": "S-13c.011"
+ },
+ "bad_record": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "record",
+  "requirement": "S-13c.021"
+ },
+ "bad_record_future": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "record",
+  "requirement": "S-13c.021"
+ },
+ "bad_record_stale": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "record",
+  "requirement": "S-13c.021"
+ },
+ "bad_reset_9us": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset",
+  "requirement": "S-13c.005"
+ },
+ "bad_reset_after_init": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset",
+  "requirement": "S-13c.005"
+ },
+ "bad_reset_wait": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset_wait",
+  "requirement": "S-13c.006"
+ },
+ "bad_reset_wait_1us_short": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset_wait",
+  "requirement": "S-13c.006"
+ },
+ "bad_restart_handover": {
+  "expect": [
+   "held",
+   "poweroff"
+  ],
+  "fails_rule": "poweroff",
+  "requirement": "S-05.033, S-13c.022"
+ },
+ "bad_second_reset": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset",
+  "requirement": "S-13c.005"
+ },
+ "bad_set2_before_unlock": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "cscon",
+  "requirement": "S-13c.009"
+ },
+ "bad_short_frame": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "frames",
+  "requirement": "S-13c.016"
+ },
+ "bad_slpout_4ms": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "slpout",
+  "requirement": "S-13c.007"
+ },
+ "bad_strap_handshake": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset_wait",
+  "requirement": "S-13c.004, S-13c.006, S-13c.021"
+ },
+ "bad_two_frames_one_te": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "te",
+  "requirement": "S-13c.017"
+ },
+ "bad_unlocked": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "cscon",
+  "requirement": "S-13c.009"
+ },
+ "bad_vcom": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "registers",
+  "requirement": "S-13c.008"
+ },
+ "bad_window": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "frames",
+  "requirement": "S-13c.014"
+ },
+ "good_boot_handshake": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.004-021"
+ },
+ "good_boot_no_reads": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.010, S-13c.011"
+ },
+ "good_boot_own_reset": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.004"
+ },
+ "good_boot_prompt": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-05.025, S-13c.019"
+ },
+ "good_boot_regreet": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.019"
+ },
+ "good_fail_then_held": {
+  "expect": [
+   "fail"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.013"
+ },
+ "good_held": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.012, S-13c.017"
+ },
+ "good_held_fatal": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.017"
+ },
+ "good_held_poweroff": {
+  "expect": [
+   "held",
+   "poweroff"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.022"
+ },
+ "good_held_te_stops": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.017"
+ },
+ "good_logo_first_boot": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.010, S-13c.019"
+ },
+ "good_logo_first_fail_then_held": {
+  "expect": [
+   "fail"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.010, S-13c.013"
+ },
+ "good_logo_first_held": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.010, S-13c.019"
+ },
+ "good_logo_first_held_poweroff": {
+  "expect": [
+   "held",
+   "poweroff"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.022"
+ },
+ "good_logo_first_off_after_frame": {
+  "expect": [
+   "poweroff"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.010, S-13c.022"
+ },
+ "good_logo_first_prompt": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-05.025, S-13c.019"
+ },
+ "good_logo_first_prompt_then_held": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": null,
+  "requirement": "S-05.025, S-13c.019"
+ },
+ "good_logo_first_regreet": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.019"
+ },
+ "good_off_in_start": {
+  "expect": [
+   "poweroff"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.019, S-13c.022"
+ },
+ "good_poweroff_in_frame": {
+  "expect": [
+   "held",
+   "poweroff"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.019, S-13c.022"
+ },
+ "good_prefill_off_before_frame": {
+  "expect": [
+   "poweroff"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.010, S-13c.022"
+ },
+ "good_prompt_then_held": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": null,
+  "requirement": "S-05.025, S-13c.019"
+ },
+ "good_reset_wait_exact": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.006"
+ },
+ "good_strap_low_handshake": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.004, S-13c.006, S-13c.021"
+ },
+ "good_strap_low_own_reset": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.004, S-13c.005"
+ }
+}

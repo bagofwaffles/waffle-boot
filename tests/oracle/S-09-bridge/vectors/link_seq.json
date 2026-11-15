@@ -1,0 +1,396 @@
+[
+ {
+  "name": "repeat_deferred",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "260102000000000000000000610000000500000020d4e0fc"
+   },
+   {
+    "mode": 1,
+    "outcome": "repeat",
+    "session_hex": "260102000000000000000000610000000500000020d4e0fc"
+   }
+  ]
+ },
+ {
+  "name": "repeat_immediate",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   },
+   {
+    "mode": 1,
+    "outcome": "repeat",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   }
+  ]
+ },
+ {
+  "name": "next_number",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "260102000000000000000000610000000500000020d4e0fc"
+   },
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "2602020000000000000000006200000006000000463dddad"
+   }
+  ]
+ },
+ {
+  "name": "same_number_other_check",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "260102000000000000000000610000000500000020d4e0fc"
+   },
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "26020200000000000000000062000000050000009f1b9ea0"
+   }
+  ]
+ },
+ {
+  "name": "no_number",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "26010200000000000000000061000000000000004bbf25eb"
+   }
+  ]
+ },
+ {
+  "name": "link_numbered",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "1a01040000000000040000006162636403000000a2dba9fc"
+   }
+  ]
+ },
+ {
+  "name": "link_keeps_memory",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   },
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "1a02040000000000040000006162636400000000539a8376"
+   },
+   {
+    "mode": 1,
+    "outcome": "repeat",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   }
+  ]
+ },
+ {
+  "name": "fall_back_keeps_memory",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   },
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "1a000400000000000400000061636364000000000e2b8d70"
+   },
+   {
+    "mode": 0,
+    "note": "an echo, not the recovery echo",
+    "outcome": "dropped",
+    "session_hex": "0a0000000900000000000000"
+   },
+   {
+    "mode": 0,
+    "note": "the recovery echo",
+    "outcome": "new",
+    "session_hex": "0a000000e5903d6b00000000"
+   },
+   {
+    "mode": 0,
+    "note": "0x19 on trial",
+    "outcome": "new",
+    "session_hex": "190000000100000000000000"
+   },
+   {
+    "mode": 1,
+    "note": "0x19 keep",
+    "outcome": "new",
+    "session_hex": "19000000010000000100000000000000ae66d514"
+   },
+   {
+    "mode": 1,
+    "outcome": "repeat",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   }
+  ]
+ },
+ {
+  "name": "poll_between",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "260102000000000000000000610000000500000020d4e0fc"
+   },
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "060000000000000000000000070000004242cece"
+   },
+   {
+    "mode": 1,
+    "outcome": "repeat",
+    "session_hex": "260102000000000000000000610000000500000020d4e0fc"
+   }
+  ]
+ },
+ {
+  "name": "poll_repeat",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "260102000000000000000000610000000500000020d4e0fc"
+   },
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "060000000000000000000000070000004242cece"
+   },
+   {
+    "mode": 1,
+    "outcome": "repeat",
+    "session_hex": "060000000000000000000000070000004242cece"
+   }
+  ]
+ },
+ {
+  "name": "poll_after_request",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "060000000000000000000000070000004242cece"
+   },
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   },
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "060000000000000000000000070000004242cece"
+   }
+  ]
+ },
+ {
+  "name": "poll_with_request_number",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "260102000000000000000000610000000500000020d4e0fc"
+   },
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "060000000000000000000000050000002c794cc7"
+   }
+  ]
+ },
+ {
+  "name": "request_with_poll_number",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "060000000000000000000000070000004242cece"
+   },
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "26010200000000000000000061000000070000004eef62f5"
+   }
+  ]
+ },
+ {
+  "name": "recovering",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   },
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "1a000400000000000400000061636364000000000e2b8d70"
+   },
+   {
+    "mode": 0,
+    "note": "an echo, not the recovery echo",
+    "outcome": "dropped",
+    "session_hex": "0a0000000900000000000000"
+   },
+   {
+    "mode": 0,
+    "note": "the recovery echo",
+    "outcome": "new",
+    "session_hex": "0a000000e5903d6b00000000"
+   },
+   {
+    "mode": 0,
+    "note": "an access after the recovery echo",
+    "outcome": "dropped",
+    "pb2_low": false,
+    "session_hex": "26010200000000000000000061000000"
+   },
+   {
+    "mode": 0,
+    "note": "a keep: no mode asked for",
+    "outcome": "dropped",
+    "pb2_low": false,
+    "session_hex": "190000000100000001000000"
+   },
+   {
+    "mode": 0,
+    "note": "mode 3",
+    "outcome": "dropped",
+    "pb2_low": false,
+    "session_hex": "190000000300000000000000"
+   },
+   {
+    "mode": 0,
+    "note": "the plain mode asked for",
+    "outcome": "new",
+    "session_hex": "190000000000000000000000"
+   },
+   {
+    "mode": 0,
+    "note": "then anything",
+    "outcome": "new",
+    "session_hex": "26010200000000000000000061000000"
+   }
+  ]
+ },
+ {
+  "name": "init_after_fault",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   },
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "1a000400000000000400000061636364000000000e2b8d70"
+   },
+   {
+    "mode": 0,
+    "note": "the init exactly",
+    "outcome": "new",
+    "session_hex": "010000000000000000000000"
+   },
+   {
+    "mode": 0,
+    "note": "start-up's echo (S-09.015)",
+    "outcome": "new",
+    "session_hex": "0a0000007856341200000000"
+   },
+   {
+    "mode": 0,
+    "note": "0x19 on trial",
+    "outcome": "new",
+    "session_hex": "190000000100000000000000"
+   },
+   {
+    "mode": 1,
+    "note": "0x19 keep",
+    "outcome": "new",
+    "session_hex": "19000000010000000100000000000000ae66d514"
+   },
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   }
+  ]
+ },
+ {
+  "name": "init_recovering",
+  "steps": [
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   },
+   {
+    "mode": 1,
+    "outcome": "fault",
+    "session_hex": "1a000400000000000400000061636364000000000e2b8d70"
+   },
+   {
+    "mode": 0,
+    "note": "an echo, not the recovery echo",
+    "outcome": "dropped",
+    "session_hex": "0a0000000900000000000000"
+   },
+   {
+    "mode": 0,
+    "note": "the recovery echo",
+    "outcome": "new",
+    "session_hex": "0a000000e5903d6b00000000"
+   },
+   {
+    "mode": 0,
+    "note": "the init exactly",
+    "outcome": "new",
+    "session_hex": "010000000000000000000000"
+   },
+   {
+    "mode": 0,
+    "note": "start-up's echo (S-09.015)",
+    "outcome": "new",
+    "session_hex": "0a0000007856341200000000"
+   },
+   {
+    "mode": 0,
+    "note": "0x19 on trial",
+    "outcome": "new",
+    "session_hex": "190000000100000000000000"
+   },
+   {
+    "mode": 1,
+    "note": "0x19 keep",
+    "outcome": "new",
+    "session_hex": "19000000010000000100000000000000ae66d514"
+   },
+   {
+    "mode": 1,
+    "outcome": "new",
+    "session_hex": "05010000000000000000000005000000555096bd"
+   }
+  ]
+ }
+]

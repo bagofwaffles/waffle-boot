@@ -1,0 +1,12 @@
+# S-11.080
+state	keys	slave	meta_write_ok	decision	metadata_writes	notice	state_after	steps	nordic_dfu	record_access
+0x0000	not_held	present		os	[]	0	0x0000	0	0	0
+0x0000	held	present		held	[]	0	0x0000	0	0	0
+0xab0d	not_held	present	1	held	"[""state=0""]"	1	0x0000	0	0	0
+0xab0d	not_held	present	0	held	"[""state=0""]"	1	0xab0d	0	0	0
+0xab0d	not_held	absent	1	held	"[""state=0""]"	1	0x0000	0	0	0
+0xab0d	not_held	absent	0	held	"[""state=0""]"	1	0xab0d	0	0	0
+0xab0d	held	present	1	held	"[""state=0""]"	1	0x0000	0	0	0
+0xab0d	held	present	0	held	"[""state=0""]"	1	0xab0d	0	0	0
+0xab0d	held	absent	1	held	"[""state=0""]"	1	0x0000	0	0	0
+0xab0d	held	absent	0	held	"[""state=0""]"	1	0xab0d	0	0	0

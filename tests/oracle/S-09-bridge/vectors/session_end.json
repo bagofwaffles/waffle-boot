@@ -1,0 +1,112 @@
+[
+ {
+  "conforms": true,
+  "dir": "reply",
+  "expect": 12,
+  "fell_again": false,
+  "moved": 12,
+  "name": "reply_complete",
+  "note": "a 12-byte deferred reply sent whole",
+  "rose": true
+ },
+ {
+  "conforms": true,
+  "dir": "reply",
+  "expect": 524,
+  "fell_again": false,
+  "moved": 524,
+  "name": "reply_sector_complete",
+  "note": "a 0x11 reply (12 + 512) sent whole",
+  "rose": true
+ },
+ {
+  "conforms": true,
+  "dir": "request",
+  "expect": 12,
+  "fell_again": false,
+  "moved": 12,
+  "name": "request_complete",
+  "note": "a request header received whole",
+  "rose": true
+ },
+ {
+  "conforms": false,
+  "dir": "reply",
+  "expect": 8,
+  "fell_again": false,
+  "moved": 8,
+  "name": "reply_complete_held",
+  "note": "complete, but the line stays low: the master would find the slave absent (S-09.011)",
+  "rose": false
+ },
+ {
+  "conforms": false,
+  "dir": "reply",
+  "expect": 8,
+  "fell_again": true,
+  "moved": 8,
+  "name": "reply_complete_rearmed",
+  "note": "complete, then ready again before PB15 rose: ready for a session while the master is in one",
+  "rose": true
+ },
+ {
+  "conforms": true,
+  "dir": "reply",
+  "expect": 524,
+  "fell_again": false,
+  "moved": 260,
+  "name": "reply_feed_stall",
+  "note": "the feed stopped part-way; the line stays high and the master is held until its wait runs out",
+  "rose": true
+ },
+ {
+  "conforms": false,
+  "dir": "reply",
+  "expect": 524,
+  "fell_again": true,
+  "moved": 260,
+  "name": "reply_feed_stall_rearmed",
+  "note": "the slave gave up and made itself ready again: the master would clock the rest into a new session",
+  "rose": true
+ },
+ {
+  "conforms": true,
+  "dir": "reply",
+  "expect": 524,
+  "fell_again": false,
+  "moved": 520,
+  "name": "reply_cut_short",
+  "note": "the master ended the session one word early; the slave could still move the next word",
+  "rose": false
+ },
+ {
+  "conforms": true,
+  "dir": "reply",
+  "expect": 8,
+  "fell_again": false,
+  "moved": 0,
+  "name": "reply_none_held",
+  "note": "nothing sent; the line stays high",
+  "rose": true
+ },
+ {
+  "conforms": true,
+  "dir": "request",
+  "expect": 76,
+  "fell_again": false,
+  "moved": 72,
+  "name": "request_rx_short",
+  "note": "a 0x2B write of 0x40 bytes that the master ended one word short; the slave was ready for it",
+  "rose": false
+ },
+ {
+  "conforms": false,
+  "dir": "request",
+  "expect": 76,
+  "fell_again": true,
+  "moved": 72,
+  "name": "request_rx_stall_rearmed",
+  "note": "received one word short, then ready again before PB15 rose",
+  "rose": true
+ }
+]
