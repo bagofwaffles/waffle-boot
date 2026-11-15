@@ -3,9 +3,8 @@
 // The installer's numbers and words: its request types, the fields of its replies, and every
 // sentence the page says about them. install.js imports this file and exports its names again.
 
-// The ferret tool's page, for a unit that has never had developer mode on. The maintainer fills
-// it in; while it is empty the page names the tool without a link.
-export const FERRET_URL = '';
+// The ferret tool's page, for a unit that has never had developer mode on.
+export const FERRET_URL = 'https://bagofwaffles.github.io/ferret/op-xy/';
 
 export const INSTALLER_FILE = 'waffle-install.ldr';
 

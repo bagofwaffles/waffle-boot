@@ -12,7 +12,7 @@ it sends is the installer file, to a unit already on waffle-boot (step 1).
 ## Before you start
 
 - The bootloader on the unit must have a developer menu that writes an OS file to the boot partition the OS
-  is not in. A unit that has never had developer mode on needs it turned on first, with the ferret tool;
+  is not in. A unit that has never had developer mode on needs it turned on first, with the [ferret tool](https://bagofwaffles.github.io/ferret/op-xy/);
   this project does nothing for that step.
 - Your OS stays on the eMMC. The installer is written into the other boot partition, and the installer makes
   your OS active again when it ends.

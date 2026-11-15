@@ -10,7 +10,7 @@ can also send the installer file; nothing else.
 ## Before you start
 
 - The bootloader on the unit needs a developer menu that writes an OS file. A unit that has never had
-  developer mode on needs it turned on first, with the ferret tool.
+  developer mode on needs it turned on first, with the [ferret tool](https://bagofwaffles.github.io/ferret/op-xy/).
 - Your OS stays on the eMMC: the installer goes into the other boot partition, and makes your OS active
   again when it ends.
 - Charge the unit, and keep it on USB.
