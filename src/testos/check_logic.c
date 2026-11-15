@@ -216,8 +216,11 @@ bool tchk_nordic_allowed(const uint8_t *wire, size_t n, unsigned *id)
 	switch (raw[2]) {
 	case 0x05u:		/* S-08.002 */
 		return len == 2u && raw[4] == 0x01u && raw[5] == 0x03u;
-	case 0x06u:		/* S-08.011: the one answer this build gives */
+	case 0x06u:		/* S-08.011's answer in state 0 */
 		return len == 1u && raw[4] == 0x40u;
+	case 0x0Du:		/* S-08.011's other answer in state 0: leave the
+				 * bootloader; every other 0x0D form is held back */
+		return len == 1u && raw[4] == 0x18u;
 	case 0x09u:		/* S-08.020 */
 		return len == 0u;
 	case 0x02u:		/* a ping's answer (S-07.076's shape) */
@@ -902,6 +905,11 @@ static void judge_nordic(const struct tchk_facts *f, struct tchk_table *t)
 	tchk_put_str(d, f->nordic_start_mode == 2u ? "in its bootloader at the suite's start; " :
 			f->nordic_start_mode == 1u ? "in its application at the suite's start; " :
 						     "no answer at the suite's start; ");
+	if (f->nordic_left != 0u) {
+		tchk_put_str(d, "told to leave its bootloader: ");
+		tchk_put_dec(d, f->nordic_left);
+		tchk_put_str(d, "; ");
+	}
 	tchk_put_str(d, "frames held back by the gate: ");
 	tchk_put_dec(d, f->nordic_refused);
 }

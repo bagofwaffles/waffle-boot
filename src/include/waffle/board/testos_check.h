@@ -270,8 +270,17 @@ void tchk_first_stage(int (*read)(void *ctx, uint32_t off, uint8_t *buf, uint32_
  * *id gets the frame's id, 0xFFFF for bytes that are no frame.
  */
 bool tchk_nordic_allowed(const uint8_t *wire, size_t n, unsigned *id);
-/* A metadata state that S-08.011's table answers with 0x06 {40} alone. */
-#define TCHK_NORDIC_STATE 1
+/*
+ * S-08.011's state 0, as held mode has it on a unit in use: a greeting from
+ * the Nordic's bootloader (0xBB) is answered 0x0D {18}, which has it start
+ * its application; every other greeting 0x06 {40}. A boot to the OS answers
+ * no greeting (S-08.001), so a Nordic still in its bootloader at the OS's
+ * entry is left for the OS to end.
+ * SPEC-Q: whether the Nordic's bootloader also starts its application on its
+ * own after a time, and why some starts find it in its application and
+ * others in its bootloader, is not stated.
+ */
+#define TCHK_NORDIC_STATE 0
 
 /* --- The facts the runner collects --- */
 
@@ -356,6 +365,7 @@ struct tchk_facts {
 	/* the mode at the suite's start, before the long reads: 0 no answer,
 	 * 1 its application, 2 its bootloader */
 	uint8_t nordic_start_mode;
+	uint8_t nordic_left;			/* 0x0D {18} sent: "leave the bootloader" */
 	uint8_t nordic_reply[TCHK_INFO_MAX];	/* the raw info reply */
 	uint16_t nordic_reply_len;
 	uint32_t nordic_refused;

@@ -863,6 +863,15 @@ static void test_verdict(void)
 	facts.nordic_start_mode = 2u;
 	judge();
 	CHECK(strncmp(table.r[TCHK_NORDIC].more.s, "in its bootloader at the suite's start; ", 40) == 0);
+	/* told to leave and did: a pass that says so */
+	facts.nordic_left = 1u;
+	facts.nordic_reply_len = (uint16_t)strlen(strcpy((char *)facts.nordic_reply,
+							  "mode:app;sw_version:1.0.1"));
+	judge();
+	CHECK(table.r[TCHK_NORDIC].state == TCHK_PASS);
+	CHECK(strcmp(table.r[TCHK_NORDIC].more.s, "in its bootloader at the suite's start; "
+		     "told to leave its bootloader: 1; frames held back by the gate: 0") == 0);
+	facts.nordic_left = 0u;
 	facts.nordic_start_mode = 0u;
 	judge();
 	CHECK(strncmp(table.r[TCHK_NORDIC].more.s, "no answer at the suite's start; ", 32) == 0);
@@ -1005,14 +1014,17 @@ static void test_nordic_gate(void)
 	CHECK(allowed(0x09, NULL, 0));
 	CHECK(allowed(0x02, hello, 2));
 	CHECK(!allowed(0x0D, &enter, 1));	/* DFU enter */
-	CHECK(!allowed(0x0D, &exit18, 1));	/* DFU exit */
+	CHECK(allowed(0x0D, &exit18, 1));	/* leave the bootloader: state 0's answer */
 	CHECK(!allowed(0x0D, chunk, sizeof chunk));
+	CHECK(!allowed(0x0D, hello, 2));
+	CHECK(!allowed(0x0D, NULL, 0));
 	CHECK(!allowed(0x06, &exit18, 1));
 	CHECK(!allowed(0x05, &ok40, 1));
 	CHECK(!allowed(0x51, &ok40, 1));
 	CHECK(!tchk_nordic_allowed(junk, sizeof junk, &id) && id == 0xFFFFu);
 	CHECK(!tchk_nordic_allowed(junk, 0, &id));
-	/* every greeting is answered 0x06 {40} in this state (S-08.011) */
+	/* S-08.011 in state 0: the bootloader's 0xBB is told to leave, every
+	 * other greeting 0x06 {40}; both answers pass the gate */
 	{
 		static const uint8_t flags[] = { 0x00, 0xAA, 0xBB, 0x01 };
 		unsigned i;
@@ -1021,7 +1033,11 @@ static void test_nordic_gate(void)
 			uint8_t aid = 0, byte = 0;
 
 			CHECK(s08_answer_greeting(TCHK_NORDIC_STATE, &flags[i], 1, &aid, &byte));
-			CHECK(aid == 0x06u && byte == 0x40u);
+			if (flags[i] == 0xBBu)
+				CHECK(aid == 0x0Du && byte == 0x18u);
+			else
+				CHECK(aid == 0x06u && byte == 0x40u);
+			CHECK(allowed(aid, &byte, 1));
 		}
 	}
 }

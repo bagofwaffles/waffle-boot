@@ -47,6 +47,8 @@
 #define PSOC_KEY_STATUS 0x41u		/* S-07.032 */
 #define NORDIC_GREETING 0x05u		/* S-08.002 */
 #define NORDIC_TRIES 200u
+#define NORDIC_LEAVE_US 10000000u	/* its bootloader told to leave: the application by then */
+#define NORDIC_ASK_US 500000u
 
 static struct {
 	struct tchk_facts f;
@@ -88,8 +90,11 @@ static void gate_write(void *ctx, const uint8_t *data, size_t n)
 {
 	unsigned id;
 
-	if (tchk_nordic_allowed(data, n, &id))
+	if (tchk_nordic_allowed(data, n, &id)) {
+		if (id == 0x0Du && ck.f.nordic_left < 0xFFu)
+			ck.f.nordic_left++;
 		nordic_port->write(ctx, data, n);
+	}
 	else
 		ck.f.nordic_refused++;
 }
@@ -718,6 +723,7 @@ static void nordic_mode_at_start(struct opxy_master *m)
 static void t_nordic(struct opxy_master *m)
 {
 	static const uint8_t hello[2] = { 0x01, 0x03 };
+	uint64_t end;
 	unsigned i;
 	long len;
 
@@ -727,6 +733,17 @@ static void t_nordic(struct opxy_master *m)
 		ck.f.nordic_greeting = s06_transact(&m->node, S06_LINK_NORDIC, NORDIC_GREETING,
 						    hello, sizeof hello, 5000u, NULL) == 1;
 	len = s08_info(&m->nordic, ck.f.nordic_reply, sizeof ck.f.nordic_reply);
+	/* still in its bootloader: its greetings are being answered "leave";
+	 * asked again until its application answers, within a bound */
+	end = wb_time_deadline(&m->hw.time, NORDIC_LEAVE_US);
+	while (len >= 0 && s17_reply_in_bootloader(ck.f.nordic_reply, (size_t)len) &&
+	       !wb_time_passed(end)) {
+		const uint64_t next = wb_time_deadline(&m->hw.time, NORDIC_ASK_US);
+
+		while (!wb_time_passed(next))
+			pass(m);
+		len = s08_info(&m->nordic, ck.f.nordic_reply, sizeof ck.f.nordic_reply);
+	}
 	ck.f.nordic_info = len >= 0;
 	ck.f.nordic_reply_len = len > 0 ? (uint16_t)len : 0u;
 	mark(TCHK_NORDIC);
@@ -806,8 +823,9 @@ void opxy_testos_check_start(struct opxy_master *m)
 {
 	ck.f.held_ms = (uint32_t)wb_time_ms(&m->hw.time);
 	version();
-	/* S-08.011 answers every greeting 0x06 {40} in this state; the gate
-	 * holds back anything else, DFU's 0x0D above all */
+	/* S-08.011 in state 0: a bootloader's greeting is told to start the
+	 * application, any other answered 0x06 {40}; the gate holds back every
+	 * other frame, every other 0x0D form above all */
 	nordic_port = m->link[S06_LINK_NORDIC].ops;
 	m->link[S06_LINK_NORDIC].ops = &gate_port;
 	s08_set_state(&m->nordic, TCHK_NORDIC_STATE);
