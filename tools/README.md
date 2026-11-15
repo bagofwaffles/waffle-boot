@@ -37,7 +37,7 @@ Run them from the repository root. The Python tools need only the standard libra
 | `ui_shots.c` | Draws each screen with the bootloader's own code into raw frames | `ui-shots.sh` |
 | `maps.py` | Draws the README's maps of the SPI flash and the eMMC into `docs/maps/`, each for a light and a dark page | by hand, when the layout changes |
 | `ui_shots.py` | Turns the raw frames into PNG files, and into the README's `tour.gif` | `ui-shots.sh` |
-| `wiki-publish.sh` | Copies `wiki/` and its screenshots into the GitHub wiki's repository; pushes only with `--push` | by hand |
+| `wiki-publish.sh` | Copies `wiki/` into the GitHub wiki's repository, its screenshots pointed at `docs/ui/`; pushes only with `--push` | by hand |
 
 ## Running the checks
 
