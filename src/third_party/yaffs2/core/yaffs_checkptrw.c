@@ -10,6 +10,8 @@
  * published by the Free Software Foundation.
  */
 
+/* Modified for waffle-boot: see src/third_party/README.md, "Local changes". */
+
 #include "yaffs_checkptrw.h"
 #include "yaffs_getblockinfo.h"
 #include "yaffs_endian.h"
@@ -87,6 +89,9 @@ static int yaffs2_checkpt_space_ok(struct yaffs_dev *dev)
 static int yaffs_checkpt_erase(struct yaffs_dev *dev)
 {
 	u32 i;
+#ifdef CONFIG_YAFFS_CHECKPT_ERASE_FIRST
+	u32 left = 0;
+#endif
 
 	if (!dev->drv.drv_erase_fn)
 		return 0;
@@ -111,14 +116,25 @@ static int yaffs_checkpt_erase(struct yaffs_dev *dev)
 				dev->n_erased_blocks++;
 				dev->n_free_chunks +=
 				    dev->param.chunks_per_block;
+#ifdef CONFIG_YAFFS_CHECKPT_ERASE_FIRST
+			} else {
+				/* Still a checkpoint: nothing may be written. */
+				left++;
+#else
 			} else {
 				dev->drv.drv_mark_bad_fn(dev, offset_i);
 				bi->block_state = YAFFS_BLOCK_STATE_DEAD;
+#endif
 			}
 		}
 	}
 
+#ifdef CONFIG_YAFFS_CHECKPT_ERASE_FIRST
+	dev->blocks_in_checkpt = left;
+	return left == 0;
+#else
 	dev->blocks_in_checkpt = 0;
+#endif
 
 	return 1;
 }

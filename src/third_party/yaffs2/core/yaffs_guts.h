@@ -12,6 +12,8 @@
  * Note: Only YAFFS headers are LGPL, YAFFS C code is covered by GPL.
  */
 
+/* Modified for waffle-boot: see src/third_party/README.md, "Local changes". */
+
 #ifndef __YAFFS_GUTS_H__
 #define __YAFFS_GUTS_H__
 
@@ -125,6 +127,20 @@
 
 /* Special sequence number for bad block that failed to be marked bad */
 #define YAFFS_SEQUENCE_BAD_BLOCK	0xffff0000
+
+/*
+ * What erased flash reads as. NAND erases to 0xff; define
+ * CONFIG_YAFFS_ERASED_ZERO for media that erases to 0x00 (for example
+ * an eMMC whose erase leaves zeros). A chunk is unused when its tags'
+ * sequence number is the erased word.
+ */
+#ifdef CONFIG_YAFFS_ERASED_ZERO
+#define YAFFS_ERASED_BYTE		0x00
+#define YAFFS_ERASED_WORD		0x00000000
+#else
+#define YAFFS_ERASED_BYTE		0xff
+#define YAFFS_ERASED_WORD		0xffffffff
+#endif
 
 /* Chunk cache is used for short read/write operations.*/
 struct yaffs_cache {
@@ -741,6 +757,9 @@ struct yaffs_dev {
 	unsigned has_pending_prioritised_gc;	/* We think this device might
 						have pending prioritised gcs */
 	unsigned gc_disable;
+#ifdef CONFIG_YAFFS_LAZY_MOUNT_CLEANUP
+	unsigned cleanup_pending;	/* the scan's clean-up is still to do */
+#endif
 	unsigned gc_block_finder;
 	unsigned gc_dirtiest;
 	unsigned gc_pages_in_use;
@@ -901,6 +920,9 @@ struct yaffs_xattr_mod {
 int yaffs_guts_initialise(struct yaffs_dev *dev);
 void yaffs_deinitialise(struct yaffs_dev *dev);
 void yaffs_guts_cleanup(struct yaffs_dev *dev);
+#ifdef CONFIG_YAFFS_LAZY_MOUNT_CLEANUP
+void yaffs_finish_mount_cleanup(struct yaffs_dev *dev);
+#endif
 
 int yaffs_get_n_free_chunks(struct yaffs_dev *dev);
 
@@ -1094,8 +1116,8 @@ void yaffs_oh_atime_load(struct yaffs_obj *obj, struct yaffs_obj_hdr *oh);
 #else
 #define FSIZE_LOW(fsize) ((fsize) & 0xffffffff)
 #define FSIZE_HIGH(fsize)(((fsize) >> 32) & 0xffffffff)
-#define FSIZE_COMBINE(high, low) ((((loff_t) (high)) << 32) | \
-					(((loff_t) (low)) & 0xFFFFFFFF))
+#define FSIZE_COMBINE(high, low) ((loff_t) ((((u64) (high)) << 32) | \
+					(((u64) (low)) & 0xFFFFFFFF)))
 #endif
 
 

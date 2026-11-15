@@ -10,6 +10,8 @@
  * published by the Free Software Foundation.
  */
 
+/* Modified for waffle-boot: see src/third_party/README.md, "Local changes". */
+
 #include "yaffs_packedtags2.h"
 #include "yportenv.h"
 #include "yaffs_trace.h"
@@ -35,7 +37,7 @@
 
 /* Also, the top 4 bits of the object Id are set to the object type. */
 #define EXTRA_OBJECT_TYPE_SHIFT (28)
-#define EXTRA_OBJECT_TYPE_MASK  ((0x0f) << EXTRA_OBJECT_TYPE_SHIFT)
+#define EXTRA_OBJECT_TYPE_MASK  ((0x0fU) << EXTRA_OBJECT_TYPE_SHIFT)
 
 static void yaffs_dump_packed_tags2_tags_only(
 				const struct yaffs_packed_tags2_tags_only *ptt)
@@ -99,7 +101,7 @@ void yaffs_pack_tags2_tags_only(struct yaffs_dev *dev,
 			ptt->chunk_id |= EXTRA_SHADOWS_FLAG;
 
 		ptt->obj_id &= ~EXTRA_OBJECT_TYPE_MASK;
-		ptt->obj_id |= (t->extra_obj_type << EXTRA_OBJECT_TYPE_SHIFT);
+		ptt->obj_id |= ((u32)t->extra_obj_type << EXTRA_OBJECT_TYPE_SHIFT);
 
 		if (t->extra_obj_type == YAFFS_OBJECT_TYPE_HARDLINK)
 			ptt->n_bytes = t->extra_equiv_id;
@@ -134,7 +136,7 @@ void yaffs_unpack_tags2_tags_only(struct yaffs_dev *dev,
 
 	memset(t, 0, sizeof(struct yaffs_ext_tags));
 
-	if (ptt_copy.seq_number == 0xffffffff)
+	if (ptt_copy.seq_number == YAFFS_ERASED_WORD)
 		return;
 
 	yaffs_do_endian_packed_tags2(dev, &ptt_copy);
@@ -176,7 +178,7 @@ void yaffs_unpack_tags2(struct yaffs_dev *dev,
 {
 	enum yaffs_ecc_result ecc_result = YAFFS_ECC_RESULT_NO_ERROR;
 
-	if (pt->t.seq_number != 0xffffffff && tags_ecc) {
+	if (pt->t.seq_number != YAFFS_ERASED_WORD && tags_ecc) {
 		/* Chunk is in use and we need to do ECC */
 
 		struct yaffs_ecc_other ecc;

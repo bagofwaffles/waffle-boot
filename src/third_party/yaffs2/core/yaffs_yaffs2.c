@@ -10,6 +10,8 @@
  * published by the Free Software Foundation.
  */
 
+/* Modified for waffle-boot: see src/third_party/README.md, "Local changes". */
+
 #include "yaffs_guts.h"
 #include "yaffs_trace.h"
 #include "yaffs_yaffs2.h"
@@ -964,6 +966,18 @@ int yaffs_checkpoint_save(struct yaffs_dev *dev)
 	yaffs_verify_free_chunks(dev);
 
 	if (!dev->is_checkpointed) {
+#ifdef CONFIG_YAFFS_LAZY_CHECKPT_ERASE
+		/*
+		 * With no checkpoint to write, leave the old one: a session
+		 * that changed something has invalidated it already.
+		 */
+		if (!yaffs2_checkpt_required(dev))
+			return dev->is_checkpointed;
+#endif
+#ifdef CONFIG_YAFFS_LAZY_MOUNT_CLEANUP
+		/* A checkpoint records the state after the clean-up. */
+		yaffs_finish_mount_cleanup(dev);
+#endif
 		yaffs2_checkpt_invalidate(dev);
 		yaffs2_wr_checkpt_data(dev);
 	}
@@ -1089,21 +1103,25 @@ int yaffs2_handle_hole(struct yaffs_obj *obj, loff_t new_size)
 /* Yaffs2 scanning */
 
 struct yaffs_block_index {
-	int seq;
+	u32 seq;
 	int block;
 };
 
 static int yaffs2_ybicmp(const void *a, const void *b)
 {
-	int aseq = ((struct yaffs_block_index *)a)->seq;
-	int bseq = ((struct yaffs_block_index *)b)->seq;
+	u32 aseq = ((struct yaffs_block_index *)a)->seq;
+	u32 bseq = ((struct yaffs_block_index *)b)->seq;
 	int ablock = ((struct yaffs_block_index *)a)->block;
 	int bblock = ((struct yaffs_block_index *)b)->block;
 
+	/*
+	 * Sequence numbers reach 0xefffff00: compare them unsigned, and
+	 * without a subtraction that could overflow.
+	 */
 	if (aseq == bseq)
-		return ablock - bblock;
+		return (ablock > bblock) - (ablock < bblock);
 
-	return aseq - bseq;
+	return (aseq > bseq) - (aseq < bseq);
 }
 
 static inline int yaffs2_scan_chunk(struct yaffs_dev *dev,
@@ -1371,6 +1389,19 @@ static inline int yaffs2_scan_chunk(struct yaffs_dev *dev,
 			}
 			/* Use existing - destroy this one. */
 			yaffs_chunk_del(dev, chunk, 1, __LINE__);
+		}
+
+		if (in->fake && in->variant_type !=
+		    (oh ? oh->type : tags.extra_obj_type)) {
+			/*
+			 * The root, lost+found, unlinked and deleted objects
+			 * are always directories: retyping one would lose
+			 * the directory the rest of yaffs relies on, so a
+			 * header that gives one of them another type is
+			 * discarded.
+			 */
+			yaffs_chunk_del(dev, chunk, 1, __LINE__);
+			return alloc_failed ? YAFFS_FAIL : YAFFS_OK;
 		}
 
 		if (!in->valid && in->variant_type !=
@@ -1680,12 +1711,14 @@ int yaffs2_scan_backwards(struct yaffs_dev *dev)
 			bi->block_state = YAFFS_BLOCK_STATE_FULL;
 		}
 
+#ifndef CONFIG_YAFFS_LAZY_MOUNT_CLEANUP
 		/* Now let's see if it was dirty */
 		if (bi->pages_in_use == 0 &&
 		    !bi->has_shrink_hdr &&
 		    bi->block_state == YAFFS_BLOCK_STATE_FULL) {
 			yaffs_block_became_dirty(dev, blk);
 		}
+#endif
 	}
 
 	yaffs_skip_rest_of_block(dev);

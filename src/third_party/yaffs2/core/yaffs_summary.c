@@ -10,6 +10,8 @@
  * published by the Free Software Foundation.
  */
 
+/* Modified for waffle-boot: see src/third_party/README.md, "Local changes". */
+
 /* Summaries write the useful part of the tags for the chunks in a block into an
  * an array which is written to the last n chunks of the block.
  * Reading the summaries gives all the tags for the block in one read. Much
@@ -280,6 +282,11 @@ int yaffs_summary_fetch(struct yaffs_dev *dev,
 	struct yaffs_summary_tags *sum_tags;
 	if (chunk_in_block >= 0 && chunk_in_block < dev->chunks_per_summary) {
 		sum_tags = &dev->sum_tags[chunk_in_block];
+		/*
+		 * The summary holds no sequence number: the caller sets it.
+		 * Any value but the erased word makes the tags count as used.
+		 */
+		tags_only.seq_number = ~YAFFS_ERASED_WORD;
 		tags_only.chunk_id = sum_tags->chunk_id;
 		tags_only.n_bytes = sum_tags->n_bytes;
 		tags_only.obj_id = sum_tags->obj_id;

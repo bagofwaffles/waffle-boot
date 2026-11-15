@@ -10,6 +10,8 @@
 
 */
 
+/* Modified for waffle-boot: see src/third_party/README.md, "Local changes". */
+
 #if defined(_WIN32) && (!(defined(_CRT_SECURE_NO_WARNINGS)))
         #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -76,6 +78,46 @@ void fill_zlib_filefunc64_32_def_from_filefunc32(zlib_filefunc64_32_def* p_filef
     p_filefunc64_32->zseek32_file = p_filefunc32->zseek_file;
     p_filefunc64_32->ztell32_file = p_filefunc32->ztell_file;
 }
+
+#ifdef MINIZIP_NO_STDIO
+/* No stdio: opening an archive by name always fails, so that nothing
+   needs fopen(). Open archives with unzOpen2_64() and your own functions. */
+static voidpf ZCALLBACK no_open_file_func(voidpf opaque, const char* filename, int mode) {
+    (void)opaque;
+    (void)filename;
+    (void)mode;
+    return NULL;
+}
+
+static voidpf ZCALLBACK no_open64_file_func(voidpf opaque, const void* filename, int mode) {
+    (void)opaque;
+    (void)filename;
+    (void)mode;
+    return NULL;
+}
+
+void fill_fopen_filefunc(zlib_filefunc_def* pzlib_filefunc_def) {
+    pzlib_filefunc_def->zopen_file = no_open_file_func;
+    pzlib_filefunc_def->zread_file = NULL;
+    pzlib_filefunc_def->zwrite_file = NULL;
+    pzlib_filefunc_def->ztell_file = NULL;
+    pzlib_filefunc_def->zseek_file = NULL;
+    pzlib_filefunc_def->zclose_file = NULL;
+    pzlib_filefunc_def->zerror_file = NULL;
+    pzlib_filefunc_def->opaque = NULL;
+}
+
+void fill_fopen64_filefunc(zlib_filefunc64_def* pzlib_filefunc_def) {
+    pzlib_filefunc_def->zopen64_file = no_open64_file_func;
+    pzlib_filefunc_def->zread_file = NULL;
+    pzlib_filefunc_def->zwrite_file = NULL;
+    pzlib_filefunc_def->ztell64_file = NULL;
+    pzlib_filefunc_def->zseek64_file = NULL;
+    pzlib_filefunc_def->zclose_file = NULL;
+    pzlib_filefunc_def->zerror_file = NULL;
+    pzlib_filefunc_def->opaque = NULL;
+}
+#else
 
 
 
@@ -229,3 +271,4 @@ void fill_fopen64_filefunc(zlib_filefunc64_def* pzlib_filefunc_def) {
     pzlib_filefunc_def->zerror_file = ferror_file_func;
     pzlib_filefunc_def->opaque = NULL;
 }
+#endif /* MINIZIP_NO_STDIO */

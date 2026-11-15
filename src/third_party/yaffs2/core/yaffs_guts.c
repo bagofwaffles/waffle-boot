@@ -10,6 +10,8 @@
  * published by the Free Software Foundation.
  */
 
+/* Modified for waffle-boot: see src/third_party/README.md, "Local changes". */
+
 #include "yportenv.h"
 #include "yaffs_trace.h"
 
@@ -289,7 +291,7 @@ int yaffs_check_ff(u8 *buffer, int n_bytes)
 {
 	/* Horrible, slow implementation */
 	while (n_bytes--) {
-		if (*buffer != 0xff)
+		if (*buffer != YAFFS_ERASED_BYTE)
 			return 0;
 		buffer++;
 	}
@@ -497,6 +499,10 @@ static int yaffs_write_new_chunk(struct yaffs_dev *dev,
 	int chunk;
 
 	yaffs2_checkpt_invalidate(dev);
+#ifdef CONFIG_YAFFS_CHECKPT_ERASE_FIRST
+	if (dev->blocks_in_checkpt > 0)
+		return -1;
+#endif
 
 	do {
 		struct yaffs_block_info *bi = NULL;
@@ -797,6 +803,23 @@ static void yaffs_free_tnode(struct yaffs_dev *dev, struct yaffs_tnode *tn)
 
 static void yaffs_deinit_tnodes_and_objs(struct yaffs_dev *dev)
 {
+	u32 b;
+	struct list_head *i;
+	struct yaffs_obj *obj;
+
+	/*
+	 * The objects go back to the allocator in bulk; the strings that
+	 * symbolic links own would be lost with them.
+	 */
+	for (b = 0; b < YAFFS_NOBJECT_BUCKETS; b++) {
+		list_for_each(i, &dev->obj_bucket[b].list) {
+			obj = list_entry(i, struct yaffs_obj, hash_link);
+			if (obj->variant_type == YAFFS_OBJECT_TYPE_SYMLINK) {
+				kfree(obj->variant.symlink_variant.alias);
+				obj->variant.symlink_variant.alias = NULL;
+			}
+		}
+	}
 	yaffs_deinit_raw_tnodes_and_objs(dev);
 	dev->n_obj = 0;
 	dev->n_tnodes = 0;
@@ -2165,6 +2188,11 @@ void yaffs_block_became_dirty(struct yaffs_dev *dev, int block_no)
 
 	if (!bi->needs_retiring) {
 		yaffs2_checkpt_invalidate(dev);
+#ifdef CONFIG_YAFFS_CHECKPT_ERASE_FIRST
+		/* Left dirty: a later collection erases it. */
+		if (dev->blocks_in_checkpt > 0)
+			return;
+#endif
 		erased_ok = yaffs_erase_block(dev, block_no);
 		if (!erased_ok) {
 			dev->n_erase_failures++;
@@ -2638,6 +2666,14 @@ static int yaffs_check_gc(struct yaffs_dev *dev, int background)
 	int min_erased;
 	int erased_chunks;
 	int checkpt_block_adjust;
+
+#ifdef CONFIG_YAFFS_LAZY_MOUNT_CLEANUP
+	/*
+	 * Every chunk write and every collection comes through here first,
+	 * so the clean-up the mount left is done before any of them.
+	 */
+	yaffs_finish_mount_cleanup(dev);
+#endif
 
 	if (dev->param.gc_control_fn &&
 		(dev->param.gc_control_fn(dev) & 1) == 0)
@@ -4034,7 +4070,13 @@ void yaffs_link_fixup(struct yaffs_dev *dev, struct list_head *hard_list)
 		in = yaffs_find_by_number(dev,
 					hl->variant.hardlink_variant.equiv_id);
 
-		if (in) {
+		/*
+		 * yaffs never links to a hard link, so one named as the
+		 * equivalent object is treated as missing. Chaining onto it
+		 * could splice hl back into hard_list; a link to itself
+		 * would be left pointing at the caller's list head.
+		 */
+		if (in && in->variant_type != YAFFS_OBJECT_TYPE_HARDLINK) {
 			/* Add the hardlink pointers */
 			hl->variant.hardlink_variant.equiv_obj = in;
 			list_add(&hl->hard_links, &in->hard_links);
@@ -4245,7 +4287,12 @@ struct yaffs_obj *yaffs_find_by_name(struct yaffs_obj *directory,
 
 struct yaffs_obj *yaffs_get_equivalent_obj(struct yaffs_obj *obj)
 {
-	if (obj && obj->variant_type == YAFFS_OBJECT_TYPE_HARDLINK) {
+	/*
+	 * A hard link to an object the scan did not find stands for itself:
+	 * the callers do not expect NULL.
+	 */
+	if (obj && obj->variant_type == YAFFS_OBJECT_TYPE_HARDLINK &&
+	    obj->variant.hardlink_variant.equiv_obj) {
 		obj = obj->variant.hardlink_variant.equiv_obj;
 		yaffs_check_obj_details_loaded(obj);
 	}
@@ -4588,11 +4635,48 @@ int yaffs_guts_format_dev(struct yaffs_dev *dev)
  */
 void yaffs_guts_cleanup(struct yaffs_dev *dev)
 {
+#ifdef CONFIG_YAFFS_LAZY_MOUNT_CLEANUP
+	/*
+	 * Leave the deletions and erasures to the first write of the session,
+	 * so that a mount that changes nothing writes and erases nothing.
+	 */
+	dev->cleanup_pending = !dev->read_only;
+#else
 	yaffs_strip_deleted_objs(dev);
+#endif
 	yaffs_fix_hanging_objs(dev);
 	if (dev->param.empty_lost_n_found)
 			yaffs_empty_l_n_f(dev);
 }
+
+#ifdef CONFIG_YAFFS_LAZY_MOUNT_CLEANUP
+/*
+ * The clean-up a scan leaves to the session's first write: erasing the
+ * blocks it found with nothing in use, then deleting the objects in the
+ * unlinked and deleted directories, as the mount would have done. Until
+ * then those objects are beneath no directory a path reaches. A shadowed
+ * object stays deleted on flash meanwhile: only a collection clears the
+ * shadows flag of the header that deletes it, and collections come
+ * after this.
+ */
+void yaffs_finish_mount_cleanup(struct yaffs_dev *dev)
+{
+	u32 b;
+	struct yaffs_block_info *bi;
+
+	if (!dev->cleanup_pending)
+		return;
+	dev->cleanup_pending = 0;
+
+	for (b = dev->internal_start_block; b <= dev->internal_end_block; b++) {
+		bi = yaffs_get_block_info(dev, b);
+		if (bi->block_state == YAFFS_BLOCK_STATE_FULL &&
+		    bi->pages_in_use == 0 && !bi->has_shrink_hdr)
+			yaffs_block_became_dirty(dev, b);
+	}
+	yaffs_strip_deleted_objs(dev);
+}
+#endif
 
 int yaffs_guts_initialise(struct yaffs_dev *dev)
 {
@@ -4801,8 +4885,16 @@ int yaffs_guts_initialise(struct yaffs_dev *dev)
 	yaffs_verify_blocks(dev);
 
 	/* Clean up any aborted checkpoint data */
+#ifndef CONFIG_YAFFS_LAZY_CHECKPT_ERASE
 	if (!dev->is_checkpointed && dev->blocks_in_checkpt > 0)
 		yaffs2_checkpt_invalidate(dev);
+#else
+	/*
+	 * Leave the checkpoint blocks to the first chunk write or block erase
+	 * of the session, which invalidate the checkpoint before they touch
+	 * the flash: a mount that changes nothing then writes nothing.
+	 */
+#endif
 
 	yaffs_trace(YAFFS_TRACE_TRACING,
 	  "yaffs: yaffs_guts_initialise() done.");
