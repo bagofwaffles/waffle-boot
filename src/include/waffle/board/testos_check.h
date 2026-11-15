@@ -353,6 +353,9 @@ struct tchk_facts {
 	uint32_t rtc_us;
 	/* nordic */
 	bool nordic_greeting, nordic_info;
+	/* the mode at the suite's start, before the long reads: 0 no answer,
+	 * 1 its application, 2 its bootloader */
+	uint8_t nordic_start_mode;
 	uint8_t nordic_reply[TCHK_INFO_MAX];	/* the raw info reply */
 	uint16_t nordic_reply_len;
 	uint32_t nordic_refused;

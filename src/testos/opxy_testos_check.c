@@ -33,6 +33,7 @@
 #include "waffle/s10a_usb.h"
 #include "waffle/s13c_panel.h"
 #include "waffle/s15_lines.h"
+#include "waffle/s17_revisions.h"
 #include "waffle/board/installer.h"
 #include "waffle/board/testos_check.h"
 #include "waffle/wire_fat.h"
@@ -326,8 +327,29 @@ static bool read_id(const struct wb_spi *spi, uint8_t id[3])
 	return ok;
 }
 
+/*
+ * The flash as the slot checks read it: each read, then a pass of held
+ * mode's services. A slot read whole is seconds at this rate; the links are
+ * answered between the reads, not held up for all of it (the Nordic's and
+ * the PSoC's messages included).
+ */
+static struct opxy_master *flash_m;
+static const struct s02_flash_ops *flash_inner;
+
+static int flash_served(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
+{
+	const int rc = flash_inner->read(ctx, off, buf, len);
+
+	pass(flash_m);
+	return rc;
+}
+
 static void t_flash(struct opxy_master *m)
 {
+	const struct s02_flash_ops served = {
+		m->flash_ops.ctx, flash_served, m->flash_ops.erase, m->flash_ops.program,
+	};
+	struct s02_env env = m->flash;
 	const struct wb_spi *spi = m->hw.flash.spi;
 	struct s02_selector sel;
 	uint8_t magic[5];
@@ -340,8 +362,11 @@ static void t_flash(struct opxy_master *m)
 	mark(TCHK_FLASH_ID);
 
 	progress(m, TCHK_FLASH_LAYOUT);
+	flash_m = m;
+	flash_inner = &m->flash_ops;
+	env.flash = &served;
 	ck.f.flash_read = m->flash_ops.read(m->flash_ops.ctx, S02_META_OFF, magic, 5u) == 0 &&
-			  s02_read_selector(&m->flash, &sel) == 0;
+			  s02_read_selector(&env, &sel) == 0;
 	if (ck.f.flash_read) {
 		ck.f.meta_magic_ok = wb_get_le32(magic) == S02_META_MAGIC;
 		/* the magic one byte on: reads come back one byte late */
@@ -354,17 +379,17 @@ static void t_flash(struct opxy_master *m)
 			struct s02_record rec;
 
 			pass(m);
-			if (s02_read_record(&m->flash, slot, &rec) == 0) {
+			if (s02_read_record(&env, slot, &rec) == 0) {
 				ck.f.slot_crc[slot] = rec.crc32;
 				ck.f.slot_len[slot] = rec.length;
 				if (s02_record_plausible(&rec))
 					ck.f.flash_bytes += rec.length;
 			}
-			if (s02_check_slot(&m->flash, slot, &ck.f.slot_good[slot]) != 0)
+			if (s02_check_slot(&env, slot, &ck.f.slot_good[slot]) != 0)
 				ck.f.slot_good[slot] = false;
 		}
 		ck.f.flash_us = now_us() - t0;
-		tchk_first_stage(m->flash_ops.read, m->flash_ops.ctx, &ck.f.fs);
+		tchk_first_stage(flash_served, m->flash_ops.ctx, &ck.f.fs);
 	}
 	mark(TCHK_FLASH_LAYOUT);
 }
@@ -679,6 +704,17 @@ static void t_rtc(struct opxy_master *m)
 	ck.f.rtc_us = (uint32_t)(now_us() - t0);
 }
 
+/* The Nordic's mode before anything long runs (S-08.021): whether a
+ * bootloader the nordic test finds was there from the start. */
+static void nordic_mode_at_start(struct opxy_master *m)
+{
+	uint8_t reply[TCHK_INFO_MAX];
+	const long len = s08_info(&m->nordic, reply, sizeof reply);
+
+	if (len >= 0)
+		ck.f.nordic_start_mode = s17_reply_in_bootloader(reply, (size_t)len) ? 2u : 1u;
+}
+
 static void t_nordic(struct opxy_master *m)
 {
 	static const uint8_t hello[2] = { 0x01, 0x03 };
@@ -813,6 +849,7 @@ void opxy_testos_check_service(void *ctx, const struct boot_held *h)
 	(void)h;
 	ck.f.slave = slave_up(m);
 	opxy_display_held_start(m);
+	nordic_mode_at_start(m);
 	/* the OS partition first, as soon as the eMMC answers */
 	t_switch_back(m);
 	t_registers(m);

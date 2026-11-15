@@ -31,7 +31,7 @@ export const STARTING = 0, CHECKING = 1, GUIDED = 2, LOCKED = 3, READY = 4, WRIT
 export const PHASE = {
     0: ['starting', 'Starting the checks'],
     1: ['checking', 'Running the checks'],
-    2: ['guided', 'The key check: press com, then M4, on the unit'],
+    2: ['guided', 'The key check: press com, then M4 (4 under the display), on the unit'],
     3: ['locked', 'A check did not pass: nothing was written'],
     4: ['ready', 'Hold 1 on the unit for 5 s to write the trial'],
     5: ['writing trial', 'Writing the trial'],
@@ -66,7 +66,7 @@ export const LOCK_ADVICE = {
     4: 'The bootloader slots are not in a state the installer writes over.',
     5: "The installer needs the unit's OS in the other boot partition, checked, so that it can " +
         'make it active again. Write the OS from the developer menu, then the installer again.',
-    6: 'Start the installer again and press com, then M4, on the unit.',
+    6: 'Start the installer again and press com, then M4 (4 under the display), on the unit.',
     7: 'Switch off and on and start the installer again. Save check.txt if it happens again.',
 };
 

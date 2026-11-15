@@ -423,7 +423,7 @@ test('keys-ended: the key check ended with 8 locks the install (lock 6)', needPy
     assert.equal(d.lock.code, 6);
     assert.equal(d.verdict.text, 'PASS WITH GAPS');
     assert.equal(d.lines[1], 'Why: the key check (com and M4) was ended with 8.');
-    assert.equal(d.advice[0], 'Start the installer again and press com, then M4, on the unit.');
+    assert.equal(d.advice[0], 'Start the installer again and press com, then M4 (4 under the display), on the unit.');
     assert.deepEqual(d.checks.filter((c) => c.kind === 2).map((c) => [c.id, c.stateText]),
         [['keys', 'not tested']]);
 }));

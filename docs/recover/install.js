@@ -294,7 +294,7 @@ export function describeInstall(s, hello = null, tests = null) {
         break;
     case IW.GUIDED:
         L.push('The key check.');
-        A.push('The key check: press com, then M4, on the unit.');
+        A.push('The key check: press com, then M4 (4 under the display), on the unit.');
         break;
     case IW.LOCKED:
         d.tone = 'bad';

@@ -6,7 +6,7 @@
     "head:Checking the hardware"]},
   {"name": "keys", "phase": 2, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "keys_seen": 0,
    "lines": [
-    "head:Press com, then M4, to go on",
+    "head:Press com, then M4 (4 under the display), to go on",
     "These two presses are the key check.",
     "",
     "step-run:com\twaiting",
@@ -15,7 +15,7 @@
     "item:8 End: the install is then not offered"]},
   {"name": "keys_com_pressed", "phase": 2, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "keys_seen": 1,
    "lines": [
-    "head:Press com, then M4, to go on",
+    "head:Press com, then M4 (4 under the display), to go on",
     "These two presses are the key check.",
     "",
     "step-ok:com\tpressed",

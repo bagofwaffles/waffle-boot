@@ -743,6 +743,7 @@ static void all_good(void)
 	facts.keys = TCHK_G_PASSED;
 	facts.keys_seen = 3u;
 	facts.psoc_start_greeted = true;
+	facts.nordic_start_mode = 1u;
 }
 
 static void judge(void)
@@ -856,6 +857,15 @@ static void test_verdict(void)
 							  "mode:bootloader;bl_version:1000.0.10"));
 	judge();
 	CHECK(table.r[TCHK_NORDIC].state == TCHK_FAIL);
+	CHECK(strcmp(table.r[TCHK_NORDIC].detail.s, "it is in its bootloader (DFU)") == 0);
+	CHECK(strcmp(table.r[TCHK_NORDIC].more.s,
+		     "in its application at the suite's start; frames held back by the gate: 0") == 0);
+	facts.nordic_start_mode = 2u;
+	judge();
+	CHECK(strncmp(table.r[TCHK_NORDIC].more.s, "in its bootloader at the suite's start; ", 40) == 0);
+	facts.nordic_start_mode = 0u;
+	judge();
+	CHECK(strncmp(table.r[TCHK_NORDIC].more.s, "no answer at the suite's start; ", 32) == 0);
 	all_good();
 	facts.jedec[0] = facts.jedec[1] = facts.jedec[2] = 0xFF;
 	judge();

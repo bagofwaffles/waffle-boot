@@ -899,6 +899,9 @@ static void judge_nordic(const struct tchk_facts *f, struct tchk_table *t)
 	else
 		put_version(d, f->nordic_reply, f->nordic_reply_len);
 	d = &t->r[TCHK_NORDIC].more;
+	tchk_put_str(d, f->nordic_start_mode == 2u ? "in its bootloader at the suite's start; " :
+			f->nordic_start_mode == 1u ? "in its application at the suite's start; " :
+						     "no answer at the suite's start; ");
 	tchk_put_str(d, "frames held back by the gate: ");
 	tchk_put_dec(d, f->nordic_refused);
 }

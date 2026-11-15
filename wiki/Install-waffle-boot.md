@@ -20,7 +20,7 @@ can also send the installer file; nothing else.
 1. Write `waffle-install.ldr` from the developer menu, then switch off and on. On a unit already on
    waffle-boot with developer mode on, the recovery page can send the file over the boot menu's USB serial
    port and check it; then press 5 in the developer menu, Write /os.ldr to boot partition.
-2. The checks run, then the key check: press com, then M4. 8 ends it, and the install is not offered.
+2. The checks run, then the key check: press com, then M4 (4 under the display). 8 ends it, and the install is not offered.
    After a trial start it is not asked again. Results are on the screen, on the page, and in `check.txt`
    on the unit's USB disk.
 

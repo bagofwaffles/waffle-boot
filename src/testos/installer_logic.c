@@ -619,7 +619,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		break;
 	case INST_GUIDED:
 		/* the one guided test: reading this shows the panel works */
-		add(&o, S15_ST_HEAD, "Press com, then M4, to go on", NULL);
+		add(&o, S15_ST_HEAD, "Press com, then M4 (4 under the display), to go on", NULL);
 		add(&o, S15_ST_TEXT, "These two presses are the key check.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		add(&o, (s->keys_seen & 1u) ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com",

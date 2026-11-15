@@ -27,8 +27,9 @@ it sends is the installer file, to a unit already on waffle-boot (step 1).
    size and SHA-256; then press 5 in the developer menu, Write /os.ldr to boot partition.
 2. **The checks.** It tests the clocks and DDR, the SPI flash, the PSoC, the second processor and the
    bridge, the eMMC, the display, the clock and the Nordic chip, then asks for one guided step: press com, then
-   M4. That is the key check, and reading the screen shows the panel works. 8 ends it, and the install is
-   then not offered; after a trial start it is not asked again. USB is shown by the page connecting at all.
+   M4 (4 under the display). That is the key check, and reading the screen shows the panel works. 8 ends it,
+   and the install is then not offered; after a trial start it is not asked again. USB is shown by the page
+   connecting at all.
    The results are on the screen, on the page, and in `check.txt` on the unit's USB disk (no serial number
    or key).
 
