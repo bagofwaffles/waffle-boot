@@ -306,6 +306,13 @@ static unsigned running_slot(struct opxy_master *m, bool *established)
 }
 #endif
 
+#if !defined(OPXY_TEST_OS)
+bool opxy_stream_trial(unsigned slot)
+{
+	return stream_image.slot == slot && stream_image.trial;
+}
+#endif
+
 /* The bridge controller's last fault words and its second four, for the
  * link's record. */
 static void bridge_fault(void *ctx, uint32_t out[4])
@@ -335,6 +342,8 @@ static bool slave_start(void *ctx)
 	m->running_slot = (uint8_t)slot;
 	/* S-09.002: the slot's CRC first (S-02.016), over the bytes to be sent. */
 	good = OPXY_TESTOS_OR(((void)slot, false), opxy_stream_checked(m, slot, &stream, &len));
+	/* S-02.095: a trial start's boot menu marks the tried slot's log */
+	m->running_trial = OPXY_TESTOS_OR(false, established && opxy_stream_trial(slot));
 	/* S-13b.020, .021: the boot link on SPI0, SEL3. */
 	(void)wb_spi_init(&m->hw.link_spi, OPXY_SPI_LINK, &opxy_spi_boot_link,
 			  &m->hw.time, OPXY_BOOT_LINK_WORD_US);

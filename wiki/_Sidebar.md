@@ -8,6 +8,7 @@
 - [My Unit Will Not Start](My-Unit-Will-Not-Start)
 - [Factory Reset](Factory-Reset)
 - [Installing Firmware](Installing-Firmware)
+- [Install waffle-boot](Install-waffle-boot)
 - [Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)
 
 **The project**

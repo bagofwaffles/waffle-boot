@@ -20,20 +20,23 @@ Sectors are 4 KiB, pages 256 bytes. An erase sets a sector to `0xFF`; a program 
 | `0x0C000` | 1 sector | The metadata record (`0x34` bytes) | Metadata writes; the restore at a start | An OS install (three times), a failed OS load (once), a set-metadata request in factory mode; a start that finds the mirror and the record different |
 | `0x0D000` | 1 sector | The selector: the slot to start, and `verified` | The first stage; a slot write; recovery's try, switch and keep | After a slot has been read back; once by the first stage at the start after it |
 | `0x0E000`, `0x0F000` | 1 sector each | A slot's record: CRC-32, length, tag | A write of that slot; recovery's try, keep and put back | After the slot's last program |
-| `0x10000` | `0x77000` | Slot 1's image | The package's bootloader step; recovery; the test OS installer | On request only |
-| `0x87000` | 1 sector | Slot 1's start log | The front and the main image; a slot write erases it | One bit at each start, a second when the main image is up |
+| `0x10000` | `0x77000` | Slot 1's image | The package's bootloader step; recovery; the installer | On request only |
+| `0x87000` | 1 sector | Slot 1's start log | The front and the main image; a slot write erases it | One bit at each start, a second when the main image is up; in a trial start, the front's mark and the boot menu's |
 | `0x88000` | `0x76000` | Slot 2's image | As Slot 1 | On request only |
 | `0xFE000` | 1 sector | The boot store: Start in boot menu | The Settings screen | When the setting is changed |
 | `0xFF000` | 1 sector | Slot 2's start log | As Slot 1's | As Slot 1's |
 
 Which writer takes which size: the package's bootloader step takes an image of up to `0x78000` bytes, the
-whole slot (S-02.044); recovery and the test OS installer take at most `0x77000` bytes, which leaves the
+whole slot (S-02.044); recovery and the installer take at most `0x77000` bytes, which leaves the
 slot's last sector to the start log (S-02.084, S-02.095). `wbrecover.py` checks the image against recovery's
 limit. In a slot, an image over `0x77000` bytes covers its slot's start log, which is then
 not used; one over `0x76000` bytes in Slot 2 covers the boot store, which is then off. waffle-boot's own
 build is at most `0x76000` bytes. A write of Slot 2 with such an image leaves the boot store as it is.
 
-A normal start erases nothing. It programs two bits, in the last sector of the slot the selector names.
+A normal start erases nothing. It programs two bits, in the last sector of the slot the selector names. A
+trial start programs two bits too, in the tried slot's last sector: the front's mark, and the main image's
+when its boot menu shows (`0xFD` to `0xFC` to `0xF0`, S-02.095); the installer ([`install.md`](install.md))
+keeps a trial only with both.
 
 ## The rules
 

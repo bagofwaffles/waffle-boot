@@ -399,120 +399,21 @@ class Q11(unittest.TestCase):
             m.symbol_addrs(elf32.Elf(data), ['wb_spi_testos_missing'])
 
 
-class Install(unittest.TestCase):
-    """install status: the old reply and the one with the start log's summary."""
+class Crumbs(unittest.TestCase):
+    """crumbs: check.txt's breadcrumbs line decoded with no unit."""
 
-    def run_install(self, reply):
-        class Mon:
-            def checked(self, payload, timeout=5.0):
-                return reply
+    def test_marks(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            m.install(Mon(), ['status'])
-        return out.getvalue()
+            m.run(None, ['crumbs', '01ff0304'])
+        self.assertIn('crumb  1: opxy_master_main entered', out.getvalue())
+        self.assertIn('crumb  3: bring-up done', out.getvalue())
 
-    def head(self, sel=1):
-        # rc 0, status register, selector {sel, 01}, slot 0 factory, slot 1 committed
-        return bytes([0, 0, sel, 1, 1, 5, 2, 0, 1])
-
-    def summary(self, follows=1, slot=1, state=0, used=0, unfinished=0, last=0):
-        return bytes([follows, slot, state]) + struct.pack('<3H', used, unfinished, last)
-
-    def test_old_reply(self):
-        out = self.run_install(self.head() + bytes([0xFF]) * 64)
-        self.assertIn('breadcrumbs: none', out)
-        self.assertNotIn('start log', out)
-
-    def test_bad_length(self):
-        with self.assertRaises(SystemExit):
-            self.run_install(self.head() + bytes([0xFF]) * 70)
-
-    def test_all_finished(self):
-        out = self.run_install(self.head() + bytes([0xFF]) * 64 + self.summary(used=14))
-        self.assertIn('breadcrumbs: none', out)
-        self.assertIn('start log (slot 2 (index 1)): 14 starts, all finished', out)
-        self.assertIn('newest first: finished, finished', out)
-
-    def test_last_not_finished(self):
-        # the newest two unfinished (10), then finished (00)
-        out = self.run_install(self.head() + bytes([0xFF]) * 64 +
-                               self.summary(used=5, unfinished=2, last=0b1010))
-        self.assertIn('5 starts, the last 2 not finished', out)
-        self.assertIn('newest first: NOT finished, NOT finished, finished, finished, finished', out)
-
-    def test_none_finished_and_empty(self):
-        out = self.run_install(self.head() + bytes([0xFF]) * 64 +
-                               self.summary(used=1, unfinished=1, last=2))
-        self.assertIn('1 start, none finished', out)
-        out = self.run_install(self.head() + bytes([0xFF]) * 64 + self.summary())
-        self.assertIn('no starts yet', out)
-
-    def test_odd_full_unread(self):
-        out = self.run_install(self.head() + bytes([0xFF]) * 64 + self.summary(state=1, used=3))
-        self.assertIn('odd', out)
-        self.assertIn('3 starts', out)
-        out = self.run_install(self.head() + bytes([0xFF]) * 64 +
-                               self.summary(state=2, used=16384))
-        self.assertIn('16384 starts, all finished; FULL', out)
-        out = self.run_install(self.head() + bytes([0xFF]) * 64 + self.summary(state=3))
-        self.assertIn('could not be read', out)
-
-    def test_commit_of_a_crumbs_build_refused(self):
-        reply = bytes([0x40]) + self.head()[1:] + bytes([0xFF]) * 64 + self.summary(used=2)
-
-        class Mon:
-            def checked(self, payload, timeout=5.0):
-                return reply
+    def test_none(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            m.install(Mon(), ['commit', 'yes'])
-        self.assertIn('result 64', out.getvalue())
-        self.assertIn('commit refused: this installer carries a breadcrumb build', out.getvalue())
-        self.assertNotIn('commit refused', self.run_install(self.head() + bytes([0xFF]) * 64))
-
-    def test_trial_entry(self):
-        # slot 1 tried (2) with its entry pending (8), started (0x10), spent (0x20) or none
-        for bits, text in ((8, 'trial pending'), (0x10, 'trial started: ready to commit'),
-                           (0x20, 'trial spent: the old slot started first'),
-                           (0x40, 'odd entry: the trial must be repeated'), (0, 'no trial entry')):
-            reply = bytes([0, 0, 0, 1, 1, 2 | bits, 1, 0, 1]) + bytes([0xFD]) + bytes([0xFF]) * 63
-            out = self.run_install(reply)
-            self.assertIn('slot 2 (index 1): not good, this image with the trial record; ' + text, out)
-            self.assertIn('breadcrumbs: none', out)     # byte 0 is the trial's entry
-        # a committed slot reports no trial entry
-        self.assertIn('slot 2 (index 1): good, this image committed\n',
-                      self.run_install(self.head() + bytes([0xFF]) * 64))
-
-    def test_commit_not_started_refused(self):
-        reply = bytes([0x41, 0, 0, 1, 1, 2 | 8, 1, 0, 1]) + bytes([0xFF]) * 64
-
-        class Mon:
-            def checked(self, payload, timeout=5.0):
-                return reply
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out):
-            m.install(Mon(), ['commit', 'yes'])
-        self.assertIn('result 65', out.getvalue())
-        self.assertIn('commit refused: the new image has not recorded its trial start', out.getvalue())
-        self.assertIn('Restart with no key held', out.getvalue())
-        self.assertIn('both slots hold the same bytes', out.getvalue())
-
-    def test_trial_of_the_running_image_refused(self):
-        reply = bytes([0x42, 0, 0, 1, 1, 0, 1, 0, 1]) + bytes([0xFF]) * 64
-
-        class Mon:
-            def checked(self, payload, timeout=5.0):
-                return reply
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out):
-            m.install(Mon(), ['trial', 'yes'])
-        self.assertIn('result 66', out.getvalue())
-        self.assertIn('trial refused: this installer does not try an image the unit already runs',
-                      out.getvalue())
-
-    def test_not_this_image(self):
-        out = self.run_install(self.head() + bytes([0xFF]) * 64 + bytes([0]) + bytes([0xFF]) * 8)
-        self.assertIn('start log: not read', out)
+            m.run(None, ['crumbs', 'ff' * 63])
+        self.assertIn('breadcrumbs: none', out.getvalue())
 
 
 class Link(unittest.TestCase):

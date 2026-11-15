@@ -68,3 +68,42 @@ void opxy_start_finished(struct opxy_master *m)
 		opxy_flash_writer(&m->hw, false);
 	}
 }
+
+bool opxy_trial_reached_at(const struct s02_env *env, unsigned running, uint32_t *off)
+{
+	struct s02_selector sel;
+	const uint32_t at = FR_LOG_OFF(running);
+	uint32_t i;
+
+	if (running > 1u || s02_read_selector(env, &sel) != S02_OK ||
+	    s02_selected_slot(sel.index) == running)
+		return false;
+	for (i = 0; i < S02_SECTOR_SIZE; i += env->scratch_len) {
+		const uint32_t k = S02_SECTOR_SIZE - i < env->scratch_len ?
+					   S02_SECTOR_SIZE - i : env->scratch_len;
+		uint32_t j;
+
+		if (env->flash->read(env->flash->ctx, at + i, env->scratch, k) != 0)
+			return false;
+		for (j = 0; j < k; j++)
+			if (env->scratch[j] != (i + j == 0u ? OPXY_TRIAL_STARTED_BYTE : 0xFFu))
+				return false;
+	}
+	*off = at;
+	return true;
+}
+
+void opxy_trial_reached(struct opxy_master *m)
+{
+	static const uint8_t reached = OPXY_TRIAL_REACHED_BYTE;
+	uint32_t off;
+
+	if (m->trial_marked || !m->front || !m->running_trial)
+		return;
+	m->trial_marked = true;
+	if (opxy_trial_reached_at(&m->flash, m->running_slot, &off)) {
+		opxy_flash_writer(&m->hw, true);	/* S-13b.017 */
+		(void)m->flash.flash->program(m->flash.flash->ctx, off, &reached, 1u);
+		opxy_flash_writer(&m->hw, false);
+	}
+}

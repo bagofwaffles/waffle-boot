@@ -1,19 +1,19 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The test OS's installer (src/testos/opxy_testos_install.c, docs/test-os.md):
- * its write gate, a trial and a commit against a RAM flash, and every power
- * cut in the trial's selector write and the first stage's writes after it.
- * The source is built here in the `install` variant, its SPI flash calls on
- * the RAM flash below.
+ * The installer's write engine (src/testos/installer_engine.c,
+ * docs/install.md): its write gate, a trial and a commit against a RAM flash,
+ * and every power cut in the trial's selector write and the first stage's
+ * writes after it. The source is built here in the installer variant, its
+ * SPI flash calls on the RAM flash below.
  */
 #define OPXY_TEST_OS 1
-#define OPXY_TESTOS_MONITOR 1
-#define OPXY_TESTOS_INSTALL 1
+#define OPXY_TESTOS_CHECK 1
+#define OPXY_TESTOS_INSTALLER 1
 #define wb_spiflash_read ram_read
 #define wb_spiflash_erase ram_erase
 #define wb_spiflash_program ram_program
 #define wb_spiflash_status ram_status
-#include "../../src/testos/opxy_testos_install.c"
+#include "../../src/testos/installer_engine.c"
 
 #include <stdio.h>
 
@@ -323,6 +323,21 @@ static void front_trial_start(unsigned k)
 	mem[log_byte(k)] = 0xFCu;
 }
 
+/* The main image of that start at its boot menu (opxy_trial_reached()):
+ * 0xFC to 0xF0 where the front marked the start. */
+static void menu_reached(unsigned k)
+{
+	if (mem[log_byte(k)] == OPXY_TRIAL_STARTED_BYTE)
+		mem[log_byte(k)] = OPXY_TRIAL_REACHED_BYTE;
+}
+
+/* A trial start that reached the boot menu. */
+static void trial_start(unsigned k)
+{
+	front_trial_start(k);
+	menu_reached(k);
+}
+
 /* A trial from slot 0 writes slot 1, the record with the wrong crc, byte 0 of
  * slot 1's log 0xFD before the selector, and the selector {0xFF, 0xFF}, and
  * nothing else; after the trial start's mark the commit makes the record
@@ -335,7 +350,7 @@ static void test_trial_and_commit(void)
 
 	setup(0u, true);
 	memset(out, 0xEE, sizeof out);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == S02_OK);
 	CHECK(out[2] == 0xFFu && out[3] == 0xFFu);		/* the selector */
 	CHECK(sel_nlog == 1u && sel_log[0].erase);		/* the erase alone */
@@ -356,10 +371,19 @@ static void test_trial_and_commit(void)
 	mem[S02_SELECTOR_OFF + 1u] = 0x01u;
 	front_trial_start(1u);
 	CHECK(mem[log_byte(1u)] == 0xFCu);
+	/* the front ran, the boot menu not reached: no commit, nothing written */
 	memcpy(before, mem, sizeof mem);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_STATUS, out);
-	CHECK(out[5] == (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_STARTED));
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+	writes = 0;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
+	CHECK(out[0] == OPXY_INSTALL_REFUSED_UNREACHED);
+	CHECK(writes == 0u && memcmp(mem, before, sizeof mem) == 0);
+	menu_reached(1u);
+	CHECK(mem[log_byte(1u)] == 0xF0u);
+	memcpy(before, mem, sizeof mem);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+	CHECK(out[5] == (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_STARTED |
+			 OPXY_INSTALL_SLOT_REACHED));
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 	CHECK(out[0] == S02_OK);
 	CHECK(out[2] == 1u && out[3] == 0x00u);
 	CHECK((out[5] & OPXY_INSTALL_SLOT_COMMITTED) != 0u);
@@ -368,11 +392,12 @@ static void test_trial_and_commit(void)
 	memcpy(raw, mem + s02_record_off(1), sizeof raw);
 	s02_record_decode(raw, &rec);
 	CHECK(rec.crc32 == opxy_install_crc);
-	CHECK(mem[log_byte(1u)] == 0xFCu);	/* the log byte as it was */
+	CHECK(mem[log_byte(1u)] == 0xF0u);	/* the log byte as it was */
 	CHECK(only_allowed_changed(1u));
 }
 
-/* Commit with each trial entry: refused, writing nothing, unless started. */
+/* Commit with each trial entry: refused, writing nothing, unless started and
+ * the boot menu's mark after it. */
 static void test_commit_needs_start(void)
 {
 	static const struct {
@@ -388,15 +413,17 @@ static void test_commit_needs_start(void)
 		{ 0xFEu, OPXY_INSTALL_SLOT_ODD, OPXY_INSTALL_REFUSED_UNSTARTED },
 		{ 0xFBu, OPXY_INSTALL_SLOT_ODD, OPXY_INSTALL_REFUSED_UNSTARTED },
 		{ 0x7Fu, OPXY_INSTALL_SLOT_ODD, OPXY_INSTALL_REFUSED_UNSTARTED },
-		{ 0xFCu, OPXY_INSTALL_SLOT_STARTED, S02_OK },
-		{ 0x00u, OPXY_INSTALL_SLOT_STARTED, S02_OK },
+		{ 0xFCu, OPXY_INSTALL_SLOT_STARTED, OPXY_INSTALL_REFUSED_UNREACHED },
+		{ 0x00u, OPXY_INSTALL_SLOT_STARTED, OPXY_INSTALL_REFUSED_UNREACHED },
+		{ 0xF4u, OPXY_INSTALL_SLOT_STARTED, OPXY_INSTALL_REFUSED_UNREACHED },
+		{ 0xF0u, OPXY_INSTALL_SLOT_STARTED | OPXY_INSTALL_SLOT_REACHED, S02_OK },
 	};
 	uint8_t out[512];
 
 	for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
 		for (unsigned k = 0; k < 2u; k++) {
 			setup(1u - k, true);
-			(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+			(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 			CHECK(out[0] == S02_OK);
 			/* The trial start's selector, {old, 0x01}; the entry as given. */
 			mem[S02_SELECTOR_OFF] = (uint8_t)(1u - k);
@@ -404,10 +431,10 @@ static void test_commit_needs_start(void)
 			mem[log_byte(k)] = cases[i].entry;
 			memcpy(before, mem, sizeof mem);
 			writes = 0;
-			(void)opxy_testos_install(&m, OPXY_INSTALL_STATUS, out);
+			(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
 			CHECK(out[4u + k] == (OPXY_INSTALL_SLOT_TRIAL | cases[i].bits));
 			CHECK(out[4u + (1u - k)] == OPXY_INSTALL_SLOT_GOOD);
-			(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+			(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 			CHECK(out[0] == (uint8_t)cases[i].rc);
 			CHECK(mem[log_byte(k)] == cases[i].entry);
 			if (cases[i].rc == S02_OK) {
@@ -440,7 +467,7 @@ static void test_trial_same_image(void)
 		put32(mem + s02_record_off(s) + 4, opxy_install_len);
 		memcpy(before, mem, sizeof mem);
 		memset(out, 0xEE, sizeof out);
-		(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 		CHECK(out[0] == S02_OK && out[6] == (uint8_t)k && log_pending(k));
 		CHECK(out[4u + s] == (OPXY_INSTALL_SLOT_GOOD | OPXY_INSTALL_SLOT_COMMITTED));
 		CHECK(out[4u + k] == (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_PENDING));
@@ -448,11 +475,12 @@ static void test_trial_same_image(void)
 		/* a commit before the trial start is refused, as for any image */
 		mem[S02_SELECTOR_OFF] = (uint8_t)s;
 		mem[S02_SELECTOR_OFF + 1u] = 0x01u;
-		(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 		CHECK(out[0] == OPXY_INSTALL_REFUSED_UNSTARTED);
 		front_trial_start(k);
 		CHECK(mem[log_byte(k)] == 0xFCu);
-		(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+		menu_reached(k);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 		CHECK(out[0] == S02_OK);
 		CHECK(out[2] == (uint8_t)k && out[3] == 0x00u);
 		CHECK(out[4] == (OPXY_INSTALL_SLOT_GOOD | OPXY_INSTALL_SLOT_COMMITTED));
@@ -478,14 +506,14 @@ static void test_trial_mark_cases(void)
 
 	/* An older front in slot 0 starts, writing nothing to slot 1's log. */
 	setup(0u, true);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	mem[S02_SELECTOR_OFF] = 0x00u;
 	mem[S02_SELECTOR_OFF + 1u] = 0x01u;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 	CHECK(out[0] == OPXY_INSTALL_REFUSED_UNSTARTED);
 	CHECK(out[5] == (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_PENDING));
-	front_trial_start(1u);			/* slot 1's own front, later */
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+	trial_start(1u);			/* slot 1's own front, later */
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 	CHECK(out[0] == S02_OK);
 
 	/* Both slots the same bytes, slot 1 as a trial left it: the trial
@@ -503,7 +531,8 @@ static void test_trial_mark_cases(void)
 	mem[log_byte(1u)] = 0xFDu;
 	front_trial_start(1u);
 	CHECK(mem[log_byte(1u)] == 0xFCu);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+	menu_reached(1u);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 	CHECK(out[0] == S02_OK);
 
 	/* What recovery's trial write leaves (S-02.084): the image in slot 1, the
@@ -515,24 +544,24 @@ static void test_trial_mark_cases(void)
 	put32(mem + s02_record_off(1) + 4, opxy_install_len);
 	put32(mem + s02_record_off(1) + 8, S02_RECORD_TAG);
 	mem[log_byte(1u)] = 0xFDu;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 	CHECK(out[0] == OPXY_INSTALL_REFUSED_UNSTARTED);
-	front_trial_start(1u);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
-	CHECK(out[0] == S02_OK && mem[log_byte(1u)] == 0xFCu);
+	trial_start(1u);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
+	CHECK(out[0] == S02_OK && mem[log_byte(1u)] == 0xF0u);
 
 	/* A front in the old slot spent the entry, 0xFD to 0xF9. */
 	setup(0u, true);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	mem[S02_SELECTOR_OFF] = 0x00u;
 	mem[S02_SELECTOR_OFF + 1u] = 0x01u;
 	mem[log_byte(1u)] = 0xF9u;
 	front_trial_start(1u);			/* not pending: no mark */
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 	CHECK(out[0] == OPXY_INSTALL_REFUSED_UNSTARTED);
 	CHECK(out[5] == (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_SPENT));
 	/* Another trial erases the sector and starts over. */
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == S02_OK && log_pending(1u));
 }
 
@@ -546,7 +575,7 @@ static void test_trial_log_faults(void)
 		for (unsigned f = 1; f <= 2u; f++) {
 			setup(1u - k, true);
 			fail_log = f;
-			(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+			(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 			CHECK(out[0] == (uint8_t)(f == 1u ? S02_ERR_IO : S02_ERR_VERIFY));
 			CHECK(sel_nlog == 0u);
 			CHECK(out[2] == (uint8_t)(1u - k) && out[3] == 0x01u);
@@ -564,7 +593,7 @@ static void test_trial_slot0(void)
 	uint8_t out[512];
 
 	setup(1u, true);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == S02_OK);
 	CHECK(out[2] == 0x00u && out[3] == 0xFEu);
 	CHECK(out[4] == (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_PENDING));
@@ -582,8 +611,9 @@ static void test_trial_slot0(void)
 	mem[S02_SELECTOR_OFF + 1u] = 0x01u;
 	front_trial_start(0u);
 	CHECK(mem[log_byte(0u)] == 0xFCu);
+	menu_reached(0u);
 	memcpy(before, mem, sizeof mem);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 	CHECK(out[0] == S02_OK);
 	CHECK(out[2] == 0x00u && out[3] == 0x00u);
 	CHECK((out[4] & OPXY_INSTALL_SLOT_COMMITTED) != 0u);
@@ -743,7 +773,7 @@ static void test_trial_cuts(void)
 		setup(1u, true);
 		mem[S02_SELECTOR_OFF] = (uint8_t)x;
 		memcpy(before, mem, sizeof mem);
-		(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 		CHECK(out[0] == S02_OK && out[6] == 0u);
 		if (x == 1u) {
 			memcpy(ops, sel_log, sizeof ops);
@@ -763,7 +793,7 @@ static void test_trial_cuts(void)
 
 	/* k = 1: the selector before is {0x00, 0x01}. */
 	setup(0u, true);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == S02_OK && out[6] == 1u);
 	CHECK(!right_crc_seen);
 	memcpy(ops, sel_log, sizeof ops);
@@ -826,7 +856,7 @@ static void test_trial_faults(void)
 		fail_ok = f->ok;
 		memcpy(fail_left, f->left, 2u);
 		fail_read_op = f->read_op;
-		(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 		CHECK(out[0] == (uint8_t)f->rc);
 		CHECK(out[2] == f->sel[0] && out[3] == f->sel[1]);
 		CHECK(mem[S02_SELECTOR_OFF] == f->sel[0] && mem[S02_SELECTOR_OFF + 1u] == f->sel[1]);
@@ -857,7 +887,7 @@ static void test_trial_rescue_faults(void)
 	fail_more = 1u;			/* the erase and the first rescue program */
 	fail_left[0] = 0x03u;
 	fail_left[1] = 0x01u;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == (uint8_t)S02_ERR_IO);
 	CHECK(sel_nlog == 3u && !sel_log[2].erase && sel_log[2].b[0] == 0x00u);
 	CHECK(out[2] == 0x00u && out[3] == 0x01u);
@@ -867,7 +897,7 @@ static void test_trial_rescue_faults(void)
 	fail_more = 2u;			/* both rescue programs too */
 	fail_left[0] = 0x03u;
 	fail_left[1] = 0x01u;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == (uint8_t)S02_ERR_IO);
 	CHECK(sel_nlog == 3u);
 	CHECK(out[2] == 0x03u && out[3] == 0x01u);
@@ -892,7 +922,7 @@ static void test_trial_record_faults(void)
 
 	setup(0u, true);
 	fail_rec = true;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == (uint8_t)S02_ERR_VERIFY);
 	CHECK(sel_nlog == 0u && log_prog_n == 0u);
 	CHECK(out[2] == 0x00u && out[3] == 0x01u);
@@ -959,18 +989,18 @@ static void test_rerun_after_cut(void)
 	fail_op = 1u;
 	fail_left[0] = 0xFFu;
 	fail_left[1] = 0xFFu;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[2] == 0xFFu && out[3] == 0xFFu);
 	writes = 0;
 	sel_nlog = 0;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == (uint8_t)S02_ERR_START && writes == 0u);
 
 	/* After a reset: slot 1 passes, {FF, 01}; the run starts over, k = 0. */
 	first_stage_reset();
 	CHECK(mem[S02_SELECTOR_OFF] == 0xFFu && mem[S02_SELECTOR_OFF + 1u] == 0x01u);
 	sel_nlog = 0;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == S02_OK && out[6] == 0u);
 	CHECK(out[2] == 0x00u && out[3] == 0xFEu && out[4] == (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_PENDING));
 
@@ -980,31 +1010,43 @@ static void test_rerun_after_cut(void)
 	fail_op = 3u;
 	fail_left[0] = 0x7Fu;
 	fail_left[1] = 0xFEu;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	first_stage_reset();
 	CHECK(mem[S02_SELECTOR_OFF] == 0x7Fu && mem[S02_SELECTOR_OFF + 1u] == 0x01u);
 	sel_nlog = 0;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == S02_OK && out[2] == 0x00u && out[3] == 0xFEu);
 
 	/* k = 1, the window: the erase torn to {03, 01}, trusting the trial slot.
 	 * Run again: the selected slot is slot 1, bad, so nothing is written. */
 	setup(0u, true);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	mem[S02_SELECTOR_OFF] = 0x03u;
 	mem[S02_SELECTOR_OFF + 1u] = 0x01u;
 	writes = 0;
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == (uint8_t)S02_ERR_START && writes == 0u);
 }
 
-/* No write when the selected slot is not the way back. */
+/* No write when the selected slot is not the way back, or the carried image
+ * did not pass its check. */
 static void test_refusals(void)
 {
 	uint8_t out[512];
 
+	setup(0u, true);				/* the image not verified */
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, false, out);
+	CHECK(out[0] == OPXY_INSTALL_REFUSED_IMAGE);
+	CHECK(writes == 0u && memcmp(mem, before, sizeof mem) == 0);
+	trial_start(1u);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, false, out);
+	CHECK(out[0] == OPXY_INSTALL_REFUSED_IMAGE);
+	CHECK(writes == 0u);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, false, out);
+	CHECK(out[0] == S02_OK);
+
 	setup(1u, false);				/* the selected slot is bad */
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == (uint8_t)S02_ERR_START);
 	CHECK(writes == 0u);
 	CHECK(memcmp(mem, before, sizeof mem) == 0);
@@ -1012,17 +1054,17 @@ static void test_refusals(void)
 	setup(0u, true);
 	mem[S02_SELECTOR_OFF + 1u] = 0x00u;		/* not verified */
 	memcpy(before, mem, sizeof mem);
-	(void)opxy_testos_install(&m, OPXY_INSTALL_TRIAL, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
 	CHECK(out[0] == (uint8_t)S02_ERR_START);
 	CHECK(writes == 0u);
 
 	setup(0u, true);				/* a commit with no trial */
-	(void)opxy_testos_install(&m, OPXY_INSTALL_COMMIT, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
 	CHECK(out[0] == (uint8_t)S02_ERR_START);
 	CHECK(writes == 0u);
 
 	setup(0u, true);				/* the status form writes nothing */
-	(void)opxy_testos_install(&m, OPXY_INSTALL_STATUS, out);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
 	CHECK(out[0] == S02_OK);
 	CHECK(out[4] == OPXY_INSTALL_SLOT_GOOD);
 	CHECK(writes == 0u);
@@ -1044,5 +1086,5 @@ int main(void)
 	RUN(test_trial_faults);
 	RUN(test_rerun_after_cut);
 	RUN(test_refusals);
-	return check_summary("test_board_testos_install");
+	return check_summary("test_board_installer_engine");
 }

@@ -244,8 +244,8 @@ void opxy_testos_log(struct opxy_master *m)
 	s14_text_str(&t, ".");
 	s14_text_dec(&t, OPXY_BL_VERSION_PATCH);
 	s14_text_str(&t, " (panel " OPXY_TESTOS_PANEL_NAME
-#if defined(OPXY_TESTOS_INSTALL)
-			 "): held mode as an OS image, flash writes only on the installer's request");
+#if defined(OPXY_TESTOS_INSTALLER)
+			 "): held mode as an OS image, flash writes only on a hold of the unit's key");
 #else
 			 "): held mode as an OS image, no flash write");
 #endif
@@ -915,7 +915,7 @@ bool opxy_testos_mem_ok(uint32_t addr, uint32_t len, bool write)
 
 #if defined(OPXY_TESTOS_MONITOR)
 
-enum { MON_PING, MON_READ, MON_WRITE, MON_LOAD, MON_CALL, MON_REPORT, MON_BUS, MON_BEACON, MON_RUN, MON_LAST, MON_INSTALL };
+enum { MON_PING, MON_READ, MON_WRITE, MON_LOAD, MON_CALL, MON_REPORT, MON_BUS, MON_BEACON, MON_RUN, MON_LAST };
 #define MON_MAGIC 0x4D4F4E31u	/* "MON1" */
 /* Where MON_LOAD and MON_CALL may go: the top of the heap, which nothing else
  * reaches (sbrk() grows from the bottom). */
@@ -1067,7 +1067,7 @@ bool opxy_testos_monitor(struct opxy_master *m, const struct s06_frame *f)
 {
 	static uint8_t out[S06_MAX_PAYLOAD];
 	const uint8_t *p = f->payload;
-	size_t n = 1u, i;
+	size_t n = 1u;
 
 	if (f->id != OPXY_TESTOS_MON_ID || f->len < 1u)
 		return false;
@@ -1087,7 +1087,7 @@ bool opxy_testos_monitor(struct opxy_master *m, const struct s06_frame *f)
 		} else if (!opxy_testos_mem_ok(addr, words * 4u, false)) {
 			out[0] = MON_ST_REFUSED;
 		} else {
-			for (i = 0; i < words; i++)
+			for (uint32_t i = 0; i < words; i++)
 				wb_put_le32(out + 1 + 4u * i, wb_mmr_read32(addr + 4u * i));
 			n = 1u + words * 4u;
 		}
@@ -1149,22 +1149,6 @@ bool opxy_testos_monitor(struct opxy_master *m, const struct s06_frame *f)
 		}
 		break;
 	}
-#if defined(OPXY_TESTOS_INSTALL)
-	case MON_INSTALL: {
-		/* form:1 key:4: the installer; the key on every form that writes */
-		const unsigned form = f->len >= 2u ? p[1] : 0xFFu;
-
-		if (form > OPXY_INSTALL_COMMIT) {
-			out[0] = MON_ST_BAD;
-		} else if (form != OPXY_INSTALL_STATUS &&
-			   (f->len < 6u || wb_get_le32(p + 2) != OPXY_INSTALL_MAGIC + form)) {
-			out[0] = MON_ST_REFUSED;
-		} else {
-			n = 1u + opxy_testos_install(m, form, out + 1);
-		}
-		break;
-	}
-#endif
 	case MON_LAST: {
 		/* clear:1: a routine that never returned, from the note; then the
 		 * note's words, or nothing when there is no note */
@@ -1257,6 +1241,18 @@ void opxy_testos_disk_files(struct opxy_master *m)
 		s14_log_str(&m->sv.log, S14_WARNING, S14_TAG("testos"),
 			    "testos.txt could not be written");
 }
+
+#if defined(OPXY_TESTOS_CHECK)
+void opxy_testos_check_kept(const uint32_t **regs, unsigned *n, bool *replied,
+			    uint32_t *te, uint32_t *frame)
+{
+	*regs = regvals;
+	*n = opxy_testos_regs_n < REGS_MAX ? opxy_testos_regs_n : REGS_MAX;
+	*replied = key_replied;
+	*te = te_misses;
+	*frame = frame_timeouts;
+}
+#endif
 
 #else
 

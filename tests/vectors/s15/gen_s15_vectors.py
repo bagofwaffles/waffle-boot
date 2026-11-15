@@ -21,7 +21,7 @@ UI = os.path.join(ROOT, 'tests', 'vectors', 's15', 'ui')
 OUT = 's15_vectors.h'
 
 # The screens' wording and the console's behavior, which this repository owns.
-UI_FILES = ('console.json', 'screens.json', 'upgrade_lines.json', 'os_write.json')
+UI_FILES = ('console.json', 'screens.json', 'upgrade_lines.json', 'os_write.json', 'installer.json')
 
 
 def load(name):
@@ -384,6 +384,27 @@ def os_write(o):
     o.w()
 
 
+def installer(o):
+    v = load('installer.json')
+    o.w('#ifdef S15V_INSTALLER')
+    o.w('/* installer.json: the installer\'s screens, one case per state shown. */')
+    o.w('struct s15v_inst { const char *name; unsigned phase; const char *version; unsigned target, lock, last_rc,'
+        ' os, trial, hold_digit, hold_fill, hold_left_s; const char *const *lines; size_t n; };')
+    items = []
+    for c in v['cases']:
+        ident = o.uid('s15v_inst_lines')
+        o.w(clist(ident, c['lines']))
+        items.append((c, ident))
+    o.w('static const struct s15v_inst s15v_insts[] = {')
+    for c, ident in items:
+        o.w('\t{ %s, %du, %s, %du, %du, %du, %du, %du, %du, %du, %du, %s, %d },' % (
+            cstr(c['name']), c['phase'], cstr(c['version']), c['target'], c['lock'], c['last_rc'], c['os'],
+            c['trial'], c['hold_digit'], c['hold_fill'], c['hold_left_s'], ident, len(c['lines'])))
+    o.w('};')
+    o.w('#endif')
+    o.w()
+
+
 def tokens(o):
     v = load('info_tokens.json')
     o.w('#ifdef S15V_TOKENS')
@@ -485,6 +506,7 @@ def gen():
     settings_file(o)
     gray(o)
     os_write(o)
+    installer(o)
     o.w('#define S15V_N(a) (sizeof(a) / sizeof((a)[0]))')
     o.w()
     o.w('#endif /* S15_VECTORS_H */')

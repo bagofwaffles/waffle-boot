@@ -150,6 +150,9 @@ unsigned opxy_stream_slot(struct opxy_master *m, const struct opxy_stream_src *s
 			  bool *established);
 bool opxy_stream_checked(struct opxy_master *m, unsigned slot, const uint8_t **stream,
 			 uint32_t *len);
+/* Whether the last slot opxy_stream_checked() judged was slot, read under
+ * the trial mark (S-02.016): this start runs a tried slot. */
+bool opxy_stream_trial(unsigned slot);
 
 /* The UART software buffers (S-06's links; S-13b.070, .071). */
 #define OPXY_UART_BUF 0x800u
@@ -186,6 +189,10 @@ struct opxy_master {
 	 * value (S-15.180). */
 	bool running_established;
 	uint8_t running_slot;
+	/* S-02.095: the running slot is established and holds the trial mark,
+	 * and whether the boot menu's mark was made or tried */
+	bool running_trial;
+	bool trial_marked;
 	/* S-02 */
 	struct s02_flash_ops flash_ops;
 	struct s02_env flash;
@@ -238,6 +245,19 @@ bool opxy_front_take(struct fr_handoff *out);
  */
 bool opxy_log_finish_at(const struct fr_handoff *ho, uint32_t *off, uint8_t *value);
 void opxy_start_finished(struct opxy_master *m);
+/*
+ * S-02.095: a trial start that reaches the boot menu says so in the tried
+ * slot's log. Once, at held mode's first service pass, when the running slot
+ * is established and read under the trial mark, the selector names the other
+ * slot, and byte 0 of the running slot's last sector reads 0xFC (the front's
+ * trial start mark) with nothing else written in that sector: one 1-byte
+ * program, 0xFC to OPXY_TRIAL_REACHED_BYTE, entry 1 finished. The installer
+ * keeps a trial only with this mark. A failed program is not repeated.
+ */
+#define OPXY_TRIAL_STARTED_BYTE 0xFCu
+#define OPXY_TRIAL_REACHED_BYTE 0xF0u
+bool opxy_trial_reached_at(const struct s02_env *env, unsigned running, uint32_t *off);
+void opxy_trial_reached(struct opxy_master *m);
 /* The INIT stage's stamps, from the hand-off (BOOT_TIMING=1 reports them). */
 extern uint64_t opxy_init_cycles[3];
 

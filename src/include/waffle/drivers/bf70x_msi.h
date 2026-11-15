@@ -127,6 +127,7 @@ struct wb_msi_desc {
 #define WB_MMC_R1_STATE(r)  (((r) >> 9) & 0xFu)
 #define WB_MMC_STATE_TRAN   4u
 #define WB_MMC_R1_ERRORS    0xFDF90000u	/* bits 31-26, 24, 23-19, 16 */
+#define WB_MMC_R1_OUT_OF_RANGE (1u << 31)	/* ADDRESS_OUT_OF_RANGE */
 
 #define WB_EXT_CSD_FLUSH_CACHE   32u
 #define WB_EXT_CSD_POWER_OFF     34u

@@ -626,7 +626,7 @@ bool opxy_disk_ready(struct opxy_master *m)
 	}
 	/* The test OS (waffle/testos.h) puts flash.bin and testos.txt on
 	 * the fresh volume, before any host sees it. */
-	OPXY_TESTOS(opxy_testos_disk_files(m);)
+	OPXY_TESTOS(OPXY_TESTOS_CHECK_OR(opxy_testos_check_disk(m), opxy_testos_disk_files(m));)
 	wire_fat_unmount(&sv->fat);
 	sv->disk_formatted = true;
 	return true;

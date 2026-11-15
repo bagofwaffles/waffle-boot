@@ -85,12 +85,9 @@
                          each step (use 0x30000: printed as steps)
     table                the slave's bring-up table
     emmc                 start the slave's eMMC bring-up, then the table
-    install status       the `install` image only: the selector and what each slot holds; writes nothing
-    install trial yes    write its slot image to the slot the selector does not name, with a wrong
-                         record, a trial pending in its start log and the selector {00, FE}
-                         (slot index 0) or {FF, FF} (index 1): boots once, then returns by itself
-    install commit yes   after a trial start the new image marked: make that record right, and the
-                         selector {k, 00}
+    crumbs HEX...        decode the breadcrumbs line of an installer's check.txt (a breadcrumb build,
+                         BOOT_CRUMBS=1): its hex bytes, from byte 1 of the tried slot's last sector;
+                         needs no unit
     encode OP HEX        print a frame's wire bytes, for a bench script
     continue-os          restart the unit from the boot menu so that the next start boots the OS
                          (S-10c.076, firmware sub-command 0D 19): the reply 54, then the unit shuts
@@ -120,14 +117,7 @@ ROUTE = 0x21            # S-06.010: the host to the master
 NORDIC_ROUTE = 0x23     # the host to the Nordic: the master forwards it (S-06.050)
 INFO, INFO_REPLY = 0x09, 0x0A   # S-17.021: the coprocessor info exchange
 ID = 0x7D               # OPXY_TESTOS_MON_ID
-PING, READ, WRITE, LOAD, CALL, REPORT, BUS, BEACON, RUN, LAST, INSTALL = range(11)
-INSTALL_MAGIC = 0x494E5354     # OPXY_INSTALL_MAGIC
-INSTALL_FORMS = {'status': 0, 'trial': 1, 'commit': 2}
-INSTALL_REFUSED_CRUMBS = 0x40  # OPXY_INSTALL_REFUSED_CRUMBS
-INSTALL_REFUSED_UNSTARTED = 0x41   # OPXY_INSTALL_REFUSED_UNSTARTED
-INSTALL_REFUSED_SAME = 0x42        # OPXY_INSTALL_REFUSED_SAME
-INSTALL_REPLY_OLD = 9 + 64      # OPXY_INSTALL_CRUMBS, before the start log's summary
-INSTALL_REPLY = INSTALL_REPLY_OLD + 9   # OPXY_INSTALL_REPLY
+PING, READ, WRITE, LOAD, CALL, REPORT, BUS, BEACON, RUN, LAST = range(10)
 RUN_MAGIC = 0x52554E31
 LOAD_TOP = 0x8A000000 - 0x10000  # a place for the stall routine
 STATUS = {0: 'ok', 1: 'refused', 2: 'bad request', 3: 'the slave is not answering'}
@@ -453,7 +443,8 @@ SPACES = {1: 'L1 data A', 2: 'L1 data B', 3: 'L1 scratch', 4: 'L2', 5: 'other', 
 
 
 def show_crumbs(c):
-    """A breadcrumb build's marks, from the unselected slot when it holds this image (src/board/opxy_crumbs.c)."""
+    """A breadcrumb build's marks, from the tried slot's last sector (src/board/opxy_crumbs.c); c[0] is
+    that sector's byte 0, the start log's (S-02.095)."""
     marks = [i for i in range(1, 32) if c[i] == i]
     if all(b == 0xFF for b in c[1:]):           # byte 0 is a trial's entry (S-02.095)
         print('breadcrumbs: none')
@@ -468,89 +459,6 @@ def show_crumbs(c):
     spaces = [SPACES.get(b, '%02x' % b) for b in c[52:64] if b != 0xFF]
     if spaces:
         print('  memory compared, in order: ' + ', '.join(spaces))
-
-
-LOG_STATES = ('ok', 'odd: not used entries and then free ones, so the front writes nothing',
-              'full: no free entry, so the front writes nothing', 'could not be read',
-              'none: the image reaches the slot\'s last sector')
-LOG_ENTRY = {0: 'finished', 2: 'NOT finished', 1: 'odd', 3: 'free'}
-
-
-def show_startlog(s):
-    """The selected slot's start log (S-02.095), as the installer sums it up (waffle/testos.h)."""
-    if not s:
-        return                                  # an older installer: no summary in the reply
-    if s[0] != 1:
-        print('start log: not read, the selected slot does not hold this image')
-        return
-    used, unfinished, last = struct.unpack('<3H', bytes(s[3:9]))
-    where = 'start log (%s)' % slot_name(s[1])
-    if s[2] not in (0, 2):
-        print('%s: %s' % (where, LOG_STATES[s[2]] if s[2] < len(LOG_STATES) else 'state %d' % s[2]))
-        if s[2] != 1:
-            return
-    if used == 0:
-        print('%s: no starts yet' % where)
-        return
-    tail = 'all finished' if unfinished == 0 else \
-        'the last %d not finished' % unfinished if unfinished < used else 'none finished'
-    print('%s: %d start%s, %s%s' % (where, used, '' if used == 1 else 's', tail,
-                                     '; FULL' if s[2] == 2 else ''))
-    newest = [LOG_ENTRY[(last >> (2 * i)) & 3] for i in range(min(used, 8))]
-    print('  newest first: ' + ', '.join(newest))
-
-
-def slot_name(index):
-    """A slot as a person reads it: index 0 is slot 1, index 1 is slot 2."""
-    return 'slot %d (index %d)' % (index + 1, index)
-
-
-def trial_entry(st):
-    """A tried slot's trial entry, byte 0 of its start log (S-02.095), as the installer reports it."""
-    if not st & 2:
-        return ''
-    if st & 8:
-        return '; trial pending: it has not started from its slot yet'
-    if st & 0x10:
-        return '; trial started: ready to commit'
-    if st & 0x20:
-        return '; trial spent: the old slot started first, so the trial must be repeated'
-    if st & 0x40:
-        return '; odd entry: the trial must be repeated'
-    return '; no trial entry, so the trial must be repeated'
-
-
-def install(mon, a):
-    form = INSTALL_FORMS[a[0]]
-    if form and a[1:] != ['yes']:
-        sys.exit('install %s writes the SPI flash: say `install %s yes`' % (a[0], a[0]))
-    r = mon.checked(bytes([INSTALL, form]) + struct.pack('<I', INSTALL_MAGIC + form), 180.0)
-    rc = r[0] - 256 if r[0] > 127 else r[0]
-    print('result %d, status register %02x, selector {%02x, %02x}' % (rc, r[1], r[2], r[3]))
-    if rc == INSTALL_REFUSED_CRUMBS:
-        print('commit refused: this installer carries a breadcrumb build (BOOT_CRUMBS=1), '
-              'which runs only as a trial; nothing was written')
-    if rc == INSTALL_REFUSED_SAME:
-        print('trial refused: this installer does not try an image the unit already runs; nothing was written')
-    if rc == INSTALL_REFUSED_UNSTARTED:
-        print('commit refused: the new image has not recorded its trial start; nothing was written.\n'
-              '  Restart with no key held so that it starts once, then run the installer again.\n'
-              '  A front before version 14 makes no mark when both slots hold the same bytes, and the\n'
-              '  commit then stays refused.')
-    for i in (0, 1):
-        st = r[4 + i]
-        print('%s: %s%s%s%s' % (slot_name(i), 'good' if st & 1 else 'not good',
-                                 ', this image with the trial record' if st & 2 else '',
-                                 ', this image committed' if st & 4 else '', trial_entry(st)))
-    print('mirror (S-02.065): %s' % ('not valid, so no restore', 'same as the record, so no restore',
-                                     'valid and DIFFERENT: waffle-boot would restore it over the record',
-                                     'could not be read')[r[8]])
-    if form:
-        print('target %s, writes refused by the gate %d' % (slot_name(r[6]), r[7]))
-    if len(r) not in (INSTALL_REPLY_OLD, INSTALL_REPLY):
-        raise SystemExit('install: a reply of %d bytes, not %d or %d' % (len(r), INSTALL_REPLY_OLD, INSTALL_REPLY))
-    show_crumbs(r[9:73])
-    show_startlog(r[73:])
 
 
 def show_last(mon, clear=False):
@@ -1083,8 +991,9 @@ def q11(mon, a):
 
 def run(mon, argv):
     c, a = argv[0], argv[1:]
-    if c == 'install':
-        install(mon, a)
+    if c == 'crumbs':
+        # check.txt lists bytes 1 to 63
+        show_crumbs([0xFF] + list(bytes.fromhex(''.join(a))) + [0xFF] * 64)
     elif c == 'log':
         show_log(mon, float(a[0]) if a else 10.0)
     elif c == 'nordic-info':
@@ -2195,7 +2104,7 @@ def main(argv):
     if not args:
         print(__doc__)
         return 2
-    if args[0] == 'encode' or args == ['continue-os', '--sysex']:
+    if args[0] in ('encode', 'crumbs') or args == ['continue-os', '--sysex']:
         return run(None, args)
     return run(Monitor(port or find_port()), args)
 

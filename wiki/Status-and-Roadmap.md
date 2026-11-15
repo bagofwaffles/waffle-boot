@@ -1,4 +1,4 @@
-**Under development. Boots on one unit. No supported install.**
+**Under development. Boots on one unit. The installer is built but not yet run on a unit.**
 
 > Do not flash anything from this project onto an OP-XY. A broken bootloader can leave a unit that only an
 > external SPI flash programmer brings back.

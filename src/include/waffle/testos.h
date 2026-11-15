@@ -34,6 +34,16 @@
 #define OPXY_TESTOS_UNUSED
 #endif
 
+/* The check suite, in the installer's variant (`make installer`,
+ * docs/install.md), on the same terms: nothing in any other build. */
+#if defined(OPXY_TESTOS_CHECK)
+#define OPXY_TESTOS_CHECK_ONLY(x)          x
+#define OPXY_TESTOS_CHECK_OR(check, other) (check)
+#else
+#define OPXY_TESTOS_CHECK_ONLY(x)
+#define OPXY_TESTOS_CHECK_OR(check, other) (other)
+#endif
+
 struct opxy_master;
 struct s09_bus_ops;
 struct s06_frame;
@@ -48,6 +58,8 @@ struct wb_display;
  */
 #if defined(OPXY_TESTOS_MONITOR)
 #define OPXY_TESTOS_PANEL_NAME "smc, monitor"
+#elif defined(OPXY_TESTOS_INSTALLER)
+#define OPXY_TESTOS_PANEL_NAME "smc, installer"
 #elif defined(OPXY_TESTOS_PANEL_GPIO)
 #define OPXY_TESTOS_PANEL_NAME "gpio"
 #else
@@ -305,7 +317,7 @@ void opxy_testos_bus_note(char what, int rc, const uint8_t *d, size_t n);
 
 /*
  * The USB debug monitor (docs/test-os.md, tools/testos_mon.py), in the `mon`
- * and `install` variants alone: S-06 frames of this id on the CDC link, served from held
+ * variant alone: S-06 frames of this id on the CDC link, served from held
  * mode's loop. Registers and our own memory only (opxy_testos_mem_ok()): no
  * write reaches the flash controller or the OTP, and no read reaches memory
  * outside this image, which may hold another bootloader's code.
@@ -319,17 +331,21 @@ void opxy_testos_bus_note(char what, int rc, const uint8_t *d, size_t n);
 /* Whether this address range may be read, or (write) written. */
 bool opxy_testos_mem_ok(uint32_t addr, uint32_t len, bool write);
 /*
- * The installer, in the `install` variant (src/testos/opxy_testos_install.c):
- * out gets OPXY_INSTALL_REPLY bytes, reporting whichever form ran: 9 bytes of
- * state, OPXY_INSTALL_CRUMBS of a breadcrumb build's marks, then the selected
- * slot's start log (S-02.095) summed up, OPXY_INSTALL_LOG bytes:
+ * The installer's write engine (src/testos/installer_engine.c), in the
+ * installer variant: out gets OPXY_INSTALL_REPLY bytes, reporting whichever
+ * form ran: 9 bytes of state, OPXY_INSTALL_CRUMBS of a breadcrumb build's
+ * marks, then the selected slot's start log (S-02.095) summed up,
+ * OPXY_INSTALL_LOG bytes:
  *   [0]    1 when the rest follows: the selected slot holds this image
  *   [1]    the selected slot
  *   [2]    OPXY_INSTALL_LOG_*
  *   [3..4] used entries, u16 little-endian
  *   [5..6] unfinished entries at the end of them, u16
  *   [7..8] the last eight used entries' two bits, the newest lowest, u16
- * Without the log the bytes after [0] are 0xFF.
+ * Without the log the bytes after [0] are 0xFF. The 9 bytes of state: rc,
+ * the flash's status register, the selector's two bytes, each slot's
+ * OPXY_INSTALL_SLOT_* bits, the target slot, the writes the gate refused,
+ * the metadata mirror (OPXY_INSTALL_MIRROR_*).
  */
 enum { OPXY_INSTALL_STATUS, OPXY_INSTALL_TRIAL, OPXY_INSTALL_COMMIT };
 #define OPXY_INSTALL_CRUMBS 64u
@@ -339,11 +355,14 @@ enum { OPXY_INSTALL_STATUS, OPXY_INSTALL_TRIAL, OPXY_INSTALL_COMMIT };
 #define OPXY_INSTALL_REFUSED_UNSTARTED 0x41
 /* rc: no longer given; an older installer refused the selected slot's own image with it */
 #define OPXY_INSTALL_REFUSED_SAME 0x42
+/* rc: refused, the carried image did not pass inst_image_check() */
+#define OPXY_INSTALL_REFUSED_IMAGE 0x43
+/* rc: commit refused, the trial start did not reach the boot menu */
+#define OPXY_INSTALL_REFUSED_UNREACHED 0x44
 #define OPXY_INSTALL_LOG 9u
 #define OPXY_INSTALL_REPLY (9u + OPXY_INSTALL_CRUMBS + OPXY_INSTALL_LOG)
 enum { OPXY_INSTALL_LOG_OK, OPXY_INSTALL_LOG_ODD, OPXY_INSTALL_LOG_FULL,
        OPXY_INSTALL_LOG_UNREAD, OPXY_INSTALL_LOG_NONE };
-#define OPXY_INSTALL_MAGIC 0x494E5354u	/* "INST", with the form added: a write's key */
 #define OPXY_INSTALL_SLOT_GOOD      0x01u	/* S-02.016 */
 #define OPXY_INSTALL_SLOT_TRIAL     0x02u	/* this image, with the trial's record */
 #define OPXY_INSTALL_SLOT_COMMITTED 0x04u	/* this image, with its right record */
@@ -359,9 +378,13 @@ enum { OPXY_INSTALL_LOG_OK, OPXY_INSTALL_LOG_ODD, OPXY_INSTALL_LOG_FULL,
 #define OPXY_INSTALL_SLOT_STARTED   0x10u
 #define OPXY_INSTALL_SLOT_SPENT     0x20u
 #define OPXY_INSTALL_SLOT_ODD       0x40u
+/* With TRIAL: byte 0 of the log reads OPXY_TRIAL_REACHED_BYTE, the trial
+ * start's main image reached the boot menu (waffle/board/opxy_boot.h). */
+#define OPXY_INSTALL_SLOT_REACHED   0x80u
 enum { OPXY_INSTALL_MIRROR_INVALID, OPXY_INSTALL_MIRROR_SAME, OPXY_INSTALL_MIRROR_DIFFERS,
        OPXY_INSTALL_MIRROR_UNREAD };
-size_t opxy_testos_install(struct opxy_master *m, unsigned form, uint8_t *out);
+/* A write form runs only with image_ok (inst_image_check() passed). */
+size_t opxy_installer_write(struct opxy_master *m, unsigned form, bool image_ok, uint8_t *out);
 
 /* The display's DMA as the loading bootloader left it, stopped (S-05.016). */
 void opxy_testos_display_dma_stop(void);
@@ -438,5 +461,22 @@ void opxy_testos_frame_lines(int rc, const struct opxy_testos_frame_time *ft,
 int opxy_testos_flash_erase(void *ctx, uint32_t sector_off);
 int opxy_testos_flash_program(void *ctx, uint32_t off, const uint8_t *buf,
 			      uint32_t len);
+
+/*
+ * The check suite (src/testos/opxy_testos_check.c, waffle/board/testos_check.h),
+ * in the installer variant alone. check_start(): before held mode's entry
+ * steps, the Nordic link's gate and the USB set; check_service(): held
+ * mode's loop in place of the menus; check_disk(): on the RAM disk, just
+ * formatted and still mounted, check.txt in place of testos_disk_files().
+ */
+struct boot_held;
+void opxy_testos_check_start(struct opxy_master *m);
+void opxy_testos_check_service(void *ctx, const struct boot_held *h);
+void opxy_testos_check_disk(struct opxy_master *m);
+/* What src/testos/opxy_testos.c kept for the suite: the registers read at
+ * entry (opxy_testos_regs' order), whether the key status was answered, and
+ * the display waits cut short. */
+void opxy_testos_check_kept(const uint32_t **regs, unsigned *n, bool *key_replied,
+			    uint32_t *te_misses, uint32_t *frame_timeouts);
 
 #endif /* WAFFLE_TESTOS_H */

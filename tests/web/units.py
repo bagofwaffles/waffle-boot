@@ -246,6 +246,9 @@ def make_unit(spec, fd=None):
     """The unit a spec describes; None for a shim that cannot be built here."""
     if spec.get('kind', 'model') == 'shim':
         return ShimUnit(spec, fd) if shim() is not None else None
+    if spec.get('kind') == 'installer':
+        import installer_model
+        return installer_model.InstallerUnit(spec, fd)
     return ModelUnit(spec, fd)
 
 

@@ -9,11 +9,12 @@ code or data from the device's firmware. It is an independent project, not affil
 Teenage Engineering.
 
 > [!WARNING]
-> **Under development. Do not flash it onto your OP-XY.** There is no supported install yet, and a broken
-> bootloader can leave a unit that only an external flash programmer brings back.
+> **Under development. Do not flash it onto your OP-XY.** The installer ([`docs/install.md`](docs/install.md))
+> has not yet been run on a unit, and a broken bootloader can leave a unit that only an external flash
+> programmer brings back.
 
 **Status:** it boots on one unit. Shown there so far: a start from a committed slot through to the OP-XY's
-own OS, writing a slot over USB from recovery, and the test OS installer's trial and commit.
+own OS, writing a slot over USB from recovery, and the trial and commit that the installer reuses.
 [Status and roadmap](https://github.com/bagofwaffles/waffle-boot/wiki/Status-and-Roadmap) covers open work and what is out of scope.
 
 <img src="docs/ui/tour.gif" width="480" alt="waffle-boot's screens on the OP-XY's display: the frame shown while the OS loads, the main menu, Settings, the developer menu, System, Device Info, an install running and the recovery menu">
@@ -82,8 +83,8 @@ How it works:
 
 Working on it:
 
-- [The test OS](docs/test-os.md): the boot menu built as an OS image, its USB monitor, and how waffle-boot
-  gets onto a unit today
+- [Installing waffle-boot](docs/install.md): the installer, its checks, and what it writes
+- [The test OS](docs/test-os.md): the boot menu built as an OS image, and its USB monitor
 - [Developer requests](docs/devhost.md): driving a unit from a computer in developer mode
 - [Tools](tools/README.md): what each tool is for, and how to run the checks
 - [Contributing](CONTRIBUTING.md): the clean-room rule. Outside code contributions are not open yet; bug

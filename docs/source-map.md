@@ -33,7 +33,7 @@ label number; files without a number are shared (the boot flow, drawing, library
 | `src/board/`, `src/include/waffle/board/` | The OP-XY: wiring the logic to the drivers, held mode, the test OS's hooks |
 | `src/drivers/bf70x/`, `src/include/waffle/drivers/` | ADSP-BF70x drivers: start-up, CPLBs, interrupts, timers, clocks and DDR, pins, DMA, SPI and serial flash, UART, eMMC, OTP; the BF703 linker script |
 | `src/front/` | The frozen front ([`front.md`](front.md)) |
-| `src/testos/` | The test OS's board files, linker script, and the SPI driver's test-OS parts, which `spi.c` includes in that build only ([`test-os.md`](test-os.md)) |
+| `src/testos/` | The test OS's board files, linker script, and the SPI driver's test-OS parts, which `spi.c` includes in that build only, and the installer ([`test-os.md`](test-os.md), [`install.md`](install.md)) |
 | `src/glue/`, `src/third_party/` | Our glue, and the vendored picolibc, FatFs, yaffs2, zlib and minizip, BearSSL, micro-ecc, Spleen and TinyUSB ([`README.md`](../src/third_party/README.md)) |
 | `tests/unit/` | Host unit tests, driver tests against a register-access fake, the libraries tested end to end |
 | `tests/conformance/` | The conformance tests: drive the code with the reference models of `tests/oracle/`; `coverage.py` writes an untracked `COVERAGE.md` listing every scenario in `scenarios.tsv` and how it is covered |

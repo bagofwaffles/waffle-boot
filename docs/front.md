@@ -73,8 +73,8 @@ Every cross build also checks (`tools/front_image.py` and the stream tools):
   writes the selector a byte at a time, and refuses to restart while no start would reach a good slot.
 - **A new front only by trial**, with the running slot good. The tried slot gets a record that fails on
   purpose and a pending start-log entry; the first stage starts it once and goes back. Nothing selects it
-  until its front has marked that start, or its own recovery selects it during the trial start. The test OS
-  installer follows the same rules ([`test-os.md`](test-os.md#the-installer)).
+  until its front has marked that start, or its own recovery selects it during the trial start. The
+  installer follows the same rules ([`install.md`](install.md)).
 - **The power switch** works at every point of a start and in recovery. The power-off is held only during an
   in-place write, and after a failed write of the running slot while no start would reach a good slot
   (S-02.084).

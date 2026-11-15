@@ -6,8 +6,11 @@ import {
 	Link, connect, getInfo, describe, checkImage, planWrite, planSelect, planAct, planRestart,
 	runWrite, runSelect, runAct, runRestart,
 } from './core.js';
+import {
+	detect, installerHello, poll, isBusy, readReport, describeInstall, FERRET_URL, BUSY, GONE_TRIAL, GONE_END,
+} from './install.js';
 import { SerialTransport, USB_FILTERS, serialSupported } from './serial.js';
-import { simulated, SimTransport, simImage } from './sim.js';
+import { simulated, simInstaller, SimTransport, simImage, simAct } from './sim.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => {
@@ -115,6 +118,8 @@ function checkBrowser() {
 		step('check', 'done', 'ready');
 		step('menu', 'active');
 		$('connect').disabled = false;
+		$('i-connect').disabled = false;
+		step('iconn', 'active');
 	} else {
 		$('checkhint').textContent = !serial ?
 			'This browser has no Web Serial. Use Chrome or Edge on a computer.' :
@@ -133,7 +138,17 @@ async function doConnect() {
 		state.transport = t;
 		state.link = new Link(logged(t));
 		log('Port open. Asking the unit...');
-		const { hello, info } = await connect(state.link);
+		const found = await detect(state.link);
+		if (found.kind === 'installer') {
+			const link = state.link;
+			state.transport = state.link = null;
+			$('connect').disabled = false;
+			log('The installer answers, not recovery: showing the Install tab.', 'warn');
+			tab('install');
+			await installerFound(t, link, found.hello);
+			return;
+		}
+		const { hello, info } = found;
 		log('Recovery answers: front version ' + hello.front_version + '.', 'ok');
 		$('disconnect').hidden = false;
 		$('refresh').hidden = false;
@@ -535,6 +550,364 @@ async function advancedRun(cmd, title) {
 	await carryOut(plan, state.aimage, ADV_UI(), title);
 }
 
+// ---- the Install tab: the installer image ----
+// The installer only reports over USB. This page polls its state, shows the checks and the
+// phase, and says what to do on the unit; it never asks for a write.
+
+const POLL_MS = 500, RETRY_MS = 1500;
+const inst = {
+	transport: null, link: null, hello: null, tests: {}, desc: null,
+	timer: null, queue: Promise.resolve(), waiting: false, quietSince: 0,
+};
+// each STATE waits this long; a request with no answer while the port stays is the unit busy
+const POLL_REQ = { timeout: 2000, retries: 1 };
+
+// One request at a time on the link: polls and the report read take turns.
+function serial(fn) {
+	const run = inst.queue.then(fn, fn);
+	inst.queue = run.catch(() => {});
+	return run;
+}
+
+async function openTransport(pick) {
+	if (simulated())
+		return SimTransport.open();
+	if (pick)
+		return SerialTransport.request(USB_FILTERS);
+	// after a restart: a port this page was already allowed, if the browser lists it again
+	for (const port of await navigator.serial.getPorts()) {
+		const i = port.getInfo();
+		if (USB_FILTERS.some((f) => f.usbVendorId === i.usbVendorId && f.usbProductId === i.usbProductId)) {
+			const t = new SerialTransport(port);
+			try {
+				await t.open();
+				return t;
+			} catch (e) {
+				await t.close();
+			}
+		}
+	}
+	return null;
+}
+
+async function instConnect() {
+	$('i-connect').disabled = true;
+	stopWaiting();
+	let t = null;
+	try {
+		t = await openTransport(true);
+		const link = new Link(logged(t));
+		log('Port open. Asking the unit...');
+		const found = await detect(link);
+		if (found.kind === 'recovery') {
+			log('Recovery answers, not the installer.', 'warn');
+			$('i-connhint').textContent = 'That is the recovery menu, not the installer. Switch the unit off and ' +
+				'on with no key held so that it starts the installer, then connect again. The recovery menu is ' +
+				'on the Guided tab.';
+			step('iconn', 'fail', 'recovery menu');
+			await t.close().catch(() => {});
+			$('i-connect').disabled = false;
+			return;
+		}
+		await installerFound(t, link, found.hello);
+	} catch (e) {
+		if (t)
+			await t.close().catch(() => {});
+		if (e && e.name === 'NotFoundError') {
+			log('No port was chosen.', 'warn');
+		} else {
+			log('Could not connect: ' + (e && e.message ? e.message : e), 'err');
+			$('i-connhint').textContent = 'No answer from the installer on that port. Check that the unit shows ' +
+				'the installer, then connect again.';
+			step('iconn', 'fail', 'no answer');
+		}
+		$('i-connect').disabled = false;
+	}
+}
+
+async function installerFound(t, link, hello) {
+	t.onLost = instLost;
+	inst.transport = t;
+	inst.link = link;
+	if (!inst.hello || inst.hello.crc !== hello.crc)
+		inst.tests = {};
+	inst.hello = hello;
+	inst.waiting = false;
+	log('The installer answers: it carries v' + hello.version.slice(0, 3).join('.') + '.', 'ok');
+	$('i-connect').disabled = true;
+	$('i-disconnect').hidden = false;
+	$('i-report').hidden = false;
+	$('i-connhint').textContent = 'Connected to the installer. Leave this page open: it follows the unit.';
+	step('iconn', 'done', 'connected');
+	step('iwrite', 'done', '');
+	pollSoon(0);
+}
+
+function pollSoon(ms) {
+	clearTimeout(inst.timer);
+	inst.timer = setTimeout(pollNow, ms);
+}
+
+async function pollNow() {
+	if (!inst.link)
+		return;
+	const link = inst.link;
+	try {
+		const { state: s, changed } = await serial(() => poll(link, inst.hello, inst.tests, POLL_REQ));
+		if (link !== inst.link)
+			return;
+		inst.quietSince = 0;
+		$('i-busy').hidden = true;
+		for (const k of changed) {
+			const t = inst.tests[k];
+			log(t.name + ': ' + ['not run', 'pass', 'FAIL', 'not tested', 'not passed'][t.state] +
+				(t.detail ? ', ' + t.detail : ''), t.state === 2 ? 'err' : t.state === 1 ? 'ok' : '');
+		}
+		const before = inst.desc ? inst.desc.phase.name : null;
+		inst.desc = describeInstall(s, inst.hello, inst.tests);
+		if (inst.desc.phase.name !== before)
+			log('Installer: ' + inst.desc.phase.text + '.', inst.desc.tone === 'bad' ? 'err' : '');
+		renderInstall();
+		pollSoon(POLL_MS);
+	} catch (e) {
+		if (link !== inst.link)
+			return;
+		if (isBusy(e)) {
+			// the installer does not serve its port while it writes and in some long checks
+			if (!inst.quietSince) {
+				inst.quietSince = Date.now();
+				log('The unit is busy: no answer for now. Waiting.', 'warn');
+			}
+			const secs = Math.round((Date.now() - inst.quietSince) / 1000);
+			$('i-busy').textContent = BUSY + (secs >= 5 ? ' (' + secs + ' s so far)' : '');
+			$('i-busy').hidden = false;
+			pollSoon(0);
+			return;
+		}
+		instLost();
+	}
+}
+
+// The port went away: a switch off and on, or the cable. The page waits for the installer.
+async function instLost() {
+	if (!inst.transport)
+		return;
+	const t = inst.transport;
+	inst.transport = inst.link = null;
+	t.onLost = null;
+	clearTimeout(inst.timer);
+	await t.close().catch(() => {});
+	$('i-busy').hidden = true;
+	inst.quietSince = 0;
+	log('The installer\'s port went away.', 'warn');
+	$('i-disconnect').hidden = true;
+	$('i-connect').disabled = false;
+	const phase = inst.desc ? inst.desc.phase.code : -1;
+	const os = inst.desc ? inst.desc.os.code : -1;
+	if ((phase === 9 || phase === 12) && os === 6) {
+		// the end: switched off, the unit starts its OS and no installer comes back
+		$('i-connhint').textContent = GONE_END;
+		step('iconn', 'done', 'switched off');
+		return;
+	}
+	startWaiting(phase === 6 ? GONE_TRIAL : null);
+}
+
+function startWaiting(words) {
+	inst.waiting = true;
+	step('iconn', 'active', 'waiting');
+	$('i-connhint').textContent = (words || 'The port went away. Switch the unit on if it is off: when the ' +
+		'installer is back, this page connects again.') + ' If it does not, press Connect.';
+	pollWait();
+}
+
+function stopWaiting() {
+	inst.waiting = false;
+	clearTimeout(inst.timer);
+}
+
+async function pollWait() {
+	if (!inst.waiting)
+		return;
+	let t = null;
+	try {
+		t = await openTransport(false);
+		if (t && inst.waiting) {
+			const link = new Link(logged(t), { timeout: 800, retries: 2 });
+			const h = await installerHello(link, { timeout: 800, retries: 2 });
+			if (h && inst.waiting) {
+				await installerFound(t, new Link(logged(t)), h);
+				return;
+			}
+		}
+	} catch (e) {
+		// not back yet
+	}
+	if (t)
+		await t.close().catch(() => {});
+	if (inst.waiting)
+		inst.timer = setTimeout(pollWait, RETRY_MS);
+}
+
+async function instDisconnect() {
+	stopWaiting();
+	const t = inst.transport;
+	inst.transport = inst.link = null;
+	if (t) {
+		t.onLost = null;
+		await t.close().catch(() => {});
+	}
+	$('i-disconnect').hidden = true;
+	$('i-connect').disabled = false;
+	$('i-connhint').textContent = 'Disconnected. The installer goes on by itself on the unit.';
+	step('iconn', 'active', '');
+}
+
+async function saveReport() {
+	if (!inst.link)
+		return;
+	$('i-report').disabled = true;
+	$('i-reporthint').textContent = 'Reading check.txt...';
+	try {
+		const text = await serial(() => readReport(inst.link, {
+			onProgress: (n, total) => {
+				$('i-reporthint').textContent = 'Reading check.txt: ' + n + ' of ' + total + ' bytes';
+			},
+		}));
+		const a = document.createElement('a');
+		a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+		a.download = 'check.txt';
+		document.body.append(a);
+		a.click();
+		a.remove();
+		setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+		$('i-reporthint').textContent = 'check.txt saved, ' + text.length.toLocaleString('en-US') + ' bytes.';
+		log('check.txt read: ' + text.length + ' bytes.', 'ok');
+	} catch (e) {
+		$('i-reporthint').textContent = 'Could not read check.txt: ' + (e && e.message ? e.message : e);
+	}
+	$('i-report').disabled = false;
+}
+
+const STATE_CHIP = ['', 'on', 'off', 'warn', 'warn'];
+const TONE_STEP = { ok: 'done', bad: 'fail', act: 'active', wait: 'active' };
+
+function renderInstall() {
+	const d = inst.desc;
+	if (!d)
+		return;
+	// the checks
+	const rows = d.checks.map((c) => {
+		const row = el('div', 'crow' + (c.current ? ' now' : '') + (c.state === 2 ? ' bad' : ''));
+		row.append(el('span', 'cname', c.name),
+			   el('span', 'chip ' + (c.current && !c.state ? 'warn' : STATE_CHIP[c.state] || ''),
+			      c.current && !c.state ? 'running' : c.stateText),
+			   el('span', 'cdetail', c.detail));
+		if (c.note && c.state === 2)
+			row.append(el('span', 'cnote', c.note));
+		return row;
+	});
+	$('i-checks').replaceChildren(...rows);
+	$('i-checks').hidden = false;
+	const failed = d.checks.filter((c) => c.state === 2).length;
+	const ran = d.checks.filter((c) => c.state).length;
+	$('i-checkhint').textContent = d.verdict.code === 0xFF ?
+		'Checks run so far: ' + ran + ' of ' + d.checks.length + '.' :
+		'Verdict: ' + d.verdict.text + (failed ? ', ' + failed + (failed > 1 ? ' checks' : ' check') +
+			' failed.' : '.');
+	step('ichecks', d.verdict.code === 0xFF ? 'active' : d.lock ? 'fail' : 'done',
+	     d.verdict.code === 0xFF ? ran + ' of ' + d.checks.length : d.verdict.text);
+	// the image
+	const im = d.image;
+	if (im) {
+		$('i-ver').textContent = im.version;
+		$('i-len').textContent = im.length.toLocaleString('en-US') + ' bytes';
+		$('i-crc').textContent = im.crc;
+		$('i-pin').textContent = im.pinShort;
+		$('i-pin').title = im.pin;
+		$('i-target').textContent = d.target || 'not chosen yet';
+		$('i-verified').textContent = im.verified ? 'yes: its CRC-32 and front pin match' : 'NO';
+		$('i-image').hidden = false;
+		$('i-imagehint').textContent = 'Front pin ' + im.pin + '.';
+		says($('i-imagenotes'), [im.breadcrumb ? 'This installer is a breadcrumb build: it writes the trial, ' +
+			'and refuses the commit.' : '', im.verified ? '' : 'The installer could not verify the image it ' +
+			'carries: it will not write it.'], !im.verified);
+		step('iimage', im.verified ? 'done' : 'fail', im.version);
+	}
+	// the phase
+	const box = $('i-phasebox');
+	box.className = 'phase ' + d.tone;
+	box.hidden = false;
+	$('i-ptitle').textContent = d.phase.text + (d.failure && d.phase.code === 10 ? ': ' + d.failure.text : '');
+	says($('i-lines'), d.lines.filter((l) => !l.startsWith('Holding ')), d.tone === 'bad');
+	says($('i-advice'), d.advice);
+	$('i-holdbox').hidden = !d.hold;
+	if (d.hold) {
+		$('i-holdtext').textContent = 'Holding ' + d.hold.key + ' on the unit: keep holding until the bar is ' +
+			'full (' + Math.round(d.hold.progress * 100) + ' %).';
+		$('i-hold').style.width = Math.round(d.hold.progress * 100) + '%';
+	}
+	$('i-phasehint').hidden = true;
+	step('iphase', TONE_STEP[d.tone], d.phase.name);
+	// the slots and the way so far
+	const slotRows = d.slots.map((sl) => {
+		const row = el('div', 'slot');
+		row.append(el('span', 'sname', sl.name));
+		for (const w of sl.words.length ? sl.words : ['empty or not good'])
+			row.append(el('span', 'chip ' + (w === 'good' || w.startsWith('holds this image, kept') ||
+				w === 'trial reached the boot menu' ? 'on' : w === 'trial spent' &&
+				!(sl.bits & 0x80) ? 'off' : ''), w));
+		return row;
+	});
+	const starts = el('div', 'unitrow');
+	starts.append(el('span', '', 'Starts'), el('b', '', d.starts));
+	const os = el('div', 'unitrow');
+	os.append(el('span', '', 'The OS'), el('b', '', d.os.text));
+	$('i-slots').replaceChildren(...slotRows, starts, os);
+	$('i-slots').hidden = d.phase.code < 3;
+	const order = ['ready', 'trial written', 'commit ready', 'done'];
+	const reached = { 4: 1, 5: 1, 6: 2, 7: 3, 8: 3, 9: 4, 11: 2, 10: 1 }[d.phase.code] || 0;
+	for (const li of $('i-trail').children) {
+		const at = order.indexOf(li.dataset.p);
+		li.className = at < reached ? 'on' : '';
+		if (d.phase.code === 11 && li.dataset.p === 'commit ready')
+			li.className = 'bad';
+	}
+	$('i-trail').hidden = reached === 0 && d.phase.code !== 3;
+	if (d.phase.code === 3)
+		$('i-trail').firstElementChild.className = 'bad';
+}
+
+function startInstall() {
+	const f = $('i-ferret');
+	f.replaceChildren(el('b', '', 'Developer mode never turned on? '),
+			  'Turn it on with the ');
+	if (FERRET_URL) {
+		const a = el('a', '', 'ferret tool');
+		a.href = FERRET_URL;
+		a.target = '_blank';
+		a.rel = 'noopener';
+		f.append(a);
+	} else {
+		f.append(el('b', '', 'ferret tool'));
+	}
+	f.append(' first. This page does nothing for that step.');
+	$('i-connect').addEventListener('click', instConnect);
+	$('i-disconnect').addEventListener('click', instDisconnect);
+	$('i-report').addEventListener('click', saveReport);
+	if (simInstaller()) {
+		$('i-simbox').hidden = false;
+		$('i-connhint').textContent = 'A simulated installer answers this page. The Simulator buttons stand ' +
+			'for what you do on the unit.';
+		for (const b of $('i-simbox').querySelectorAll('button'))
+			b.addEventListener('click', async () => {
+				log('Simulator: ' + b.textContent + '.', 'warn');
+				if (!await simAct(b.dataset.sim))
+					log('Simulator: not now.', 'warn');
+			});
+	}
+}
+
 // ---- wiring ----
 
 function render() {
@@ -543,18 +916,21 @@ function render() {
 }
 
 function tab(which) {
-	const adv = which === 'advanced';
-	$('guided').hidden = adv;
-	$('advanced').hidden = !adv;
-	$('tab-guided').setAttribute('aria-selected', String(!adv));
-	$('tab-advanced').setAttribute('aria-selected', String(adv));
-	if (adv)
+	for (const name of ['guided', 'advanced', 'install']) {
+		$(name).hidden = name !== which;
+		$('tab-' + name).setAttribute('aria-selected', String(name === which));
+	}
+	// the recovery menu's connect and unit steps belong to Guided and Advanced
+	$('s-menu').hidden = $('s-unit').hidden = which === 'install';
+	if (which === 'advanced')
 		$('d-log').open = true;
 }
 
 function start() {
 	$('tab-guided').addEventListener('click', () => tab('guided'));
 	$('tab-advanced').addEventListener('click', () => tab('advanced'));
+	$('tab-install').addEventListener('click', () => tab('install'));
+	startInstall();
 	$('connect').addEventListener('click', doConnect);
 	$('disconnect').addEventListener('click', () => disconnected(''));
 	$('refresh').addEventListener('click', refresh);
@@ -581,6 +957,8 @@ function start() {
 		}
 	checkBrowser();
 	render();
+	if (simInstaller())
+		tab('install');
 }
 
 start();

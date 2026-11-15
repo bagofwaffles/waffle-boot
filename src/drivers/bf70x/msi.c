@@ -380,6 +380,24 @@ static int stop_transmission(struct wb_msi *m)
 	return rc != WB_MSI_OK ? rc : wait_dat0(m, m->c->busy_timeout_us);
 }
 
+/*
+ * CMD12 after a CMD18 whose every block arrived. The eMMC may read ahead of
+ * the host in a multiple-block read, and when the read ends at the last
+ * block of a partition it may already have tried the address past it:
+ * ADDRESS_OUT_OF_RANGE then shows in CMD12's response, and the host is to
+ * ignore it (JESD84-B51, "Read ahead in multiple block read operation").
+ * Any other error bit still fails the read.
+ */
+static int stop_read(struct wb_msi *m)
+{
+	int rc = r1(m, 12, 0, MSI_CMD_STPABORT);
+
+	if (rc == WB_MSI_ERR_EMMC &&
+	    (m->last_r1 & WB_MMC_R1_ERRORS) == WB_MMC_R1_OUT_OF_RANGE)
+		rc = WB_MSI_OK;
+	return rc != WB_MSI_OK ? rc : wait_dat0(m, m->c->busy_timeout_us);
+}
+
 /* cppcheck-suppress constParameterPointer ; the IDMAC writes ext_csd */
 int wb_msi_read_ext_csd(struct wb_msi *m, uint8_t *ext_csd)
 {
@@ -477,7 +495,7 @@ int wb_msi_emmc_read(void *ctx, uint32_t sector, uint32_t count,
 		} else {
 			rc = data(m, 18, sector, buf, n, false);
 			if (rc == WB_MSI_OK)
-				rc = stop_transmission(m);
+				rc = stop_read(m);
 		}
 		sector += n;
 		buf += n * WB_MSI_BLOCK;

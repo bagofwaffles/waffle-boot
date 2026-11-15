@@ -200,6 +200,37 @@ dialog.danger h2{color:#B1401F}
 #log .tx{color:#8FC6FF}
 #log .rx{color:#D8B4FF}
 
+/* install */
+.mono{font-family:var(--mono)}
+#i-imagehint,.crow .cdetail,.crow .cnote{overflow-wrap:anywhere}
+.checks{margin:12px 0 0;border:2px solid var(--line);border-radius:12px;background:#FFFDF8;padding:6px 16px}
+.crow{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:6px 0;border-top:1px dashed var(--line);
+  font-size:15.4px}
+.crow:first-child{border-top:0}
+.crow .cname{font-weight:700;width:150px;flex:none}
+.crow .chip{font-size:13.2px;padding:1px 8px}
+.crow .cdetail{flex:1 1 200px;min-width:0;color:var(--dim)}
+.crow .cnote{flex-basis:100%;color:#A78F76;font-size:14.3px;padding-left:160px}
+.crow.now{background:#FFF7E3}
+.crow.bad .cname{color:#B1401F}
+@media(max-width:640px){.crow .cname{width:auto}.crow .cnote{padding-left:0}}
+.phase{margin:12px 0 0;border:2px solid var(--line);border-radius:12px;background:#FFFDF8;padding:12px 16px}
+.phase.bad{border-color:#F3C1B3;background:var(--err-bg)}
+.phase.ok{border-color:#B7DFB9;background:var(--ok-bg)}
+.phase.act{border-color:var(--gold)}
+.ptitle{margin:0;font:800 19px var(--font)}
+.phase.bad .ptitle{color:#B1401F}
+.phase.ok .ptitle{color:#2F6A37}
+.todo{margin:10px 0 0;padding:4px 12px 8px;border-radius:8px;background:#FFF3DA}
+.todo:has(ul:empty){display:none}
+.todo .says{color:var(--ink);font-weight:600}
+.trail{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;padding:0;font-size:14.3px}
+.trail li{padding:3px 10px;border-radius:5px;background:#FFF3DA;color:#A78F76;border:1.5px solid var(--line)}
+.trail li.on{background:var(--ok-bg);border-color:#B7DFB9;color:#3E7F46}
+.trail li.bad{background:var(--err-bg);border-color:#F3C1B3;color:#B1401F}
+.simtag{font:700 13.2px var(--font);text-transform:uppercase;letter-spacing:.04em;color:#8A5A12;
+  background:var(--warn-bg);border:1px dashed #EBCF9C;border-radius:5px;padding:4px 9px}
+
 footer p{margin:0}
 footer{text-align:center;color:#8A7259;font-size:14.9px;margin-top:26px;border-top:1px solid var(--line);
   padding-top:22px}

@@ -16,6 +16,12 @@
 #include <stdio.h>
 #include <string.h>
 
+/* The installer's screens (src/testos/installer_logic.c), its pure part. */
+#define OPXY_TESTOS_CHECK 1
+#define OPXY_TESTOS_INSTALLER 1
+#include "../src/testos/check_logic.c"
+#include "../src/testos/installer_logic.c"
+
 #include "front/fr_draw.h"
 #include "front/fr_start.h"
 #include "waffle/display.h"
@@ -255,6 +261,60 @@ static void front_shot(const struct fr_screen *s)
 		}
 }
 
+/* The installer: the checks under way, the trial offered with its key
+ * held, the trial written, the commit offered, done, and a locked install. */
+static int installer_shots(const char *dir)
+{
+	static const struct s15_frame fr = { "Installer", "1.0.3", 0, S15_SLOT_UNKNOWN,
+					     false, false, true };
+	static const struct {
+		const char *name;
+		uint8_t phase, lock, trial;
+		unsigned hold_digit, hold_fill, hold_left_s;
+	} shots[] = {
+		{ "installer-ready", INST_READY, 0, 0, 1u, 600u, 2u },
+		{ "installer-trial", INST_TRIAL_WRITTEN, 0, INST_TRIAL_WAITING, 0, 0, 0 },
+		{ "installer-commit", INST_COMMIT_READY, 0, INST_TRIAL_REACHED, 0, 0, 0 },
+		{ "installer-done", INST_DONE, 0, 0, 0, 0, 0 },
+		{ "installer-locked", INST_LOCKED, INST_LOCK_FAILED, 0, 0, 0, 0 },
+	};
+	struct s15_console con;
+	struct tchk_line l[S15_ROWS];
+	int bad = 0;
+
+	/* the checks under way: the suite's first screen */
+	s15_console_init(&con, NULL);
+	s15_console_add(&con, S15_ST_HEAD, tchk_first_lines[0]);
+	for (unsigned i = 1; i < TCHK_FIRST_LINES; i++)
+		s15_console_add(&con, S15_ST_TEXT, tchk_first_lines[i]);
+	s15_console_add(&con, S15_ST_STEP_RUN, "Bridge\ttesting");
+	s15_render_console(&con, &wb_display_geometry, wb_display_draw(&disp), &fr);
+	bad |= write_raw(dir, "installer-checks");
+	for (size_t k = 0; k < sizeof shots / sizeof shots[0]; k++) {
+		struct inst_screen sc;
+		unsigned n;
+
+		memset(&sc, 0, sizeof sc);
+		sc.phase = shots[k].phase;
+		sc.version = "1.0.3";
+		sc.target = 1u;
+		sc.lock = shots[k].lock;
+		sc.last_rc = 0xFFu;
+		sc.os = shots[k].phase == INST_DONE ? INST_OS_ACTIVE : INST_OS_CHECKED;
+		sc.trial = shots[k].trial;
+		sc.hold_digit = shots[k].hold_digit;
+		sc.hold_fill = shots[k].hold_fill;
+		sc.hold_left_s = shots[k].hold_left_s;
+		n = inst_screen_lines(&sc, l);
+		s15_console_init(&con, NULL);
+		for (unsigned i = 0; i < n; i++)
+			s15_console_add(&con, (enum s15_style)l[i].style, l[i].s);
+		s15_render_console(&con, &wb_display_geometry, wb_display_draw(&disp), &fr);
+		bad |= write_raw(dir, shots[k].name);
+	}
+	return bad;
+}
+
 int main(int argc, char **argv)
 {
 	const char *d;
@@ -447,5 +507,6 @@ int main(int argc, char **argv)
 	}
 	bad |= shot(d, "upgrade-confirm");
 
+	bad |= installer_shots(d);
 	return bad;
 }

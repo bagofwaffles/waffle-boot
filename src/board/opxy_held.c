@@ -163,7 +163,7 @@ void opxy_held_service(void *ctx, const struct boot_held *h)
 	opxy_held_screen(m, h); OPXY_TESTOS(opxy_testos_frame_timing(m);)	/* the test OS: HW-FRAME's timing, once */
 	for (;;) {
 		/* S-02.095: alive at the start of the first pass; once per boot. */
-		opxy_start_finished(m);
+		opxy_start_finished(m); opxy_trial_reached(m);
 		s06_node_poll(&m->node);
 		if (s07_service_pass(&m->psoc) == S07_POWEROFF ||
 		    opxy_held_settle(m) == S07_POWEROFF ||
@@ -221,13 +221,13 @@ void opxy_held(void *ctx, const struct boot_held *h)
 	/* S-09.046: the clock message once as held mode starts */
 	opxy_clock_to_slave(m);
 	opxy_services_start(m);
-	OPXY_TESTOS(opxy_testos_paint(OPXY_PAINT_NAVY); opxy_testos_bridge_check(m);)
+	OPXY_TESTOS(opxy_testos_paint(OPXY_PAINT_NAVY); opxy_testos_bridge_check(m);) OPXY_TESTOS_CHECK_ONLY(opxy_testos_check_start(m);)
 
 	ops.ctx = m;
 	ops.nordic_greeting = greeting;
 	ops.psoc_info = info;
 	ops.psoc_held_state = held_state;
-	ops.service = opxy_held_service;
+	ops.service = OPXY_TESTOS_CHECK_OR(opxy_testos_check_service, opxy_held_service);
 	/* S-11.080: before the Nordic's first greeting is answered, so that
 	 * the answer goes by the state 0 (S-08.013). */
 	if (h->interrupted)

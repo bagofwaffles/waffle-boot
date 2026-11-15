@@ -23,8 +23,9 @@
 #                 build/bf703-testos/waffle-test-{smc,gpio}.{elf,ldr,layout.json};
 #                 TESTOS_PANEL=smc|gpio builds one
 #   make test-os-mon      the test OS with the USB debug monitor
-#   make test-os-install  test-os-mon with this build's image inside, and the
-#                 request that writes it (docs/test-os.md, "The installer")
+#   make installer        the installer (docs/install.md): the hardware checks,
+#                 then this build's image written to the unit when every
+#                 check passes: $(BUILD)/waffle-install.ldr
 #   make analyze  clang static analyzer over src/ and tests/
 #   make cppcheck cppcheck over src/ and tests/, the vendored code left out
 #   make fuzz     libFuzzer targets (clang), see tests/fuzz/README.md
@@ -106,7 +107,7 @@ endif
 # is built, analyzed and tested there; its op is never set on the host.
 # BOOT_CRUMBS=1: a trial boot's breadcrumbs (src/board/opxy_crumbs.c). In the
 # bootloader alone, and it goes into the installer with it:
-# make test-os-install BOOT_CRUMBS=1 BUILD=build/crumbs
+# make installer BOOT_CRUMBS=1 BUILD=build/crumbs
 ifneq ($(BOOT_CRUMBS),)
 TARGET_CFLAGS += -DOPXY_BOOT_CRUMBS_ON=1
 endif
@@ -114,9 +115,9 @@ ifneq ($(BOOT_PROMPT),)
 TARGET_CFLAGS += -DOPXY_BOOT_PROMPT=1
 endif
 # BOOT_TIMING=1: the boot's milestones timed (src/board/opxy_timing.c), never in
-# a release. The report repeats on the log in held mode; built into the
-# installer, its test OS logs a hand-over's report (docs/test-os.md):
-# make test-os-install BOOT_TIMING=1 BUILD=build/timing
+# a release. The report repeats on the log in held mode, and the monitor's
+# test OS reads a hand-over's report (docs/test-os.md):
+# make installer test-os-mon BOOT_TIMING=1 BUILD=build/timing
 ifneq ($(BOOT_TIMING),)
 TARGET_CFLAGS += -DOPXY_BOOT_TIMING_ON=1
 endif
@@ -126,7 +127,7 @@ endif
 # after a byte is not measured; a timing build measures it, and watches PA6
 # for BOOT_TIMING_WINDOW_US after each byte when that is longer
 # (docs/test-os.md):
-# make test-os-install BOOT_TIMING=1 BOOT_TIMING_WINDOW_US=5 BUILD=build/timing
+# make installer BOOT_TIMING=1 BOOT_TIMING_WINDOW_US=5 BUILD=build/timing
 ifneq ($(BOOT_LINK_SETTLE_US),)
 TARGET_CFLAGS += -DOPXY_BOOT_LINK_SETTLE_US=$(BOOT_LINK_SETTLE_US)u
 endif
@@ -138,14 +139,14 @@ endif
 # PA6 before each byte (S-13b.022). Off by default: how soon the slave's boot
 # ROM raises PA6 after a byte is not measured (docs/test-os.md). The host
 # build has it on, so that its code is built, analyzed and tested there:
-# make test-os-install BOOT_LINK_FC=1 BOOT_TIMING=1 BUILD=build/linkfc
+# make installer BOOT_LINK_FC=1 BOOT_TIMING=1 BUILD=build/linkfc
 ifneq ($(BOOT_LINK_FC),)
 TARGET_CFLAGS += -DOPXY_BOOT_LINK_FC=1
 endif
 # REPLY_END=count: the slave's single-I/O replies end at their received-word
 # count (REN set) from the start, in place of the factory's end, TF with REN
 # clear (S-13b.083), which is the default. The test OS's replies follow it too:
-# make test-os-install REPLY_END=count BUILD=build/count
+# make installer REPLY_END=count BUILD=build/count
 ifeq ($(REPLY_END),count)
 TARGET_CFLAGS += -DOPXY_REPLY_END_COUNT=1
 else ifneq ($(filter-out factory,$(REPLY_END)),)
@@ -543,7 +544,7 @@ TESTOS_$(1)_CFLAGS := $(TESTOS_CFLAGS) $(TESTOS_FLAGS_$(1))
 TESTOS_$(1)_OBJS   := $$(TESTOS_$(1)_SRCS:src/%.c=$$(TESTOS_$(1)_OBJDIR)/obj/%.o) \
 	$(TESTOS_ASM:src/%.S=$$(TESTOS_$(1)_OBJDIR)/obj/%.o) \
 	$$(TESTOS_$(1)_OBJDIR)/obj/gen/testos_regs.o \
-	$(if $(filter install,$(1)),$$(TESTOS_$(1)_OBJDIR)/obj/gen/install_image.o)
+	$(if $(filter installer,$(1)),$$(TESTOS_$(1)_OBJDIR)/obj/gen/installer_image.o)
 TESTOS_$(1)_LIB    := $$(TESTOS_$(1)_OBJDIR)/libwaffle.a
 TESTOS_$(1)_IMAGE  := $(TESTOS_BUILD)/waffle-test-$(1).elf
 TESTOS_$(1)_STREAM := $(TESTOS_BUILD)/waffle-test-$(1).ldr
@@ -589,22 +590,30 @@ $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testo
 	@mv $$@.tmp $$@
 endef
 
-# The USB debug monitor's image and the installer (docs/test-os.md).
-TESTOS_MON := mon install
+# The USB debug monitor's image (docs/test-os.md).
+TESTOS_MON := mon
 TESTOS_FLAGS_gpio    := -DOPXY_TESTOS_PANEL_GPIO=1
 TESTOS_FLAGS_mon     := -DOPXY_TESTOS_MONITOR=1
-TESTOS_FLAGS_install := -DOPXY_TESTOS_MONITOR=1 -DOPXY_TESTOS_INSTALL=1
+# The installer (docs/install.md): the check suite, then this build's image
+# written to the unit, every write held on the unit's key; no monitor.
+TESTOS_INSTALLER := installer
+TESTOS_FLAGS_installer := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1
 # A local, untracked local.mk may add targets, test-OS variants
 # (TESTOS_EXTRA) and sources to analyze (LOCAL_SRCS).
 TESTOS_EXTRA :=
 -include local.mk
-# The installer (docs/test-os.md, "The installer"): `mon` with the slot image
-# this build made inside it, and the request that writes it.
-$(TESTOS_BUILD)/gen/install_image.c: $(STREAM) tools/testos_install_image.py
+# The image the installer carries: this build's, checked as a bootloader
+# stream and against the pinned front.
+$(TESTOS_BUILD)/gen/installer_image.c: $(STREAM) tools/installer_image.py src/front/front.pin
 	@mkdir -p $(@D)
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_stream.py bootloader $(STREAM)
-	$(PYTHON) -I -B tools/testos_install_image.py $(STREAM) $@
-$(foreach v,$(TESTOS_PANELS) $(TESTOS_MON) $(TESTOS_EXTRA),$(eval $(call testos_variant,$(v))))
+	$(PYTHON) -I -B tools/installer_image.py $(STREAM) src/front/front.pin $@
+$(foreach v,$(TESTOS_PANELS) $(TESTOS_MON) $(TESTOS_INSTALLER) $(TESTOS_EXTRA),$(eval $(call testos_variant,$(v))))
+
+.PHONY: installer
+installer: $(BUILD)/waffle-install.ldr
+$(BUILD)/waffle-install.ldr: $(TESTOS_installer_STREAM) $(TESTOS_installer_LAYOUT)
+	cp $< $@
 
 test-os: $(addprefix test-os-,$(TESTOS_PANEL))
 
@@ -703,19 +712,20 @@ ANALYZE := $(addprefix analyze/,$(SRCS) $(FRONT_SRCS) $(TP_GLUE) $(TESTS) $(TEST
 	$(filter %.c,$(LOCAL_SRCS)))
 TESTOS_VARIANT := $(sort $(shell grep -l 'OPXY_TEST_OS\|OPXY_TESTOS' src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
 ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
-# The test OS's installer (with its monitor and the hand-over timing report),
-# and the development image (BOOT_CRUMBS=1 BOOT_TIMING=1 LOG_DEBUG=1), over
-# the files their options reach.
-ANALYZE_INSTALL := $(addprefix analyze-install/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
+# The monitor's test OS with the hand-over timing report, the installer, and
+# the development image (BOOT_CRUMBS=1 BOOT_TIMING=1 LOG_DEBUG=1), over the
+# files their options reach.
+ANALYZE_MON := $(addprefix analyze-mon/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
+ANALYZE_INSTALLER := $(addprefix analyze-installer/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
 DEV_VARIANT := $(sort $(shell grep -l 'OPXY_BOOT_CRUMBS\|OPXY_CRUMB\|OPXY_TIM\|OPXY_STARTUP\|S14_DEFAULT_THRESHOLD' \
 	src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
 ANALYZE_DEV := $(addprefix analyze-dev/,$(DEV_VARIANT))
-.PHONY: $(CHECKS) $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_INSTALL) $(ANALYZE_DEV)
+.PHONY: $(CHECKS) $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_MON) $(ANALYZE_INSTALLER) $(ANALYZE_DEV)
 
 $(CHECKS): check/%: $(BUILD)/host/tests/% $(VECTORS)/.stamp
 	@out=$$(WB_VECTORS=$(VECTORS) ./$< 2>&1); s=$$?; printf '%s\n' "$$out"; exit $$s
 
-analyze: $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_INSTALL) $(ANALYZE_DEV)
+analyze: $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_MON) $(ANALYZE_INSTALLER) $(ANALYZE_DEV)
 
 $(addprefix analyze/,$(TESTS)): | $(VEC_HEADERS)
 
@@ -733,12 +743,19 @@ $(ANALYZE_TESTOS): analyze-testos/%:
 		$* -o /dev/null 2>&1); s=$$?; \
 	printf '  ANALYZE %s (test OS)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
 
-$(ANALYZE_INSTALL): analyze-install/%:
+$(ANALYZE_MON): analyze-mon/%:
 	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \
 		-Xanalyzer -analyzer-output=text \
-		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_install) \
+		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_mon) \
 		-DOPXY_BOOT_TIMING_ON=1 $* -o /dev/null 2>&1); s=$$?; \
-	printf '  ANALYZE %s (test OS installer)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
+	printf '  ANALYZE %s (test OS monitor)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
+
+$(ANALYZE_INSTALLER): analyze-installer/%:
+	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \
+		-Xanalyzer -analyzer-output=text \
+		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_installer) \
+		$* -o /dev/null 2>&1); s=$$?; \
+	printf '  ANALYZE %s (installer)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
 
 $(ANALYZE_DEV): analyze-dev/%:
 	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \

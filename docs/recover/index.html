@@ -27,11 +27,13 @@
   </div>
   <p class="promise">Nothing is sent to a server. The page talks to the unit over USB, and the unit checks
     every image itself before it writes.</p>
-  <p class="warnbar"><b>waffle-boot is under development.</b> This page is for units that already run it. A
-    wrong image can leave a unit that does not start.</p>
+  <p class="warnbar"><b>waffle-boot is under development.</b> Guided and Advanced are for units that already
+    run it; Install follows the installer that puts it on a unit. A wrong image can leave a unit that does not
+    start.</p>
   <div class="modes" role="tablist" aria-label="Mode">
     <button id="tab-guided" role="tab" aria-selected="true" aria-controls="guided">Guided</button>
     <button id="tab-advanced" role="tab" aria-selected="false" aria-controls="advanced">Advanced</button>
+    <button id="tab-install" role="tab" aria-selected="false" aria-controls="install">Install</button>
   </div>
 </header>
 
@@ -223,6 +225,105 @@
     </div>
   </section>
 
+  <!-- ---------------- install: the installer image ---------------- -->
+  <section id="install" role="tabpanel" aria-labelledby="tab-install" hidden>
+    <ol class="steps" start="2">
+      <li class="step active" id="s-iwrite">
+        <div class="num"><span class="ico">2</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Write the installer file from the developer menu <span class="sn" id="sn-iwrite"></span></h2>
+          <p class="hint">The installer checks the unit's hardware first. Only when every check passes does it
+            offer to install waffle-boot, and every write is started and confirmed on the unit: you hold the
+            key it names for 5 s. This page only shows what the installer reports. It sends no image and
+            asks for no write.</p>
+          <ol class="howlist">
+            <li>Have the installer file, <code>waffle-install.ldr</code>, from a waffle-boot release.</li>
+            <li>Open the developer menu of the bootloader your unit has, and write the file there as the OS.
+              It goes into the boot partition the OS is not in, so the OS stays where it is.</li>
+            <li>Switch the unit off and on. It starts the installer, which begins its checks.</li>
+            <li>Connect the unit to this computer with a USB cable.</li>
+          </ol>
+          <p class="notebar" id="i-ferret"></p>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-iconn">
+        <div class="num"><span class="ico">3</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Connect to the installer <span class="sn" id="sn-iconn"></span></h2>
+          <div class="actions">
+            <button id="i-connect" class="btn primary" disabled>Connect to the installer</button>
+            <button id="i-disconnect" class="btn small" hidden>Disconnect</button>
+          </div>
+          <p class="hint" id="i-connhint">The browser asks which port to use: pick the OP-XY.</p>
+          <p class="notebar" id="i-busy" hidden></p>
+          <div class="actions" id="i-simbox" hidden>
+            <span class="simtag">Simulator</span>
+            <button class="btn small" data-sim="hold" type="button">Hold the key for 5 s</button>
+            <button class="btn small" data-sim="leave" type="button">Hold 8 to leave</button>
+            <button class="btn small" data-sim="release" type="button">Let go</button>
+            <button class="btn small" data-sim="restart" type="button">Switch off and on</button>
+            <button class="btn small" data-sim="reset" type="button">Start over</button>
+          </div>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-ichecks">
+        <div class="num"><span class="ico">4</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>The checks <span class="sn" id="sn-ichecks"></span></h2>
+          <p class="hint" id="i-checkhint">Each check and its result shows here as the installer runs it.</p>
+          <div class="checks" id="i-checks" hidden></div>
+          <div class="actions">
+            <button id="i-report" class="btn small" hidden>Save check.txt</button>
+            <span class="hint" id="i-reporthint"></span>
+          </div>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-iimage">
+        <div class="num"><span class="ico">5</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>What will be written <span class="sn" id="sn-iimage"></span></h2>
+          <p class="hint" id="i-imagehint">The bootloader the installer carries, once it is connected.</p>
+          <div class="unit" id="i-image" hidden>
+            <div class="unitrow"><span>Version</span><b id="i-ver"></b></div>
+            <div class="unitrow"><span>Length</span><b id="i-len"></b></div>
+            <div class="unitrow"><span>CRC-32</span><b class="mono" id="i-crc"></b></div>
+            <div class="unitrow"><span>Front pin</span><b class="mono" id="i-pin"></b></div>
+            <div class="unitrow"><span>Goes into</span><b id="i-target"></b></div>
+            <div class="unitrow"><span>Verified</span><b id="i-verified"></b></div>
+          </div>
+          <ul class="says" id="i-imagenotes"></ul>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-iphase">
+        <div class="num"><span class="ico">6</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Install <span class="sn" id="sn-iphase"></span></h2>
+          <p class="hint" id="i-phasehint">The installer offers the install once every check has passed.</p>
+          <div class="phase" id="i-phasebox" hidden>
+            <p class="ptitle" id="i-ptitle"></p>
+            <ul class="says" id="i-lines"></ul>
+            <div class="todo" id="i-advicebox"><ul class="says" id="i-advice"></ul></div>
+            <div id="i-holdbox" hidden>
+              <p class="hint" id="i-holdtext"></p>
+              <div class="bar"><i id="i-hold"></i></div>
+            </div>
+          </div>
+          <div class="unit" id="i-slots" hidden></div>
+          <ol class="trail" id="i-trail" hidden>
+            <li data-p="ready">Every check passed</li>
+            <li data-p="trial written">Trial written</li>
+            <li data-p="commit ready">Trial start reached the boot menu</li>
+            <li data-p="done">Kept</li>
+          </ol>
+        </div>
+      </li>
+    </ol>
+  </section>
+
   <details class="card" id="d-help">
     <summary>If something goes wrong</summary>
     <ul class="howlist">
@@ -231,6 +332,10 @@
       <li><b>Refused or Stopped.</b> Nothing was written. The message says why.</li>
       <li><b>The connection dropped during a transfer.</b> Nothing was written. Connect and write again.</li>
       <li><b>FAILED while writing the other slot.</b> The unit still starts as before. Write again.</li>
+      <li><b>Install: a check did not pass.</b> Nothing was written. The Install step says what the unit
+        starts now; save check.txt, which lists every check.</li>
+      <li><b>Install: the trial failed.</b> Nothing was kept: the unit starts the bootloader it had. Hold the
+        key the unit names to try again, or leave it as it is.</li>
       <li><b>The unit does not start after a restart.</b> Switch it off and on with no key held. If it still
         does not start, hold <b class="key">M4</b> again: recovery is in every image.</li>
     </ul>

@@ -139,6 +139,5 @@ answering. The log shares the port, so skip frames of other ids. `frame()` and `
 
 ## Getting waffle-boot on for this
 
-Install it as any OS ([`test-os.md`](test-os.md#the-installer)): build the installer, write it as the OS,
-`install trial yes`, let it return, `install commit yes`. With developer mode on, the requests answer in
-the boot menu.
+Install it with the installer ([`install.md`](install.md)): `make installer`, write `waffle-install.ldr`
+as the OS, then follow the unit's screen. With developer mode on, the requests answer in the boot menu.

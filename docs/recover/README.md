@@ -10,6 +10,7 @@ A static page that does what `tools/wbrecover.py` does, from a browser with Web 
   exports its names again.
 - `index.html`, `app.js`, `style.css`, `serial.js`: the page, and the Web Serial transport `core.js`
   talks through.
+- `install.js`, `install_words.js`: the Install tab's protocol and words, in the same style (below).
 - `sim.js`: a simulated unit in place of Web Serial, from localhost only (below).
 - `assets/`: the Bag of Waffles logo and background.
 
@@ -28,6 +29,43 @@ needs `crypto.subtle`, so the page must be served over HTTPS or from `localhost`
 
 Stopping a run stops the page only. Once END or ACT has gone out, the unit's countdown is stopped
 by switching the unit off or unplugging USB, and by nothing else.
+
+## The Install tab
+
+The installer, `waffle-install.ldr`, runs as an OS under whatever bootloader the unit has: it is
+written from that bootloader's developer menu into the boot partition the OS is not in. It runs the
+hardware checks, and only when every check passes does it offer the install: a trial write, a
+trial start, then a commit, after which the OS is made active again. Each write is started and
+confirmed on the unit by holding the step's key for 5 s. The page guides and shows; it never sends
+the image and never asks for a write.
+
+The installer speaks recovery's framing over its USB serial port, with request types of its own:
+`0x40` IHELLO (what it carries: version, length, CRC-32, front pin), `0x41` STATE (phase, verdict,
+lock reason, slots, the hold's progress, each test's state), `0x42` TEST (one test's id, name and
+detail) and `0x43` REPORT (`check.txt`, in chunks). Why that framing:
+
+- the page's codec and its tests exist already (`core.js`'s `frame`, `takeFrame` and `Link`), and
+  the CRC-32 and the resync rules are the same;
+- the types `0x40` to `0x43` are not recovery's `0x01` to `0x07`, so neither side mistakes the
+  other: recovery answers `0x40` with its unknown-request status, and the installer answers
+  recovery's HELLO with `[0xFF]`. The page sends IHELLO first and falls back to HELLO;
+- it is read-only, because every write is confirmed on the unit: nothing the page sends can change
+  the unit.
+
+`install.js` holds the requests, a parser for each reply, `poll` (STATE, then TEST for each test
+whose state changed) and `describeInstall`, which gives the lines and advice the page shows for
+each phase. The page polls about every 500 ms. A request with no answer while the port stays open
+is the unit busy (it does not serve the port while it writes, and in some long checks), and the
+page keeps waiting. A port that goes away after the trial write is the unit switched off for its
+trial start: the page connects again on its own when the installer is back. After the end, the
+unit starts its OS and no installer comes back.
+
+`FERRET_URL` in `install_words.js` is the link for a unit that has never had developer mode on;
+while it is empty the page names the tool without a link.
+
+`tests/web/test_install.mjs` checks the parsers against frames built by hand from the protocol's
+tables, and walks each case of the simulated installer (`installer_model.py`, over
+`unit_bridge.py`) from its first check to its end: the phases in order and the page's lines.
 
 ## Keeping it the same as the Python tool
 
@@ -65,6 +103,13 @@ What differs from the Python tool, on purpose:
 front's own protocol, slot and image code, built for the host), and a case from the script's `CASES`
 (`plain`, `same`, `other-bad`, `unsettled`). The page then shows a button that loads an image the
 simulated unit takes. `sim.js` does this only when the page is opened from localhost with `?sim`.
+
+`?sim=installer:CASE` opens the Install tab on a simulated installer: `pass` (checks, trial,
+restart, commit, done), `check-fail` (a check fails: locked), `trial-fail` (the trial start does not
+reach the boot menu), `no-os` (no OS to make active again: lock reason 5), `write-fail` (the trial
+write fails) and `breadcrumb` (the commit is refused). It moves on its own timer, keeps its state
+across connections as a unit does across a restart, and the page's Simulator buttons stand for
+what a person does on the unit (`/sim/act?unit=installer:CASE&do=hold|leave|release|restart|reset`).
 
 ## Hosting
 

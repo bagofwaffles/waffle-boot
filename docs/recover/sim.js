@@ -13,6 +13,14 @@ export function simulated() {
 // Which unit: ?sim=KIND:CASE, as sim_server.py lists them.
 const which = () => encodeURIComponent(params.get('sim') || '');
 
+// The installer simulator (?sim=installer:CASE): what a person does on the unit.
+export const simInstaller = () => simulated() && (params.get('sim') || '').startsWith('installer:');
+
+export async function simAct(what) {
+	const r = await fetch('/sim/act?unit=' + which() + '&do=' + encodeURIComponent(what));
+	return r.ok;
+}
+
 export async function simImage() {
 	const r = await fetch('/sim/image?unit=' + which());
 	return new Uint8Array(await r.arrayBuffer());

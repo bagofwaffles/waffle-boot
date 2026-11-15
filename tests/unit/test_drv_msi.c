@@ -754,6 +754,30 @@ static void test_failed_multi_stops(void)
 	fake_core_set_cycle_step(1);
 }
 
+/*
+ * JESD84-B51's read-ahead: a multiple-block read that ends at a partition's
+ * last block may draw ADDRESS_OUT_OF_RANGE in CMD12's response, which the
+ * host ignores once every block arrived.
+ */
+static void test_read_ahead_out_of_range(void)
+{
+	static _Alignas(32) uint8_t buf[128u * 512u];
+	struct wb_msi m;
+	unsigned from;
+
+	init_emmc(&m, 0x57u, 0x0Fu);
+	emmc.dto_delay = 0;
+	emmc.fail_idx = 12;
+	from = emmc.n;
+	CHECK(wb_msi_emmc_read(&m, 0x3F80u, 128, buf) == WB_MSI_OK);
+	CHECK(emmc.log[from].idx == 18 && emmc.log[from + 1u].idx == 12);
+	/* a single block has no CMD12 */
+	CHECK(wb_msi_emmc_read(&m, 0x3FFFu, 1, buf) == WB_MSI_OK);
+	emmc.fail_idx = 0;
+	CHECK(wb_msi_emmc_read(&m, 0, 4, buf) == WB_MSI_OK);
+	CHECK(emmc.violations == 0);
+}
+
 /* No whole bound given: the allowance alone, which saturates where
  * 2^31 + 2^31 us would wrap to 0. */
 static void test_data_timeout_saturates(void)
@@ -988,6 +1012,7 @@ int main(void)
 	RUN(test_data_timeout);
 	RUN(test_data_timeout_saturates);
 	RUN(test_failed_multi_stops);
+	RUN(test_read_ahead_out_of_range);
 	RUN(test_chain);
 	RUN(test_erase_arg);
 	RUN(test_switch_list);

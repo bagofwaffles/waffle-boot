@@ -13,6 +13,9 @@ It first prints {"socket": PATH, "shim": whether the front's code could be built
     {"op": "unit", "spec": SPEC, "keep": true}   a new unit on the connection that is open
     {"op": "set", "set": {...}}             units.py's set()
     {"op": "state"}                         the unit's flash and what it was asked, as its state()
+    {"op": "act", "do": WHAT}               an installer's act(): hold, release, restart, reset
+    {"op": "reconnect"}                     the same unit on the connection the client has just
+                                            made (an installer after a restart)
     {"op": "quit"}
 
 Each is answered with {"ok": true, ...} or {"error": "..."}. Python 3, standard library only.
@@ -78,6 +81,15 @@ def main():
                     say({'ok': unit is not None})
                 elif op == 'set':
                     unit.set(req['set'])
+                    say({'ok': True})
+                elif op == 'act':
+                    say({'ok': unit.act(req['do'])})
+                elif op == 'reconnect':
+                    old = conn
+                    conn, _ = srv.accept()
+                    unit.attach(conn.fileno())
+                    if old is not None:
+                        old.close()
                     say({'ok': True})
                 elif op == 'state':
                     say(dict(unit.state(), ok=True))
