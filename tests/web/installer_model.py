@@ -52,11 +52,10 @@ TESTS = [
     ('rtc', 'Clock chip', 1, 'ticks'),
     ('nordic', 'Radio', 1, 'answers'),
     ('timing', 'Timing', 1, 'start to menu 6.3 s'),
-    ('keys', 'Keys', 2, 'every key pressed'),
-    ('colors', 'Colors', 2, 'confirmed on the unit'),
-    ('usb', 'USB', 2, 'the disk and the port seen'),
+    ('keys', 'Keys', 2, 'com and M4 pressed'),
 ]
 N = len(TESTS)
+KEYS = [t[0] for t in TESTS].index('keys')
 
 CASES = {
     'pass': {},
@@ -66,6 +65,7 @@ CASES = {
     'no-os': {'os': 3},
     'write-fail': {'write_fail': 4},
     'breadcrumb': {'breadcrumb': True},
+    'keys-ended': {'keys_ended': True},
 }
 
 VERSION = (1, 0, 3, 0)
@@ -184,6 +184,8 @@ class InstallerUnit:
             lock = 5
         elif FAIL in hw:
             lock = 1
+        elif self.tests[KEYS] != PASS:
+            lock = 6
         elif NOT_TESTED in hw:
             lock = 2
         elif not self.flags & F_IMAGE_OK:
@@ -212,6 +214,8 @@ class InstallerUnit:
                     self.set_test(0, PASS, ok)
                 else:
                     self.set_test(0, FAIL, 'no OS in the other boot partition')
+            elif tid == 'keys' and self.cfg.get('keys_ended'):
+                self.set_test(k, NOT_TESTED, 'ended with 8')
             elif tid == self.cfg.get('fail'):
                 self.set_test(k, FAIL, self.cfg['detail'], self.cfg.get('note', ''))
             else:
@@ -297,6 +301,8 @@ class InstallerUnit:
         if self.phase == TRIAL_WRITTEN:
             b = self.slots[TARGET] & ~SB_PENDING | SB_STARTED | SB_SPENT
             self.trial = self.cfg.get('trial', 2)
+            # back after the trial start: the key check is not asked again
+            self.set_test(KEYS, PASS, 'passed before the trial, not asked again')
             if self.trial == 2:
                 self.slots[TARGET] = b | SB_REACHED
                 self.enter(COMMIT_READY)

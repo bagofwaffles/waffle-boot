@@ -32,7 +32,6 @@
 #include "waffle/drivers/mmr.h"
 #include "waffle/s10a_usb.h"
 #include "waffle/s13c_panel.h"
-#include "waffle/s15_keytest.h"
 #include "waffle/s15_lines.h"
 #include "waffle/board/installer.h"
 #include "waffle/board/testos_check.h"
@@ -40,7 +39,6 @@
 
 #define REQUEST_US 100000u		/* S-07.011, S-08.020 */
 #define LINK_TOTAL 0x800000u		/* the bridge's soak: 8 MiB */
-#define USB_WAIT_US 30000000u
 #define RTC_WAIT_US 1500000u
 #define TE_WAIT_US 50000u
 #define PSOC_PING 0x01u
@@ -55,7 +53,6 @@ static struct {
 	struct tchk_guard guard;
 	struct s03_env env;
 	struct s15_console con;
-	struct s15_keytest kt;
 	char version[24];
 	char report[TCHK_REPORT_MAX];
 	size_t report_len;
@@ -108,6 +105,17 @@ static void key_event(void *ctx, uint8_t key, bool down)
 		ck.down[ck.kin % sizeof ck.key] = down;
 		ck.kin++;
 	}
+}
+
+/* The PSoC's log events, counted on their way to the usual log. */
+static void (*psoc_log_next)(void *ctx, int event, uint32_t a, uint32_t b);
+
+static void psoc_log(void *ctx, int event, uint32_t a, uint32_t b)
+{
+	if (event == S07_LOG_GREET_FAILED && ck.f.psoc_greet_failed < 0xFFu)
+		ck.f.psoc_greet_failed++;
+	if (psoc_log_next != NULL)
+		psoc_log_next(ctx, event, a, b);
 }
 
 static bool next_key(unsigned *key, bool *down)
@@ -300,44 +308,44 @@ static void t_registers(struct opxy_master *m)
 }
 
 /*
- * The receive FIFO emptied. The id read below is a counted send then a
- * counted receive, a pair the bootloader never uses; it can leave a word in
- * the receive FIFO, and the driver's full-duplex transfers that follow take
- * the first word they find there as their own, so every read comes back one
- * byte late. Reading SPI_RFIFO until SPI_STAT.RFE is set empties it (HRM,
- * "SPI_STAT.RFE"). The FIFO holds a few words: the bound only stops a
- * controller that never reports it empty.
+ * S-13b.013: RDID as the driver frames every other command (spiflash.c's
+ * frame()): the opcode, then the reply, both full-duplex transfers. A counted
+ * send and receive is a pair nothing else uses on this controller; after its
+ * counted receive one more word can reach the receive FIFO, and every
+ * full-duplex read that follows then returns one byte late.
  */
-static void rx_drain(const struct wb_spi *spi)
+static bool read_id(const struct wb_spi *spi, uint8_t id[3])
 {
-	unsigned i;
+	static const uint8_t rdid = WB_SPIFLASH_RDID;
+	bool ok;
 
-	for (i = 0; i < 16u && !(wb_mmr_read32(SPI_STAT(spi->n)) & SPI_STAT_RFE); i++)
-		(void)wb_mmr_read32(SPI_RFIFO(spi->n));
+	wb_spi_select(spi, true);
+	ok = wb_spi_xfer(spi, &rdid, NULL, 1u) == WB_SPI_OK &&
+	     wb_spi_xfer(spi, NULL, id, 3u) == WB_SPI_OK;
+	wb_spi_select(spi, false);
+	return ok;
 }
 
 static void t_flash(struct opxy_master *m)
 {
-	static const uint8_t rdid = WB_SPIFLASH_RDID;
 	const struct wb_spi *spi = m->hw.flash.spi;
 	struct s02_selector sel;
-	uint8_t magic[4];
+	uint8_t magic[5];
 
 	progress(m, TCHK_FLASH_ID);
-	/* S-13b.013: RDID, informative (S-13b.018) */
-	rx_drain(spi);
-	wb_spi_select(spi, true);
-	ck.f.flash_id_read = wb_spi_send(spi, &rdid, 1) == WB_SPI_OK &&
-			     wb_spi_recv(spi, ck.f.jedec, sizeof ck.f.jedec) == WB_SPI_OK;
-	wb_spi_select(spi, false);
-	rx_drain(spi);
+	/* S-13b.015: the stage's first frames are the read's RDSR until WIP = 0;
+	 * then RDID, informative (S-13b.018) */
+	ck.f.flash_id_read = m->flash_ops.read(m->flash_ops.ctx, S02_META_OFF, magic, 1u) == 0 &&
+			     read_id(spi, ck.f.jedec);
 	mark(TCHK_FLASH_ID);
 
 	progress(m, TCHK_FLASH_LAYOUT);
-	ck.f.flash_read = m->flash_ops.read(m->flash_ops.ctx, S02_META_OFF, magic, 4u) == 0 &&
+	ck.f.flash_read = m->flash_ops.read(m->flash_ops.ctx, S02_META_OFF, magic, 5u) == 0 &&
 			  s02_read_selector(&m->flash, &sel) == 0;
 	if (ck.f.flash_read) {
 		ck.f.meta_magic_ok = wb_get_le32(magic) == S02_META_MAGIC;
+		/* the magic one byte on: reads come back one byte late */
+		ck.f.flash_late = !ck.f.meta_magic_ok && wb_get_le32(magic + 1) == S02_META_MAGIC;
 		ck.f.sel_index = sel.index;
 		ck.f.sel_verified = sel.verified;
 		const uint64_t t0 = now_us();
@@ -369,6 +377,16 @@ static void t_psoc(struct opxy_master *m)
 
 	progress(m, TCHK_PSOC);
 	ck.f.psoc_greeted = m->psoc.greeted;
+	if (!ck.f.psoc_greeted) {
+		bool g = false;
+
+		/* S-07.020: a greeting of the test's own; S-07.025's subscription
+		 * after it, as after any greeting held mode answers */
+		if (s07_greet(&m->psoc, &g) == S07_OK && g) {
+			ck.f.psoc_asked = true;
+			s07_subscribe(&m->psoc);
+		}
+	}
 	ck.f.psoc_ping = s06_transact(&m->node, S06_LINK_PSOC, PSOC_PING, NULL, 0, REQUEST_US,
 				      &r) == 1;
 	ck.f.psoc_keys = s06_transact(&m->node, S06_LINK_PSOC, PSOC_KEY_STATUS, NULL, 0,
@@ -692,106 +710,44 @@ static bool wait_key(struct opxy_master *m, unsigned *key)
 	}
 }
 
-/* A guided test's offer: true when the white knob starts it, false on 8. */
-static bool offer(struct opxy_master *m, const char *head, const char *what)
+/*
+ * The one guided test: com and M4, in either order. A person who can read
+ * this screen has seen the panel work. 8 ends it without them, and the
+ * install is then not offered.
+ */
+static void key_line(struct opxy_master *m)
 {
-	unsigned key;
+	struct inst_screen sc;
+	struct tchk_line l[S15_ROWS];
+	unsigned n, i;
 
-	opxy_installer_note(INST_GUIDED, TCHK_COUNT);
+	memset(&sc, 0, sizeof sc);
+	sc.phase = INST_GUIDED;
+	sc.keys_seen = ck.f.keys_seen;
+	n = inst_screen_lines(&sc, l);
 	s15_console_clear(&ck.con);
-	s15_console_add(&ck.con, S15_ST_HEAD, head);
-	s15_console_add(&ck.con, S15_ST_TEXT, what);
-	s15_console_add(&ck.con, S15_ST_TEXT, "");
-	s15_console_add(&ck.con, S15_ST_KEYS, "`White knob` starts it.");
-	s15_console_add(&ck.con, S15_ST_ITEM, "8 Skip: the install is then not offered");
+	for (i = 0; i < n; i++)
+		s15_console_add(&ck.con, (enum s15_style)l[i].style, l[i].s);
 	show(m);
-	do {
-		(void)wait_key(m, &key);
-	} while (key != S15_KEY_WHITE && s15_digit(key) != 8u);
-	return key == S15_KEY_WHITE;
 }
 
 static void g_keys(struct opxy_master *m)
 {
-	const struct s15_geometry *g = opxy_display_geometry();
-	static const char end_line[] = "`Shift` + `8`   End the key test";
-	unsigned key;
-	bool down, done = false;
-
-	if (!offer(m, "Key test", "Press every key and knob, one at a time.")) {
-		ck.f.keys = TCHK_G_SKIPPED;
-		return;
-	}
-	s15_keytest_start(&ck.kt);
-	s07_key_test_start(&m->psoc);		/* S-07.045 */
-	while (!done) {
-		/* cppcheck-suppress knownConditionTrueFalse ; a weak default */
-		if (g != NULL) {
-			s15_render_keytest(&ck.kt, g, &m->sv.draw, frame());
-			s15_render_row(g, &m->sv.draw, 1, S15_ST_KEYS, end_line, sizeof end_line - 1u);
-		}
-		do {
-			pass(m);
-		} while (ck.kin == ck.kout);
-		while (!done && next_key(&key, &down))
-			done = s15_keytest_event(&ck.kt, key, down);
-	}
-	s07_key_test_stop(&m->psoc);
-	ck.f.keys_tested = (uint8_t)ck.kt.n_tested;
-	ck.f.keys = ck.kt.n_tested >= S15_NKEYS ? TCHK_G_PASSED : TCHK_G_ENDED;
-}
-
-static void g_colors(struct opxy_master *m)
-{
-	const struct s15_geometry *g = opxy_display_geometry();
 	unsigned key;
 
-	if (!offer(m, "Color test", "Five bars: red, green, blue, white and gray.")) {
-		ck.f.colors = TCHK_G_SKIPPED;
-		return;
-	}
-	s15_console_clear(&ck.con);
-	s15_console_add(&ck.con, S15_ST_HEAD, "Red, green, blue, white, gray, each even?");
-	s15_console_add(&ck.con, S15_ST_KEYS, "`White knob` yes, `any other key` no.");
-	show(m);
-	/* cppcheck-suppress knownConditionTrueFalse ; a weak default */
-	if (g != NULL) {
-		bars(m, g->margin, s15_row_y(g, 2), (uint16_t)(S15_COLS * g->glyph_w),
-		     (uint16_t)(s15_row_y(g, S15_ROWS) - s15_row_y(g, 2)));
-		opxy_display_send();
-	}
-	(void)wait_key(m, &key);
-	ck.f.colors = key == S15_KEY_WHITE ? TCHK_G_PASSED : TCHK_G_FAILED;
-}
-
-static void g_usb(struct opxy_master *m)
-{
-	uint64_t end;
-	unsigned key;
-	bool down;
-
-	if (!offer(m, "USB test", "Connect USB to a computer when asked.")) {
-		ck.f.usb = TCHK_G_SKIPPED;
-		return;
-	}
-	s15_console_clear(&ck.con);
-	s15_console_add(&ck.con, S15_ST_HEAD, "Connect USB to a computer now.");
-	s15_console_add(&ck.con, S15_ST_TEXT, "It passes once the computer sets the unit up.");
-	s15_console_add(&ck.con, S15_ST_KEYS, "`Any key` skips it.");
-	show(m);
-	end = wb_time_deadline(&m->hw.time, USB_WAIT_US);
-	ck.f.usb = TCHK_G_FAILED;
-	while (!wb_time_passed(end)) {
-		if (wb_usb_state() == WB_USB_CONFIGURED) {
-			ck.f.usb = TCHK_G_PASSED;
+	opxy_installer_note(INST_GUIDED, TCHK_COUNT);
+	key_line(m);
+	while (ck.f.keys_seen != 3u) {
+		(void)wait_key(m, &key);
+		if (key == TCHK_KEY_COM)
+			ck.f.keys_seen |= 1u;
+		else if (key == TCHK_KEY_M4)
+			ck.f.keys_seen |= 2u;
+		else if (s15_digit(key) == 8u)
 			break;
-		}
-		if (next_key(&key, &down) && down) {
-			ck.f.usb = TCHK_G_SKIPPED;
-			break;
-		}
-		pass(m);
+		key_line(m);
 	}
+	ck.f.keys = ck.f.keys_seen == 3u ? TCHK_G_PASSED : TCHK_G_ENDED;
 }
 
 /* --- the entry points --- */
@@ -820,6 +776,9 @@ void opxy_testos_check_start(struct opxy_master *m)
 	m->link[S06_LINK_NORDIC].ops = &gate_port;
 	s08_set_state(&m->nordic, TCHK_NORDIC_STATE);
 	m->psoc_ops.key_event = key_event;
+	ck.f.psoc_start_greeted = m->psoc.greeted;
+	psoc_log_next = m->psoc_ops.log;
+	m->psoc_ops.log = psoc_log;
 	/* the carried image checked; the serial port's bytes to the installer */
 	opxy_installer_start(m);
 	/* S-10a.010's disk set with the serial port, with no serial number:
@@ -870,11 +829,11 @@ void opxy_testos_check_service(void *ctx, const struct boot_held *h)
 	mark(TCHK_TIMING);
 	report(m);
 
-	g_keys(m);
-	report(m);
-	g_colors(m);
-	report(m);
-	g_usb(m);
+	/* back after a trial start: the keys passed at the start that wrote it */
+	if (opxy_installer_trial_back(m))
+		ck.f.keys = TCHK_G_EARLIER;
+	else
+		g_keys(m);
 	report(m);
 
 	/* the install, offered only when every check passed */

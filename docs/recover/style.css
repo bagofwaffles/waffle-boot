@@ -43,6 +43,16 @@ b.key{font:700 14.3px var(--font);background:var(--brown);color:#FFF6E6;border-r
 @media(max-width:640px){.wrap{padding:0 16px 30px;margin:14px auto}.hero{padding:20px 0 18px}
   .hero-head{gap:14px}.logo{width:86px;height:86px}.tag{font-size:16.5px}}
 
+/* the two choices: install, or recovery */
+.choose{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:18px 0 0}
+.choice{display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;padding:16px 18px;
+  border:2.5px solid var(--line);border-radius:14px;background:#FFFDF8;color:var(--dim);
+  font:600 15.4px/1.4 var(--font);box-shadow:0 3px 0 #EDDCC0}
+.choice b{font:700 21px var(--font);color:var(--ink)}
+.choice:hover{border-color:#E7CFA9;background:#FFF7E3}
+.choice[aria-selected="true"]{border-color:var(--gold);background:#FFF3DA;box-shadow:0 3px 0 var(--gold-edge)}
+.choice[aria-selected="true"] b{color:#8A5A12}
+
 /* mode tabs */
 .modes{display:flex;gap:8px;margin:18px 0 0;padding:5px;background:#FFF3DA;border:1px solid var(--line);
   border-radius:12px;width:fit-content;max-width:100%}
@@ -235,3 +245,7 @@ footer p{margin:0}
 footer{text-align:center;color:#8A7259;font-size:14.9px;margin-top:26px;border-top:1px solid var(--line);
   padding-top:22px}
 :focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px}
+/* the Install tab's send over the developer link */
+.devput{margin:18px 0 0;padding:14px 0 0;border-top:1px dashed var(--line)}
+.devput h3{margin:0;font-size:17.6px}
+.devput .bar{margin-top:10px}

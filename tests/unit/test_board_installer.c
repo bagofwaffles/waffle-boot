@@ -46,6 +46,7 @@ static void test_screens(void)
 		s.hold_digit = v->hold_digit;
 		s.hold_fill = v->hold_fill;
 		s.hold_left_s = v->hold_left_s;
+		s.keys_seen = (uint8_t)v->keys_seen;
 		n = inst_screen_lines(&s, l);
 		CHECK(n == v->n);
 		for (unsigned i = 0; i < n && i < v->n; i++) {
@@ -96,7 +97,7 @@ static void test_lock(void)
 	t.r[TCHK_KEYS].state = TCHK_NOT_TESTED;		/* skipped */
 	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_GUIDED);
 	all_pass(&t, &sw);
-	t.r[TCHK_COLORS].state = TCHK_FAIL;
+	t.r[TCHK_KEYS].state = TCHK_FAIL;
 	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_GUIDED);
 	all_pass(&t, &sw);
 	sw.result = TCHK_SW_NO_OTHER_OS;
@@ -541,6 +542,13 @@ static void test_report(void)
 	n = inst_report_append(buf, 5u, sizeof buf, &he, &st, &img_r, eng);
 	CHECK(n == strlen(buf));
 	CHECK(strstr(buf, "breadcrumbs: 01 ff") != NULL);
+	CHECK(strstr(buf, "not read yet") == NULL);
+	/* during the checks the engine has not read the flash: no selector */
+	st.phase = INST_CHECKING;
+	n = inst_report_append(buf, 5u, sizeof buf, &he, &st, &img_r, NULL);
+	CHECK(n == strlen(buf));
+	CHECK(strstr(buf, "selector and slots: not read yet\n") != NULL);
+	CHECK(strstr(buf, "selector: ") == NULL && strstr(buf, "target: ") == NULL);
 	/* never past the buffer */
 	n = inst_report_append(buf, 5u, 40u, &he, &st, &img_r, eng);
 	CHECK(n == 39u && buf[39] == '\0');

@@ -47,9 +47,7 @@ enum tchk_id {
 	TCHK_RTC,
 	TCHK_NORDIC,
 	TCHK_TIMING,
-	TCHK_KEYS,		/* guided */
-	TCHK_COLORS,
-	TCHK_USB,
+	TCHK_KEYS,		/* guided: com and M4 */
 	TCHK_COUNT
 };
 
@@ -291,7 +289,11 @@ void tchk_regs_judge(const struct opxy_testos_reg *rows, unsigned n, const uint3
 		     struct tchk_regs out[TCHK_REGS_GROUPS]);
 
 /* Guided outcomes. */
-enum { TCHK_G_NOT_RUN = 0, TCHK_G_SKIPPED, TCHK_G_PASSED, TCHK_G_FAILED, TCHK_G_ENDED };
+enum { TCHK_G_NOT_RUN = 0, TCHK_G_SKIPPED, TCHK_G_PASSED, TCHK_G_FAILED, TCHK_G_ENDED,
+       TCHK_G_EARLIER	/* passed at the start that wrote the trial: not asked again */ };
+/* The guided key check's keys (S-07.030's numbers). */
+#define TCHK_KEY_COM 0x18u
+#define TCHK_KEY_M4  0x09u
 
 #define TCHK_INFO_MAX 128u
 struct tchk_facts {
@@ -306,6 +308,7 @@ struct tchk_facts {
 	/* flash-layout: only words of these reach the report */
 	bool flash_read;
 	bool meta_magic_ok;
+	bool flash_late;		/* the metadata's magic one byte further on */
 	uint8_t sel_index, sel_verified;
 	bool slot_good[2];
 	uint32_t slot_crc[2], slot_len[2];	/* never shown */
@@ -313,6 +316,9 @@ struct tchk_facts {
 	uint64_t flash_bytes, flash_us;
 	/* psoc */
 	bool psoc_greeted, psoc_ping, psoc_keys, psoc_battery;
+	bool psoc_start_greeted;	/* the start-up's greeting answered */
+	bool psoc_asked;		/* not greeted at the test: greeted again by the test */
+	uint8_t psoc_greet_failed;	/* greeting sequences that ended ungreeted since start-up */
 	uint8_t psoc_info[TCHK_INFO_MAX];	/* the raw 0x09 reply: serial included */
 	uint16_t psoc_info_len;
 	/* slave */
@@ -353,8 +359,8 @@ struct tchk_facts {
 	/* timing */
 	uint32_t held_ms;			/* entry to the suite's start */
 	/* guided */
-	uint8_t keys, colors, usb;
-	uint8_t keys_tested;
+	uint8_t keys;
+	uint8_t keys_seen;			/* bit 0 com, bit 1 M4 */
 };
 
 /* Every test's outcome from the facts. */

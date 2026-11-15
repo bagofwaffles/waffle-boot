@@ -334,11 +334,18 @@ static enum inst_phase act(const struct opxy_installer_ctx *c, unsigned digit)
 	return p;
 }
 
+bool opxy_installer_trial_back(struct opxy_master *m)
+{
+	if (!in.eng_read)
+		engine(m, OPXY_INSTALL_STATUS);
+	return in.st.trial != INST_TRIAL_NONE;
+}
+
 void opxy_installer_run(const struct opxy_installer_ctx *c)
 {
 	uint32_t drawn = 0;
 
-	engine(c->m, OPXY_INSTALL_STATUS);
+	(void)opxy_installer_trial_back(c->m);
 	in.st.flags |= INST_F_CHECKS_DONE;
 	enter(c, settle(c), now_ms(c));
 	for (;;) {

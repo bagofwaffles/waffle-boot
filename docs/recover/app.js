@@ -8,9 +8,13 @@ import {
 } from './core.js';
 import {
 	detect, installerHello, poll, isBusy, readReport, describeInstall, FERRET_URL, BUSY, GONE_TRIAL, GONE_END,
+	DevLink, checkInstallerFile, devPut,
 } from './install.js';
+import * as IW from './install_words.js';
 import { SerialTransport, USB_FILTERS, serialSupported } from './serial.js';
-import { simulated, simInstaller, SimTransport, simImage, simAct } from './sim.js';
+import {
+	simulated, simInstaller, simDevlink, SimTransport, simImage, simAct, simInstallerFile,
+} from './sim.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => {
@@ -603,7 +607,7 @@ async function instConnect() {
 			log('Recovery answers, not the installer.', 'warn');
 			$('i-connhint').textContent = 'That is the recovery menu, not the installer. Switch the unit off and ' +
 				'on with no key held so that it starts the installer, then connect again. The recovery menu is ' +
-				'on the Guided tab.';
+				'under Recovery.';
 			step('iconn', 'fail', 'recovery menu');
 			await t.close().catch(() => {});
 			$('i-connect').disabled = false;
@@ -878,6 +882,114 @@ function renderInstall() {
 		$('i-trail').firstElementChild.className = 'bad';
 }
 
+// ---- the Install tab: the installer file over the boot menu's developer link ----
+// For a unit already on waffle-boot with developer mode on: the file goes to /yaffs2/os.ldr as
+// tools/testos_mon.py dev-put sends it, and its SHA-256 is checked. The person then writes it to
+// the boot partition from the developer menu.
+
+const dev = { bytes: null, name: '', busy: false };
+const devCan = () => (serialSupported() || simulated()) && window.isSecureContext;
+
+function devLoad(bytes, name) {
+	const c = checkInstallerFile(bytes, name);
+	dev.bytes = c.ok ? bytes : null;
+	dev.name = name;
+	$('i-devdrop').classList.toggle('ok', c.ok);
+	$('i-devdrop').classList.toggle('bad', !c.ok);
+	$('i-devdropsub').textContent = name + ', ' + bytes.length.toLocaleString('en-US') + ' bytes';
+	says($('i-devnotes'), c.lines, !c.ok);
+	$('i-devresult').hidden = true;
+	$('i-devsend').disabled = !c.ok || !devCan();
+}
+
+async function devSend() {
+	if (!dev.bytes || dev.busy)
+		return;
+	dev.busy = true;
+	$('i-devsend').disabled = true;
+	$('i-devresult').hidden = true;
+	const stage = $('i-devstage');
+	let t = null;
+	try {
+		t = simulated() ? await SimTransport.open() : await SerialTransport.request(USB_FILTERS);
+	} catch (e) {
+		const why = e && e.name === 'NotFoundError' ? IW.DEV_NO_PORT :
+			IW.devOpenFailed(e && e.message ? e.message : String(e));
+		log(why, 'warn');
+		stage.textContent = why;
+		dev.busy = false;
+		$('i-devsend').disabled = false;
+		return;
+	}
+	$('i-devbarbox').hidden = false;
+	$('i-devbar').style.width = '0%';
+	log('Sending ' + dev.name + ' to the boot menu as /yaffs2/' + IW.DEV_NAME + '.');
+	let r;
+	try {
+		r = await devPut(new DevLink(logged(t)), dev.bytes, dev.name, {
+			onStage: (s) => {
+				stage.textContent = IW.DEV_STAGE[s];
+			},
+			onProgress: (n, total) => {
+				stage.textContent = IW.devSending(n, total);
+				$('i-devbar').style.width = Math.round(100 * n / total) + '%';
+			},
+		});
+	} catch (e) {
+		r = { outcome: 'failed', lines: [e && e.message ? e.message : String(e)], advice: [IW.DEV_PARTIAL] };
+	}
+	await t.close().catch(() => {});
+	const ok = r.outcome === 'verified';
+	stage.textContent = '';
+	$('i-devbarbox').hidden = !ok;
+	$('i-devresult').className = 'phase ' + (ok ? 'ok' : 'bad');
+	$('i-devresult').hidden = false;
+	says($('i-devlines'), r.lines, !ok);
+	says($('i-devadvice'), r.advice);
+	for (const l of r.lines)
+		log(l, ok ? 'ok' : 'err');
+	if (ok)
+		step('iwrite', 'active', 'file sent');
+	dev.busy = false;
+	$('i-devsend').disabled = !dev.bytes;
+}
+
+function startDev() {
+	$('i-devtitle').textContent = IW.DEV_TITLE;
+	$('i-devhint').textContent = IW.DEV_HINT;
+	$('i-devdroptext').textContent = IW.DEV_DROP;
+	$('i-devdropsub').textContent = IW.DEV_DROP_SUB;
+	$('i-devsend').textContent = IW.DEV_SEND;
+	$('i-devstage').textContent = IW.DEV_PICK;
+	$('i-devother').textContent = IW.DEV_OTHER;
+	const drop = $('i-devdrop'), file = $('i-devfile');
+	const take = async (f) => {
+		if (f)
+			devLoad(new Uint8Array(await f.arrayBuffer()), f.name);
+	};
+	file.addEventListener('change', () => take(file.files[0]));
+	drop.addEventListener('dragover', (e) => {
+		e.preventDefault();
+		drop.classList.add('hover');
+	});
+	drop.addEventListener('dragleave', () => drop.classList.remove('hover'));
+	drop.addEventListener('drop', (e) => {
+		e.preventDefault();
+		drop.classList.remove('hover');
+		take(e.dataTransfer.files[0]);
+	});
+	$('i-devsend').addEventListener('click', devSend);
+	if (simDevlink()) {
+		const b = el('button', 'btn small', IW.DEV_SIM_FILE);
+		b.type = 'button';
+		b.addEventListener('click', async (e) => {
+			e.preventDefault();
+			devLoad(await simInstallerFile(), IW.INSTALLER_FILE);
+		});
+		drop.after(b);
+	}
+}
+
 function startInstall() {
 	const f = $('i-ferret');
 	f.replaceChildren(el('b', '', 'Developer mode never turned on? '),
@@ -892,6 +1004,7 @@ function startInstall() {
 		f.append(el('b', '', 'ferret tool'));
 	}
 	f.append(' first. This page does nothing for that step.');
+	startDev();
 	$('i-connect').addEventListener('click', instConnect);
 	$('i-disconnect').addEventListener('click', instDisconnect);
 	$('i-report').addEventListener('click', saveReport);
@@ -915,11 +1028,17 @@ function render() {
 	renderAdvanced();
 }
 
+// which: 'install', 'guided' or 'advanced'; Recovery opens the last of its two modes
+let recoveryMode = 'guided';
 function tab(which) {
+	if (which !== 'install')
+		recoveryMode = which;
 	for (const name of ['guided', 'advanced', 'install']) {
 		$(name).hidden = name !== which;
 		$('tab-' + name).setAttribute('aria-selected', String(name === which));
 	}
+	$('tab-recover').setAttribute('aria-selected', String(which !== 'install'));
+	$('recmodes').hidden = which === 'install';
 	// the recovery menu's connect and unit steps belong to Guided and Advanced
 	$('s-menu').hidden = $('s-unit').hidden = which === 'install';
 	if (which === 'advanced')
@@ -930,6 +1049,7 @@ function start() {
 	$('tab-guided').addEventListener('click', () => tab('guided'));
 	$('tab-advanced').addEventListener('click', () => tab('advanced'));
 	$('tab-install').addEventListener('click', () => tab('install'));
+	$('tab-recover').addEventListener('click', () => tab(recoveryMode));
 	startInstall();
 	$('connect').addEventListener('click', doConnect);
 	$('disconnect').addEventListener('click', () => disconnected(''));
@@ -957,8 +1077,8 @@ function start() {
 		}
 	checkBrowser();
 	render();
-	if (simInstaller())
-		tab('install');
+	// Install opens first; a simulated recovery unit opens Recovery
+	tab(simulated() && !simInstaller() && !simDevlink() ? 'guided' : 'install');
 }
 
 start();

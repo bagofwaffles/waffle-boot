@@ -16,6 +16,14 @@ const which = () => encodeURIComponent(params.get('sim') || '');
 // The installer simulator (?sim=installer:CASE): what a person does on the unit.
 export const simInstaller = () => simulated() && (params.get('sim') || '').startsWith('installer:');
 
+// The boot menu's developer link simulator (?sim=devlink:CASE), and a file it takes.
+export const simDevlink = () => simulated() && (params.get('sim') || '').startsWith('devlink:');
+
+export async function simInstallerFile() {
+	const r = await fetch('/sim/installer-file');
+	return new Uint8Array(await r.arrayBuffer());
+}
+
 export async function simAct(what) {
 	const r = await fetch('/sim/act?unit=' + which() + '&do=' + encodeURIComponent(what));
 	return r.ok;

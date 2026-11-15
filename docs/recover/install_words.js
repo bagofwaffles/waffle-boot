@@ -31,7 +31,7 @@ export const STARTING = 0, CHECKING = 1, GUIDED = 2, LOCKED = 3, READY = 4, WRIT
 export const PHASE = {
     0: ['starting', 'Starting the checks'],
     1: ['checking', 'Running the checks'],
-    2: ['guided', "Follow the unit's screen"],
+    2: ['guided', 'The key check: press com, then M4, on the unit'],
     3: ['locked', 'A check did not pass: nothing was written'],
     4: ['ready', 'Hold 1 on the unit for 5 s to write the trial'],
     5: ['writing trial', 'Writing the trial'],
@@ -54,7 +54,7 @@ export const LOCK = {
     3: 'the installer did not verify the image it carries (CRC-32 or front pin)',
     4: 'the slot the selector names is not verified or not good',
     5: "the unit's OS was not found, or fails its check",
-    6: 'a guided test was skipped or not passed',
+    6: 'the key check (com and M4) was ended with 8',
     7: 'the eMMC could not be reached',
 };
 
@@ -66,7 +66,7 @@ export const LOCK_ADVICE = {
     4: 'The bootloader slots are not in a state the installer writes over.',
     5: "The installer needs the unit's OS in the other boot partition, checked, so that it can " +
         'make it active again. Write the OS from the developer menu, then the installer again.',
-    6: 'Start the installer again and follow each guided test on the unit to its end.',
+    6: 'Start the installer again and press com, then M4, on the unit.',
     7: 'Switch off and on and start the installer again. Save check.txt if it happens again.',
 };
 
@@ -139,3 +139,81 @@ export const trialText = (t) => TRIAL[t] || `state ${t}`;
 export const hex8 = (n) => (n >>> 0).toString(16).padStart(8, '0');
 export const failureText = (c) => FAILURE[c] || `failure code 0x${c.toString(16).padStart(2, '0')}`;
 export const slotBits = (b) => SLOT_BITS.filter(([m]) => b & m).map(([, w]) => w);
+
+// --- sending the installer over the boot menu's developer link ---
+// A unit already on waffle-boot, with developer mode on, takes the file on its USB serial port in
+// the boot menu, as tools/testos_mon.py dev-put sends it (docs/devhost.md). The numbers are that
+// tool's; the port is the same USB vendor and product as recovery's and the installer's.
+
+export const DEV_ROUTE = 0x21;          // S-06.010: the host to the master
+export const DEV_ID = 0x7D;             // S-10c.110: the developer requests
+export const DEV_PUT = 25, DEV_SHA = 26;
+export const PUT_OPEN = 0, PUT_DATA = 1, PUT_CLOSE = 2;
+export const PUT_CHUNK = 240;           // file bytes in one PUT_DATA, as the tool sends them
+export const DEV_NAME = 'os.ldr';       // the only name the boot menu takes
+export const DEV_TIMEOUT = 5000, DEV_SHA_TIMEOUT = 30000;   // ms, the tool's
+export const DEV_STATUS = { 0: 'ok', 1: 'refused', 2: 'bad request', 3: 'the slave is not answering' };
+export const LDR_MAX = 0x800000;        // the most a unit loads (docs/test-os.md)
+export const OS_WRITE_KEY = 5;
+
+export const DEV_TITLE = 'Or send it from here, to a unit already on waffle-boot';
+export const DEV_HINT = 'For a unit whose bootloader is waffle-boot, with developer mode on (Settings, 1 ' +
+    'Developer mode): this page sends the file to the unit over its USB serial port while the boot ' +
+    'menu shows, then checks the unit\'s copy. Nothing is written to a boot partition until you press ' +
+    `${OS_WRITE_KEY} in the developer menu yourself.`;
+export const DEV_DROP = 'Drop waffle-install.ldr here';
+export const DEV_DROP_SUB = '.ldr, a boot stream of at most 8 MB';
+export const DEV_SEND = 'Send to the boot menu';
+export const DEV_PICK = 'The browser asks which port to use: pick the OP-XY (it may be named OP-XY Boot).';
+export const DEV_OTHER = 'A unit on another bootloader has no such link: write the file from its own ' +
+    'developer menu, as above.';
+
+export const DEV_EMPTY = 'The file is empty.';
+export const devTooLarge = (n) => `The file is ${n.toLocaleString('en-US')} bytes, more than a unit loads ` +
+    `(${LDR_MAX.toLocaleString('en-US')} bytes).`;
+export const DEV_NOT_LDR = 'The file is not a boot stream: its first block header is not one (signature ' +
+    `0xAD, header checksum zero). Choose ${INSTALLER_FILE}.`;
+export const devOtherName = (name) => `The file is named ${name}, not ${INSTALLER_FILE}: check that it ` +
+    'is the installer before you press 5.';
+export const devFileOk = (n) => `A boot stream of ${n.toLocaleString('en-US')} bytes.`;
+
+export const DEV_STAGE = {
+    open: `Opening /yaffs2/${DEV_NAME} on the unit...`,
+    sending: 'Sending',
+    close: 'Closing the file...',
+    sha: "Checking the unit's copy (SHA-256)...",
+};
+export const devSending = (n, total) => `Sending: ${n.toLocaleString('en-US')} of ` +
+    `${total.toLocaleString('en-US')} bytes`;
+
+export const DEV_VERIFIED = 'The unit has the file: its size and SHA-256 match.';
+export const DEV_VERIFIED_ADVICE = [
+    `In the developer menu (3 on the boot menu), press ${OS_WRITE_KEY}, Write /os.ldr to boot ` +
+        'partition. It writes the file into the boot partition the OS is not in.',
+    'When the unit says the OS is written, switch it off and on (or press 6): the installer starts. ' +
+        'Then connect to it below.',
+];
+export const devMismatch = (unitSha, unitSize, sha, n) => "The unit's copy does not match the file: " +
+    `SHA-256 ${unitSha} and ${unitSize.toLocaleString('en-US')} bytes on the unit, ${sha} and ` +
+    `${n.toLocaleString('en-US')} bytes here.`;
+export const DEV_DONT_WRITE = `Do not press ${OS_WRITE_KEY} in the developer menu: the file on the unit ` +
+    'is not this one.';
+export const DEV_AGAIN = 'Send the file again.';
+export const DEV_REFUSED = {
+    1: 'The boot menu refused the request: developer mode is off, or the file was refused. Turn on ' +
+        'Settings, 1 Developer mode, and send again.',
+    2: 'The boot menu took the request as malformed.',
+    3: 'The second processor is not answering, so the unit cannot reach its drive: switch the unit off ' +
+        'and on, then send again.',
+};
+export const devRefused = (status) => DEV_REFUSED[status] || `The boot menu answered status ${status}.`;
+export const DEV_NO_ANSWER = 'No answer from the boot menu. Check that the unit shows the boot menu, with ' +
+    'developer mode on, and that the port picked is the OP-XY. Turning MTP on or off re-enumerates USB: ' +
+    'send again to pick the port again.';
+export const DEV_GONE = 'The port went away while the file was sent.';
+export const DEV_PARTIAL = `The file on the unit is incomplete. Do not press ${OS_WRITE_KEY} in the ` +
+    'developer menu; send again.';
+export const DEV_NO_PORT = 'No port was chosen.';
+export const devOpenFailed = (why) => `Could not open the port: ${why}. Close any other program using ` +
+    'it, then send again.';
+export const DEV_SIM_FILE = "Use the simulator's sample installer file";

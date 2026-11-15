@@ -34,8 +34,6 @@ const struct tchk_info tchk_tests[TCHK_COUNT] = {
 	[TCHK_NORDIC] = { "nordic", "Nordic", TCHK_KIND_AUTO },
 	[TCHK_TIMING] = { "timing", "Timing", TCHK_KIND_AUTO },
 	[TCHK_KEYS] = { "keys", "Keys", TCHK_KIND_GUIDED },
-	[TCHK_COLORS] = { "colors", "Colors", TCHK_KIND_GUIDED },
-	[TCHK_USB] = { "usb", "USB", TCHK_KIND_GUIDED },
 };
 
 /* --- the formatters --- */
@@ -539,7 +537,8 @@ static void judge_flash(const struct tchk_facts *f, struct tchk_table *t)
 	tchk_put_str(d, ", other ");
 	tchk_put_str(d, f->slot_good[sel ^ 1u] ? "good" : "not good");
 	d = &t->r[TCHK_FLASH_LAYOUT].more;
-	tchk_put_str(d, f->meta_magic_ok ? "metadata present" : "metadata differs");
+	tchk_put_str(d, f->meta_magic_ok ? "metadata present" :
+			f->flash_late ? "reads one byte late" : "metadata differs");
 	tchk_put_str(d, "; selector index ");
 	tchk_put_hex(d, f->sel_index, 2u);
 	tchk_put_str(d, ", verified ");
@@ -573,7 +572,8 @@ static void put_version(struct tchk_text *d, const uint8_t *reply, size_t len)
 
 static void judge_psoc(const struct tchk_facts *f, struct tchk_table *t)
 {
-	const bool ok = f->psoc_greeted && f->psoc_ping && f->psoc_keys && f->psoc_battery;
+	const bool greeted = f->psoc_greeted || f->psoc_asked;
+	const bool ok = greeted && f->psoc_ping && f->psoc_keys && f->psoc_battery;
 	struct tchk_text *d;
 
 	if (!ran(f, TCHK_PSOC)) {
@@ -585,12 +585,23 @@ static void judge_psoc(const struct tchk_facts *f, struct tchk_table *t)
 		tchk_put_str(d, "greeting, ping, keys, battery answered");
 	} else {
 		tchk_put_str(d, "no answer:");
-		tchk_put_str(d, f->psoc_greeted ? "" : " greeting");
+		tchk_put_str(d, greeted ? "" : " greeting");
 		tchk_put_str(d, f->psoc_ping ? "" : " ping");
 		tchk_put_str(d, f->psoc_keys ? "" : " keys");
 		tchk_put_str(d, f->psoc_battery ? "" : " battery");
 	}
 	put_version(&t->r[TCHK_PSOC].more, f->psoc_info, f->psoc_info_len);
+	/* the greeting's history, for a unit that needed a greeting again */
+	d = &t->r[TCHK_PSOC].more;
+	if (!f->psoc_start_greeted)
+		tchk_put_str(d, "; start-up greeting not answered");
+	if (f->psoc_greet_failed != 0u) {
+		tchk_put_str(d, "; greetings not answered since: ");
+		tchk_put_dec(d, f->psoc_greet_failed);
+	}
+	if (!f->psoc_greeted)
+		tchk_put_str(d, f->psoc_asked ? "; greeted again at the test" :
+						"; the test's greeting not answered");
 }
 
 static void judge_slave(const struct tchk_facts *f, struct tchk_table *t)
@@ -934,47 +945,20 @@ static void judge_guided(const struct tchk_facts *f, struct tchk_table *t)
 
 	switch (f->keys) {
 	case TCHK_G_PASSED:
-		tchk_put_str(tchk_set(t, TCHK_KEYS, TCHK_PASS), "all 72 keys and knobs tested");
+		tchk_put_str(tchk_set(t, TCHK_KEYS, TCHK_PASS), "com and M4 pressed");
+		break;
+	case TCHK_G_EARLIER:
+		tchk_put_str(tchk_set(t, TCHK_KEYS, TCHK_PASS),
+			     "passed before the trial, not asked again");
 		break;
 	case TCHK_G_ENDED:
 		d = tchk_set(t, TCHK_KEYS, TCHK_NOT_TESTED);
-		tchk_put_str(d, "ended with ");
-		tchk_put_dec(d, f->keys_tested);
-		tchk_put_str(d, " of 72 tested");
-		break;
-	case TCHK_G_SKIPPED:
-		not_tested(t, TCHK_KEYS, "skipped");
+		tchk_put_str(d, "ended with 8; ");
+		tchk_put_str(d, (f->keys_seen & 1u) ? "com pressed" : "com not pressed");
+		tchk_put_str(d, (f->keys_seen & 2u) ? ", M4 pressed" : ", M4 not pressed");
 		break;
 	default:
 		not_tested(t, TCHK_KEYS, "not run");
-		break;
-	}
-	switch (f->colors) {
-	case TCHK_G_PASSED:
-		tchk_put_str(tchk_set(t, TCHK_COLORS, TCHK_PASS), "the five bars looked right");
-		break;
-	case TCHK_G_FAILED:
-		tchk_put_str(tchk_set(t, TCHK_COLORS, TCHK_FAIL), "the bars did not look right");
-		break;
-	case TCHK_G_SKIPPED:
-		not_tested(t, TCHK_COLORS, "skipped");
-		break;
-	default:
-		not_tested(t, TCHK_COLORS, "not run");
-		break;
-	}
-	switch (f->usb) {
-	case TCHK_G_PASSED:
-		tchk_put_str(tchk_set(t, TCHK_USB, TCHK_PASS), "a computer configured the device");
-		break;
-	case TCHK_G_FAILED:
-		tchk_put_str(tchk_set(t, TCHK_USB, TCHK_FAIL), "not configured within 30 s");
-		break;
-	case TCHK_G_SKIPPED:
-		not_tested(t, TCHK_USB, "skipped");
-		break;
-	default:
-		not_tested(t, TCHK_USB, "not run");
 		break;
 	}
 }
@@ -1218,7 +1202,7 @@ size_t tchk_report(const struct tchk_table *t, const struct tchk_switch *sw, con
 		emit(&o, l[i]);
 		emit(&o, "\n");
 	}
-	emit(&o, "Guided tests skipped are listed as not tested; they leave no gap.\n");
+	emit(&o, "A key check ended with 8 is listed as not tested; the install is then not offered.\n");
 	return o.n;
 }
 

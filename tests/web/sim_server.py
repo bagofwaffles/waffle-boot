@@ -10,9 +10,13 @@ It serves docs/ as files, and at /sim/unit a WebSocket that units.py's Model or 
 or shim, CASE one of CASES below. /sim/image gives an image that unit takes.
 
 ?sim=installer:CASE is the installer instead (installer_model.py; CASE one of its CASES: pass,
-check-fail, trial-fail, no-os, write-fail, breadcrumb). It keeps its state across connections, as a
+check-fail, trial-fail, no-os, write-fail, breadcrumb, keys-ended). It keeps its state across connections, as a
 unit does across a restart, and /sim/act?unit=installer:CASE&do=hold|release|restart|reset stands
-for what a person does on the unit. Python 3, standard library only; nothing here reaches a real
+for what a person does on the unit.
+
+?sim=devlink:CASE is the boot menu's developer link instead (devlink_model.py; CASE good, mismatch,
+drop or dev-off): the Install tab's send of the installer file. /sim/installer-file gives a file
+it takes. Python 3, standard library only; nothing here reaches a real
 unit.
 """
 import base64
@@ -29,6 +33,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import units  # noqa: E402
 import installer_model  # noqa: E402
+import devlink_model  # noqa: E402
 
 DOCS = os.path.join(HERE, '..', '..', 'docs')
 OLD = {'make': {'seed': 1, 'version': [0, 9, 12, 0]}}
@@ -109,6 +114,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Length', str(len(data)))
             self.end_headers()
             self.wfile.write(data)
+        elif url.path == '/sim/installer-file':
+            data = devlink_model.sample(70000)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/octet-stream')
+            self.send_header('Content-Length', str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
         elif url.path == '/sim/act' and unit.startswith('installer:'):
             what = urllib.parse.parse_qs(url.query).get('do', [''])[0]
             ok = installer(unit).act(what)
@@ -120,6 +132,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(body)
         elif url.path == '/sim/unit' and unit.startswith('installer:'):
             self.installer(installer(unit))
+        elif url.path == '/sim/unit' and unit.startswith('devlink:'):
+            self.upgrade()
+            ours, theirs = socket.socketpair()
+            u = devlink_model.DevLinkUnit({'case': unit.partition(':')[2]}, theirs.fileno())
+            theirs.close()
+            try:
+                self.bridge(ours)
+            finally:
+                u.close()
         elif url.path == '/sim/unit':
             self.unit(spec_of(unit))
         else:

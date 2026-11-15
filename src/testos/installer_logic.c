@@ -110,7 +110,7 @@ const char *inst_lock_words(enum inst_lock l)
 		[INST_LOCK_IMAGE] = "The image it carries does not pass its check.",
 		[INST_LOCK_SELECTED] = "The unit's bootloader slot is not settled.",
 		[INST_LOCK_NO_OS] = "The unit's OS was not found, or fails its check.",
-		[INST_LOCK_GUIDED] = "A guided test was skipped or did not pass.",
+		[INST_LOCK_GUIDED] = "The key check (com and M4) was ended with 8.",
 		[INST_LOCK_EMMC] = "The eMMC could not be reached.",
 	};
 
@@ -615,8 +615,19 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 	switch ((enum inst_phase)s->phase) {
 	case INST_STARTING:
 	case INST_CHECKING:
-	case INST_GUIDED:
 		add(&o, S15_ST_HEAD, "Checking the hardware", NULL);
+		break;
+	case INST_GUIDED:
+		/* the one guided test: reading this shows the panel works */
+		add(&o, S15_ST_HEAD, "Press com, then M4, to go on", NULL);
+		add(&o, S15_ST_TEXT, "These two presses are the key check.", NULL);
+		add(&o, S15_ST_TEXT, "", NULL);
+		add(&o, (s->keys_seen & 1u) ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com",
+		    (s->keys_seen & 1u) ? "\tpressed" : "\twaiting");
+		add(&o, (s->keys_seen & 2u) ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "M4",
+		    (s->keys_seen & 2u) ? "\tpressed" : "\twaiting");
+		add(&o, S15_ST_TEXT, "", NULL);
+		add(&o, S15_ST_ITEM, "8 End: the install is then not offered", NULL);
 		break;
 	case INST_LOCKED:
 		add(&o, S15_ST_HEAD, "The install is not offered", NULL);
@@ -756,7 +767,7 @@ static void r_hex(struct rep *r, uint32_t v, unsigned digits)
 static const char *phase_word(uint8_t p)
 {
 	static const char *const w[] = {
-		"starting", "checking", "guided test", "locked", "ready", "writing the trial",
+		"starting", "checking", "key check", "locked", "ready", "writing the trial",
 		"trial written", "commit ready", "committing", "done", "failed",
 		"trial failed", "left",
 	};
@@ -829,14 +840,19 @@ size_t inst_report_append(char *out, size_t len, size_t cap, const struct inst_h
 		r_str(&r, "\nlocked: ");
 		r_str(&r, inst_lock_words((enum inst_lock)st->lock));
 	}
-	r_str(&r, "\nselector: ");
-	r_hex(&r, st->sel_index, 2u);
-	r_str(&r, " ");
-	r_hex(&r, st->sel_verified, 2u);
-	r_str(&r, "\n");
-	r_slot(&r, 0u, st->slot_state[0]);
-	r_slot(&r, 1u, st->slot_state[1]);
-	if (st->target <= 1u) {
+	if (eng == NULL) {
+		/* the engine reads the flash once the checks end */
+		r_str(&r, "\nselector and slots: not read yet\n");
+	} else {
+		r_str(&r, "\nselector: ");
+		r_hex(&r, st->sel_index, 2u);
+		r_str(&r, " ");
+		r_hex(&r, st->sel_verified, 2u);
+		r_str(&r, "\n");
+		r_slot(&r, 0u, st->slot_state[0]);
+		r_slot(&r, 1u, st->slot_state[1]);
+	}
+	if (eng != NULL && st->target <= 1u) {
 		r_str(&r, "target: ");
 		r_str(&r, slot_name(st->target));
 		r_str(&r, "\n");

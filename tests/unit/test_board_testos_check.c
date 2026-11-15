@@ -741,8 +741,8 @@ static void all_good(void)
 	facts.psoc_info_len = 16;
 	facts.held_ms = 7100;
 	facts.keys = TCHK_G_PASSED;
-	facts.colors = TCHK_G_PASSED;
-	facts.usb = TCHK_G_PASSED;
+	facts.keys_seen = 3u;
+	facts.psoc_start_greeted = true;
 }
 
 static void judge(void)
@@ -784,12 +784,49 @@ static void test_verdict(void)
 	CHECK(table.r[TCHK_OS_PARTITION].state == TCHK_FAIL);
 	CHECK(tchk_verdict(&table) == TCHK_VERDICT_PASS);
 
-	/* guided tests skipped leave no gap */
+	/* the key check ended with 8 leaves no gap; the installer locks on it */
 	all_good();
-	facts.keys = facts.colors = facts.usb = TCHK_G_SKIPPED;
+	facts.keys = TCHK_G_ENDED;
+	facts.keys_seen = 1u;
 	judge();
 	CHECK(table.r[TCHK_KEYS].state == TCHK_NOT_TESTED);
+	CHECK(strcmp(table.r[TCHK_KEYS].detail.s, "ended with 8; com pressed, M4 not pressed") == 0);
 	CHECK(tchk_verdict(&table) == TCHK_VERDICT_PASS);
+	/* back after a trial start: not asked again */
+	all_good();
+	facts.keys = TCHK_G_EARLIER;
+	facts.keys_seen = 0u;
+	judge();
+	CHECK(table.r[TCHK_KEYS].state == TCHK_PASS);
+	CHECK(strcmp(table.r[TCHK_KEYS].detail.s, "passed before the trial, not asked again") == 0);
+	all_good();
+	judge();
+	CHECK(strcmp(table.r[TCHK_KEYS].detail.s, "com and M4 pressed") == 0);
+
+	/* the PSoC: a greeting missed at start-up, answered at the test */
+	all_good();
+	facts.psoc_start_greeted = false;
+	facts.psoc_greeted = false;
+	facts.psoc_asked = true;
+	facts.psoc_greet_failed = 2u;
+	judge();
+	CHECK(table.r[TCHK_PSOC].state == TCHK_PASS);
+	CHECK(strcmp(table.r[TCHK_PSOC].more.s, "version 1.0.7; start-up greeting not answered; "
+		     "greetings not answered since: 2; greeted again at the test") == 0);
+	facts.psoc_asked = false;
+	judge();
+	CHECK(table.r[TCHK_PSOC].state == TCHK_FAIL);
+	CHECK(strcmp(table.r[TCHK_PSOC].detail.s, "no answer: greeting") == 0);
+	CHECK(strstr(table.r[TCHK_PSOC].more.s, "the test's greeting not answered") != NULL);
+
+	/* the flash read one byte late is named */
+	all_good();
+	facts.meta_magic_ok = false;
+	facts.flash_late = true;
+	facts.slot_good[0] = facts.slot_good[1] = false;
+	judge();
+	CHECK(table.r[TCHK_FLASH_LAYOUT].state == TCHK_FAIL);
+	CHECK(strncmp(table.r[TCHK_FLASH_LAYOUT].more.s, "reads one byte late; ", 21) == 0);
 
 	/* an automatic test not tested is a gap; no slave makes several */
 	all_good();
@@ -805,10 +842,6 @@ static void test_verdict(void)
 	CHECK(tchk_verdict(&table) == TCHK_VERDICT_GAPS);
 
 	/* any failure is FAIL, a guided one included */
-	all_good();
-	facts.colors = TCHK_G_FAILED;
-	judge();
-	CHECK(tchk_verdict(&table) == TCHK_VERDICT_FAIL);
 	all_good();
 	facts.regs[1].differ = 1;
 	facts.regs[1].first = &(const struct opxy_testos_reg){ 0x2000200Cu, 31, 0, OPXY_TESTOS_RULE_EQ,
@@ -1047,7 +1080,9 @@ static void test_pages_fit(void)
 	facts.te_us = 99999;
 	facts.file.failed = TCHK_FILE_LEFTOVER;
 	facts.keys = TCHK_G_ENDED;
-	facts.keys_tested = 71;
+	facts.keys_seen = 0u;
+	facts.psoc_start_greeted = false;
+	facts.psoc_greet_failed = 255u;
 	judge();
 	check_pages(&facts.sw);
 	all_good();
@@ -1168,7 +1203,7 @@ static void test_report_redaction(void)
 	CHECK(has("- waffle-boot's own earliest start-up"));
 	/* the report ends with its last line whole */
 	CHECK(n > 1u && report[n - 1u] == '\n' && report[n] == '\0');
-	CHECK(has("they leave no gap.\n"));
+	CHECK(has("the install is then not offered.\n"));
 	/* no line promises a return to the OS when none was made */
 	CHECK(!has("active again.") && !has("returns"));
 	/* every detail written whole */
@@ -1190,7 +1225,7 @@ static void test_report_pad(void)
 	size_t a, b, n;
 
 	all_good();
-	facts.usb = TCHK_G_NOT_RUN;
+	facts.keys = TCHK_G_NOT_RUN;
 	judge();
 	n = tchk_report(&table, &facts.sw, "1.0.11", report, sizeof report);
 	CHECK(n + 1u < TCHK_REPORT_LEN);
@@ -1198,7 +1233,7 @@ static void test_report_pad(void)
 	CHECK(a == TCHK_REPORT_LEN && report[a - 1u] == '\n' && report[n] == ' ' &&
 	      report[a - 2u] == ' ');
 	CHECK(report[n - 1u] == '\n');
-	facts.usb = TCHK_G_PASSED;
+	facts.keys = TCHK_G_PASSED;
 	facts.sw.result = TCHK_SW_RESTORED;
 	facts.nordic_refused = 4000000000u;
 	judge();

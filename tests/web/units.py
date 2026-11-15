@@ -249,6 +249,9 @@ def make_unit(spec, fd=None):
     if spec.get('kind') == 'installer':
         import installer_model
         return installer_model.InstallerUnit(spec, fd)
+    if spec.get('kind') == 'devlink':
+        import devlink_model
+        return devlink_model.DevLinkUnit(spec, fd)
     return ModelUnit(spec, fd)
 
 

@@ -37,7 +37,7 @@ written from that bootloader's developer menu into the boot partition the OS is 
 hardware checks, and only when every check passes does it offer the install: a trial write, a
 trial start, then a commit, after which the OS is made active again. Each write is started and
 confirmed on the unit by holding the step's key for 5 s. The page guides and shows; it never sends
-the image and never asks for a write.
+the bootloader image and never asks for a write.
 
 The installer speaks recovery's framing over its USB serial port, with request types of its own:
 `0x40` IHELLO (what it carries: version, length, CRC-32, front pin), `0x41` STATE (phase, verdict,
@@ -59,6 +59,15 @@ is the unit busy (it does not serve the port while it writes, and in some long c
 page keeps waiting. A port that goes away after the trial write is the unit switched off for its
 trial start: the page connects again on its own when the installer is back. After the end, the
 unit starts its OS and no installer comes back.
+
+For a unit already on waffle-boot with developer mode on, the tab can also send the installer file
+itself: over the boot menu's developer link (the same USB vendor and product), as
+`tools/testos_mon.py dev-put` does it: COBS frames with a CRC-8 and id `0x7D`, `PUT` open, the file in
+240-byte data requests and close, then `SHA`, whose SHA-256 and size the page holds against the file's.
+There is no retry: a data request sent twice would be stored twice. The person then writes the file
+with 5 in the developer menu; the page says not to when the copy does not match. `install.js` holds
+the codec and `devPut`; `tests/web/devlink_model.py` simulates the link, and the tests compare the
+page's bytes with what `testos_mon.py` itself sends to it, case by case.
 
 `FERRET_URL` in `install_words.js` is the link for a unit that has never had developer mode on;
 while it is empty the page names the tool without a link.
@@ -107,9 +116,14 @@ simulated unit takes. `sim.js` does this only when the page is opened from local
 `?sim=installer:CASE` opens the Install tab on a simulated installer: `pass` (checks, trial,
 restart, commit, done), `check-fail` (a check fails: locked), `trial-fail` (the trial start does not
 reach the boot menu), `no-os` (no OS to make active again: lock reason 5), `write-fail` (the trial
-write fails) and `breadcrumb` (the commit is refused). It moves on its own timer, keeps its state
+write fails), `breadcrumb` (the commit is refused) and `keys-ended` (the key check ended with 8: lock
+reason 6). It moves on its own timer, keeps its state
 across connections as a unit does across a restart, and the page's Simulator buttons stand for
 what a person does on the unit (`/sim/act?unit=installer:CASE&do=hold|leave|release|restart|reset`).
+
+`?sim=devlink:CASE` opens the Install tab with a simulated boot menu's developer link behind the
+send of the installer file: `good`, `mismatch` (the unit's copy differs), `drop` (a data request
+gets no answer) or `dev-off` (developer mode off: refused). A button loads a sample file.
 
 ## Hosting
 

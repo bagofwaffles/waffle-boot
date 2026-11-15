@@ -261,8 +261,9 @@ static void front_shot(const struct fr_screen *s)
 		}
 }
 
-/* The installer: the checks under way, the trial offered with its key
- * held, the trial written, the commit offered, done, and a locked install. */
+/* The installer: the checks under way, the key check with com pressed, the
+ * trial offered with its key held, the trial written, the commit offered,
+ * done, and a locked install. */
 static int installer_shots(const char *dir)
 {
 	static const struct s15_frame fr = { "Installer", "1.0.3", 0, S15_SLOT_UNKNOWN,
@@ -272,6 +273,7 @@ static int installer_shots(const char *dir)
 		uint8_t phase, lock, trial;
 		unsigned hold_digit, hold_fill, hold_left_s;
 	} shots[] = {
+		{ "installer-keys", INST_GUIDED, 0, 0, 0, 0, 0 },
 		{ "installer-ready", INST_READY, 0, 0, 1u, 600u, 2u },
 		{ "installer-trial", INST_TRIAL_WRITTEN, 0, INST_TRIAL_WAITING, 0, 0, 0 },
 		{ "installer-commit", INST_COMMIT_READY, 0, INST_TRIAL_REACHED, 0, 0, 0 },
@@ -305,6 +307,7 @@ static int installer_shots(const char *dir)
 		sc.hold_digit = shots[k].hold_digit;
 		sc.hold_fill = shots[k].hold_fill;
 		sc.hold_left_s = shots[k].hold_left_s;
+		sc.keys_seen = shots[k].phase == INST_GUIDED ? 1u : 0u;
 		n = inst_screen_lines(&sc, l);
 		s15_console_init(&con, NULL);
 		for (unsigned i = 0; i < n; i++)

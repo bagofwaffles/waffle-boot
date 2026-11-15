@@ -6,8 +6,8 @@
 The installer is one file, `waffle-install.ldr`. It runs as the unit's OS under whatever bootloader the unit
 has, checks the hardware, and only when every check passes it writes the waffle-boot image it carries.
 Every write is started on the unit, by holding the step's key for 5 s. The
-[recovery page](recover/) guides each step from a computer and shows the checks as they run; it sends
-nothing to the unit.
+[recovery page](recover/) guides each step from a computer and shows the checks as they run; the only thing
+it sends is the installer file, to a unit already on waffle-boot (step 1).
 
 ## Before you start
 
@@ -21,13 +21,18 @@ nothing to the unit.
 ## The steps
 
 1. **Write the installer from the developer menu.** Copy `waffle-install.ldr` to the unit and write it as
-   the OS from the developer menu, then switch off and on. The installer starts.
+   the OS from the developer menu, then switch off and on. The installer starts. On a unit already on
+   waffle-boot with developer mode on, the recovery page's Install tab can send the file instead, over the
+   boot menu's USB serial port, as `/yaffs2/os.ldr` (as `tools/testos_mon.py dev-put` does), and checks its
+   size and SHA-256; then press 5 in the developer menu, Write /os.ldr to boot partition.
 2. **The checks.** It tests the clocks and DDR, the SPI flash, the PSoC, the second processor and the
-   bridge, the eMMC, the display, the clock and the Nordic chip, then asks for three guided tests: the keys,
-   the colors and USB. A guided test skipped with 8 counts as not passed. The results are on the screen,
-   on the page, and in `check.txt` on the unit's USB disk (no serial number or key).
+   bridge, the eMMC, the display, the clock and the Nordic chip, then asks for one guided step: press com, then
+   M4. That is the key check, and reading the screen shows the panel works. 8 ends it, and the install is
+   then not offered; after a trial start it is not asked again. USB is shown by the page connecting at all.
+   The results are on the screen, on the page, and in `check.txt` on the unit's USB disk (no serial number
+   or key).
 
-   ![The checks](ui/installer-checks.png)
+   ![The checks](ui/installer-checks.png) ![The key check, com pressed](ui/installer-keys.png)
 3. **The trial.** When every check passes, the unit shows the version it carries and the slot it will
    write. Hold **1** for 5 s. It writes the slot the selector does not name, for one start only; your
    bootloader stays selected.
@@ -105,13 +110,13 @@ While it writes, and in some long checks, the installer does not service the por
 | `0x42` TEST | the test's index (u8) | status (0, or 1 for no such test), index, state, kind (0 OS, 1 automatic, 2 guided), then four NUL-ended strings: its id, its name, the detail line (at most 56 characters) and the report's note (at most 160) |
 | `0x43` REPORT | an offset (u32) | status (0), `check.txt`'s length (u32), then up to 1024 of its bytes from the offset. The text is rewritten as the checks run, so a reader starts again when the length changes |
 
-- **Phase:** 0 starting, 1 checking, 2 a guided test, 3 locked, 4 ready (the trial offered), 5 writing the
+- **Phase:** 0 starting, 1 checking, 2 the key check, 3 locked, 4 ready (the trial offered), 5 writing the
   trial, 6 the trial written, 7 the commit offered, 8 committing, 9 done, 10 a write failed, 11 the trial
   failed, 12 left without installing.
 - **Flags:** bit 0 the checks done, bit 1 the install offered, bit 2 the carried image passed its check, bit 3
   a breadcrumb build.
 - **Lock:** 0 none, 1 a check failed, 2 a check could not run, 3 the carried image, 4 the selected slot not
-  verified or not good, 5 the unit's OS not found or bad, 6 a guided test not passed, 7 the eMMC not
+  verified or not good, 5 the unit's OS not found or bad, 6 the key check ended with 8, 7 the eMMC not
   reachable.
 - **Slot state:** bit 0 good, 1 this image under the trial mark, 2 this image committed, 3 trial pending, 4
   trial started, 5 trial spent, 6 trial entry odd, 7 the trial reached the boot menu.

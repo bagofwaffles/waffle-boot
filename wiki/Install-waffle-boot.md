@@ -4,7 +4,8 @@
 The installer is one file, `waffle-install.ldr`. It runs as the unit's OS under whatever bootloader the unit
 has, checks the hardware, and only when every check passes it installs waffle-boot. Every write is started
 on the unit, by holding the step's key for 5 s. The [recovery page](Recover-from-a-Computer) has an
-Install tab that guides each step and shows the checks as they run; it sends nothing to the unit.
+Install tab that guides each step and shows the checks as they run. To a unit already on waffle-boot it
+can also send the installer file; nothing else.
 
 ## Before you start
 
@@ -16,9 +17,12 @@ Install tab that guides each step and shows the checks as they run; it sends not
 
 ## The steps
 
-1. Write `waffle-install.ldr` from the developer menu, then switch off and on.
-2. The checks run, then three guided tests: keys, colors and USB. Results are on the screen, on the page,
-   and in `check.txt` on the unit's USB disk.
+1. Write `waffle-install.ldr` from the developer menu, then switch off and on. On a unit already on
+   waffle-boot with developer mode on, the recovery page can send the file over the boot menu's USB serial
+   port and check it; then press 5 in the developer menu, Write /os.ldr to boot partition.
+2. The checks run, then the key check: press com, then M4. 8 ends it, and the install is not offered.
+   After a trial start it is not asked again. Results are on the screen, on the page, and in `check.txt`
+   on the unit's USB disk.
 
    <img src="../docs/ui/installer-checks.png" width="480" alt="The checks under way">
 3. When every check passes, hold **1** for 5 s to write the trial. Your bootloader stays selected.

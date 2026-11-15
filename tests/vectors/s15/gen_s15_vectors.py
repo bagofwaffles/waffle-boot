@@ -389,7 +389,7 @@ def installer(o):
     o.w('#ifdef S15V_INSTALLER')
     o.w('/* installer.json: the installer\'s screens, one case per state shown. */')
     o.w('struct s15v_inst { const char *name; unsigned phase; const char *version; unsigned target, lock, last_rc,'
-        ' os, trial, hold_digit, hold_fill, hold_left_s; const char *const *lines; size_t n; };')
+        ' os, trial, hold_digit, hold_fill, hold_left_s, keys_seen; const char *const *lines; size_t n; };')
     items = []
     for c in v['cases']:
         ident = o.uid('s15v_inst_lines')
@@ -397,9 +397,10 @@ def installer(o):
         items.append((c, ident))
     o.w('static const struct s15v_inst s15v_insts[] = {')
     for c, ident in items:
-        o.w('\t{ %s, %du, %s, %du, %du, %du, %du, %du, %du, %du, %du, %s, %d },' % (
+        o.w('\t{ %s, %du, %s, %du, %du, %du, %du, %du, %du, %du, %du, %du, %s, %d },' % (
             cstr(c['name']), c['phase'], cstr(c['version']), c['target'], c['lock'], c['last_rc'], c['os'],
-            c['trial'], c['hold_digit'], c['hold_fill'], c['hold_left_s'], ident, len(c['lines'])))
+            c['trial'], c['hold_digit'], c['hold_fill'], c['hold_left_s'], c.get('keys_seen', 0), ident,
+            len(c['lines'])))
     o.w('};')
     o.w('#endif')
     o.w()

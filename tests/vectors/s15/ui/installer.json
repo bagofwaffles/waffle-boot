@@ -1,9 +1,27 @@
 {
- "_doc": "The installer's screens (src/testos/installer_logic.c, inst_screen_lines()), hand-checked; lines as screens.json writes them. Each case gives the phase, the version shown, the target slot index (0 Slot 1, 1 Slot 2), the lock, the last write's code (255 none), the OS state, the trial, and a hold under way (digit, fill 0-1000, seconds left; digit 0 none), as waffle/board/installer.h numbers them.",
+ "_doc": "The installer's screens (src/testos/installer_logic.c, inst_screen_lines()), hand-checked; lines as screens.json writes them. Each case gives the phase, the version shown, the target slot index (0 Slot 1, 1 Slot 2), the lock, the last write's code (255 none), the OS state, the trial, a hold under way (digit, fill 0-1000, seconds left; digit 0 none), and the key check's keys pressed (keys_seen: bit 0 com, bit 1 M4; 0 when absent), as waffle/board/installer.h numbers them.",
  "cases": [
   {"name": "checking", "phase": 1, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0,
    "lines": [
     "head:Checking the hardware"]},
+  {"name": "keys", "phase": 2, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "keys_seen": 0,
+   "lines": [
+    "head:Press com, then M4, to go on",
+    "These two presses are the key check.",
+    "",
+    "step-run:com\twaiting",
+    "step-run:M4\twaiting",
+    "",
+    "item:8 End: the install is then not offered"]},
+  {"name": "keys_com_pressed", "phase": 2, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "keys_seen": 1,
+   "lines": [
+    "head:Press com, then M4, to go on",
+    "These two presses are the key check.",
+    "",
+    "step-ok:com\tpressed",
+    "step-run:M4\twaiting",
+    "",
+    "item:8 End: the install is then not offered"]},
   {"name": "locked", "phase": 3, "version": "1.0.3", "target": 1, "lock": 1, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0,
    "lines": [
     "head:The install is not offered",

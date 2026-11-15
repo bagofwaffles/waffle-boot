@@ -229,6 +229,7 @@ struct inst_screen {
 	unsigned hold_digit;	/* 0: no hold under way */
 	unsigned hold_fill;	/* 0 to 1000 */
 	unsigned hold_left_s;
+	uint8_t keys_seen;	/* the key check: bit 0 com, bit 1 M4 */
 };
 unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15_ROWS]);
 /* A write's code (STATE byte 10) in words, at most 56 columns. */
@@ -262,6 +263,9 @@ void opxy_installer_note(enum inst_phase phase, unsigned under_way);
 /* The verdict and the report as they are now, for the protocol. */
 void opxy_installer_table(const struct tchk_table *t, const char *report, size_t len);
 /* After the suite: the install's screens until the power is removed. */
+/* The flash read through the engine, once: true when a trial of this
+ * installer was written at an earlier start (the checks passed then). */
+bool opxy_installer_trial_back(struct opxy_master *m);
 void opxy_installer_run(const struct opxy_installer_ctx *c);
 /* check.txt's install part, for the suite's render(). */
 size_t opxy_installer_report(char *out, size_t len, size_t cap);

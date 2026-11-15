@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>waffle-boot recovery | Bag of Waffles</title>
-<meta name="description" content="Write, try or switch the bootloader slots of an OP-XY running waffle-boot,
-  from the recovery menu, in your browser over USB.">
+<title>Waffle Boot</title>
+<meta name="description" content="Install waffle-boot on an OP-XY, or write, try or switch the bootloader
+  slots of one that runs it from its recovery menu, in your browser over USB.">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#FFF6E6">
 <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
@@ -20,20 +20,30 @@
     <img class="logo" src="assets/logo.svg" alt="The Bag of Waffles logo: a brown paper bag overflowing with
       waffles" width="118" height="118">
     <div class="hero-title">
-      <h1>waffle-boot recovery</h1>
-      <p class="tag">Write or switch your <span style="white-space:nowrap">OP-XY</span>'s bootloader slots
-        from its recovery menu, in your browser.</p>
+      <h1>Waffle Boot</h1>
+      <p class="tag">Install waffle-boot on your <span style="white-space:nowrap">OP-XY</span>, or recover
+        its bootloader slots from the recovery menu, in your browser.</p>
     </div>
   </div>
   <p class="promise">Nothing is sent to a server. The page talks to the unit over USB, and the unit checks
     every image itself before it writes.</p>
-  <p class="warnbar"><b>waffle-boot is under development.</b> Guided and Advanced are for units that already
-    run it; Install follows the installer that puts it on a unit. A wrong image can leave a unit that does not
-    start.</p>
-  <div class="modes" role="tablist" aria-label="Mode">
-    <button id="tab-guided" role="tab" aria-selected="true" aria-controls="guided">Guided</button>
+  <p class="warnbar"><b>waffle-boot is under development.</b> Install follows the installer that puts it on a
+    unit; Recovery is for units that already run it. A wrong image can leave a unit that does not start.</p>
+  <div class="choose" role="tablist" aria-label="What to do">
+    <button id="tab-install" class="choice" role="tab" aria-selected="true" aria-controls="install">
+      <b>Install waffle-boot</b>
+      <span>Put it on a unit with the installer: the hardware is checked first, and every write is held on
+        the unit.</span>
+    </button>
+    <button id="tab-recover" class="choice" role="tab" aria-selected="false" aria-controls="guided">
+      <b>Recovery</b>
+      <span>A unit that already runs waffle-boot: write, try or switch its slots from the recovery menu
+        (Power + M4).</span>
+    </button>
+  </div>
+  <div class="modes" id="recmodes" role="tablist" aria-label="Recovery mode" hidden>
+    <button id="tab-guided" role="tab" aria-selected="false" aria-controls="guided">Guided</button>
     <button id="tab-advanced" role="tab" aria-selected="false" aria-controls="advanced">Advanced</button>
-    <button id="tab-install" role="tab" aria-selected="false" aria-controls="install">Install</button>
   </div>
 </header>
 
@@ -49,7 +59,7 @@
       </div>
     </li>
 
-    <li class="step pending" id="s-menu">
+    <li class="step pending" id="s-menu" hidden>
       <div class="num"><span class="ico">2</span><span class="tick">ok</span></div>
       <div class="sbody">
         <h2>Open the recovery menu <span class="sn" id="sn-menu"></span></h2>
@@ -74,7 +84,7 @@
       </div>
     </li>
 
-    <li class="step pending" id="s-unit">
+    <li class="step pending" id="s-unit" hidden>
       <div class="num"><span class="ico">3</span><span class="tick">ok</span></div>
       <div class="sbody">
         <h2>Your unit <span class="sn" id="sn-unit"></span></h2>
@@ -91,7 +101,7 @@
   </ol>
 
   <!-- ---------------- guided: install an image ---------------- -->
-  <section id="guided" role="tabpanel" aria-labelledby="tab-guided">
+  <section id="guided" role="tabpanel" aria-labelledby="tab-guided" hidden>
     <ol class="steps" start="4">
       <li class="step pending" id="s-image">
         <div class="num"><span class="ico">4</span><span class="tick">ok</span></div>
@@ -226,7 +236,7 @@
   </section>
 
   <!-- ---------------- install: the installer image ---------------- -->
-  <section id="install" role="tabpanel" aria-labelledby="tab-install" hidden>
+  <section id="install" role="tabpanel" aria-labelledby="tab-install">
     <ol class="steps" start="2">
       <li class="step active" id="s-iwrite">
         <div class="num"><span class="ico">2</span><span class="tick">ok</span></div>
@@ -234,8 +244,9 @@
           <h2>Write the installer file from the developer menu <span class="sn" id="sn-iwrite"></span></h2>
           <p class="hint">The installer checks the unit's hardware first. Only when every check passes does it
             offer to install waffle-boot, and every write is started and confirmed on the unit: you hold the
-            key it names for 5 s. This page only shows what the installer reports. It sends no image and
-            asks for no write.</p>
+            key it names for 5 s. This page only shows what the installer reports. It sends no bootloader
+            image and asks for no write; for a unit already on waffle-boot it can send the installer file
+            itself (below).</p>
           <ol class="howlist">
             <li>Have the installer file, <code>waffle-install.ldr</code>, from a waffle-boot release.</li>
             <li>Open the developer menu of the bootloader your unit has, and write the file there as the OS.
@@ -244,6 +255,26 @@
             <li>Connect the unit to this computer with a USB cable.</li>
           </ol>
           <p class="notebar" id="i-ferret"></p>
+          <div class="devput" id="i-dev">
+            <h3 id="i-devtitle"></h3>
+            <p class="hint" id="i-devhint"></p>
+            <label class="drop" id="i-devdrop" for="i-devfile">
+              <b id="i-devdroptext"></b>
+              <span class="sub" id="i-devdropsub"></span>
+              <input type="file" id="i-devfile" accept=".ldr">
+            </label>
+            <ul class="says" id="i-devnotes"></ul>
+            <div class="actions">
+              <button id="i-devsend" class="btn primary" disabled></button>
+              <span class="hint" id="i-devstage"></span>
+            </div>
+            <div class="bar" id="i-devbarbox" hidden><i id="i-devbar"></i></div>
+            <div class="phase" id="i-devresult" hidden>
+              <ul class="says" id="i-devlines"></ul>
+              <div class="todo"><ul class="says" id="i-devadvice"></ul></div>
+            </div>
+            <p class="hint" id="i-devother"></p>
+          </div>
         </div>
       </li>
 
