@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Host tests of tools/mtpcp.py, with no USB: its protocol against waffle-boot's real responder
-(src/s10b_mtp.c, level R, built here through tests/tools/test_mtpcp_shim.c), and against a writable fake
+(src/s10b_mtp.c, at levels R and W, built here through tests/tools/test_mtpcp_shim.c), and against a writable fake
 responder whose faults, each a departure from an S-16 rule a test turns on, show the tool stays safe with any
 responder. A compiler is needed ($CC, or cc). Python 3, standard library only.
 
@@ -22,7 +22,9 @@ TOOLS = os.path.join(TOP, 'tools')
 sys.path.insert(0, TOOLS)
 import mtpcp  # noqa: E402
 
-ALLOWED = {0x1001, 0x1002, 0x1003, 0x1004, 0x1005, 0x1007, 0x1008, 0x1009, 0x100B, 0x100C, 0x100D}
+ALLOWED = {0x1001, 0x1002, 0x1003, 0x1004, 0x1005, 0x1007, 0x1008, 0x1009, 0x100B, 0x100C, 0x100D, 0x1019,
+           0x9804}
+CHANGES = {0x100B, 0x100C, 0x100D, 0x1019, 0x9804}
 
 
 def packets(transport_read_queue, size, mps):
@@ -65,7 +67,9 @@ class Engine(Spy):
                                                      's10c_text.c', 's11_common.c', 's11_version.c')])
         lib = ctypes.CDLL(out)
         lib.shim_add.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32, ctypes.c_int]
-        lib.shim_start.argtypes = [ctypes.c_size_t]
+        lib.shim_start.argtypes = [ctypes.c_size_t, ctypes.c_int]
+        lib.shim_get.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t]
+        lib.shim_get.restype = ctypes.c_long
         lib.shim_rx_size.restype = ctypes.c_size_t
         lib.shim_rx.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
         lib.shim_tx.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
@@ -73,7 +77,7 @@ class Engine(Spy):
         cls.lib = lib
         return lib
 
-    def __init__(self, files, mps=512):
+    def __init__(self, files, mps=512, level=0):
         super().__init__()
         self.mps = mps
         self.c = self.build()
@@ -83,7 +87,13 @@ class Engine(Spy):
             n = name.encode()
             self.keep += [n, data]
             self.c.shim_add(n, data or b'', len(data or b''), data is None)
-        self.c.shim_start(mps)
+        self.c.shim_start(mps, level)
+
+    def get(self, path):
+        """The bytes of /path on the volume, None when absent, 'folder' for a folder."""
+        buf = ctypes.create_string_buffer(1 << 20)
+        n = self.c.shim_get(path.encode(), buf, len(buf))
+        return None if n == -1 else 'folder' if n == -2 else buf.raw[:n]
 
     def write(self, data, timeout_ms=0):
         self.note(data)
@@ -152,7 +162,63 @@ class AgainstTheEngine(unittest.TestCase):
             f.flush()
             with self.assertRaisesRegex(mtpcp.Failure, 'nothing was changed'):
                 mtpcp.cmd_put(mtpcp.Mtp(e), f.name, 'os.ldr', b'new', io.StringIO())
-        self.assertFalse({0x100B, 0x100C, 0x100D} & set(e.ops))
+        self.assertFalse(CHANGES & set(e.ops))
+
+    def test_level_r_refuses_every_change(self):
+        for run in (lambda m: mtpcp.cmd_rm(m, 'a.txt', io.StringIO()),
+                    lambda m: mtpcp.cmd_mkdir(m, 'new', io.StringIO()),
+                    lambda m: mtpcp.cmd_mv(m, 'a.txt', 'b.txt', io.StringIO())):
+            e = Engine({'a.txt': b'1', 'dir': None})
+            with self.assertRaisesRegex(mtpcp.Failure, 'nothing was changed'):
+                run(mtpcp.Mtp(e))
+            self.assertFalse(CHANGES & set(e.ops))
+            self.assertEqual(e.get('/a.txt'), b'1')
+
+    def test_put_at_level_w(self):
+        new = bytes(i * 5 % 256 for i in range(70000))
+        for mps in (512, 64):
+            e = Engine({'os.ldr': b'old image', 'lost+found': None, 'keep.wav': b'k'}, mps, level=1)
+            out = io.StringIO()
+            with tempfile.NamedTemporaryFile() as f:
+                f.write(new)
+                f.flush()
+                mtpcp.cmd_put(mtpcp.Mtp(e), f.name, 'os.ldr', new, out)
+            self.assertIn('identical', out.getvalue())
+            self.assertEqual(e.get('/os.ldr'), new)
+            self.assertEqual(e.get('/keep.wav'), b'k')
+            self.assertLessEqual(set(e.ops), ALLOWED)
+
+    def test_rm_mkdir_mv_at_level_w(self):
+        e = Engine({'a.txt': b'abc', 'dir': None, 'lost+found': None}, level=1)
+        m = mtpcp.Mtp(e)
+        mtpcp.cmd_mkdir(m, 'dir/sub', io.StringIO())
+        self.assertEqual(e.get('/dir/sub'), 'folder')
+        with self.assertRaisesRegex(mtpcp.Failure, 'already on the unit'):
+            mtpcp.cmd_mkdir(m, 'dir/sub', io.StringIO())
+        with self.assertRaisesRegex(mtpcp.Failure, 'not a folder'):
+            mtpcp.cmd_mkdir(m, 'none/sub', io.StringIO())
+        mtpcp.cmd_mv(m, 'a.txt', 'dir/sub', io.StringIO())            # into a folder
+        self.assertEqual(e.get('/dir/sub/a.txt'), b'abc')
+        self.assertIsNone(e.get('/a.txt'))
+        mtpcp.cmd_mv(m, 'dir/sub/a.txt', 'dir/sub/b.txt', io.StringIO())   # a rename
+        self.assertEqual(e.get('/dir/sub/b.txt'), b'abc')
+        mtpcp.cmd_mv(m, 'dir/sub/b.txt', 'c.txt', io.StringIO())       # moved and renamed
+        self.assertEqual(e.get('/c.txt'), b'abc')
+        mtpcp.cmd_mv(m, 'dir', 'top', io.StringIO())                   # a folder, with what is in it
+        self.assertEqual(e.get('/top/sub'), 'folder')
+        with self.assertRaisesRegex(mtpcp.Failure, 'beneath itself'):
+            mtpcp.cmd_mv(m, 'top', 'top/sub/x', io.StringIO())
+        mtpcp.cmd_mkdir(m, 'top/c.txt', io.StringIO())
+        with self.assertRaisesRegex(mtpcp.Failure, 'already on the unit'):
+            mtpcp.cmd_mv(m, 'c.txt', 'top', io.StringIO())             # top/c.txt is there
+        with self.assertRaisesRegex(mtpcp.Failure, 'recursive'):
+            mtpcp.cmd_rm(m, 'top', io.StringIO())
+        mtpcp.cmd_rm(m, 'c.txt', io.StringIO())
+        self.assertIsNone(e.get('/c.txt'))
+        with self.assertRaisesRegex(mtpcp.Failure, 'MoveObject answered Object_WriteProtected'):
+            mtpcp.cmd_mv(m, 'lost+found', 'top', io.StringIO())
+        self.assertEqual(e.get('/lost+found'), 'folder')
+        self.assertLessEqual(set(e.ops), ALLOWED)
 
 
 # ---------------------------------------------------------------- a writable responder, faults on request

@@ -311,15 +311,24 @@ static void mtp_deliver(void)
 	}
 }
 
-/* From s10a_usb_poll(): the engine reads the volume as it answers. */
+/* From s10a_usb_poll(): the engine reads and changes the volume as it
+ * answers. */
 static void mtp_run(void)
 {
 	size_t n = 0;
 	bool send;
 
-	if (!u.mtp || !u.mtp_in || !u.mtp_out)
+	if (!u.mtp)
 		return;
 	u.mtp_in_request = true;
+	/* What a canceled or reset transaction left (S-10b.005): also once
+	 * the set without MTP has replaced it. */
+	s10b_service(u.mtp);
+	if (!u.mtp_in || !u.mtp_out) {
+		u.mtp_in_request = false;
+		mtp_deliver();
+		return;
+	}
 	if (u.mtp_rx_done) {
 		u.mtp_rx_done = false;
 		s10b_rx(u.mtp, u.mtp_rx_pkt, u.mtp_rx_n);

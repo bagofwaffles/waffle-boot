@@ -76,6 +76,8 @@ H_s10c_SRCS := src/s10c_sysex.c src/s10c_text.c src/s11_common.c src/s11_version
 # The command server (S-10c.070, S-10c.076).
 H_s10c_SRCS += src/s10c_host.c
 H_s10a_SRCS := src/s10a_desc.c src/s10a_ch9.c src/s10a_scsi.c src/s10a_bot.c
+H_s10b_SRCS := src/s10b_mtp.c src/s10b_text.c src/s04_records.c src/s10c_text.c src/s11_common.c \
+	src/s11_version.c
 H_s13c_SRCS := src/s13c_panel.c src/display_draw.c src/display_font.c src/s15_console.c src/s15_lines.c \
 	src/s15_prompt.c src/s14_log.c src/s14_line.c src/s17_revisions.c src/s11_common.c src/s11_version.c
 H_s14_SRCS := src/s14_line.c src/s14_log.c src/s14_export.c
@@ -93,7 +95,7 @@ H_s12_TP := $(TP_OBJS)
 # Programs that need only a vendored library's header.
 H_s10a_CPPFLAGS := -Isrc/glue/blockdev
 
-PROGS := s02 s03 s04 s05 s06 s07 s07p s08 s09 s10a s10c s11 s12 s13c s14
+PROGS := s02 s03 s04 s05 s06 s07 s07p s08 s09 s10a s10b s10c s11 s12 s13c s14
 
 .PHONY: all clean
 all: $(PROGS:%=$(OUT)/h_%)

@@ -4,12 +4,13 @@
 
 Run from the repository root:  python3 -I -B tests/vectors/s10b/gen_s10b_vectors.py --out DIR
 
-The expectations are the JSON files' (level R). The volumes they were made over are rebuilt here with
+The expectations are the JSON files', at levels R and W. The volumes they were made over are rebuilt here with
 tests/oracle/S-10b-mtp/gen_vectors.py (model.Volume.build), so the C test's in-memory volume holds the same
 paths, sizes, contents and times. Handles are never compared by value: every handle-dependent field is
 written as a reference to the path it names, and the test substitutes the handle its engine gave that path.
 
-    scripts   a fresh engine over one volume, optionally with a session open, then steps
+    scripts   a fresh engine at one level over one volume, optionally with a session open, then steps, and
+              for the writes the volume's expected tree after them
     steps     one operation: parameters, a host data phase, and the expected response and data
 """
 import json
@@ -132,23 +133,43 @@ patches = []        # (offset, path index)
 elems = []          # expected ObjectPropList elements: v_bytes
 
 
+finals = []         # expected trees after write scripts
+
+
 class Script:
-    def __init__(self, what, vol, open_session=True, battery=57, clock=0):
+    def __init__(self, what, vol, open_session=True, battery=57, clock=0, level='R'):
         self.first = len(steps)
         scripts.append(None)
         self.slot = len(scripts) - 1
-        self.row = [what, vol, int(open_session), battery, clock]
+        self.row = [what, vol, int(open_session), battery, clock, int(level == 'W')]
+        self.final = (0, -1)
+
+    def tree(self, tree):
+        """The volume's expected entries after the steps: {path: dict(type, size, sha256, mtime, ctime,
+        atime)}."""
+        first = len(finals)
+        for p, e in sorted(tree.items()):
+            dig = bytes.fromhex(e['sha256']) if 'sha256' in e else bytes(32)
+            finals.append('{ %d, %d, %du, { %s }, %du, %du, %du }' % (
+                pref(p), 1 if e['type'] == 'dir' else 0, e.get('size', 0),
+                ', '.join('0x%02X' % b for b in dig), e['mtime'], e['ctime'], e['atime']))
+        self.final = (first, len(finals) - first)
 
     def done(self):
-        what, vol, op, bat, clk = self.row
-        scripts[self.slot] = '{ %s, %d, %d, %du, 0x%08Xu, %d, %d }' % (c_str(what.encode()), vol, op, bat, clk,
-                                                                       self.first, len(steps) - self.first)
+        what, vol, op, bat, clk, lw = self.row
+        scripts[self.slot] = '{ %s, %d, %d, %du, 0x%08Xu, %d, %d, %d, %d, %d }' % (
+            c_str(what.encode()), vol, op, bat, clk, self.first, len(steps) - self.first, lw, self.final[0],
+            self.final[1])
+
+
+PARAM_KIND = {'h': 1, 'was': 2, 'new': 3}
 
 
 def param(v):
-    """A literal, or ('h', path) for the handle of a path."""
+    """A literal, or (kind, path): 'h' the handle of a path, 'was' the one it had in the session's first
+    listing, 'new' a handle the step creates for that path."""
     if isinstance(v, tuple):
-        return '{ 1, %du }' % pref(v[1])
+        return '{ %d, %du }' % (PARAM_KIND[v[0]], pref(v[1]))
     return '{ 0, 0x%08Xu }' % v
 
 
@@ -163,7 +184,7 @@ NONE, BYTES, HANDLES, PROPLIST, DIGEST, OBJECTS, ANY = range(7)
 
 
 def step(op, params=(), out=None, code=M.OK, reply=(), expect=NONE, data=b'', patch=(), handle_set=(),
-         elements=(), digest=None, length=0, clock=None):
+         elements=(), digest=None, length=0, clock=None, out_seed=-1, out_len=0, same=None):
     params = list(params) + [0] * (5 - len(params))
     reply = list(reply)
     first = len(sets) if expect in (HANDLES, OBJECTS) else len(elems)
@@ -179,10 +200,15 @@ def step(op, params=(), out=None, code=M.OK, reply=(), expect=NONE, data=b'', pa
         n = 0
         first = 0
     dig = '{ %s }' % ', '.join('0x%02X' % b for b in (digest or bytes(32)))
-    steps.append('{ 0x%04X, { %s }, %d, %s, 0x%04X, %d, { %s }, %d, %s, %d, %d, %s, %du, %d, 0x%08Xu }' % (
-        op, ', '.join(param(p) for p in params), int(out is not None), blob.ref(out or b''), code, len(reply),
-        ', '.join(param(p) for p in reply + [0] * (5 - len(reply))), expect,
-        v_bytes(data, patch), first, n, dig, length, int(clock is not None), clock or 0))
+    has_out = out is not None or out_seed >= 0
+    out_ref = blob.ref(out or b'') if out_seed < 0 else '{ 0, %d }' % out_len
+    same_old, same_new = (pref(same[0]), pref(same[1])) if same else (-1, -1)
+    steps.append('{ 0x%04X, { %s }, %d, %s, %d, 0x%04X, %d, { %s }, %d, %s, %d, %d, %s, %du, %d, 0x%08Xu, '
+                 '%d, %d }' % (
+                     op, ', '.join(param(p) for p in params), int(has_out), out_ref, out_seed, code, len(reply),
+                     ', '.join(param(p) for p in reply + [0] * (5 - len(reply))), expect,
+                     v_bytes(data, patch), first, n, dig, length, int(clock is not None), clock or 0, same_old,
+                     same_new))
 
 
 def unhex(s):
@@ -233,22 +259,21 @@ def prop_list(data, by_handle):
 # ---------------------------------------------------------------- the vectors
 def device_info():
     v = load('device_info')
-    s = Script('device_info', volume('empty', lambda: M.Volume({})), open_session=False)
-    step(0x1001, expect=BYTES, data=unhex(v['R']['data']))
-    s.done()
+    for lv in ('R', 'W'):
+        s = Script('device_info ' + lv, volume('empty', lambda: M.Volume({})), open_session=False, level=lv)
+        step(0x1001, expect=BYTES, data=unhex(v[lv]['data']))
+        s.done()
     return v['strings']
 
 
 def storage_info():
     v = load('storage_info')
     for c in v['cases']:
-        if c['level'] != 'R':
-            continue
         if c['total'] is None:
             vol = volume('none', lambda: None)
         else:
             vol = volume('empty_free_%d' % c['free'], lambda c=c: M.Volume({}, free=c['free']))
-        s = Script('storage_info free %s' % c['free'], vol)
+        s = Script('storage_info %s free %s' % (c['level'], c['free']), vol, level=c['level'])
         step(0x1005, [S], expect=BYTES, data=unhex(c['data']))
         if c['total'] is None:
             step(0x1007, [S, 0, A], expect=BYTES, data=unhex(c['root_handles']))
@@ -375,6 +400,15 @@ def object_props():
             step(0x9802, [c['prop'], c['format']], expect=BYTES, data=unhex(c['data']))
         else:
             step(0x9802, [c['prop'], c['format']], code=c['code'])
+    s.done()
+    s = Script('object_props desc W', tree('tree_basic'), level='W')
+    for c in v['desc']:
+        if c['level'] != 'W':
+            continue
+        if c['code'] == M.OK:
+            step(0x9802, [c['prop'], c['format']], expect=BYTES, data=unhex(c['data']))
+        else:
+            step(0x9802, [c['prop'], c['format']], code=c['code'])
     for c in v['value']:
         h = ('h', c['path']) if c['path'] else 0x7FFF0000
         if c['code'] == M.OK:
@@ -414,9 +448,54 @@ def object_props():
 def op_sweep():
     v = load('op_sweep')
     rows = []
-    for code, in_session, listed, response, host_data, device_data in v['R']:
-        rows.append('{ 0x%04X, %d, 0x%04X, %d, %d }' % (code, in_session, response, host_data, device_data))
+    for lv in ('R', 'W'):
+        for code, in_session, listed, response, host_data, device_data in v[lv]:
+            rows.append('{ 0x%04X, %d, %d, 0x%04X, %d, %d }' % (code, int(lv == 'W'), in_session, response,
+                                                               host_data, device_data))
     return rows
+
+
+def ref(v):
+    """A vector's handle form as a step parameter."""
+    if isinstance(v, dict):
+        (k, p), = v.items()
+        return (k, p)
+    return v
+
+
+def writes():
+    """S-10b.080 - S-10b.087: each script's steps, then its tree."""
+    v = load('writes')
+    for sc in v['scripts']:
+        vol = volume('w_' + sc['name'], lambda sc=sc: M.Volume.build(G.TREES[sc['volume']](), free=sc['free']))
+        s = Script('writes ' + sc['name'], vol, clock=sc['clock'], level=sc['level'])
+        for st in sc['steps']:
+            kw = dict(code=st['code'], reply=[ref(x) for x in st['reply']])
+            d = st.get('data')
+            if isinstance(d, dict):
+                kw.update(out_seed=d['seed'], out_len=d['len'])
+            elif d is not None:
+                kw['out'] = unhex(d)
+            if 'paths' in st:
+                kw.update(expect=HANDLES, handle_set=st['paths'])
+            elif 'out' in st:
+                data = unhex(st['out'])
+                patch = []
+                if st['op'] == 0x1008 and st.get('parent'):
+                    patch = [(38, st['parent'])]
+                elif st['op'] == 0x9803 and st['params'][1] == 0xDC0B:
+                    h = struct.unpack_from('<I', data)[0]
+                    patch = [(0, st['parent_path'])] if h else []
+                kw.update(expect=BYTES, data=data, patch=patch)
+            elif 'sha256' in st:
+                kw.update(expect=DIGEST, digest=unhex(st['sha256']), length=st['length'])
+            elif st['code'] == M.OK and st['op'] in (0x1001,):
+                kw.update(expect=ANY)
+            if 'same' in st:
+                kw['same'] = st['same']
+            step(st['op'], [ref(x) for x in st['params']], **kw)
+        s.tree(sc['tree'])
+        s.done()
 
 
 def transcripts():
@@ -468,6 +547,7 @@ def main():
     big_elements = object_props()
     sweep = op_sweep()
     sizes = transcripts()
+    writes()
 
     o = ['/* SPDX-License-Identifier: GPL-2.0-or-later */',
          '/* Generated by tests/vectors/s10b/gen_s10b_vectors.py from tests/oracle/S-10b-mtp/vectors/; do not edit. */',
@@ -481,19 +561,27 @@ def main():
          '                 uint32_t mtime, ctime; };',
          '/* big: that many empty files big/f0000... are added, mtime and ctime 0 */',
          'struct v_volume { uint8_t present; uint64_t total, free; uint16_t first, n; uint16_t big; };',
-         'struct v_param { uint8_t handle; uint32_t v; };	/* handle: v is a path index */',
+         '/* handle 0: v is the value; else v is a path index: 1 its handle, 2 its handle in the first listing,',
+         ' * 3 (a reply) a new handle the step gives it */',
+         'struct v_param { uint8_t handle; uint32_t v; };',
          'enum v_expect { X_NONE, X_BYTES, X_HANDLES, X_PROPLIST, X_DIGEST, X_OBJECTS, X_ANY };',
          'struct v_step {',
          '	uint16_t op; struct v_param p[5]; uint8_t has_out; struct v_ref out;',
+         '	int16_t out_seed;	/* not -1: out is out.len bytes (7 i + 3 + seed) mod 256 */',
          '	uint16_t code; uint8_t n_reply; struct v_param reply[5];',
          '	uint8_t expect; struct v_bytes data;',
          '	uint16_t first, n;	/* X_HANDLES, X_OBJECTS: v_sets; X_PROPLIST: v_elems */',
          '	uint8_t digest[32]; uint32_t length;	/* X_DIGEST; X_ANY, X_OBJECTS when not 0 */',
          '	uint8_t has_clock; uint32_t clock;	/* the clock after the step */',
+         '	int16_t same_old, same_new;	/* not -1: the handle of path same_old before is same_new\'s after */',
          '};',
          'struct v_script { const char *what; uint8_t volume, open; unsigned battery; uint32_t clock;',
-         '                  uint16_t first, n; };',
-         'struct v_sweep { uint16_t op; uint8_t in_session; uint16_t code; uint8_t host_data, device_data; };',
+         '                  uint16_t first, n; uint8_t level_w; int16_t first_final, n_final; };',
+         '/* the volume after a script: kind 0 file, 1 folder */',
+         'struct v_final { uint16_t path; uint8_t kind; uint32_t size; uint8_t sha256[32];',
+         '                 uint32_t mtime, ctime, atime; };',
+         'struct v_sweep { uint16_t op; uint8_t level_w, in_session; uint16_t code; uint8_t host_data,',
+         '                 device_data; };',
          'struct v_format { const char *path; uint16_t format; };',
          'struct v_name { struct v_ref name, presented; };',
          'struct v_size { const char *path; uint32_t size; uint8_t zlp_512, zlp_64; };', '']
@@ -528,6 +616,9 @@ def main():
     o.append('};')
     o.append('static const struct v_script v_scripts[%d] = {' % len(scripts))
     o += ['\t%s,' % sc for sc in scripts]
+    o.append('};')
+    o.append('static const struct v_final v_finals[%d] = {' % max(len(finals), 1))
+    o += ['\t%s,' % f for f in finals] or ['\t{ 0, 0, 0, { 0 }, 0, 0, 0 },']
     o.append('};')
     o.append('static const struct v_sweep v_sweep[%d] = {' % len(sweep))
     o += ['\t%s,' % r for r in sweep]

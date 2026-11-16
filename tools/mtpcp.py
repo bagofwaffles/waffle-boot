@@ -8,7 +8,11 @@
     mtpcp.py tree OUT.json [--hash]     list the whole volume (sizes, dates, and with --hash each
                                       file's SHA-256, read with GetObject) into OUT.json; read only
     mtpcp.py compare A.json B.json    the differences between two tree listings (no unit needed)
-    mtpcp.py rm NAME                  delete the file /yaffs2/NAME (top level, never a folder or os.ldr)
+    mtpcp.py rm PATH                  delete the file /yaffs2/PATH (never a folder, never os.ldr)
+    mtpcp.py mkdir PATH               make the folder /yaffs2/PATH (its parent must exist)
+    mtpcp.py mv FROM TO               rename or move /yaffs2/FROM to /yaffs2/TO, or into the folder TO
+
+PATH, FROM and TO are paths in the volume, `user/a.txt`; put and verify take a name at the top only.
 
 Exit status 0 only when the bytes on the unit are FILE's bytes (put, verify) or the listing was read
 (ls). Anything else prints FAILED and exits 1. The read-back is the proof that the bytes arrived; nothing
@@ -21,7 +25,8 @@ standard one, which macOS's camera daemon may hold first (wiki/Test-OS.md).
 It is a careful MTP copy of its own, not a wrapper of libmtp: it sends only the operations any responder
 for the device is required to handle, and checks what comes back rather than trusting it. Only these
 operations are ever sent: GetDeviceInfo, OpenSession, CloseSession, GetStorageIDs, GetStorageInfo,
-GetObjectHandles, GetObjectInfo, GetObject, DeleteObject, SendObjectInfo and SendObject. In particular:
+GetObjectHandles, GetObjectInfo, GetObject, DeleteObject, SendObjectInfo, SendObject, and for mv
+MoveObject and SetObjectPropValue (ObjectFileName). In particular:
 
 - never GetPartialObject: a file is read whole with GetObject, so nothing rests on partial reads
   (S-16.055);
@@ -33,10 +38,12 @@ GetObjectHandles, GetObjectInfo, GetObject, DeleteObject, SendObjectInfo and Sen
 - a data container left from an earlier transaction is dropped, since a data phase belongs only to its
   own transaction (S-16.064);
 - a successful GetObject is not taken as proof of anything: the bytes are compared;
-- a folder is never deleted, since folder deletes are recursive (S-16.067).
+- a folder is never deleted, since folder deletes are recursive (S-16.067);
+- nothing is changed on a responder whose store is read-only (AccessCapability not 0, S-10b.031);
+- every change is checked afterwards from a new session's listing.
 
-waffle-boot's own responder is level R (S-10b.021): ls and verify work, and put stops before changing
-anything.
+waffle-boot's developer menu serves level W (S-10b.021): every command works. A level-R responder lists and
+reads, and put, rm, mkdir and mv stop before changing anything.
 """
 import argparse
 import ctypes
@@ -56,6 +63,8 @@ CMD, DATA, RESP, EVENT = 1, 2, 3, 4
 OP_DEVICE_INFO, OP_OPEN, OP_CLOSE, OP_STORAGE_IDS = 0x1001, 0x1002, 0x1003, 0x1004
 OP_STORAGE_INFO, OP_HANDLES, OP_OBJECT_INFO, OP_GET_OBJECT = 0x1005, 0x1007, 0x1008, 0x1009
 OP_DELETE, OP_SEND_INFO, OP_SEND = 0x100B, 0x100C, 0x100D
+OP_MOVE, OP_SET_PROP = 0x1019, 0x9804
+PROP_FILE_NAME = 0xDC07
 OK, ALREADY_OPEN = 0x2001, 0x201E
 INVALID_HANDLE, INVALID_PARENT = 0x2009, 0x201A
 ROOT = 0xFFFFFFFF
@@ -342,10 +351,10 @@ class Object:
         return self.format == FORMAT_FOLDER
 
 
-def object_info_dataset(storage, name, size, modified):
-    """The ObjectInfo dataset (S-10b.049) of a file to send, at the top of the store."""
-    return (struct.pack('<IHHIHIIIIIIIHII', storage, FORMAT_UNDEFINED, 0, size,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+def object_info_dataset(storage, name, size, modified, folder=False):
+    """The ObjectInfo dataset (S-10b.049) of a file or folder to send."""
+    return (struct.pack('<IHHIHIIIIIIIHII', storage, FORMAT_FOLDER if folder else FORMAT_UNDEFINED, 0,
+                        size, 0, 0, 0, 0, 0, 0, 0, 0, 1 if folder else 0, 0, 0)
             + mtp_string(name) + mtp_string(modified) + mtp_string(modified) + mtp_string(''))
 
 
@@ -476,14 +485,16 @@ class Mtp:
     def get_object(self, handle):
         return self.read_op('GetObject', OP_GET_OBJECT, (handle,))
 
-    def send_file(self, storage, name, content, modified):
-        info = object_info_dataset(storage, name, len(content), modified)
+    def send_info(self, storage, info, parent=ROOT):
         # MTP 1.1's root; a responder that reads it as a handle gets 0, S-10b.080's other form.
-        code, _, _ = self.transaction(OP_SEND_INFO, (storage, ROOT), info)
-        if code in (INVALID_HANDLE, INVALID_PARENT):
+        code, _, _ = self.transaction(OP_SEND_INFO, (storage, parent), info)
+        if parent == ROOT and code in (INVALID_HANDLE, INVALID_PARENT):
             code, _, _ = self.transaction(OP_SEND_INFO, (storage, 0), info)
         if code != OK:
             raise Failure('SendObjectInfo answered %s' % response_name(code))
+
+    def send_file(self, storage, name, content, modified):
+        self.send_info(storage, object_info_dataset(storage, name, len(content), modified))
         self.checked('SendObject', OP_SEND, (), content)
 
 
@@ -533,6 +544,51 @@ def check_name(name):
         raise Failure('%r is not a name for the top of the volume' % name)
 
 
+def split_path(path):
+    """A path in the volume as its names, each one checked."""
+    parts = path.strip('/').split('/')
+    for name in parts:
+        if not name or name in ('.', '..') or len(name.encode('utf-16-le')) > 2 * 254 or \
+                len(name.encode('utf-8')) > 255:
+            raise Failure('%r is not a path in the volume' % path)
+    return parts
+
+
+def resolve(mtp, storage, parts):
+    """The object a path names, or None when it is not there."""
+    parent, obj = ROOT, None
+    for i, name in enumerate(parts):
+        found = named(mtp.list_children(storage, parent), name)
+        if not found:
+            return None
+        if len(found) > 1:
+            raise Failure('/yaffs2/%s is listed %d times' % ('/'.join(parts[:i + 1]), len(found)))
+        obj = found[0]
+        if i + 1 < len(parts) and not obj.is_folder:
+            raise Failure('/yaffs2/%s is not a folder' % '/'.join(parts[:i + 1]))
+        parent = obj.handle
+    return obj
+
+
+def folder_handle(mtp, storage, parts):
+    """The handle of the folder a path names, ROOT for the top; Failure when it is not a folder."""
+    if not parts:
+        return ROOT
+    obj = resolve(mtp, storage, parts)
+    if obj is None or not obj.is_folder:
+        raise Failure('/yaffs2/%s is not a folder on the unit: nothing was changed' % '/'.join(parts))
+    return obj.handle
+
+
+def require_writable(mtp, storage):
+    access, total, _ = mtp.storage_info(storage)
+    if total == 0:
+        raise Failure('the unit reports no volume (S-10b.031)')
+    if access != 0:
+        raise Failure('this responder is read-only (AccessCapability %d, S-10b.021): nothing was changed'
+                      % access)
+
+
 def begin(mtp, out):
     mtp.drain()
     manufacturer, model, version = mtp.device_info()
@@ -569,8 +625,8 @@ def cmd_put(mtp, path, name, content, out):
     if total == 0:
         raise Failure('the unit reports no volume (S-10b.031)')
     if access != 0:
-        raise Failure('this responder is read-only (AccessCapability %d; waffle-boot\'s own is, '
-                      'S-10b.021): nothing was changed' % access)
+        raise Failure('this responder is read-only (AccessCapability %d, S-10b.021): nothing was changed'
+                      % access)
     if any(o.is_folder for o in old):
         raise Failure('/yaffs2/%s is a folder, and a folder delete is recursive: nothing was '
                       'changed' % name)
@@ -665,20 +721,76 @@ def compare_trees(a, b):
 
 def cmd_rm(mtp, name, out):
     storage = begin(mtp, out)
-    found = named(mtp.list_root(storage), name)
+    parts = split_path(name)
+    parent = folder_handle(mtp, storage, parts[:-1])
+    found = named(mtp.list_children(storage, parent), parts[-1])
     if not found:
         raise Failure('/yaffs2/%s is not on the unit' % name)
     if any(o.is_folder for o in found):
         raise Failure('/yaffs2/%s is a folder, and a folder delete is recursive: nothing was '
                       'changed' % name)
+    require_writable(mtp, storage)
     for o in found:
         mtp.checked('DeleteObject', OP_DELETE, (o.handle, 0))
         print('deleted /yaffs2/%s (%d bytes)' % (name, o.size), file=out)
     mtp.close_session()
     mtp.open_session()
-    if named(mtp.list_root(storage), name):
+    if resolve(mtp, storage, parts) is not None:
         raise Failure('/yaffs2/%s is still listed after its delete' % name)
     print_listing(mtp.list_root(storage), mtp.storage_info(storage), out)
+    mtp.close_session()
+
+
+def cmd_mkdir(mtp, path, out):
+    storage = begin(mtp, out)
+    parts = split_path(path)
+    parent = folder_handle(mtp, storage, parts[:-1])
+    if named(mtp.list_children(storage, parent), parts[-1]):
+        raise Failure('/yaffs2/%s is already on the unit: nothing was changed' % path)
+    require_writable(mtp, storage)
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S')
+    mtp.send_info(storage, object_info_dataset(storage, parts[-1], 0, stamp, folder=True), parent)
+    mtp.close_session()
+    mtp.open_session()
+    made = resolve(mtp, storage, parts)
+    if made is None or not made.is_folder:
+        raise Failure('/yaffs2/%s is not listed as a folder after it was made' % path)
+    print('made /yaffs2/%s/' % path, file=out)
+    mtp.close_session()
+
+
+def cmd_mv(mtp, src, dst, out):
+    """Moves with MoveObject when the folder changes, renames with SetObjectPropValue when the name does."""
+    storage = begin(mtp, out)
+    sp, dp = split_path(src), split_path(dst)
+    obj = resolve(mtp, storage, sp)
+    if obj is None:
+        raise Failure('/yaffs2/%s is not on the unit' % src)
+    there = resolve(mtp, storage, dp)
+    if there is not None and there.is_folder and there.handle != obj.handle:
+        dp = dp + [sp[-1]]                      # into that folder
+        there = resolve(mtp, storage, dp)
+    if there is not None:
+        raise Failure('/yaffs2/%s is already on the unit: nothing was changed' % '/'.join(dp))
+    if dp[:len(sp)] == sp:
+        raise Failure('/yaffs2/%s cannot go beneath itself: nothing was changed' % src)
+    parent = folder_handle(mtp, storage, dp[:-1])
+    require_writable(mtp, storage)
+    if dp[:-1] != sp[:-1]:
+        if dp[-1] != sp[-1] and named(mtp.list_children(storage, parent), sp[-1]):
+            raise Failure('/yaffs2/%s is already on the unit: nothing was changed'
+                          % '/'.join(dp[:-1] + [sp[-1]]))
+        mtp.checked('MoveObject', OP_MOVE, (obj.handle, storage, parent))
+    if dp[-1] != sp[-1]:
+        mtp.checked('SetObjectPropValue', OP_SET_PROP, (obj.handle, PROP_FILE_NAME), mtp_string(dp[-1]))
+    mtp.close_session()
+    mtp.open_session()
+    moved = resolve(mtp, storage, dp)
+    if moved is None or moved.is_folder != obj.is_folder or moved.size != obj.size:
+        raise Failure('/yaffs2/%s is not listed as it should be after the move' % dst)
+    if resolve(mtp, storage, sp) is not None:
+        raise Failure('/yaffs2/%s is still listed after the move' % src)
+    print('moved /yaffs2/%s to /yaffs2/%s' % (src, '/'.join(dp)), file=out)
     mtp.close_session()
 
 
@@ -687,9 +799,16 @@ def load(a):
     if a.command in ('ls', 'tree'):
         return None
     if a.command == 'rm':
-        check_name(a.name)
-        if a.name == 'os.ldr':
+        split_path(a.name)
+        if a.name.strip('/') == 'os.ldr':
             raise Failure('os.ldr is replaced with put, not removed')
+        return None
+    if a.command == 'mkdir':
+        split_path(a.path)
+        return None
+    if a.command == 'mv':
+        split_path(a.src)
+        split_path(a.dst)
         return None
     check_name(a.name)
     with open(a.file, 'rb') as f:
@@ -703,6 +822,10 @@ def run(a, content, mtp, out):
         cmd_tree(mtp, a.out, a.hash, out)
     elif a.command == 'rm':
         cmd_rm(mtp, a.name, out)
+    elif a.command == 'mkdir':
+        cmd_mkdir(mtp, a.path, out)
+    elif a.command == 'mv':
+        cmd_mv(mtp, a.src, a.dst, out)
     elif a.command == 'verify':
         cmd_verify(mtp, a.name, content, out)
     else:
@@ -719,8 +842,13 @@ def main(argv=None):
     p = sub.add_parser('tree', help='list the whole volume into a JSON file (read only)')
     p.add_argument('out')
     p.add_argument('--hash', action='store_true', help='read every file and record its SHA-256')
-    p = sub.add_parser('rm', help='delete one file at the top of the volume')
+    p = sub.add_parser('rm', help='delete one file')
     p.add_argument('name')
+    p = sub.add_parser('mkdir', help='make one folder')
+    p.add_argument('path')
+    p = sub.add_parser('mv', help='rename or move a file or folder')
+    p.add_argument('src')
+    p.add_argument('dst')
     p = sub.add_parser('compare', help='compare two tree listings (no unit needed)')
     p.add_argument('a')
     p.add_argument('b')

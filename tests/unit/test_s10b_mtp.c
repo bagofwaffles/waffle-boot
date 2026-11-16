@@ -1,8 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-10b: the MTP responder against tests/oracle/S-10b-mtp/vectors (level R), over
- * an in-memory volume holding the vectors' trees, and its container framing
- * (S-10b.001 to S-10b.007) at both packet sizes.
+ * S-10b: the MTP responder against tests/oracle/S-10b-mtp/vectors (levels R and
+ * W), over an in-memory volume holding the vectors' trees, and its container
+ * framing (S-10b.001 to S-10b.007) at both packet sizes. At level W: what the
+ * vectors leave out, the volume's failures (a full volume, a create, close,
+ * delete or time that fails), a SendObject canceled or cut by a bus event, the
+ * listing's table and name pool past their room, and the commit after each
+ * change.
  */
 #include <stdbool.h>
 #include <stdint.h>
@@ -10,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "waffle/s04_records.h"
 #include "waffle/s10b_mtp.h"
 
 #include "support/check.h"
@@ -26,15 +31,24 @@ struct file {
 	const uint8_t *path;
 	size_t len;
 	uint8_t kind;		/* 0 file, 1 folder */
-	uint32_t size, mtime, ctime;
+	bool gone;		/* removed (level W) */
+	uint32_t size, mtime, ctime, atime;
 	int seed;
 	const uint8_t *data;
+	uint8_t *own;		/* written data, and its room */
+	size_t room;
+	char *own_path;		/* a path a change gave it */
 };
 
-static struct file files[64 + MANY];
+static struct file files[200 + MANY];
 static size_t n_files;
 static char big_paths[BIG_FILES][12];
 static char many_paths[MANY][8];
+
+enum vop {
+	V_NONE, V_MKDIR, V_CREATE, V_WRITE, V_CLOSE, V_REMOVE, V_RENAME,
+	V_TIMES, V_COUNT
+};
 
 static struct {
 	const struct v_volume *v;
@@ -44,20 +58,55 @@ static struct {
 	unsigned battery;
 	uint32_t clock;
 	unsigned lists;
+	/* Level W: each operation's calls; fail_op's call number fail_nth
+	 * (1 up) and those after it fail with fail_res. */
+	unsigned calls[V_COUNT];
+	enum vop fail_op;
+	unsigned fail_nth;
+	enum s10b_result fail_res;
+	unsigned commits;
+	uint64_t free_bytes;
+	/* Writes past this many bytes find the volume full. */
+	uint64_t write_room;
+	size_t write_max;	/* the largest single write */
+	/* A remove takes this many objects, then fails (0: all). */
+	unsigned remove_only;
 } vol;
+
+static void free_owned(void)
+{
+	size_t i;
+
+	for (i = 0; i < n_files; i++) {
+		free(files[i].own);
+		free(files[i].own_path);
+		files[i].own = NULL;
+		files[i].own_path = NULL;
+	}
+}
 
 static void load_volume(unsigned k)
 {
 	const struct v_volume *v = &v_volumes[k];
 	size_t i;
 
+	free_owned();
+	memset(&vol.calls, 0, sizeof(vol.calls));
+	vol.fail_op = V_NONE;
+	vol.fail_nth = 0;
+	vol.commits = 0;
+	vol.write_room = UINT64_MAX;
+	vol.write_max = 0;
+	vol.remove_only = 0;
 	vol.v = v;
+	vol.free_bytes = v->free;
 	vol.fail_path = NULL;
 	n_files = 0;
 	for (i = 0; i < v->n; i++) {
 		const struct v_entry *e = &v_entries[v->first + i];
 		struct file *f = &files[n_files++];
 
+		memset(f, 0, sizeof(*f));
 		f->path = (const uint8_t *)v_paths[e->path];
 		f->len = strlen(v_paths[e->path]);
 		f->kind = e->kind;
@@ -81,6 +130,8 @@ static void load_volume(unsigned k)
 
 static uint8_t content(const struct file *f, uint32_t i)
 {
+	if (f->own)
+		return f->own[i];
 	return f->seed < 0 ? f->data[i] :
 	       (uint8_t)((7u * i + 3u + (unsigned)f->seed) & 0xFFu);
 }
@@ -101,7 +152,7 @@ static bool vol_space(void *ctx, uint64_t *total, uint64_t *free_bytes)
 	if (!vol.v->present)
 		return false;
 	*total = vol.v->total;
-	*free_bytes = vol.v->free;
+	*free_bytes = vol.free_bytes;
 	return true;
 }
 
@@ -117,7 +168,8 @@ static bool vol_list(void *ctx, const char *path, s10b_entry_fn fn,
 		const struct file *f = &files[i];
 		struct s10b_entry e;
 
-		if (parent_len(f) != plen || memcmp(f->path, path, plen) != 0)
+		if (f->gone || parent_len(f) != plen ||
+		    memcmp(f->path, path, plen) != 0)
 			continue;
 		e.name = f->path + plen + 1u;
 		e.name_len = f->len - plen - 1u;
@@ -130,12 +182,12 @@ static bool vol_list(void *ctx, const char *path, s10b_entry_fn fn,
 	return true;
 }
 
-static const struct file *find(const char *path)
+static struct file *find(const char *path)
 {
 	size_t i;
 
 	for (i = 0; i < n_files; i++)
-		if (files[i].len == strlen(path) &&
+		if (!files[i].gone && files[i].len == strlen(path) &&
 		    memcmp(files[i].path, path, files[i].len) == 0)
 			return &files[i];
 	return NULL;
@@ -162,7 +214,225 @@ static long vol_read(void *ctx, const char *path, uint32_t offset,
 	return (long)n;
 }
 
+/* --- The volume's changes (level W) ----------------------------------------- */
+
+/* The clock's time in seconds, as the engine reads it. */
+static uint32_t now(void)
+{
+	struct s04_datetime t;
+	struct s10b_datetime d;
+	uint32_t secs = 0;
+
+	s04_rtc_decode(vol.clock, &t);
+	d.year = t.year;
+	d.month = t.month;
+	d.day = t.day;
+	d.hour = t.hour;
+	d.minute = t.minute;
+	d.second = t.second;
+	(void)s10b_datetime_secs(&d, &secs);
+	return secs;
+}
+
+/* Counts the call; true when it is to fail. */
+static bool fails(enum vop op)
+{
+	vol.calls[op]++;
+	return vol.fail_op == op && vol.calls[op] >= vol.fail_nth;
+}
+
+static bool parent_is_dir(const char *path)
+{
+	char p[2048];
+	size_t n = strlen(path);
+	const struct file *f;
+
+	while (n > 0 && path[n - 1u] != '/')
+		n--;
+	if (n <= 1)
+		return true;		/* the root */
+	memcpy(p, path, n - 1u);
+	p[n - 1u] = '\0';
+	f = find(p);
+	return f && f->kind;
+}
+
+static struct file *new_file(const char *path, uint8_t kind)
+{
+	struct file *f = &files[n_files++];
+
+	CHECK(n_files <= ARRAY_LEN(files));
+	memset(f, 0, sizeof(*f));
+	f->own_path = malloc(strlen(path) + 1u);
+	memcpy(f->own_path, path, strlen(path) + 1u);
+	f->path = (const uint8_t *)f->own_path;
+	f->len = strlen(path);
+	f->kind = kind;
+	f->seed = -1;
+	f->mtime = f->ctime = f->atime = now();
+	return f;
+}
+
+static bool vol_stat(void *ctx, const char *path, struct s10b_entry *e)
+{
+	const struct file *f = find(path);
+
+	(void)ctx;
+	if (!f)
+		return false;
+	e->kind = f->kind ? S10B_KIND_DIR : S10B_KIND_FILE;
+	e->size = f->size;
+	e->mtime = f->mtime;
+	e->ctime = f->ctime;
+	return true;
+}
+
+static enum s10b_result vol_mkdir(void *ctx, const char *path)
+{
+	(void)ctx;
+	if (fails(V_MKDIR))
+		return vol.fail_res;
+	if (find(path))
+		return S10B_V_EXISTS;
+	if (!parent_is_dir(path))
+		return S10B_V_FAIL;
+	(void)new_file(path, 1);
+	return S10B_V_OK;
+}
+
+static enum s10b_result vol_create(void *ctx, const char *path, int32_t *fd)
+{
+	(void)ctx;
+	if (fails(V_CREATE))
+		return vol.fail_res;
+	if (find(path))
+		return S10B_V_EXISTS;
+	if (!parent_is_dir(path))
+		return S10B_V_FAIL;
+	(void)new_file(path, 0);
+	*fd = (int32_t)(n_files - 1u);
+	return S10B_V_OK;
+}
+
+static enum s10b_result vol_write(void *ctx, int32_t fd, const uint8_t *p,
+				  size_t n)
+{
+	struct file *f = &files[fd];
+
+	(void)ctx;
+	if (n > vol.write_max)
+		vol.write_max = n;
+	if (fails(V_WRITE))
+		return vol.fail_res;
+	if (n > vol.write_room)
+		return S10B_V_FULL;
+	vol.write_room -= n;
+	if (f->size + n > f->room) {
+		f->room = (f->size + n) * 2u;
+		f->own = realloc(f->own, f->room);
+	}
+	memcpy(f->own + f->size, p, n);
+	f->size += (uint32_t)n;
+	return S10B_V_OK;
+}
+
+static enum s10b_result vol_close(void *ctx, int32_t fd)
+{
+	(void)ctx;
+	(void)fd;
+	return fails(V_CLOSE) ? vol.fail_res : S10B_V_OK;
+}
+
+/* path, and every path beneath it. */
+static bool under(const struct file *f, const char *path)
+{
+	const size_t n = strlen(path);
+
+	return !f->gone && f->len >= n && memcmp(f->path, path, n) == 0 &&
+	       (f->len == n || f->path[n] == '/');
+}
+
+static enum s10b_result vol_remove(void *ctx, const char *path)
+{
+	unsigned taken = 0;
+	size_t i;
+
+	(void)ctx;
+	if (fails(V_REMOVE))
+		return vol.fail_res;
+	/* deepest first, as a walk removes them */
+	for (i = n_files; i-- > 0;) {
+		if (!under(&files[i], path))
+			continue;
+		if (vol.remove_only && taken == vol.remove_only)
+			return S10B_V_FAIL;
+		files[i].gone = true;
+		taken++;
+	}
+	return S10B_V_OK;
+}
+
+static enum s10b_result vol_rename(void *ctx, const char *from, const char *to)
+{
+	const size_t a = strlen(from), b = strlen(to);
+	size_t i;
+
+	(void)ctx;
+	if (fails(V_RENAME))
+		return vol.fail_res;
+	if (find(to))
+		return S10B_V_EXISTS;
+	if (!find(from) || !parent_is_dir(to))
+		return S10B_V_FAIL;
+	for (i = 0; i < n_files; i++) {
+		struct file *f = &files[i];
+		char *np;
+
+		if (!under(f, from))
+			continue;
+		np = malloc(f->len - a + b + 1u);
+		memcpy(np, to, b);
+		memcpy(np + b, f->path + a, f->len - a);
+		np[f->len - a + b] = '\0';
+		free(f->own_path);
+		f->own_path = np;
+		f->path = (const uint8_t *)np;
+		f->len = strlen(np);
+	}
+	return S10B_V_OK;
+}
+
+static enum s10b_result vol_set_times(void *ctx, const char *path,
+				      uint32_t atime, uint32_t mtime)
+{
+	struct file *f = find(path);
+
+	(void)ctx;
+	if (fails(V_TIMES))
+		return vol.fail_res;
+	if (!f)
+		return S10B_V_FAIL;
+	f->atime = atime;
+	f->mtime = mtime;
+	return S10B_V_OK;
+}
+
+static void vol_commit(void *ctx)
+{
+	(void)ctx;
+	vol.commits++;
+}
+
 static const struct s10b_volume_ops vol_ops = {
+	.space = vol_space, .list = vol_list, .read = vol_read,
+	.stat = vol_stat, .mkdir = vol_mkdir, .create = vol_create,
+	.write = vol_write, .close = vol_close, .remove = vol_remove,
+	.rename = vol_rename, .set_times = vol_set_times,
+	.commit = vol_commit,
+};
+
+/* Level R's volume: a change would call a null pointer. */
+static const struct s10b_volume_ops vol_ops_r = {
 	.space = vol_space, .list = vol_list, .read = vol_read,
 };
 
@@ -194,13 +464,16 @@ static const struct s10b_device_ops dev_ops = {
 
 static struct s10b m;
 static struct s10b_object objects[MAX_OBJECTS];
-static uint8_t names[MAX_OBJECTS * 16u];
+static uint8_t names[MAX_OBJECTS * 24u];
 static uint32_t tid;
+static enum s10b_level level;
 
 static void engine(unsigned volume, size_t max_objects, size_t mps)
 {
 	const struct s10b_config cfg = {
-		.vol = &vol_ops, .dev = &dev_ops,
+		.level = level,
+		.vol = level == S10B_LEVEL_W ? &vol_ops : &vol_ops_r,
+		.dev = &dev_ops,
 		.manufacturer = v_strings[0], .model = v_strings[1],
 		.version = v_strings[2], .serial = v_strings[3],
 		.objects = objects, .max_objects = max_objects,
@@ -371,6 +644,9 @@ static unsigned op0(unsigned op, uint32_t a)
 /* --- Handles bound by path ----------------------------------------------- */
 
 static uint32_t bound[ARRAY_LEN(v_paths)];
+/* The handles of the session's first listing, and those a step created. */
+static uint32_t bound_first[ARRAY_LEN(v_paths)];
+static uint32_t made[ARRAY_LEN(v_paths)];
 
 /* The handle bound to one of the vectors' paths. */
 static uint32_t handle_of(const char *path)
@@ -386,11 +662,11 @@ static uint32_t handle_of(const char *path)
 
 static size_t object_path(size_t i, char *out)
 {
-	const struct s10b_object *o = &objects[i];
+	const struct s10b_object *o = &m.cfg.objects[i];
 	size_t n = o->parent ? object_path(o->parent - 1u, out) : 0;
 
 	out[n++] = '/';
-	memcpy(out + n, names + o->name, o->name_len);
+	memcpy(out + n, m.cfg.names + o->name, o->name_len);
 	n += o->name_len;
 	out[n] = '\0';
 	return n;
@@ -403,10 +679,12 @@ static void bind(void)
 
 	memset(bound, 0, sizeof(bound));
 	for (i = 0; i < m.n_objects; i++) {
+		if (m.cfg.objects[i].kind == S10B_KIND_FREE)
+			continue;
 		(void)object_path(i, path);
 		for (k = 0; k < ARRAY_LEN(v_paths); k++)
 			if (strcmp(path, v_paths[k]) == 0)
-				bound[k] = s10b_handle(i);
+				bound[k] = m.cfg.objects[i].handle;
 	}
 }
 
@@ -414,8 +692,25 @@ static uint32_t param(const struct v_param *p)
 {
 	if (!p->handle)
 		return p->v;
+	if (p->handle == 2) {
+		CHECK(bound_first[p->v] != 0);
+		return bound_first[p->v];
+	}
 	CHECK(bound[p->v] != 0);
 	return bound[p->v];
+}
+
+/* S-10b.012: a handle a step creates is one no object had. */
+static bool fresh_handle(uint32_t h)
+{
+	size_t k;
+
+	if (h == 0 || h == S10B_ALL || h >> 16 == 1u)
+		return false;
+	for (k = 0; k < ARRAY_LEN(v_paths); k++)
+		if (bound_first[k] == h || made[k] == h)
+			return false;
+	return true;
 }
 
 static int path_of_handle(uint32_t h)
@@ -553,27 +848,65 @@ static bool same_digest(const struct v_step *s, size_t len)
 
 static const char *why;
 
+static uint8_t pattern_buf[(1u << 20) + 64u];
+
+static const uint8_t *step_out(const struct v_step *s)
+{
+	uint32_t i;
+
+	if (!s->has_out)
+		return NULL;
+	if (s->out_seed < 0)
+		return v_blob + s->out.off;
+	for (i = 0; i < s->out.len && i < sizeof(pattern_buf); i++)
+		pattern_buf[i] = (uint8_t)((7u * i + 3u + (unsigned)s->out_seed) &
+					   0xFFu);
+	return pattern_buf;
+}
+
 static bool step_ok(const struct v_step *s)
 {
+	const uint32_t before = s->same_old >= 0 ? bound[s->same_old] : 0;
 	uint32_t p[5];
 	struct reply r;
 	unsigned i;
+	size_t k;
 
 	for (i = 0; i < 5; i++)
 		p[i] = param(&s->p[i]);
-	txn(s->op, p, 5, s->has_out ? v_blob + s->out.off : NULL,
-	    s->out.len, 0, &r);
+	txn(s->op, p, 5, step_out(s), s->out.len, 0, &r);
 	if (r.code != s->code || r.n != s->n_reply) {
 		why = "response";
 		printf("  code 0x%04X want 0x%04X, %u params want %u\n", r.code,
 		       s->code, r.n, s->n_reply);
 		return false;
 	}
-	for (i = 0; i < r.n; i++)
+	for (i = 0; i < r.n; i++) {
+		if (s->reply[i].handle == 3) {
+			if (!fresh_handle(r.params[i])) {
+				why = "new handle";
+				return false;
+			}
+			made[s->reply[i].v] = r.params[i];
+			continue;
+		}
 		if (r.params[i] != param(&s->reply[i])) {
 			why = "parameter";
 			return false;
 		}
+	}
+	/* Handles bound again after each step: a made one names its path,
+	 * a moved or renamed object keeps its own (S-10b.012). */
+	bind();
+	for (k = 0; k < ARRAY_LEN(v_paths); k++)
+		if (made[k] && bound[k] && made[k] != bound[k]) {
+			why = "handle of a new object";
+			return false;
+		}
+	if (s->same_old >= 0 && bound[s->same_new] != before) {
+		why = "handle after a move or rename";
+		return false;
+	}
 	if (s->has_clock && vol.clock != s->clock) {
 		why = "clock";
 		return false;
@@ -613,6 +946,54 @@ static void open_session(void)
 	bind();
 }
 
+/* The volume after a write script is the model's: paths, kinds, sizes,
+ * contents and times. */
+static void check_tree(const struct v_script *sc)
+{
+	size_t live = 0, i, k;
+
+	for (i = 0; i < n_files; i++)
+		if (!files[i].gone)
+			live++;
+	if (live != (size_t)sc->n_final) {
+		printf("  %s: %u objects, want %d\n", sc->what, (unsigned)live,
+		       sc->n_final);
+		CHECK(0);
+	}
+	for (k = 0; k < (size_t)sc->n_final; k++) {
+		const struct v_final *e = &v_finals[sc->first_final + (int)k];
+		const struct file *f = find(v_paths[e->path]);
+		struct s15_sha256 h;
+		char got[65], want[65];
+		uint32_t b;
+
+		if (!f || f->kind != e->kind || f->mtime != e->mtime ||
+		    f->ctime != e->ctime || f->atime != e->atime ||
+		    (!e->kind && f->size != e->size)) {
+			printf("  %s: %s differs\n", sc->what, v_paths[e->path]);
+			if (f)
+				printf("    kind %u size %u times %u %u %u, want "
+				       "%u %u %u %u %u\n", f->kind, f->size,
+				       f->mtime, f->ctime, f->atime, e->kind,
+				       e->size, e->mtime, e->ctime, e->atime);
+			CHECK(0);
+			continue;
+		}
+		if (e->kind)
+			continue;
+		s15_sha256_init(&h);
+		for (b = 0; b < f->size; b++)
+			s15_sha256_byte(&h, content(f, b));
+		s15_sha256_hex(&h, got);
+		hex_of(e->sha256, want);
+		if (strcmp(got, want) != 0) {
+			printf("  %s: %s content differs\n", sc->what,
+			       v_paths[e->path]);
+			CHECK(0);
+		}
+	}
+}
+
 static void test_scripts(void)
 {
 	size_t k, i;
@@ -620,11 +1001,16 @@ static void test_scripts(void)
 	for (k = 0; k < ARRAY_LEN(v_scripts); k++) {
 		const struct v_script *sc = &v_scripts[k];
 
+		level = sc->level_w ? S10B_LEVEL_W : S10B_LEVEL_R;
 		engine(sc->volume, MAX_OBJECTS, 512);
 		vol.battery = sc->battery;
 		vol.clock = sc->clock;
-		if (sc->open)
+		memset(bound_first, 0, sizeof(bound_first));
+		memset(made, 0, sizeof(made));
+		if (sc->open) {
 			open_session();
+			memcpy(bound_first, bound, sizeof(bound));
+		}
 		for (i = 0; i < sc->n; i++) {
 			const struct v_step *s = &v_steps[sc->first + i];
 
@@ -634,7 +1020,10 @@ static void test_scripts(void)
 				CHECK(0);
 			}
 		}
+		if (sc->n_final >= 0)
+			check_tree(sc);
 	}
+	level = S10B_LEVEL_R;
 }
 
 /* S-10b.006, .011, .086, .090, .091 */
@@ -644,21 +1033,29 @@ static void test_sweep(void)
 	static const uint32_t none[5] = { 0, 0, 0, 0, 0 };
 	size_t k;
 
-	engine(V_VOL_TREE_BASIC, MAX_OBJECTS, 512);
 	for (k = 0; k < ARRAY_LEN(v_sweep); k++) {
 		const struct v_sweep *w = &v_sweep[k];
 		struct reply r;
 
+		if (k == 0 || w->level_w != v_sweep[k - 1u].level_w) {
+			level = w->level_w ? S10B_LEVEL_W : S10B_LEVEL_R;
+			engine(V_VOL_TREE_BASIC, MAX_OBJECTS, 512);
+		}
 		s10b_reset(&m, 512);
 		if (w->in_session)
 			CHECK(op0(0x1002, 1) == S10B_OK);
 		txn(w->op, none, 0, w->host_data ? &zero : NULL, 1, 0, &r);
 		if (r.code != w->code || r.data != (w->device_data != 0)) {
-			printf("  op 0x%04X in_session %u: 0x%04X\n", w->op,
-			       w->in_session, r.code);
+			printf("  op 0x%04X level %c in_session %u: 0x%04X\n",
+			       w->op, w->level_w ? 'W' : 'R', w->in_session,
+			       r.code);
 			CHECK(0);
 		}
 	}
+	/* Nothing the sweep sent changed the volume. */
+	CHECK(vol.calls[V_MKDIR] + vol.calls[V_CREATE] + vol.calls[V_REMOVE] +
+	      vol.calls[V_RENAME] + vol.calls[V_TIMES] == 0);
+	level = S10B_LEVEL_R;
 }
 
 /* S-10b.046 */
@@ -983,7 +1380,7 @@ static void test_cancel_and_reset(void)
 static void test_many_handles(void)
 {
 	static struct s10b_object many[MANY];
-	static uint8_t pool[MANY * 6u];
+	static uint8_t pool[MANY * (6u + S10B_NAME_REC)];
 	static const struct v_volume flat = { 1, 1u << 30, 0, 0, 0, 0 };
 	const struct s10b_config cfg = {
 		.vol = &vol_ops, .dev = &dev_ops,
@@ -1062,7 +1459,7 @@ static void test_table_full(void)
 static void test_listing_floor(void)
 {
 	static struct s10b_object table[S10B_LIST_OBJECTS];
-	static uint8_t pool[S10B_LIST_NAMES];
+	static uint8_t pool[S10B_LIST_POOL];
 	static char paths[S10B_LIST_OBJECTS][1u + 32u + 1u];
 	static const struct v_volume flat = { 1, 1u << 30, 0, 0, 0, 0 };
 	const struct s10b_config cfg = {
@@ -1097,6 +1494,348 @@ static void test_listing_floor(void)
 	CHECK(op0(0x1008, s10b_handle(S10B_LIST_OBJECTS - 1u)) == S10B_OK);
 }
 
+/* --- Level W beyond the vectors ------------------------------------------- */
+
+/* An ObjectInfo dataset (S-10b.080) of an ASCII name into out; its length. */
+static size_t info(const char *name, uint32_t size, unsigned fmt, uint8_t *out)
+{
+	size_t n = strlen(name), i, len = 52;
+
+	memset(out, 0, 52);
+	put32(out, S10B_STORAGE_ID);
+	out[4] = (uint8_t)fmt;
+	out[5] = (uint8_t)(fmt >> 8);
+	put32(out + 8, size);
+	out[len++] = (uint8_t)(n + 1u);
+	for (i = 0; i <= n; i++) {
+		out[len++] = (uint8_t)(i < n ? name[i] : 0);
+		out[len++] = 0;
+	}
+	out[len++] = 0;			/* DateCreated "" */
+	out[len++] = 0;			/* DateModified "": the clock's */
+	out[len++] = 0;			/* Keywords "" */
+	return len;
+}
+
+static void w_engine(unsigned volume, size_t max_objects, size_t mps)
+{
+	level = S10B_LEVEL_W;
+	engine(volume, max_objects, mps);
+	vol.clock = 0xA21EC000u;	/* 2026-10-27 12:00:00 */
+	open_session();
+	level = S10B_LEVEL_R;
+}
+
+/* SendObjectInfo of a file at the root: its code; the handle in *h. */
+static unsigned announce(const char *name, uint32_t size, uint32_t *h)
+{
+	static uint8_t ds[600];
+	const uint32_t p[2] = { S10B_STORAGE_ID, S10B_ALL };
+	struct reply r;
+
+	txn(0x100C, p, 2, ds, info(name, size, 0x3000, ds), 0, &r);
+	if (h)
+		*h = r.n == 3 ? r.params[2] : 0;
+	return r.code;
+}
+
+static unsigned send_bytes(const uint8_t *b, size_t n, size_t split)
+{
+	struct reply r;
+
+	txn(0x100D, NULL, 0, b, n, split, &r);
+	CHECK(!r.data);
+	return r.code;
+}
+
+static uint32_t num_objects(void)
+{
+	const uint32_t p[3] = { S10B_STORAGE_ID, 0, 0 };
+	struct reply r;
+
+	txn(0x1006, p, 3, NULL, 0, 0, &r);
+	return r.params[0];
+}
+
+/* S-10b.081: the data written in chunks of at most S10B_WRITE_CHUNK as it
+ * comes, at both packet sizes and however the host splits it; a phase that
+ * ends on a full packet, with its zero-length packet after it. */
+static void test_send_chunks(void)
+{
+	static uint8_t big[70000];
+	static const size_t sizes[] = { 0, 1, 499, 500, 4096, 4097, 10000,
+					512 * 9 - 12, 70000 };
+	const struct file *f;
+	size_t s, k, mps;
+	uint32_t h;
+	char name[16];
+
+	for (k = 0; k < sizeof(big); k++)
+		big[k] = (uint8_t)(k * 13u + 5u);
+	for (mps = 64; mps <= 512; mps *= 8)
+		for (s = 0; s < ARRAY_LEN(sizes); s++) {
+			w_engine(V_VOL_TREE_BASIC, MAX_OBJECTS, mps);
+			(void)snprintf(name, sizeof(name), "f%u.bin",
+				       (unsigned)sizes[s]);
+			CHECK(announce(name, (uint32_t)sizes[s], &h) == S10B_OK);
+			CHECK(send_bytes(big, sizes[s], s % 3u ? 7 : 0) ==
+			      S10B_OK);
+			if ((12u + sizes[s]) % mps == 0) {
+				uint8_t z;
+
+				s10b_rx(&m, &z, 0);	/* the ZLP: nothing */
+				CHECK(!s10b_tx(&m, &z, 1, &k));
+			}
+			(void)snprintf((char *)data, 64, "/%s", name);
+			f = find((const char *)data);
+			CHECK(f && f->size == sizes[s] &&
+			      (!sizes[s] || memcmp(f->own, big, sizes[s]) == 0));
+			CHECK(vol.write_max <= S10B_WRITE_CHUNK);
+			CHECK(f && f->mtime == now() && f->atime == now());
+			CHECK(vol.commits == 1);
+			CHECK(op0(0x1008, h) == S10B_OK);
+		}
+}
+
+/* S-10b.081: whatever fails, no file is left and nothing is listed. */
+static void test_send_failures(void)
+{
+	static const struct {
+		enum vop op;
+		enum s10b_result res;
+		unsigned code;
+	} t[] = {
+		{ V_CREATE, S10B_V_FAIL, S10B_GENERAL_ERROR },
+		{ V_CREATE, S10B_V_EXISTS, S10B_GENERAL_ERROR },
+		{ V_CREATE, S10B_V_FULL, S10B_STORE_FULL },
+		{ V_WRITE, S10B_V_FULL, S10B_STORE_FULL },
+		{ V_WRITE, S10B_V_FAIL, S10B_GENERAL_ERROR },
+		{ V_CLOSE, S10B_V_FULL, S10B_STORE_FULL },
+		{ V_CLOSE, S10B_V_FAIL, S10B_GENERAL_ERROR },
+		{ V_TIMES, S10B_V_FAIL, S10B_GENERAL_ERROR },
+	};
+	static uint8_t b[9000];
+	size_t k;
+
+	for (k = 0; k < ARRAY_LEN(t); k++) {
+		uint32_t n0;
+
+		w_engine(V_VOL_TREE_BASIC, MAX_OBJECTS, 512);
+		n0 = num_objects();
+		vol.fail_op = t[k].op;
+		vol.fail_nth = t[k].op == V_WRITE ? 2u : 1u;
+		vol.fail_res = t[k].res;
+		CHECK(announce("x.bin", sizeof(b), NULL) == S10B_OK);
+		CHECK(send_bytes(b, sizeof(b), 0) == t[k].code);
+		CHECK(!find("/x.bin") && num_objects() == n0);
+		/* the announced file is spent */
+		vol.fail_op = V_NONE;
+		CHECK(send_bytes(b, 1, 0) == S10B_NO_VALID_OBJECT_INFO);
+	}
+	/* The volume fills part way. */
+	w_engine(V_VOL_TREE_BASIC, MAX_OBJECTS, 512);
+	vol.write_room = 5000;
+	CHECK(announce("x.bin", sizeof(b), NULL) == S10B_OK);
+	CHECK(send_bytes(b, sizeof(b), 0) == S10B_STORE_FULL);
+	CHECK(!find("/x.bin"));
+	/* A folder that cannot be made. */
+	{
+		const uint32_t p[2] = { S10B_STORAGE_ID, 0 };
+		struct reply r;
+
+		vol.fail_op = V_MKDIR;
+		vol.fail_nth = 1;
+		vol.fail_res = S10B_V_FULL;
+		txn(0x100C, p, 2, b, info("d", 0, 0x3001, b), 0, &r);
+		CHECK(r.code == S10B_STORE_FULL && r.n == 0 && !find("/d"));
+	}
+}
+
+/* S-10b.005, S-10b.007: a SendObject canceled or cut by a bus event has no
+ * effect: no response, and the file it had begun is removed when the
+ * volume may be used again (s10b_service()). */
+static void test_send_cut(void)
+{
+	static uint8_t b[3000];
+	uint8_t cmd[12], buf[512];
+	struct reply r;
+	size_t n;
+	int pass;
+
+	for (pass = 0; pass < 2; pass++) {
+		w_engine(V_VOL_TREE_BASIC, MAX_OBJECTS, 512);
+		CHECK(announce("cut.bin", sizeof(b), NULL) == S10B_OK);
+		tid++;
+		header(cmd, 12, 1, 0x100D, tid);
+		send(cmd, 12, 0);
+		header(data_out, 12u + sizeof(b), 2, 0x100D, tid);
+		memset(data_out + 12, 0x77, sizeof(b));
+		send(data_out, 512 * 3, 0);
+		CHECK(find("/cut.bin") != NULL && s10b_busy(&m));
+		if (pass == 0)
+			s10b_cancel(&m);
+		else
+			s10b_reset(&m, 512);
+		CHECK(find("/cut.bin") != NULL);	/* not yet */
+		s10b_service(&m);
+		CHECK(!find("/cut.bin") && vol.commits == 1);
+		CHECK(!s10b_tx(&m, buf, sizeof(buf), &n));
+		if (pass == 1)
+			open_session();
+		/* the rest of the phase, out of place now, gets nothing */
+		send(data_out + 512 * 3, 400, 0);
+		CHECK(!s10b_tx(&m, buf, sizeof(buf), &n));
+		txn(0x1001, NULL, 0, NULL, 0, 0, &r);
+		CHECK(r.code == S10B_OK && r.data);
+		CHECK(send_bytes(b, sizeof(b), 0) == S10B_NO_VALID_OBJECT_INFO);
+		CHECK(!find("/cut.bin"));
+	}
+	/* A cancel with nothing in progress leaves the file announced. */
+	w_engine(V_VOL_TREE_BASIC, MAX_OBJECTS, 512);
+	CHECK(announce("kept.bin", 5, NULL) == S10B_OK);
+	s10b_cancel(&m);
+	CHECK(send_bytes(b, 5, 0) == S10B_OK && find("/kept.bin"));
+}
+
+/* S-10b.082: a delete that fails part way answers a failure; what it
+ * removed is no longer listed, the rest is. */
+static void test_delete_partial(void)
+{
+	uint32_t h;
+
+	w_engine(V_VOL_TREE_BASIC, MAX_OBJECTS, 512);
+	h = handle_of("/a");
+	vol.remove_only = 2;		/* /a/kick.wav and /a/empty, say */
+	CHECK(op0(0x100B, h) == S10B_GENERAL_ERROR);
+	bind();
+	{
+		size_t k, listed = 0, there = 0;
+
+		for (k = 0; k < ARRAY_LEN(v_paths); k++) {
+			const bool in = find(v_paths[k]) != NULL;
+
+			if (strncmp(v_paths[k], "/a", 2) != 0 ||
+			    (v_paths[k][2] != '/' && v_paths[k][2] != '\0'))
+				continue;
+			if (bound[k])
+				listed++;
+			if (in)
+				there++;
+			CHECK((bound[k] != 0) == in);
+		}
+		CHECK(there > 0 && listed == there);
+	}
+	CHECK(vol.commits == 1);
+	CHECK(op0(0x1008, h) == S10B_OK);
+	vol.remove_only = 0;
+	CHECK(op0(0x100B, h) == S10B_OK && op0(0x1008, h) ==
+	      S10B_INVALID_HANDLE);
+}
+
+/* S-10b.014, S-10b.012: a table and a pool with room for 12 objects. Past
+ * them a SendObjectInfo fails and creates nothing; a delete makes room
+ * again; handles are never reused; the pool is compacted as names come and
+ * go, renames too, and the listing stays the volume's. */
+static void test_room(void)
+{
+	static struct s10b_object table[12];
+	static uint8_t pool[12u * (S10B_NAME_REC + 30u)];
+	const struct s10b_config cfg = {
+		.level = S10B_LEVEL_W, .vol = &vol_ops, .dev = &dev_ops,
+		.manufacturer = "m", .model = "x", .version = "1",
+		.serial = "s",
+		.objects = table, .max_objects = ARRAY_LEN(table),
+		.names = pool, .names_size = sizeof(pool),
+	};
+	static uint32_t given[200];
+	size_t n_given = 0, k, j;
+	uint8_t ren[1 + 2 * 31];
+	char name[40];
+	uint32_t h, p[2];
+	struct reply r;
+
+	load_volume(V_VOL_TREE_BASIC);	/* 9 objects, lost+found too */
+	vol.clock = 0xA21EC000u;
+	s10b_init(&m, &cfg);
+	s10b_reset(&m, 512);
+	CHECK(op0(0x1002, 1) == S10B_OK && m.n_objects == 9);
+	for (k = 0; k < 3; k++) {
+		(void)snprintf(name, sizeof(name), "%030u", (unsigned)k);
+		CHECK(announce(name, 1, &h) == S10B_OK);
+		CHECK(send_bytes((const uint8_t *)"z", 1, 0) == S10B_OK);
+		given[n_given++] = h;
+	}
+	/* full: refused, nothing created */
+	k = vol.calls[V_CREATE];
+	CHECK(announce("one-more", 1, NULL) == S10B_GENERAL_ERROR);
+	CHECK(vol.calls[V_CREATE] == k && num_objects() == 12);
+	/* 100 rounds of delete, create and rename, names of 1 to 30 bytes */
+	for (k = 0; k < 100; k++) {
+		CHECK(op0(0x100B, given[n_given - 1u]) == S10B_OK);
+		CHECK(op0(0x1008, given[n_given - 1u]) == S10B_INVALID_HANDLE);
+		(void)snprintf(name, sizeof(name), "%.*s", (int)(1u + k % 30u),
+			       "abcdefghijklmnopqrstuvwxyz0123456789");
+		name[0] = (char)('A' + k % 26u);
+		CHECK(announce(name, 1, &h) == S10B_OK);
+		CHECK(send_bytes((const uint8_t *)"y", 1, 0) == S10B_OK);
+		for (j = 0; j < n_given; j++)
+			CHECK(given[j] != h);	/* never one given before */
+		given[n_given++] = h;
+		/* rename it to a 30-byte name and back to a short one */
+		p[0] = h;
+		p[1] = 0xDC07;
+		ren[0] = 31;
+		for (j = 0; j < 30; j++) {
+			ren[1 + 2 * j] = (uint8_t)('a' + (k + j) % 26u);
+			ren[2 + 2 * j] = 0;
+		}
+		ren[61] = ren[62] = 0;
+		txn(0x9804, p, 2, ren, sizeof(ren), 0, &r);
+		CHECK(r.code == S10B_OK);
+	}
+	CHECK(num_objects() == 12);
+	/* the listing is the volume's, name for name */
+	bind();
+	for (k = 0, j = 0; k < m.n_objects; k++) {
+		char path[S10B_PATH_MAX];
+
+		if (table[k].kind == S10B_KIND_FREE)
+			continue;
+		j++;
+		(void)object_path(k, path);
+		CHECK(find(path) != NULL);
+	}
+	CHECK(j == 12);
+}
+
+/* Each change commits once (S-12.059's volume, flushed: s10b_store);
+ * a refusal or a read commits nothing. */
+static void test_commits(void)
+{
+	static uint8_t ds[600];
+	const uint32_t root[2] = { S10B_STORAGE_ID, 0 };
+	uint32_t p[3];
+	struct reply r;
+
+	w_engine(V_VOL_TREE_BASIC, MAX_OBJECTS, 512);
+	txn(0x100C, root, 2, ds, info("d", 0, 0x3001, ds), 0, &r);
+	CHECK(r.code == S10B_OK && vol.commits == 1);
+	CHECK(announce("f", 2, NULL) == S10B_OK && vol.commits == 1);
+	CHECK(send_bytes((const uint8_t *)"ab", 2, 0) == S10B_OK &&
+	      vol.commits == 2);
+	p[0] = handle_of("/notes.txt");
+	p[1] = S10B_STORAGE_ID;
+	p[2] = handle_of("/a");
+	txn(0x1019, p, 3, NULL, 0, 0, &r);
+	CHECK(r.code == S10B_OK && vol.commits == 3);
+	CHECK(op0(0x100B, handle_of("/zero.bin")) == S10B_OK &&
+	      vol.commits == 4);
+	CHECK(op0(0x100B, S10B_ALL) == S10B_PARAM_NOT_SUPPORTED &&
+	      vol.commits == 4);
+	CHECK(op0(0x1009, handle_of("/song.aiff")) == S10B_OK &&
+	      vol.commits == 4);
+}
+
 int main(void)
 {
 	RUN(test_scripts);
@@ -1114,5 +1853,12 @@ int main(void)
 	RUN(test_table_full);
 	RUN(test_listing_floor);
 	RUN(test_many_handles);
+	RUN(test_send_chunks);
+	RUN(test_send_failures);
+	RUN(test_send_cut);
+	RUN(test_delete_partial);
+	RUN(test_room);
+	RUN(test_commits);
+	free_owned();
 	return check_summary("test_s10b_mtp");
 }

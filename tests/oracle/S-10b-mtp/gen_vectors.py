@@ -488,11 +488,290 @@ def v_bus_events():
     return {'cases': cases}
 
 
+# ---------------------------------------------------------------- level W (S-10b.080-.087)
+WRITE_CLOCK = M.rtc_count(M.parse_datetime('20261027T120000'))
+
+
+def info_dataset(name, size=0, fmt=0x3000, modified='20250102T030405', created='', units=None, cut=None):
+    """An ObjectInfo dataset as a host sends it (MTP 1.1 5.3.1.4.6); `units` replaces the Filename's units;
+    `cut` ends the dataset after that field."""
+    fields = dict(StorageID=S, ObjectFormat=fmt, ProtectionStatus=0, ObjectCompressedSize=size, ThumbFormat=0,
+                  ThumbCompressedSize=0, ThumbPixWidth=0, ThumbPixHeight=0, ImagePixWidth=0, ImagePixHeight=0,
+                  ImageBitDepth=0, ParentObject=0, AssociationType=1 if fmt == 0x3001 else 0,
+                  AssociationDesc=0, SequenceNumber=0,
+                  Filename=M.mtp.MtpString(units) if units is not None else M.mtp.MtpString(name),
+                  DateCreated=created, DateModified=modified, Keywords='')
+    if cut is not None:
+        keys = [k for k, _ in M.mtp.OBJECT_INFO]
+        for k in keys[keys.index(cut) + 1:]:
+            fields[k] = None
+    return M.mtp.encode_object_info(**fields)
+
+
+class WriteScript:
+    """Steps of one level-W session over one volume, each with the model's answer. A handle is written as
+    {'h': path}, the handle the path names at that step, or {'was': path}, the handle the path had in the
+    session's first listing; a SendObjectInfo that creates names its new object's path in its reply's
+    {'new': path}."""
+
+    def __init__(self, name, tree, level='W', free=1 << 30):
+        self.name, self.tree = name, tree
+        self.r = session(M.Volume.build(TREES[tree]() if isinstance(tree, str) else tree, free=free), level,
+                         clock=WRITE_CLOCK)
+        self.steps = []
+        self.first = dict(self.r.by_path)
+
+    def ref(self, v):
+        if isinstance(v, str):
+            return {'h': v}
+        if isinstance(v, tuple):
+            return {'was': v[1]}
+        return v
+
+    def value(self, v):
+        if isinstance(v, str):
+            return self.r.handle(v)
+        if isinstance(v, tuple):
+            return self.first[v[1]]
+        return v
+
+    def reply_ref(self, h):
+        return {'h': self.r.handles[h]} if h in self.r.handles else h
+
+    def step(self, op, params=(), data=None, pattern=None, binds=None, check=None):
+        if pattern is not None:
+            data = content(*pattern)
+        moved = self.r.by_path.get(params[0]) if op in (0x1019, 0x9804) and isinstance(params[0], str) else None
+        rep = self.r.op(op, [self.value(v) for v in params], data)
+        st = dict(op=op, params=[self.ref(v) for v in params], code=rep.code)
+        if pattern is not None:
+            st['data'] = {'len': pattern[0], 'seed': pattern[1]}
+        elif data is not None:
+            st['data'] = data.hex()
+        if op == 0x100C and rep.code == M.OK:
+            st['reply'] = [rep.params[0], self.reply_ref(rep.params[1]), {'new': binds}]
+        else:
+            st['reply'] = [self.reply_ref(x) for x in rep.params]
+        if check == 'handles' and rep.code == M.OK:
+            n = struct.unpack_from('<I', rep.data)[0]
+            st['paths'] = sorted(self.r.handles[h] for h in struct.unpack_from('<%dI' % n, rep.data, 4))
+        elif check == 'info' and rep.code == M.OK:
+            st['out'] = rep.data.hex()
+            parent = struct.unpack_from('<I', rep.data, 38)[0]
+            st['parent'] = self.r.handles[parent] if parent else None
+        elif check == 'value' and rep.code == M.OK:
+            st['out'] = rep.data.hex()
+            if params[1] == 0xDC0B:
+                h = struct.unpack_from('<I', rep.data)[0]
+                st['parent_path'] = self.r.handles[h] if h else None
+        elif check == 'digest' and rep.code == M.OK:
+            st['sha256'] = digest(rep.data)
+            st['length'] = len(rep.data)
+        if moved is not None and rep.code == M.OK and self.r.handles.get(moved) != params[0]:
+            st['same'] = [params[0], self.r.handles[moved]]          # the handle stays (S-10b.012)
+        self.steps.append(st)
+        return rep
+
+    def send(self, parent, name, size=None, seed=0, modified='20250102T030405', fmt=0x3000, then=True, **kw):
+        """SendObjectInfo, then SendObject of `size` bytes of content(size, seed) (none for a folder, with
+        size None, or with then False)."""
+        path = (parent if parent not in (0, A) else '') + '/' + name
+        n = 0 if size is None else size
+        rep = self.step(0x100C, [S, parent], info_dataset(name, n, fmt, modified, **kw), binds=path)
+        if rep.code == M.OK and fmt != 0x3001 and size is not None and then:
+            self.step(0x100D, [], pattern=(size, seed))
+        return rep
+
+    def json(self):
+        tree = {}
+        for p, e in sorted(self.r.v.entries.items()):
+            t = dict(type=e['type'], mtime=e['mtime'], ctime=e['ctime'], atime=e.get('atime', 0))
+            if e['type'] == 'file':
+                t['size'] = len(e['data'])
+                t['sha256'] = digest(e['data'])
+            tree[p] = t
+        return dict(name=self.name, volume=self.tree if isinstance(self.tree, str) else 'custom',
+                    level=self.r.level, clock=WRITE_CLOCK, free=self.r.v.free, steps=self.steps, tree=tree)
+
+
+def w_send():
+    w = WriteScript('send', 'tree_basic')
+    for n, seed, modified in ((0, 1, '20250102T030405'), (1, 2, ''), (4080, 3, '19700101T000000'),
+                              (4081, 4, '20261027T130000.5+0200'), (1 << 20, 5, '21060207T062815')):
+        w.send(A, 'new%d.bin' % n, n, seed, modified)
+    w.send(0, 'zero-root.txt', 7, 6, '20000229T235959Z')
+    w.send('/a', 'in-a.wav', 500, 7)
+    w.send('/a', 'made', fmt=0x3001)
+    w.send('/a/made', 'deeper.txt', 100, 8)
+    w.send(A, 'n' * 254, 3, 9)
+    w.send(A, 'é' * 127 + 'z', 2, 12)
+    w.send(A, 'é€🎵.txt', 5, 10)
+    w.step(0x1007, [S, 0, A], check='handles')
+    w.step(0x1007, [S, 0, '/a/made'], check='handles')
+    w.step(0x1008, ['/a/in-a.wav'], check='info')
+    w.step(0x1008, ['/a/made'], check='info')
+    w.step(0x1009, ['/new1048576.bin'], check='digest')
+    w.step(0x9803, ['/new4081.bin', 0xDC09], check='value')
+    return w
+
+
+def w_send_refused():
+    w = WriteScript('send_refused', 'tree_basic', free=100000)
+    w.step(0x100C, [0x00020001, A], info_dataset('x'))
+    w.step(0x100C, [S, '/notes.txt'], info_dataset('x'))
+    w.step(0x100C, [S, 0x7FFF0000], info_dataset('x'))
+    w.step(0x100C, [S, A], info_dataset('x')[:30])
+    w.step(0x100C, [S, A], info_dataset('x', cut='DateCreated'))
+    for units in ([], [0x61, 0x2F, 0x62], [0x2E], [0x2E, 0x2E], [0xE9] * 128, [0x61, 0, 0x62], [0x61, 0xD800],
+                  [0xDC00, 0x61]):
+        w.step(0x100C, [S, A], info_dataset('', units=units + [0] if units else []))
+    w.step(0x100C, [S, A], info_dataset('notes.txt'))                    # Q-05
+    w.step(0x100C, [S, '/a'], info_dataset('b', fmt=0x3001))
+    w.step(0x100C, [S, A], info_dataset('big.bin', 100001))               # S-12.056
+    w.send(A, 'fits.bin', 100000, 11)
+    w.send(A, 'later.bin', 10, then=False)
+    w.step(0x1001, [])
+    w.step(0x100D, [], pattern=(10, 0))                                   # not right after it
+    w.step(0x100D, [], pattern=(10, 0))
+    w.send(A, 'short.bin', 100, then=False)
+    w.step(0x100D, [], pattern=(99, 0))
+    w.send(A, 'long.bin', 100, then=False)
+    w.step(0x100D, [], pattern=(101, 0))
+    w.step(0x1007, [S, 0, A], check='handles')
+    return w
+
+
+def w_delete():
+    w = WriteScript('delete', 'tree_basic')
+    w.step(0x100B, ['/notes.txt', 0])
+    w.step(0x1008, [('was', '/notes.txt')])
+    w.step(0x100B, ['/a', 0x3001])
+    w.step(0x100B, [A, 0])                                               # S-16.065
+    w.step(0x100B, ['/lost+found', 0])
+    w.step(0x100B, [0x7FFF0000, 0])
+    w.step(0x1007, [S, 0, 0], check='handles')
+    return w
+
+
+def w_delete_handles():
+    """A deleted object's handle names nothing after its delete (S-10b.012, S-10b.082)."""
+    w = WriteScript('delete_handles', 'tree_basic')
+    w.step(0x100B, ['/a', 0])
+    for p in ('/a/b/deep.txt', '/a/b', '/a'):
+        w.step(0x1008, [('was', p)])
+        w.step(0x9803, [('was', p), 0xDC07])
+    w.send(A, 'a', fmt=0x3001)
+    w.step(0x1007, [S, 0, A], check='handles')
+    return w
+
+
+def w_move():
+    w = WriteScript('move', 'tree_basic')
+    w.step(0x1019, ['/notes.txt', S, '/a'])
+    w.step(0x1008, ['/a/notes.txt'], check='info')
+    w.step(0x1019, ['/a/b', S, A])
+    w.step(0x1007, [S, 0, '/b'], check='handles')
+    w.step(0x1019, ['/zero.bin', S, 0])                                    # already at level 1: the name exists
+    w.step(0x1019, ['/a', S, '/zero.bin'])
+    w.step(0x1019, ['/a', S, '/a'])
+    w.step(0x1019, ['/a', S, '/a/empty'])
+    w.send(A, 'notes.txt', fmt=0x3001)
+    w.step(0x1019, ['/a/notes.txt', S, A])
+    w.step(0x1019, ['/a/kick.wav', 0, A])
+    w.step(0x1019, ['/a/kick.wav', S, 0x7FFF0000])
+    w.step(0x1019, [0x7FFF0000, S, A])
+    w.step(0x1019, ['/lost+found', S, '/a'])
+    w.step(0x1019, ['/song.aiff', S, '/a/empty'])
+    w.step(0x9803, ['/a/empty/song.aiff', 0xDC0B], check='value')
+    w.step(0x1019, ['/a/empty', S, '/lost+found'])
+    w.step(0x1007, [S, 0, 0], check='handles')
+    return w
+
+
+def w_rename():
+    w = WriteScript('rename', 'tree_basic')
+    w.step(0x9804, ['/notes.txt', 0xDC07], M.mtp_string('renamed.TXT'))
+    w.step(0x9803, ['/renamed.TXT', 0xDC02], check='value')
+    w.step(0x9804, ['/a', 0xDC44], M.mtp_string('A2'))
+    w.step(0x1008, ['/A2/b/deep.txt'], check='info')
+    w.step(0x9804, ['/song.aiff', 0xDCE0], M.mtp_string('song.wav'))
+    w.step(0x9803, ['/song.wav', 0xDC02], check='value')
+    w.step(0x9804, ['/zero.bin', 0xDC07], M.mtp_string('song.wav'))         # Q-05
+    w.step(0x9804, ['/zero.bin', 0xDC07], M.mtp_string('zero.bin'))         # its own name
+    for bad in (b'\x00', M.mtp_string('a/b'), M.mtp_string('..'), M.mtp_string('é' * 128), b'',
+                b'\x05ab'):
+        w.step(0x9804, ['/zero.bin', 0xDC07], bad)
+    w.step(0x9804, ['/zero.bin', 0xDC07], M.mtp_string('é' * 127 + 'z'))   # 255 bytes
+    w.step(0x9804, ['/lost+found', 0xDC07], M.mtp_string('lf'))
+    w.step(0x9804, [0x7FFF0000, 0xDC07], M.mtp_string('x'))
+    w.step(0x1007, [S, 0, 0], check='handles')
+    return w
+
+
+def w_modified():
+    w = WriteScript('modified', 'tree_basic')
+    w.step(0x9804, ['/notes.txt', 0xDC09], M.mtp_string('20240229T101112'))
+    w.step(0x9803, ['/notes.txt', 0xDC09], check='value')
+    w.step(0x9804, ['/song.aiff', 0xDC09], M.mtp_string(M.datetime_text(0)))   # equal to its own: no write
+    w.step(0x9804, ['/a', 0xDC09], M.mtp_string('21000301T000000.5Z'))
+    for bad in ('2024022T101112', '20240230T000000', '19691231T235959', '21060207T062816', ''):
+        w.step(0x9804, ['/zero.bin', 0xDC09], M.mtp_string(bad))
+    w.step(0x9804, ['/zero.bin', 0xDC04], b'\x00' * 8)                    # Access_Denied
+    w.step(0x9804, ['/zero.bin', 0xDC06], b'\x00')
+    w.step(0x9804, ['/lost+found', 0xDC09], M.mtp_string('20240229T101112'))
+    return w
+
+
+def w_deep():
+    w = WriteScript('deep', 'tree_deep')
+    d9 = '/d1/d2/d3/d4/d5/d6/d7/d8/d9'
+    w.step(0x100C, [S, d9], info_dataset('x'))                              # level 9 lists no children
+    w.send(A, 'x', fmt=0x3001)
+    w.send('/x', 'y', fmt=0x3001)
+    w.step(0x1019, ['/d1/d2', S, '/x/y'])                                  # d9 to level 10
+    w.step(0x1019, ['/d1/d2/d3/d4/d5/d6/d7/d8', S, A])                     # d9's own come into view
+    w.step(0x1007, [S, 0, '/d8/d9'], check='handles')
+    w.step(0x1007, [S, 0, '/d8/d9/d10'], check='handles')
+    w.step(0x1009, ['/d8/d9/d10/f11'], check='digest')
+    w.step(0x9804, ['/d1', 0xDC07], M.mtp_string('e1'))
+    w.step(0x1007, [S, 0, 0], check='handles')
+    return w
+
+
+def w_long():
+    w = WriteScript('long', 'tree_long')
+    a, b1, b2 = long_names()
+    w.step(0x100C, [S, '/' + a + '/' + b2], info_dataset('x'))              # a 502-byte path lists none
+    w.step(0x9804, ['/' + a, 0xDC07], M.mtp_string(a + 'x'))                # b1's to 502: f out of view
+    w.step(0x9804, ['/' + a + '/' + b2, 0xDC07], M.mtp_string(b2[:-1]))      # to 501: its f in view
+    w.step(0x1007, [S, 0, '/' + a + '/' + b2[:-1]], check='handles')
+    w.step(0x1009, ['/' + a + '/' + b2[:-1] + '/f'], check='digest')
+    return w
+
+
+def w_readonly():
+    """S-10b.086: at level R every change answers Operation_Not_Supported, after its data phase."""
+    w = WriteScript('readonly', 'tree_basic', level='R')
+    w.step(0x100C, [S, A], info_dataset('new.bin', 3))
+    w.step(0x100D, [], pattern=(3, 0))
+    w.step(0x100B, ['/notes.txt', 0])
+    w.step(0x1019, ['/notes.txt', S, '/a'])
+    w.step(0x9804, ['/notes.txt', 0xDC07], M.mtp_string('x.txt'))
+    w.step(0x9804, ['/notes.txt', 0xDC09], M.mtp_string('20240229T101112'))
+    return w
+
+
+def v_writes():
+    return {'clock': WRITE_CLOCK, 'now': M.secs_of(M.clock_datetime(WRITE_CLOCK)),
+            'scripts': [f().json() for f in (w_send, w_send_refused, w_delete, w_delete_handles, w_move,
+                                             w_rename, w_modified, w_deep, w_long, w_readonly)]}
+
+
 VECTORS = {'device_info': v_device_info, 'storage_info': v_storage_info, 'listings': v_listings,
            'formats': v_formats, 'object_info': v_object_info, 'partial': v_partial,
            'device_props': v_device_props, 'datetime': v_datetime, 'object_props': v_object_props,
            'op_sweep': v_op_sweep, 'transcripts': v_transcripts, 'class_requests': v_class_requests,
-           'bus_events': v_bus_events, 'capacity': v_capacity}
+           'bus_events': v_bus_events, 'capacity': v_capacity, 'writes': v_writes}
 
 
 def main():

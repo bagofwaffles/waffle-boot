@@ -15,6 +15,16 @@ every request is refused and changes nothing. `ping`, `rd` and `wr` work as with
 The serial port is in every USB set while developer mode is on, MTP included (S-10a.010). Turning MTP on or
 off re-enumerates the device: reopen the port.
 
+## Files over MTP
+
+The developer menu's **2 MTP file transfer** shares the internal drive read-write (S-10b, level W). A
+computer's file manager, or `tools/mtpcp.py` (`ls`, `put`, `verify`, `rm`, `mkdir`, `mv`, `tree`), can copy,
+delete, move and rename files and folders and set their dates. Each change is flushed to the eMMC before the
+computer is answered. `lost+found` cannot be deleted, moved or renamed; a name that exists is never
+replaced, so a copy over an existing file is refused (delete it first, as `mtpcp.py put` does). Nothing
+outside the drive can be reached, and the bootloader's own files on it (`bootloader.settings`, `os.ldr`,
+`upgrade/`) are not protected.
+
 ## Requests
 
 | Request | What it does |

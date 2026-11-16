@@ -3,7 +3,9 @@
 #define WAFFLE_S10B_MTP_H
 
 /*
- * S-10b: the MTP responder, level R (a read-only store, S-10b.021).
+ * S-10b: the MTP responder, at level R (a read-only store) or level W (R
+ * and the changes of S-10b.080 to S-10b.085), as its configuration says
+ * (S-10b.021).
  *
  * Pure logic over the generic containers of the Still Image class: bulk
  * transfers in (s10b_rx), bulk transfers out (s10b_tx), nothing on the
@@ -12,11 +14,16 @@
  * side is s10a_usb.c's.
  *
  * The session's listing (S-10b.013) is made at OpenSession into memory the
- * caller gives: one struct s10b_object per listed object and a pool for
- * their names as stored. S-10b.014 sets the floor: a caller gives at least
- * S10B_LIST_OBJECTS objects and S10B_LIST_NAMES bytes. Past it, what does
+ * caller gives: a table of struct s10b_object and a pool holding each
+ * listed object's name as stored, behind a record header of
+ * S10B_NAME_REC bytes. S-10b.014 sets the floor: a caller gives at least
+ * S10B_LIST_OBJECTS objects and S10B_LIST_POOL bytes. Past it, what does
  * not fit is not listed; folders are read breadth first, so the parent of
  * every listed object is listed, and the one listing serves the session.
+ * At level W the listing follows each change: a deleted object's slot and
+ * name are reused, never its handle (S-10b.012), and the pool is compacted
+ * when a name does not fit, so a volume that stays within the floor stays
+ * listed whole.
  */
 
 #include <stdbool.h>
@@ -27,6 +34,10 @@
  * most this many bytes is listed in full. */
 #define S10B_LIST_OBJECTS	8192u
 #define S10B_LIST_NAMES		262144u
+/* A name's place in the pool: its owner (u32, 0 when free) and length,
+ * then its bytes. */
+#define S10B_NAME_REC		5u
+#define S10B_LIST_POOL		(S10B_LIST_NAMES + S10B_NAME_REC * S10B_LIST_OBJECTS)
 
 /* --- Codes (MTP 1.1 appendix F) ----------------------------------------- */
 
@@ -34,11 +45,15 @@
 #define S10B_GENERAL_ERROR		0x2002u
 #define S10B_SESSION_NOT_OPEN		0x2003u
 #define S10B_OP_NOT_SUPPORTED		0x2005u
+#define S10B_PARAM_NOT_SUPPORTED	0x2006u
 #define S10B_INCOMPLETE_TRANSFER	0x2007u
 #define S10B_INVALID_STORAGE		0x2008u
 #define S10B_INVALID_HANDLE		0x2009u
 #define S10B_DEVPROP_NOT_SUPPORTED	0x200Au
+#define S10B_STORE_FULL			0x200Cu
+#define S10B_WRITE_PROTECTED		0x200Du
 #define S10B_ACCESS_DENIED		0x200Fu
+#define S10B_NO_VALID_OBJECT_INFO	0x2015u
 #define S10B_DEVICE_BUSY		0x2019u
 #define S10B_INVALID_PARENT		0x201Au
 #define S10B_INVALID_DEVPROP_VALUE	0x201Cu
@@ -46,6 +61,8 @@
 #define S10B_SESSION_ALREADY_OPEN	0x201Eu
 #define S10B_INVALID_PROP_CODE		0xA801u
 #define S10B_INVALID_PROP_FORMAT	0xA802u
+#define S10B_INVALID_PROP_VALUE		0xA803u
+#define S10B_INVALID_DATASET		0xA806u
 #define S10B_DEPTH_UNSUPPORTED		0xA808u
 
 #define S10B_STORAGE_ID		0x00010001u
@@ -65,6 +82,20 @@ enum s10b_kind {
 	S10B_KIND_FILE,
 	S10B_KIND_DIR,
 	S10B_KIND_OTHER,	/* links, special objects: not listed (S-10b Q-01) */
+	S10B_KIND_FREE,		/* a table slot that lists nothing */
+};
+
+enum s10b_level {
+	S10B_LEVEL_R,		/* read-only (S-10b.086) */
+	S10B_LEVEL_W,		/* and the changes of S-10b.080 to S-10b.085 */
+};
+
+/* What a change to the volume came to. */
+enum s10b_result {
+	S10B_V_OK,
+	S10B_V_EXISTS,		/* the name is taken; nothing changed */
+	S10B_V_FULL,		/* no space (S-12.056) */
+	S10B_V_FAIL,		/* any other failure */
 };
 
 /* One entry of a directory, as S-12 presents it. */
@@ -95,6 +126,28 @@ struct s10b_volume_ops {
 	 * the end of the file; negative when it cannot be read. */
 	long (*read)(void *ctx, const char *path, uint32_t offset,
 		     uint8_t *buf, size_t n);
+
+	/* Level W only; a level-R engine never calls these. */
+	/* An object's kind, size and times (name unused); false when it is
+	 * not there. */
+	bool (*stat)(void *ctx, const char *path, struct s10b_entry *e);
+	enum s10b_result (*mkdir)(void *ctx, const char *path);
+	/* A new empty file open for writing, never replacing one: *fd is
+	 * passed back to write and close. */
+	enum s10b_result (*create)(void *ctx, const char *path, int32_t *fd);
+	/* All n bytes at the end of the file, or a failure. */
+	enum s10b_result (*write)(void *ctx, int32_t fd, const uint8_t *p,
+				  size_t n);
+	enum s10b_result (*close)(void *ctx, int32_t fd);
+	/* A file, or a folder with everything beneath it. */
+	enum s10b_result (*remove)(void *ctx, const char *path);
+	/* Renames or moves; S10B_V_EXISTS when `to` exists, which is never
+	 * replaced. */
+	enum s10b_result (*rename)(void *ctx, const char *from, const char *to);
+	enum s10b_result (*set_times)(void *ctx, const char *path,
+				      uint32_t atime, uint32_t mtime);
+	/* After each change: what the volume holds is committed to the eMMC. */
+	void (*commit)(void *ctx);
 };
 
 struct s10b_device_ops {
@@ -108,19 +161,23 @@ struct s10b_device_ops {
 	void (*clock_write)(void *ctx, uint32_t count);
 };
 
-/* One listed object. Its handle is derived from its index (S-10b.012). */
+/* One listed object (S-10b.012): the listing gives object `index` the
+ * handle s10b_handle(index); an object created later the next unused one. */
 struct s10b_object {
+	uint32_t handle;
 	uint32_t parent;	/* index + 1 of its folder; 0: the root */
-	uint32_t name;		/* offset of its name in the pool */
+	uint32_t name;		/* offset of its name's bytes in the pool */
 	uint32_t size, mtime, ctime;
 	uint16_t path_len;	/* bytes of P (S-10b.042) */
 	uint16_t rows;		/* S-10b.046 rows found in P, bit k = row k */
 	uint8_t name_len;
 	uint8_t level;		/* 1 at the root */
 	uint8_t kind;		/* enum s10b_kind */
+	uint8_t flags;		/* s10b_mtp.c's */
 };
 
 struct s10b_config {
+	enum s10b_level level;
 	const struct s10b_volume_ops *vol;
 	const struct s10b_device_ops *dev;
 	/* DeviceInfo's strings (S-10b.020), UTF-8; the product string is also
@@ -135,7 +192,11 @@ struct s10b_config {
 
 /* --- The engine --------------------------------------------------------- */
 
-#define S10B_DATA_MAX		512u	/* bytes of a host data phase kept */
+/* Bytes of a host data phase kept: an ObjectInfo dataset through
+ * DateModified with names of 255 units (S-10b.080). */
+#define S10B_DATA_MAX		1600u
+/* A file's bytes gathered before each write to the volume (S-10b.081). */
+#define S10B_WRITE_CHUNK	4096u
 #define S10B_BUF_MAX		2304u	/* the largest fixed dataset */
 #define S10B_STAGE_MAX		(8u + 1u + 2u * (S10B_NAME_UNITS + 1u))
 
@@ -202,6 +263,25 @@ struct s10b {
 	uint8_t stage[S10B_STAGE_MAX];
 	uint8_t buf[S10B_BUF_MAX];
 	char path[S10B_PATH_MAX];
+
+	/* Level W. */
+	uint32_t next_handle;	/* index of the next new handle */
+	size_t names_dead;	/* pool bytes of names no longer used */
+	/* The file a SendObjectInfo prepared (S-10b.080). */
+	bool send_ready;
+	uint32_t send_parent;	/* index + 1, 0: the root */
+	uint32_t send_handle, send_size, send_mtime;	/* mtime 0: the clock */
+	uint8_t send_len;
+	uint8_t send_name[S10B_NAME_MAX];
+	/* SendObject's data phase (S-10b.081). */
+	bool sending;		/* taking it into a file */
+	bool w_open, w_abandon;	/* a file open; left by a cancel */
+	enum s10b_result w_res;
+	bool w_short;		/* its length is not the one announced */
+	int32_t w_fd;
+	size_t w_len;
+	uint8_t w_buf[S10B_WRITE_CHUNK];
+	char w_path[S10B_PATH_MAX];
 };
 
 void s10b_init(struct s10b *m, const struct s10b_config *cfg);
@@ -222,6 +302,14 @@ void s10b_cancel(struct s10b *m);
 
 /* Whether a transaction is in progress (for Get Device Status). */
 bool s10b_busy(const struct s10b *m);
+
+/*
+ * Work a canceled or reset transaction left (level W: the file a SendObject
+ * had begun is removed, S-10b.005). Called where the volume may be used,
+ * outside s10b_cancel() and s10b_reset(), which never use it; s10b_rx()
+ * and s10b_tx() call it first.
+ */
+void s10b_service(struct s10b *m);
 
 /*
  * Bulk OUT. s10b_rx_size() is how many bytes to arm the next transfer
@@ -269,5 +357,15 @@ struct s10b_datetime {
 };
 bool s10b_datetime_parse(const uint16_t *units, size_t n, bool range,
 			 struct s10b_datetime *dt);
+/* Seconds since 1970-01-01 UTC; false before 1970 or past 2^32 - 1. */
+bool s10b_datetime_secs(const struct s10b_datetime *dt, uint32_t *secs);
+
+/*
+ * A name from the host (S-10b.080): n UTF-16 units, without the String's
+ * NUL, as UTF-8 into out (S10B_NAME_MAX bytes). 0 when it is not a name:
+ * empty, a NUL unit, an unpaired surrogate, more than 255 bytes, a '/', or
+ * "." or "..".
+ */
+size_t s10b_name_utf8(const uint16_t *units, size_t n, uint8_t *out);
 
 #endif /* WAFFLE_S10B_MTP_H */

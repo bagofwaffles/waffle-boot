@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-10b's text rules: names (S-10b.047), formats (S-10b.046) and DateTime
- * strings (S-10b.048, S-10b.062).
+ * S-10b's text rules: names (S-10b.047, S-10b.080), formats (S-10b.046) and
+ * DateTime strings (S-10b.048, S-10b.062).
  */
 #include "waffle/s10b_mtp.h"
 
@@ -78,6 +78,58 @@ size_t s10b_name_utf16(const uint8_t *name, size_t n, uint16_t *out)
 		i += len;
 	}
 	return units;
+}
+
+/* S-10b.080, S-10b.087: the host's units as the name stored. */
+size_t s10b_name_utf8(const uint16_t *u, size_t n, uint8_t *out)
+{
+	size_t i, len = 0;
+
+	for (i = 0; i < n; i++) {
+		uint32_t cp = u[i];
+		uint8_t b[4];
+		size_t k, nb;
+
+		if (cp == 0 || (cp >= 0xDC00u && cp <= 0xDFFFu))
+			return 0;
+		if (cp >= 0xD800u && cp <= 0xDBFFu) {
+			if (i + 1u == n || u[i + 1u] < 0xDC00u ||
+			    u[i + 1u] > 0xDFFFu)
+				return 0;
+			cp = 0x10000u + ((cp - 0xD800u) << 10) +
+			     (u[++i] - 0xDC00u);
+		}
+		if (cp < 0x80u) {
+			b[0] = (uint8_t)cp;
+			nb = 1;
+		} else if (cp < 0x800u) {
+			b[0] = (uint8_t)(0xC0u | cp >> 6);
+			b[1] = (uint8_t)(0x80u | (cp & 0x3Fu));
+			nb = 2;
+		} else if (cp < 0x10000u) {
+			b[0] = (uint8_t)(0xE0u | cp >> 12);
+			b[1] = (uint8_t)(0x80u | (cp >> 6 & 0x3Fu));
+			b[2] = (uint8_t)(0x80u | (cp & 0x3Fu));
+			nb = 3;
+		} else {
+			b[0] = (uint8_t)(0xF0u | cp >> 18);
+			b[1] = (uint8_t)(0x80u | (cp >> 12 & 0x3Fu));
+			b[2] = (uint8_t)(0x80u | (cp >> 6 & 0x3Fu));
+			b[3] = (uint8_t)(0x80u | (cp & 0x3Fu));
+			nb = 4;
+		}
+		if (len + nb > S10B_NAME_MAX)
+			return 0;
+		for (k = 0; k < nb; k++) {
+			if (b[k] == '/')
+				return 0;
+			out[len++] = b[k];
+		}
+	}
+	if ((len == 1 && out[0] == '.') ||
+	    (len == 2 && out[0] == '.' && out[1] == '.'))
+		return 0;
+	return len;
 }
 
 /* S-10b.046, in order; a row's patterns end at an empty one. */
@@ -268,5 +320,19 @@ bool s10b_datetime_parse(const uint16_t *u, size_t n, bool range,
 			return false;
 	}
 	*dt = t;
+	return true;
+}
+
+bool s10b_datetime_secs(const struct s10b_datetime *t, uint32_t *secs)
+{
+	uint64_t s;
+
+	if (t->year < 1970u || t->year > 2106u)
+		return false;
+	s = (uint64_t)day_number(t) * 86400u + t->hour * 3600u +
+	    t->minute * 60u + t->second;
+	if (s > UINT32_MAX)
+		return false;
+	*secs = (uint32_t)s;
 	return true;
 }

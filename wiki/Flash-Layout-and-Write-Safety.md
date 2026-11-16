@@ -175,3 +175,9 @@ the switch. Every load and write sets the eMMC back to its user area at the end,
 volume is used only while the user area is selected. What an erased group reads as is taken from the eMMC's
 own EXT_CSD before the volume relies on it. Whatever the eMMC holds, the bootloader starts from the SPI flash
 and reaches its boot menu.
+
+With MTP on in the developer menu, the bootloader writes to the volume what the computer asks: new files and
+folders, deletes, moves, renames and file dates. It flushes the eMMC's cache after each change, before it
+answers the computer. A copy that is canceled or cut off (a cable pulled) leaves no file, but a power cut in
+the middle of a copy can leave a short one. MTP reaches only the volume, never the boot partitions, and it
+does not protect the bootloader's own files there (`bootloader.settings`, `os.ldr`, `upgrade/`).

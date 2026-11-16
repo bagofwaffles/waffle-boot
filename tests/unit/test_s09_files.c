@@ -16,12 +16,16 @@
  * S-09.060). S-11's staging writes on the client: the reset, directories,
  * files, the free space (S-11.031 - S-11.033), the progress record (S-11.062)
  * and checks 16 and 17 end to end through s09_files_zip_ops() over a zip
- * reader fake.
+ * reader fake. S-10b's store (s10b_store.c) on the same volume: each of its
+ * operations, a folder removed whole, a rename that never replaces, a full
+ * volume, and the MTP responder at level W over it.
  */
 #include <time.h>
 
 #include "waffle/s09_files.h"
 #include "waffle/s09_slave.h"
+#include "waffle/s10b_store.h"
+#include "waffle/bytes.h"
 #include "waffle/s11_run.h"
 #include "waffle/wire_s09.h"
 #include "waffle/wire_yaffs.h"
@@ -850,6 +854,301 @@ static void test_long_files(void)
 	memset(back, 0, sizeof back);
 	CHECK_EQ(s09_files_read_file(&F, "four.bin", back, sizeof back), 0x4000u);
 	CHECK(!memcmp(back, big, 0x4000));
+}
+
+/* ---- S-10b's store ---- */
+
+static struct s10b_store mst;
+static struct s10b_volume_ops mops;
+static struct s10b mtp;
+
+static int listed_n;
+static char listed_name[32];
+
+static void listed(void *arg, const struct s10b_entry *e)
+{
+	(void)arg;
+	if (e->name_len < sizeof listed_name) {
+		memcpy(listed_name, e->name, e->name_len);
+		listed_name[e->name_len] = '\0';
+	}
+	listed_n++;
+}
+
+static unsigned m_battery(void *c) { (void)c; return 50; }
+/* 2026-10-27 12:00:00 (S-04.070) */
+static uint32_t m_clock(void *c) { (void)c; return 0xA21EC000u; }
+static void m_set_clock(void *c, uint32_t v) { (void)c; (void)v; }
+
+static const struct s10b_device_ops mdev = { NULL, m_battery, m_clock, m_set_clock };
+static uint32_t mtid;
+
+/* One MTP transaction through the responder, the host's data in 512-byte
+ * packets: the response code, up to three parameters into rp, and the data
+ * phase's dataset into back (*n bytes). */
+static unsigned mtx(unsigned op, const uint32_t *p, unsigned np, const uint8_t *out,
+		    size_t on, uint32_t *rp, size_t *n)
+{
+	static uint8_t c[12 + 0x10000];
+	uint8_t pkt[512] = { 0 };
+	size_t k = 0, got = 0, len;
+	bool data = false;
+
+	mtid++;
+	len = 12u + 4u * np;
+	wb_put_le32(c, (uint32_t)len);
+	wb_put_le16(c + 4, 1);
+	wb_put_le16(c + 6, (uint16_t)op);
+	wb_put_le32(c + 8, mtid);
+	for (k = 0; k < np; k++)
+		wb_put_le32(c + 12 + 4 * k, p[k]);
+	s10b_rx(&mtp, c, len);
+	if (out) {
+		wb_put_le32(c, (uint32_t)(12u + on));
+		wb_put_le16(c + 4, 2);
+		memcpy(c + 12, out, on);
+		for (k = 0; k < 12u + on; k += 512u)
+			s10b_rx(&mtp, c + k, 12u + on - k < 512u ? 12u + on - k : 512u);
+		if ((12u + on) % 512u == 0)
+			s10b_rx(&mtp, c, 0);
+	}
+	for (;;) {
+		CHECK(s10b_tx(&mtp, pkt, sizeof pkt, &k));
+		if (!data && k >= 12 && pkt[4] == 2)
+			data = true;
+		else if (!data)
+			break;
+		if (got + k <= sizeof back) {
+			memcpy(back + got, pkt, k);
+			got += k;
+		}
+		if (k < 512) {
+			CHECK(s10b_tx(&mtp, pkt, sizeof pkt, &k));
+			break;
+		}
+	}
+	if (n) {
+		*n = got >= 12 ? got - 12u : 0;
+		memmove(back, back + 12, *n);
+	}
+	for (k = 0; rp && k < (wb_get_le32(pkt) - 12u) / 4u && k < 3; k++)
+		rp[k] = wb_get_le32(pkt + 12 + 4 * k);
+	return wb_get_le16(pkt + 6);
+}
+
+/* An ObjectInfo dataset of an ASCII name, DateModified 2025-01-02 03:04:05. */
+static size_t mtp_info(const char *name, uint32_t size, unsigned fmt, uint8_t *o)
+{
+	static const char dm[] = "20250102T030405";
+	size_t n = strlen(name), len = 52;
+
+	memset(o, 0, 52);
+	wb_put_le32(o, 0x00010001u);
+	wb_put_le16(o + 4, (uint16_t)fmt);
+	wb_put_le32(o + 8, size);
+	o[len++] = (uint8_t)(n + 1u);
+	for (size_t i = 0; i <= n; i++) {
+		o[len++] = (uint8_t)(i < n ? name[i] : 0);
+		o[len++] = 0;
+	}
+	o[len++] = 0;
+	o[len++] = 16;
+	for (size_t i = 0; i < 16; i++) {
+		o[len++] = (uint8_t)dm[i];
+		o[len++] = 0;
+	}
+	o[len++] = 0;
+	return len;
+}
+
+/* The handle of the level-1 object named `name`, by its ObjectFileName. */
+static uint32_t mtp_find(const char *name)
+{
+	const uint32_t p[3] = { 0x00010001u, 0, 0xFFFFFFFFu };
+	uint32_t hs[16], q[2];
+	size_t n, k, i;
+
+	if (mtx(0x1007, p, 3, NULL, 0, NULL, &n) != 0x2001u || n < 4)
+		return 0;
+	for (k = 0; k < wb_get_le32(back) && k < 16; k++)
+		hs[k] = wb_get_le32(back + 4 + 4 * k);
+	for (i = 0; i < k; i++) {
+		q[0] = hs[i];
+		q[1] = 0xDC07u;
+		if (mtx(0x9803, q, 2, NULL, 0, NULL, &n) != 0x2001u)
+			continue;
+		if (back[0] == strlen(name) + 1u) {
+			size_t j;
+
+			for (j = 0; name[j] && back[1 + 2 * j] == (uint8_t)name[j]; j++)
+				;
+			if (!name[j])
+				return hs[i];
+		}
+	}
+	return 0;
+}
+
+/* S-10b's store over this volume, and the responder at level W over it;
+ * with `full`, a write the volume has no room for. */
+static void test_mtp_store(bool full)
+{
+	static struct s10b_object objs[64];
+	static uint8_t pool[64u * (S10B_NAME_REC + 32u)];
+	struct s10b_config cfg;
+	struct s10b_entry e;
+	struct s09_stat st;
+	uint64_t total, free_bytes;
+	uint32_t p[3], rq[3] = { 0, 0, 0 }, h, flushes;
+	uint8_t ds[200] = { 0 };
+	int32_t fd;
+	size_t n;
+
+	t_case = "mtp store";
+	fresh();
+	s10b_store_ops(&mst, &F, &mops);
+	CHECK(mops.space(mops.ctx, &total, &free_bytes) && total > 0 && free_bytes > 0);
+	/* each operation, under /yaffs2 */
+	CHECK_EQ(mops.mkdir(mops.ctx, "/d"), S10B_V_OK);
+	CHECK_EQ(mops.mkdir(mops.ctx, "/d"), S10B_V_EXISTS);
+	CHECK_EQ(mops.mkdir(mops.ctx, "/none/d"), S10B_V_FAIL);
+	CHECK_EQ(mops.create(mops.ctx, "/d/f", &fd), S10B_V_OK);
+	pattern(big, 10000, 3);
+	CHECK_EQ(mops.write(mops.ctx, fd, big, 10000), S10B_V_OK);
+	CHECK_EQ(mops.close(mops.ctx, fd), S10B_V_OK);
+	CHECK_EQ(mops.create(mops.ctx, "/d/f", &fd), S10B_V_EXISTS);	/* never replaced */
+	CHECK(mops.stat(mops.ctx, "/d/f", &e) && e.kind == S10B_KIND_FILE && e.size == 10000u);
+	CHECK(mops.stat(mops.ctx, "/d", &e) && e.kind == S10B_KIND_DIR);
+	CHECK(!mops.stat(mops.ctx, "/d/none", &e));
+	memset(back, 0, sizeof back);
+	CHECK_EQ(mops.read(mops.ctx, "/d/f", 5000, back, 5000), 5000);
+	CHECK(!memcmp(back, big + 5000, 5000));
+	CHECK_EQ(mops.set_times(mops.ctx, "/d/f", 111u, 1735787045u), S10B_V_OK);
+	CHECK_EQ(s09_files_stat(&F, "/yaffs2/d/f", &st), 0);
+	CHECK_EQ(st.mtime, 1735787045u);
+	CHECK_EQ(st.atime, 111u);
+	/* a rename never replaces */
+	CHECK_EQ(mops.create(mops.ctx, "/d/g", &fd), S10B_V_OK);
+	CHECK_EQ(mops.close(mops.ctx, fd), S10B_V_OK);
+	CHECK_EQ(mops.rename(mops.ctx, "/d/f", "/d/g"), S10B_V_EXISTS);
+	CHECK_EQ(s09_files_stat(&F, "d/f", &st), 0);
+	CHECK_EQ(st.size, 10000u);
+	CHECK_EQ(mops.rename(mops.ctx, "/d/f", "/h"), S10B_V_OK);
+	CHECK_EQ(s09_files_stat(&F, "h", &st), 0);
+	CHECK_EQ(mops.rename(mops.ctx, "/d", "/e"), S10B_V_OK);
+	/* a folder removed whole, its folders too */
+	CHECK_EQ(mops.mkdir(mops.ctx, "/e/x"), S10B_V_OK);
+	CHECK_EQ(mops.mkdir(mops.ctx, "/e/x/y"), S10B_V_OK);
+	CHECK_EQ(mops.create(mops.ctx, "/e/x/y/z", &fd), S10B_V_OK);
+	CHECK_EQ(mops.close(mops.ctx, fd), S10B_V_OK);
+	CHECK_EQ(mops.remove(mops.ctx, "/e"), S10B_V_OK);
+	CHECK_EQ(s09_files_stat(&F, "e", &st), -1);
+	CHECK_EQ(F.err, S09_ENOENT);
+	CHECK_EQ(mops.remove(mops.ctx, "/e"), S10B_V_OK);		/* gone already */
+	CHECK_EQ(mops.remove(mops.ctx, "/h"), S10B_V_OK);
+	listed_n = 0;
+	CHECK(mops.list(mops.ctx, "/", listed, NULL));
+	CHECK_EQ(listed_n, 1);					/* lost+found */
+	CHECK(!strcmp(listed_name, "lost+found"));
+	/* the commit: the eMMC's flush (S-10b.088) */
+	flushes = emmc.flushes;
+	mops.commit(mops.ctx);
+	CHECK_EQ(emmc.flushes, flushes + 1u);
+	if (full) {
+		/* a write that does not fit finds the volume full (S-12.056) */
+		uint32_t left;
+
+		CHECK(mops.space(mops.ctx, &total, &free_bytes));
+		CHECK_EQ(mops.create(mops.ctx, "/fill", &fd), S10B_V_OK);
+		pattern(big, sizeof big, 9);
+		/* past the reserve: the free space leaves 6 blocks out */
+		left = (uint32_t)free_bytes + 8u * 128u * 4096u;
+		while (left > 0) {
+			const uint32_t k = left < sizeof big ? left : (uint32_t)sizeof big;
+			const enum s10b_result r = mops.write(mops.ctx, fd, big, k);
+
+			if (r != S10B_V_OK) {
+				CHECK_EQ(r, S10B_V_FULL);
+				break;
+			}
+			left -= k;
+		}
+		CHECK(left > 0);
+		(void)mops.close(mops.ctx, fd);
+		CHECK_EQ(mops.remove(mops.ctx, "/fill"), S10B_V_OK);
+		CHECK_EQ(s09_files_stat(&F, "fill", &st), -1);
+	}
+
+	/* the responder at level W over the store, end to end */
+	memset(&cfg, 0, sizeof cfg);
+	cfg.level = S10B_LEVEL_W;
+	cfg.vol = &mops;
+	cfg.dev = &mdev;
+	cfg.manufacturer = cfg.model = cfg.version = cfg.serial = "x";
+	cfg.objects = objs;
+	cfg.max_objects = 64;
+	cfg.names = pool;
+	cfg.names_size = sizeof pool;
+	s10b_init(&mtp, &cfg);
+	s10b_reset(&mtp, 512);
+	p[0] = 1;
+	CHECK_EQ(mtx(0x1002, p, 1, NULL, 0, NULL, NULL), 0x2001u);
+	p[0] = 0x00010001u;
+	p[1] = 0xFFFFFFFFu;
+	CHECK_EQ(mtx(0x100C, p, 2, ds, mtp_info("music", 0, 0x3001, ds), rq, NULL), 0x2001u);
+	CHECK_EQ(s09_files_stat(&F, "music", &st), 0);
+	p[1] = rq[2];
+	CHECK_EQ(mtx(0x100C, p, 2, ds, mtp_info("kick.wav", 9000, 0x3008, ds), rq, NULL), 0x2001u);
+	h = rq[2];
+	pattern(big, 9000, 5);
+	flushes = emmc.flushes;
+	CHECK_EQ(mtx(0x100D, NULL, 0, big, 9000, NULL, NULL), 0x2001u);
+	CHECK(emmc.flushes > flushes);
+	CHECK_EQ(s09_files_stat(&F, "music/kick.wav", &st), 0);
+	CHECK_EQ(st.size, 9000u);
+	CHECK_EQ(st.mtime, 1735787045u);			/* its DateModified */
+	CHECK_EQ(st.atime, 1793102400u);			/* the clock's */
+	p[0] = h;
+	memset(back, 0, sizeof back);
+	CHECK_EQ(mtx(0x1009, p, 1, NULL, 0, NULL, &n), 0x2001u);
+	CHECK_EQ(n, 9000u);
+	CHECK(!memcmp(back, big, 9000));
+	/* renamed and moved: the volume follows, the handle stays */
+	p[0] = h;
+	p[1] = 0xDC07u;
+	ds[0] = 6;
+	for (unsigned i = 0; i < 6; i++) {
+		ds[1 + 2 * i] = (uint8_t)"k.wav"[i];
+		ds[2 + 2 * i] = 0;
+	}
+	CHECK_EQ(mtx(0x9804, p, 2, ds, 13, NULL, NULL), 0x2001u);
+	CHECK_EQ(s09_files_stat(&F, "music/k.wav", &st), 0);
+	p[1] = 0x00010001u;
+	p[2] = 0xFFFFFFFFu;
+	CHECK_EQ(mtx(0x1019, p, 3, NULL, 0, NULL, NULL), 0x2001u);
+	CHECK_EQ(s09_files_stat(&F, "k.wav", &st), 0);
+	CHECK_EQ(mtx(0x1009, p, 1, NULL, 0, NULL, &n), 0x2001u);
+	CHECK_EQ(n, 9000u);
+	/* a short data phase leaves no file */
+	p[0] = 0x00010001u;
+	p[1] = 0;
+	CHECK_EQ(mtx(0x100C, p, 2, ds, mtp_info("short", 100, 0x3000, ds), rq, NULL), 0x2001u);
+	CHECK_EQ(mtx(0x100D, NULL, 0, big, 99, NULL, NULL), 0x2007u);
+	CHECK_EQ(s09_files_stat(&F, "short", &st), -1);
+	/* a new session lists what the last one made; a folder goes whole */
+	CHECK_EQ(mtx(0x1003, NULL, 0, NULL, 0, NULL, NULL), 0x2001u);
+	p[0] = 2;
+	CHECK_EQ(mtx(0x1002, p, 1, NULL, 0, NULL, NULL), 0x2001u);
+	CHECK(mtp_find("k.wav") != 0);
+	p[0] = mtp_find("music");
+	CHECK(p[0] != 0);
+	CHECK_EQ(mops.create(mops.ctx, "/music/later", &fd), S10B_V_OK);	/* not listed */
+	CHECK_EQ(mops.close(mops.ctx, fd), S10B_V_OK);
+	CHECK_EQ(mtx(0x100B, p, 1, NULL, 0, NULL, NULL), 0x2001u);
+	CHECK_EQ(s09_files_stat(&F, "music", &st), -1);
+	p[0] = mtp_find("lost+found");
+	CHECK_EQ(mtx(0x100B, p, 1, NULL, 0, NULL, NULL), 0x200Du);
+	CHECK_EQ(s09_files_stat(&F, "lost+found", &st), 0);
 }
 
 /* The close that answers once the eMMC has flushed its cache (S-03.068). */
@@ -3937,6 +4236,7 @@ int main(void)
 		for (int h = 0; h < 200; h++)
 			(void)yaffs_close(h);
 		test_requests();
+		test_mtp_store(pass == 0u);
 		test_long_files();
 		test_close_sync();
 		test_staging();

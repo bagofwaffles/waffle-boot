@@ -116,6 +116,6 @@ unit. To erase everything instead, use **5 Format drive**.
 
 | Item | What it does |
 | --- | --- |
-| 2 MTP file transfer | Shares the internal drive with the computer. 8 turns it off |
+| 2 MTP file transfer | Shares the internal drive with the computer, which can copy, delete, move and rename files and folders on it. 8 turns it off |
 | 5 Write /os.ldr to boot partition | Writes the file `os.ldr` from the drive to the eMMC's inactive boot partition. After a success, 6 restarts into the OS |
 | 6 Restart | Restarts the unit |

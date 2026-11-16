@@ -4,7 +4,8 @@ Handles are bound by path through the listing, never by value.
 
     Volume.build(tree)            a yaffs2 image from {path: bytes | None (folder) | dict}, read back with
                                   tests/oracle/conformance/fs
-    Responder(volume, level)      op(code, params, data) -> Reply(data, code, params)
+    Responder(volume, level)      op(code, params, data) -> Reply(data, code, params); at level 'W' the
+                                  operations of S-10b section 9 change the volume's entries
 """
 import calendar
 import codecs
@@ -32,6 +33,7 @@ OK, GENERAL_ERROR, SESSION_NOT_OPEN = 0x2001, 0x2002, 0x2003
 OP_NOT_SUPPORTED, PARAM_NOT_SUPPORTED, INCOMPLETE = 0x2005, 0x2006, 0x2007
 INVALID_STORAGE, INVALID_HANDLE, DEVPROP_NOT_SUPPORTED = 0x2008, 0x2009, 0x200A
 ACCESS_DENIED, INVALID_PARENT, INVALID_DEVPROP_VALUE = 0x200F, 0x201A, 0x201C
+STORE_FULL, WRITE_PROTECTED = 0x200C, 0x200D
 INVALID_PARAMETER, SESSION_ALREADY_OPEN = 0x201D, 0x201E
 DEVICE_BUSY = 0x2019
 NO_VALID_OBJECT_INFO, INVALID_DATASET = 0x2015, 0xA806
@@ -71,6 +73,8 @@ MAX_READ_PATH = 501           # S-10b.042
 NAME_UNITS = 254              # S-10b.047
 LIST_OBJECTS = 8192           # S-10b.014: the listing floor, objects
 LIST_NAME_BYTES = 262144      # S-10b.014: the listing floor, bytes of names as stored
+NAME_MAX = 255                # S-12.058
+FOLDER = 0x3001
 
 
 def creation_outcome(objects, name_bytes, name_len):
@@ -170,6 +174,47 @@ def rtc_count(t):
     return s04_model.rtc_encode(t)
 
 
+def secs_of(t):
+    """Seconds since 1970 of a naive UTC datetime; None outside 0 to 2**32 - 1 (S-10b.085)."""
+    if t.year < 1970:
+        return None
+    s = calendar.timegm(t.timetuple())
+    return s if s < 1 << 32 else None
+
+
+def host_name(units):
+    """S-10b.080, S-10b.087: the name stored for a Filename's units without its final NUL, or None."""
+    if 0 in units:
+        return None
+    try:
+        text = struct.pack('<%dH' % len(units), *units).decode('utf-16-le')
+    except UnicodeDecodeError:
+        return None                                  # an unpaired surrogate
+    b = text.encode('utf-8')
+    if not b or len(b) > NAME_MAX or b'/' in b or b in (b'.', b'..'):
+        return None
+    return b
+
+
+def string_units(s):
+    """The units of an mtp.MtpString without its final NUL."""
+    u = list(s.units)
+    return u[:-1] if u and u[-1] == 0 else u
+
+
+def host_time(units):
+    """S-10b.081: DateModified's time in seconds, or None (the clock's time is used): not well-formed by
+    S-10b.062's grammar without the range, on 1970-01-01, or not a u32 count."""
+    try:
+        text = struct.pack('<%dH' % len(units), *units).decode('utf-16-le')
+    except UnicodeDecodeError:
+        return None
+    t = parse_datetime(text, with_range=False)
+    if t is None or (t.year, t.month, t.day) == (1970, 1, 1):
+        return None
+    return secs_of(t)
+
+
 def clock_datetime(count):
     """A clock count read back as S-04.070."""
     d = s04_model.rtc_decode_days(count >> 17)
@@ -200,17 +245,17 @@ class Volume:
             else:
                 b.write_file(path, v, **kw)
         r = yaffs2read.Yaffs2Reader(b.image(), p)
-        entries = {'/lost+found': dict(type='dir', data=None, mtime=0, ctime=0)}
+        entries = {'/lost+found': dict(type='dir', data=None, mtime=0, ctime=0, atime=0)}
         for oid, o in r.live.items():
             path = r.path_of(oid)
             if path is None:
                 continue
             a = r.attributes(oid) or dict(times=(0, 0, 0))
-            _, mt, ct = a['times']
+            at, mt, ct = a['times']
             if o['type'] == yaffs2.DIR:
-                entries['/' + path] = dict(type='dir', data=None, mtime=mt, ctime=ct)
+                entries['/' + path] = dict(type='dir', data=None, mtime=mt, ctime=ct, atime=at)
             elif o['type'] == yaffs2.FILE:
-                entries['/' + path] = dict(type='file', data=r.file_bytes(o), mtime=mt, ctime=ct)
+                entries['/' + path] = dict(type='file', data=r.file_bytes(o), mtime=mt, ctime=ct, atime=at)
         return cls(entries, total=total, free=free)
 
 
@@ -235,6 +280,8 @@ class Responder:
         self.handles = {}                       # handle -> path
         self.by_path = {}
         self.in_progress = None                 # (code, params) of a transaction in progress (S-10b.005)
+        self.next_handle = handle_base
+        self.prepared = None                    # the file a SendObjectInfo announced (S-10b.080)
 
     # ---- the class requests (S-10b.005, S-10b.009)
     def begin(self, code, params=()):
@@ -270,6 +317,7 @@ class Responder:
             self.in_progress = None
             self.session = 0
             self.handles, self.by_path = {}, {}
+            self.prepared = None
         elif kind in ('set_interface_0', 'clear_halt_bulk_in', 'clear_halt_bulk_out'):
             self.in_progress = None             # as a Cancel Request (S-10b.005); the session stays open
         # set_interface_1 (S-10a.032) and the interrupt endpoint: no effect
@@ -294,13 +342,24 @@ class Responder:
         return level_of(folder) < MAX_LEVEL and len(folder.encode('utf-8')) <= MAX_READ_PATH
 
     def open_listing(self):
-        h = self.handle_base
-        for path in self.listed_paths():
-            while h in (0, ALL) or h >> 16 == 1:
-                h += 1
-            self.handles[h] = path
-            self.by_path[path] = h
+        self.next_handle = self.handle_base
+        self.relist()
+
+    def new_handle(self):
+        h = self.next_handle
+        while h in (0, ALL) or h >> 16 == 1:
             h += 1
+        self.next_handle = h + 1
+        return h
+
+    def relist(self):
+        """Handles for listed objects that have none: the first listing, and objects a move or rename lets a
+        folder list (S-10b.013, S-10b.087). Handles are never reused (S-10b.012)."""
+        for path in self.listed_paths():
+            if path not in self.by_path:
+                h = self.new_handle()
+                self.handles[h] = path
+                self.by_path[path] = h
 
     def handle(self, path):
         return self.by_path[path]
@@ -324,6 +383,10 @@ class Responder:
     # ---- the transaction
     def op(self, code, params=(), data=None):
         params = list(params) + [0] * (5 - len(params))
+        if code != 0x100D:
+            prepared, self.prepared = self.prepared, None                               # S-10b.080
+        else:
+            prepared = self.prepared
         supported = OPS_W if self.level == 'W' else OPS_R
         if code not in supported and code not in CAPTURE:
             return Reply(None, OP_NOT_SUPPORTED, [])                                    # S-10b.090
@@ -332,6 +395,9 @@ class Responder:
         fn = getattr(self, 'op_%04x' % code, None)
         if fn is None:                                                                  # capture: S-10b.091
             return Reply(None, OK, [])
+        if code == 0x100D:
+            self.prepared = None
+            return fn(params, data, prepared)
         return fn(params, data) if code in DATA_OUT else fn(params)
 
     def op_1001(self, p):                                                               # S-10b.020
@@ -355,6 +421,7 @@ class Responder:
     def op_1003(self, p):
         self.session = 0
         self.handles, self.by_path = {}, {}
+        self.prepared = None
         return Reply(None, OK, [])
 
     def op_1004(self, p):                                                               # S-10b.030
@@ -563,44 +630,166 @@ class Responder:
         kids = self.children(path) if e['type'] == 'dir' else []
         return Reply(arr32([self.by_path[x] for x in sorted(kids)]), OK, [])
 
-    # Level W: the parameter checks of S-10b.080-.085. A call that would change the volume is not modeled
-    # and raises.
+    # ---- level W (S-10b.080-.087)
+    def now(self):
+        return secs_of(clock_datetime(self.clock)) or 0
+
+    def lost_found(self, path):
+        return path == '/lost+found'
+
+    def child(self, folder, name):
+        return (folder.rstrip('/') + '/' + name.decode('utf-8', 's10b_fffd_per_byte')) if folder != '/' else \
+            '/' + name.decode('utf-8', 's10b_fffd_per_byte')
+
+    def taken(self, folder, name):
+        return any(parent_of(p) == folder and p.rsplit('/', 1)[1].encode('utf-8', 'surrogateescape') == name
+                   for p in self.by_path)
+
+    def keeps_listed(self, old, new):
+        """S-10b.087: with `old` (and what is beneath it) at `new`, every listed object beneath is still in a
+        folder whose children are listed."""
+        for p in self.by_path:
+            if p.startswith(old + '/'):
+                q = new + p[len(old):]
+                par = parent_of(q)
+                if level_of(q) > MAX_LEVEL or not self.readable(par):
+                    return False
+        return True
+
+    def move_entries(self, old, new):
+        """Renames `old` and everything beneath it in the volume; handles follow (S-10b.012)."""
+        ents = self.v.entries
+        for p in sorted(ents):
+            if p == old or p.startswith(old + '/'):
+                q = new + p[len(old):]
+                ents[q] = ents.pop(p)
+                if p in self.by_path:
+                    h = self.by_path.pop(p)
+                    self.by_path[q] = h
+                    self.handles[h] = q
+        self.relist()
+
     def op_100b(self, p):                                                               # S-10b.082
         if p[0] == ALL:
             return Reply(None, PARAM_NOT_SUPPORTED, [])
-        if self.obj(p[0])[0] is None:
+        path, e = self.obj(p[0])
+        if path is None:
             return Reply(None, INVALID_HANDLE, [])
-        raise NotImplementedError('DeleteObject of a listed object: not modeled')
+        if self.lost_found(path):
+            return Reply(None, WRITE_PROTECTED, [])
+        for q in [q for q in self.v.entries if q == path or q.startswith(path + '/')]:
+            del self.v.entries[q]
+            if q in self.by_path:
+                del self.handles[self.by_path.pop(q)]
+        return Reply(None, OK, [])
 
     def op_100c(self, p, data):                                                         # S-10b.080
         if p[0] not in (STORAGE_ID, 0):
             return Reply(None, INVALID_STORAGE, [])
+        folder = '/'
         if p[1] not in (0, ALL):
             path, e = self.obj(p[1])
-            if path is None or e['type'] != 'dir':
+            if path is None or e['type'] != 'dir' or not self.readable(path):          # S-10b.087
                 return Reply(None, INVALID_PARENT, [])
+            folder = path
         try:
             v, _ = mtp.decode_object_info(data or b'')
         except mtp.MalformedError:
             return Reply(None, INVALID_DATASET, [])
         if v.get('DateModified') is None:
             return Reply(None, INVALID_DATASET, [])
-        raise NotImplementedError('SendObjectInfo with a dataset: not modeled')
+        name = host_name(string_units(v['Filename']))
+        if name is None:
+            return Reply(None, INVALID_DATASET, [])
+        if self.taken(folder, name):
+            return Reply(None, GENERAL_ERROR, [])                                       # Q-05
+        new = self.child(folder, name)
+        parent_h = ALL if folder == '/' else self.by_path[folder]
+        if v['ObjectFormat'] == FOLDER:
+            now = self.now()
+            self.v.entries[new] = dict(type='dir', data=None, mtime=now, ctime=now, atime=now)
+            h = self.new_handle()
+            self.handles[h], self.by_path[new] = new, h
+            return Reply(None, OK, [STORAGE_ID, parent_h, h])
+        if v['ObjectCompressedSize'] > self.v.free:
+            return Reply(None, STORE_FULL, [])
+        h = self.new_handle()
+        self.prepared = dict(path=new, size=v['ObjectCompressedSize'], handle=h,
+                             mtime=host_time(string_units(v['DateModified'])))
+        return Reply(None, OK, [STORAGE_ID, parent_h, h])
 
-    def op_100d(self, p, data):                                                         # S-10b.081
-        return Reply(None, NO_VALID_OBJECT_INFO, [])
+    def op_100d(self, p, data, prepared=None):                                          # S-10b.081
+        if prepared is None:
+            return Reply(None, NO_VALID_OBJECT_INFO, [])
+        data = data or b''
+        if len(data) != prepared['size']:
+            return Reply(None, INCOMPLETE, [])
+        now = self.now()
+        path = prepared['path']
+        mtime = prepared['mtime'] if prepared['mtime'] is not None else now
+        self.v.entries[path] = dict(type='file', data=bytes(data), mtime=mtime, ctime=now, atime=now)
+        self.handles[prepared['handle']] = path
+        self.by_path[path] = prepared['handle']
+        return Reply(None, OK, [])
 
     def op_1019(self, p):                                                               # S-10b.083
         if p[1] != STORAGE_ID:
             return Reply(None, INVALID_STORAGE, [])
-        if self.obj(p[0])[0] is None:
+        path, e = self.obj(p[0])
+        if path is None:
             return Reply(None, INVALID_HANDLE, [])
-        raise NotImplementedError('MoveObject of a listed object: not modeled')
+        folder = '/'
+        if p[2] not in (0, ALL):
+            folder, fe = self.obj(p[2])
+            if folder is None:
+                return Reply(None, INVALID_HANDLE, [])
+            if fe['type'] != 'dir' or folder == path or folder.startswith(path + '/'):
+                return Reply(None, INVALID_PARENT, [])
+        if self.lost_found(path):
+            return Reply(None, WRITE_PROTECTED, [])
+        name = path.rsplit('/', 1)[1]
+        new = (folder if folder != '/' else '') + '/' + name
+        if (folder != '/' and not self.readable(folder)) or not self.keeps_listed(path, new):
+            return Reply(None, INVALID_PARENT, [])                                      # S-10b.087
+        if self.taken(folder, name.encode('utf-8')):
+            return Reply(None, GENERAL_ERROR, [])
+        self.move_entries(path, new)
+        return Reply(None, OK, [])
 
     def op_9804(self, p, data):                                                         # S-10b.084, .085
-        if self.obj(p[0])[0] is None:
+        path, e = self.obj(p[0])
+        if path is None:
             return Reply(None, INVALID_HANDLE, [])
-        raise NotImplementedError('SetObjectPropValue of a listed object: not modeled')
+        if p[1] in NAME_PROPS:
+            if self.lost_found(path):
+                return Reply(None, WRITE_PROTECTED, [])
+            try:
+                s, _ = mtp.read_string(data or b'', 0)
+            except mtp.MalformedError:
+                return Reply(None, INVALID_PROP_VALUE, [])
+            name = host_name(string_units(s))
+            folder = parent_of(path)
+            new = self.child(folder, name) if name is not None else None
+            if name is None or not self.keeps_listed(path, new):
+                return Reply(None, INVALID_PROP_VALUE, [])
+            if self.taken(folder, name):
+                return Reply(None, GENERAL_ERROR, [])                                   # Q-05
+            self.move_entries(path, new)
+            return Reply(None, OK, [])
+        if p[1] == 0xDC09:
+            try:
+                s, _ = mtp.read_string(data or b'', 0)
+                text = struct.pack('<%dH' % len(string_units(s)), *string_units(s)).decode('utf-16-le')
+            except (mtp.MalformedError, UnicodeDecodeError):
+                return Reply(None, INVALID_PROP_VALUE, [])
+            t = parse_datetime(text, with_range=False)
+            secs = secs_of(t) if t is not None else None
+            if secs is None:
+                return Reply(None, INVALID_PROP_VALUE, [])
+            if secs != e['mtime']:                                                      # S-16.067
+                e['mtime'], e['atime'] = secs, self.now()                               # S-16.068
+            return Reply(None, OK, [])
+        return Reply(None, ACCESS_DENIED, [])
 
 
 def decode_string(b):
