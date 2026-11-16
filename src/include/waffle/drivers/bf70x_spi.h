@@ -492,7 +492,7 @@ extern struct wb_spi_array wb_spi_tx_array, wb_spi_rx_array;
 
 #if defined(OPXY_TEST_OS)
 /*
- * The test OS's q11 measurements (docs/test-os.md, `q11`). One whole transfer
+ * The test OS's q11 measurements (wiki/Test-OS.md, `q11`). One whole transfer
  * of n bytes under ctl (without EN) and clk, in S-13b.040's enable-last order:
  * SPI_CTL 0, SPI_CLK, SPI_CTL = ctl, SPI_STAT cleared, the word count, the
  * other channel off, this channel, then SPI_CTL with EN; then the words, and

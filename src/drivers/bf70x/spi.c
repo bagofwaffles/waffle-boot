@@ -1040,7 +1040,7 @@ static uint32_t dir_ctl(const struct wb_spi *p, bool reply)
 {
 	uint32_t ctl = p->ctl & ~(SPI_CTL_FCCH | SPI_CTL_FCWM_MASK);
 
-	/* The test OS's USB monitor can choose a set-up to try (docs/test-os.md). */
+	/* The test OS's USB monitor can choose a set-up to try (wiki/Test-OS.md). */
 	return ctl | (reply ? OPXY_TESTOS_OR((testos_reply_mode == 0u || (testos_reply_mode & OPXY_TESTOS_REPLY_FCCH)) ? SPI_CTL_FCCH | SPI_CTL_FCWM_TX_EMPTY : 0u,
 					     SPI_CTL_FCCH | SPI_CTL_FCWM_TX_EMPTY) :
 			      SPI_CTL_FCWM_RX_HALF);

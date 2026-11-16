@@ -52,9 +52,10 @@ A **trial start** runs a new image once without trusting it:
 3. If the new front comes up, it marks the start in its own log. That slot can then be **kept**.
 4. If it does not come up, switch off and on: the old slot starts.
 
-The [Recovery Menu](Recovery-Menu)'s **Try** and the host tool's `try` and `write --new-front` use it.
+The recovery menu's **Try** ([How to Recover](How-to-Recover#start-the-other-slot-once-and-keep-it)) and the host tool's `try` and `write --new-front` use it.
 
 ## Read more
 
 - [Flash Layout and Write Safety](Flash-Layout-and-Write-Safety)
-- [`docs/front.md`](../blob/main/docs/front.md): the front and its failsafes
+- [The Front](The-Front): the front and its failsafes
+- [Recovery Reference](Recovery-Reference)

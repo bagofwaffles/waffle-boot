@@ -987,13 +987,13 @@ function writePlan(plan, i, image) {
             return refuse(plan, 'other-front', ['Refused before sending: the file carries another ' +
                 `front, and this unit runs front version ${frontOf(i)}: a front before version ` +
                 `${TRIAL_FRONT} cannot take another front in recovery. The way is the test OS ` +
-                'installer (docs/test-os.md). Nothing was sent.']);
+                'installer (wiki/Test-OS.md). Nothing was sent.']);
         let line = 'Refused before sending: the file carries another front (pin ' +
             `${W.shortPin(front.pin)}; the unit runs pin ${W.shortPin(i.pin)}). Recovery writes ` +
             'another front only for one trial start, with write --new-front IMAGE.';
         if (frontOf(i) < TRIAL_FRONT)
             line += ` This unit runs front version ${frontOf(i)}, which cannot: the way is the ` +
-                'test OS installer (docs/test-os.md).';
+                'test OS installer (wiki/Test-OS.md).';
         return refuse(plan, 'other-front', [line + ' Nothing was sent.']);
     }
     if (target !== null && !isSlot(target))
@@ -1005,7 +1005,7 @@ function writePlan(plan, i, image) {
             `front older than version ${TRIAL_FRONT} leaves no mark in its trial start and has no ` +
             'select of its own, so its trial could never be kept, and ' +
             `${slotName(1 - i.running)}'s image would be lost for nothing. Put an older front on ` +
-            'with the test OS installer (docs/test-os.md). Nothing was sent.']);
+            'with the test OS installer (wiki/Test-OS.md). Nothing was sent.']);
     if (trial && (damaged(i) || i.moved || (!slotOf(i, i.running).good && !force)))
         return refuse(plan, 19, [`Refused before sending: ${statusText(19, { info: i })}`]);
     if (target !== null && W.onlySelect(i, target) &&

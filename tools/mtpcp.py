@@ -16,7 +16,7 @@ later in the chain is relied on to check them.
 
 Needs Python 3 and libusb (`brew install libusb`; libmtp pulls it in too), no Python packages. Serves
 the developer menu's MTP item (S-15.093, its interface by the MTP target of S-15.174): macOS, the vendor interface, and Windows, the
-standard one, which macOS's camera daemon may hold first (docs/test-os.md).
+standard one, which macOS's camera daemon may hold first (wiki/Test-OS.md).
 
 It is a careful MTP copy of its own, not a wrapper of libmtp: it sends only the operations any responder
 for the device is required to handle, and checks what comes back rather than trusting it. Only these

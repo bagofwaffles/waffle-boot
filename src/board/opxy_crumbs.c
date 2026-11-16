@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Breadcrumbs for a trial boot (docs/test-os.md, "The installer"): built only
+ * Breadcrumbs for a trial boot (wiki/Test-OS.md, "The installer"): built only
  * with BOOT_CRUMBS=1, never in a release. A trial boot has no USB and maybe no
  * screen, so the master programs one byte per milestone into the last sector
  * of the slot the selector does not name, past the image and outside its

@@ -5,7 +5,7 @@
  * replies, which wb_spi_slave_send() takes.
  *
  * Part of src/drivers/bf70x/spi.c in the test OS's build (waffle/testos.h,
- * docs/test-os.md), included there where it stands rather than compiled
+ * wiki/Test-OS.md), included there where it stands rather than compiled
  * alone: it uses the driver's static functions and state, and the order of
  * the driver's functions places the test OS image's code.
  */

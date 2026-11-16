@@ -2,7 +2,7 @@
 /*
  * S-15.116: a protected component's confirmation (src/s15_confirm.c): what
  * its keys and the time decide, the bar and the seconds left, and its
- * lines, which fit their rows (docs/ui-style-guide.md).
+ * lines, which fit their rows (wiki/Screen-Style-Guide.md).
  * Requirements: S-15.116 (with its vectors, confirm_keys.json), S-11.096,
  * S-07.031, S-07.032.
  */
@@ -351,7 +351,7 @@ static unsigned tabs(const char *s)
 	return n;
 }
 
-/* Each line within its row in its style (docs/ui-style-guide.md). */
+/* Each line within its row in its style (wiki/Screen-Style-Guide.md). */
 static bool fits(enum s15_style st, const char *s)
 {
 	const char *p;

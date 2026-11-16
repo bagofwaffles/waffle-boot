@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The installer (docs/install.md): the test OS's `installer` variant, built
+ * The installer (wiki/Installer-Reference.md): the test OS's `installer` variant, built
  * with -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1. It runs the check
  * suite (waffle/board/testos_check.h), and only when every check passes it
  * offers to write the waffle-boot image it carries: a trial first, then,
@@ -99,7 +99,7 @@ enum inst_lock inst_lock_of(const struct tchk_table *t, const struct tchk_switch
 /* The lock in words, at most 56 columns. */
 const char *inst_lock_words(enum inst_lock l);
 
-/* --- The hold that confirms a write (docs/ui-style-guide.md) --- */
+/* --- The hold that confirms a write (wiki/Screen-Style-Guide.md) --- */
 
 /*
  * A digit allowed by mask (bit d) starts a hold on its key down, with no
@@ -144,7 +144,7 @@ typedef uint32_t (*inst_crc_fn)(uint32_t crc, const uint8_t *p, size_t n);
 bool inst_image_check(const uint8_t *img, uint32_t len, uint32_t crc, const uint8_t pin[32],
 		      inst_crc_fn crc32, const struct inst_sha_ops *sha, struct inst_image *out);
 
-/* --- The protocol (docs/install.md, "The installer's USB protocol") --- */
+/* --- The protocol (wiki/Installer-Reference.md, "The installer's USB protocol") --- */
 
 /* Recovery's framing (S-02.093): "WR", type, seq, length, payload, CRC-32. */
 #define INST_FRAME_HEAD 6u

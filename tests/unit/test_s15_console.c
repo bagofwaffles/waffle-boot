@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-15 console, line styles, frames, key test and hand-over frame
- * (docs/ui-style-guide.md).
+ * (wiki/Screen-Style-Guide.md).
  * Requirements: S-15.002, S-15.003 (geometry part), S-15.004, S-15.062,
  * S-15.064, S-15.065, S-15.132, S-14.025, S-16.013.
  */

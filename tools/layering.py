@@ -12,7 +12,7 @@ Three layers and the test OS, by where a file lives:
           src/include/waffle/testos.h, which declares the board's test-OS
           hooks
   driver  src/drivers/ and src/include/waffle/drivers/
-  testos  src/testos/: the test OS's own code (docs/test-os.md)
+  testos  src/testos/: the test OS's own code (wiki/Test-OS.md)
 
 and the neutral headers of NEUTRAL, which every layer may include and
 which include no header of the three layers or of the test OS.

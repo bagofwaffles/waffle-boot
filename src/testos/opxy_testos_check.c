@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The check suite's runner on the master (docs/install.md;
+ * The check suite's runner on the master (wiki/Installer-Reference.md;
  * waffle/board/testos_check.h), in the installer variant alone: held mode's
  * loop in place of the menus, so the boot menu (with its format and factory
  * reset) is never reachable. It looks at the unit's OS partition first,

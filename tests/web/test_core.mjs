@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Tests of docs/recover/core.js against tools/wbrecover.py and the simulated units of
+// Tests of docs/web/core.js against tools/wbrecover.py and the simulated units of
 // tests/tools/test_wbrecover.py: its Model, and the front's own code in a shared library.
 //
 //     node --test tests/web/test_core.mjs
@@ -18,7 +18,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
-import * as core from '../../docs/recover/core.js';
+import * as core from '../../docs/web/core.js';
 
 const here = (name) => fileURLToPath(new URL(name, import.meta.url));
 const unhex = (s) => Uint8Array.from(s.match(/../g) || [], (b) => parseInt(b, 16));

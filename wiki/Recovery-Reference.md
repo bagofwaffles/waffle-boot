@@ -1,23 +1,34 @@
-# Recovery
-
-Reference for recovery in front version 15. Step-by-step guides are in the wiki
-([Recovery menu](../wiki/Recovery-Menu.md), [Recover from a computer](../wiki/Recover-from-a-Computer.md),
-[My unit will not start](../wiki/My-Unit-Will-Not-Start.md)); the safety rules are in [`front.md`](front.md).
+Reference for recovery in front version 15: every write, refusal and result. Step-by-step guides are in
+[How to Recover](How-to-Recover); the safety rules are in [The Front](The-Front#the-failsafes). This page is
+also the reference for the recovery round on a unit that a changed front needs before it is committed to a
+slot ([The Front](The-Front#changing-it)).
 
 ## Starting it
 
 | How | When |
 | --- | --- |
-| **Power + M4** | Key 4 (M4 (4 under the display)) held alone while switching on (S-15.150) |
+| **Power + M4** | M4 (4 under the display) held alone while switching on (S-15.150) |
 | By itself | The rest of the image fails its check |
 | By itself | Three starts in a row ended before the boot menu or the OS (S-02.095). The next start is normal |
 
 Opening recovery writes nothing to the slots (after three unfinished starts it clears one start-log bit).
 Switching off or restarting leaves the unit as it was.
 
+## The rules it keeps
+
+- A write goes to the slot the unit is not running from, unless you ask for the running one.
+- Every image is checked before anything is erased, and read back before the unit is told to start it.
+- A write or action from a computer waits 15 s first; switching off then stops it with nothing written.
+- On the unit, every action needs key 1 held for 5 s, after a screen that warns of the risk.
+- From a computer, anything that could leave the unit worse off is refused unless forced, and forcing asks
+  for a typed phrase.
+
+Some failures leave a unit that only an external SPI flash programmer brings back. They are listed in
+[Flash Layout and Write Safety](Flash-Layout-and-Write-Safety#what-is-not-safe-against-a-power-cut).
+
 ## The recovery menu
 
-<img src="ui/recovery.png" width="480" alt="The recovery menu">
+<img src="../docs/ui/recovery.png" width="480" alt="The recovery menu">
 
 It shows each slot's version and state (`good`, `bad`, `tried`, `tried, started`), which slot runs and
 which is selected, and what a write would replace. The status bar shows `USB` and the image and front
@@ -50,43 +61,45 @@ and program leaves the slot bad with its image intact: write it again, or switch
 
 ## The browser page
 
-[`docs/recover/`](recover/README.md) is a page that does what the host tool does, from Chrome or Edge on
-a computer, over Web Serial: a guided write of the slot the unit does not run from, and an Advanced tab
-with every command below. It decides and says what the tool does (its tests hold it to the tool, on the
-front's own code), and the unit checks every image and counts down all the same. Published with the
-repository's pages, it is at `https://bagofwaffles.github.io/waffle-boot/recover/`.
+[The page](https://bagofwaffles.github.io/waffle-boot/) does what the host tool does, from Chrome or Edge on
+a computer, over Web Serial: a guided write of the slot the unit does not run from, and an Advanced tab with
+every command below. It decides and says what the tool does (its tests hold it to the tool, on the front's
+own code), and the unit checks every image and counts down all the same. Nothing is sent to a server. Its
+developer notes are in [`docs/web/README.md`](../blob/main/docs/web/README.md).
 
 ## The host tool
 
-`tools/wbrecover.py` (Python 3 only) finds the port named `OP-XY Recovery` on macOS and Linux; elsewhere,
-or with more than one unit, pass `--port`. It does everything the keys do.
+`tools/wbrecover.py` (Python 3 only, no other packages) finds the port named `OP-XY Recovery` on macOS and
+Linux; elsewhere, or with more than one unit, pass `--port PORT` before the command. It does everything the
+keys do. It needs a git clone of this repository: it checks images against the repository's own files and
+history.
 
-A is the slot the unit runs from, B the other.
+Below, the running slot is the one the unit runs from, and the other slot is the one it does not.
 
 | Command | Does | You type |
 | --- | --- | --- |
 | `check IMAGE.ldr` | Checks a file; no unit needed | |
-| `info` | What the unit reports, and what each command would do | |
-| `write IMAGE.ldr` | Writes B | `yes` |
-| `write --running IMAGE.ldr` | Writes A: B is selected first if good; in place if B is bad | `yes`, or `erase the running slot in place` |
-| `write --new-front IMAGE.ldr` | Writes an image with another front to B for one trial start; B's old image is lost | `try the new front` |
-| `try` | Starts B once, as it is | `yes` |
-| `switch` | Starts B from now on | `switch for good` |
-| `keep` | Keeps a tried slot | `yes` |
+| `info` | What the unit reports, and what each command would do now | |
+| `write IMAGE.ldr` | Writes the other slot, and selects it | `yes` |
+| `write --running IMAGE.ldr` | Writes the running slot: the other slot is selected first if good; in place if it is bad | `yes`, or `erase the running slot in place` |
+| `write --new-front IMAGE.ldr` | Writes an image with another front to the other slot for one trial start; that slot's old image is lost | `try the new front` |
+| `try` | Starts the other slot once, as it is | `yes` |
+| `switch` | Starts the other slot from now on | `switch for good` |
+| `keep` | Keeps a slot that was tried and started | `yes` |
 | `select IMAGE.ldr` | Keeps the slot IMAGE was tried in, checked against IMAGE | `yes` |
 | `put-back` | Makes a tried slot's record good again | `yes` |
 | `restart` | Restarts the unit | |
-| any, with `--force` | Lifts the refusals that only protect you (below) | `force the <command>` |
+| any, with `--force` (after the command) | Lifts the refusals that only protect you (below) | `force the <command>` |
 
-To write a build: `make bump-version`, `make cross`, Power + M4 (4 under the display), connect USB, `info`, then
-`write build/bf703/waffle-boot.ldr`. On `Verified`, `restart` or switch off and on without a key. Restart
-before another write.
+To write a build: `make bump-version`, `make cross`, Power + M4 (4 under the display), connect USB, `info`,
+then `write build/bf703/waffle-boot.ldr`. On `Verified`, `restart` or switch off and on without a key.
+Restart before another write: one write per visit.
 
 Both slots may hold the same image: every command works as with two different ones. Recovery then counts
-as A the slot the unit goes on starting, which is the one the selector names when it is trusted or good;
-the boot menu's status bar names the same slot.
-A front before version 14 refuses the image a slot already holds, and refuses every write while both
-slots hold the same image; the tool says so before sending.
+as the running slot the one the unit goes on starting, which is the one the selector names when it is
+trusted or good; the boot menu's status bar names the same slot. A front before version 14 refuses the
+image a slot already holds, and refuses every write while both slots hold the same image; the tool says so
+before sending.
 
 ### Limits
 
@@ -101,36 +114,41 @@ slots hold the same image; the tool says so before sending.
 After accepting `write`, `try`, `switch`, `keep`, `select` or `put-back`, the unit shows
 `Switch the unit off within 15 s to stop`. **Switching off or unplugging USB then leaves the flash
 untouched.** Stopping the tool does not stop it. `info`, `restart` and repair writes after a failed write
-of A have no countdown.
+of the running slot have no countdown.
 
 ### Warnings
 
-- **`write --running` with B bad writes A in place, with no fallback.** It is refused until a plain
-  `write` of B has failed in this recovery (or `--force`). A power cut, a pulled cable with a flat battery,
-  or the power switch during it leaves a unit only a flash programmer can repair. The tool shows the
-  battery; the unit holds off the power switch and answers only status requests until the write ends.
-- `write --running` with B good: an interruption starts B. If B is not waffle-boot, the unit is then
-  without this recovery.
-- **After a failed write of A**, the unit re-reads the flash before every answer and `info` says which write
-  each command would make. Writes start without a countdown and settle the selector on the slot written.
-  Until a start would reach a good slot, the screen says `Keep the power on until a write has finished`,
-  the power switch is held off and `restart` is refused (unless forced). Keep the cable in.
-- **A new front**: the next start runs B once and the selector returns to A. If it does not come up, switch
-  off and on. To keep it after its trial start: key 1 then `3`, `keep`, or `select IMAGE.ldr`, or hold M4 (4 under the display)
-  through the trial start and keep it from its own recovery. Not covered: a front that starts once and
-  fails later, and, with B as Slot 2, a power cut in the selector erase at the end of the write or the first
-  instant of the trial start. The same holds for `try`.
+- **`write --running` with the other slot bad writes the running slot in place, with no fallback.** It is
+  refused until a plain `write` of the other slot has failed in this recovery (or `--force`). A power cut, a
+  pulled cable with a flat battery, or the power switch during it leaves a unit only a flash programmer can
+  repair. The tool shows the battery; the unit holds off the power switch and answers only status requests
+  until the write ends. Keep the cable in until it ends.
+- `write --running` with the other slot good: an interruption starts the other slot. If it is not
+  waffle-boot, the unit is then without this recovery.
+- **After a failed write of the running slot**, the unit re-reads the flash before every answer and `info`
+  says which write each command would make. Writes start without a countdown and settle the selector on the
+  slot written. Until a start would reach a good slot, the screen says
+  `Keep the power on until a write has finished`, the power switch is held off and `restart` is refused
+  (unless forced). Keep the cable in.
+- **A new front**: the next start runs the other slot once and the selector returns to the running slot. If
+  it does not come up, switch off and on. To keep it after its trial start: key 1 then `3`, `keep`, or
+  `select IMAGE.ldr`, or hold M4 (4 under the display) through the trial start and keep it from its own
+  recovery. Not covered: a front that starts once and fails later, and, with the other slot as Slot 2, a
+  power cut in the selector erase at the end of the write or the first instant of the trial start. The same
+  holds for `try`.
+
+Read every line the tool prints before you type a phrase.
 
 ### `--force`
 
 Lifts, on `write`, `select`, `try`, `switch`, `keep` and `restart`: another front with no trial; an image
-with no waffle-boot front; an in-place write of A before a write of B failed; a write with the selector
-unsettled or naming B (only while B is good); a keep of a slot that has not started; a try of or switch to
-a bad slot; a restart while no start would reach a good slot.
+with no waffle-boot front; an in-place write of the running slot before a write of the other slot failed; a
+write with the selector unsettled or naming the other slot (only while that slot is good); a keep of a slot
+that has not started; a try of or switch to a bad slot; a restart while no start would reach a good slot.
 
 Never lifted: a damaged, too large or unbootable image; a flash operation that failed or did not read back;
-a unit that cannot tell which slot it runs from; a write of A while the selector names a bad slot; a switch
-to a slot with nothing the boot ROM can start.
+a unit that cannot tell which slot it runs from; a write of the running slot while the selector names a bad
+slot; a switch to a slot with nothing the boot ROM can start.
 
 ## Results
 
@@ -139,9 +157,9 @@ to a slot with nothing the boot ROM can start.
 | **Verified** / `Done` | `restart`, or switch off and on without a key |
 | **Refused**, **Stopped** | Nothing was written; follow the message |
 | The port went away mid-transfer | Nothing was written; run the command again |
-| **FAILED** writing B, A intact | The unit starts as before; run `write` again |
-| **FAILED** writing A, or A damaged | Run `info` (see the warnings above) |
-| No answer | Replug USB. If the screen is gone and no write of A failed, Power + M4 (4 under the display) again. During an in-place write, wait, then `info` |
+| **FAILED** writing the other slot, the running slot intact | The unit starts as before; run `write` again |
+| **FAILED** writing the running slot, or it is damaged | Run `info` (see the warnings above) |
+| No answer | Replug USB. If the screen is gone and no write of the running slot failed, Power + M4 (4 under the display) again. During an in-place write, wait, then `info` |
 
 ## Protocol
 

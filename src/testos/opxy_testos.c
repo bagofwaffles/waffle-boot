@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The test OS's readouts (waffle/testos.h, docs/test-os.md): what the
+ * The test OS's readouts (waffle/testos.h, wiki/Test-OS.md): what the
  * loading bootloader left (S-05.014's core state, the display record of
  * S-13c.021, DMA9's handshake pair of S-01.006), the registers S-13a
  * expects at OS entry, S-07.032's raw key-status reply, whether the OTP
@@ -289,7 +289,7 @@ void opxy_testos_log(struct opxy_master *m)
 	opxy_testos_paint_log(m);
 }
 
-/* --- The S-07 waits the test OS bounds (docs/test-os.md) --- */
+/* --- The S-07 waits the test OS bounds (wiki/Test-OS.md) --- */
 
 void opxy_testos_frame_seen(const struct s06_frame *f)
 {
@@ -947,7 +947,7 @@ static void mon_note_write(struct opxy_master *m, uint32_t addr, uint32_t arg)
 /*
  * The watchdog's expiry as an interrupt, while a routine runs: S-04.065's PSoC
  * reset request, which reboots the unit, since a hard reset leaves a unit stuck
- * (docs/test-os.md). A routine that hangs on a bus access or has masked
+ * (wiki/Test-OS.md). A routine that hangs on a bus access or has masked
  * interrupts never gets here, and that needs a power cycle.
  */
 static void mon_watchdog(void *ctx, uint32_t sid)

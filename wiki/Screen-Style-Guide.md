@@ -1,5 +1,3 @@
-# waffle-boot screen style guide
-
 How the boot menu's screens look and read, so that a new screen or line fits
 with the rest. The lines themselves are in `src/s15_lines.c` and
 `src/s15_menu.c`. Everything here may change except the rules under
@@ -242,7 +240,7 @@ y 104–117): the first of each group white, the others a two-pixel faint
 outline. It carries no text: the name and version show only in the boot
 menu's and the recovery menu's bars.
 
-<img src="ui/handover.png" width="480" alt="Hand-over frame">
+<img src="../docs/ui/handover.png" width="480" alt="Hand-over frame">
 
 A build can show its own picture instead: `make image LOGO=<file>.png`,
 with a PNG of exactly 480 × 222 pixels, shown alone with nothing drawn
@@ -260,29 +258,29 @@ reach. `tour.gif` shows a few of them in turn, for the README.
 
 | | |
 | --- | --- |
-| <img src="ui/main.png" width="480" alt="Main Menu"> | <img src="ui/main-states.png" width="480" alt="Main Menu with every state"> |
+| <img src="../docs/ui/main.png" width="480" alt="Main Menu"> | <img src="../docs/ui/main-states.png" width="480" alt="Main Menu with every state"> |
 | Main Menu | developer mode on, the second processor absent, the OS to reinstall, protected writes on |
-| <img src="ui/settings.png" width="480" alt="Settings"> | <img src="ui/option.png" width="480" alt="Protected Writes"> |
+| <img src="../docs/ui/settings.png" width="480" alt="Settings"> | <img src="../docs/ui/option.png" width="480" alt="Protected Writes"> |
 | Settings | the protected-writes prompt, 2 held for 2 of the 5 s |
-| <img src="ui/system.png" width="480" alt="System"> | <img src="ui/system-armed.png" width="480" alt="Factory reset held"> |
+| <img src="../docs/ui/system.png" width="480" alt="System"> | <img src="../docs/ui/system-armed.png" width="480" alt="Factory reset held"> |
 | System, with content packs | the factory reset, 7 held for 2 of the 5 s |
-| <img src="ui/info.png" width="480" alt="Device Info"> | <img src="ui/keytest.png" width="480" alt="Key Test"> |
+| <img src="../docs/ui/info.png" width="480" alt="Device Info"> | <img src="../docs/ui/keytest.png" width="480" alt="Key Test"> |
 | Device Info | Key Test, one key down, one tested |
-| <img src="ui/packs.png" width="480" alt="Content Packs"> | <img src="ui/developer.png" width="480" alt="Developer"> |
+| <img src="../docs/ui/packs.png" width="480" alt="Content Packs"> | <img src="../docs/ui/developer.png" width="480" alt="Developer"> |
 | Content Packs, pack 1's removal held for 2 of the 5 s | Developer |
-| <img src="ui/format.png" width="480" alt="Format Drive"> | <img src="ui/upgrade-wait.png" width="480" alt="Install Firmware"> |
+| <img src="../docs/ui/format.png" width="480" alt="Format Drive"> | <img src="../docs/ui/upgrade-wait.png" width="480" alt="Install Firmware"> |
 | Format Drive | Install Firmware, waiting for a package |
-| <img src="ui/upgrade-run.png" width="480" alt="Installing"> | <img src="ui/upgrade-done.png" width="480" alt="Done"> |
+| <img src="../docs/ui/upgrade-run.png" width="480" alt="Installing"> | <img src="../docs/ui/upgrade-done.png" width="480" alt="Done"> |
 | a run in progress | a run done: the BLE and backplane parts skipped, not in this version |
-| <img src="ui/upgrade-failed.png" width="480" alt="Failed"> | <img src="ui/settings-color.png" width="480" alt="Settings, color on"> |
+| <img src="../docs/ui/upgrade-failed.png" width="480" alt="Failed"> | <img src="../docs/ui/settings-color.png" width="480" alt="Settings, color on"> |
 | a run failed | Settings with the color on |
-| <img src="ui/main-failed.png" width="480" alt="The OS not started"> | <img src="ui/info-failed.png" width="480" alt="Device Info after it"> |
+| <img src="../docs/ui/main-failed.png" width="480" alt="The OS not started"> | <img src="../docs/ui/info-failed.png" width="480" alt="Device Info after it"> |
 | Main Menu: the start failed when the second processor stopped answering | Device Info: the step, the request and where it broke |
-| <img src="ui/system-lost.png" width="480" alt="System, the slave lost"> | <img src="ui/upgrade-confirm.png" width="480" alt="Confirm Install"> |
+| <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | <img src="../docs/ui/upgrade-confirm.png" width="480" alt="Confirm Install"> |
 | System while the second processor does not answer | the bootloader's confirmation before a run, digit 1 held for 2 of the 5 s |
-| <img src="ui/oswrite-run.png" width="480" alt="Write OS"> | <img src="ui/continue-restarting.png" width="480" alt="Restarting to start the OS"> |
+| <img src="../docs/ui/oswrite-run.png" width="480" alt="Write OS"> | <img src="../docs/ui/continue-restarting.png" width="480" alt="Restarting to start the OS"> |
 | Write OS (developer menu, 5), the write running | Continue to the OS |
-| <img src="ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="ui/oswrite-failed.png" width="480" alt="Write OS failed"> |
+| <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |
 | the OS written, 8 back to the developer menu | the OS write failed: the step, the reason, what the eMMC was left with |
 
 ## Adding a screen

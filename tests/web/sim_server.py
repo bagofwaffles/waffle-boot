@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Serves the recovery page with a simulated unit behind it, for trying docs/recover/ in a browser
+"""Serves the recovery page with a simulated unit behind it, for trying docs/web/ in a browser
 with no OP-XY:
 
-    tests/web/sim_server.py [PORT]        then open http://localhost:PORT/recover/?sim=model:plain
+    tests/web/sim_server.py [PORT]        then open http://localhost:PORT/web/?sim=model:plain
 
 It serves docs/ as files, and at /sim/unit a WebSocket that units.py's Model or the front's own code
 (the shim) answers as a unit answers its recovery port. ?sim=KIND:CASE picks the unit: KIND is model
@@ -236,7 +236,7 @@ def main(argv):
     port = int(argv[1]) if len(argv) > 1 else 8767
     threading.excepthook = lambda a: None if issubclass(a.exc_type, OSError) else threading.__excepthook__(a)
     srv = http.server.ThreadingHTTPServer(('127.0.0.1', port), Handler)
-    print('http://localhost:%d/recover/?sim=model:plain' % port, flush=True)
+    print('http://localhost:%d/web/?sim=model:plain' % port, flush=True)
     srv.serve_forever()
 
 

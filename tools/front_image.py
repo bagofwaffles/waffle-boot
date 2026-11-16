@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""The frozen front's build checks (src/front/, docs/front.md "Changing it").
+"""The frozen front's build checks (src/front/, wiki/The-Front.md "Changing it").
 
     front_image.py pin FRONT.elf PIN [--write]
     front_image.py boundary --cc-include DIR DEPFILE...
@@ -98,7 +98,7 @@ def cmd_pin(args):
             '  pinned: %s\n  built:  %s\n'
             'The front (src/front/) runs from the image entry to the key read and\n'
             'holds recovery. It changes only with the maintainer\'s sign-off\n'
-            '(docs/front.md, "Changing it"); then run make front-pin and commit\n'
+            '(wiki/The-Front.md, "Changing it"); then run make front-pin and commit\n'
             'the new pin.\n'
             % (kept.strip() or '(none)', now.strip()))
         return 1

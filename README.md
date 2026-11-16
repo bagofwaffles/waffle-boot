@@ -9,8 +9,8 @@ code or data from the device's firmware. It is an independent project, not affil
 Teenage Engineering.
 
 > [!WARNING]
-> **Under development. Use it with caution.** The installer ([`docs/install.md`](docs/install.md)) has been
-> tested on real hardware, but not widely. A broken bootloader can leave a unit that only an external flash
+> **Under development. Use it with caution.** The [installer](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install) has been tested
+> on real hardware, but not widely. A broken bootloader can leave a unit that only an external flash
 > programmer brings back.
 
 **Status:** it boots on one unit. Shown there so far: a start from a committed slot through to the OP-XY's
@@ -48,7 +48,7 @@ Everything the unit needs to start is in a 1 MiB SPI flash: the first stage, a f
 the two slots that hold the bootloader. The first stage is fitted at manufacture and is not part of
 waffle-boot. The OS and everything it stores are on the eMMC.
 
-[What is written to the SPI flash](docs/flash-writes.md) lists every area, the rules that keep a write from
+[What is written to the SPI flash](https://github.com/bagofwaffles/waffle-boot/wiki/Flash-Layout-and-Write-Safety) lists every area, the rules that keep a write from
 leaving a unit that does not start, and the few writes those rules do not cover.
 
 <picture>
@@ -63,38 +63,31 @@ leaving a unit that does not start, and the few writes those rules do not cover.
 
 ## Documentation
 
-The documentation is the [wiki](https://github.com/bagofwaffles/waffle-boot/wiki): the user guide, recovery, how it works, and building and
-testing. The pages below go deeper.
+The documentation is the [wiki](https://github.com/bagofwaffles/waffle-boot/wiki/). Start with:
 
-Using it:
+- [How to Install](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install): putting waffle-boot on a unit with the installer and
+  [the browser page](https://bagofwaffles.github.io/waffle-boot/)
+- [How to Recover](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Recover): the recovery menu, and what to do when the unit will not start
 
-- [User guide](https://github.com/bagofwaffles/waffle-boot/wiki): the boot menu, installs, factory reset and logs
-- [Recovering a unit](https://github.com/bagofwaffles/waffle-boot/wiki/Recovery): what recovery is, how it opens, and which guide to follow
-- [Recovery in full](docs/recovery.md): the recovery menu, `tools/wbrecover.py`, and the
-  [browser page](docs/recover/README.md)
+Using it: the [Boot Menu](https://github.com/bagofwaffles/waffle-boot/wiki/Boot-Menu), [Updating the OS](https://github.com/bagofwaffles/waffle-boot/wiki/Updating-the-OS) from the boot menu, and
+[Getting Logs Off the Unit](https://github.com/bagofwaffles/waffle-boot/wiki/Getting-Logs-Off-the-Unit).
 
-How it works:
+How it works: [Flash Layout and Write Safety](https://github.com/bagofwaffles/waffle-boot/wiki/Flash-Layout-and-Write-Safety),
+[The Front](https://github.com/bagofwaffles/waffle-boot/wiki/The-Front) and its failsafes, the [Boot Chain](https://github.com/bagofwaffles/waffle-boot/wiki/Boot-Chain), the
+[Screen Style Guide](https://github.com/bagofwaffles/waffle-boot/wiki/Screen-Style-Guide), and the [Requirement Labels](https://github.com/bagofwaffles/waffle-boot/wiki/Specification) the code and
+tests cite.
 
-- [What is written to the SPI flash](docs/flash-writes.md): every area, the safety rules, and wear
-- [The front and its failsafes](docs/front.md): why a write cannot remove the last image that starts
-- [Where each part is in the source](docs/source-map.md), and [the requirement labels](https://github.com/bagofwaffles/waffle-boot/wiki/Specification)
-  the code and tests cite
-- [Screen style guide](docs/ui-style-guide.md): every screen, and the rules for menus and keys
+Working on it: [Building and Testing](https://github.com/bagofwaffles/waffle-boot/wiki/Building-and-Testing) (with the source map), the
+[Installer Reference](https://github.com/bagofwaffles/waffle-boot/wiki/Installer-Reference), the [Recovery Reference](https://github.com/bagofwaffles/waffle-boot/wiki/Recovery-Reference), the
+[Test OS](https://github.com/bagofwaffles/waffle-boot/wiki/Test-OS) and the [Developer Host Link](https://github.com/bagofwaffles/waffle-boot/wiki/Developer-Host-Link).
 
-Working on it:
-
-- [Installing waffle-boot](docs/install.md): the installer, its checks, and what it writes
-- [The test OS](docs/test-os.md): the boot menu built as an OS image, and its USB monitor
-- [Developer requests](docs/devhost.md): driving a unit from a computer in developer mode
-- [Tools](tools/README.md): what each tool is for, and how to run the checks
-- [Contributing](CONTRIBUTING.md): the clean-room rule. Outside code contributions are not open yet; bug
-  reports are welcome
-- [Security](SECURITY.md): how to report a problem privately
+Also in this repository: [Contributing](CONTRIBUTING.md), the clean-room rule (outside code contributions
+are not open yet; bug reports are welcome), and [Security](SECURITY.md), how to report a problem privately.
 
 ## Build and test
 
 On Linux, the host build and the tests need a C compiler, Python 3, git and GNU binutils. The cross
-toolchain needs a little more, listed in [its own page](tools/toolchain/README.md#prerequisites).
+toolchain needs a little more, listed in [Building and Testing](https://github.com/bagofwaffles/waffle-boot/wiki/Building-and-Testing).
 
 ```sh
 make check                  # host build and unit tests
@@ -105,7 +98,7 @@ make cross                  # the image: build/bf703/waffle-boot.ldr
 
 On macOS the toolchain and `make cross` work, but `make check` does not link. Use `tools/ci-local.sh`
 there: it runs the checks in a Linux container (Docker). See
-[Running the checks](tools/README.md#running-the-checks).
+[Building and Testing](https://github.com/bagofwaffles/waffle-boot/wiki/Building-and-Testing).
 
 ## License
 

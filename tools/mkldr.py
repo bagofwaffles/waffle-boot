@@ -22,7 +22,7 @@ address; the test OS's map gives one section a load address apart from its
 run address, and something of the image copies it over at start-up.
 
 With --no-init there is no INIT block (step 3): the stream of an OS image
-(S-05.024 refuses one with INIT; docs/test-os.md), whose clocks and DDR are
+(S-05.024 refuses one with INIT; wiki/Test-OS.md), whose clocks and DDR are
 up when it loads. The order of the other blocks is kept, and the FINAL
 block's argument holds the entry too. The entry reaches the loading
 bootloader through RCU0_SVECT0 (S-05.013), which the ROM kernel sets from

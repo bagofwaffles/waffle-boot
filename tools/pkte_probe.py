@@ -5,7 +5,7 @@
     pkte_probe.py [--port /dev/cu.usbmodemNNN] [--force] [dhm] [arm] [drv] [speed]
 
 It drives the engine with the developer host's register reads and writes
-(docs/devhost.md: held mode, developer mode on), so it needs no new build.
+(wiki/Developer-Host-Link.md: held mode, developer mode on), so it needs no new build.
 It checks what the driver relies on: whether the
 engine decrypts AES-256-CBC and hashes SHA-256 as the hardware reference
 says (chapter 15), how bytes map to words, whether it reads and writes DDR

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Recovery's host tool: talks to a unit started with Power + M4 (docs/recovery.md).
+"""Recovery's host tool: talks to a unit started with Power + M4 (wiki/Recovery-Reference.md).
 
     wbrecover.py [--port /dev/cu.usbmodemNNN] info
     wbrecover.py [--port PORT] write [--running | --new-front] [--force] IMAGE.ldr
@@ -138,7 +138,7 @@ RESET_HINT = 'Restart once without holding a key, then hold Power + M4 again.'
 SAFE_HINT = ('Run info first: restart only with a good slot selected; the unit refuses a restart '
              'while a write of this recovery has left no good slot selected.')
 FRONT_HINT = ('Another front goes in only as a trial: write --new-front IMAGE, on a front of '
-              'version 7 or later; from an older front, the test OS installer (docs/test-os.md).')
+              'version 7 or later; from an older front, the test OS installer (wiki/Test-OS.md).')
 OTHER_HINT = ('Start the other slot if it is good and holds a stream the boot ROM can start '
               '(S-02.091): wbrecover.py try starts it once, wbrecover.py switch for good; or '
               'key 1, "Choose the slot to start", in the recovery menu.')
@@ -146,7 +146,7 @@ SLOT_MENU = 'or key 1, "Choose the slot to start", in the recovery menu'
 NOT_STARTED_HINT = ('Write it again with --new-front and restart with no key held, so that it starts '
                     'once; then switch off and on and select. Or select from its own recovery in the '
                     'trial start (try holding key 4 through the restart). A front older than version '
-                    '7 never leaves that mark: put it on with the test OS installer (docs/test-os.md).')
+                    '7 never leaves that mark: put it on with the test OS installer (wiki/Test-OS.md).')
 OLD_FRONT_RISK = ('A front without the trial mark (any front older than version 7) can never be '
                   'selected: %s\'s image is then lost for nothing.')
 # enum fr_write_rc, then the protocol's own codes: what happened, and what to do.
@@ -1503,7 +1503,7 @@ def other_front_refusal(out, link, i, front, new_front):
     if link.front < TRIAL_FRONT and new_front:
         out('Refused before sending: the file carries another front, and this unit runs front '
             'version %d: a front before version %d cannot take another front in recovery. The way '
-            'is the test OS installer (docs/test-os.md). Nothing was sent.'
+            'is the test OS installer (wiki/Test-OS.md). Nothing was sent.'
             % (link.front, TRIAL_FRONT))
         return 1
     line = ('Refused before sending: the file carries another front (pin %s; the unit runs pin %s). '
@@ -1511,7 +1511,7 @@ def other_front_refusal(out, link, i, front, new_front):
             % (short(front['pin']), short(i['pin'])))
     if link.front < TRIAL_FRONT:
         line += (' This unit runs front version %d, which cannot: the way is the test OS installer '
-                 '(docs/test-os.md).' % link.front)
+                 '(wiki/Test-OS.md).' % link.front)
     out(line + ' Nothing was sent.')
     return 1
 
@@ -1882,7 +1882,7 @@ def cmd_write(link, data, out=print, poll=0.2, deadline=900.0, running=False, as
             'its pin at that version). A front older than version %d leaves no mark in its trial '
             'start and has no select of its own, so its trial could never be kept, and %s\'s image '
             'would be lost for nothing. Put an older front on with the test OS installer '
-            '(docs/test-os.md). Nothing was sent.'
+            '(wiki/Test-OS.md). Nothing was sent.'
             % (signed[1], TRIAL_FRONT, slot_name(1 - i['running'])))
         return 1
     if trial and (damaged(i) or i['moved'] or

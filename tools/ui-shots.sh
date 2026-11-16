@@ -3,7 +3,7 @@
 #
 # Renders the held-mode screens (S-15) with the bootloader's own drawing
 # code and writes them as PNG files, for docs/ui/ and for checking a change
-# to the screens by eye (docs/ui-style-guide.md).
+# to the screens by eye (wiki/Screen-Style-Guide.md).
 #
 # Usage: tools/ui-shots.sh [output directory]   (default docs/ui)
 #

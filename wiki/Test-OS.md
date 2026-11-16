@@ -1,35 +1,106 @@
-waffle-boot's boot menu, built as an OS image. The bootloader already on a unit loads it in place of the
-OS, so waffle-boot's drivers, menus, bridge, USB and display run on real hardware with nothing written to
-the SPI flash. The [installer](Install-waffle-boot) is built on it.
+The test OS is waffle-boot's boot menu (held mode) built as an OS image, so a bootloader already on the
+unit loads it in place of the OS (S-05). It runs waffle-boot's drivers, menus, bridge, USB and display on
+both processors with nothing written to the SPI flash: it never hands over to an OS, and refuses flash
+erase, flash program and OS writes. The installer ([Installer Reference](Installer-Reference)) is built on
+it.
 
 > **Warning.** This can leave a unit unable to start. Try nothing here on a unit you are not prepared to
-> lose. Loading a test OS replaces the unit's OS; keep TE's firmware file at
-> hand to write it back.
+> lose. Loading a test OS replaces the unit's OS; keep TE's firmware file at hand to write it back.
 
 ## Variants
 
-| Command | Builds | For |
+| Build | Output in `build/bf703-testos/` | What it is |
 | --- | --- | --- |
-| `make test-os` | `build/bf703-testos/waffle-test-smc.ldr`, `waffle-test-gpio.ldr` | The boot menu on the unit; the two differ in how the panel is driven |
-| `make test-os-mon` | `waffle-test-mon.ldr` | The same, with a USB monitor for `tools/testos_mon.py` |
-| `make installer` | `build/waffle-install.ldr` | The hardware checks, then this build's `waffle-boot.ldr` written to the unit: see [Install waffle-boot](Install-waffle-boot) |
+| `make test-os` | `waffle-test-smc.ldr`, `waffle-test-gpio.ldr` | The test OS, with the normal or a hand-driven panel driver (`TESTOS_PANEL=smc` or `gpio` builds one) |
+| `make test-os-mon` | `waffle-test-mon.ldr` | The `smc` image with the USB monitor, for `tools/testos_mon.py` |
+| `make installer` | `waffle-test-installer.ldr`, copied to `build/waffle-install.ldr` | The hardware checks, then this build's `waffle-boot.ldr` written to the unit ([How to Install](How-to-Install)); no monitor |
+
+Every build fails unless the stream passes the boot-stream checks and `tools/testos_layout.py`, which caps
+it at `0x800000` bytes, the most a unit loads. The test OS's code is in `src/testos/` and behind
+`OPXY_TEST_OS` (`src/include/waffle/testos.h`); the normal image is untouched.
 
 ## Loading it
 
-The bootloader on the unit must offer an OS write from its internal drive, as waffle-boot's developer menu
-does (**5 Write /os.ldr to boot partition**).
+The bootloader on the unit must offer a write of `os.ldr` from its yaffs2 volume (the internal drive) to the
+inactive boot partition, as waffle-boot's developer menu does (**5 Write /os.ldr to boot partition**;
+S-15.092 to S-15.094; S-15.170 says how to reach it).
 
-1. Turn MTP on (developer menu, 2) and copy the image as `os.ldr`:
+1. Turn MTP on in that menu (developer menu, 2), quit any other MTP client, and copy the stream as
+   `os.ldr` (needs libusb):
 
        python3 tools/mtpcp.py put build/bf703-testos/waffle-test-gpio.ldr
        python3 tools/mtpcp.py verify build/bf703-testos/waffle-test-gpio.ldr
 
-   Go on only on `identical`. `mtpcp.py` needs libusb; quit other MTP clients first.
-2. Run the OS write, then switch off and on. Judge it by what starts.
+   Go on only on status 0 and `identical`; on `FAILED`, stop.
+2. Run the menu's OS write, then switch off and on. Judge it by what starts: the test OS's first log line
+   names its variant.
+3. The OS write removes the unit's OS from the other partition. To go back, write TE's firmware file the
+   same way. The installer is the exception: it makes the unit's OS active again when it ends.
 
-The test OS writes its log to `testos.txt` on its USB disk, and paints the panel a new color at each
-start-up step, so a unit that shows nothing else still shows how far it got.
+## What it reports
 
-## Read more
+- Log lines tagged `testos`, also written to `testos.txt` on the USB disk when it is first formatted.
+- `flash.bin` beside it: a copy of the whole SPI flash, the unit's metadata included. Never share it.
+- Register fields that differ from S-13a's values at OS entry.
+- `te` and `frames on te` lines: the panel's TE period and four frame timings (15.05 ms expected;
+  S-13c.018, HW-FRAME).
 
-[`docs/test-os.md`](../blob/main/docs/test-os.md): boot timing builds and the monitor's commands.
+### The color trail
+
+The panel changes color at each start-up milestone, so a unit that shows nothing else shows how far it got.
+
+## The USB monitor
+
+`tools/testos_mon.py` (Python 3, standard library) drives `waffle-test-mon.ldr`; with no command it lists
+them all.
+
+| Command | What it does |
+| --- | --- |
+| `ping`, `report` | Is it there; `testos.txt` so far |
+| `rd ADDR [WORDS]`, `wr ADDR VALUE` | The master's registers |
+| `srd ADDR [WORDS]`, `swr ADDR VALUE` | The slave's, over the bridge |
+| `init`, `echo [ARG]`, `pull [LEN]`, `req CMD ARG0 ARG1`, `send` | One raw bridge request; what the slave's last reply send saw |
+| `table`, `emmc`, `beacon [US]` | The slave's bring-up table, its eMMC bring-up, its attention line |
+| `load ADDR FILE`, `call ADDR [ARG]` | Upload a routine to `0x89F00000` and run it, `uint32_t f(uint32_t)` |
+| `run ADDR [ARG] [MS]`, `last [clear]`, `stall [MS]` | Run under the watchdog (default 2000 ms), how the last one ended, a watchdog test |
+| `q11 WHICH [N] [--elf PATH] [--json FILE]` | S-13b's Q-11 measurements, `1a` to `1h` or `all`; needs `mon` on both processors |
+| `encode OP HEX` | A frame's wire bytes |
+
+> The monitor refuses the OTP and flash-controller writes, but an uploaded routine is not limited: run only
+> code you have read. Do not reset the master by hand while the slave is up (S-04.032); restart through the
+> PSoC's request (S-04.065).
+
+## Timing a boot
+
+    make installer test-os-mon BOOT_TIMING=1 BUILD=build/timing
+
+Install the timing build with its installer, then write `waffle-test-mon.ldr` as the OS from waffle-boot's
+developer menu. The bootloader stamps the cycle counter at each milestone
+(`src/include/waffle/boot_time.h`), at 400 MHz from INIT (earlier counts raw), in a record at `0x8FFFFC00`.
+
+- After a hand-over to the monitor's test OS, `testos_mon.py report` prints a `time` line per milestone,
+  then the PSoC greeting, battery and charge waits, the OS copy's rate and the slave stream's pacing. The
+  record is cleared once read.
+- After a charge wait (on USB with the switch off), lines also show `since on`, from the
+  `panel light sent` line.
+- In the boot menu, `testos_mon.py log` prints the same report. A trial start has no serial port.
+
+## The slave's ready line after a byte
+
+Each byte of the slave's boot stream waits for PA6 low (S-13b.022), after a settle time
+`BOOT_LINK_SETTLE_US` (default 2 µs, 0 for none; each µs costs about 0.4 s of a start). To measure PA6 over
+a window after each byte:
+
+    make installer test-os-mon BOOT_TIMING=1 BOOT_TIMING_WINDOW_US=5 BUILD=build/timing
+
+The report adds when PA6 rose after each byte, in eight steps of the window. Rises only in the first step,
+or none, mean the settle time can go. It also counts the slot reads at 50 MHz that were retried; one that
+then read good means 50 MHz is marginal on that unit.
+
+## The slave's stream by the controller's flow control
+
+`BOOT_LINK_FC=1` sends the slave's boot stream through SPI0's FIFO, paced by the controller's flow control
+on PA6. It is off by default and in every release; try it only as a trial, and leave the installer with 8
+at the commit, so that the next start is the old bootloader's:
+
+    make installer test-os-mon BOOT_LINK_FC=1 BOOT_TIMING=1 BUILD=build/linkfc

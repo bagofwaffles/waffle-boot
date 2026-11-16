@@ -17,13 +17,13 @@
 #   make front-image  the front alone as a recovery image (build/bf703/front.ldr)
 #   make front-pin    record a changed front's pin: only with the maintainer's
 #                 sign-off (CONTRIBUTING.md, "The frozen front")
-#   make test-os  the test OS (docs/test-os.md): held mode as an OS image
+#   make test-os  the test OS (wiki/Test-OS.md): held mode as an OS image
 #                 for another bootloader's developer menu, with its gates, in
 #                 its two panel variants:
 #                 build/bf703-testos/waffle-test-{smc,gpio}.{elf,ldr,layout.json};
 #                 TESTOS_PANEL=smc|gpio builds one
 #   make test-os-mon      the test OS with the USB debug monitor
-#   make installer        the installer (docs/install.md): the hardware checks,
+#   make installer        the installer (wiki/Installer-Reference.md): the hardware checks,
 #                 then this build's image written to the unit when every
 #                 check passes: $(BUILD)/waffle-install.ldr
 #   make analyze  clang static analyzer over src/ and tests/
@@ -116,7 +116,7 @@ TARGET_CFLAGS += -DOPXY_BOOT_PROMPT=1
 endif
 # BOOT_TIMING=1: the boot's milestones timed (src/board/opxy_timing.c), never in
 # a release. The report repeats on the log in held mode, and the monitor's
-# test OS reads a hand-over's report (docs/test-os.md):
+# test OS reads a hand-over's report (wiki/Test-OS.md):
 # make installer test-os-mon BOOT_TIMING=1 BUILD=build/timing
 ifneq ($(BOOT_TIMING),)
 TARGET_CFLAGS += -DOPXY_BOOT_TIMING_ON=1
@@ -126,7 +126,7 @@ endif
 # waffle/board/opxy.h), default 2. How soon the slave's boot ROM raises PA6
 # after a byte is not measured; a timing build measures it, and watches PA6
 # for BOOT_TIMING_WINDOW_US after each byte when that is longer
-# (docs/test-os.md):
+# (wiki/Test-OS.md):
 # make installer BOOT_TIMING=1 BOOT_TIMING_WINDOW_US=5 BUILD=build/timing
 ifneq ($(BOOT_LINK_SETTLE_US),)
 TARGET_CFLAGS += -DOPXY_BOOT_LINK_SETTLE_US=$(BOOT_LINK_SETTLE_US)u
@@ -137,7 +137,7 @@ endif
 # BOOT_LINK_FC=1: the slave's boot stream sent through the transmit FIFO with
 # SPI0's flow control on PA6 holding off each byte, in place of a sample of
 # PA6 before each byte (S-13b.022). Off by default: how soon the slave's boot
-# ROM raises PA6 after a byte is not measured (docs/test-os.md). The host
+# ROM raises PA6 after a byte is not measured (wiki/Test-OS.md). The host
 # build has it on, so that its code is built, analyzed and tested there:
 # make installer BOOT_LINK_FC=1 BOOT_TIMING=1 BUILD=build/linkfc
 ifneq ($(BOOT_LINK_FC),)
@@ -281,7 +281,8 @@ HOST_TEST_CFLAGS += -I$(GEN)
 $(HOST_TESTS): | $(VEC_HEADERS)
 
 check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check/layering check/mtpcp \
-	check/testos_mon check/wbrecover check/web check/bump_version check/generated check/leak
+	check/testos_mon check/wbrecover check/web check/bump_version check/generated check/leak \
+	check/wiki_links
 
 # The image tools' own tests (tests/tools/test_image_tools.py).
 .PHONY: check/image_tools
@@ -315,11 +316,16 @@ check/testos_mon:
 check/wbrecover:
 	CC="$(CC)" $(PYTHON) -I -B tests/tools/test_wbrecover.py
 
-# docs/recover/'s core.js against tools/wbrecover.py, on the same models and the
+# docs/web/'s core.js against tools/wbrecover.py, on the same models and the
 # front's own C (Node 20 or later; said and skipped without it).
 .PHONY: check/web
 check/web:
 	CC="$(CC)" sh tests/web/run.sh
+
+# wiki/'s links between pages, its pictures, and the tree's pointers into it.
+.PHONY: check/wiki_links
+check/wiki_links:
+	$(PYTHON) -I -B tests/tools/test_wiki_links.py
 
 # tools/bump_version.py on copies of the board header.
 .PHONY: check/bump_version
@@ -494,7 +500,7 @@ $(LAYOUT): $(IMAGE) $(STREAM) tools/layout.py tools/elf32.py
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $@.tmp
 	@mv $@.tmp $@
 
-# The test OS (docs/test-os.md): the bootloader's held mode as an OS image
+# The test OS (wiki/Test-OS.md): the bootloader's held mode as an OS image
 # that another bootloader's developer menu writes to a boot partition and
 # boots (S-15.094), so that the drivers, menus, bridge, USB and display run
 # on a unit before anything is written to the SPI flash. The same sources
@@ -590,11 +596,11 @@ $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testo
 	@mv $$@.tmp $$@
 endef
 
-# The USB debug monitor's image (docs/test-os.md).
+# The USB debug monitor's image (wiki/Test-OS.md).
 TESTOS_MON := mon
 TESTOS_FLAGS_gpio    := -DOPXY_TESTOS_PANEL_GPIO=1
 TESTOS_FLAGS_mon     := -DOPXY_TESTOS_MONITOR=1
-# The installer (docs/install.md): the check suite, then this build's image
+# The installer (wiki/Installer-Reference.md): the check suite, then this build's image
 # written to the unit, every write held on the unit's key; no monitor.
 TESTOS_INSTALLER := installer
 TESTOS_FLAGS_installer := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1

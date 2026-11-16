@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * ADSP-BF703 link map for the test OS (docs/test-os.md): the bootloader's
+ * ADSP-BF703 link map for the test OS (wiki/Test-OS.md): the bootloader's
  * held mode built as an OS image that another bootloader loads under its
  * kernel call (S-05.008 to S-05.014). bf703.ld is the bootloader's map;
  * this one differs where an OS image must (S-01.017, S-05.024) and where

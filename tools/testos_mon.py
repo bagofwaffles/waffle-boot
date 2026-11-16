@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""The host's end of the test OS's USB debug monitor (docs/test-os.md).
+"""The host's end of the test OS's USB debug monitor (wiki/Test-OS.md).
 
     testos_mon.py [--port /dev/cu.usbmodemNNN] COMMAND...
 
@@ -356,7 +356,7 @@ class Monitor:
         hdr = struct.pack('<BBHII', cmd, slot, length, arg0, arg1)
         prog = (b's\x01' + b't' + bytes([len(hdr)]) + hdr + b'w\x00' + struct.pack('<I', 500000) + b's\x00'
                 + b'w\x01' + struct.pack('<I', 500000) + b's\x01' + b'r\x08' + b'w\x00' + struct.pack('<I', 500000)
-                + b's\x00' + b'c\x00')    # c: SPI0 reset, after a receive (docs/test-os.md)
+                + b's\x00' + b'c\x00')    # c: SPI0 reset, after a receive (wiki/Test-OS.md)
         r = self.bus(prog)
         # select, send, wait(5), select, wait(5), select, recv(9), wait(5), select
         notes = []
@@ -734,7 +734,7 @@ def bridge_check(mon, when):
             time.sleep(2.5)
     print('the bridge does not answer a single-I/O echo %s (reply %s %s)' % (
         when, '%08x' % w0 if w0 is not None else '-', '%08x' % w1 if w1 is not None else '-'))
-    print('the bridge is lost: restart the unit through the PSoC\'s request (docs/test-os.md), not by hand')
+    print('the bridge is lost: restart the unit through the PSoC\'s request (wiki/Test-OS.md), not by hand')
     raise SystemExit(1)
 
 

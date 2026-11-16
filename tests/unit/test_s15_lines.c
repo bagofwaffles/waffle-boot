@@ -3,7 +3,7 @@
  * S-15 values and lines: digits, progress, the run's lines, pack names, and every required-information wording against the tokens of
  * tests/oracle/S-15-menus/vectors/info_tokens.json. Lines are written as the
  * vectors write them, "style:text", and fit the body's 56
- * columns in their style (docs/ui-style-guide.md).
+ * columns in their style (wiki/Screen-Style-Guide.md).
  * Requirements: S-15.011, S-15.041, S-15.140, S-15.161, S-16.022, S-16.038, and the required information of S-15's terms.
  */
 #include <stdbool.h>
@@ -87,7 +87,7 @@ static size_t part_len(const char *s, unsigned k)
 
 /*
  * Whether text drawn in style fits the body's 56 columns
- * (docs/ui-style-guide.md): printable characters, tabs only
+ * (wiki/Screen-Style-Guide.md): printable characters, tabs only
  * between a styled line's parts, and each part ending by column 56.
  */
 static bool fits(enum s15_style style, const char *text)

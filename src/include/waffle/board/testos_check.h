@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The check suite (docs/test-os.md, "The check suite"): the test OS's
+ * The check suite (wiki/Test-OS.md, "The check suite"): the test OS's
  * `check` variant, built with -DOPXY_TESTOS_CHECK=1. It runs hardware tests
  * under the unit's own bootloader, shows a summary, writes check.txt to the
  * USB disk, and changes as little as it can: at most the active byte of the

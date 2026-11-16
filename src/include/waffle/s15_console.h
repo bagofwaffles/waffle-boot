@@ -3,7 +3,7 @@
  * S-15 screen console: the text lines the display shows, each in a line
  * style, and the frame they are drawn in, through a small draw interface
  * (S-15.002 - S-15.004;
- * docs/ui-style-guide.md).
+ * wiki/Screen-Style-Guide.md).
  *
  * The geometry and glyphs are the display's (S-13c) and come in as
  * parameters; no display driver is used here.
@@ -25,7 +25,7 @@
 #define S15_STEP_COL (3u + S15_STEP_LABEL_MAX + 1u)
 #define S15_LINE 80u     /* characters a line keeps, tabs included */
 
-/* RGB565 colors (docs/ui-style-guide.md) */
+/* RGB565 colors (wiki/Screen-Style-Guide.md) */
 #define S15_BLACK 0x0000u
 #define S15_WHITE 0xffffu
 #define S15_TEXT  0xef5du    /* E8E8E8 */

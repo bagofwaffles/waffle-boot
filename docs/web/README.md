@@ -1,7 +1,7 @@
 # The recovery page: developer notes
 
 A static page that does what `tools/wbrecover.py` does, from a browser with Web Serial.
-[`docs/recovery.md`](../recovery.md) is the reference for recovery itself.
+The wiki's [Recovery Reference](https://github.com/bagofwaffles/waffle-boot/wiki/Recovery-Reference) is the reference for recovery itself.
 
 - `core.js`: the protocol and the decisions: framing, the link, HELLO and INFO, the image checks, a
   plan for each command, and carrying a plan out. No DOM and no Web Serial; its exported API is
@@ -106,7 +106,7 @@ What differs from the Python tool, on purpose:
 `tests/web/sim_server.py` serves `docs/` from localhost with a simulated unit behind the page:
 
     python3 -I -B tests/web/sim_server.py 8767
-    # then open http://localhost:8767/recover/?sim=shim:plain
+    # then open http://localhost:8767/web/?sim=shim:plain
 
 `?sim=KIND:CASE` picks the unit: `model` (the Python tests' model, front version 14) or `shim` (the
 front's own protocol, slot and image code, built for the host), and a case from the script's `CASES`
@@ -127,8 +127,10 @@ gets no answer) or `dev-off` (developer mode off: refused). A button loads a sam
 
 ## Hosting
 
-The page is static. GitHub Pages serves it from this repository's `docs/` folder (Settings, Pages,
-"Deploy from a branch", `main`, `/docs`), at `/recover/` under the site's address. It loads the device
-screenshots from `docs/ui/`, so the two folders stay together. Web Serial needs Chrome or Edge on a
+The page is static. GitHub Pages serves this repository's `docs/` folder (Settings, Pages, "Deploy
+from a branch", `main`, `/docs`); the page is `web/`, and `docs/index.html` sends the site's front
+address, https://bagofwaffles.github.io/waffle-boot/, to it with the query (`?sim=...`) kept.
+`docs/.nojekyll` has Pages serve the files as they are. The page loads the device screenshots from
+`docs/ui/`, so the two folders stay together. Web Serial needs Chrome or Edge on a
 computer, and a page served over HTTPS, which Pages is.
 

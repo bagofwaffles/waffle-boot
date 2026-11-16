@@ -1,17 +1,20 @@
-What can be installed on a unit that runs waffle-boot, and what cannot yet.
+Updating the OS from the boot menu: install a TE firmware package (content and OS) on a unit that runs
+waffle-boot. To install waffle-boot itself, see [How to Install](How-to-Install).
+
+## What can be installed
 
 | Task | Status |
 | --- | --- |
-| Install waffle-boot on a unit with the factory bootloader | **Not supported yet.** Developers: [Test OS](Test-OS) |
-| Replace waffle-boot in one slot with another waffle-boot build | [Recover from a Computer](Recover-from-a-Computer) |
 | Install a TE firmware package (content and OS) from the boot menu | Built; **not yet confirmed** on a unit |
-| Update the Bluetooth (BLE) or backplane (PSoC) chips | **Not supported yet.** Skipped: `Skipped: not in this version` |
+| Install waffle-boot | [How to Install](How-to-Install) |
+| Replace waffle-boot in one slot with another waffle-boot build | [How to Recover](How-to-Recover#write-a-slot-from-a-computer) |
+| Update the Bluetooth (BLE) or backplane (PSoC) chips | **Not supported yet.** Those steps show `Skipped: not in this version` |
 | Return to the factory bootloader | **Not supported yet** |
-| Write an OS image file directly | Developers: Boot menu → Developer menu → 5 |
+| Write an OS image file directly | Developers: Boot menu → Developer menu → 5 ([Test OS](Test-OS#loading-it)) |
 
-## A TE firmware package, from the boot menu
+## Steps
 
-**You need:** a USB cable, a computer, and the firmware package file (its name contains `tfw`).
+You need a USB cable, a computer, and the firmware package file (its name contains `tfw`).
 
 1. Open the [Boot Menu](Boot-Menu) and press **1** (**Install firmware**).
 2. A disk appears on the computer. Copy the package file to the disk's top folder.

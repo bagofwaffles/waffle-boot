@@ -30,3 +30,5 @@ The number before the dot names a document by topic:
 | S-17 | Board revisions |
 
 The specification itself is not part of the repository.
+
+Where the code for each label lives: [Building and Testing](Building-and-Testing#source-map).

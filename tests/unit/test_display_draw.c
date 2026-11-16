@@ -244,7 +244,7 @@ static void test_font(void)
 	CHECK(s15_geometry_ok(geo));
 	CHECK(geo->width == WB_DISPLAY_W && geo->height == WB_DISPLAY_H);
 	CHECK(geo->glyph_w == WB_FONT_W && geo->glyph_h == WB_FONT_H);
-	/* docs/ui-style-guide.md: the bar y 0 - 23, rows 19 apart from y 27
+	/* wiki/Screen-Style-Guide.md: the bar y 0 - 23, rows 19 apart from y 27
 	 * at x 16, the rule at y 202, the bars' text from x 8 */
 	CHECK(geo->edge == 8u && geo->margin == 16u && geo->top == 27u &&
 	      geo->pitch == 19u && geo->bar_h == 24u && geo->status_y == 202u);

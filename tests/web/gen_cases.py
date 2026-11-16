@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 """What tools/wbrecover.py does in a set of scenarios, as JSON on stdout, for
-tests/web/test_core.mjs to hold docs/recover/core.js against.
+tests/web/test_core.mjs to hold docs/web/core.js against.
 
     gen_cases.py [--list]
 

@@ -96,7 +96,7 @@ static uint32_t testos_row(void *ctx, uint8_t cmd, uint32_t row, uint32_t start)
 static void testos_emmc_start(struct opxy_slave *s);
 
 /*
- * The reset recorder (docs/test-os.md): the slave stays up through a reset of
+ * The reset recorder (wiki/Test-OS.md): the slave stays up through a reset of
  * the master and counts the edges on its bridge pins, in 100 ms buckets, then
  * leaves the counts in a file of its own on /yaffs2 for the next boot to read.
  * Counts only: nothing that crosses the wires is kept. PA4 reads as a slave
@@ -862,7 +862,7 @@ static void bringup(void *ctx)
 {
 	struct opxy_slave *s = ctx;
 
-	OPXY_TESTOS((void)wb_gpio_output(OPXY_PB2, false);)	/* our code is running: docs/test-os.md */
+	OPXY_TESTOS((void)wb_gpio_output(OPXY_PB2, false);)	/* our code is running: wiki/Test-OS.md */
 	(void)wb_pinmux_apply(&opxy_pinmux_slave);
 	{
 		unsigned i;

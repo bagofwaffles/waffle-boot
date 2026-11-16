@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The installer's write engine (docs/install.md): the installer carries a
+ * The installer's write engine (wiki/Installer-Reference.md): the installer carries a
  * waffle-boot slot image in its own stream and, once the runner
  * (src/testos/opxy_testos_installer.c) has a hold on the unit's key for it,
  * writes it to the slot the selector does not name. Two forms:

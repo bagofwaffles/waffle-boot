@@ -20,5 +20,5 @@ message, a comment or a test.
 - Vendored code keeps its own license and is listed, with every local change, in
   [`src/third_party/README.md`](src/third_party/README.md).
 - C11, freestanding, no warnings. US English. One focused commit per change, with a message that says why.
-- Run the checks the change touches ([`tools/README.md`](tools/README.md#running-the-checks)).
-- `src/front/` is frozen: see [Changing it](docs/front.md#changing-it) before touching it.
+- Run the checks the change touches ([Building and Testing](https://github.com/bagofwaffles/waffle-boot/wiki/Building-and-Testing)).
+- `src/front/` is frozen: see [Changing it](https://github.com/bagofwaffles/waffle-boot/wiki/The-Front#changing-it) before touching it.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""The waffle-boot image the installer carries (docs/install.md), as C.
+"""The waffle-boot image the installer carries (wiki/Installer-Reference.md), as C.
 
     installer_image.py IMAGE.ldr PIN OUT.c
 

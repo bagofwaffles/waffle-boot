@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """The simulated units of tests/tools/test_wbrecover.py, set up from a JSON description, for the
-tests of docs/recover/core.js: its Model, and the front's own protocol, slot and image code in
+tests of docs/web/core.js: its Model, and the front's own protocol, slot and image code in
 the shared library build_shim() makes, driven as AgainstC drives it.
 
 A unit is made from a spec (a dict, as JSON carries it):

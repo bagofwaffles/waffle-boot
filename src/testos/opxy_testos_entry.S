@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The test OS's entry (docs/test-os.md, waffle/testos.h): the stream's
+ * The test OS's entry (wiki/Test-OS.md, waffle/testos.h): the stream's
  * entry point, reached through the loading bootloader's read of RCU0_SVECT0
  * after its kernel call (S-05.013), on either CPU (S-05.022). Not a reset
  * entry: by S-05.014 the core is in supervisor mode at IVG15 already

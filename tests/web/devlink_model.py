@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""A simulated boot menu's developer link (docs/devhost.md) for the recovery page's Install tab: it
+"""A simulated boot menu's developer link (wiki/Developer-Host-Link.md) for the recovery page's Install tab: it
 answers the file requests tools/testos_mon.py dev-put sends (PUT open, data and close, then SHA),
 with that tool's own frame codec, and keeps every byte it was sent.
 

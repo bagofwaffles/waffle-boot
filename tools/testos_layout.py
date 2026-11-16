@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Placement and stream checks of the linked test OS (docs/test-os.md).
+"""Placement and stream checks of the linked test OS (wiki/Test-OS.md).
 
     testos_layout.py IMAGE.elf --ld LDSCRIPT --board OPXY_H --memmap S01_H
                      [--stream STREAM.ldr] [--json LAYOUT.json]

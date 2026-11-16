@@ -1,8 +1,6 @@
-# The front and its failsafes
-
 The front is the small first part of every waffle-boot image. On every start it brings up the clocks and
 memory, draws the logo, opens the PSoC link (power and keys) and reads the keys once. Then it enters
-recovery ([`recovery.md`](recovery.md)), or checks the rest of its image and starts it (S-01.023).
+recovery ([Recovery Reference](Recovery-Reference)), or checks the rest of its image and starts it (S-01.023).
 
 It runs in memory of its own, is linked alone, and shares only the hand-off record's header with the main
 image, so it still runs when the rest of the image is damaged. The rule behind every failsafe: no write
@@ -14,7 +12,7 @@ A front that fails before its key read takes recovery with it, and only an exter
 brings the unit back. So the SHA-256 of its loaded bytes is pinned in `src/front/front.pin`, and every cross
 build fails when they change. A change needs the maintainer's sign-off. Then `make front-pin`
 records the new pin, the `host`, `cross`, `repro` and `conformance` jobs must pass, and the new front goes
-through a recovery round on a unit ([recovery.md](recovery.md)) before that build is committed to a slot.
+through a recovery round on a unit ([Recovery Reference](Recovery-Reference)) before that build is committed to a slot.
 
 Every cross build also checks (`tools/front_image.py` and the stream tools):
 
@@ -26,6 +24,9 @@ Every cross build also checks (`tools/front_image.py` and the stream tools):
   front's memory, and the image is at most `0x76000` bytes.
 
 ## The flash
+
+The full map, with every writer, is in [Flash Layout and Write Safety](Flash-Layout-and-Write-Safety).
+
 
 | Offset | Holds |
 | --- | --- |
@@ -51,7 +52,7 @@ Every cross build also checks (`tools/front_image.py` and the stream tools):
   another once it is up (menus, battery wait, boot prompt, or an OS staged and checked). Three unfinished
   starts in a row open recovery. The front never erases the log and times nothing, so a slow install
   cannot trigger it (S-02.095).
-- **One chord.** Key 4 (M4) alone at power-on opens recovery and writes nothing. Every other key set is no
+- **One chord.** M4 alone at power-on opens recovery and writes nothing. Every other key set is no
   chord, and an unreadable key counts as not pressed (S-02.080, S-15.150).
 - **Recovery writes only from a known place**: its slot established, selected, trusted, with an intact
   front. It starts no second processor, does not touch the eMMC and reads no settings (S-02.084).
@@ -74,7 +75,7 @@ Every cross build also checks (`tools/front_image.py` and the stream tools):
 - **A new front only by trial**, with the running slot good. The tried slot gets a record that fails on
   purpose and a pending start-log entry; the first stage starts it once and goes back. Nothing selects it
   until its front has marked that start, or its own recovery selects it during the trial start. The
-  installer follows the same rules ([`install.md`](install.md)).
+  installer follows the same rules ([Installer Reference](Installer-Reference)).
 - **The power switch** works at every point of a start and in recovery. The power-off is held only during an
   in-place write, and after a failed write of the running slot while no start would reach a good slot
   (S-02.084).
@@ -91,5 +92,5 @@ Any of these can leave a unit that only an external programmer on the SPI flash 
 - an image that passes the stream check (block headers only) but hangs, since a trusted slot starts on
   every reset;
 - the first stage, which nothing here repairs. The bootloader writes it only in a package install with the
-  session upgrade option on and the write confirmed on the unit (S-02.070, S-11.096); a cut then leaves
+  session upgrade option (Protected writes) on and the write confirmed on the unit (S-02.070, S-11.096); a cut then leaves
   nothing that starts (S-02.072).

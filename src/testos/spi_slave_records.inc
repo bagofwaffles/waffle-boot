@@ -4,12 +4,12 @@
  * of a reply set-up the monitor chose and of an armed listen.
  *
  * Part of src/drivers/bf70x/spi.c in the test OS's build (waffle/testos.h,
- * docs/test-os.md), included there where it stands rather than compiled
+ * wiki/Test-OS.md), included there where it stands rather than compiled
  * alone: it uses the driver's static functions and state, and the order of
  * the driver's functions places the test OS image's code.
  */
 
-/* What the last reply's send saw, for the USB monitor (docs/test-os.md):
+/* What the last reply's send saw, for the USB monitor (wiki/Test-OS.md):
  * every STAT bit, the last STAT, then rc, words out and in, TWC; TWC
  * before the hand-over and when PB15 first read low; then core cycles after
  * the hand-over at which PB15 first read low, TWC first read 0, the FIFO first

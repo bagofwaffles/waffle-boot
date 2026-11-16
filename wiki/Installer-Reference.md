@@ -1,68 +1,24 @@
-# Installing waffle-boot
+How the installer works. To install, follow [How to Install](How-to-Install).
 
-> **Under development.** The installer has been tested on real hardware, but not widely: use it with caution.
-> A broken bootloader can leave a unit that only an external flash programmer brings back.
+> **Status:** tested on real hardware, but not widely: use it with caution. A broken bootloader can leave a
+> unit that only an external flash programmer brings back.
 
-The installer is one file, `waffle-install.ldr`. It runs as the unit's OS under whatever bootloader the unit
-has, checks the hardware, and only when every check passes it writes the waffle-boot image it carries.
-Every write is started on the unit, by holding the step's key for 5 s. The
-[recovery page](recover/) guides each step from a computer and shows the checks as they run; the only thing
-it sends is the installer file, to a unit already on waffle-boot (step 1).
+The installer, `waffle-install.ldr`, runs as the unit's OS. It is built on the [Test OS](Test-OS). It checks the hardware, and only when every check passes does it write the
+waffle-boot image it carries. Every write is started on the unit, by holding the step's key for 5 s.
 
-## Before you start
+## What it needs on the unit
 
-- The bootloader on the unit must have a developer menu that writes an OS file to the boot partition the OS
-  is not in. A unit that has never had developer mode on needs it turned on first, with the [ferret tool](https://bagofwaffles.github.io/ferret/op-xy/);
-  this project does nothing for that step.
-- Your OS stays on the eMMC. The installer is written into the other boot partition, and the installer makes
-  your OS active again when it ends.
-- Charge the unit, and keep it on USB while it writes.
+- A developer menu that writes an OS file to the boot partition the OS is not in.
+- The unit's own OS in the other boot partition, checked, so that it can make it active again.
 
-## The steps
+## The checks
 
-1. **Write the installer from the developer menu.** Copy `waffle-install.ldr` to the unit and write it as
-   the OS from the developer menu, then switch off and on. The installer starts. On a unit already on
-   waffle-boot with developer mode on, the recovery page's Install tab can send the file instead, over the
-   boot menu's USB serial port, as `/yaffs2/os.ldr` (as `tools/testos_mon.py dev-put` does), and checks its
-   size and SHA-256; then press 5 in the developer menu, Write /os.ldr to boot partition.
-2. **The checks.** It tests the clocks and DDR, the SPI flash, the PSoC, the second processor and the
-   bridge, the eMMC, the display, the clock and the Nordic chip, then asks for one guided step: press com, then
-   M4 (4 under the display). That is the key check, and reading the screen shows the panel works. 8 ends it,
-   and the install is then not offered; after a trial start it is not asked again. USB is shown by the page
-   connecting at all.
-   The results are on the screen, on the page, and in `check.txt` on the unit's USB disk (no serial number
-   or key).
+It tests the clocks and DDR, the SPI flash, the PSoC, the second processor and the bridge, the eMMC, the
+display, the clock and the Nordic chip. Then it asks for one guided step, the key check: press com, then M4 (4 under the display).
+Reading the screen shows the panel works. USB is shown by the page connecting at all.
 
-   ![The checks](ui/installer-checks.png) ![The key check, com pressed](ui/installer-keys.png)
-3. **The trial.** When every check passes, the unit shows the version it carries and the slot it will
-   write. Hold **1** for 5 s. It writes the slot the selector does not name, for one start only; your
-   bootloader stays selected.
-
-   ![The trial offered, 1 held](ui/installer-ready.png)
-4. **The trial start.** Switch off, then on. The new bootloader starts once and its boot menu shows: that
-   start marks the trial as having reached the boot menu. Switch off, then on again: your old bootloader
-   starts the installer again.
-
-   ![The trial written](ui/installer-trial.png)
-5. **Keep it.** The installer shows that the trial reached the boot menu. Hold **1** for 5 s. It makes the
-   new slot the one the unit starts, then makes your OS active again.
-
-   ![Keep the new bootloader](ui/installer-commit.png)
-6. **Done.** Switch off, then on: waffle-boot starts your OS. The recovery menu is Power + M4 (4 under the display).
-
-   ![Done](ui/installer-done.png)
-
-Holding **8** for 5 s on any of these screens leaves without installing and makes your OS active again.
-
-## When something does not pass
-
-| The unit shows | It means | What to do |
-| --- | --- | --- |
-| The install is not offered | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Read `check.txt`. Hold 8 to make your OS active again. A wrong check is fixed in the installer, not overridden |
-| The trial did not reach the boot menu | The trial start ran, or did not run, the new bootloader, but its boot menu did not show | Nothing was kept. Hold 1 to write the trial again, or 8 to leave |
-| The write did not complete | A write or its read-back failed | The unit keeps a bootloader that starts. Hold 1 to try again, or 8 to leave |
-
-![The install is not offered](ui/installer-locked.png)
+The results are on the screen, on the page, and in `check.txt` on the unit's USB disk (no serial number or
+key).
 
 ## What it writes
 
@@ -72,7 +28,7 @@ Holding **8** for 5 s on any of these screens leaves without installing and make
 - **The trial:** the slot the selector does not name, that slot's record with the trial mark (the CRC
   inverted, so the first stage starts it once), byte 0 of its start log `0xFD` (a trial pending), and the
   selector naming that slot unverified. The way back is the old slot, untouched: a power cut at any point
-  leaves a selected slot that starts. This is the write the earlier, host-driven installer made, unchanged.
+  leaves a selected slot that starts.
 - **The trial start:** the new slot's front marks the start (`0xFD` to `0xFC`), and its main image marks
   the boot menu reached (`0xFC` to `0xF0`, entry 1 of the log finished, S-02.095). Nothing else.
 - **The commit:** only after both marks: the record with the right CRC, then the selector `{slot, 0x00}`.
@@ -81,6 +37,13 @@ Holding **8** for 5 s on any of these screens leaves without installing and make
 
 A breadcrumb build (`BOOT_CRUMBS=1`) runs only as a trial: the commit is refused, and `check.txt` lists its
 marks, which `tools/testos_mon.py crumbs` decodes.
+
+## Sending it from the page
+
+On a unit already on waffle-boot with developer mode on, the page's Install tab can send the file over the
+boot menu's USB serial port, as `/yaffs2/os.ldr` (as `tools/testos_mon.py dev-put` does,
+[Developer Host Link](Developer-Host-Link)), and checks its size and SHA-256. Nothing is written to a boot
+partition until 5 is pressed in the developer menu. That file is the only thing the page sends.
 
 ## Building it
 
@@ -130,4 +93,4 @@ While it writes, and in some long checks, the installer does not service the por
   reached.
 
 `src/testos/installer_logic.c` is the reference, `tests/unit/test_board_installer.c` holds frames byte for
-byte, and `docs/recover/install.js` reads them.
+byte, and `docs/web/install.js` reads them.

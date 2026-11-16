@@ -949,7 +949,7 @@ class OverPty(PtyCase):
         self.assertEqual(w.cmd_write(self.link, make_image(seed=7, front=2), out), 1)
         self.assertIn('the file carries another front', out.text)
         self.assertIn('write --new-front IMAGE', out.text)
-        self.assertIn('the test OS installer (docs/test-os.md)', out.text)
+        self.assertIn('the test OS installer (wiki/Test-OS.md)', out.text)
         self.assertNotIn(w.BEGIN, m.seen)
         self.assertEqual(m.slots[1], None)
 
@@ -1345,7 +1345,7 @@ class OverPty(PtyCase):
         out = Lines()
         self.assertEqual(w.cmd_write(self.link, self.NEW, out, ask=no_prompt, new_front=True), 1)
         self.assertIn('this unit runs front version 6: a front before version 7 cannot take another '
-                      'front in recovery. The way is the test OS installer (docs/test-os.md).', out.text)
+                      'front in recovery. The way is the test OS installer (wiki/Test-OS.md).', out.text)
         self.assertNotIn(w.BEGIN, m.seen)
 
     def test_new_front_no_reported_front(self):
@@ -1545,7 +1545,7 @@ class OverPty(PtyCase):
                       'checkout set its pin at that version). A front older than version 7 leaves no '
                       'mark in its trial start and has no select of its own, so its trial could never '
                       "be kept, and Slot 2's image would be lost for nothing. Put an older front on "
-                      'with the test OS installer (docs/test-os.md). Nothing was sent.', text)
+                      'with the test OS installer (wiki/Test-OS.md). Nothing was sent.', text)
         self.assertNotIn(w.BEGIN, m.seen)
 
     def test_trial_start_image_check_failed(self):
@@ -1748,7 +1748,7 @@ class OverPty(PtyCase):
                       'restart with no key held, so that it starts once; then switch off and on and '
                       'select. Or select from its own recovery in the trial start (try holding key 4 '
                       'through the restart). A front older than version 7 never leaves that mark: put '
-                      'it on with the test OS installer (docs/test-os.md). Nothing was sent.', out.text)
+                      'it on with the test OS installer (wiki/Test-OS.md). Nothing was sent.', out.text)
         self.assertNotIn(w.BEGIN, m.seen)
 
     def test_select_before_trial_start(self):

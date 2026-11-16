@@ -8,7 +8,7 @@
 
 The PNG is exactly 480 x 222 pixels (the visible area, S-13c.023), not interlaced, of any color type and
 bit depth. Its pixel (x, y) is shown at screen position (x, y); a translucent pixel is first blended onto
-black, and each channel, as an 8-bit value, keeps its high bits (5, 6, 5), as docs/ui-style-guide.md's
+black, and each channel, as an 8-bit value, keeps its high bits (5, 6, 5), as wiki/Screen-Style-Guide.md's
 palette is converted. The C file defines wb_display_boot_image
 (waffle/display.h): the pixels in the frame's order, window row r = 479 - x from 0 to 479 and in each its
 columns y 0 to 221, as records of a byte h, then for h < 0x80 h + 1 pixels, for h >= 0x80 one pixel

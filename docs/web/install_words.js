@@ -141,7 +141,7 @@ export const slotBits = (b) => SLOT_BITS.filter(([m]) => b & m).map(([, w]) => w
 
 // --- sending the installer over the boot menu's developer link ---
 // A unit already on waffle-boot, with developer mode on, takes the file on its USB serial port in
-// the boot menu, as tools/testos_mon.py dev-put sends it (docs/devhost.md). The numbers are that
+// the boot menu, as tools/testos_mon.py dev-put sends it (wiki/Developer-Host-Link.md). The numbers are that
 // tool's; the port is the same USB vendor and product as recovery's and the installer's.
 
 export const DEV_ROUTE = 0x21;          // S-06.010: the host to the master
@@ -152,7 +152,7 @@ export const PUT_CHUNK = 240;           // file bytes in one PUT_DATA, as the to
 export const DEV_NAME = 'os.ldr';       // the only name the boot menu takes
 export const DEV_TIMEOUT = 5000, DEV_SHA_TIMEOUT = 30000;   // ms, the tool's
 export const DEV_STATUS = { 0: 'ok', 1: 'refused', 2: 'bad request', 3: 'the slave is not answering' };
-export const LDR_MAX = 0x800000;        // the most a unit loads (docs/test-os.md)
+export const LDR_MAX = 0x800000;        // the most a unit loads (wiki/Test-OS.md)
 export const OS_WRITE_KEY = 5;
 
 export const DEV_TITLE = 'Or send it from here, to a unit already on waffle-boot';

@@ -6,7 +6,7 @@ The parts of the OP-XY the bootloader drives.
 | Boot ROM | On each chip. Starts the master from the SPI flash, and the slave from the master over SPI. Cannot be changed | S-01 |
 | SPI flash, 1 MiB | On the master. Holds the factory first stage, the metadata, the slot selector, two bootloader slots and the boot store | S-02 |
 | DDR2 memory | 2 Gbit, 16-bit, 200 MHz. Set up by the bootloader's first steps; the core runs at 400 MHz | S-13a |
-| The eMMC | Soldered on the board, on the slave. Two boot partitions hold the OS (A/B); the user area holds the internal drive (yaffs2) and the OS's FAT volume | S-03, S-12 |
+| The eMMC | Soldered on the board, on the slave. Two boot partitions hold the OS, one active; the user area holds the internal drive (yaffs2) and the OS's FAT volume | S-03, S-12 |
 | SPI bridge | Links the two processors: the master streams the slave its boot image, then sends it requests (eMMC, files) | S-09, S-13b |
 | PSoC | A coprocessor on the master's UART0 (1 Mbaud). Scans the keys and knobs, drives the LEDs, switches power, reports the battery and USB supply. Shown as "Backplane" on screens | S-06, S-07 |
 | Nordic | The Bluetooth coprocessor, on the master's UART1 (1 Mbaud). Shown as "BLE" | S-08 |

@@ -7,7 +7,7 @@
 // Every function here is pure: it takes the INFO object of core.js's parseInfo() (the fields
 // carry the Python tool's names) and returns strings or arrays of strings. The words name the
 // Python tool's commands (wbrecover.py write IMAGE, --running, --force): they are the same
-// actions under the names docs/recovery.md gives them.
+// actions under the names wiki/Recovery-Reference.md gives them.
 
 export const VID = 0x2367, PID = 0x0021;
 export const PRODUCT = 'OP-XY Recovery';
@@ -59,7 +59,7 @@ export const RESET_HINT = 'Restart once without holding a key, then hold Power +
 export const SAFE_HINT = 'Run info first: restart only with a good slot selected; the unit refuses ' +
     'a restart while a write of this recovery has left no good slot selected.';
 export const FRONT_HINT = 'Another front goes in only as a trial: write --new-front IMAGE, on a ' +
-    'front of version 7 or later; from an older front, the test OS installer (docs/test-os.md).';
+    'front of version 7 or later; from an older front, the test OS installer (wiki/Test-OS.md).';
 export const OTHER_HINT = 'Start the other slot if it is good and holds a stream the boot ROM can ' +
     'start (S-02.091): wbrecover.py try starts it once, wbrecover.py switch for good; or key 1, ' +
     '"Choose the slot to start", in the recovery menu.';
@@ -67,7 +67,7 @@ export const SLOT_MENU = 'or key 1, "Choose the slot to start", in the recovery 
 export const NOT_STARTED_HINT = 'Write it again with --new-front and restart with no key held, so ' +
     'that it starts once; then switch off and on and select. Or select from its own recovery in the ' +
     'trial start (try holding key 4 through the restart). A front older than version 7 never leaves ' +
-    'that mark: put it on with the test OS installer (docs/test-os.md).';
+    'that mark: put it on with the test OS installer (wiki/Test-OS.md).';
 const oldFrontRisk = (slot) => 'A front without the trial mark (any front older than version 7) ' +
     `can never be selected: ${slot}'s image is then lost for nothing.`;
 

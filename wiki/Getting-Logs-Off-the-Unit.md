@@ -27,11 +27,13 @@ start, the step that failed (`OS start`). A photo of it is often enough.
 
 ## 3. The recovery report
 
-In the recovery menu with USB connected:
+In the [recovery menu](How-to-Recover#open-the-recovery-menu-power--m4) (Power + M4), with USB connected, from the
+repository's root:
 
     python3 tools/wbrecover.py info
 
-It prints both slots, the selector, what each command would do, and the battery.
+It prints both slots, the selector, what each command would do, and the battery. The page's Recovery tab shows what the
+unit reports once connected.
 
 ## 4. The live bootloader log (developers)
 

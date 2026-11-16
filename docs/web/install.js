@@ -40,7 +40,7 @@
 //       lines: string[], advice: string[] }
 //       lines: what is happening; advice: what to do now. hello and tests may be null.
 //
-// The boot menu's developer link (docs/devhost.md), for a unit already on waffle-boot with
+// The boot menu's developer link (wiki/Developer-Host-Link.md), for a unit already on waffle-boot with
 // developer mode on: the installer file sent as /yaffs2/os.ldr, as tools/testos_mon.py dev-put does
 //   devFrame(payload, seq) -> Uint8Array / devUnframe(wire) -> { id, payload } | null
 //       COBS frames: route 0x21, seq, id 0x7D, length, payload, CRC-8 (devCrc8); 00 ends each

@@ -105,7 +105,7 @@ jobs:
 
   # make cross includes the image, and make size fails when a component or
   # a memory region is over its limit; make test-os builds the test OS with
-  # its gates (docs/test-os.md). Drafts skip the reproducibility check.
+  # its gates (wiki/Test-OS.md). Drafts skip the reproducibility check.
   cross:
     name: Cross build and reproducibility (ADSP-BF703)
     needs: toolchain

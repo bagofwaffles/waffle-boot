@@ -188,7 +188,7 @@ bool opxy_display_early_logo(void)
 
 #if defined(OPXY_TEST_OS)
 /*
- * The test OS's early logo (docs/test-os.md, "The color trail"): the
+ * The test OS's early logo (wiki/Test-OS.md, "The color trail"): the
  * same steps, a paint after each, and the result logged. The panel's
  * start is a no-op here (yellow's initialization loaded the gamma, so
  * S-13c.013's one initialization is done); the frame goes out by CPU

@@ -3,7 +3,7 @@
 #define WAFFLE_TESTOS_H
 
 /*
- * The test OS (docs/test-os.md): the bootloader's held mode built as an
+ * The test OS (wiki/Test-OS.md): the bootloader's held mode built as an
  * OS image, loaded by another bootloader's kernel call (S-05.008 to
  * S-05.014) on both CPUs and entered at S-05.014's core state. It is
  * `make test-os`, compiled with -DOPXY_TEST_OS=1; the normal build never
@@ -35,7 +35,7 @@
 #endif
 
 /* The check suite, in the installer's variant (`make installer`,
- * docs/install.md), on the same terms: nothing in any other build. */
+ * wiki/Installer-Reference.md), on the same terms: nothing in any other build. */
 #if defined(OPXY_TESTOS_CHECK)
 #define OPXY_TESTOS_CHECK_ONLY(x)          x
 #define OPXY_TESTOS_CHECK_OR(check, other) (check)
@@ -53,7 +53,7 @@ struct wb_display;
 
 /*
  * The panel byte path this build drives the panel with (Makefile,
- * TESTOS_PANEL; docs/test-os.md): "smc" (src/drivers/bf70x/lcd.c, the
+ * TESTOS_PANEL; wiki/Test-OS.md): "smc" (src/drivers/bf70x/lcd.c, the
  * normal driver) or "gpio" (lcd_gpio.c, every byte bit-banged).
  */
 #if defined(OPXY_TESTOS_MONITOR)
@@ -210,7 +210,7 @@ extern volatile uint32_t wb_spi_testos_trace[1u + 2u * OPXY_TESTOS_TRACE_MAX];
 #define OPXY_TESTOS_REPLY_QUEUE  0x08u	/* two words queued past the last */
 #define OPXY_TESTOS_REPLY_DMA    0x10u	/* DMA feed, not the core */
 /*
- * The q11 armed replies (docs/test-os.md, `q11`). While any of these bits is
+ * The q11 armed replies (wiki/Test-OS.md, `q11`). While any of these bits is
  * set, the whole mode applies only to the next wb_spi_testos_arm replies, one
  * per count, and every other reply is the default one; without them the five
  * bits above apply to every reply. The armed count is poked with
@@ -316,7 +316,7 @@ void opxy_testos_bus_note(char what, int rc, const uint8_t *d, size_t n);
 #define OPXY_TESTOS_BEACON_DDR_FAIL  8u	/* the DDR check failed: no server */
 
 /*
- * The USB debug monitor (docs/test-os.md, tools/testos_mon.py), in the `mon`
+ * The USB debug monitor (wiki/Test-OS.md, tools/testos_mon.py), in the `mon`
  * variant alone: S-06 frames of this id on the CDC link, served from held
  * mode's loop. Registers and our own memory only (opxy_testos_mem_ok()): no
  * write reaches the flash controller or the OTP, and no read reaches memory

@@ -5,7 +5,7 @@
     crc_probe.py [--port /dev/cu.usbmodemNNN] [--force] [search] [speed]
 
 It drives CRC0 in memory scan mode, fed by DMA18 (MDMA1's source channel), with the developer
-host's register reads and writes (docs/devhost.md: held mode, developer mode on), in the order
+host's register reads and writes (wiki/Developer-Host-Link.md: held mode, developer mode on), in the order
 src/drivers/bf70x/crc.c uses, so it needs no new build. It never touches CRC1 or MDMA2, the
 display's stream.
 

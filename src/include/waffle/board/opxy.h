@@ -253,7 +253,7 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
 #define OPXY_IMAGE_START  0x8803D000u	/* S01_RESERVE_DDR_START */
 #define OPXY_IMAGE_END    0x8833D000u	/* bf703.ld's ddr region */
 /*
- * The test OS (docs/test-os.md, waffle/testos.h) is loaded by another
+ * The test OS (wiki/Test-OS.md, waffle/testos.h) is loaded by another
  * bootloader, so it may not load into the handover reserve (S-01.017,
  * S-01.013: DDR 0x8803D000-0x88A65000) and, under another bootloader,
  * not right above it either: that bootloader's hand-over may use working

@@ -907,7 +907,7 @@ static bool only(const struct toks *t, const char *s)
 }
 
 /* The rules of S-15 and of the style guide's "Menus and keys"
- * (docs/ui-style-guide.md), each checked on every key event of every
+ * (wiki/Screen-Style-Guide.md), each checked on every key event of every
  * state. */
 enum rule {
 	R_UP_NONE,            /* S-15.010: a key up has no effect */

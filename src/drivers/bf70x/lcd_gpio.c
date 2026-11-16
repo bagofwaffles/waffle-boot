@@ -2,7 +2,7 @@
 /*
  * The panel bus bit-banged over GPIO: waffle/drivers/bf70x_lcd.h's
  * interface with every byte driven by the port, for the test OS's gpio
- * variant (docs/test-os.md, make test-os), which drives the panel
+ * variant (wiki/Test-OS.md, make test-os), which drives the panel
  * without the SMC. Built only with
  * OPXY_TEST_OS and OPXY_TESTOS_PANEL_GPIO, in place of lcd.c; the normal
  * image never has it.

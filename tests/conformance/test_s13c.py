@@ -285,7 +285,7 @@ def handover_sha():
 
 ROWS = 9            # body rows
 COLS = 56           # body columns
-EDGE = 8            # x of the bars' text (docs/ui-style-guide.md)
+EDGE = 8            # x of the bars' text (wiki/Screen-Style-Guide.md)
 BAR_COLS = 58       # the bars' text cells, x 8 to 471
 TITLE = 'Main Menu'
 STATUS = 'SLOT  USB'
@@ -389,7 +389,7 @@ class Screen(Base):
     def test_font(self):
         f = self.font
         self.assertEqual(T15.check_font(f, extent=222), 'ok')
-        # Spleen 8x16 on the frame of docs/ui-style-guide.md
+        # Spleen 8x16 on the frame of wiki/Screen-Style-Guide.md
         self.assertEqual((f['height'], f['width'], f['margin'], f['top'], f['pitch']), (16, 8, 16, 27, 19))
         self.assertEqual((f['title_row'], f['status_row']), (4, 205))
         self.assertLessEqual(f['margin'] + COLS * f['width'], 480 - EDGE)

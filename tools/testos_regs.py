@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""The registers S-13a expects at OS entry, as a C table for the test OS (docs/test-os.md).
+"""The registers S-13a expects at OS entry, as a C table for the test OS (wiki/Test-OS.md).
 
     testos_regs.py OUT.c [--table register_states.tsv]
 

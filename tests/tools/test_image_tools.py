@@ -3,7 +3,7 @@
 """Host tests of tools/mkldr.py and tools/layout.py on a synthetic ELF32 file
 laid out like the bootloader image (bf703.ld), and of tools/testos_layout.py
 and mkldr.py --no-init on one laid out like the test OS (bf703_testos.ld,
-docs/test-os.md). The streams and layouts they write are
+wiki/Test-OS.md). The streams and layouts they write are
 judged by tests/oracle/S-01-boot-chain's checkers. Also tools/png2logo.py on PNG files made here
 (S-15.132). Python 3, standard library only.
 
@@ -568,7 +568,7 @@ def run_testos_layout(elf_path, *extra):
 
 class TestOs(unittest.TestCase):
     """The test OS's stream (mkldr.py --no-init) and layout (testos_layout.py)
-    against S-01's os profile and S-05.024 (docs/test-os.md)."""
+    against S-01's os profile and S-05.024 (wiki/Test-OS.md)."""
 
     def test_stream_has_no_init_and_passes_os_profile(self):
         elf = elf32.Elf(testos_image())

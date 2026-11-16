@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The installer's runner on the master (docs/install.md;
+ * The installer's runner on the master (wiki/Installer-Reference.md;
  * waffle/board/installer.h), after the check suite: the install's screens,
  * the holds that start each write, the write engine
  * (src/testos/installer_engine.c), the unit's OS made active again, and the

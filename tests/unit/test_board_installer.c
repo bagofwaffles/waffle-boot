@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The installer's pure parts (src/testos/installer_logic.c, docs/install.md):
+ * The installer's pure parts (src/testos/installer_logic.c, wiki/Installer-Reference.md):
  * its screens against tests/vectors/s15/ui/installer.json, the lock, the
  * hold, the carried image's check, the USB protocol byte for byte, and the
  * install part of check.txt.
@@ -61,7 +61,7 @@ static void test_screens(void)
 				       v->lines[i]);
 				CHECK(false);
 			}
-			/* docs/ui-style-guide.md: at most 56 columns, tabs aside */
+			/* wiki/Screen-Style-Guide.md: at most 56 columns, tabs aside */
 			CHECK(strlen(l[i].s) <= S15_COLS + 8u);
 		}
 	}

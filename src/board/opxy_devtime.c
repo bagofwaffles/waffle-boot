@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * A developer host's timing requests (waffle/devhost.h, docs/devhost.md):
+ * A developer host's timing requests (waffle/devhost.h, wiki/Developer-Host-Link.md):
  * how fast each stage of the package check (S-11.020, checks 1-15) runs on
  * the unit, where a check of the disk's package spends its time, and where
  * its extraction (checks 16-18) would. Times are core cycles. Nothing is

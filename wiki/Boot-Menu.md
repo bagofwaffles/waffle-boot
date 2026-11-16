@@ -1,5 +1,5 @@
 The boot menu is waffle-boot's own set of screens, shown instead of starting the OS. (The code calls it
-**held mode**.) For the red recovery screens, see [Recovery Menu](Recovery-Menu).
+**held mode**.) For the red recovery screens, opened by Power + M4, see [How to Recover](How-to-Recover).
 
 ## Opening it
 
@@ -24,7 +24,7 @@ key, cancels. A knob click never starts it.
 
 | Item | What it does |
 | --- | --- |
-| 1 Install firmware | Offers a USB disk for a firmware package ([Installing Firmware](Installing-Firmware)). Hold **shift** while pressing 1 to also copy system information and logs to the disk ([Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)) |
+| 1 Install firmware | Offers a USB disk for a firmware package ([Updating the OS](Updating-the-OS)). Hold **shift** while pressing 1 to also copy system information and logs to the disk ([Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)) |
 | 2 Settings | The settings below |
 | 3 Developer menu | Shown only while developer mode is on |
 | 4 Device info | Serial numbers, versions, the second processor's state, and why the OS did not start. The help key opens it too |
@@ -79,8 +79,38 @@ boot menu writes the whole file to `bootloader.settings.new`, then renames it ov
 | 1 Key test | Press every key and knob. **Shift + 8** leaves it |
 | 2 Reset volume calibration | Resets the volume knob's calibration, then returns to the main menu |
 | 3 Remove content packs | Shown when packs are installed. Hold a pack's digit for 5 s to remove it |
-| 5 Format drive | Erases the whole internal drive. Hold M1 or sound key 1 for 5 s |
-| 7 Factory reset | Removes user data ([Factory Reset](Factory-Reset)) |
+| 5 Format drive | Erases the whole internal drive, settings included. Hold M1 or sound key 1 for 5 s. After the format the unit opens **Install Firmware** |
+| 7 Factory reset | Removes user data ([below](#factory-reset)) |
+
+### Factory reset
+
+Removes your user data. A factory reset always asks for confirmation: its key held for 5 s.
+
+> **Warning.** This cannot be undone. Copy anything you want to keep first.
+
+It removes:
+
+- the folders `user`, `logs` and `content/dlc` (installed content packs) on the internal drive;
+- the start of the OS's own FAT volume on the eMMC.
+
+It keeps the bootloader, the OS, waffle-boot's settings and **Start in boot menu**. It does not restart the
+unit. To erase everything instead, use **5 Format drive**.
+
+1. Charge the unit, or keep it on USB.
+2. Open the boot menu: hold **com** or the white knob while you switch on.
+3. Press **5** (sound key 5): **System**.
+4. Press and hold **7** (sound key 7). The **Factory reset** row turns red, shows `Hold 7 for 5 s`, and a
+   bar fills along the bottom row.
+5. Keep holding for 5 s; the reset starts then. Letting go earlier, or pressing any other key, cancels and
+   nothing is removed.
+6. Wait for `User data removed. Please restart your OP-XY.`
+7. Switch the unit off and on.
+
+| Message | Meaning |
+| --- | --- |
+| `User data not removed: the drive can't be read` | The drive cannot be read. Nothing was removed. A format erases it |
+| `User data not removed: DSP2 is not answering` | The second processor stopped. Switch off and on, then try again |
+| `Some user data could not be removed` | Part of it stayed. Switch off and on, then try again |
 
 ## Developer menu
 

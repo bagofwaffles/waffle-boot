@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Tests of docs/recover/install.js, the installer's protocol and what the page says about it:
+// Tests of docs/web/install.js, the installer's protocol and what the page says about it:
 //
 //     node --test tests/web/test_install.mjs
 //
@@ -15,8 +15,8 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
-import * as core from '../../docs/recover/core.js';
-import * as inst from '../../docs/recover/install.js';
+import * as core from '../../docs/web/core.js';
+import * as inst from '../../docs/web/install.js';
 
 const here = (name) => fileURLToPath(new URL(name, import.meta.url));
 const unhex = (s) => Uint8Array.from(s.match(/../g) || [], (b) => parseInt(b, 16));

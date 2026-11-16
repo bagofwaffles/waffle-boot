@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The installer's write engine (src/testos/installer_engine.c,
- * docs/install.md): its write gate, a trial and a commit against a RAM flash,
+ * wiki/Installer-Reference.md): its write gate, a trial and a commit against a RAM flash,
  * and every power cut in the trial's selector write and the first stage's
  * writes after it. The source is built here in the installer variant, its
  * SPI flash calls on the RAM flash below.

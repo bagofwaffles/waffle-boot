@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-15 screen console and its frames (docs/ui-style-guide.md).
+ * S-15 screen console and its frames (wiki/Screen-Style-Guide.md).
  */
 #include "waffle/s15_console.h"
 
