@@ -12,7 +12,8 @@ asks for no write.
 
 - The unit, charged, and a USB cable. Keep it on USB while it writes.
 - A computer with Chrome or Edge.
-- The installer file, `waffle-install.ldr`, from a waffle-boot release, or built with `make installer`
+- The installer file, `waffle-install.ldr`, from a
+  [waffle-boot release](https://github.com/bagofwaffles/waffle-boot/releases), or built with `make installer`
   ([Installer Reference](Installer-Reference#building-it)).
 - A developer menu on the unit that writes an OS file. A unit that has never had developer mode on needs it
   turned on first, with the [ferret tool](https://bagofwaffles.github.io/ferret/op-xy/). This project does

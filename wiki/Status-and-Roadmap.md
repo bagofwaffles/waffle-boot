@@ -23,4 +23,4 @@ Open work is tracked in the repository's issues.
 ## Security
 
 Report a security problem through the repository's private vulnerability reporting, not a public issue.
-There is no release yet; fixes go to the current branch.
+Fixes go to the current branch and into the next release.
