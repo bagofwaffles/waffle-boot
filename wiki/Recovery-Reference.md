@@ -148,7 +148,8 @@ that has not started; a try of or switch to a bad slot; a restart while no start
 
 Never lifted: a damaged, too large or unbootable image; a flash operation that failed or did not read back;
 a unit that cannot tell which slot it runs from; a write of the running slot while the selector names a bad
-slot; a switch to a slot with nothing the boot ROM can start.
+slot; a switch to a slot with nothing the boot ROM can start. And, in the tool, any forced request after a
+write of Slot 1 in the same recovery, while the selector is not settled: restart the unit first (S-02.090).
 
 ## Results
 
@@ -197,7 +198,7 @@ INFO to follow a write to its end.
 
 | Reason | What to do |
 | --- | --- |
-| The running slot is not selected, or the selector is not settled | Restart once without a key, then Power + M4 (4 under the display); or `--force` |
+| The running slot is not selected, or the selector is not settled | Restart once without a key, then Power + M4 (4 under the display); or `--force`, except after a write of Slot 1 in the same recovery |
 | The selected slot is bad and its front not intact | Key 1, choose the slot to start; or `try` / `switch` |
 | Not a slot image with a front, or over `0x77000` bytes | Use the image from `make cross` |
 | `--running` in place before a plain `write` failed | Run a plain `write` first |

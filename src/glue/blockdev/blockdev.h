@@ -6,6 +6,7 @@
 #ifndef WAFFLE_BLOCKDEV_H
 #define WAFFLE_BLOCKDEV_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -25,6 +26,12 @@ struct wb_blockdev {
 	 * S-03.003). NULL: the glue writes zeros instead.
 	 */
 	int (*erase)(void *ctx, uint32_t lba, uint32_t count);
+	/*
+	 * Whether that erase leaves zeros (the eMMC's EXT_CSD ERASED_MEM_CONT,
+	 * read at its bring-up); NULL: it does. When it does not, the glue
+	 * writes zeros in place of the erase.
+	 */
+	bool (*erase_zeroes)(void *ctx);
 	/*
 	 * Writes count sectors from lba so that a power loss leaves each
 	 * either as it was or as written (an eMMC reliable write, S-12.060);

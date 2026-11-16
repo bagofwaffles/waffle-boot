@@ -80,5 +80,6 @@ void wb_ramdisk_init(struct wb_blockdev *dev, struct wb_ramdisk *rd,
 	dev->read = ramdisk_read;
 	dev->write = ramdisk_write;
 	dev->erase = ramdisk_erase;
+	dev->erase_zeroes = NULL;
 	dev->write_reliable = NULL;
 }

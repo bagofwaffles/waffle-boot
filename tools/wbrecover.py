@@ -38,7 +38,8 @@ restart  has the unit restart (the PSoC's reset), unless the unit says a restart
 check    only the file checks of write; no unit needed
 
 --force (front 11) has the unit lift the refusals that protect it; the tool warns first, says what
-could go wrong and asks for a typed phrase. Without it the unit refuses as before. From front 11
+could go wrong and asks for a typed phrase. Without it the unit refuses as before. After a write of
+Slot 1 in the same recovery the tool refuses --force and asks for a restart first. From front 11
 the unit counts down 15 s after a write or an action is confirmed, before its first erase:
 switching it off or unplugging USB in that time stops it with nothing written. These commands also
 let a unit whose keys do not work be recovered from the host alone; on the unit the same actions are
@@ -250,6 +251,19 @@ def after_write(i):
     failed, or the selector written before a write of the running slot."""
     return i is not None and (i.get('phase') == DONE or bool(i.get('moved')) or
                               (i.get('phase') == FAILED and i.get('result') in (9, 10, 11, 14)))
+
+
+def slot1_window(i):
+    """S-02.090: this recovery has written Slot 1 (the selector reads index 00, not settled), so a forced
+    second write could, with a cut and a torn first-stage selector write, leave 01 01 trusting a part
+    written Slot 2. The tool refuses --force there: a restart settles the selector first."""
+    return after_write(i) and i.get('sel_index') == 0x00 and i.get('sel_verified') != 0x01
+
+
+FORCE_AFTER_SLOT1 = ('Refused before sending, even with --force: this recovery has written Slot 1 and '
+                     'the selector is not settled, so a second write now can leave the unit starting a '
+                     'slot that is not whole if the power is cut. Restart the unit first (wbrecover.py '
+                     'restart) with no key held, then hold Power + M4 again. Nothing was sent.')
 
 
 def status_text(st, image_rc=0, hint=True, i=None):
@@ -1907,6 +1921,9 @@ def cmd_write(link, data, out=print, poll=0.2, deadline=900.0, running=False, as
     flags = (BEGIN_F_TRIAL if trial else BEGIN_F_RUNNING if running else 0) | \
         (BEGIN_F_FORCE if force else 0)
     begin = struct.pack('<I', len(data)) + sha + (bytes([flags]) if flags else b'')
+    if force and slot1_window(i):
+        out(FORCE_AFTER_SLOT1)
+        return 1
     if force and not ask_force(out, ask, 'write', risks):
         out('Stopped: nothing was sent, and nothing was written.')
         return 1
@@ -2083,6 +2100,9 @@ def cmd_select(link, data, out=print, poll=0.2, deadline=900.0, ask=ask_tty, for
             % (STATUS[20][0], slot_name(k), s['length']))
         return 1
     begin = struct.pack('<I', len(data)) + sha + bytes([BEGIN_F_SELECT | (BEGIN_F_FORCE if force else 0)])
+    if force and slot1_window(i):
+        out(FORCE_AFTER_SLOT1)
+        return 1
     if force and not ask_force(out, ask, 'select', risks):
         out('Stopped: nothing was sent, and nothing was written.')
         return 1
@@ -2318,6 +2338,9 @@ def cmd_act(link, act, out=print, poll=0.2, deadline=900.0, ask=ask_tty, force=F
     out({ACT_TRY: 'Trying %s once.', ACT_SWITCH: 'Switching to %s for good.',
          ACT_KEEP: 'Keeping %s.', ACT_PUT_BACK: 'Putting %s back.'}[act] % slot_name(k))
     lines = act_confirm_lines(i, act, k) + countdown_note(i)
+    if flag and slot1_window(i):
+        out(FORCE_AFTER_SLOT1)
+        return 1
     if flag:
         if not ask_force(out, ask, name, force_lines(act, un, i) + lines):
             out('Stopped: nothing was sent, and nothing was written.')

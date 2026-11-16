@@ -164,12 +164,13 @@ class Metadata(unittest.TestCase):
     def start(self, state):
         """The start states of metadata_cuts.csv: the old record with the tail bytes at 0xC000, the mirror
         sector erased (mirror_absent), a mirror of the old record (mirror_old, stale), of the new one
-        (pending_old, pending_erased: then 0xC000 holds the old record, or is erased)."""
+        (pending_old, pending_erased: then 0xC000 holds the old record, or is erased); written_then_other: the
+        mirror sector erased, as a completed write leaves it, and another writer's record at 0xC000."""
         v = meta_vectors()
         old, new, other = b(v['old_record']), b(v['new_record']), b(v['other_writer_record'])
         img = bytearray(b'\xff' * spiflash.FLASH_SIZE)
         sec = bytearray(b'\xff' * spiflash.SECTOR)
-        sec[:0x34] = other if state == 'stale' else old
+        sec[:0x34] = other if state in ('stale', 'written_then_other') else old
         for t in v['tail']:
             o = int(t['offset'], 16)
             tb = b(t['bytes'])
@@ -195,8 +196,8 @@ class Metadata(unittest.TestCase):
         """From both start states: the erases and programs are S-02.064's (write_sequences 'conforming'),
         the mirror is read back over 0xB000-0xB068 before 0xC000 is erased and 0xC000-0xD000 is read back
         after its last program; the flash after equals images.spiflash.write_metadata_record's on the same
-        start; only sw_version (+0x1A..+0x21) changes in 0xC000-0xD000; the mirror sector holds the new
-        record's mirror and 0xFF."""
+        start; only sw_version (+0x1A..+0x21) changes in 0xC000-0xD000; the 0xC000 sector is read twice
+        before the first erase; the mirror sector is erased last (S-02.064 step 7)."""
         v = meta_vectors()
         new = b(v['new_record'])
         ref = [o for o in v['write_sequences']['conforming'] if o['op'] != 'read']
@@ -230,8 +231,10 @@ class Metadata(unittest.TestCase):
             for i in range(0xC000, 0xD000):
                 if not 0xC01A <= i < 0xC022:
                     self.assertEqual(after[i], start[i], (state, hex(i)))
-            self.assertEqual(after[0xB000:0xB068], spiflash.mirror_encode(new))
-            self.assertEqual(after[0xB068:0xC000], b'\xff' * (0xC000 - 0xB068))
+            self.assertEqual(after[0xB000:0xC000], b'\xff' * 0x1000)
+            first_erase = next(i for i, o in enumerate(ops) if o.startswith('e:'))
+            self.assertTrue(covered(ops[1:first_erase], 0xC000, 0xD000), ops)
+            self.assertEqual(writes(ops)[-1], 'e:b000', state)
 
     def mask(self, pattern, n):
         kind, arg = pattern.split(':')
@@ -476,7 +479,8 @@ class Upgrade(unittest.TestCase):
         for k, r in enumerate(keys):
             what = (r['sequence'], r['op_n'], r['kind'])
             seq = self.seqs[r['sequence']]
-            last = int(r['op_n']) == len(seq['ops'])        # cut after the last op: the upgrade is done
+            # a cut after the last write, the selector's read-back (S-02.048) aside: the upgrade is done
+            last = all(o['op'] == 'read' for o in seq['ops'][int(r['op_n']):])
             if r['kind'] == 'after' and last:
                 self.assertEqual(split(out[6 * k + 2])[0], ['0', str(seq['target'])], what)
             elif r['kind'] != 'none':
@@ -823,7 +827,9 @@ class Recovery(unittest.TestCase):
         for k, r in enumerate(keys):
             what = (r['sequence'], r['op_n'], r['kind'])
             seq = self.seqs[r['sequence']]
-            if r['kind'] == 'after' and int(r['op_n']) < len(seq['ops']):
+            # the package's selector read-back (S-02.048) is not recovery's: a cut after the selector's
+            # program is no cut of recovery's write
+            if r['kind'] == 'after' and any(o['op'] != 'read' for o in seq['ops'][int(r['op_n']):]):
                 self.assertEqual(split(out[6 * k + 2])[0], ['cut'], what)
             boots = ' '.join(split(out[6 * k + 3 + j])[0][0] for j in range(3))
             self.assertEqual(boots, r['conforming_boots'], what)

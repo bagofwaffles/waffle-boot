@@ -519,6 +519,16 @@ static void judge_flash(const struct tchk_facts *f, struct tchk_table *t)
 			tchk_put_hex(d, f->jedec[i], 2u);
 		}
 		/* S-13b.018: informative, no expected value */
+		if (f->flash_sr_read) {
+			/* BP3-BP0, bits 5-2: 0000 and 1111 protect nothing on
+			 * the part the id names (its data sheet's table) */
+			const unsigned bp = ((unsigned)f->flash_sr >> 2) & 0x0Fu;
+
+			tchk_put_str(d, "; status ");
+			tchk_put_hex(d, f->flash_sr, 2u);
+			tchk_put_str(d, bp == 0u || bp == 0x0Fu ? ", no block protected" :
+					", block protect bits set");
+		}
 	} else {
 		not_tested(t, TCHK_FLASH_ID, "not run");
 	}

@@ -108,6 +108,7 @@ void opxy_disk_init(struct opxy_disk *d,
 	d->dev.read = disk_read;
 	d->dev.write = disk_write;
 	d->dev.erase = disk_erase;
+	d->dev.erase_zeroes = NULL;
 }
 
 void opxy_disk_ddr(struct opxy_disk_part part[OPXY_DISK_PARTS])

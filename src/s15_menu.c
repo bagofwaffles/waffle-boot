@@ -349,7 +349,8 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 6:
-		if (m->env->boot_store_save != NULL)
+		/* S-02.098: only a key on the unit writes the boot store */
+		if (m->env->boot_store_save != NULL && !m->host_event)
 			start_menu_key(m);
 		break;
 	case 8:
@@ -544,11 +545,37 @@ static void info_row(struct s15_menu *m, const char *k1, const char *v1,
 	sline(m, S15_ST_KV, b.s);
 }
 
+/* The start log's fill: entries used of S15_LOG_ENTRIES, or its state. */
+static void log_fill(struct s15_buf *v, const struct s15_boot *b)
+{
+	s15_buf_init(v);
+	switch ((enum s15_log)b->start_log) {
+	case S15_LOG_OK:
+		s15_buf_dec(v, b->start_log_used);
+		s15_buf_str(v, " of ");
+		s15_buf_dec(v, S15_LOG_ENTRIES);
+		break;
+	case S15_LOG_FULL:
+		s15_buf_str(v, "Full");
+		break;
+	case S15_LOG_ODD:
+		s15_buf_str(v, "Not valid");
+		break;
+	case S15_LOG_NONE:
+		s15_buf_str(v, "Not used");
+		break;
+	case S15_LOG_UNREAD:
+	default:
+		s15_buf_str(v, "Not read");
+		break;
+	}
+}
+
 /* Serials, then the unit's state on the left, versions on the right. */
 static void open_info(struct s15_menu *m)
 {
 	const struct s15_boot *b = m->boot;
-	struct s15_buf start;
+	struct s15_buf start, fill;
 	/* A slave that answered at the start can stop later in the boot. */
 	const enum s15_slave slave = b->slave == S15_SLAVE_OK && slave_lost(m) ?
 				     S15_SLAVE_LOST : b->slave;
@@ -562,7 +589,8 @@ static void open_info(struct s15_menu *m)
 	info_row(m, "Unit S/N", b->unit_serial, "Firmware", b->os_version);
 	info_row(m, "DSP S/N", b->chip_serial, "Blackfin", b->sw_version);
 	info_row(m, "Backplane S/N", b->psoc_serial, "Bootloader", b->version);
-	info_row(m, "", "", "BLE", b->ble_version);
+	log_fill(&fill, b);
+	info_row(m, "Start log", fill.s, "BLE", b->ble_version);
 	info_row(m, "Keys", b->provisioned ? "Provisioned" : "None",
 		 "Backplane", b->psoc_version);
 	info_row(m, "DSP2", dsp2, NULL, NULL);
@@ -1485,6 +1513,13 @@ void s15_menu_event(struct s15_menu *m, unsigned key, bool down)
 	    m->screen != S15_SCR_NONE && !bit(m->down, key))
 		set_bit(m->stale, key, true);
 	s15_menu_key(m, key, down);
+}
+
+void s15_menu_host_event(struct s15_menu *m, unsigned key, bool down)
+{
+	m->host_event = true;
+	s15_menu_event(m, key, down);
+	m->host_event = false;
 }
 
 void s15_menu_hold(struct s15_menu *m)

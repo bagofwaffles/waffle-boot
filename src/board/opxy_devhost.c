@@ -446,7 +446,7 @@ void opxy_dev_keys(struct opxy_master *m)
 	if (s15_menu_held(&m->sv.menu))
 		return;
 	ev = keyq[key_tail++ % OPXY_KEY_QUEUE];
-	s15_menu_event(&m->sv.menu, ev & 0x7Fu, (ev & 0x80u) != 0u);
+	s15_menu_host_event(&m->sv.menu, ev & 0x7Fu, (ev & 0x80u) != 0u);
 }
 
 bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)

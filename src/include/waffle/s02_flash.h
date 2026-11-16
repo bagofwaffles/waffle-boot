@@ -306,7 +306,10 @@ int s02_first_stage_upgrade(const struct s02_env *env, bool option_on,
 void s02_mirror_build(const uint8_t rec[S02_META_SIZE], uint8_t mirror[S02_MIRROR_SIZE]);
 bool s02_mirror_valid(const uint8_t mirror[S02_MIRROR_SIZE]);
 
-/* S-02.064: write a new record R.  R is S-04.043's. */
+/* S-02.064: write a new record R.  R is S-04.043's.  The sector is read
+ * twice and the reads must agree before the first erase (S02_ERR_VERIFY
+ * otherwise, nothing erased); once the record is read back, the mirror
+ * sector is erased (step 7). */
 int s02_meta_write(const struct s02_env *env, const uint8_t rec[S02_META_SIZE]);
 
 /* S-02.065: the boot-time restore.  *restored tells whether it wrote. */

@@ -12,7 +12,13 @@ enum s15_store_save opxy_boot_store_save(struct opxy_master *m,
 					 const struct s02_store *s,
 					 struct s02_store *now)
 {
-	const enum s02_store_rc rc = s02_store_write(&m->flash, s);
+	enum s02_store_rc rc;
+
+	/* S-13b.017: a frame that ends with a controller error is sent again,
+	 * as for the other writers; the save itself is made once */
+	opxy_flash_writer(&m->hw, true);
+	rc = s02_store_write(&m->flash, s);
+	opxy_flash_writer(&m->hw, false);
 
 	/* S-15.175: the item shows what a start would read */
 	(void)s02_store_read(&m->flash, now);

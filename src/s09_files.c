@@ -1184,5 +1184,9 @@ bool s09_files_settings_save(struct s09_files *f, const struct s15_settings *s)
 	c = s09_files_close(f, fd);
 	if (w != (int32_t)n || c != 0)
 		return false;
-	return s09_files_rename(f, S15_SETTINGS_NEW_PATH, S15_SETTINGS_PATH) == 0;
+	if (s09_files_rename(f, S15_SETTINGS_NEW_PATH, S15_SETTINGS_PATH) != 0)
+		return false;
+	/* the eMMC's cache committed, so a power loss keeps the change; a
+	 * failed flush counts as not saved */
+	return flush_emmc(f) == 0;
 }

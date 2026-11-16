@@ -195,12 +195,25 @@ def _():
     fl = spiflash.FlashModel(f)
     assert spiflash.write_metadata_record(fl, new) is True
     d = fl.bytes()
-    assert d[0xC000:0xC034] == new and spiflash.mirror_decode(d) == new
+    assert d[0xC000:0xC034] == new and d[0xB000:0xC000] == b'\xff' * 0x1000   # the mirror erased last
     ops = [(o[1], o[2]) for o in fl.op_log]
-    assert ops == [('read', 0xC000), ('erase', 0xB000), ('program', 0xB000), ('read', 0xB000),
-                   ('erase', 0xC000), ('program', 0xC000), ('read', 0xC000)], ops
+    assert ops == ([('read', 0xC000)] + [('read', 0xC000 + p) for p in range(0, 0x1000, 0x100)] +
+                   [('erase', 0xB000), ('program', 0xB000), ('read', 0xB000),
+                    ('erase', 0xC000), ('program', 0xC000), ('read', 0xC000), ('erase', 0xB000)]), ops
+    # the two reads before the first erase differ: nothing is erased
+    fl = spiflash.FlashModel(f)
+    first = fl.read
+    reads = []
+
+    def garbled(addr, n):
+        reads.append(addr)
+        b = first(addr, n)
+        return bytes([b[0] ^ 1]) + b[1:] if len(reads) == 2 else b
+    fl.read = garbled
+    assert spiflash.write_metadata_record(fl, new) is False
+    assert all(o[1] == 'read' for o in fl.op_log) and fl.bytes() == f
     # a cut after the 0xC000 erase: the restore brings the new record back; a second restore does nothing
-    fl = spiflash.FlashModel(f).cut_after(5)
+    fl = spiflash.FlashModel(f).cut_after(21)
     try:
         spiflash.write_metadata_record(fl, new)
         raise AssertionError('no cut')
@@ -219,7 +232,7 @@ def _():
     assert spiflash.metadata_restore(spiflash.FlashModel(fl.bytes()), 'factory') == 'none'
     assert fl.bytes()[0xC000:0xC004] == b'\xff' * 4
     # an adversarial torn program (only the magic's bits) leaves no valid mirror
-    fl = spiflash.FlashModel(spiflash.build_spi_flash(metadata=old)).cut_inside(3, mask=lambda i: 0xFF if i < 4 else 0)
+    fl = spiflash.FlashModel(spiflash.build_spi_flash(metadata=old)).cut_inside(19, mask=lambda i: 0xFF if i < 4 else 0)
     try:
         spiflash.write_metadata_record(fl, new)
     except spiflash.PowerCut:

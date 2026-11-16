@@ -197,6 +197,13 @@ int s02_slot_upgrade(const struct s02_env *env, bool option_on,
 	raw[1] = 0x00u;
 	if (env->flash->program(env->flash->ctx, S02_SELECTOR_OFF, raw, 2u) != 0)
 		return S02_ERR_IO;
+	/* S-02.048: a part that ignored the program would leave the old
+	 * slot starting while the step reports success. */
+	rc = s02_read_selector(env, &sel);
+	if (rc != S02_OK)
+		return rc;
+	if (sel.index != raw[0] || sel.verified != raw[1])
+		return S02_ERR_VERIFY;
 	return S02_OK;
 }
 
@@ -308,17 +315,42 @@ static int meta_sector_store(const struct s02_env *env)
 	return rc;
 }
 
+/*
+ * S-02.064 step 0: the sector read twice into the scratch and compared, so
+ * that a read that returned wrong bytes with no error is not written into
+ * both copies. Nothing is erased when the two reads differ.
+ */
+static int meta_sector_read(const struct s02_env *env)
+{
+	uint32_t off;
+
+	if (env->flash->read(env->flash->ctx, S02_META_OFF, env->scratch,
+			     S02_SECTOR_SIZE) != 0)
+		return S02_ERR_IO;
+	for (off = 0; off < S02_SECTOR_SIZE; off += S02_PAGE_SIZE) {
+		uint8_t page[S02_PAGE_SIZE];
+
+		if (env->flash->read(env->flash->ctx, S02_META_OFF + off, page,
+				     S02_PAGE_SIZE) != 0)
+			return S02_ERR_IO;
+		if (!same(page, env->scratch + off, S02_PAGE_SIZE))
+			return S02_ERR_VERIFY;
+	}
+	return S02_OK;
+}
+
 /* S-02.060, S-02.061, S-02.064 */
 int s02_meta_write(const struct s02_env *env, const uint8_t rec[S02_META_SIZE])
 {
 	uint8_t mirror[S02_MIRROR_SIZE], back[S02_MIRROR_SIZE];
+	int rc;
 
 	if (env->scratch_len < S02_SECTOR_SIZE)
 		return S02_ERR_IO;
 	/* The sector as it is now: every byte not meant to change survives. */
-	if (env->flash->read(env->flash->ctx, S02_META_OFF, env->scratch,
-			     S02_SECTOR_SIZE) != 0)
-		return S02_ERR_IO;
+	rc = meta_sector_read(env);
+	if (rc != S02_OK)
+		return rc;
 	wb_copy(env->scratch, rec, S02_META_SIZE);
 
 	/* Steps 1-3: the mirror, read back before 0xC000 is touched. */
@@ -333,7 +365,18 @@ int s02_meta_write(const struct s02_env *env, const uint8_t rec[S02_META_SIZE])
 		return S02_ERR_VERIFY;
 
 	/* Steps 4-6. */
-	return meta_sector_store(env);
+	rc = meta_sector_store(env);
+	if (rc != S02_OK)
+		return rc;
+	/*
+	 * Step 7: the record is written and read back, so the mirror is
+	 * erased: a mirror left behind would roll back a record another
+	 * writer changes later (S-02.065). A cut or a failure here leaves the
+	 * mirror whole and equal to the record, or not valid; either way the
+	 * next start presents the record as written.
+	 */
+	(void)env->flash->erase(env->flash->ctx, S02_MIRROR_OFF);
+	return S02_OK;
 }
 
 /* S-02.065 */

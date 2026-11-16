@@ -195,7 +195,7 @@ def main():
     w('#define V_PC_IMAGE_LEN %du' % pc['image_length'])
     w('struct v_pcop { char kind; uint32_t off, len; uint8_t cls; };')
     classes = ['slot_erase', 'slot_program', 'record_erase', 'record_program', 'readback',
-               'selector_erase', 'selector_program']
+               'selector_erase', 'selector_program', 'selector_readback']
     seqs = [s for s in pc['sequences'] if s['writer_rule'] == 'conforming']
     for s in seqs:
         w('static const struct v_pcop v_pc_ops_%s[] = {' % s['id'].replace('-', '_'))

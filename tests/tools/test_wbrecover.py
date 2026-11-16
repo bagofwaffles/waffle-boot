@@ -2350,6 +2350,29 @@ class Front11(PtyCase):
         self.assertIn('Writing %d bytes to Slot 1.' % len(img), out.text)
         self.assertEqual(m.slots[0], img)
 
+    def test_forced_after_slot1(self):
+        """S-02.090: after a write of Slot 1 in this recovery the selector reads 00 00; a forced
+        second write is refused before sending, with a restart asked first."""
+        m = self.unit(sel=(1, 1), running=1)
+        out = Lines()
+        self.assertEqual(w.cmd_write(self.link, make_image(seed=7), out, poll=0.001,
+                                     ask=Ask('yes')), 0, out.text)
+        self.assertEqual(list(m.sel), [0, 0])
+        self.assertTrue(w.slot1_window(w.get_info(self.link)))
+        begins = len(self.sent(m, w.BEGIN))
+        out = Lines()
+        ask = Ask('force the write', 'yes')
+        self.assertEqual(w.cmd_write(self.link, make_image(seed=8), out, poll=0.001, ask=ask,
+                                     force=True), 1)
+        self.assertIn(w.FORCE_AFTER_SLOT1, out.text)
+        self.assertEqual(ask.prompts, [])
+        self.assertEqual(len(self.sent(m, w.BEGIN)), begins)
+        # a write of Slot 2 leaves 01 00: not this window
+        self.unit()
+        self.assertEqual(w.cmd_write(self.link, make_image(seed=7), Lines(), poll=0.001,
+                                     ask=Ask('yes')), 0)
+        self.assertFalse(w.slot1_window(w.get_info(self.link)))
+
     def test_forced_write_selected_bad(self):
         """write --force with the selector naming a bad Slot 2: the unit refuses it with status 5,
         forced too (S-02.084), so the tool refuses before sending."""

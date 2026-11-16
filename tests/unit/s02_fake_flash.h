@@ -45,6 +45,10 @@ struct fake_flash {
 	bool corrupt_on;	/* and every program after it */
 	uint8_t corrupt_mask;
 	unsigned fail_read;	/* this read (1-based over reads) fails */
+	unsigned garble_read;	/* this read (1-based over reads) returns byte 0
+				 * with bit 0 flipped and reports success */
+	unsigned ignore;	/* this erase or program reports success and
+				 * changes nothing (a protected area) */
 	unsigned fail_regions;	/* every read that starts in one of these FF_R_* fails */
 	unsigned nreads;
 	bool dead;		/* power has been lost */
@@ -129,6 +133,8 @@ static inline int ff_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 	if ((f->fail_regions & ff_region(off)) != 0u)
 		return -1;
 	memcpy(buf, f->mem + off, len);
+	if (f->garble_read != 0u && f->nreads == f->garble_read && len != 0u)
+		buf[0] = (uint8_t)(buf[0] ^ 0x01u);
 	ff_after(f, false);
 	return 0;
 }
@@ -148,6 +154,8 @@ static inline int ff_erase(void *ctx, uint32_t off)
 	ff_log(f, FF_ERASE, off, S02_SECTOR_SIZE);
 	if (f->fail != 0u && f->nmut == f->fail)
 		return -1;
+	if (f->ignore != 0u && f->nmut == f->ignore)
+		return 0;
 	if (f->tear != 0u && (f->count_reads ? f->nall : f->nmut) == f->tear) {
 		uint32_t i, rng = f->tear_a * 2654435761u + 1u;
 
@@ -178,6 +186,8 @@ static inline int ff_program(void *ctx, uint32_t off, const uint8_t *buf, uint32
 	ff_log(f, FF_PROGRAM, off, len);
 	if (f->fail != 0u && f->nmut == f->fail)
 		return -1;
+	if (f->ignore != 0u && f->nmut == f->ignore)
+		return 0;
 	if (f->tear != 0u && (f->count_reads ? f->nall : f->nmut) == f->tear) {
 		rng = f->tear_a * 2654435761u + 1u;
 		for (i = 0; i < len; i++) {
@@ -220,6 +230,8 @@ static inline void ff_reset(struct fake_flash *f)
 	f->corrupt_on = false;
 	f->corrupt_mask = 0xFF;
 	f->fail_read = 0;
+	f->garble_read = 0;
+	f->ignore = 0;
 	f->fail_regions = 0;
 	f->dead = false;
 	f->bad_call = false;

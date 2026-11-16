@@ -499,8 +499,8 @@ static void check_detail(const struct v_wcase *c, const struct s03_write *w)
 			fail = S03_FAIL_READ; stage = S03_WS_TARGET; part = 1; break;
 		case FE_FAIL_SELECT2:
 			fail = S03_FAIL_SELECT; stage = S03_WS_TARGET; part = 2; break;
-		case FE_FAIL_ERASE:
-			fail = S03_FAIL_ERASE; stage = S03_WS_ERASE; part = c->target; break;
+		case FE_FAIL_ERASE:	/* group 1's: group 0 is never erased */
+			fail = S03_FAIL_ERASE; stage = S03_WS_ERASE; part = c->target; at = 1; break;
 		case FE_FAIL_WRITE_IMAGE:
 			fail = S03_FAIL_WRITE; stage = S03_WS_WRITE; part = c->target; at = 1; break;
 		case FE_FAIL_READ_IMAGE:
@@ -718,45 +718,63 @@ static void test_write_table(void)
 
 /*
  * S-03.055 step 1, S-03.056: on an eMMC whose erased bytes read 0xFF, the
- * target's header is made inactive before the copy and after a failure of the
- * first steps, so a cut during the copy or a failed erase boots the old image.
+ * target's group 0 is never erased and its header reads inactive before any
+ * erase, so a cut at any erase or write before the active header, and a
+ * failed erase, boot the old image; from the active header on, the new.
  */
 static void test_erased_ff(void)
 {
 	static const uint32_t lens[] = {0x3000u, 0x90000u};	/* one group, two */
 	struct s03_env env;
 	struct s03_write w;
-	unsigned i, k;
+	unsigned i, k, s;
 
 	fill(g_old, sizeof g_old, 3);
-	for (i = 0; i < N(lens); i++) {
-		const unsigned groups = 1u + lens[i] / (S03_GROUP_SECTORS * S03_SECTOR);
+	for (s = 0; s < 5u; s++) {
+		for (i = 0; i < N(lens); i++) {
+			unsigned total, active_at = 0, nmut = 0, j;
 
-		fill(g_new, lens[i], 4);
-		/* A whole write: the new image boots. */
-		fe_init(&g_e, V_B);
-		start_state(1);			/* target BP1 */
-		g_e.erase_ff = true;
-		env = env_now();
-		s03_write_os(&env, g_new, lens[i], &w);
-		CHECK_EQ(w.result, S03_WRITE_OK);
-		CHECK_EQ(w.target, S03_PART_BP1);
-		CHECK_EQ(boots(lens[i]), 1);
-		/* A cut after the zero sector, or during the copy: the old one.
-		 * (A cut between the erase and the zero sector is the window
-		 * S-03.055 names.) */
-		for (k = groups + 1u; k <= groups + 3u; k++) {
+			fill(g_new, lens[i], 4);
+			/* A whole write: the new image boots; no erase of group 0. */
 			fe_init(&g_e, V_B);
-			start_state(1);
+			start_state((int)s);
 			g_e.erase_ff = true;
-			g_e.cut_after = k;
 			env = env_now();
 			s03_write_os(&env, g_new, lens[i], &w);
-			if (!CHECK_EQ(boots(lens[i]), 0))
-				printf("    len %#x cut %u\n", (unsigned)lens[i], k);
+			CHECK_EQ(w.result, S03_WRITE_OK);
+			CHECK_EQ(boots(lens[i]), 1);
+			for (j = 0; j < g_e.nlog && j < FE_LOG_MAX; j++) {
+				const struct fe_op *o = &g_e.log[j];
+
+				if (o->kind == 'e')
+					CHECK(!(o->part == w.target && o->a == 0u));
+				if (o->kind == 'e' || o->kind == 'w')
+					nmut++;
+				/* the write that sets the target's active byte */
+				if (o->kind == 'w' && o->part == w.target && o->a == 0u &&
+				    active_at == 0u && w.target != 0u)
+					active_at = nmut;	/* the inactive copy */
+			}
+			total = g_e.nmut;
+			for (k = 1; k <= total; k++) {
+				int b;
+
+				fe_init(&g_e, V_B);
+				start_state((int)s);
+				g_e.erase_ff = true;
+				g_e.cut_after = k;
+				env = env_now();
+				s03_write_os(&env, g_new, lens[i], &w);
+				b = boots(lens[i]);
+				/* old, or none from a start with no old image; new once
+				 * the active header is in */
+				if (!CHECK(b == 0 || b == 1 || (b == 2 && s >= 3u)) ||
+				    !CHECK(k > active_at || b != 1))
+					printf("    start %u len %#x cut %u: %d\n", s, (unsigned)lens[i], k, b);
+			}
 		}
 	}
-	/* Group 1's erase fails after group 0 read 0xFF: the old image boots. */
+	/* Group 1's erase fails: the old image boots. */
 	fe_init(&g_e, V_B);
 	start_state(1);
 	g_e.erase_ff = true;

@@ -356,6 +356,52 @@ static void test_upgrade_fault(void)
 	}
 }
 
+/*
+ * S-02.048: the selector is read back after its program. A part that ignores
+ * the program, or a read-back that fails, fails the step; the selector
+ * still names the slot it named, so the old slot goes on starting.
+ */
+static void test_selector_read_back(void)
+{
+	struct s02_env env = ff_env(&g_f, &g_ops);
+	uint32_t n = 0x800u;
+	unsigned t, last, c;
+
+	ff_init(&g_f);
+	set_state(0, 0, 1u);
+	set_state(1, 0, 2u);
+	ff_set_selector(&g_f, 0x01, 0x01);
+	memcpy(&g_start.mem, g_f.mem, sizeof g_f.mem);
+	ff_reset(&g_f);
+	CHECK_EQ(s02_slot_upgrade(&env, true, g_image, n, &t), S02_OK);
+	last = g_f.nmut;	/* the selector's program */
+	CHECK(g_f.log[g_f.nlog - 1u].kind == FF_READ &&
+	      g_f.log[g_f.nlog - 1u].off == S02_SELECTOR_OFF);
+	for (c = 0; c < 2u; c++) {
+		memcpy(g_f.mem, g_start.mem, sizeof g_f.mem);
+		ff_reset(&g_f);
+		if (c == 0u)
+			g_f.ignore = last;	/* the program stores nothing */
+		else
+			g_f.fail_read = 0;	/* set below, by count */
+		if (c == 1u) {
+			unsigned reads;
+
+			CHECK_EQ(s02_slot_upgrade(&env, true, g_image, n, &t), S02_OK);
+			reads = g_f.nreads;	/* the last read is the read-back */
+			memcpy(g_f.mem, g_start.mem, sizeof g_f.mem);
+			ff_reset(&g_f);
+			g_f.fail_read = reads;
+			CHECK_EQ(s02_slot_upgrade(&env, true, g_image, n, &t), S02_ERR_IO);
+			continue;
+		}
+		CHECK_EQ(s02_slot_upgrade(&env, true, g_image, n, &t), S02_ERR_VERIFY);
+		/* the erased selector names slot 1, the slot that started */
+		CHECK_EQ(g_f.mem[S02_SELECTOR_OFF], 0xFFu);
+		CHECK_EQ(s02_selected_slot(g_f.mem[S02_SELECTOR_OFF]), 1u);
+	}
+}
+
 /* SC-UPG-START (S-02.090) and SC-SEL-WRITE (S-02.050). */
 static void test_start_and_selector_rule(void)
 {
@@ -863,6 +909,7 @@ int main(void)
 	test_upgrade_same_image();
 	test_upgrade_size_and_option();
 	test_upgrade_fault();
+	test_selector_read_back();
 	test_start_and_selector_rule();
 	test_powercut_sequences();
 	test_powercut_cuts();

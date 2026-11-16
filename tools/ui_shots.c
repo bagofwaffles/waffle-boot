@@ -113,6 +113,8 @@ static void setup(void)
 	boot.ble_version = "0.9.2";
 	boot.psoc_version = "0.4.1";
 	boot.provisioned = true;
+	boot.start_log = S15_LOG_OK;
+	boot.start_log_used = 41;
 	s15_settings_defaults(&boot.settings);
 	boot.settings.color = false;	/* the shots are in gray (S-15.173), but settings-color */
 	boot.settings.dev_mode = true;	/* the shots show the developer menu */

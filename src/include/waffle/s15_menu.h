@@ -95,6 +95,16 @@ struct s15_osw_report {
 };
 
 /* What this boot knows when held mode starts. */
+/* The selected slot's start log (S-02.095) as Device Info shows it. */
+enum s15_log {
+	S15_LOG_UNREAD = 0,	/* not read, or a read failed */
+	S15_LOG_OK,		/* start_log_used entries used */
+	S15_LOG_FULL,
+	S15_LOG_ODD,
+	S15_LOG_NONE		/* the slot's image leaves no log */
+};
+#define S15_LOG_ENTRIES 16384u
+
 struct s15_boot {
 	const char *version;       /* S-17.032 version text */
 	unsigned reason;           /* S-04.006 reason taken */
@@ -106,6 +116,8 @@ struct s15_boot {
 				    * when its image is marked encrypted */
 	bool interrupted;          /* S-11.080: the last install did not finish */
 	bool start_menu;           /* S-15.175: the boot store's setting as read at this start */
+	uint8_t start_log;         /* enum s15_log */
+	uint16_t start_log_used;   /* with S15_LOG_OK */
 	/* S-17.030 */
 	const char *unit_serial, *chip_serial, *psoc_serial;
 	const char *os_version, *sw_version, *ble_version, *psoc_version;
@@ -223,6 +235,7 @@ struct s15_menu {
 	uint8_t down[(S15_NKEYS + 7u) / 8u];
 	uint8_t stale[(S15_NKEYS + 7u) / 8u];
 	bool shift;
+	bool host_event;          /* the event in hand came from a host (S-02.098) */
 
 	/* the option: S-15.140 */
 	bool option_on;
@@ -306,6 +319,9 @@ bool s15_menu_held(const struct s15_menu *m);
 void s15_menu_release(struct s15_menu *m);
 /* s15_menu_key() with that hold: held mode's key events come here. */
 void s15_menu_event(struct s15_menu *m, unsigned key, bool down);
+/* The same for a key a host sent (a developer request): it acts as the
+ * unit's key would, but writes no boot store (S-02.098). */
+void s15_menu_host_event(struct s15_menu *m, unsigned key, bool down);
 /*
  * The time passes (ms since any fixed point; only differences matter): a
  * hold's bar follows it, and a hold of S15_CONFIRM_HOLD_MS runs its action.

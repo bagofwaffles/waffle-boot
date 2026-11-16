@@ -331,6 +331,8 @@ static void default_boot(void)
 	BOOT.ble_version = "1.0.1";
 	BOOT.psoc_version = "1.0.7";
 	BOOT.provisioned = true;
+	BOOT.start_log = S15_LOG_OK;
+	BOOT.start_log_used = 41;
 	s15_settings_defaults(&BOOT.settings);
 	BOOT.settings.dev_mode = true;	/* most tests use the developer menu */
 }
@@ -2857,6 +2859,19 @@ static void test_start_menu(void)
 	press(0x13);
 	CHECK(F.store_saves == 4u && F.store_last && !M.start_menu, "unusable: off");
 	expect_screen("settings_store_unusable");
+	/* S-02.098: a key a host sent writes no boot store; the unit's does. */
+	reset_fake(); default_boot(); start();
+	press(0x07);
+	s15_menu_host_event(&M, 0x13, true);
+	s15_menu_host_event(&M, 0x13, false);
+	CHECK(F.store_saves == 0u && !M.start_menu && M.screen == S15_SCR_SETTINGS &&
+	      !M.host_event, "host key: no store write");
+	s15_menu_host_event(&M, 0x15, true);	/* other host keys act as before */
+	s15_menu_host_event(&M, 0x15, false);
+	CHECK(M.screen == S15_SCR_MAIN, "host key: 8 goes back");
+	press(0x07);
+	press(0x13);
+	CHECK(F.store_saves == 1u && M.start_menu, "unit key: the store written");
 	/* As read at the start. */
 	reset_fake(); default_boot(); BOOT.start_menu = true; start();
 	press(0x07);

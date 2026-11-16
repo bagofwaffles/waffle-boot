@@ -486,9 +486,11 @@ def _program_sector(fl, base, content):
 def write_metadata_record(fl, record, profile='conforming'):
     """One metadata write of the 0x34-byte `record` to a Flash or FlashModel.
 
-    conforming (S-02.061, S-02.064): write and read back the mirror, then rewrite the 0xC000 sector with
-    the record and its other bytes as read, and read it back. Returns True when both read-backs matched.
-    factory: erase 0xC000 and program the 0x34 bytes, no mirror."""
+    conforming (S-02.061, S-02.064): read the 0xC000 sector twice (the second a page at a time) and stop
+    with nothing erased when the reads differ; write and read back the mirror, then rewrite the 0xC000
+    sector with the record and its other bytes as read, read it back, and erase the mirror sector.
+    Returns True when the reads agreed and both read-backs matched; the mirror's erase does not change
+    that. factory: erase 0xC000 and program the 0x34 bytes, no mirror."""
     new = bytes(record.pack() if hasattr(record, 'pack') else record)
     if len(new) != METADATA_SIZE:
         raise ValueError('a metadata record is 0x34 bytes')
@@ -497,6 +499,8 @@ def write_metadata_record(fl, record, profile='conforming'):
     if profile != 'conforming':
         raise ValueError('unknown metadata profile %r' % profile)
     sector = bytearray(fl.read(METADATA_OFF, SECTOR))
+    if any(fl.read(METADATA_OFF + p, PAGE) != bytes(sector[p:p + PAGE]) for p in range(0, SECTOR, PAGE)):
+        return False                      # nothing erased
     sector[:METADATA_SIZE] = new
     m = mirror_encode(new)
     if not (_ok(fl.erase(MIRROR_OFF)) and _ok(fl.program(MIRROR_OFF, m))):
@@ -505,7 +509,10 @@ def write_metadata_record(fl, record, profile='conforming'):
         return False                      # 0xC000 left untouched
     if not (_ok(fl.erase(METADATA_OFF)) and _program_sector(fl, METADATA_OFF, sector)):
         return False
-    return fl.read(METADATA_OFF, SECTOR) == bytes(sector)
+    if fl.read(METADATA_OFF, SECTOR) != bytes(sector):
+        return False
+    fl.erase(MIRROR_OFF)                  # step 7: no mirror is left to roll the record back
+    return True
 
 
 def metadata_restore(fl, profile='conforming'):

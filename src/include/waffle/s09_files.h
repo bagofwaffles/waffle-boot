@@ -225,8 +225,9 @@ uint32_t s09_files_boot_size(struct s09_files *f);
  * unusable or cannot be read, or the volume is refused. */
 void s09_files_settings_read(struct s09_files *f, struct s15_settings *s);
 /* The whole file to S15_SETTINGS_NEW_PATH, then renamed over
- * S15_SETTINGS_PATH, so a power cut leaves the old file or the new. False
- * when a step failed. */
+ * S15_SETTINGS_PATH, so a power cut leaves the old file or the new, then the
+ * eMMC's cache flushed (0x04), so the new one is kept. False when a step
+ * failed. */
 bool s09_files_settings_save(struct s09_files *f, const struct s15_settings *s);
 
 #endif

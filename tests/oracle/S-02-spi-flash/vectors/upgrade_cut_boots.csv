@@ -58,6 +58,8 @@ C-01,28,torn,selector_erase,selector,0,1,good,superset_of 00 01,varies(32768 val
 C-01,28,after,selector_erase,selector,0,1,good,ff ff,1 1 1,True,True,True,1 1 1,True,True,True
 C-01,29,torn,selector_program,selector,0,1,good,superset_of 01 00,varies(32768 values),True,True,True,varies(32768 values),True,True,True
 C-01,29,after,selector_program,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
+C-01,30,torn,selector_readback,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
+C-01,30,after,selector_readback,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
 C-02,0,none,-,not_started,1,0,good,01 01,1 1 1,False,True,True,1 1 1,False,True,True
 C-02,1,torn,slot_erase,partial,1,0,badcrc,01 01,1 1 1,False,True,True,1 1 1,False,True,True
 C-02,1,after,slot_erase,partial,1,0,badcrc,01 01,1 1 1,False,True,True,1 1 1,False,True,True
@@ -117,6 +119,8 @@ C-02,28,torn,selector_erase,selector,1,0,good,superset_of 01 01,varies(16384 val
 C-02,28,after,selector_erase,selector,1,0,good,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
 C-02,29,torn,selector_program,selector,1,0,good,superset_of 00 00,varies(65536 values),True,True,True,varies(65536 values),True,True,True
 C-02,29,after,selector_program,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-02,30,torn,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-02,30,after,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
 C-03,0,none,-,not_started,1,0,good,02 01,1 1 1,False,True,True,1 1 1,False,True,True
 C-03,1,torn,slot_erase,partial,1,0,badcrc,02 01,1 1 1,False,True,True,1 1 1,False,True,True
 C-03,1,after,slot_erase,partial,1,0,badcrc,02 01,1 1 1,False,True,True,1 1 1,False,True,True
@@ -176,6 +180,8 @@ C-03,28,torn,selector_erase,selector,1,0,good,superset_of 02 01,varies(16384 val
 C-03,28,after,selector_erase,selector,1,0,good,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
 C-03,29,torn,selector_program,selector,1,0,good,superset_of 00 00,varies(65536 values),True,True,True,varies(65536 values),True,True,True
 C-03,29,after,selector_program,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-03,30,torn,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-03,30,after,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
 C-04,0,none,-,not_started,1,0,good,ff 01,1 1 1,False,True,True,1 1 1,False,True,True
 C-04,1,torn,slot_erase,partial,1,0,badcrc,ff 01,1 1 1,False,True,True,1 1 1,False,True,True
 C-04,1,after,slot_erase,partial,1,0,badcrc,ff 01,1 1 1,False,True,True,1 1 1,False,True,True
@@ -235,6 +241,8 @@ C-04,28,torn,selector_erase,selector,1,0,good,superset_of ff 01,varies(128 value
 C-04,28,after,selector_erase,selector,1,0,good,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
 C-04,29,torn,selector_program,selector,1,0,good,superset_of 00 00,varies(65536 values),True,True,True,varies(65536 values),True,True,True
 C-04,29,after,selector_program,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-04,30,torn,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-04,30,after,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
 C-05,0,none,-,not_started,1,0,good,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
 C-05,1,torn,slot_erase,partial,1,0,badcrc,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
 C-05,1,after,slot_erase,partial,1,0,badcrc,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
@@ -294,6 +302,8 @@ C-05,28,torn,selector_erase,selector,1,0,good,superset_of ff ff,varies(1 values)
 C-05,28,after,selector_erase,selector,1,0,good,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
 C-05,29,torn,selector_program,selector,1,0,good,superset_of 00 00,varies(65536 values),True,True,True,varies(65536 values),True,True,True
 C-05,29,after,selector_program,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-05,30,torn,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-05,30,after,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
 C-06,0,none,-,not_started,0,1,good,00 00,0 0 0,False,True,True,0 0 0,False,True,True
 C-06,1,torn,slot_erase,partial,0,1,badcrc,00 00,0 0 0,False,True,False,0 0 0,False,True,True
 C-06,1,after,slot_erase,partial,0,1,badcrc,00 00,0 0 0,False,True,False,0 0 0,False,True,True
@@ -353,6 +363,8 @@ C-06,28,torn,selector_erase,selector,0,1,good,superset_of 00 00,varies(65536 val
 C-06,28,after,selector_erase,selector,0,1,good,ff ff,1 1 1,True,True,True,1 1 1,True,True,True
 C-06,29,torn,selector_program,selector,0,1,good,superset_of 01 00,varies(32768 values),True,True,True,varies(32768 values),True,True,True
 C-06,29,after,selector_program,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
+C-06,30,torn,selector_readback,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
+C-06,30,after,selector_readback,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
 C-07,0,none,-,not_started,1,0,good,01 00,1 1 1,False,True,True,1 1 1,False,True,True
 C-07,1,torn,slot_erase,partial,1,0,badcrc,01 00,1 1 1,False,True,True,1 1 1,False,True,True
 C-07,1,after,slot_erase,partial,1,0,badcrc,01 00,1 1 1,False,True,True,1 1 1,False,True,True
@@ -412,6 +424,8 @@ C-07,28,torn,selector_erase,selector,1,0,good,superset_of 01 00,varies(32768 val
 C-07,28,after,selector_erase,selector,1,0,good,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
 C-07,29,torn,selector_program,selector,1,0,good,superset_of 00 00,varies(65536 values),True,True,True,varies(65536 values),True,True,True
 C-07,29,after,selector_program,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-07,30,torn,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-07,30,after,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
 C-08,0,none,-,not_started,0,1,erased,00 01,0 0 0,False,True,True,0 0 0,False,True,True
 C-08,1,torn,slot_erase,partial,0,1,erased,00 01,0 0 0,False,True,True,0 0 0,False,True,True
 C-08,1,after,slot_erase,partial,0,1,erased,00 01,0 0 0,False,True,True,0 0 0,False,True,True
@@ -471,6 +485,8 @@ C-08,28,torn,selector_erase,selector,0,1,good,superset_of 00 01,varies(32768 val
 C-08,28,after,selector_erase,selector,0,1,good,ff ff,1 1 1,True,True,True,1 1 1,True,True,True
 C-08,29,torn,selector_program,selector,0,1,good,superset_of 01 00,varies(32768 values),True,True,True,varies(32768 values),True,True,True
 C-08,29,after,selector_program,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
+C-08,30,torn,selector_readback,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
+C-08,30,after,selector_readback,selected,0,1,good,01 00,1 1 1,True,True,True,1 1 1,True,True,True
 C-09,0,none,-,not_started,1,0,badcrc,01 01,1 1 1,False,True,True,1 1 1,False,True,True
 C-09,1,torn,slot_erase,partial,1,0,badcrc,01 01,1 1 1,False,True,True,1 1 1,False,True,True
 C-09,1,after,slot_erase,partial,1,0,badcrc,01 01,1 1 1,False,True,True,1 1 1,False,True,True
@@ -530,3 +546,5 @@ C-09,28,torn,selector_erase,selector,1,0,good,superset_of 01 01,varies(16384 val
 C-09,28,after,selector_erase,selector,1,0,good,ff ff,1 1 1,False,True,True,1 1 1,False,True,True
 C-09,29,torn,selector_program,selector,1,0,good,superset_of 00 00,varies(65536 values),True,True,True,varies(65536 values),True,True,True
 C-09,29,after,selector_program,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-09,30,torn,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True
+C-09,30,after,selector_readback,selected,1,0,good,00 00,0 0 0,True,True,True,0 0 0,True,True,True

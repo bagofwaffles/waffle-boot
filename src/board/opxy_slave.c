@@ -244,7 +244,9 @@ static bool master_ready(void)
 /* --- The eMMC's geometry (S-03.001, S-03.002) --- */
 
 /* EXT_CSD bytes, JESD84-B51. */
+#define EXT_CSD_ERASED_MEM_CONT    181u	/* bit 0: an erased byte reads 0xFF */
 #define EXT_CSD_SEC_COUNT          212u	/* 4 bytes, little-endian */
+#define EXT_CSD_CACHE_SIZE         249u	/* 4 bytes, little-endian; 0: no cache */
 #define EXT_CSD_OPTIMAL_WRITE_SIZE 265u
 
 /*
@@ -308,6 +310,24 @@ static int bd_write_reliable(void *ctx, uint32_t lba, const void *buf,
 	return s->emmc_more->write_reliable(s->emmc_ops.ctx, lba, count, buf);
 }
 
+/* S-03.003: what an erased group reads as, from the bring-up's EXT_CSD,
+ * before anything relies on it: zeros unless ERASED_MEM_CONT says 0xFF. */
+/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
+static bool erase_zeroes(void *ctx)
+{
+	const struct opxy_slave *s = ctx;
+
+	return (s->ext_csd[EXT_CSD_ERASED_MEM_CONT] & 1u) == 0u;
+}
+
+/* S-03.068: the eMMC has a volatile cache to flush (CACHE_SIZE not 0). */
+static bool cache_present(const struct opxy_slave *s)
+{
+	const uint8_t *c = s->ext_csd + EXT_CSD_CACHE_SIZE;
+
+	return (c[0] | c[1] | c[2] | c[3]) != 0u;
+}
+
 #if !defined(OPXY_YAFFS_ZERO_ERASE)
 /* S-12.042: a block is one erase group, emptied by one eMMC erase of it
  * (CMD35 and CMD36 at its first sector, CMD38; S-03.004), tried at most
@@ -341,6 +361,7 @@ void opxy_slave_user_bd(struct opxy_slave *s, struct wb_blockdev *bd)
 	bd->read = bd_read;
 	bd->write = bd_write;
 	bd->erase = BD_ERASE;
+	bd->erase_zeroes = erase_zeroes;
 	bd->write_reliable = bd_write_reliable;
 }
 
@@ -432,6 +453,10 @@ static int32_t emmc_command(void *ctx, uint8_t cmd, uint32_t arg0,
 	 * until a select succeeds. */
 	if (s->part == OPXY_PART_UNKNOWN && cmd != S09_SELECT && cmd != S09_FLUSH)
 		return -1;
+	/* S-03.068: a flush where EXT_CSD shows a cache; with none there is
+	 * nothing to commit, and no command is sent */
+	if (cmd == S09_FLUSH && !cache_present(s))
+		return 0;
 	rc = opxy_slave_emmc(&s->emmc_ops, s->emmc_more, cmd, arg0, arg1, data,
 			     n);
 	if (cmd == S09_SELECT && arg0 <= S03_PART_BP2)

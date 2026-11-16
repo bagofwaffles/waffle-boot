@@ -872,7 +872,7 @@ size_t inst_report_append(char *out, size_t len, size_t cap, const struct inst_h
 		r_str(&r, "metadata mirror: ");
 		r_str(&r, eng[8] == OPXY_INSTALL_MIRROR_SAME ? "same as the record" :
 			  eng[8] == OPXY_INSTALL_MIRROR_DIFFERS ? "differs from the record" :
-			  eng[8] == OPXY_INSTALL_MIRROR_INVALID ? "not valid" : "not read");
+			  eng[8] == OPXY_INSTALL_MIRROR_INVALID ? "none (erased or not valid)" : "not read");
 		r_str(&r, "\n");
 		if (log[0] == 1u) {
 			r_str(&r, "start log: ");

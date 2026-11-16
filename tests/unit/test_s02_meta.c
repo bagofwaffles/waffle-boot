@@ -113,26 +113,28 @@ static bool ops_equal(const struct v_op *ops, unsigned nops)
 static void test_write(void)
 {
 	struct s02_env env = ff_env(&g_f, &g_ops);
+	unsigned i;
+	bool restored;
 	int start;
 
 	for (start = 0; start < 2; start++) {
-		uint8_t m[S02_MIRROR_SIZE];
-		unsigned i, me, mp, ce, j;
-		bool restored;
+		unsigned me, mp, ce, j;
 
 		setup(start);
 		CHECK_EQ(s02_meta_write(&env, v_meta_new_record), S02_OK);
 		CHECK(ops_equal(v_meta_write_ops, N(v_meta_write_ops)));
 		CHECK(memcmp(g_f.mem + S02_META_OFF, v_meta_new_record, S02_META_SIZE) == 0);
 		CHECK(tail_kept());				/* S-02.061 */
-		s02_mirror_build(v_meta_new_record, m);
-		CHECK(memcmp(g_f.mem + S02_MIRROR_OFF, m, S02_MIRROR_SIZE) == 0);
-		for (i = S02_MIRROR_SIZE; i < S02_SECTOR_SIZE; i++)
-			CHECK_EQ(g_f.mem[S02_MIRROR_OFF + i], 0xFFu);	/* S-02.004 */
+		/* Step 7: the mirror sector erased once the record reads back. */
+		for (i = 0; i < S02_SECTOR_SIZE; i++)
+			CHECK_EQ(g_f.mem[S02_MIRROR_OFF + i], 0xFFu);
+		CHECK(g_f.log[g_f.nlog - 1u].kind == FF_ERASE &&
+		      g_f.log[g_f.nlog - 1u].off == S02_MIRROR_OFF);
 		/* The read-backs (S-02.064 steps 3 and 6). */
 		me = ~0u, mp = ~0u, ce = ~0u;
 		for (i = 0; i < g_f.nlog; i++) {
-			if (g_f.log[i].kind == FF_ERASE && g_f.log[i].off == S02_MIRROR_OFF)
+			if (g_f.log[i].kind == FF_ERASE && g_f.log[i].off == S02_MIRROR_OFF &&
+			    me == ~0u)
 				me = i;
 			if (g_f.log[i].kind == FF_PROGRAM && g_f.log[i].off == S02_MIRROR_OFF)
 				mp = i;
@@ -157,6 +159,63 @@ static void test_write(void)
 		CHECK(!restored);
 		CHECK_EQ(g_f.nmut, 0);
 	}
+	/* Step 0: two reads of the sector that differ stop the write with
+	 * nothing erased, the first read's bytes or the second's wrong. */
+	for (i = 1; i <= 2u; i++) {
+		setup(0);
+		g_f.garble_read = i == 1u ? 1u : 2u;
+		CHECK_EQ(s02_meta_write(&env, v_meta_new_record), S02_ERR_VERIFY);
+		CHECK_EQ(g_f.nmut, 0);
+		CHECK(memcmp(g_f.mem + S02_META_OFF, g_start_sector, S02_SECTOR_SIZE) == 0);
+		CHECK(memcmp(g_f.mem + S02_MIRROR_OFF, v_meta_mirror_of_old, S02_MIRROR_SIZE) == 0);
+	}
+	/* A read that fails in step 0 stops it the same way. */
+	setup(0);
+	g_f.fail_read = 5;
+	CHECK_EQ(s02_meta_write(&env, v_meta_new_record), S02_ERR_IO);
+	CHECK_EQ(g_f.nmut, 0);
+	/* Every read of the sector before the first erase is made twice. */
+	setup(1);
+	CHECK_EQ(s02_meta_write(&env, v_meta_new_record), S02_OK);
+	{
+		unsigned first_erase = 0, page_reads = 0;
+
+		while (first_erase < g_f.nlog && g_f.log[first_erase].kind != FF_ERASE)
+			first_erase++;
+		for (i = 0; i < first_erase; i++)
+			if (g_f.log[i].off >= S02_META_OFF && g_f.log[i].len == S02_PAGE_SIZE)
+				page_reads++;
+		CHECK(g_f.log[0].kind == FF_READ && g_f.log[0].off == S02_META_OFF &&
+		      g_f.log[0].len == S02_SECTOR_SIZE);
+		CHECK_EQ(page_reads, S02_SECTOR_SIZE / S02_PAGE_SIZE);
+	}
+	/* A failed erase of the mirror at step 7 leaves the write a success. */
+	setup(1);
+	{
+		uint8_t m[S02_MIRROR_SIZE];
+		unsigned total;
+
+		CHECK_EQ(s02_meta_write(&env, v_meta_new_record), S02_OK);
+		total = g_f.nmut;
+		setup(1);
+		g_f.fail = total;
+		CHECK_EQ(s02_meta_write(&env, v_meta_new_record), S02_OK);
+		CHECK(memcmp(g_f.mem + S02_META_OFF, v_meta_new_record, S02_META_SIZE) == 0);
+		s02_mirror_build(v_meta_new_record, m);
+		CHECK(memcmp(g_f.mem + S02_MIRROR_OFF, m, S02_MIRROR_SIZE) == 0);
+		ff_reset(&g_f);
+		CHECK_EQ(s02_meta_restore(&env, &restored), S02_OK);
+		CHECK(!restored);
+	}
+	/* After a completed write a writer without a mirror changes the
+	 * record: nothing rolls it back. */
+	setup(0);
+	CHECK_EQ(s02_meta_write(&env, v_meta_new_record), S02_OK);
+	memcpy(g_f.mem + S02_META_OFF, v_meta_other_writer_record, S02_META_SIZE);
+	ff_reset(&g_f);
+	CHECK_EQ(s02_meta_restore(&env, &restored), S02_OK);
+	CHECK(!restored);
+	CHECK(memcmp(g_f.mem + S02_META_OFF, v_meta_other_writer_record, S02_META_SIZE) == 0);
 	/* A failed mirror read-back stops the write before 0xC000 is erased. */
 	setup(0);
 	g_f.corrupt = 2;	/* the mirror program */

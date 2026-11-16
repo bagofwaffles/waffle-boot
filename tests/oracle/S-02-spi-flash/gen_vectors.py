@@ -227,7 +227,8 @@ def writer_target(rule, index):
     return 0 if index == 1 else 1      # stock_rule: the negative control
 
 
-def upgrade_ops(rule, sel, n=IMAGE_LEN):
+def upgrade_ops(rule, sel, n=IMAGE_LEN, package=False):
+    """The writes of a slot upgrade; package: the package's bootloader step, which reads the selector back."""
     t = writer_target(rule, sel[0])
     base = SLOT[t]
     ops = []
@@ -250,6 +251,8 @@ def upgrade_ops(rule, sel, n=IMAGE_LEN):
         ops.append(dict(cls="readback", op="read", offset=base, length=n))
     ops.append(dict(cls="selector_erase", op="erase", offset=SELECTOR, length=SECTOR))
     ops.append(dict(cls="selector_program", op="program", offset=SELECTOR, length=2))
+    if rule == "conforming" and package:                         # S-02.048: the selector read back
+        ops.append(dict(cls="selector_readback", op="read", offset=SELECTOR, length=2))
     for i, o in enumerate(ops, 1):
         o["n"] = i
     return t, ops
@@ -488,7 +491,7 @@ def powercut_data():
         for k, (sel, s0, s1, note) in enumerate(START_STATES, 1):
             slots = (s0, s1)
             precondition = slots[boot_rule(sel[0])] == "good"
-            t, ops = upgrade_ops(rule, sel)
+            t, ops = upgrade_ops(rule, sel, package=True)
             selected = boot_rule(sel[0])
             fp_ok = all(not (SLOT[selected] <= o["offset"] < SLOT[selected] + SLOT_MAX)
                         and o["offset"] != RECORD[selected]
@@ -693,7 +696,7 @@ def cut_phase(op_class, kind):
         return "partial"
     if op_class in ("record_program", "readback"):
         return "complete"
-    if op_class == "selector_program" and kind == "after":
+    if (op_class == "selector_program" and kind == "after") or op_class == "selector_readback":
         return "selected"
     return "selector"
 
@@ -718,7 +721,7 @@ def next_boot_rows():
         selected = boot_rule(sel[0])
         if slots[selected] != "good":
             continue
-        t, ops = upgrade_ops("conforming", sel)
+        t, ops = upgrade_ops("conforming", sel, package=True)
         base_good = {p: boots_good(run_resets(p, sel, slots), slots) for p in PROFILES}
         points = [(0, False)] + [(i, tor) for i in range(1, len(ops) + 1) for tor in (True, False)]
         for i, torn in points:
@@ -1770,7 +1773,7 @@ def _start_flash(start):
     meta = _sector_with(OLD_REC)
     if start in ("mirror_old", "stale"):
         mir[:MIRROR_LEN] = mirror_bytes(OLD_REC)
-    if start == "stale":
+    if start in ("stale", "written_then_other"):
         meta[:META_LEN] = OTHER_REC
     if start in RESTORE_STARTS:
         mir[:MIRROR_LEN] = mirror_bytes(NEW_REC)
@@ -1793,7 +1796,12 @@ def meta_write_ops(rule, fl):
     mirror = [("erase", MIRROR, None), ("program", MIRROR, mirror_bytes(NEW_REC)), ("read", MIRROR, MIRROR_LEN)]
     meta = [("erase", META, None)] + _pages(META, target) + [("read", META, SECTOR)]
     first = [("read", META, SECTOR)]
-    return first + (meta + mirror if rule == "neg_c_first" else mirror + meta)
+    if rule == "neg_c_first":
+        return first + meta + mirror
+    # S-02.064 step 0: the sector read a second time, a page at a time, before the first erase; step 7:
+    # the mirror erased once the record reads back.
+    again = [("read", META + p, PAGE) for p in range(0, SECTOR, PAGE)]
+    return first + again + mirror + meta + ([("erase", MIRROR, None)] if rule == "conforming" else [])
 
 
 def _mask(pattern, data_before):
@@ -1927,10 +1935,13 @@ def metadata_data():
             fl = _start_flash(start)
             _run(fl, ops, cut)
             rows.append(_row("conforming", start, "restore", cut, ops, fl))
-    fl = _start_flash("stale")
-    r = _row("conforming", "stale", "none", ("none", 0, ""), [], fl)
-    r["safe"] = "n/a"
-    rows.append(r)
+    # A stale mirror rolls back another writer's record; after a completed write the mirror sector is
+    # erased (S-02.064 step 7), so that writer's record stands.
+    for start in ("stale", "written_then_other"):
+        fl = _start_flash(start)
+        r = _row("conforming", start, "none", ("none", 0, ""), [], fl)
+        r["safe"] = "n/a"
+        rows.append(r)
     data = {
         "mirror_offset": "0x0b000", "mirror_length": "0x68", "first_stage_limit": "0xb000",
         "old_record": OLD_REC.hex(" "), "new_record": NEW_REC.hex(" "), "other_writer_record": OTHER_REC.hex(" "),

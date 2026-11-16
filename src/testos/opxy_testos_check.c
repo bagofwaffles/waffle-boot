@@ -364,6 +364,9 @@ static void t_flash(struct opxy_master *m)
 	 * then RDID, informative (S-13b.018) */
 	ck.f.flash_id_read = m->flash_ops.read(m->flash_ops.ctx, S02_META_OFF, magic, 1u) == 0 &&
 			     read_id(spi, ck.f.jedec);
+	/* the status register, read only: its block-protect bits, under which a
+	 * program or erase is ignored with no error */
+	ck.f.flash_sr_read = wb_spiflash_status(&m->hw.flash, &ck.f.flash_sr) == WB_SPIFLASH_OK;
 	mark(TCHK_FLASH_ID);
 
 	progress(m, TCHK_FLASH_LAYOUT);

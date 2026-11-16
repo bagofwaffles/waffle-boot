@@ -178,6 +178,8 @@ struct opxy_master {
 	bool front;
 	struct fr_handoff ho;
 	bool log_finished;		/* S-02.095: the finished mark made or tried */
+	bool log_tidied;		/* and the log's erase decided */
+	bool log_viewed;		/* and the log read for Device Info */
 	uint32_t dma9_xmod, dma9_ymod;	/* S-01.006, kept at entry */
 	uint16_t strap;			/* S-13b.001 */
 	uint16_t boot_reason;		/* S-04.004: the reason this boot took */
@@ -258,6 +260,58 @@ void opxy_start_finished(struct opxy_master *m);
 #define OPXY_TRIAL_REACHED_BYTE 0xF0u
 bool opxy_trial_reached_at(const struct s02_env *env, unsigned running, uint32_t *off);
 void opxy_trial_reached(struct opxy_master *m);
+/*
+ * S-02.101: the main image's erase of the start log, so that the front's
+ * count never stops for a full log and a sector takes a bounded number of
+ * one-bit programs between erases. Once per boot, after the finished mark,
+ * on a normal start of the established running slot when it is the
+ * selected slot: the selected slot's log is erased when it holds
+ * OPXY_LOG_ERASE_USED or more used entries with this start's, named by
+ * the front, the newest and finished; or when it reads full or odd.
+ * Everything is read again first, as the front reads it; any doubt or
+ * failed read leaves the sector alone. The erase is read back; a failure is
+ * logged and stops nothing.
+ */
+#define OPXY_LOG_ERASE_USED 256u	/* 512 one-bit programs between erases */
+/* An entry's two bits, the started bit low (S-02.095). */
+#define OPXY_LOG_E_FREE       3u
+#define OPXY_LOG_E_UNFINISHED 2u
+#define OPXY_LOG_E_INVALID    1u
+
+enum opxy_log { OPXY_LOG_IO, OPXY_LOG_OK, OPXY_LOG_FULL, OPXY_LOG_ODD, OPXY_LOG_NONE };
+
+/* A slot's log as read: the front's states, with the entries used and the
+ * unfinished ones just before the first free one (OPXY_LOG_OK only), and
+ * whether byte 0 holds a trial's entry (0xFD, 0xFC, 0xF0, 0xF9) with every
+ * other byte 0xFF. -1 when a read failed. Reads the record and the sector,
+ * through env's scratch. */
+struct opxy_log_scan {
+	uint8_t state;		/* enum opxy_log */
+	uint8_t byte0;
+	bool trial_alone;
+	uint16_t used;
+	uint16_t unfinished;
+};
+int opxy_log_scan(const struct s02_env *env, unsigned slot, struct opxy_log_scan *out);
+
+/* What the guard knows of this start. */
+struct opxy_log_start {
+	bool front;		/* the hand-off record was taken */
+	bool logged;		/* it names this start's entry */
+	uint8_t log_slot;
+	uint16_t log_entry;
+	bool established;	/* the running slot (S-01.002) */
+	uint8_t running;
+	bool trial;		/* its stream was read under the trial mark */
+};
+enum opxy_log_erase { OPXY_ERASE_NO, OPXY_ERASE_USED, OPXY_ERASE_FULL, OPXY_ERASE_ODD };
+/* The guard: why the sector *off, the selected slot's last sector, is to be
+ * erased now, or OPXY_ERASE_NO. */
+enum opxy_log_erase opxy_log_erase_at(const struct s02_env *env, const struct opxy_log_start *st,
+				      uint32_t *off);
+void opxy_start_log_tidy(struct opxy_master *m);
+/* The selected slot's log, for Device Info: once, in held mode. */
+void opxy_start_log_view(struct opxy_master *m);
 /* The INIT stage's stamps, from the hand-off (BOOT_TIMING=1 reports them). */
 extern uint64_t opxy_init_cycles[3];
 

@@ -51,6 +51,7 @@ static struct {
 	int fail_erase_at;		/* erases from this number fail, 0: none */
 	int fail_erase_only;		/* this erase alone fails, 0: none */
 	bool fail_select;
+	bool fail_bp_write;		/* every write to a boot partition fails */
 	unsigned flushes;
 	unsigned fail_flush_from;	/* flushes from this number fail, 0: none */
 } emmc;
@@ -88,6 +89,8 @@ static int32_t st_emmc(void *c, uint8_t cmd, uint32_t a0, uint32_t a1,
 	case S09_WRITE_SECTOR:
 	case S09_WRITE_SECTORS:
 	case S09_WRITE_RELIABLE:
+		if (emmc.part != 0 && emmc.fail_bp_write)
+			return 1;
 		p = sector_at(a0, n);
 		if (p == NULL)
 			return emmc.part == 0 ? 0 : 1;
@@ -3743,14 +3746,17 @@ static void test_os_write(void)
 	CHECK_EQ(os_write(&env, 0x800, &e), S15_OSW_FAILED);
 	CHECK(e.why == S15_OSW_WHY_TOO_LARGE && e.value == 0x1000u && e.limit == 0x800u &&
 	      strcmp(rp.s, "s0 ") == 0);
-	/* an eMMC failure: the first erase of the target (S-03.056) */
+	/* an eMMC failure: the first write of the target's image, which
+	 * erases nothing in group 0 (S-03.054, S-03.056) */
 	CHECK(put("/yaffs2/os.ldr", os, (uint32_t)n));
-	emmc.fail_erase_at = (int)emmc.erases + 1;
+	emmc.erases = 0;
+	emmc.fail_bp_write = true;
 	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_FAILED);
-	CHECK(e.why == S15_OSW_WHY_ERASE && e.part == 1u && e.target == 1u && e.value == 0u &&
+	CHECK(e.why == S15_OSW_WHY_EMMC_WRITE && e.part == 1u && e.target == 1u && e.value == 1u &&
 	      e.emmc == S15_OSW_EMMC_UNCHANGED);
-	CHECK(strlen(rp.s) >= 3u && strcmp(rp.s + strlen(rp.s) - 3u, "s3 ") == 0);
-	emmc.fail_erase_at = 0;
+	CHECK(strlen(rp.s) >= 3u && strcmp(rp.s + strlen(rp.s) - 3u, "s4 ") == 0);
+	CHECK_EQ(emmc.erases, 0u);
+	emmc.fail_bp_write = false;
 	/* S-03.068: the flushes in turn fail, on every try */
 	emmc.fail_flush_from = emmc.flushes + 1u;
 	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_FAILED);
@@ -3794,7 +3800,9 @@ static void test_settings_file(void)
 	CHECK(!s.dev_mode && s.color);			/* missing: defaults */
 	s.dev_mode = true;
 	s.color = false;
+	emmc.flushes = 0;
 	CHECK(s09_files_settings_save(&F, &s));
+	CHECK_EQ(emmc.flushes, 1u);			/* the eMMC's cache, after the rename */
 	CHECK_EQ(s09_files_read_file(&F, S15_SETTINGS_PATH, buf, sizeof buf),
 		 sizeof on_off - 1u);
 	CHECK(!memcmp(buf, on_off, sizeof on_off - 1u));
@@ -3814,6 +3822,14 @@ static void test_settings_file(void)
 	CHECK(s09_files_settings_save(&F, &s));
 	CHECK_EQ(s09_files_stat(&F, S15_SETTINGS_PATH, &st), 0);
 	CHECK_EQ(st.size, 68u);
+	/* a failed flush: renamed, and reported as not saved */
+	emmc.fail_flush_from = emmc.flushes + 1u;
+	s.dev_mode = true;
+	CHECK(!s09_files_settings_save(&F, &s));
+	emmc.fail_flush_from = 0;
+	s.dev_mode = false;
+	s09_files_settings_read(&F, &s);
+	CHECK(s.dev_mode);
 	/* corrupt: too long, then not text: the defaults */
 	CHECK(put(S15_SETTINGS_PATH, big, 513));
 	s.dev_mode = true;

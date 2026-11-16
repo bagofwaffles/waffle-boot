@@ -698,6 +698,8 @@ static void all_good(void)
 	facts.jedec[0] = 0xef;
 	facts.jedec[1] = 0x40;
 	facts.jedec[2] = 0x14;
+	facts.flash_sr_read = true;
+	facts.flash_sr = 0x00;
 	facts.flash_read = true;
 	facts.meta_magic_ok = true;
 	facts.sel_verified = 1;
@@ -879,6 +881,20 @@ static void test_verdict(void)
 	facts.jedec[0] = facts.jedec[1] = facts.jedec[2] = 0xFF;
 	judge();
 	CHECK(table.r[TCHK_FLASH_ID].state == TCHK_FAIL);
+	/* the status register's block-protect bits, reported, judged by nothing */
+	all_good();
+	facts.flash_sr = 0x3C;		/* BP3-BP0 1111: none protected */
+	judge();
+	CHECK(strcmp(table.r[TCHK_FLASH_ID].detail.s,
+		     "JEDEC id ef 40 14; status 3c, no block protected") == 0);
+	facts.flash_sr = 0x04;		/* BP0 */
+	judge();
+	CHECK(table.r[TCHK_FLASH_ID].state == TCHK_PASS);
+	CHECK(strcmp(table.r[TCHK_FLASH_ID].detail.s,
+		     "JEDEC id ef 40 14; status 04, block protect bits set") == 0);
+	facts.flash_sr_read = false;
+	judge();
+	CHECK(strcmp(table.r[TCHK_FLASH_ID].detail.s, "JEDEC id ef 40 14") == 0);
 	/* S-03.009's switches: judged by the slave's record, not the bring-up's
 	 * copy of EXT_CSD, which predates them */
 	all_good();
@@ -1219,7 +1235,7 @@ static void test_report_redaction(void)
 	CHECK(has("waffle-boot installer, checks v1.0.11\n"));
 	CHECK(has("version 1.0.7"));
 	CHECK(has("version unread"));
-	CHECK(has("JEDEC id ef 40 14"));
+	CHECK(has("JEDEC id ef 40 14; status 00, no block protected"));
 	CHECK(has("Hardware: PASS"));
 	CHECK(has("Your OS: must be written again"));
 	CHECK(has("Your OS stays on the eMMC"));

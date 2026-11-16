@@ -51,7 +51,8 @@ The full map, with every writer, is in [Flash Layout and Write Safety](Flash-Lay
 - **The start log.** Each start marks a bit in the selected slot's last sector; the main image clears
   another once it is up (menus, battery wait, boot prompt, or an OS staged and checked). Three unfinished
   starts in a row open recovery. The front never erases the log and times nothing, so a slow install
-  cannot trigger it (S-02.095).
+  cannot trigger it (S-02.095). The main image erases the log on a normal start once 256 or more entries are
+  used, and when it reads full or not valid, so the count never stops (S-02.101).
 - **One chord.** M4 alone at power-on opens recovery and writes nothing. Every other key set is no
   chord, and an unreadable key counts as not pressed (S-02.080, S-15.150).
 - **Recovery writes only from a known place**: its slot established, selected, trusted, with an intact

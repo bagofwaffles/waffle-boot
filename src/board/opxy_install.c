@@ -137,23 +137,34 @@ static void version_str(const struct s11_version *v, char *out)
 
 /* --- the metadata record (S-04.043) --- */
 
+/* n bytes at off read twice, the reads equal (S-02.064 step 0): a read that
+ * returns wrong bytes with no error is not written into both copies. */
+static bool read_twice(const struct s02_flash_ops *f, uint32_t off, uint8_t *buf, uint32_t n)
+{
+	uint8_t again[S02_MIRROR_SIZE];
+
+	return n <= sizeof(again) && f->read(f->ctx, off, buf, n) == 0 &&
+	       f->read(f->ctx, off, again, n) == 0 && memcmp(buf, again, n) == 0;
+}
+
 /*
  * The record every write keeps its other bytes from, read now: 0xC000 when it
  * holds the magic, else a valid mirror (S-02.063), else 0xC000 as it reads,
- * which then holds no record to lose.  False when neither can be read.
+ * which then holds no record to lose.  False when neither can be read, or
+ * two reads of what is used disagree.
  */
 static bool meta_before(const struct opxy_master *m, uint8_t before[S04_META_SIZE])
 {
 	const struct s02_flash_ops *f = m->flash.flash;
 	uint8_t mirror[S02_MIRROR_SIZE];
-	bool read = f->read(f->ctx, S02_META_OFF, before, S04_META_SIZE) == 0;
+	bool read = read_twice(f, S02_META_OFF, before, S04_META_SIZE);
 
 	if (read && before[0] == (uint8_t)S04_META_MAGIC &&
 	    before[1] == (uint8_t)(S04_META_MAGIC >> 8) &&
 	    before[2] == (uint8_t)(S04_META_MAGIC >> 16) &&
 	    before[3] == (uint8_t)(S04_META_MAGIC >> 24))
 		return true;
-	if (f->read(f->ctx, S02_MIRROR_OFF, mirror, S02_MIRROR_SIZE) == 0 &&
+	if (read_twice(f, S02_MIRROR_OFF, mirror, S02_MIRROR_SIZE) &&
 	    s02_mirror_valid(mirror)) {
 		memcpy(before, mirror, S04_META_SIZE);
 		return true;

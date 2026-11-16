@@ -101,8 +101,10 @@ int opxy_boot_prompt(void *ctx)
 	values(m, &v);
 	s15_prompt_show(&m->sv.menu, &v);	/* logged */
 	draw(m);
-	/* S-02.095: the prompt shown, alive; the one write, before the wait. */
+	/* S-02.095: the prompt shown, alive; the finished mark, and the log's
+	 * erase when due (S-02.101), before the wait. */
 	opxy_start_finished(m);
+	opxy_start_log_tidy(m);
 	/*
 	 * S-15.180: every bitmap that arrived before the screen was shown is
 	 * taken into account first; its events choose nothing. The keys

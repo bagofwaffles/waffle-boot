@@ -115,7 +115,7 @@ static int drv_erase(struct yaffs_dev *dev, int block_no)
 	    (uint32_t)block_no >= bd->n_sectors / WB_YAFFS_SECTORS_PER_BLOCK)
 		return YAFFS_FAIL;
 	lba = (uint32_t)block_no * WB_YAFFS_SECTORS_PER_BLOCK;
-	if (bd->erase)
+	if (bd->erase && (bd->erase_zeroes == NULL || bd->erase_zeroes(bd->ctx)))
 		return bd->erase(bd->ctx, lba, WB_YAFFS_SECTORS_PER_BLOCK) ?
 			YAFFS_FAIL : YAFFS_OK;
 	for (i = 0; i < WB_YAFFS_SECTORS_PER_BLOCK; i += WB_YAFFS_ZERO_RUN)

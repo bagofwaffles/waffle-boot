@@ -565,8 +565,12 @@ static int release(void *ctx, uint8_t *reply)
 	int v;
 
 	OPXY_CRUMB(17u); OPXY_TIME(BOOT_TIME_CHECKED);
-	/* S-02.095: the OS image staged and checked, the release next: alive. */
+	/* S-02.095: the OS image staged and checked, the release next: alive.
+	 * S-02.101: the log's erase, when due, before the release: the slave
+	 * waits for it with no bound of its own, and from the release on the
+	 * hand-over leaves no time for a sector erase. */
 	opxy_start_finished(m);
+	opxy_start_log_tidy(m);
 	v = s09_master_release(&m->bridge);
 
 	OPXY_CRUMB(19u); OPXY_TIME(BOOT_TIME_RELEASED);

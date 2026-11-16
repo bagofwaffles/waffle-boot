@@ -314,6 +314,8 @@ struct tchk_facts {
 	/* flash-id */
 	bool flash_id_read;
 	uint8_t jedec[3];
+	bool flash_sr_read;		/* RDSR answered, after the id */
+	uint8_t flash_sr;		/* its block-protect bits are reported */
 	/* flash-layout: only words of these reach the report */
 	bool flash_read;
 	bool meta_magic_ok;

@@ -36,7 +36,7 @@ SECTOR = 0x1000
 FLASH = [
     ('First stage', 0x00000, 0xB000, GRAY, 46,
      ["The unit's own first loader. It reads the selector,", 'checks the slot and starts it. waffle-boot leaves it.']),
-    ('Metadata mirror', 0x0B000, SECTOR, BLUE, 26, ['A second copy, written before the record is erased.']),
+    ('Metadata mirror', 0x0B000, SECTOR, BLUE, 26, ['A second copy, kept only while the record is written.']),
     ('Metadata', 0x0C000, SECTOR, BLUE, 26, ['Serial number and calibration. Written by an OS install.']),
     ('Selector', 0x0D000, SECTOR, AMBER, 26, ['Which slot starts, and whether it is trusted.']),
     ('Slot 1 record', 0x0E000, SECTOR, AMBER, 26, ["Slot 1's length and CRC-32."]),
@@ -44,7 +44,7 @@ FLASH = [
     ('Slot 1', 0x10000, 0x77000, RED, 66,
      ['A bootloader image. Its first part is the front,', 'which holds recovery, so recovery is in every image.',
       'Written only on request, never the slot that runs.']),
-    ('Slot 1 start log', 0x87000, SECTOR, GREEN, 26, ['One bit cleared at each start. Never erased by a start.']),
+    ('Slot 1 start log', 0x87000, SECTOR, GREEN, 26, ['One bit cleared at each start. Erased every 256 or more.']),
     ('Slot 2', 0x88000, 0x76000, RED, 66,
      ['The second image. A new image goes into the slot', 'that is not running and is read back before the',
       'selector names it.']),

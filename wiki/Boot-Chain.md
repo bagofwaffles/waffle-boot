@@ -36,7 +36,9 @@ Power switch on
    the hand-over frame, and hands both processors to the OS.
 
 The main image clears the start log's mark once it is up: at its menus, its battery wait, or an OS image
-staged and checked. A start that never gets there counts as unfinished.
+staged and checked. A start that never gets there counts as unfinished. On a normal start the main image
+also erases the log, once 256 or more entries are used or when it reads full or not valid
+([Flash Layout and Write Safety](Flash-Layout-and-Write-Safety#the-rules)).
 
 ## Slots and the trial start
 

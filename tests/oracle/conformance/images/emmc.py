@@ -122,15 +122,16 @@ def last_writable_sector(length, B=BOOT_PARTITION_SIZE):
 
 class Emmc:
     """Boot partitions as bytearrays of B bytes, the user area sparse ({sector: 512 bytes}, zero
-    elsewhere). An erase zeroes one group of 0x400 sectors."""
+    elsewhere). An erase sets one group of 0x400 sectors to `erased` (0x00 by default, S-03.003)."""
 
-    def __init__(self, boot_size=BOOT_PARTITION_SIZE):
+    def __init__(self, boot_size=BOOT_PARTITION_SIZE, erased=0x00):
         self.B = boot_size
+        self.erased = erased      # what an erased byte reads as (EXT_CSD ERASED_MEM_CONT)
         self.boot = {BOOT1: bytearray(boot_size), BOOT2: bytearray(boot_size)}
         self.user = {}
 
     def copy(self):
-        c = Emmc(self.B)
+        c = Emmc(self.B, self.erased)
         c.boot = {k: bytearray(v) for k, v in self.boot.items()}
         c.user = dict(self.user)
         return c
@@ -138,7 +139,7 @@ class Emmc:
     def erase_group(self, part, g):
         a = g * ERASE_GROUP * SECTOR
         b = min(a + ERASE_GROUP * SECTOR, self.B)
-        self.boot[part][a:b] = bytes(b - a)
+        self.boot[part][a:b] = bytes([self.erased]) * (b - a)
 
     def write(self, part, sector, data):
         a = sector * SECTOR
@@ -259,8 +260,9 @@ def write_os(emmc, image, corrupt_sector=None, corrupt_header=None, deactivate='
     """The OS writer (S-03.050-S-03.068) on `emmc` (mutated). Returns (result, ops, target), result 'ok',
     'refused', 'failed' or 'cut'.
 
-    profile 'two_step' (S-03.055): erase; zero the target header if it reads active; write and read back
-    the image; write and verify the header inactive, then active; rewrite the other partition's header
+    profile 'two_step' (S-03.055): zero the target header if it reads active, and read it back; erase the
+    target's groups from 1 on (group 0, the header's, is written over and never erased); write and read
+    back the image; write and verify the header inactive, then active; rewrite the other partition's header
     inactive, then erase its group 0 if deactivate='rewrite_erase'. A header that does not verify is
     rewritten inactive. Flushes follow the inactive header, the active header and the deactivation; a
     failed write that changed anything flushes before its select 0.
@@ -351,16 +353,22 @@ def write_os(emmc, image, corrupt_sector=None, corrupt_header=None, deactivate='
                 mutate(('write', target, 0, 1), lambda: emmc.write(target, 0, inactive))
         return bad
 
-    def header_inactive():
-        """S-03.055, S-03.056: zero the target header if it reads active."""
+    def header_inactive(check=False):
+        """S-03.055, S-03.056: zero the target header if it reads active; with check, read it back and
+        report whether it still reads active."""
         if profile != 'two_step':
-            return
+            return False
         op(('read', target, 0, 1))
         if emmc.read(target, 0, 1)[0x0C]:
             mutate(('write', target, 0, 1), lambda: emmc.write(target, 0, bytes(SECTOR)))
+            if check:
+                op(('read', target, 0, 1))
+                return emmc.read(target, 0, 1)[0x0C] != 0
+        return False
 
     def failed_early():
-        header_inactive()
+        if muts[0]:
+            header_inactive()
         return end('failed')
 
     try:
@@ -372,10 +380,16 @@ def write_os(emmc, image, corrupt_sector=None, corrupt_header=None, deactivate='
         other = BOOT1 if target == BOOT2 else BOOT2
         if target == BOOT2 and op(('select', BOOT2), 'select2'):
             return end('failed')
-        for g in range(0, n // ERASE_GROUP + 1):
-            if mutate(('erase', target, g), lambda g=g: emmc.erase_group(target, g), 'erase' if g == 0 else None):
+        if profile == 'two_step':
+            if header_inactive(check=True):
                 return failed_early()
-        header_inactive()
+            first = 1
+        else:
+            first = 0
+        for g in range(first, n // ERASE_GROUP + 1):
+            if mutate(('erase', target, g), lambda g=g: emmc.erase_group(target, g),
+                      'erase' if g == first else None):
+                return failed_early()
         data = bytearray(stored)
         if corrupt_sector is not None:
             data[(corrupt_sector - 1) * SECTOR] ^= 0xFF

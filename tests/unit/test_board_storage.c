@@ -288,6 +288,7 @@ static void geometry(uint32_t sectors, uint8_t grp_size, uint8_t grp_mult,
 	emmc.ext_csd[215] = (uint8_t)(sectors >> 24);
 	emmc.ext_csd[224] = 2u;
 	emmc.ext_csd[265] = opt_write;
+	emmc.ext_csd[181] = 0u;		/* ERASED_MEM_CONT: erases to zero */
 	emmc.csd[3] = 0xFFFFFFFFu;
 	emmc.csd[2] = 0xFFFFFFFFu;
 	emmc.csd[1] = 0xFFFF801Fu | (uint32_t)grp_size << 10 |
@@ -816,6 +817,35 @@ static void test_user_bd_erase(void)
 	log_start();
 	CHECK(bd.erase(bd.ctx, 0u, S03_GROUP_SECTORS) != 0);
 	CHECK(emmc.log_n == 0u);
+
+	/* S-03.003: what an erase leaves, from EXT_CSD[181] as the bring-up
+	 * read it; with 0xFF the glue writes zeros in place of the erase */
+	CHECK(bd.erase_zeroes != NULL);
+	if (bd.erase_zeroes == NULL)
+		return;
+	CHECK(bd.erase_zeroes(bd.ctx));
+	s.ext_csd[181] = 1u;
+	CHECK(!bd.erase_zeroes(bd.ctx));
+	s.ext_csd[181] = 0xFEu;
+	CHECK(bd.erase_zeroes(bd.ctx));
+}
+
+/* S-03.068: a flush reaches the eMMC only where EXT_CSD shows a cache. */
+static void test_flush_needs_cache(void)
+{
+	reset(GOOD);
+	opxy_slave_storage(&s);
+	CHECK(s.emmc_up);
+	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	log_start();
+	CHECK(s.store.emmc(s.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
+	CHECK(emmc.sw[32] == 1u);			/* CACHE_SIZE 0xA5A5A5A5 */
+	memset(s.ext_csd + 249, 0, 4u);		/* no cache */
+	CHECK(s.store.emmc(s.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
+	CHECK(emmc.sw[32] == 1u);
+	s.ext_csd[252] = 1u;
+	CHECK(s.store.emmc(s.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
+	CHECK(emmc.sw[32] == 2u);
 }
 
 /* S-12.060, S-13b.054: the volume's device writes chunks with CMD23,
@@ -970,6 +1000,7 @@ int main(void)
 	RUN(test_features_once);
 	RUN(test_features_fail);
 	RUN(test_user_bd_erase);
+	RUN(test_flush_needs_cache);
 	RUN(test_user_bd_reliable);
 	RUN(test_geometry_accepted);
 	return check_summary("test_board_storage");

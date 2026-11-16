@@ -65,6 +65,7 @@ def headers():
 
 L_A, L_B = 12288, 12544               # a 512-multiple and a non-multiple length
 L_LONG = 0x20000 + 700                # 258 sectors: more than 256 sectors
+L_TWO = 0x80000 + 0x1000              # past erase group 0
 
 STATES = {
     # name: (description, installer(device, part, seed))
@@ -230,7 +231,7 @@ def write_sequences():
     cases.append(write_case('p1_inactive_p2_active_rewrite_erase', 'p1_inactive_p2_active', L_B,
                             deactivate='rewrite_erase'))
     cases.append(write_case('p1_active_rewrite_erase', 'p1_active', L_B, deactivate='rewrite_erase'))
-    cases.append(write_case('large_two_groups', 'p1_active', 0x80000 + 0x1000))
+    cases.append(write_case('large_two_groups', 'p1_active', L_TWO))
     cases.append(write_case('corrupt_sector5', 'p1_active', L_A, corrupt_sector=5))
     cases.append(write_case('corrupt_last_sector_512_multiple', 'p1_active', L_A, corrupt_sector=L_A // 512))
     cases.append(write_case('corrupt_last_partial_sector', 'p1_active', L_B, corrupt_sector=M.n_sectors(L_B)))
@@ -250,7 +251,8 @@ def write_sequences():
         for start in ('p1_active', 'p1_inactive_p2_active'):
             if f == 'select2' and start != 'p1_active':
                 continue                    # no select 2 when the target is BP1
-            cases.append(write_case('fail_%s__%s' % (f, start), start, L_B, fail=f,
+            # an erase only from group 1 on: the erase's failure needs an image past group 0
+            cases.append(write_case('fail_%s__%s' % (f, start), start, L_TWO if f == 'erase' else L_B, fail=f,
                                     deactivate='rewrite_erase' if f == 'erase_other' else 'rewrite'))
     for f in ('select_other', 'read_other', 'deactivate'):   # step 8 from the other starting states (S-03.062)
         for start in ('both_active', 'neither', 'p1_bad'):
@@ -258,7 +260,34 @@ def write_sequences():
     cases.append(write_case('fail_deactivate__p1_inactive_p2_active_rewrite_erase', 'p1_inactive_p2_active', L_B,
                             deactivate='rewrite_erase', fail='deactivate'))
     return {
-            'B': B, 'cases': cases}
+            'B': B, 'cases': cases, 'erased_ff': erased_ff()}
+
+
+def erased_ff():
+    """S-03.055 on an eMMC whose erased bytes read 0xFF (ERASED_MEM_CONT 1): the boot after a cut at every
+    erase or write boundary of a clean write, each start state, both lengths and one past group 0. The
+    target's group 0 is never erased, so no cut leaves a header of 0xFF bytes that reads active."""
+    out = []
+    for start in ('p1_active', 'p1_inactive_p2_active', 'both_active', 'neither', 'p1_bad'):
+        for length in (L_A, L_B, L_TWO):
+            old, new = img(3, 16384), img(4, length)
+
+            def dev():
+                c = start_state(start, old)
+                ff = M.Emmc(B, erased=0xFF)
+                ff.boot = c.boot
+                return ff
+            c = dev()
+            result, ops, _ = M.write(c, new)
+            muts = sum(1 for o in ops if o[0] in ('erase', 'write'))
+            boots = []
+            for k in range(1, muts + 1):
+                cc = dev()
+                M.write(cc, new, cut_after=k)
+                boots.append(M.boots(cc, old, new))
+            out.append({'start': start, 'length': length, 'result': result, 'final': M.boots(c, old, new),
+                        'cuts': boots})
+    return out
 
 
 # ---- user_area.json (S-03.001, S-03.070-S-03.073) ----

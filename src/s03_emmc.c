@@ -447,8 +447,11 @@ static int header_step(struct wrun *r, const uint8_t hdr[S03_SECTOR])
 }
 
 /*
- * S-03.055 step 1: the target's header reads inactive before an image sector
- * is written.  An eMMC whose erased bytes are not zero gets a zero sector.
+ * S-03.055 step 1: the target's header reads inactive before its first
+ * erase and before an image sector is written: a header that reads active
+ * gets a zero sector, read back. Group 0, which holds the header, is never
+ * erased, so what an erased group reads as plays no part: at every cut the
+ * target reads inactive until the active header of step 6.
  */
 static int header_inactive(struct wrun *r)
 {
@@ -461,7 +464,9 @@ static int header_inactive(struct wrun *r)
 		return 0;
 	for (i = 0; i < S03_SECTOR; i++)
 		hdr[i] = 0u;
-	return w_write(r, 0, 1, hdr);
+	if (w_write(r, 0, 1, hdr) != 0 || w_read(r, 0, 1, hdr) != 0)
+		return -1;
+	return hdr[S03_ACTIVE_OFF] == 0u ? 0 : w_failed(r, S03_FAIL_MISMATCH, 0);
 }
 
 /*
@@ -504,17 +509,18 @@ static enum s03_write_result write_body(struct wrun *r, const uint8_t *image, ui
 	if (out->target == S03_PART_BP2 && w_select(r, S03_PART_BP2) != 0)
 		return S03_WRITE_FAILED;
 
-	/* Step 1: the target's groups 0..floor(N / 0x400) (S-03.054, S-03.004). */
+	/* Step 1: the header inactive, then the target's groups
+	 * 1..floor(N / 0x400) (S-03.054, S-03.004); group 0 is written over. */
 	w_stage(r, S03_WS_ERASE);
 	n = s03_sectors(length);
 	groups = n / S03_GROUP_SECTORS + 1u;
-	for (g = 0; g < groups; g++) {
-		if (w_erase(r, g) != 0)
-			return failed_early(r);		/* S-03.056 */
-		w_progress(r, g + 1u, groups);
-	}
 	if (header_inactive(r) != 0)
 		return failed_early(r);
+	for (g = 1; g < groups; g++) {
+		if (w_erase(r, g) != 0)
+			return failed_early(r);		/* S-03.056 */
+		w_progress(r, g, groups - 1u);
+	}
 	/* Steps 2 and 3. */
 	w_stage(r, S03_WS_WRITE);
 	if (write_stored(r, image, length) != 0)

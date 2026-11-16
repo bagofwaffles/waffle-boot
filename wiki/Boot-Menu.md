@@ -27,7 +27,7 @@ key, cancels. A knob click never starts it.
 | 1 Install firmware | Offers a USB disk for a firmware package ([Updating the OS](Updating-the-OS)). Hold **shift** while pressing 1 to also copy system information and logs to the disk ([Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)) |
 | 2 Settings | The settings below |
 | 3 Developer menu | Shown only while developer mode is on |
-| 4 Device info | Serial numbers, versions, the second processor's state, and why the OS did not start. The help key opens it too |
+| 4 Device info | Serial numbers, versions, the second processor's state, how full the start log is, and why the OS did not start. The help key opens it too |
 | 5 System | Key test, volume calibration, content packs, format, factory reset |
 
 The status bar shows the running slot (`SLOT1` or `SLOT2`) and `USB`, lit while a disk is offered. Under
