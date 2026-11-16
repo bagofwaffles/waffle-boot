@@ -26,6 +26,22 @@ UTC = '2026-01-02T03:04:05+0000'
 ZEROS = '0' * 40
 
 
+def jpeg(marker=b'', body=b''):
+    """A JPEG's opening: JFIF, then one more segment if asked, then the scan."""
+    def segment(m, b):
+        return b'\xff' + m + (len(b) + 2).to_bytes(2, 'big') + b
+    extra = segment(marker, body) if marker else b''
+    return b'\xff\xd8' + segment(b'\xe0', b'JFIF\0\1\1\0\0\1\0\1\0\0') + extra + \
+        b'\xff\xda\0\2' + b'Exif\0\0 in the picture data is not a block\xff\xd9'
+
+
+def chunk(kind, body):
+    return len(body).to_bytes(4, 'big') + kind + body + b'\0' * 4
+
+
+JPEG = jpeg()
+
+
 class Case(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -120,6 +136,33 @@ class PrePush(Case):
 
     def test_vector(self):
         self.clean(self.push(self.commit({'tests/oracle/S-05-os-handoff/vectors/a.ldr': b'\x00' * 9})))
+
+    def test_photo(self):
+        self.clean(self.push(self.commit({'photos/board.jpg': JPEG})))
+
+    def test_photo_elsewhere(self):
+        sha = self.commit({'board.jpg': JPEG})
+        self.caught(self.push(sha), 'binary file outside')
+
+    def test_photo_exif(self):
+        sha = self.commit({'photos/board.jpg': jpeg(b'\xe1', b'Exif\0\0MM\0*')})
+        self.caught(self.push(sha), 'Exif block in an image')
+
+    def test_photo_xmp(self):
+        sha = self.commit({'photos/board.jpg': jpeg(b'\xe1', b'http://ns.adobe.com/xap/1.0/\0<x/>')})
+        self.caught(self.push(sha), 'XMP block in an image')
+
+    def test_photo_iptc(self):
+        sha = self.commit({'photos/board.jpg': jpeg(b'\xed', b'Photoshop 3.0\0')})
+        self.caught(self.push(sha), 'IPTC block in an image')
+
+    def test_png_exif(self):
+        png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', b'\0' * 13) + chunk(b'eXIf', b'MM\0*')
+        self.caught(self.push(self.commit({'docs/ui/a.png': png})), 'Exif block in an image')
+
+    def test_png_plain(self):
+        png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', b'\0' * 13) + chunk(b'IDAT', b'eXIf')
+        self.clean(self.push(self.commit({'docs/ui/a.png': png})))
 
     def test_spec_tree(self):
         sha = self.commit({'spec/S-05-os-handoff.md': 'text\n'})

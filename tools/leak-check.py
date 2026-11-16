@@ -18,7 +18,9 @@ What it looks for:
   identity   every commit is by the project identity, in UTC
   messages   no "…-by:" trailers, no addresses
   content    no home directory paths, no email addresses, and binary
-             files only where test data and screenshots live
+             files only where photos, test data and screenshots live
+  images     no Exif, XMP or IPTC block in a JPEG or PNG: that is where
+             a camera puts the place, the time and its serial number
   private    the patterns in ~/.config/bagofwaffles/leak-patterns, one
              regular expression a line, matched without regard to case
   banned     nothing descended from a commit in
@@ -56,7 +58,7 @@ EMAIL_RE = re.compile(
 TRAILER_RE = re.compile(rb'^[A-Za-z-]+-by:', re.I | re.M)
 
 # Binary files belong here and nowhere else.
-BINARY_OK = re.compile(r'^(docs/ui/|tests/oracle/S-[^/]+/vectors/|tests/fuzz/regressions/)')
+BINARY_OK = re.compile(r'^(photos/|docs/ui/|tests/oracle/S-[^/]+/vectors/|tests/fuzz/regressions/)')
 # The specification is a private repository of its own: nothing under spec/ is tracked here.
 PRIVATE_TREE = re.compile(r'^spec(/|$)')
 # Upstream code keeps its authors' addresses and paths.
@@ -175,6 +177,45 @@ def scan_name(name, what, report):
             report.add('private pattern %d in a %s' % (n, what), '(not shown)')
 
 
+def image_metadata(data):
+    """The kind of metadata block a JPEG or PNG carries, or ''."""
+    if data[:2] == b'\xff\xd8':
+        at = 2
+        while at + 4 <= len(data) and data[at] == 0xff:
+            marker = data[at + 1]
+            if marker == 0xda:                # the picture starts here
+                break
+            if marker == 0xff:                # a fill byte
+                at += 1
+                continue
+            if 0xd0 <= marker <= 0xd9 or marker == 0x01:
+                at += 2                       # a marker with no length
+                continue
+            size = int.from_bytes(data[at + 2:at + 4], 'big')
+            body = data[at + 4:at + 2 + size]
+            if marker == 0xe1 and body.startswith(b'Exif\0'):
+                return 'Exif'
+            if marker == 0xe1 and body.startswith(b'http://ns.adobe.com/'):
+                return 'XMP'
+            if marker == 0xed:
+                return 'IPTC'
+            at += 2 + size
+    elif data[:8] == b'\x89PNG\r\n\x1a\n':
+        at = 8
+        while at + 8 <= len(data):
+            size = int.from_bytes(data[at:at + 4], 'big')
+            kind = data[at + 4:at + 8]
+            if kind == b'eXIf':
+                return 'Exif'
+            if kind in (b'iTXt', b'tEXt', b'zTXt') and \
+                    data[at + 8:at + 8 + size].startswith(b'XML:com.adobe.xmp'):
+                return 'XMP'
+            if kind == b'IDAT':               # the picture starts here
+                break
+            at += 12 + size
+    return ''
+
+
 def scan_blob(path, data, report):
     """A tracked file's content, under its path."""
     binary = b'\0' in data[:8000]
@@ -185,6 +226,9 @@ def scan_blob(path, data, report):
         report.add('a file under spec/, which is not tracked here', path)
     if binary and not BINARY_OK.match(path):
         report.add('binary file outside the test data and screenshots', path)
+    found = image_metadata(data)
+    if found:
+        report.add('%s block in an image (strip it: exiftool -all=)' % found, path)
     if base == '.gitmodules':
         report.add('submodule', path)
     if base == '.gitattributes' and b'filter=lfs' in data:
