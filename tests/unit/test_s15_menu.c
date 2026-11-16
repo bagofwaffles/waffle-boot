@@ -12,7 +12,7 @@
  * Requirements: S-15.004, S-15.010, S-15.011, S-15.012, S-15.013, S-15.014, S-15.015,
  * S-15.020, S-15.031, S-15.032, S-15.042, S-15.043, S-15.050, S-15.051,
  * S-15.052, S-15.060, S-15.061, S-15.062, S-15.065, S-15.071, S-15.072,
- * S-15.073, S-15.081, S-15.092, S-15.093, S-15.094, S-15.095, S-15.100,
+ * S-15.073, S-15.081, S-15.082, S-15.092, S-15.093, S-15.094, S-15.095, S-15.100,
  * S-15.102, S-15.103, S-15.104, S-15.105, S-15.115, S-15.140, S-15.161,
  * S-15.170, S-15.172, S-15.175, S-15.180, S-15.190, S-05.033, S-16.012,
  * S-16.123, S-16.161.
@@ -78,6 +78,9 @@ struct fake {
 	bool store_last;                  /* the value asked for */
 	enum s15_store_save store_rc;     /* what the write gives */
 	bool store_after;                 /* what it reads after a failed write */
+	/* S-15.082: the start log read again, and what it reads then */
+	unsigned log_reads;
+	bool log_change;
 };
 
 static struct fake F;
@@ -219,6 +222,17 @@ static void f_continue(void *c)
 	F.leds_end_at_cont = F.leds_end;
 }
 
+static struct s15_boot BOOT;
+
+/* S-15.082: a read of the start log that finds one more start each time. */
+static void f_logread(void *c)
+{
+	(void)c;
+	F.log_reads++;
+	if (F.log_change)
+		BOOT.start_log_used++;
+}
+
 static enum s15_store_save f_store(void *c, bool on, bool *now)
 {
 	(void)c;
@@ -232,7 +246,7 @@ static const struct s15_env_ops env = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, f_settings, NULL, f_lost, f_continue,
-	f_store,
+	f_store, f_logread,
 };
 
 /* A board with no boot store and no continue_os for the host. */
@@ -240,6 +254,7 @@ static const struct s15_env_ops env_bare = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, f_settings, NULL, f_lost, NULL, NULL,
+	NULL,
 };
 
 static void clear_records(void)
@@ -316,8 +331,6 @@ static bool appended(const char *s)
 
 /* ---- menus ------------------------------------------------------------- */
 
-static struct s15_boot BOOT;
-
 static void default_boot(void)
 {
 	memset(&BOOT, 0, sizeof BOOT);
@@ -333,6 +346,7 @@ static void default_boot(void)
 	BOOT.provisioned = true;
 	BOOT.start_log = S15_LOG_OK;
 	BOOT.start_log_used = 41;
+	BOOT.start_log_erase = 256;
 	s15_settings_defaults(&BOOT.settings);
 	BOOT.settings.dev_mode = true;	/* most tests use the developer menu */
 }
@@ -560,6 +574,70 @@ static void expect_title(const char *screen)
 	      "title of %s: '%s'", screen, f.title ? f.title : "");
 }
 
+/* S-15.082: Device Info's second page, the start log read again each time
+ * it opens; 8 goes back to the first page, no other key leaves it. */
+static void info2_with(enum s15_log st, unsigned slot, unsigned used,
+		       unsigned unfinished, const char *name)
+{
+	reset_fake(); default_boot();
+	BOOT.start_log = (uint8_t)st;
+	BOOT.start_log_slot = (uint8_t)slot;
+	BOOT.start_log_used = (uint16_t)used;
+	BOOT.start_log_unfinished = (uint16_t)unfinished;
+	start();
+	press(0x09);
+	press(0x06);
+	CHECK(M.screen == S15_SCR_INFO2 && F.log_reads == 1u, "S-15.082 %s opened", name);
+	expect_screen(name);
+}
+
+static void test_info2(void)
+{
+	reset_fake(); default_boot(); BOOT.version = "1.0.0"; start();
+	press(0x00);
+	CHECK(F.log_reads == 0u, "S-15.082 the first page reads no log");
+	press(0x06);
+	expect_screen("info2");
+	expect_title("info2");
+	CHECK(F.log_reads == 1u, "S-15.082 read as it opens");
+	press(0x06);                /* only 8 leaves it */
+	press(0x0d);
+	press(0x12);
+	press(0x00);
+	CHECK(M.screen == S15_SCR_INFO2 && F.log_reads == 1u, "S-15.082 other keys stay");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_INFO, "S-15.082 8 back to Device Info");
+	expect_screen("info");
+	/* opened again: read again, and the new count shown */
+	F.log_change = true;
+	press(0x0a);                /* knob 1's click is digit 1 too */
+	CHECK(F.log_reads == 2u && BOOT.start_log_used == 42u, "S-15.082 read again");
+	{
+		const char *got[S15_ROWS];
+		char buf[S15_ROWS][ROWLEN];
+
+		CHECK(rows(got, buf) > 1u &&
+		      strcmp(got[1], "kv:Starts logged\t42 of 16384") == 0,
+		      "S-15.082 the new count");
+	}
+	press(0x15);
+	press(0x15);
+	expect_screen("main_plain");
+	info2_with(S15_LOG_OK, 1u, 3u, 2u, "info2_slot2");
+	info2_with(S15_LOG_FULL, 0u, 0u, 0u, "info2_full");
+	info2_with(S15_LOG_ODD, 0u, 0u, 0u, "info2_odd");
+	info2_with(S15_LOG_NONE, 1u, 0u, 0u, "info2_none");
+	info2_with(S15_LOG_UNREAD, 0u, 0u, 0u, "info2_unread");
+	/* a board with no read: the page shows what held mode began with */
+	reset_fake(); default_boot();
+	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
+	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_start(&M);
+	press(0x09);
+	press(0x06);
+	expect_screen("info2");
+}
+
 /* ---- the boot prompt: S-15.180 ---------------------------------------- */
 
 /* The boot prompt, which is shown before held mode and whose keys
@@ -616,6 +694,7 @@ static const struct rstate rstates[] = {
 	{ "pending=1,screen=packs", S15_SCR_PACKS, false, false, false, OPT_OFF, true, 1u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "pending=2,screen=packs", S15_SCR_PACKS, false, false, false, OPT_OFF, true, 2u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "screen=info", S15_SCR_INFO, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
+	{ "screen=info2", S15_SCR_INFO2, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "armed=0,packs=0,screen=system", S15_SCR_SYSTEM, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "armed=1,packs=0,screen=system", S15_SCR_SYSTEM, false, false, true, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "armed=0,packs=1,screen=system", S15_SCR_SYSTEM, false, true, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
@@ -714,6 +793,10 @@ static void setup_state(const struct rstate *st)
 		break;
 	case S15_SCR_INFO:
 		press(0x00);
+		break;
+	case S15_SCR_INFO2:
+		press(0x00);
+		press(0x06);
 		break;
 	case S15_SCR_SYSTEM:
 		press(0x12);
@@ -916,7 +999,8 @@ enum rule {
 	R_MAIN_INFO,          /* Help and digit 4 open Device Info */
 	R_MAIN_SYSTEM,        /* Digit 5 opens System; 8 does nothing */
 	R_BACK,               /* 8 leaves every screen below the main one */
-	R_INFO_ONLY_8,        /* S-15.081 */
+	R_INFO_ONLY_8,        /* S-15.081: 8 back, 1 the second page */
+	R_INFO2_ONLY_8,       /* S-15.082 */
 	R_MAIN_SAFE,          /* S-15.031: nothing destructive, no setting */
 	R_DEV_MODE,           /* S-15.170: the developer menu's setting */
 	R_MTP_TARGET,         /* S-15.174 */
@@ -943,7 +1027,7 @@ enum rule {
 };
 
 static const char *const rule_names[R_N] = {
-	"up_none", "main_info", "main_system", "back", "info_only_8",
+	"up_none", "main_info", "main_system", "back", "info_only_8", "info2_only_8",
 	"main_safe", "dev_mode", "mtp_target", "color", "white_knob",
 	"reset_confirmed", "from_system", "upgrade_exit", "option_keys",
 	"upgrade_gate", "format_keys", "mtp_busy", "osw_result",
@@ -1135,6 +1219,9 @@ static void test_rules(void)
 					case S15_SCR_SETTINGS:
 						ok = next == S15_SCR_MAIN;
 						break;
+					case S15_SCR_INFO2:
+						ok = next == S15_SCR_INFO;
+						break;
 					case S15_SCR_FACTORY:
 						if (st->mtp != MTP_OFF)
 							ok = next == S15_SCR_FACTORY &&
@@ -1157,7 +1244,14 @@ static void test_rules(void)
 
 				if (before == S15_SCR_INFO && down)
 					rule(R_INFO_ONLY_8, next == (key == 0x15u ?
-					     S15_SCR_MAIN : S15_SCR_INFO), n, key, down, &got);
+					     S15_SCR_MAIN : d == 1u ? S15_SCR_INFO2 :
+					     S15_SCR_INFO) && (next == before ? got.n == 0u :
+					     only(&got, "open")), n, key, down, &got);
+				if (before == S15_SCR_INFO2 && down)
+					rule(R_INFO2_ONLY_8, next == (key == 0x15u ?
+					     S15_SCR_INFO : S15_SCR_INFO2) &&
+					     (next == before ? got.n == 0u : only(&got, "open")),
+					     n, key, down, &got);
 
 				/* The kept settings: each only by its own digit on
 				 * Settings, turned the other way */
@@ -1337,8 +1431,8 @@ static void test_start_screens(void)
 		snprintf(want, sizeof want, "kv:OS start\t%s", c->info);
 		CHECK(strcmp(got[7], want) == 0, "S-15.163 %s info: %s", c->name, got[7]);
 		CHECK(strlen(c->info) <= S15_START_INFO_MAX, "S-15.163 %s fits", c->name);
-		snprintf(want, sizeof want, "kv:DSP2\t%s", c->dsp2);
-		CHECK(strcmp(got[5], want) == 0, "S-15.163 %s DSP2: %s", c->name, got[5]);
+		snprintf(want, sizeof want, "kv:DSP2\t%s\tBackplane\t1.0.7", c->dsp2);
+		CHECK(strcmp(got[4], want) == 0, "S-15.163 %s DSP2: %s", c->name, got[4]);
 		CHECK(strcmp(got[8], "back:8 Back to Main Menu") == 0,
 		      "S-15.163 %s: the back line last", c->name);
 		press(0x15);
@@ -1571,7 +1665,7 @@ static void test_screens(void)
 	press(0x00);
 	expect_screen("info");
 	expect_title("info");
-	press(0x06);                /* S-15.081: only 8 goes back */
+	press(0x07);                /* S-15.081: 8 goes back, 1 opens page 2 */
 	press(0x0d);
 	press(0x12);
 	CHECK(M.screen == S15_SCR_INFO, "S-15.081 other keys stay");
@@ -1593,6 +1687,7 @@ static void test_screens(void)
 	BOOT.slave = S15_SLAVE_ABSENT; start();
 	press(0x00);
 	expect_screen("info_slave_absent");
+	test_info2();
 	reset_fake(); default_boot(); start();     /* No dev mode */
 	press(0x08);
 	expect_screen("factory");

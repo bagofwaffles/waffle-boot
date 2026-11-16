@@ -305,11 +305,23 @@ void opxy_start_log_view(struct opxy_master *m)
 		return;
 	m->log_viewed = true;
 	b->start_log = S15_LOG_UNREAD;
+	b->start_log_slot = 0;
 	b->start_log_used = 0;
-	if (s02_read_selector(&m->flash, &sel) != S02_OK ||
-	    opxy_log_scan(&m->flash, s02_selected_slot(sel.index), &v) != 0)
+	b->start_log_unfinished = 0;
+	b->start_log_erase = OPXY_LOG_ERASE_USED;
+	if (s02_read_selector(&m->flash, &sel) != S02_OK)
+		return;
+	b->start_log_slot = (uint8_t)s02_selected_slot(sel.index);
+	if (opxy_log_scan(&m->flash, b->start_log_slot, &v) != 0)
 		return;
 	b->start_log = v.state == OPXY_LOG_OK ? S15_LOG_OK : v.state == OPXY_LOG_FULL ? S15_LOG_FULL :
 		       v.state == OPXY_LOG_ODD ? S15_LOG_ODD : S15_LOG_NONE;
 	b->start_log_used = v.used;
+	b->start_log_unfinished = v.unfinished;
+}
+
+void opxy_start_log_reread(struct opxy_master *m)
+{
+	m->log_viewed = false;
+	opxy_start_log_view(m);
 }

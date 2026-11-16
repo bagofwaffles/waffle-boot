@@ -1399,6 +1399,12 @@ static enum s15_store_save env_store_save(void *ctx, bool on, bool *now)
 }
 #endif
 
+/* S-15.082: Device Info's second page reads the start log again. */
+static void env_start_log_read(void *ctx)
+{
+	opxy_start_log_reread(ctx);
+}
+
 /* The PSoC's, the option's and the USB sets are the board's; the file
  * operations are the S-09 client's. The test OS (waffle/testos.h) has no
  * boot store and never hands over. */
@@ -1424,6 +1430,7 @@ void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 	env->settings_save = env_settings_save;
 	env->continue_os = OPXY_TESTOS_OR(NULL, env_continue_os);
 	env->boot_store_save = OPXY_TESTOS_OR(NULL, env_store_save);
+	env->start_log_read = env_start_log_read;
 }
 
 __attribute__((weak)) const struct s15_geometry *opxy_display_geometry(void)

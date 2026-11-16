@@ -320,7 +320,24 @@ static void test_tidy(void)
 	finished(0, 41);
 	master(0, true, 40);
 	opxy_start_log_view(&m);
-	CHECK(m.sv.boot.start_log == S15_LOG_OK && m.sv.boot.start_log_used == 41u);
+	CHECK(m.sv.boot.start_log == S15_LOG_OK && m.sv.boot.start_log_used == 41u &&
+	      m.sv.boot.start_log_slot == 0u && m.sv.boot.start_log_unfinished == 0u &&
+	      m.sv.boot.start_log_erase == OPXY_LOG_ERASE_USED);
+	/* once per boot, but again for Device Info's second page (S-15.082) */
+	unfinished(0, 41);
+	unfinished(0, 42);
+	opxy_start_log_view(&m);
+	CHECK(m.sv.boot.start_log_used == 41u);
+	opxy_start_log_reread(&m);
+	CHECK(m.sv.boot.start_log == S15_LOG_OK && m.sv.boot.start_log_used == 43u &&
+	      m.sv.boot.start_log_unfinished == 2u && m.log_viewed);
+	/* Slot 2 selected: its log */
+	flash(1);
+	finished(1, 7);
+	opxy_start_log_reread(&m);
+	CHECK(m.sv.boot.start_log == S15_LOG_OK && m.sv.boot.start_log_slot == 1u &&
+	      m.sv.boot.start_log_used == 7u && m.sv.boot.start_log_unfinished == 0u);
+	flash(0);
 	memset(g_f.mem + FR_LOG_OFF(0), 0x00, S02_SECTOR_SIZE);
 	m.log_viewed = false;
 	opxy_start_log_view(&m);

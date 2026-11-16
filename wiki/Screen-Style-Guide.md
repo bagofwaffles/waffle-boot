@@ -40,7 +40,8 @@ left, y from the top.
 | `SLOT1`, `SLOT2` | the slot that is running, on every screen, in gray. A bare dark gray `SLOT` when the running slot is not established |
 | `USB` | dark gray; amber while the device offers the host a disk (the upgrade screen's RAM disk, or MTP) |
 
-Device Info spells out the second processor's state, which has no status word.
+Device Info spells out the second processor's state, which has no status word. Its `1 More`
+opens a second page, `Device Info 2`, left with `8 Back to Device Info`.
 
 ### Bar colors
 
@@ -282,6 +283,8 @@ reach. `tour.gif` shows a few of them in turn, for the README.
 | Write OS (developer menu, 5), the write running | Continue to the OS |
 | <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |
 | the OS written, 8 back to the developer menu | the OS write failed: the step, the reason, what the eMMC was left with |
+| <img src="../docs/ui/info2.png" width="480" alt="Device Info 2"> | |
+| Device Info 2, from Device Info's 1: the start log | |
 
 ## Adding a screen
 

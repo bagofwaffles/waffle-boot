@@ -153,7 +153,8 @@ counter shares a sector with the selector, a record, the metadata or the first s
 
 A start log holds 16,384 starts. The main image erases it long before it is full, and also when it reads full
 or not valid, so the front goes on counting unfinished starts; Power + M4 opens recovery in any case. Device
-Info shows how many entries are used. Writing that slot again empties it too.
+Info's second page shows how many entries are used, read again each time it opens. Writing that slot again
+empties it too.
 
 Reading does not wear the flash.
 

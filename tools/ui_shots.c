@@ -84,7 +84,7 @@ static enum s15_store_save e_store(void *c, bool on, bool *now)
 static const struct s15_env_ops env = {
 	e_usb, e_none, e_leds, e_refused, e_dir, e_pack, e_manifest,
 	e_remove, e_none, e_format, e_osw, e_none, e_none, e_none, e_option,
-	e_settings, NULL, e_lost, e_continue, e_store,
+	e_settings, NULL, e_lost, e_continue, e_store, NULL,
 };
 
 /* S-15.163: the image read lost the slave, as on a unit. */
@@ -114,7 +114,9 @@ static void setup(void)
 	boot.psoc_version = "0.4.1";
 	boot.provisioned = true;
 	boot.start_log = S15_LOG_OK;
+	boot.start_log_slot = 1;	/* the running slot, selected */
 	boot.start_log_used = 41;
+	boot.start_log_erase = 256;
 	s15_settings_defaults(&boot.settings);
 	boot.settings.color = false;	/* the shots are in gray (S-15.173), but settings-color */
 	boot.settings.dev_mode = true;	/* the shots show the developer menu */
@@ -407,6 +409,8 @@ int main(int argc, char **argv)
 	start();
 	press(0x09);
 	bad |= shot(d, "info");
+	press(0x06);		/* S-15.082: the second page */
+	bad |= shot(d, "info2");
 
 	setup(); npacks = 3; start();
 	press(0x12);

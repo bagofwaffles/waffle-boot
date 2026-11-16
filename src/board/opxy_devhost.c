@@ -329,6 +329,7 @@ static const char *const screen_names[] = {
 	[S15_SCR_UPGRADE] = "upgrade",
 	[S15_SCR_RESULT] = "result",
 	[S15_SCR_STARTING] = "starting",
+	[S15_SCR_INFO2] = "info2",
 	[S15_SCR_NONE] = "none",
 };
 

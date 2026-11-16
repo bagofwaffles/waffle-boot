@@ -312,6 +312,8 @@ enum opxy_log_erase opxy_log_erase_at(const struct s02_env *env, const struct op
 void opxy_start_log_tidy(struct opxy_master *m);
 /* The selected slot's log, for Device Info: once, in held mode. */
 void opxy_start_log_view(struct opxy_master *m);
+/* The same again, each time Device Info's second page opens (S-15.082). */
+void opxy_start_log_reread(struct opxy_master *m);
 /* The INIT stage's stamps, from the hand-off (BOOT_TIMING=1 reports them). */
 extern uint64_t opxy_init_cycles[3];
 

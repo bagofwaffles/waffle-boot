@@ -516,7 +516,7 @@ static void packs_key(struct s15_menu *m, unsigned key)
 	hold_begin(m, S15_ARM_PACK, key);
 }
 
-/* ---- the Info screen: S-15.081 ---------------------------- */
+/* ---- the Info screen and its second page: S-15.081, S-15.082 -------- */
 
 /* A value of a Device Info row; a tab in it (a serial the host set,
  * S-10c.056) would move the next column, so it shows as '?'. */
@@ -571,11 +571,12 @@ static void log_fill(struct s15_buf *v, const struct s15_boot *b)
 	}
 }
 
-/* Serials, then the unit's state on the left, versions on the right. */
+/* Serials, then the unit's state on the left, versions on the right;
+ * digit 1 opens the second page (S-15.082). */
 static void open_info(struct s15_menu *m)
 {
 	const struct s15_boot *b = m->boot;
-	struct s15_buf start, fill;
+	struct s15_buf start;
 	/* A slave that answered at the start can stop later in the boot. */
 	const enum s15_slave slave = b->slave == S15_SLAVE_OK && slave_lost(m) ?
 				     S15_SLAVE_LOST : b->slave;
@@ -589,12 +590,11 @@ static void open_info(struct s15_menu *m)
 	info_row(m, "Unit S/N", b->unit_serial, "Firmware", b->os_version);
 	info_row(m, "DSP S/N", b->chip_serial, "Blackfin", b->sw_version);
 	info_row(m, "Backplane S/N", b->psoc_serial, "Bootloader", b->version);
-	log_fill(&fill, b);
-	info_row(m, "Start log", fill.s, "BLE", b->ble_version);
 	info_row(m, "Keys", b->provisioned ? "Provisioned" : "None",
-		 "Backplane", b->psoc_version);
-	info_row(m, "DSP2", dsp2, NULL, NULL);
+		 "BLE", b->ble_version);
+	info_row(m, "DSP2", dsp2, "Backplane", b->psoc_version);
 	blank(m);
+	sline(m, S15_ST_ITEM, "1 More\tStart log");
 	if (b->start.why != S15_START_OK) {                /* S-15.163 */
 		s15_start_info(&start, &b->start);
 		info_row(m, "OS start", start.s, NULL, NULL);
@@ -602,6 +602,42 @@ static void open_info(struct s15_menu *m)
 		blank(m);
 	}
 	sline(m, S15_ST_BACK, "8 Back to Main Menu");
+}
+
+/* S-15.082: the selected slot's start log, read again as the page opens.
+ * The rows below it are free for more of the unit's state. */
+static void open_info2(struct s15_menu *m)
+{
+	const struct s15_boot *b = m->boot;
+	struct s15_buf v;
+
+	if (m->env->start_log_read != NULL)
+		m->env->start_log_read(m->env->ctx);
+	enter(m, S15_SCR_INFO2, "Device Info 2");
+	s15_buf_init(&v);
+	if ((enum s15_log)b->start_log == S15_LOG_UNREAD) {
+		s15_buf_str(&v, "Not read");
+	} else {
+		s15_buf_str(&v, "Slot ");
+		s15_buf_dec(&v, b->start_log_slot + 1u);
+	}
+	info_row(m, "Start log", v.s, NULL, NULL);
+	log_fill(&v, b);
+	info_row(m, "Starts logged", v.s, NULL, NULL);
+	if ((enum s15_log)b->start_log == S15_LOG_OK) {
+		s15_buf_init(&v);
+		s15_buf_dec(&v, b->start_log_unfinished);
+		s15_buf_str(&v, " at the end");
+		info_row(m, "Unfinished", v.s, NULL, NULL);
+	}
+	if (b->start_log_erase != 0u) {
+		s15_buf_init(&v);
+		s15_buf_dec(&v, b->start_log_erase);
+		s15_buf_str(&v, " used");
+		info_row(m, "Erased at", v.s, NULL, NULL);
+	}
+	blank(m);
+	sline(m, S15_ST_BACK, "8 Back to Device Info");
 }
 
 /* ---- the system menu and the key test: S-15.060 - S-15.065 ---------- */
@@ -1442,6 +1478,12 @@ static void key_down(struct s15_menu *m, unsigned key)
 	case S15_SCR_INFO:
 		if (s15_digit(key) == 8u)           /* S-15.081 */
 			open_main(m);
+		else if (s15_digit(key) == 1u)      /* S-15.082 */
+			open_info2(m);
+		break;
+	case S15_SCR_INFO2:
+		if (s15_digit(key) == 8u)           /* S-15.082 */
+			open_info(m);
 		break;
 	case S15_SCR_SYSTEM:
 		system_key(m, key);

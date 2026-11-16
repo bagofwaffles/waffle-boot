@@ -35,6 +35,7 @@ enum s15_screen {
 	S15_SCR_UPGRADE,
 	S15_SCR_RESULT,     /* an erasing action's result: digit 8 alone acts */
 	S15_SCR_STARTING,   /* S-15.190: restarting for the OS; no key acts */
+	S15_SCR_INFO2,      /* S-15.082: Device Info's second page */
 	S15_SCR_NONE        /* before held mode's first screen */
 };
 
@@ -117,7 +118,10 @@ struct s15_boot {
 	bool interrupted;          /* S-11.080: the last install did not finish */
 	bool start_menu;           /* S-15.175: the boot store's setting as read at this start */
 	uint8_t start_log;         /* enum s15_log */
+	uint8_t start_log_slot;    /* the selected slot's index, but with S15_LOG_UNREAD */
 	uint16_t start_log_used;   /* with S15_LOG_OK */
+	uint16_t start_log_unfinished; /* with S15_LOG_OK: unfinished entries at the end */
+	uint16_t start_log_erase;  /* used entries the main image erases the log at; 0: none */
 	/* S-17.030 */
 	const char *unit_serial, *chip_serial, *psoc_serial;
 	const char *os_version, *sw_version, *ble_version, *psoc_version;
@@ -192,6 +196,9 @@ struct s15_env_ops {
 	 * reads afterwards, also after a failed or refused write. NULL: there
 	 * is no store, and no item. */
 	enum s15_store_save (*boot_store_save)(void *ctx, bool start_menu, bool *now);
+	/* S-15.082: read the selected slot's start log again into the boot's
+	 * start_log fields. NULL: they stay as held mode began with them. */
+	void (*start_log_read)(void *ctx);
 };
 
 /* What the upgrade screen is doing (S-15.103). */
