@@ -118,8 +118,7 @@ static void test_logo(void)
 	CHECK(memcmp(fb, frame, sizeof fb) == 0);
 }
 
-/* Held mode's red title bar with its squares, and its status bar, with
- * the same title. */
+/* Held mode's red title bar and its status bar, with the same title. */
 static void held_frame(const char *title)
 {
 	struct s15_frame f;
@@ -144,9 +143,12 @@ static void test_bars(void)
 		held_frame(titles[t]);
 		rows_of(&s, frame);
 		for (unsigned x = 0; x < 480u; x++) {
-			/* the title bar whole, and the rows under it */
+			/* the title bar's text part, and the rows under it;
+			 * right of it the front's bar is black around its
+			 * squares, checked below */
 			for (unsigned y = 0; y < 27u; y++)
-				bad += at(frame, x, y) != at(fb, x, y);
+				if (x < 383u || y >= 24u)
+					bad += at(frame, x, y) != at(fb, x, y);
 			/* the status bar where held mode draws no words */
 			for (unsigned y = 202; y < 222u; y++)
 				if (x >= 100u && x < 320u)
@@ -160,7 +162,7 @@ static void test_bars(void)
 	 * bottom, edge to edge. */
 	{
 		struct fr_screen s;
-		const unsigned bw = S15_BAR_W(g), mx = S15_MARK_X(g);
+		const unsigned bw = S15_TEXT_W(g), mx = S15_MARK_X(g);
 		const unsigned my = (g->bar_h - S15_MARK_SIZE) / 2u;
 		unsigned bad = 0;
 

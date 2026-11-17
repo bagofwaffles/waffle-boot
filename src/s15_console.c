@@ -480,18 +480,17 @@ void s15_render_row(const struct s15_geometry *g,
 	}
 }
 
-/* The title bar's group of squares: the first filled with the bar's
- * color, the others outlined in its dark color, black inside. */
+/* The title bar's group of squares, in the bar's dark color over the
+ * bar: the first filled, the others outlined. */
 static void logo_squares(const struct s15_draw_ops *d,
-			 const struct s15_geometry *g, uint16_t lit,
-			 uint16_t dark)
+			 const struct s15_geometry *g, uint16_t dark)
 {
 	unsigned x = S15_MARK_X(g);
 	unsigned y = ((unsigned)g->bar_h - S15_MARK_SIZE) / 2u;
 	const unsigned n = S15_MARK_SIZE, t = S15_MARK_LINE;
 
 	d->fill(d->ctx, (uint16_t)x, (uint16_t)y, (uint16_t)n, (uint16_t)n,
-		lit);
+		dark);
 	for (unsigned i = 1; i < S15_MARK_COUNT; i++) {
 		x += S15_MARK_SIZE + S15_MARK_GAP;
 		d->fill(d->ctx, (uint16_t)x, (uint16_t)y, (uint16_t)n,
@@ -618,18 +617,15 @@ static void frame(const struct s15_frame *f, const struct s15_geometry *g,
 	const char *w = "SLOT";
 	uint16_t fg = S15_UNLIT;
 
-	d->fill(d->ctx, 0, 0, (uint16_t)S15_BAR_W(g), g->bar_h, bg);
-	d->fill(d->ctx, (uint16_t)S15_BAR_W(g), 0,
-		(uint16_t)((unsigned)g->width - S15_BAR_W(g)), g->bar_h,
-		S15_BLACK);
-	logo_squares(d, g, bg, red ? S15_RED_DARK : S15_AMBER_DARK);
+	d->fill(d->ctx, 0, 0, g->width, g->bar_h, bg);
+	logo_squares(d, g, red ? S15_RED_DARK : S15_AMBER_DARK);
 	d->fill(d->ctx, 0, g->status_y, g->width,
 		(uint16_t)((unsigned)g->height - g->status_y), S15_STATUS_BG);
 	if (f->title != NULL)
 		bar_bold(d, g->edge, ty, f->title, ink, bg);
-	/* inside the solid part, the bars' edge from its end */
+	/* left of the squares, the bars' edge from the text part's end */
 	if (f->option_on)
-		bar_bold(d, (uint16_t)((size_t)S15_BAR_W(g) - g->edge -
+		bar_bold(d, (uint16_t)((size_t)S15_TEXT_W(g) - g->edge -
 				       (sizeof s15_indicator_text - 1u) *
 				       g->title_w),
 			 ty, s15_indicator_text, ink, bg);

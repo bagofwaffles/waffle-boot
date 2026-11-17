@@ -293,8 +293,9 @@ VERSION = 'waffle-boot v1.0.0'
 INDICATOR = 'Protected writes on'
 TITLE_COLS = 17     # title bar cells clear of the indicator, x 8 to 177
 AMBER, RED, BLACK = 0xFD84, 0xFA88, 0x0000
-# the title bar solid to x 382 (BAR_END), then black with four squares of 14 from x 392, 22 apart, at
-# y 5 to 18: the first in the bar's color, the others outlined in its dark color; the status bar one color
+# the title bar solid from side to side, its text left of x 383 (BAR_END), with four squares of 14 from
+# x 392, 22 apart, at y 5 to 18, in its dark color: the first filled, the others outlined; the status bar
+# one color
 BAR_END = 383
 MARKS = [392 + 22 * i for i in range(4)]
 AMBER_DARK, RED_DARK = 0x82C2, 0x8103
@@ -399,12 +400,13 @@ class Screen(Base):
         for y in (0, 3, 23):
             self.assertEqual({pixel(frame, c, y) for c in range(0, BAR_END, 7)} | {pixel(frame, BAR_END - 1, y)},
                              {color})
-        self.assertEqual({pixel(frame, c, y) for c in range(BAR_END, 480) for y in (0, 4, 19, 23)}, {BLACK})
+        self.assertEqual({pixel(frame, c, y) for c in range(BAR_END, 480) for y in (0, 4, 19, 23)}, {color})
+        self.assertEqual({pixel(frame, c, 12) for c in (BAR_END, MARKS[0] - 1, MARKS[1] - 1, 472, 479)}, {color})
         self.assertEqual({pixel(frame, c, 24) for c in range(0, 480, 10)}, {BLACK})
-        self.assertEqual(pixel(frame, MARKS[0] + 7, 12), color)
+        self.assertEqual(pixel(frame, MARKS[0] + 7, 12), dark)
         for x0 in MARKS[1:]:
             self.assertEqual([pixel(frame, x0, 5), pixel(frame, x0 + 13, 18), pixel(frame, x0 + 1, 12),
-                              pixel(frame, x0 + 2, 12), pixel(frame, x0 + 7, 7)], [dark, dark, dark, BLACK, BLACK])
+                              pixel(frame, x0 + 2, 12), pixel(frame, x0 + 7, 7)], [dark, dark, dark, color, color])
 
     def check_bars(self, frame, title=TITLE, right='', status=STATUS):
         self.assertEqual(title_row(frame, self.font), title_bar(title, right))
@@ -440,7 +442,7 @@ class Screen(Base):
         lines, _, _ = trace('option', 'held', frames=16, option=1)
         c = self.check(lines, ['held'])
         for x in self.frames(c)[-16:]:
-            # every held frame: the red bar, its title and the indicator at its solid part's right end,
+            # every held frame: the red bar, its title and the indicator at its text part's right end,
             # the status bar's first row its one color
             self.check_bars(x.params, right=INDICATOR)
             self.check_title_bar(x.params, RED, RED_DARK)

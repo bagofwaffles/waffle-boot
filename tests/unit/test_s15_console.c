@@ -469,10 +469,10 @@ static bool box_is(unsigned x0, unsigned y0, unsigned x1, unsigned y1,
 	return true;
 }
 
-/* The title bar's x 383 - 479 as drawn: black, the squares of 14 at
- * x 392, 414, 436 and 458, y 5 - 18, the first lit, the others a
- * 2-pixel outline in dark around black. */
-static uint16_t mark_pixel(unsigned x, unsigned y, uint16_t lit, uint16_t dark)
+/* The title bar's pixel as drawn: bg, with the squares of 14 at x 392,
+ * 414, 436 and 458, y 5 - 18, in dark: the first filled, the others a
+ * 2-pixel outline around bg. */
+static uint16_t mark_pixel(unsigned x, unsigned y, uint16_t bg, uint16_t dark)
 {
 	for (unsigned i = 0; i < 4u; i++) {
 		unsigned x0 = 392u + 22u * i;
@@ -480,24 +480,22 @@ static uint16_t mark_pixel(unsigned x, unsigned y, uint16_t lit, uint16_t dark)
 		if (x < x0 || x >= x0 + 14u || y < 5u || y >= 19u)
 			continue;
 		if (i == 0u)
-			return lit;
+			return dark;
 		if (x < x0 + 2u || x >= x0 + 12u || y < 7u || y >= 17u)
 			return dark;
-		return S15_BLACK;
+		return bg;
 	}
-	return S15_BLACK;
+	return bg;
 }
 
-/* The title bar: solid bg from x 0 to 382, y 0 - 23, then the squares on
- * black; nothing drawn at y 24, the status bar one color. */
+/* The title bar: solid bg from side to side, y 0 - 23, with the squares
+ * in dark; nothing drawn at y 24, the status bar one color. */
 static bool title_bar_is(uint16_t bg, uint16_t dark, uint16_t status)
 {
-	CHECK(S15_MARK_X(&geom) == 392u && S15_BAR_W(&geom) == 383u,
-	      "the squares from x 392, the bar to x 382");
-	if (!box_is(0, 0, 383, 24, bg))
-		return false;
+	CHECK(S15_MARK_X(&geom) == 392u && S15_TEXT_W(&geom) == 383u,
+	      "the squares from x 392, the text part to x 382");
 	for (unsigned y = 0; y < 24u; y++)
-		for (unsigned x = 383; x < geom.width; x++)
+		for (unsigned x = 0; x < geom.width; x++)
 			if (fb[y][x] != mark_pixel(x, y, bg, dark))
 				return false;
 	return box_is(0, 24, geom.width, 25, 0xaaaau) &&
@@ -513,24 +511,25 @@ static void test_render_frame(void)
 	uint16_t sy = s15_status_text_y(&geom);
 	/* "waffle-boot v1.0.0" ends at width - edge */
 	unsigned vx = geom.width - geom.edge - 18u * geom.glyph_w;
-	/* the indicator ends 8 pixels before the solid part does */
+	/* the indicator ends 8 pixels before the text part does */
 	unsigned ix = 383u - geom.edge -
 		      (unsigned)strlen(s15_indicator_text) * geom.title_w;
 
 	reset_frame();
 	s15_render_frame(&f, &geom, &draw);
 	CHECK(title_bar_is(S15_AMBER, S15_AMBER_DARK, S15_STATUS_BG),
-	      "a solid amber bar to x 382, the squares, no line under it, "
-	      "the status bar solid");
-	CHECK(fb[5][392] == S15_AMBER && fb[18][405] == S15_AMBER &&
+	      "a solid amber bar side to side, the squares, no line under "
+	      "it, the status bar solid");
+	CHECK(fb[5][392] == S15_AMBER_DARK && fb[18][405] == S15_AMBER_DARK &&
+	      fb[12][399] == S15_AMBER_DARK &&
 	      fb[5][414] == S15_AMBER_DARK && fb[6][415] == S15_AMBER_DARK &&
-	      fb[7][416] == S15_BLACK && fb[16][425] == S15_BLACK &&
+	      fb[7][416] == S15_AMBER && fb[16][425] == S15_AMBER &&
 	      fb[17][425] == S15_AMBER_DARK && fb[18][471] == S15_AMBER_DARK &&
-	      fb[4][392] == S15_BLACK && fb[19][392] == S15_BLACK &&
-	      fb[12][472] == S15_BLACK && fb[12][383] == S15_BLACK &&
-	      fb[12][382] == S15_AMBER,
-	      "the first square filled, the others 2-pixel outlines, black "
-	      "between");
+	      fb[4][392] == S15_AMBER && fb[19][392] == S15_AMBER &&
+	      fb[12][472] == S15_AMBER && fb[12][383] == S15_AMBER &&
+	      fb[12][479] == S15_AMBER,
+	      "the first square filled, the others 2-pixel outlines, the "
+	      "bar's color between and inside");
 	CHECK(S15_STATUS_BG == 0x2124u && s15_gray(S15_STATUS_BG) == S15_STATUS_BG,
 	      "the status bar 212421, already gray");
 	reset_frame();
@@ -585,13 +584,13 @@ static void test_render_frame(void)
 	      "index 0 shown as SLOT1");
 
 	/* Protected writes on: the bar red, the name white, the indicator
-	 * at the solid part's right end, clear of the squares. */
+	 * at the text part's right end, clear of the squares. */
 	f.status = 0;
 	f.option_on = true;
 	reset_frame();
 	s15_render_frame(&f, &geom, &draw);
 	CHECK(title_bar_is(S15_RED, S15_RED_DARK, S15_STATUS_BG),
-	      "a solid red bar, dark red outlines, no line under it");
+	      "a solid red bar, dark red squares, no line under it");
 	CHECK(drawn(geom.edge, ty, "Main Menu", S15_WHITE, BOLD),
 	      "the title white on red");
 	CHECK(ix == 185u && drawn(ix, ty, s15_indicator_text, S15_WHITE, BOLD) &&
@@ -620,7 +619,7 @@ static void test_render_frame(void)
 	      fb[geom.status_y][0] == S15_STATUS_BG,
 	      "no indicator, a gray status bar");
 
-	/* S-15.173: color off, every pixel its gray; the outlines on amber
+	/* S-15.173: color off, every pixel its gray; the squares on amber
 	 * near 606060. */
 	{
 		static const bool reds[3][2] = { { false, false },
@@ -653,7 +652,7 @@ static void test_render_frame(void)
 						 0x3fu) * 4u;
 
 			CHECK(g8 >= 88u && g8 <= 100u,
-			      "the outlines' gray near 96 (%u)", g8);
+			      "the squares' gray near 96 (%u)", g8);
 		}
 		f.gray = false;
 		f.fatal = false;
@@ -921,7 +920,7 @@ static void test_frames(void)
 	f.option_on = true;
 	reset_frame();
 	s15_render_console(&con, &geom, &draw, &f);
-	CHECK(drawn(S15_BAR_W(&geom) - geom.edge -
+	CHECK(drawn(S15_TEXT_W(&geom) - geom.edge -
 		    (unsigned)strlen(s15_indicator_text) * geom.title_w, geom.title_y,
 		    s15_indicator_text, S15_WHITE, BOLD) &&
 	      drawn(geom.margin, s15_row_y(&geom, 8), "L9", S15_TEXT, S15_BLACK),
@@ -1052,7 +1051,7 @@ static void test_boxes(void)
 	      drawn(col(5), s15_row_y(&geom, 1), " + ", S15_DIM, S15_BLACK),
 	      "S-15.062 a text line and a keys line");
 	CHECK(drawn(geom.edge, geom.title_y, "Key Test", S15_WHITE, BOLD) &&
-	      drawn(S15_BAR_W(&geom) - geom.edge -
+	      drawn(S15_TEXT_W(&geom) - geom.edge -
 		    (unsigned)strlen(s15_indicator_text) * geom.title_w, geom.title_y,
 		    s15_indicator_text, S15_WHITE, BOLD),
 	      "the key test's frame with the indicator");
@@ -1060,7 +1059,7 @@ static void test_boxes(void)
 	      fb[r[5].y + 1][r[5].x + 1] == s15_keytest_fill(S15_KT_DOWN) &&
 	      fb[r[6].y][r[6].x] == S15_KT_UNTESTED,
 	      "box outline and fill in the frame");
-	CHECK(box_is(0, 0, S15_BAR_W(&geom), geom.bar_h, S15_RED) &&
+	CHECK(box_is(0, 0, S15_TEXT_W(&geom), geom.bar_h, S15_RED) &&
 	      fb[geom.status_y][0] == S15_STATUS_BG,
 	      "the bars drawn with the boxes");
 	texts_placed("key test");

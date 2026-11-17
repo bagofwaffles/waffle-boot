@@ -12,21 +12,21 @@ left, y from the top.
 
 | Part | Where | What |
 | --- | --- | --- |
-| Title bar | y 0–23, solid to x 382, four squares at x 392–471; text at y 4 | the active screen's name, top left |
+| Title bar | y 0–23, solid from side to side, four squares at x 392–471; text at y 4 | the active screen's name, top left |
 | Body | 9 rows, y 27 + 19 × row, x 16–463 | the screen's lines, 56 columns |
 | Status bar | solid y 202–221, text at y 205 | the status words left, `waffle-boot v<version>` right |
 
-- **Title bar.** Solid amber from x 0 to 382 with the screen's name in
-  black at x 8 in title case (`Main Menu`, `Device Info`); then black, and
-  the boot logo's group of four 14 × 14 squares, 8 apart, at y 5–18 from
-  x 392, the last ending 8 pixels from the right edge. The first square is
-  filled in the bar's color, the other three are two-pixel outlines in its
-  dark color. No line under the bar. Only the active screen is named, with
-  no path. With protected writes on, the bar is red, the outlines dark red,
-  the name white, and `Protected writes on` stands in white at the solid
-  part's right end, ending 8 pixels before it. A fatal error turns the bar
-  red with the name `Fatal Error`. A title of up to 17 characters fits
-  beside the indicator.
+- **Title bar.** Solid amber from side to side with the screen's name in
+  black at x 8 in title case (`Main Menu`, `Device Info`), and over it the
+  boot logo's group of four 14 × 14 squares, 8 apart, at y 5–18 from
+  x 392, the last ending 8 pixels from the right edge. The squares are in
+  the bar's dark color: the first filled, the other three two-pixel
+  outlines. The bar's text keeps left of x 383. No line under the bar.
+  Only the active screen is named, with no path. With protected writes on,
+  the bar is red, the squares dark red, the name white, and
+  `Protected writes on` stands in white ending at x 374. A fatal error
+  turns the bar red with the name `Fatal Error`. A title of up to 17
+  characters fits beside the indicator.
 - **Body.** Nine console rows, 3 pixels below the bar. A tenth line
   pushes the oldest off the top. Each row has a line style (below); all
   text lies on the 8-pixel grid from x 16.
@@ -48,15 +48,17 @@ opens a second page, `Device Info 2`, left with `8 Back to Device Info`.
 The bars are flat, with no texture. The constants are in
 `src/include/waffle/s15_console.h` (`S15_MARK_*` for the squares).
 
-| Bar | Fill | Outlined squares |
+| Bar | Fill | Squares |
 | --- | --- | --- |
 | title, amber | `FD84` (amber) | `82C2` (dark amber, `805810`) |
 | title, red | `FA88` (red) | `8103` (dark red, `802018`) |
 | status | `2124` (`212421`) | none |
 
 Recovery's screens are drawn by the front (`src/front/`), which holds its
-own copy of the red title bar and the status bar; a unit test keeps the
-copy equal to these, pixel for pixel.
+own red title bar and status bar. Its title bar is solid to x 382 and
+black after it, with the first square red and the others outlined in dark
+red on the black; a unit test keeps its text part and its status bar
+equal to these, pixel for pixel.
 
 ## Font
 

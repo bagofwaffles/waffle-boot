@@ -36,16 +36,16 @@
 #define S15_AMBER 0xfd84u    /* FFB020 */
 #define S15_RED   0xfa88u    /* FF5040 */
 #define S15_GREEN 0x56ceu    /* 50D870 */
-#define S15_AMBER_DARK 0x82c2u /* 805810: the hollow squares on amber */
-#define S15_RED_DARK   0x8103u /* 802018: the hollow squares on red */
+#define S15_AMBER_DARK 0x82c2u /* 805810: the squares on amber */
+#define S15_RED_DARK   0x8103u /* 802018: the squares on red */
 #define S15_STATUS_BG  0x2124u /* 212421: the status bar */
 
 /*
- * The title bar: solid in its color, then black, and at its right the
- * boot logo's group of four squares, S15_MARK_SIZE pixels each and
- * S15_MARK_GAP apart, the last one the bars' edge from the right side.
- * The first is filled with the bar's color; the others are outlines
- * S15_MARK_LINE thick in its dark color. The solid part ends
+ * The title bar: solid in its color from side to side, and at its right
+ * the boot logo's group of four squares in its dark color, S15_MARK_SIZE
+ * pixels each and S15_MARK_GAP apart, the last one the bars' edge from
+ * the right side. The first is filled; the others are outlines
+ * S15_MARK_LINE thick. The bar's text keeps to the part that ends
  * S15_MARK_CLEAR pixels left of the first square.
  */
 #define S15_MARK_COUNT 4u
@@ -53,11 +53,11 @@
 #define S15_MARK_GAP   8u
 #define S15_MARK_LINE  2u
 #define S15_MARK_CLEAR 10u
-/* x of the first square, and the solid part's width, for a geometry. */
+/* x of the first square, and the text part's width, for a geometry. */
 #define S15_MARK_X(g) ((unsigned)(g)->width - (g)->edge - \
 		       S15_MARK_COUNT * S15_MARK_SIZE - \
 		       (S15_MARK_COUNT - 1u) * S15_MARK_GAP)
-#define S15_BAR_W(g) (S15_MARK_X(g) - S15_MARK_CLEAR + 1u)
+#define S15_TEXT_W(g) (S15_MARK_X(g) - S15_MARK_CLEAR + 1u)
 
 /* The line styles; s15_style_names[] holds their names. A tab
  * separates a line's parts; in S15_ST_KEYS a backquote starts and ends an
