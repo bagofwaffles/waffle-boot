@@ -86,9 +86,10 @@ WARNINGS := -Wall -Wextra -Werror -pedantic-errors \
 # Build paths must not leak into the outputs (see tools/repro-check.sh).
 COMMON := -std=c11 $(WARNINGS) -Isrc/include -Isrc -g -fdebug-prefix-map=$(CURDIR)=.
 
-# The image spans L1, L2 and DDR, beyond a CALL's reach, so every call on
-# the target goes through a register (S-01.011; bf703.ld).
-TARGET_CFLAGS := $(COMMON) -mcpu=bf703-none -mlong-calls -Os -ffreestanding \
+# The image spans L1, L2 and DDR, beyond a CALL's reach (S-01.011;
+# bf703.ld). A function called across regions carries WB_FAR_CALL, and the
+# link fails on a call that cannot reach; the rest are plain calls.
+TARGET_CFLAGS := $(COMMON) -mcpu=bf703-none -Os -ffreestanding \
 	-fno-common -ffunction-sections -fdata-sections
 TARGET_ASFLAGS := -mcpu=bf703-none -Isrc/include
 # The bootloader's build number (S-17.032), default 0.
@@ -225,9 +226,9 @@ include tests/fuzz/fuzz.mk
 HOST_LIB_CFLAGS  += $(TP_CPPFLAGS)
 HOST_TEST_CFLAGS += $(TP_CPPFLAGS)
 TARGET_CFLAGS    += $(TP_CPPFLAGS) $(LIBC_INCLUDES)
-# The image spans L1, L2 and DDR: the vendored code's calls go through a
-# register too.
-$(foreach c,$(TP_COMPONENTS),$(TP_$(c)_TARGET_OBJS)): TP_CFLAGS += -mlong-calls
+# The hand-over's code is in L2 and calls into DDR and back: every call in
+# that file goes through a register.
+$(BUILD)/bf703/obj/board/opxy_handover.o: TARGET_CFLAGS += -mlong-calls
 # S-09.072: the bridge's check runs over every byte an install sends, on both
 # CPUs; -O2, as third_party.mk gives the CRCs, speeds its word loop.
 $(BUILD)/bf703/obj/s09_bridge.o: TARGET_CFLAGS += -O2
