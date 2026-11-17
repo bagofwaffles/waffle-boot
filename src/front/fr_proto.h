@@ -146,7 +146,7 @@
 				 * of this recovery, and no other slot is selected */
 
 /* Why recovery runs. */
-#define FR_WHY_KEYS  1u		/* Power + 4 (S-15.150) */
+#define FR_WHY_KEYS  1u		/* Power + M4 (S-15.150) */
 #define FR_WHY_CHECK 2u		/* the image check failed */
 #define FR_WHY_COUNT 3u		/* three starts in a row did not finish (S-02.095) */
 

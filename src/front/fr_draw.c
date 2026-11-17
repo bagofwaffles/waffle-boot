@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's screens, a pixel at a time: the boot logo, with no text
- * (S-15.132), and held mode's frame (docs/ui-style-guide.md) with a text
+ * The front's screens: the boot logo, with no text
+ * (S-15.132), and held mode's frame (wiki/Screen-Style-Guide.md) with a text
  * body. Copies of the full bootloader's drawing, trimmed: the logo of
  * s15_logo_pixel(), and the bars, colors and geometry of s15_console.c
  * and display_draw.c.
@@ -11,7 +11,7 @@
 #include "fr_font.h"
 #include "fr_panel.h"
 
-/* RGB565 colors (docs/ui-style-guide.md). */
+/* RGB565 colors (wiki/Screen-Style-Guide.md). */
 #define BLACK      0x0000u
 #define WHITE      0xffffu
 #define TEXT       0xef5du

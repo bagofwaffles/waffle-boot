@@ -125,7 +125,7 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 		ho->flags |= FR_HO_KEYS_REPLIED;
 		fr_copy(ho->keys, s->psoc.keys, n);
 		ho->key_len = (uint8_t)n;
-		/* S-02.080: Power + 4, key 4 alone; no reply is no chord. */
+		/* S-02.080: Power + M4, key 4 alone; no reply is no chord. */
 		if (fr_keys_one(s->psoc.keys, s->psoc.keys_len) == FR_KEY_4) {
 			s->why = FR_WHY_KEYS;	/* S-02.084, S-15.150 */
 			return FR_NEXT_RECOVERY;

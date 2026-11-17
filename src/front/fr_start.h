@@ -48,7 +48,7 @@ struct fr_start_hw {
 
 enum fr_next {
 	FR_NEXT_MAIN,		/* the image checked: jump to desc.main_entry */
-	FR_NEXT_RECOVERY,	/* Power + 4, a failed image check, or three starts
+	FR_NEXT_RECOVERY,	/* Power + M4, a failed image check, or three starts
 				 * that did not finish (s->why) */
 	FR_NEXT_HALT		/* powered off, or restarted: wait for the end */
 };
@@ -92,7 +92,7 @@ struct fr_start {
  * frame, the greeting (with S-07.021's wait ending at the PSoC's greeting),
  * the power queries and the start-up report, the battery wait's first
  * requests and any charge wait, the logo lit, the subscription and the key
- * status. Then Power + 4 is recovery; otherwise the image check and the
+ * status. Then Power + M4 is recovery; otherwise the image check and the
  * start log's step (S-02.095), the one flash write of a start that goes on
  * to the main image. ho carries what the board read at entry and gets the
  * rest.

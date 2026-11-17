@@ -180,7 +180,7 @@ unsigned fr_keys_one(const uint8_t *pl, size_t n);
 #define FR_KEY_1 0x06u	/* M1 */
 #define FR_KEY_2 0x07u	/* M2 */
 #define FR_KEY_3 0x08u	/* M3 */
-#define FR_KEY_4 0x09u	/* M4: Power + 4 */
+#define FR_KEY_4 0x09u	/* M4: Power + M4 */
 #define FR_KEY_8 0x15u	/* sound 8: Back */
 
 #endif /* FR_PSOC_H */
