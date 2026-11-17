@@ -126,9 +126,9 @@ extern const struct wb_spi_config opxy_spi_boot_link;
 #endif
 #define OPXY_BOOT_LINK_SETTLE_CYCLES ((uint64_t)(OPXY_BOOT_LINK_SETTLE_US) * OPXY_CCLK_MHZ)
 
-/* The boot link with BOOT_LINK_FC=1 or 2 (waffle/s09_master.h): flow control
- * on PA6 for the stream's sessions (S-13b.022, S-13b.023); the opening byte
- * and S-09.007's go without it. */
+/* The boot link with BOOT_LINK_FC=1 or 2, 2 the Makefile's default
+ * (waffle/s09_master.h): flow control on PA6 for the stream's sessions
+ * (S-13b.022, S-13b.023); the opening byte and S-09.007's go without it. */
 #ifndef OPXY_BOOT_LINK_FC
 #define OPXY_BOOT_LINK_FC 0
 #endif
@@ -150,7 +150,7 @@ extern const struct wb_spi_config opxy_spi_boot_link_fc;
  * Before a session (a piece or a block) it passes with the chip select high.
  */
 #ifndef OPXY_BOOT_LINK_GUARD_US
-#define OPXY_BOOT_LINK_GUARD_US 20u
+#define OPXY_BOOT_LINK_GUARD_US 200u
 #endif
 /* S-13b.040, .041: SPI0 master, mode 1, 32-bit, flow control on PA6,
  * single I/O at SCLK0 / 4 before the link. The chip select is PC11 as a

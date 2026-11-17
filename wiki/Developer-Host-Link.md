@@ -42,7 +42,7 @@ outside the drive can be reached, and the bootloader's own files on it (`bootloa
 | `dev-key KEY...` | Press keys: `1`–`8`, `white`, `back`, `help`, `shift`, a key number (`0x12`), or `KEY:down`/`KEY:up`. Keys queued behind a long operation act after it |
 | `dev-shot OUT.png` | The frame buffer as a PNG |
 | `dev-start` | Why this start's OS start failed ([below](#why-the-os-did-not-start)) |
-| `dev-stream` | How this start sent the slave its boot stream, in a `BOOT_LINK_FC` build ([below](#the-slaves-boot-stream)) |
+| `dev-stream` | How this start sent the slave its boot stream ([below](#the-slaves-boot-stream)) |
 | `log [S]` | The log for S seconds (default 10), including an install's failed step and cause |
 | `nordic-info` | The Nordic's `mode`, `sw_version`, `bl_version`, `boot_slot`; changes nothing |
 | `continue-os` | Restart the unit so that its next start boots the OS (S-10c.076), even with Start in boot menu on. If the slave does not answer, the restart is a plain one and Start in boot menu applies. Needs no developer mode; `continue-os --sysex` prints it as a MIDI SysEx message for a unit without a serial port |
@@ -122,15 +122,15 @@ A refused image adds `refusal` (S-05.024), a failed release adds `release`. With
 ## The slave's boot stream
 
 `dev-stream` (request 40) prints how this start sent the slave its boot stream, at any time in that start,
-in a build with `BOOT_LINK_FC=1` or `2` ([Test OS](Test-OS#the-slaves-stream-by-the-controllers-flow-control));
-any other build answers `bad request`. It reads only. For example:
+in every build but a byte-by-byte one, `BOOT_LINK_FC=0`, which answers `bad request`
+([Test OS](Test-OS#the-slaves-stream-by-the-controllers-flow-control)). It reads only. For example:
 
 ```
 this start's stream: by the controller under flow control, fed by DMA
   outcome:  streamed, ended at the FINAL block; 120.500 ms from the wait for the ready line
   bridge:   linked
   sent:     412 sessions, 437 parts by DMA, 421376 bytes by the controller, 0 one at a time
-  pacing:   guard 20 us, 9.180 ms in the guards; 3 parts began with the line high, 0.030 ms waited, the longest 12 us
+  pacing:   guard 200 us, 85.547 ms in the guards; 3 parts began with the line high, 0.030 ms waited, the longest 12 us
   held:     SPI_STAT.FCS set in 2400 of 91000 samples, in 380 parts, the first at byte 16
   fell back: no
 ```

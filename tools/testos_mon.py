@@ -1828,7 +1828,7 @@ def show_stream(mon):
     try:
         r = mon.checked(bytes([DEV_STREAM]))
     except SystemExit:
-        print("this start's stream: not in this bootloader (built without BOOT_LINK_FC)")
+        print("this start's stream: not in this bootloader (a byte-by-byte build, BOOT_LINK_FC=0, or older)")
         return
     for line in stream_lines(r):
         print(line)

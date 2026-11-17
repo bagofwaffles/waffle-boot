@@ -68,7 +68,7 @@ job_toolchain() {
 # Besides the release image and the test OS's panel variants, the build
 # variants no other job compiles: the test OS's monitor, the installer, and a
 # development image with breadcrumbs, timing and debug logging, carried by
-# its own installer.
+# its own installer, and an image that sends the slave's stream byte by byte.
 job_cross() {
 	local bin cc=()
 	bin=$(tools/toolchain/build.sh --print-prefix)/bin
@@ -81,6 +81,7 @@ job_cross() {
 	make test-os test-os-mon installer "${cc[@]}"
 	make image installer test-os-mon BOOT_CRUMBS=1 BOOT_TIMING=1 LOG_DEBUG=1 \
 		BUILD=build/dev "${cc[@]}"
+	make image BOOT_LINK_FC=0 BOOT_L1_CHECK=1 BUILD=build/bytes "${cc[@]}"
 }
 
 # CI keeps the findings as an artifact; the container is discarded, so

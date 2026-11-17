@@ -125,6 +125,8 @@ jobs:
         run: make -j"$(nproc)" test-os test-os-mon test-os-install
       - name: A development image and its installer
         run: make -j"$(nproc)" image test-os-install BOOT_CRUMBS=1 BOOT_TIMING=1 LOG_DEBUG=1 BUILD=build/dev
+      - name: An image that sends the slave's stream byte by byte
+        run: make -j"$(nproc)" image BOOT_LINK_FC=0 BOOT_L1_CHECK=1 BUILD=build/bytes
       - if: ${{ !github.event.pull_request.draft }}
         run: MAKEFLAGS=-j"$(nproc)" tools/repro-check.sh cross
 

@@ -45,16 +45,18 @@
 #                 default 2; 0 for none
 #   BOOT_TIMING_WINDOW_US=<n>  with BOOT_TIMING=1, how long PA6 is watched after
 #                 each stream byte, when longer than the settle time
-#   BOOT_LINK_FC=1  the slave's boot stream paced by the SPI controller's own
-#                 flow control on PA6 (S-13b.022), fed by the core; off by default
-#   BOOT_LINK_FC=2  the same fed by DMA4, with a pause after each block header
-#                 and before each session, and the rest sent byte by byte
-#                 after a failure of the controller (S-09.009, S-13b.023)
+#   BOOT_LINK_FC=2  (the default) the slave's boot stream by DMA4 under the SPI
+#                 controller's flow control on PA6, with a pause after each block
+#                 header and before each session, and the rest sent byte by
+#                 byte after a failure of the controller (S-09.009, S-13b.023)
+#   BOOT_LINK_FC=0  the stream byte by byte, PA6 sampled before each byte
+#                 (S-09.005, S-13b.022)
+#   BOOT_LINK_FC=1  under flow control, fed by the core (a test build)
 #   BOOT_LINK_GUARD_US=<n>  with BOOT_LINK_FC=2, the pause in microseconds,
-#                 default 20; before a session it passes with the chip select high
-#   BOOT_L1_CHECK=1  the second processor's check of its L1 code (S-09.019)
-#                 with the stream sent byte by byte; BOOT_LINK_FC has it unless
-#                 BOOT_L1_CHECK=0
+#                 default 200; before a session it passes with the chip select high
+#   BOOT_L1_CHECK=0  leaves the second processor's check of its L1 code
+#                 (S-09.019) out of a BOOT_LINK_FC build; BOOT_L1_CHECK=1 adds it
+#                 to a BOOT_LINK_FC=0 build
 #   REPLY_END=count  the slave's replies end at their received-word count
 #                 from the start; default (REPLY_END=factory) the factory's
 #                 end, TF (S-13b.083)
@@ -143,31 +145,29 @@ endif
 ifneq ($(BOOT_TIMING_WINDOW_US),)
 TARGET_CFLAGS += -DOPXY_BOOT_TIMING_WINDOW_US=$(BOOT_TIMING_WINDOW_US)u
 endif
-# BOOT_LINK_FC=1: the slave's boot stream sent through the transmit FIFO with
-# SPI0's flow control on PA6 holding off each byte, in place of a sample of
-# PA6 before each byte (S-13b.022). BOOT_LINK_FC=2: the same fed by DMA4, in
-# parts with a pause before each, a failure of the controller's own sending
-# the rest of the stream byte by byte in the same start, and the slave's
-# check of its L1 code before it serves the bridge (S-09.009, S-09.019,
-# S-13b.023). Off by default: how soon the slave's boot ROM raises PA6 after
-# a byte is not measured (wiki/Test-OS.md). The host build has 1 on, which
-# builds both, so that their code is built, analyzed and tested there:
-# make installer BOOT_LINK_FC=2 BOOT_TIMING=1 BUILD=build/linkdma
-ifeq ($(BOOT_LINK_FC),1)
-TARGET_CFLAGS += -DOPXY_BOOT_LINK_FC=1
-else ifeq ($(BOOT_LINK_FC),2)
-TARGET_CFLAGS += -DOPXY_BOOT_LINK_FC=2
-else ifneq ($(BOOT_LINK_FC),)
-$(error BOOT_LINK_FC is 1 or 2)
+# BOOT_LINK_FC=2, the default: the slave's boot stream fed by DMA4 to SPI0
+# under its flow control on PA6, in parts with a pause before each, a failure
+# of the controller's own sending the rest of the stream byte by byte in the
+# same start, and the slave's check of its L1 code before it serves the bridge
+# (S-09.009, S-09.019, S-13b.023). BOOT_LINK_FC=0: the stream byte by byte, PA6
+# sampled before each byte (S-09.005, S-13b.022). BOOT_LINK_FC=1: the stream
+# through the transmit FIFO under flow control, fed by the core. The host
+# build has 1 on, which builds every way, so that their code is built,
+# analyzed and tested there; the cross job also builds a BOOT_LINK_FC=0 image:
+# make image BOOT_LINK_FC=0 BUILD=build/bytes
+BOOT_LINK_FC ?= 2
+ifneq ($(filter-out 0 1 2,$(BOOT_LINK_FC)),)
+$(error BOOT_LINK_FC is 0, 1 or 2)
 endif
+TARGET_CFLAGS += -DOPXY_BOOT_LINK_FC=$(BOOT_LINK_FC)
 ifneq ($(BOOT_LINK_GUARD_US),)
 TARGET_CFLAGS += -DOPXY_BOOT_LINK_GUARD_US=$(BOOT_LINK_GUARD_US)u
 endif
-# BOOT_L1_CHECK=1: S-09.019's check in a build without BOOT_LINK_FC, so that a
+# BOOT_L1_CHECK=1: S-09.019's check in a BOOT_LINK_FC=0 build, so that a
 # trial of the byte path tries the check alone; BOOT_L1_CHECK=0: a
 # BOOT_LINK_FC build without it, so that a trial tries the send alone:
-# make installer BOOT_L1_CHECK=1 BOOT_TIMING=1 BUILD=build/l1
-# make installer BOOT_LINK_FC=2 BOOT_L1_CHECK=0 BOOT_TIMING=1 BUILD=build/dma
+# make installer BOOT_LINK_FC=0 BOOT_L1_CHECK=1 BOOT_TIMING=1 BUILD=build/l1
+# make installer BOOT_L1_CHECK=0 BOOT_TIMING=1 BUILD=build/dma
 ifeq ($(BOOT_L1_CHECK),1)
 TARGET_CFLAGS += -DOPXY_BOOT_L1_CHECK=1
 else ifeq ($(BOOT_L1_CHECK),0)

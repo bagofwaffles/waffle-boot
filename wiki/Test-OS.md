@@ -110,26 +110,24 @@ then read good means 50 MHz is marginal on that unit.
 
 ## The slave's stream by the controller's flow control
 
-`BOOT_LINK_FC=1` sends the slave's boot stream through SPI0's FIFO, paced by the controller's flow control
-on PA6. It is off by default and in every release; try it only as a trial, and leave the installer with 8
-at the commit, so that the next start is the old bootloader's:
+The default build sends the slave's boot stream by DMA4 feeding SPI0, paced by the controller's flow control
+on PA6, so the core is off the stream (`BOOT_LINK_FC=2`, S-09.009, S-13b.023). `BOOT_LINK_FC=0` builds the
+byte-by-byte send, PA6 sampled before each byte (S-13b.022), and `BOOT_LINK_FC=1` a send under flow control
+fed by the core. Try a build that changes the send only as a trial, so that the next start is the old
+bootloader's:
 
-    make installer test-os-mon BOOT_LINK_FC=1 BOOT_TIMING=1 BUILD=build/linkfc
-
-`BOOT_LINK_FC=2` does the same with DMA4 feeding SPI0, so the core is off the stream (S-09.009,
-S-13b.023):
-
-    make installer test-os-mon BOOT_LINK_FC=2 BOOT_TIMING=1 BUILD=build/linkdma
+    make installer test-os-mon BOOT_TIMING=1 BUILD=build/linkdma
+    make installer test-os-mon BOOT_LINK_FC=0 BOOT_TIMING=1 BUILD=build/bytes
 
 - Each session goes in parts, a block's header alone and then its payload, each part once PA6 reads low
-  and at least `BOOT_LINK_GUARD_US` (default 20 µs) after the last part ended. Before a session, a piece of
+  and at least `BOOT_LINK_GUARD_US` (default 200 µs) after the last part ended. Before a session, a piece of
   up to 1,024 bytes or a new block, that time passes with the chip select high.
 - A part the controller gives up with PA6 low (a DMA error, a stall, no end of the transmit) sends the rest
-  of the stream byte by byte, the default way, from the first byte not sent, in the same start, once. A part
+  of the stream byte by byte, as `BOOT_LINK_FC=0` sends it, from the first byte not sent, in the same start, once. A part
   the slave holds for T_STREAM ends the stream, as a held byte does.
 - The slave checks its L1 code before it answers the bridge or touches the eMMC (S-09.019): a damaged stream
-  ends with the slave not answering, not running. `BOOT_L1_CHECK=1` adds the same check to a build that sends
-  the stream byte by byte, and `BOOT_L1_CHECK=0` leaves it out of a `BOOT_LINK_FC` build.
+  ends with the slave not answering, not running. `BOOT_L1_CHECK=0` leaves it out, and `BOOT_L1_CHECK=1` adds
+  it to a `BOOT_LINK_FC=0` build.
 - The master cannot restart the slave, so a stream it sent whole but the slave did not take whole still ends
   with the slave absent for that start; the next start tries again.
 

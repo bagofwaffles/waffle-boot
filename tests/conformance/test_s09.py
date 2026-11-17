@@ -691,10 +691,10 @@ class BootStream(unittest.TestCase):
         self.assertEqual((r['rc'], r['sessions']), (3, no_open))
         self.assertLessEqual(r['release'], T_BOOT_READY + SLACK)
 
-    def bootf(self, vector, stuck=0, late=0, bound=0, guard=20, fault=0, at=0):
-        """The stream as BOOT_LINK_FC=2 sends it (S-09.009): s09_fast_send() as the boot ops' send(),
-        its parts moved by the model controller GUARD us apart, after a fall-back one byte at a time.
-        BOUND: the slave raises PA6 `late` us only after a header and after a piece (else after every
+    def bootf(self, vector, stuck=0, late=0, bound=0, guard=200, fault=0, at=0):
+        """The stream as the default build, BOOT_LINK_FC=2, sends it (S-09.009): s09_fast_send() as the
+        boot ops' send(), its parts moved by the model controller GUARD us apart (200, the build's
+        default), after a fall-back one byte at a time. BOUND: the slave raises PA6 `late` us only after a header and after a piece (else after every
         byte). FAULT: the model controller's own failure (S09_PART_*) before its AT-th byte. 'parts': the
         parts' lengths grouped by session, the opening one left out."""
         path = spec_path('S-09-bridge', 'vectors', 'slave_stream_%s.bin' % vector)

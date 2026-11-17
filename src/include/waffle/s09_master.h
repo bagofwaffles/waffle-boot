@@ -65,10 +65,11 @@ struct s09_boot_ops {
 };
 
 /*
- * The stream paced by the controller's flow control, a property of the
- * build: make BOOT_LINK_FC=1 defines OPXY_BOOT_LINK_FC=1, fed by the core,
- * and BOOT_LINK_FC=2 defines 2, fed by DMA (waffle/s09_fast.h). Off by
- * default: without it send() is never called and its code is not in the image.
+ * How the stream goes, a property of the build: OPXY_BOOT_LINK_FC=2 by DMA
+ * under the controller's flow control (waffle/s09_fast.h), the Makefile's
+ * default; 1 under flow control, fed by the core; 0 byte by byte, where
+ * send() is never called and its code is not in the image. A compile that
+ * defines nothing has 0.
  */
 #ifndef OPXY_BOOT_LINK_FC
 #define OPXY_BOOT_LINK_FC 0

@@ -139,7 +139,8 @@ enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
  * OPXY_DEV_STREAM answers how this start's slave boot stream went
  * (S-09.009), at any time: opxy_stream_report()'s OPXY_STREAM_REPORT bytes
  * after the status byte, laid out in waffle/board/opxy_boot.h. Only a build
- * with BOOT_LINK_FC=1 or 2 has it; any other answers OPXY_DEV_BAD.
+ * with BOOT_LINK_FC=1 or 2 (2 is the default) has it; a BOOT_LINK_FC=0 build
+ * answers OPXY_DEV_BAD.
  */
 
 /*
