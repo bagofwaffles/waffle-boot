@@ -1,0 +1,2356 @@
+[
+ {
+  "n": 64,
+  "name": "part",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": []
+ },
+ {
+  "n": 64,
+  "name": "part_two_descriptors",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     60,
+     4
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": []
+ },
+ {
+  "n": 64,
+  "name": "part_memory_words",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217601
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": []
+ },
+ {
+  "n": 64,
+  "name": "no_flow_control",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 19
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_ctl"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "ready_active_high",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 40979
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_ctl"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "en_cleared_in_part",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8210
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_ctl"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "bridge_peripheral_words",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217121
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_cfg"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "sync_set",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217093
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_cfg"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "desc_short",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     60
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_desc"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "twc_wrong",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 16
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_twc"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "ten_first",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_end",
+   "boot_order"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "twc_before_dma",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_order"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "no_stat_clear",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_order"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "rx_left_on",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_order"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "byte_by_core",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TFIFO",
+    "val": 90
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_core"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "end_on_dma_done",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_end"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "select_before_end",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   }
+  ],
+  "violations": [
+   "boot_end"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "dma_stopped_first",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 0
+   },
+   {
+    "op": "r",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 1
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 262144
+   },
+   {
+    "op": "r",
+    "reg": "SPI0_STAT",
+    "val": 264192
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "ev": "select",
+    "on": false,
+    "op": "ev"
+   }
+  ],
+  "violations": [
+   "boot_end"
+  ]
+ },
+ {
+  "n": 64,
+  "name": "never_ends",
+  "trace": [
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_CTL",
+    "val": 8211
+   },
+   {
+    "ev": "select",
+    "on": true,
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_RXCTL",
+    "val": 0
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_STAT",
+    "val": 2952794096
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_STAT",
+    "val": 7
+   },
+   {
+    "bytes": [
+     64
+    ],
+    "ch": 4,
+    "ev": "desc",
+    "op": "ev"
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_DSCPTR_CUR",
+    "val": 293601536
+   },
+   {
+    "op": "w",
+    "reg": "DMA4_CFG",
+    "val": 217089
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TWC",
+    "val": 64
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65564
+   },
+   {
+    "op": "w",
+    "reg": "SPI0_TXCTL",
+    "val": 65565
+   }
+  ],
+  "violations": [
+   "boot_end"
+  ]
+ }
+]

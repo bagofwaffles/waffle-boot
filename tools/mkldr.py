@@ -44,7 +44,9 @@ bootloader's version (the image's _opxy_bl_version, four u16) and the
 front's pin. The front checks the runs as data with L1DM_DCTL.ENX clear,
 so a load from L1 code would fault (S-01.023, S-13a.040); every listed run
 must lie where the front reads (FR_READABLE). No run and no NOLOAD section
-of the image may meet the front's windows or the shared block. The stream
+of the image may meet the front's windows or the shared block. An image built
+with the slave's check of its L1 code (S-09.019) has its mark filled first
+(mark_l1()). The stream
 must leave the slot's last sector free, FR_LOG_IMAGE_MAX bytes at most: that
 sector holds the start log (S-02.095). This build's own stream is held to
 STORE_IMAGE_MAX, so that in slot 1 it never reaches the boot store's sector. --front-only streams the front alone,
@@ -151,6 +153,9 @@ FR_DESC_VERSION = 1
 FR_DESC_HEAD = 0x40
 FR_DESC_REGIONS = 24
 FR_LOG_IMAGE_MAX = 0x77000     # a slot less its last sector, the start log (S-02.095)
+# S-09.019: the slave's L1 check's mark (waffle/board/opxy_boot.h), as compiled and as filled
+L1_MARK = '_opxy_l1_mark'
+L1_MARK_EMPTY, L1_MARK_FULL = 0x4C314D30, 0x4C314D31
 STORE_IMAGE_MAX = 0x76000      # and less the sector below it, the boot store's in slot 1 (S-02)
 
 
@@ -220,8 +225,34 @@ def descriptor(main, front):
     return d + struct.pack('<I', zlib.crc32(d) & 0xFFFFFFFF)
 
 
+def mark_l1(main):
+    """S-09.019: an image built with the slave's check of its L1 code (BOOT_LINK_FC) has the 16-byte mark
+    _opxy_l1_mark, four words compiled as L1_MARK_EMPTY and zeros. It is filled in the image's bytes here,
+    before anything else is taken from them, with L1_MARK_FULL, the address and length of the one run the
+    stream loads into L1 code and that run's CRC-32 (zlib's), so the descriptor's CRC covers the filled
+    mark. An image without the symbol is left as it is."""
+    sym = main.symbol(L1_MARK)
+    if sym is None:
+        return
+    sec = [s for s in main.sections if s.alloc and s.type != elf32.SHT_NOBITS
+           and s.addr <= sym and sym + 16 <= s.addr + s.size]
+    if not sec:
+        raise SystemExit('mkldr: %s is not in a loaded section' % L1_MARK)
+    off = sec[0].offset + sym - sec[0].addr
+    if struct.unpack_from('<I', main.data, off)[0] != L1_MARK_EMPTY:
+        raise SystemExit('mkldr: %s holds no empty mark' % L1_MARK)
+    code = [(a, b) for a, b in runs(main) if meets(a, len(b), *L1_CODE)]
+    if len(code) != 1 or code[0][0] < L1_CODE[0] or code[0][0] + len(code[0][1]) > L1_CODE[1]:
+        raise SystemExit('mkldr: the slave\'s L1 check needs one run inside L1 code, not %d' % len(code))
+    addr, buf = code[0]
+    data = bytearray(main.data)
+    struct.pack_into('<IIII', data, off, L1_MARK_FULL, addr, len(buf), zlib.crc32(buf) & 0xFFFFFFFF)
+    main.data = bytes(data)
+
+
 def merged(main, front):
     """The bootloader's stream with the front and the descriptor."""
+    mark_l1(main)
     init = front.symbol('_fr_init')
     entry = front.entry
     if init is None:

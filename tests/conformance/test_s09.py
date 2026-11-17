@@ -683,6 +683,85 @@ class BootStream(unittest.TestCase):
         self.assertEqual((r['rc'], r['sessions']), (3, no_open))
         self.assertLessEqual(r['release'], T_BOOT_READY + SLACK)
 
+    def bootf(self, vector, stuck=0, late=0, bound=0, guard=20, fault=0, at=0):
+        """The stream as BOOT_LINK_FC=2 sends it (S-09.009): s09_fast_send() as the boot ops' send(),
+        its parts moved by the model controller GUARD us apart, after a fall-back one byte at a time.
+        BOUND: the slave raises PA6 `late` us only after a header and after a piece (else after every
+        byte). FAULT: the model controller's own failure (S09_PART_*) before its AT-th byte. 'parts': the
+        parts' lengths grouped by session, the opening one left out."""
+        path = spec_path('S-09-bridge', 'vectors', 'slave_stream_%s.bin' % vector)
+        f = run('s09', ['bootf %s %d %d %d %d %d %d' % (path, stuck, late, bound, guard, fault,
+                                                        at)])[0].split()
+        rc, end, high, release, elapsed, early, fell, fell_at, slow, after, nparts = (int(x) for x in f[:11])
+        flat = [int(x) for x in f[11:11 + nparts]]
+        sessions = [unhex(x) for x in f[11 + nparts:]]
+        parts, k = [], 0
+        for s in sessions[1:]:
+            group, n = [], 0
+            while n < len(s) and k < len(flat):
+                group.append(flat[k])
+                n += flat[k]
+                k += 1
+            parts.append(group)
+        return {'rc': rc, 'end': end, 'high': high, 'release': release, 'elapsed': elapsed, 'early': early,
+                'fell': fell, 'fell_at': fell_at, 'slow': slow, 'after': after, 'nparts': nparts,
+                'parts': parts, 'sessions': sessions}
+
+    @scenario('S-09/B-STREAM')
+    @requirement('S-09.009')
+    def test_B_STREAM_fast(self):
+        """BOOT_LINK_FC=2 (S-09.009): the same sessions and bytes as the byte path, each session in the
+        parts of slave_stream_parts.json (a header alone, then its payload), the guard between parts, no
+        byte while PA6 reads high, and the same bounds: a line that never falls ends the stream within
+        T_STREAM, with no fall-back."""
+        for vector, end in (('final', 0), ('badsig', 1), ('truncated', 2)):
+            r = self.bootf(vector)
+            with self.subTest(vector=vector):
+                self.assertEqual((r['rc'], r['end'], r['high'], r['early'], r['fell']), (0, end, 0, 0, 0))
+                self.assertEqual(bc.check_stream(vector, r['sessions']), [])
+                self.assertEqual(bc.check_parts(vector, r['parts']), [])
+                self.assertEqual(r['sessions'], self.boot(vector)['sessions'])
+        r = self.bootf('final', stuck=100)                       # stream_stuck: S-09.060
+        self.assertEqual((r['rc'], r['fell']), (4, 0))
+        self.assertEqual(sum(len(s) for s in r['sessions']), 100)
+        self.assertLessEqual(r['release'], T_STREAM + SLACK)
+
+    @scenario('S-09/B-STREAM')
+    @requirement('S-09.009')
+    def test_B_STREAM_fast_guard(self):
+        """The guard (S-09.009, S-13b.023) against a slave that raises PA6 late only where its boot ROM
+        changes state, after a block header and after a piece: within the guard no byte goes out early;
+        past it some do, as they would inside a part from a slave that raises late after any byte, which
+        S-13b.023 leaves to the boot ROM's receive watermark."""
+        for late in (1, 5, 19):
+            r = self.bootf('final', late=late, bound=1, guard=20)
+            with self.subTest(late=late):
+                self.assertEqual((r['rc'], r['high'], r['early']), (0, 0, 0))
+                self.assertEqual(bc.check_stream('final', r['sessions']), [])
+        self.assertGreater(self.bootf('final', late=25, bound=1, guard=20)['early'], 0)
+        self.assertEqual(self.bootf('final', late=25, bound=1, guard=40)['early'], 0)
+        self.assertGreater(self.bootf('final', late=3, bound=0, guard=20)['early'], 0)
+        # the byte path's settle time covers none of these past 2 us
+        self.assertGreater(self.bootx('final', 0, late=5, settle=2)['early'], 0)
+
+    @scenario('S-09/B-STREAM')
+    @requirement('S-09.009')
+    def test_B_STREAM_fast_fall_back(self):
+        """A fault of the controller's own (S09_PART_DMA 2, STALL 3, NO_END 4, REFUSED 5) at the first byte,
+        in a header, in a payload and at the last byte: the stream ends whole and the same, every byte
+        once, the controller's bytes then the rest one at a time, and no part after the fault."""
+        total = sum(len(s) for s in self.boot('final')['sessions'][1:])
+        for fault in (2, 3, 4, 5):
+            for at in (1, 16, 17, 600, 1060, total):
+                r = self.bootf('final', fault=fault, at=at)
+                with self.subTest(fault=fault, at=at):
+                    self.assertEqual((r['rc'], r['end'], r['high'], r['fell']), (0, 0, 0, fault))
+                    self.assertEqual(bc.check_stream('final', r['sessions']), [])
+                    self.assertEqual((r['fell_at'], r['slow'], r['after']), (at - 1, total - (at - 1), 0))
+        r = self.bootf('final', fault=3, at=20, stuck=40)        # held after the fall-back
+        self.assertEqual(r['rc'], 4)
+        self.assertEqual(sum(len(s) for s in r['sessions']), 40)
+
     @scenario('S-09/B-ABSENT')
     def test_B_ABSENT_stream_stuck(self):
         """B-ABSENT stream_stuck, the boot link's part: PA6 stays high after the 100th stream byte; no

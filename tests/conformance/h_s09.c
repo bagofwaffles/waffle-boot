@@ -51,6 +51,19 @@
  *                                     when absent), which send() does not;
  *                                     RELEASE: us from the last byte to the chip select's release;
  *                                     ELAPSED: us of the whole call; each SESSION hex
+ *   bootf PATH STUCK LATE BOUND GUARD FAULT AT -> RESULT END HIGH RELEASE ELAPSED EARLY FELL FELL_AT
+ *                                     SLOW AFTER NPARTS PART... SESSION...: the stream as BOOT_LINK_FC=2
+ *                                     sends it (s09_fast_send(), S-09.009) over the same model, its
+ *                                     parts moved by the model controller, GUARD us apart (the
+ *                                     board's guard), and after a fall-back one byte at a time with
+ *                                     a settle of 2 us. BOUND 1: the slave raises PA6 LATE us only
+ *                                     after a block header's last byte and a piece's last byte (where
+ *                                     its boot ROM changes state); 0: after every byte. FAULT: the
+ *                                     model controller's own failure (an S09_PART_* cause, 0 none)
+ *                                     before its AT-th byte. FELL: the fall-back's cause, FELL_AT the
+ *                                     slot's bytes clocked before it, SLOW the bytes sent one at a
+ *                                     time, AFTER the parts given after it, then the parts' lengths
+ *                                     in order;
  *   sreq HEX                       -> RX REPLY: HEX handed to the slave directly as one request
  *                                     session (RX: the bytes it takes; HEX zero padded to the
  *                                     s09_slave_rx_keep() of them it keeps), then the reply session it
@@ -113,6 +126,7 @@
 #include "waffle/s06_clock.h"
 #include "waffle/s06_link.h"
 #include "waffle/s09_bridge.h"
+#include "waffle/s09_fast.h"
 #include "waffle/s09_master.h"
 #include "waffle/s09_slave.h"
 
@@ -636,6 +650,38 @@ static struct {
 	unsigned nsess;
 } bl;
 
+/* BOOT_LINK_FC=2 (S-09.009): the parts by the model controller, as bl_send()
+ * moves a session, with a fault of its own before its fault_at-th byte. */
+static struct {
+	bool bound;
+	int fault;
+	unsigned long fault_at, ctl_bytes;
+	uint8_t have;
+	uint8_t head[16];
+	uint32_t left, in_block;
+	unsigned nparts, after;	/* parts given, and given after a fall-back */
+	size_t part[1024];
+} bf;
+static struct s09_fast bf_fast;
+
+/* With BOUND: the slave's own walk of the blocks, a raise after a header
+ * and after each piece of 1,024 payload bytes and a block's last byte. */
+static bool bf_boundary(uint8_t tx)
+{
+	if (bf.left != 0u) {
+		bf.left--;
+		bf.in_block++;
+		return bf.left == 0u || bf.in_block % 1024u == 0u;
+	}
+	bf.head[bf.have++] = tx;
+	if (bf.have < 16u)
+		return false;
+	bf.left = (s06_rd_le32(bf.head) & 0x0100u) ? 0u : s06_rd_le32(bf.head + 8);
+	bf.in_block = 0;
+	bf.have = 0;
+	return true;
+}
+
 static uint32_t bl_rand(void)
 {
 	bl.rng ^= bl.rng << 13;
@@ -676,6 +722,11 @@ static uint8_t bl_byte(void *ctx, uint8_t tx)
 		bl.log[bl.n++] = tx;
 	bl.bytes++;
 	bl.last_t = clock_us;
+	if (bf.bound && (bl.bytes == 1 || !bf_boundary(tx))) {
+		/* no raise after this byte: the line as the watermark keeps it */
+		bl.rise_at = bl.ready_at = clock_us;
+		return bl.bytes == 1 ? (bl.mode == 2 || bl.mode == 3 ? 0x00 : 0xFF) : 0;
+	}
 	bl.rise_at = clock_us + bl.late;
 	bl.ready_at = bl.rise_at + 1u + bl_rand() % 51u;
 	if (bl.mode == 4 && bl.bytes == bl.stuck)
@@ -712,7 +763,56 @@ static bool bl_send(void *ctx, const uint8_t *d, size_t n)
 	return true;
 }
 
+/* BOOT_LINK_FC=2's part, moved as bl_send() moves a session. */
+static int bf_part(void *ctx, const uint8_t *d, size_t n, size_t *left)
+{
+	if (bf_fast.slow)
+		bf.after++;
+	if (bf.nparts < sizeof bf.part / sizeof bf.part[0])
+		bf.part[bf.nparts] = n;
+	bf.nparts++;
+	for (size_t i = 0; i < n; i++) {
+		const uint32_t from = clock_us;
+
+		if (bf.fault != S09_PART_OK && bf.ctl_bytes + 1u == bf.fault_at) {
+			*left = n - i;
+			return bf.fault;
+		}
+		while (!bl_ready(ctx)) {
+			if (clock_us - from >= S09_T_STREAM_US) {
+				*left = n - i;
+				return S09_PART_HELD;
+			}
+			clock_us++;
+		}
+		(void)bl_byte(ctx, d[i]);
+		bf.ctl_bytes++;
+	}
+	return S09_PART_OK;
+}
+
+static bool bf_slow(void *ctx)
+{
+	(void)ctx;
+	return true;
+}
+
+static void bf_byte(void *ctx, uint8_t tx)
+{
+	(void)bl_byte(ctx, tx);
+	clock_us += 2u;
+}
+
+static const struct s09_fast_ops bf_ops = { NULL, bl_ready, bf_part, bf_slow, bf_byte, NULL };
+
+static bool bf_send(void *ctx, const uint8_t *d, size_t n)
+{
+	(void)ctx;
+	return s09_fast_send(&bf_fast, d, n);
+}
+
 static const struct s09_boot_ops boot_ops = { NULL, bl_ready, bl_select, bl_xfer, NULL, NULL };
+static const struct s09_boot_ops boot_ops_dma = { NULL, bl_ready, bl_select, bl_xfer, bf_send, NULL };
 static const struct s09_boot_ops boot_ops_fc = { NULL, bl_ready, bl_select, bl_xfer, bl_send, NULL };
 
 static void do_boot(const struct h_cmd *c)
@@ -745,6 +845,50 @@ static void do_boot(const struct h_cmd *c)
 	h_put(s);
 	if (c->n >= 8)
 		h_putu(bl.early);
+	bl.start[bl.nsess] = bl.n;
+	for (unsigned i = 0; i < bl.nsess; i++)
+		h_puthex(bl.log + bl.start[i], bl.start[i + 1u] - bl.start[i]);
+	h_end();
+}
+
+static void do_bootf(const struct h_cmd *c)
+{
+	static uint8_t slotb[0x10000];
+	FILE *f = fopen(h_str(c, 1), "rb");
+	size_t len;
+	uint32_t t0;
+	int end, rc;
+	char s[96];
+
+	if (!f) {
+		h_error(c, "cannot open");
+		return;
+	}
+	len = fread(slotb, 1, sizeof slotb, f);
+	fclose(f);
+	memset(&bl, 0, sizeof bl);
+	memset(&bf, 0, sizeof bf);
+	bl.rng = 1u;
+	bl.stuck = h_num(c, 2);
+	bl.late = (uint32_t)h_num(c, 3);
+	bf.bound = h_num(c, 4) != 0;
+	bf.fault = (int)h_num(c, 6);
+	bf.fault_at = h_num(c, 7);
+	s09_fast_init(&bf_fast, &bf_ops, &clk, (uint32_t)h_num(c, 5));
+	bl.rise_at = bl.ready_at = clock_us;
+	t0 = clock_us;
+	rc = s09_boot_slave(&boot_ops_dma, &clk, slotb, len, true, &end);
+	snprintf(s, sizeof s, "%d %d %lu %ld %lu", rc, end, bl.high,
+		 bl.nsess ? (long)(bl.release_t - bl.last_t) : -1L, (unsigned long)(clock_us - t0));
+	h_put(s);
+	h_putu(bl.early);
+	h_putu(bf_fast.st.fell);
+	h_putu(bf_fast.st.fell_at);
+	h_putu(bf_fast.st.slow_bytes);
+	h_putu(bf.after);
+	h_putu(bf.nparts);
+	for (unsigned i = 0; i < bf.nparts && i < sizeof bf.part / sizeof bf.part[0]; i++)
+		h_putu(bf.part[i]);
 	bl.start[bl.nsess] = bl.n;
 	for (unsigned i = 0; i < bl.nsess; i++)
 		h_puthex(bl.log + bl.start[i], bl.start[i + 1u] - bl.start[i]);
@@ -1138,6 +1282,8 @@ int main(void)
 		} else if ((strcmp(k, "boot") == 0 && c.n == 6) ||
 			   (strcmp(k, "bootx") == 0 && (c.n == 8 || c.n == 9))) {
 			do_boot(&c);
+		} else if (strcmp(k, "bootf") == 0 && c.n == 8) {
+			do_bootf(&c);
 		} else if (strcmp(k, "sreq") == 0 && c.n == 2) {
 			do_sreq(&c);
 		} else if (strcmp(k, "qtargs") == 0 && c.n == 3) {

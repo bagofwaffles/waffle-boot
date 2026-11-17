@@ -295,6 +295,71 @@ class FrontMerge(unittest.TestCase):
             mkldr.merged(elf32.Elf(fimage(extra=[far])), elf32.Elf(front()))
 
 
+MARK = 0x8803D03C                    # where fimage_marked() puts _opxy_l1_mark
+
+
+def fimage_marked(word=mkldr.L1_MARK_EMPTY, **kw):
+    """fimage() with the slave's L1 check's mark (S-09.019), as a BOOT_LINK_FC build has it."""
+    mark = ('.rodata.opxy_l1_mark', elf32.SHT_PROGBITS, elf32.SHF_ALLOC, MARK,
+            struct.pack('<IIII', word, 0, 0, 0))
+    extra = list(kw.pop('extra', ())) + [mark]
+    img = image(extra=extra + [('.wb.version', elf32.SHT_PROGBITS, elf32.SHF_ALLOC, 0x8803D034, VERSION)],
+                symbols_extra=[('_opxy_bl_version', 0x8803D034, '.wb.version'),
+                               ('_opxy_l1_mark', MARK, '.rodata.opxy_l1_mark', 16)], **kw)
+    return img
+
+
+class L1Mark(unittest.TestCase):
+    """tools/mkldr.py's mark for the slave's check of its L1 code (S-09.019): filled with the run the stream
+    loads into L1 code and its CRC-32 before the descriptor is made, so the front's check covers the
+    filled mark; an image without the mark keeps every byte."""
+
+    def stream_mark(self, data):
+        blocks = check_stream.ldr.parse(data)
+        for b in blocks:
+            if b['target'] <= MARK < b['target'] + b['count']:
+                off = data.index(mkldr.header(0, b['target'], b['count'], 0)) + 16 + MARK - b['target']
+                return struct.unpack_from('<IIII', data, off)
+        return None
+
+    def test_filled(self):
+        data = mkldr.merged(elf32.Elf(fimage_marked()), elf32.Elf(front()))
+        magic, addr, n, crc = self.stream_mark(data)
+        code = [(a, b) for a, b in mkldr.runs(elf32.Elf(fimage_marked()))
+                if 0x11A00000 <= a < 0x11A0C000]
+        self.assertEqual(len(code), 1)
+        self.assertEqual((magic, addr, n, crc),
+                         (mkldr.L1_MARK_FULL, code[0][0], len(code[0][1]), zlib.crc32(code[0][1])))
+        # the L1 code block in the stream holds exactly those bytes
+        blocks = check_stream.ldr.parse(data)
+        l1 = [b for b in blocks if b['target'] == addr]
+        self.assertEqual(len(l1), 1)
+        off = data.index(mkldr.header(0, addr, l1[0]['count'], 0)) + 16
+        self.assertEqual(zlib.crc32(data[off:off + n]), crc)
+        # the descriptor's CRC is over the filled mark
+        main = elf32.Elf(fimage_marked())
+        mkldr.mark_l1(main)
+        d = mkldr.descriptor(main, elf32.Elf(front()))
+        want = 0
+        for _, b in mkldr.checked(mkldr.ordered(mkldr.runs(main))):
+            want = zlib.crc32(b, want)
+        self.assertEqual(struct.unpack_from('<I', d, 0x10)[0], want)
+        res = check_stream.check('bootloader', data, FIRST_STAGE_STACK)
+        self.assertTrue(all(ok for _, ok, _ in res), res)
+
+    def test_unmarked_unchanged(self):
+        a = mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()))
+        self.assertEqual(a, mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front())))
+        self.assertIsNone(self.stream_mark(a))
+
+    def test_refused(self):
+        with self.assertRaises(SystemExit):     # a mark already filled, or not the compiled one
+            mkldr.merged(elf32.Elf(fimage_marked(word=mkldr.L1_MARK_FULL)), elf32.Elf(front()))
+        far = ('.l1.far', elf32.SHT_PROGBITS, AX, 0x11A02000, b'\x77' * 8)
+        with self.assertRaises(SystemExit):     # two runs in L1 code
+            mkldr.merged(elf32.Elf(fimage_marked(extra=[far])), elf32.Elf(front()))
+
+
 class Tmp:
     def __enter__(self):
         self.d = tempfile.TemporaryDirectory()

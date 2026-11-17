@@ -819,13 +819,60 @@ def uart_close():
     return {'rows': [{'name': n, 'trace': t, 'expect': x} for n, t, x in rows]}
 
 
+def boot_dma():
+    """S-13b.023: a part of the slave boot stream by DMA4 under SPI0's flow control, as register traces
+    (check_boot_dma): the control value with flow control, the select, a 64-byte part, its end."""
+    def ev(name, **kw):
+        return dict({'op': 'ev', 'ev': name}, **kw)
+
+    TF = C.SPI_TF
+    sel, desel = ev('select', on=True), ev('select', on=False)
+    head = [w('SPI0_CTL', 0), w('SPI0_CTL', C.BOOT_CTL_FC), sel]
+
+    def setup(n=64, cfg=C.BOOT_DMA_CFG, desc=None):
+        return [w('SPI0_TXCTL', 0), w('SPI0_RXCTL', 0), w('SPI0_STAT', 0xB0000FF0), w('DMA4_STAT', 7),
+                ev('desc', ch=4, bytes=desc or [n]), w('DMA4_DSCPTR_CUR', 0x11800100), w('DMA4_CFG', cfg),
+                w('SPI0_TWC', n), w('SPI0_TXCTL', C.BOOT_TXCTL), w('SPI0_TXCTL', C.BOOT_TXCTL | 1)]
+
+    end = [r('DMA4_STAT', 0), r('DMA4_STAT', 1), w('DMA4_STAT', 1), r('SPI0_STAT', 0x40000),
+           r('SPI0_STAT', 0x40000 | TF), w('SPI0_TXCTL', 0), w('SPI0_STAT', 0xB0000FF0), w('DMA4_CFG', 0),
+           w('DMA4_STAT', 7), desel]
+    good = head + setup() + end
+    s_ = setup()
+    rows = [
+        ('part', good, []),
+        ('part_two_descriptors', head + setup(desc=[60, 4]) + end, []),
+        ('part_memory_words', head + setup(cfg=C.BOOT_DMA_CFG | 0x200) + end, []),
+        ('no_flow_control', [w('SPI0_CTL', 0), w('SPI0_CTL', 0x13), sel] + setup() + end, ['boot_ctl']),
+        ('ready_active_high', [w('SPI0_CTL', 0), w('SPI0_CTL', C.BOOT_CTL_FC | 0x8000), sel] + setup() + end,
+         ['boot_ctl']),
+        ('en_cleared_in_part', head + [w('SPI0_CTL', 0x2012)] + setup() + [w('SPI0_CTL', C.BOOT_CTL_FC)] + end,
+         ['boot_ctl']),
+        ('bridge_peripheral_words', head + setup(cfg=C.DMA_CFG_SEND) + end, ['boot_cfg']),
+        ('sync_set', head + setup(cfg=C.BOOT_DMA_CFG | 4) + end, ['boot_cfg']),
+        ('desc_short', head + setup(desc=[60]) + end, ['boot_desc']),
+        ('twc_wrong', head + s_[:7] + [w('SPI0_TWC', 16)] + s_[8:] + end, ['boot_twc']),
+        # TEN set before SPI_TXCTL's other bits: the write after it clears TEN again
+        ('ten_first', head + s_[:8] + [s_[9], s_[8]] + end, ['boot_end', 'boot_order']),
+        ('twc_before_dma', head + s_[:4] + [s_[7]] + s_[4:7] + s_[8:] + end, ['boot_order']),
+        ('no_stat_clear', head + s_[:2] + s_[3:] + end, ['boot_order']),
+        ('rx_left_on', head + [s_[0]] + s_[2:] + end, ['boot_order']),
+        ('byte_by_core', head + setup() + [w('SPI0_TFIFO', 0x5A)] + end, ['boot_core']),
+        ('end_on_dma_done', head + setup() + end[:3] + end[5:], ['boot_end']),
+        ('select_before_end', head + setup() + end[:5] + [desel] + end[5:9], ['boot_end']),
+        ('dma_stopped_first', head + setup() + end[:5] + [end[7], end[5], end[6], end[8], desel], ['boot_end']),
+        ('never_ends', head + setup(), ['boot_end']),
+    ]
+    return [{'name': name, 'n': 64, 'trace': t, 'violations': v} for name, t, v in rows]
+
+
 def pinmux():
     return {role: {p: {'mux': m, 'fer': f} for p, (m, f) in ports.items()} for role, ports in C.PINMUX.items()}
 
 
 ALL = {'pinmux': pinmux, 'pin_traces': pin_traces, 'strap_timing': strap_timing, 'bridge_pins': bridge_pins,
        'slave_tx': slave_tx, 'bridge_sessions': bridge_sessions,
-       'reply_setup': reply_setup, 'bridge_dma': bridge_dma,
+       'reply_setup': reply_setup, 'bridge_dma': bridge_dma, 'boot_dma': boot_dma,
        'spi_configs': spi_configs, 'flash_traces': flash_traces, 'emmc_init': emmc, 'uart': uart,
        'spi_start': spi_start, 'uart_close': uart_close}
 

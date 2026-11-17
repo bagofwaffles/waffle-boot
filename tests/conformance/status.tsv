@@ -43,7 +43,7 @@ S-05/H-CONTINUE	-	-	not driven here (the host's 19, or digit 6 after an OS write
 S-05/H-CONTINUE-NEXT	-	-	harness: boot_master (src/boot_flow.c) with reason 80 and the setting on, against reason 20, and with keys held, the state 0xAB0D, an absent slave and a failed stage; the record's bytes are R-ROWS row 80
 S-06/FR-EVERY	-	-	the CRC-8 is test glue in h_s06.c (src/ takes it as a function)
 S-03/SC-03-WRITE-TABLE	-	-	the 5 cases that take S-03.058's optional rewrite_erase are skipped: src/ never takes it
-S-09/B-STREAM	-	-	harness: s09_boot_slave on the three slots against a boot-link model (bridge_check stream, PA6 at each byte, seeded) and the bad_crc, no_ready, no_open, no_open_stuck and slow_block variants; the first PC11 edge and the slave-role run are not observed
+S-09/B-STREAM	-	-	harness: s09_boot_slave on the three slots against a boot-link model (bridge_check stream, PA6 at each byte, seeded) and the bad_crc, no_ready, no_open, no_open_stuck and slow_block variants; with S-09.009's option (s09_fast_send, bootf), the fast, fast_late and fast_fall_back variants; the first PC11 edge and the slave-role run are not observed
 S-09/B-ABSENT	-	-	harness: stream_stuck's boot-link part only (no byte after the 100th, given up within T_STREAM); the other causes, held mode and the shutdown are not run
 S-09/M-START	-	-	harness: sessions 1-6 and their bytes; SPI0's configurations are not observed (configure() is a stub)
 S-09/M-SESSION	-	-	harness: bridge_check master and requests.json (the pad variant included) over a master-slave loopback; PA6/PC11 edges are not observed; push is not sent

@@ -18,6 +18,7 @@ Neutral trace formats:
 - the flash at a stage's end (S-13b.015): see `check_flash_end`
 - the UART at its disable (S-13b.072): see `check_uart_close`
 - a bridge session moved by DMA (S-13b.083): see `check_bridge_dma`
+- a part of the slave boot stream moved by DMA under flow control (S-13b.023): see `check_boot_dma`
 Each checker returns a list of (rule, message) violations; an empty list passes.
 
 The generic decoders, the port model and the flash/eMMC/UART checkers are the conformance package's
@@ -895,3 +896,99 @@ def check_bridge_dma(kind, trace, words=None, parts=None):
     if stage != 3:
         out.append(('recv_end', 'the session did not end: PA4 taken back, EN and REN cleared'))
     return out
+
+
+# --- S-13b.023: the slave boot stream's parts by DMA4 under flow control (S-09.009's option) -----
+
+BOOT_DMA_CFG = 0x00035001       # DMA_CFG_SEND with 8-bit peripheral words
+BOOT_TXCTL = 0x0001001C         # TTI, TWCEN, TDR 1, TUWM 1; TEN after it
+BOOT_CTL_FC = 0x00002013        # S-13b.020's control value with FCEN (ready active low), and EN
+
+
+def check_boot_dma(trace, n):
+    """S-13b.023: one part of n bytes of the slave boot stream moved by DMA4 under SPI0's flow control, from
+    its register trace in check_bridge_dma's format ("select" being SPI0_SEL3 low, true, or high): the
+    control value's write, the select, then the part. Rules:
+    `boot_ctl` the last SPI0_CTL write before the select is not 0x2013 (S-13b.020's set-up with flow control,
+    ready active low, and EN), or SPI0_CTL is written after it: EN stays set, as SEL3 is SPI0's;
+    `boot_core` a byte written to SPI0_TFIFO by the core during the part, or DMA4 never started;
+    `boot_cfg` DMA4_CFG started with another value than 0x35001 (its memory word size is free);
+    `boot_desc` the descriptors given to DMA4 do not cover n bytes;
+    `boot_order` the set-up's writes not, in this order: SPI0_TXCTL 0, SPI0_RXCTL 0, SPI0_STAT cleared,
+    DMA4_STAT acknowledged, DMA4_DSCPTR_CUR, DMA4_CFG, SPI0_TWC, SPI0_TXCTL 0x1001C, SPI0_TXCTL 0x1001D;
+    `boot_twc` SPI0_TWC not n;
+    `boot_end` not, after the set-up: DMA4's done status read, then SPI0_STAT read with TF, then
+    SPI0_TXCTL 0 and DMA4 stopped, with the select still low."""
+    out = []
+
+    def bad(rule, msg, k):
+        out.append((rule, '#%d %s' % (k, msg)))
+
+    sel = [k for k, e in enumerate(trace) if e['op'] == 'ev' and e['ev'] == 'select' and e['on']]
+    begin = sel[0] + 1 if sel else 0
+    ctl = [(k, e['val']) for k, e in enumerate(trace) if e['op'] == 'w' and e['reg'] == 'SPI0_CTL']
+    before = [v for k, v in ctl if k < begin]
+    if not before or before[-1] != BOOT_CTL_FC:
+        bad('boot_ctl', 'SPI0_CTL before the part %s, not 0x%x' % (
+            '0x%x' % before[-1] if before else 'unwritten', BOOT_CTL_FC), 0)
+    for k, v in ctl:
+        if k >= begin:
+            bad('boot_ctl', 'SPI0_CTL 0x%x written during the part' % v, k)
+            break
+    part = trace[begin:]
+    want = [('SPI0_TXCTL', 0), ('SPI0_RXCTL', 0), ('SPI0_STAT', None), ('DMA4_STAT', None),
+            ('DMA4_DSCPTR_CUR', None), ('DMA4_CFG', None), ('SPI0_TWC', None), ('SPI0_TXCTL', BOOT_TXCTL),
+            ('SPI0_TXCTL', BOOT_TXCTL | 1)]
+    names = {x[0] for x in want}
+    writes = [(begin + k, e) for k, e in enumerate(part) if e['op'] == 'w' and e['reg'] in names]
+    started = False
+    for k, e in writes:
+        if e['reg'] == 'DMA4_CFG' and e['val'] & 1:
+            started = True
+            if e['val'] & ~0x700 != BOOT_DMA_CFG:
+                bad('boot_cfg', 'DMA4_CFG 0x%x, not 0x%x' % (e['val'], BOOT_DMA_CFG), k)
+        if e['reg'] == 'SPI0_TWC' and e['val'] != n:
+            bad('boot_twc', 'SPI0_TWC %d, not %d' % (e['val'], n), k)
+    if not started:
+        out.append(('boot_core', 'DMA4 never started'))
+    for k, e in enumerate(part):
+        if e['op'] == 'w' and e['reg'] == 'SPI0_TFIFO':
+            bad('boot_core', 'a byte by the core', begin + k)
+    desc = [e['bytes'] for e in part if e['op'] == 'ev' and e['ev'] == 'desc' and e['ch'] == 4]
+    if [sum(d) for d in desc] != [n]:
+        out.append(('boot_desc', 'descriptors of %s bytes for a part of %d' % (desc, n)))
+    setup = writes[:len(want)]
+    for (k, e), (reg, val) in zip(setup, want):
+        if e['reg'] != reg or (val is not None and e['val'] != val):
+            bad('boot_order', '%s 0x%x where %s%s is due' % (e['reg'], e['val'], reg,
+                                                             '' if val is None else ' 0x%x' % val), k)
+            break
+    else:
+        if len(setup) < len(want):
+            out.append(('boot_order', 'the set-up stops after %d of its %d writes' % (len(setup), len(want))))
+    ten = [k for k, e in writes if e['reg'] == 'SPI0_TXCTL' and e['val'] & 1]
+    after = ten[0] + 1 if ten else len(trace)
+    step = 0                    # 0: DMA4's done, 1: TF, 2: TXCTL 0, 3: DMA4 stopped
+    for k in range(after, len(trace)):
+        e = trace[k]
+        if step == 0 and e['op'] == 'r' and e['reg'] == 'DMA4_STAT' and e['val'] & 1:
+            step = 1
+        elif step == 1 and e['op'] == 'r' and e['reg'] == 'SPI0_STAT' and e['val'] & SPI_TF:
+            step = 2
+        elif e['op'] == 'w' and e['reg'] == 'SPI0_TXCTL' and not e['val'] & 1:
+            if step != 2:
+                bad('boot_end', 'TEN cleared before the done status and TF', k)
+                return out
+            step = 3
+        elif e['op'] == 'w' and e['reg'] == 'DMA4_CFG' and not e['val'] & 1:
+            if step != 3:
+                bad('boot_end', 'DMA4 stopped before TEN was cleared after TF', k)
+                return out
+            step = 4
+        elif e['op'] == 'ev' and e['ev'] == 'select' and not e['on'] and step < 4:
+            bad('boot_end', 'the select raised before the part ended', k)
+            return out
+    if step < 4:
+        out.append(('boot_end', 'the part never ended'))
+    return out
+

@@ -629,6 +629,22 @@ def stream_sessions(slot):
     return out
 
 
+def stream_parts(slot):
+    """S-09.009: per session after the opening one, its parts' lengths: a header-only block's session is its
+    header; a block's first session is its header, then its first piece; each later piece is one part."""
+    out = []
+    for b in ldr.parse_blocks(slot):
+        if b['flags'] & ldr.FILL or b['count'] == 0:
+            out.append([16])
+            continue
+        out.append([16, min(1024, b['count'])])
+        rest = b['count'] - 1024
+        while rest > 0:
+            out.append([min(1024, rest)])
+            rest -= 1024
+    return out
+
+
 def streams():
     rnd = random.Random(9)
 
@@ -662,6 +678,12 @@ def streams():
     out['truncated'] = (slot, [b'\x03', whole[:56]], 'slot_end')
     files = {'final': 'slave_stream_final.bin', 'badsig': 'slave_stream_badsig.bin',
              'truncated': 'slave_stream_truncated.bin'}
+    # S-09.009: the parts each session goes in with the option, the opening session left out: by the
+    # block walk for 'final', as written for the other two
+    dump('slave_stream_parts.json', {
+        'final': {'session_parts': stream_parts(final)},
+        'badsig': {'session_parts': [[16], [16, 100]]},
+        'truncated': {'session_parts': [[16, 40]]}})
     for name, (slot, sess, end) in out.items():
         with open(os.path.join(V, files[name]), 'wb') as f:
             f.write(slot)

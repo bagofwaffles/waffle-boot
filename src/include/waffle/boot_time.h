@@ -67,6 +67,7 @@ enum boot_time_id {
 #define BOOT_TIME_GREET_WAITED  0x4u	/* the front waited for the greeting (S-07.021) */
 #define BOOT_TIME_CHARGE_WAITED 0x8u	/* the front's charge wait ran (S-07.054) */
 #define BOOT_TIME_LINK_FC       0x10u	/* the stream was paced by the controller */
+#define BOOT_TIME_LINK_DMA      0x20u	/* and fed by DMA (S-09.009, S-13b.023) */
 
 #define BOOT_TIME_RAISE_STEPS 8u
 #define BOOT_TIME_FIRST 16u
@@ -134,6 +135,14 @@ struct boot_time {
 	 * whose CRC was then good, which says the faster read is marginal. */
 	uint32_t slot_fast, slot_fast_failed, slot_reread, slot_reread_good;
 	uint32_t slot_trial;	/* faster reads a trial mark's CRC confirmed: kept */
+	/* Fed by DMA (BOOT_TIME_LINK_DMA, struct s09_fast_stats): the parts the
+	 * controller sent whole, the guard's length and the time in the guards
+	 * (us), the parts whose guard ended with the line high, the fall-back's
+	 * cause (S09_PART_*, 0 for none), its session and the slot's bytes
+	 * clocked before it, the bytes sent one at a time after it, and 1 when
+	 * the slave held the line past T_STREAM. */
+	uint32_t dma_parts, dma_guard, dma_guard_us, dma_high;
+	uint32_t dma_fell, dma_fell_session, dma_fell_at, dma_slow_bytes, dma_held;
 	struct boot_time_split split;
 };
 
@@ -235,8 +244,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 7u
-#define BOOT_TIME_WORDS   (42u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+#define BOOT_TIME_VERSION 8u
+#define BOOT_TIME_WORDS   (51u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,

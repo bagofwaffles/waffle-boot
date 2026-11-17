@@ -66,6 +66,9 @@
                          load's log line give it: the step, the partition and sector, the header and
                          the image's CRC, the refusal, the release's reply, and for a lost bridge the
                          request, where it broke and the driver's four words
+    dev-stream           how this start sent the slave its boot stream (a BOOT_LINK_FC build): the
+                         way, the outcome, whether the bridge linked, the sessions, parts and
+                         bytes, the time, the guards and waits, and a fall-back's cause and place
     dev-cal-start        restart into one plain start of the OS with the calibration screen in the
                          memory the OS draws its first screen over (S-04.012, S-05.016): photograph
                          the OS's first screen. The boot after it is black there again
@@ -139,6 +142,14 @@ DEV_LINK_RECORD, DEV_LINK_TEST = 35, 36
 DEV_BOOT_START, START_REPORT = 37, 61   # OPXY_DEV_BOOT_START and OPXY_START_REPORT's bytes
 DEV_CAL_START = 38      # OPXY_DEV_CAL_START
 DEV_QUAD_REPLY = 39     # OPXY_DEV_QUAD_REPLY (S-09.080)
+DEV_STREAM, STREAM_REPORT = 40, 72     # OPXY_DEV_STREAM and OPXY_STREAM_REPORT's bytes (S-09.009)
+STREAM_WAYS = ['byte by byte', 'by the controller under flow control, fed by the core',
+               'by the controller under flow control, fed by DMA']
+STREAM_OUTCOMES = ['streamed', "the slot's CRC failed, nothing sent", 'the slave never showed ready',
+                   'the slave did not open', 'the stream stopped part-way']
+STREAM_ENDS = ['the FINAL block', 'a bad signature', "the slot's end"]
+STREAM_CAUSES = ['none', "the slave's hold", 'a DMA error', 'the controller stopped with the line low',
+                 'no end of the transmit with the line low', 'the driver refused the part']
 QUAD_N, QUAD_N_MAX, QUAD_LIMIT_S = 16, 4096, 120
 QUAD_LAYOUT = '<BBBIHBB8H8HIIBIIIQBHI4I18I'     # the reply after its status byte
 QUAD_REPLY = 167
@@ -1373,6 +1384,8 @@ def run(mon, argv):
         show_start(mon)
     elif c == 'dev-cal-start':
         cal_start(mon)
+    elif c == 'dev-stream':
+        show_stream(mon)
     elif c == 'dev-link-test':
         n = num(a[0]) if a else LINK_TEST_N
         if not 1 <= n <= 255:
@@ -1769,6 +1782,50 @@ def show_start(mon):
         print("the failed start's report: not in this bootloader")
         return
     for line in start_lines(r):
+        print(line)
+
+
+def stream_lines(r):
+    """OPXY_DEV_STREAM's reply (after the status byte) in plain words."""
+    if len(r) < STREAM_REPORT or r[0] != 1:
+        return ["this start's stream: no report (an older bootloader, or not this build's)"]
+    way, rc, end, fell, linked, held, ran = r[1], r[2], r[3], r[4], r[5], r[6], r[7]
+    (sessions, parts, fast, slow, fell_session, fell_at, us, guard_us, wait_us, wait_max,
+     high, guard) = struct.unpack_from('<12I', r, 8)
+    fault = struct.unpack_from('<4I', r, 56)
+    if not ran:
+        return ["this start's stream: not sent in this start"]
+    out = ["this start's stream: %s" % (STREAM_WAYS[way] if way < len(STREAM_WAYS) else 'way %d' % way)]
+    line = '  outcome:  %s' % (STREAM_OUTCOMES[rc] if rc < len(STREAM_OUTCOMES) else 'outcome %d' % rc)
+    if rc == 0:
+        line += ', ended at %s' % (STREAM_ENDS[end] if end < len(STREAM_ENDS) else 'end %d' % end)
+    out.append(line + '; %.3f ms from the wait for the ready line' % (us / 1000.0))
+    out.append('  bridge:   %s' % ('linked' if linked else 'not linked: the slave did not answer'))
+    if way == 2:
+        out.append('  sent:     %d sessions, %d parts by DMA, %d bytes by the controller, %d one at a time'
+                   % (sessions, parts, fast, slow))
+        out.append('  pacing:   guard %d us, %.3f ms in the guards; %d parts began with the line high, '
+                   '%.3f ms waited, the longest %d us' % (guard, guard_us / 1000.0, high, wait_us / 1000.0,
+                                                           wait_max))
+        if fell:
+            out.append('  fell back at byte %d of session %d: %s; the rest one byte at a time' % (
+                fell_at, fell_session, STREAM_CAUSES[fell] if fell < len(STREAM_CAUSES) else 'cause %d' % fell))
+            out.append('  driver:   %s' % driver_text(list(fault)))
+        else:
+            out.append('  fell back: no')
+        if held:
+            out.append('  the slave held the ready line past T_STREAM')
+    return out
+
+
+def show_stream(mon):
+    """OPXY_DEV_STREAM, in plain words."""
+    try:
+        r = mon.checked(bytes([DEV_STREAM]))
+    except SystemExit:
+        print("this start's stream: not in this bootloader (built without BOOT_LINK_FC)")
+        return
+    for line in stream_lines(r):
         print(line)
 
 

@@ -794,6 +794,67 @@ class Start(unittest.TestCase):
 
 
 
+class Stream(unittest.TestCase):
+    """dev-stream: OPXY_DEV_STREAM's report of this start's slave boot stream (S-09.009), as
+    opxy_stream_report() lays it out (waffle/board/opxy_boot.h)."""
+
+    def report(self, way=2, rc=0, end=0, fell=0, linked=1, held=0, ran=1, words=(), fault=(0, 0, 0, 0)):
+        w = list(words) + [0] * (12 - len(words))
+        r = bytes([1, way, rc, end, fell, linked, held, ran]) + struct.pack('<12I', *w) + \
+            struct.pack('<4I', *fault)
+        self.assertEqual(len(r), m.STREAM_REPORT)
+        return r
+
+    def test_none(self):
+        self.assertIn('no report', m.stream_lines(b'')[0])
+        self.assertIn('not sent', m.stream_lines(self.report(ran=0))[0])
+
+    def test_dma(self):
+        lines = m.stream_lines(self.report(words=(412, 437, 421376, 0, 0, 0, 120500, 9180, 30, 12, 3, 20)))
+        self.assertEqual(lines[0], "this start's stream: by the controller under flow control, fed by DMA")
+        self.assertIn('  outcome:  streamed, ended at the FINAL block; 120.500 ms from the wait for the ready '
+                      'line', lines)
+        self.assertIn('  bridge:   linked', lines)
+        self.assertIn('  sent:     412 sessions, 437 parts by DMA, 421376 bytes by the controller, 0 one at a '
+                      'time', lines)
+        self.assertIn('  fell back: no', lines)
+
+    def test_fell_back(self):
+        lines = m.stream_lines(self.report(fell=3, linked=1, words=(412, 6, 6200, 415176, 7, 6200),
+                                           fault=(0xFFFFFFFE, 0x10000, 25, 6)))
+        text = '\n'.join(lines)
+        self.assertIn('  fell back at byte 6200 of session 7: the controller stopped with the line low; the '
+                      'rest one byte at a time', text)
+        self.assertIn("[the DMA's count stopped; rc -2", text)
+        lines = m.stream_lines(self.report(rc=4, linked=0, held=1))
+        self.assertIn('  outcome:  the stream stopped part-way; 0.000 ms from the wait for the ready line', lines)
+        self.assertIn('  bridge:   not linked: the slave did not answer', lines)
+        self.assertIn('  the slave held the ready line past T_STREAM', lines)
+
+    def test_core_fed(self):
+        lines = m.stream_lines(self.report(way=1))
+        self.assertEqual(lines[0], "this start's stream: by the controller under flow control, fed by the core")
+        self.assertFalse(any(x.startswith('  sent:') for x in lines))
+
+    def test_show(self):
+        class Old:
+            def checked(self, payload, timeout=5.0):
+                raise SystemExit('monitor: bad request')
+
+        class New:
+            def checked(self, payload, timeout=5.0):
+                self.asked = payload
+                return bytes([1, 2, 0, 0, 0, 1, 0, 1]) + bytes(64)
+        out = io.StringIO()
+        new = New()
+        with contextlib.redirect_stdout(out):
+            m.show_stream(Old())
+            m.show_stream(new)
+        self.assertEqual(new.asked, bytes([m.DEV_STREAM]))
+        self.assertIn('not in this bootloader', out.getvalue().splitlines()[0])
+        self.assertIn('fed by DMA', out.getvalue())
+
+
 class CalStart(unittest.TestCase):
     """dev-cal-start: one request, OPXY_DEV_CAL_START, answered before the restart."""
 

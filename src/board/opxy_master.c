@@ -347,9 +347,9 @@ static bool slave_start(void *ctx)
 	/* S-13b.020, .021: the boot link on SPI0, SEL3. */
 	(void)wb_spi_init(&m->hw.link_spi, OPXY_SPI_LINK, &opxy_spi_boot_link,
 			  &m->hw.time, OPXY_BOOT_LINK_WORD_US);
-	m->boot_ops = OPXY_BOOT_OPS(&m->hw); OPXY_TIMING_STREAM(&m->boot_ops);
+	m->boot_ops = OPXY_BOOT_OPS(&m->hw); OPXY_TIMING_STREAM(&m->boot_ops); OPXY_STREAM_BEGIN();
 	rc = OPXY_TESTOS_OR(((void)len, (void)good, (void)end, (void)stream, S09_BOOT_STREAMED), /* S-05.022: the loading bootloader booted the slave too */
-			    s09_boot_slave(&m->boot_ops, &m->clock, stream, len, good, &end)); OPXY_TIMING_STREAM_END();
+			    s09_boot_slave(&m->boot_ops, &m->clock, stream, len, good, &end)); OPXY_TIMING_STREAM_END(); OPXY_STREAM_END(rc, end);
 	/* S-09.060: T_INIT for the init request session runs from the
 	 * stream's last byte; the slave's start-up and its eMMC bring-up come
 	 * first (S-09.018). */
@@ -371,7 +371,7 @@ static bool slave_start(void *ctx)
 	else if (!OPXY_TESTOS_OR(opxy_testos_bridge_ready(&m->bus_ops, init_by), opxy_bridge_init_ready(&m->bus_ops, init_by)) ||
 		 !s09_master_start(&m->bridge))
 		s09_master_set_absent(&m->bridge);
-	OPXY_TIME(BOOT_TIME_LINKED); OPXY_TESTOS(opxy_testos_slave_bringup(m);) m->slave_present = !m->bridge.absent;	/* the test OS: blue and the eMMC, or brown */
+	OPXY_TIME(BOOT_TIME_LINKED); OPXY_TESTOS(opxy_testos_slave_bringup(m);) m->slave_present = !m->bridge.absent; OPXY_STREAM_LINKED(m);	/* the test OS: blue and the eMMC, or brown */
 	/* S-13b.083: the end the slave's replies use, which the slave cannot log */
 	s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
 		    opxy_bridge_end_line(WB_SPI_REPLY_END_BUILD));

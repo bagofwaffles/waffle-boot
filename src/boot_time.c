@@ -371,6 +371,46 @@ static bool stream_line(const struct boot_time *t, unsigned k, uint32_t cpu,
 	}
 }
 
+/* Fed by DMA, in place of the lines about the line after a byte: the parts
+ * and their guards, then the fall-back. The causes are S09_PART_*'s. */
+static bool dma_line(const struct boot_time *t, bool fell, struct s14_text *out)
+{
+	static const char *const cause[] = {
+		"none", "the slave's hold", "a DMA error", "the controller stopped with the line low",
+		"no end of the transmit with the line low", "the driver refused the part",
+	};
+
+	if (!fell) {
+		s14_text_str(out, "stream by DMA: ");
+		s14_text_dec(out, t->dma_parts);
+		s14_text_str(out, " parts, guard ");
+		s14_text_dec(out, t->dma_guard);
+		s14_text_str(out, " us, ");
+		text_ms(out, t->dma_guard_us);
+		s14_text_str(out, " in the guards, ");
+		s14_text_dec(out, t->dma_high);
+		s14_text_str(out, " parts began with the ready line high");
+		return true;
+	}
+	if (t->dma_fell == 0u) {
+		s14_text_str(out, t->dma_held ? "stream fall-back: none; the slave held the line past T_STREAM" :
+						"stream fall-back: none");
+		return true;
+	}
+	s14_text_str(out, "stream fall-back at byte ");
+	s14_text_dec(out, t->dma_fell_at);
+	s14_text_str(out, " of session ");
+	s14_text_dec(out, t->dma_fell_session);
+	s14_text_str(out, ": ");
+	s14_text_str(out, t->dma_fell < sizeof cause / sizeof cause[0] ? cause[t->dma_fell] : "?");
+	s14_text_str(out, ", then ");
+	s14_text_dec(out, t->dma_slow_bytes);
+	s14_text_str(out, " bytes one at a time");
+	if (t->dma_held)
+		s14_text_str(out, "; the slave held the line past T_STREAM");
+	return true;
+}
+
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out)
 {
@@ -437,6 +477,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 		text_ms(out, t->stream_wait / cpu);
 		return true;
 	case 4:
+		if (reached(t, BOOT_TIME_STREAM_END) && (t->flags & BOOT_TIME_LINK_DMA))
+			return dma_line(t, false, out);
 		if (!reached(t, BOOT_TIME_STREAM_END) || (t->flags & BOOT_TIME_LINK_FC))
 			return false;
 		s14_text_str(out, "ready line after a byte: ");
@@ -451,6 +493,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 	case 5: {
 		unsigned i;
 
+		if (reached(t, BOOT_TIME_STREAM_END) && (t->flags & BOOT_TIME_LINK_DMA))
+			return dma_line(t, true, out);
 		if (!reached(t, BOOT_TIME_STREAM_END) || (t->flags & BOOT_TIME_LINK_FC) ||
 		    t->line_window == 0u)
 			return false;
@@ -543,6 +587,8 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->line_window, &t->line_high_first, &t->line_late, &t->line_late_max,
 		&t->line_hold_max, &t->slot_fast, &t->slot_fast_failed, &t->slot_reread,
 		&t->slot_reread_good, &t->slot_trial,
+		&t->dma_parts, &t->dma_guard, &t->dma_guard_us, &t->dma_high, &t->dma_fell,
+		&t->dma_fell_session, &t->dma_fell_at, &t->dma_slow_bytes, &t->dma_held,
 		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
 		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};

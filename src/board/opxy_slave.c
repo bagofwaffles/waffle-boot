@@ -1022,6 +1022,17 @@ static void bringup(void *ctx)
 	(void)wb_spi_slave_init(&s->hw.link_slave, OPXY_SPI_BRIDGE_SLAVE,
 				&opxy_spi_bridge_slave_pre, OPXY_PA4, OPXY_PB15,
 				&s->hw.time, S09_T_REPLY_US);
+#if OPXY_BOOT_LINK_FC && !defined(OPXY_TEST_OS)
+	/*
+	 * S-09.019: the L1 code the stream loaded, checked before anything is
+	 * served or the eMMC touched. A stream that arrived damaged there
+	 * leaves PA4 high for good: the master's init finds no slave
+	 * (S-09.017), as for a stream that never ended.
+	 */
+	if (!opxy_l1_code_ok())
+		for (;;)
+			;
+#endif
 }
 
 /*

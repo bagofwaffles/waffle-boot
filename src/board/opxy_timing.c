@@ -218,7 +218,9 @@ static bool stream_send(void *ctx, const uint8_t *d, size_t n)
 	const uint64_t wire = (uint64_t)n * STREAM_WIRE_BYTE;
 	const uint64_t at = wb_core_cycles();
 	const uint32_t before = SPLIT.bytes;
-	uint64_t from, took;
+	/* fed by DMA, the guards are the stream's own pauses, not the slave's */
+	const uint32_t guard_was = opxy_boot_fast()->st.guard_us;
+	uint64_t from, took, guard;
 	bool sent;
 
 	if (!stream_ops.ready(ctx))
@@ -227,6 +229,8 @@ static bool stream_send(void *ctx, const uint8_t *d, size_t n)
 	sent = stream_ops.send(ctx, d, n);
 	stream_byte_end = wb_core_cycles();
 	took = stream_byte_end - from;
+	guard = (uint64_t)(opxy_boot_fast()->st.guard_us - guard_was) * OPXY_CCLK_MHZ;
+	took = took > guard ? took - guard : 0u;
 	SPLIT.sample += from - at;
 	SPLIT.send += took;
 	SPLIT.reads++;
@@ -273,6 +277,22 @@ void opxy_timing_stream(struct s09_boot_ops *ops)
 
 void opxy_timing_stream_end(void)
 {
+#if OPXY_BOOT_LINK_FC
+	const struct s09_fast_stats *f = &opxy_boot_fast()->st;
+
+	if (opxy_boot_way() == 2u && f->sessions != 0u) {
+		opxy_boot_time.flags |= BOOT_TIME_LINK_DMA;
+		opxy_boot_time.dma_parts = f->parts;
+		opxy_boot_time.dma_guard = OPXY_BOOT_LINK_GUARD_US;
+		opxy_boot_time.dma_guard_us = f->guard_us;
+		opxy_boot_time.dma_high = f->high;
+		opxy_boot_time.dma_fell = f->fell;
+		opxy_boot_time.dma_fell_session = f->fell_session;
+		opxy_boot_time.dma_fell_at = f->fell_at;
+		opxy_boot_time.dma_slow_bytes = f->slow_bytes;
+		opxy_boot_time.dma_held = f->held ? 1u : 0u;
+	}
+#endif
 	if (stream_begun)
 		boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_LAST, stream_byte_end);
 	OPXY_TIME(BOOT_TIME_STREAM_END);

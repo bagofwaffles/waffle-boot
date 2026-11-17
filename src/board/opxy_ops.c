@@ -347,6 +347,8 @@ struct s09_boot_ops opxy_boot_ops(struct opxy_hw *hw)
  */
 static unsigned boot_fc_sessions;
 static bool boot_fc_fault;
+/* The ops this start's stream took: 1 core-fed, 2 DMA-fed, 0 none yet. */
+static unsigned boot_way;
 
 /* cppcheck-suppress constParameterCallback ; s09_boot_ops fixes the type */
 static uint8_t boot_fc_xfer(void *ctx, uint8_t tx)
@@ -397,9 +399,152 @@ struct s09_boot_ops opxy_boot_ops_fc(struct opxy_hw *hw)
 
 	boot_fc_sessions = 0u;
 	boot_fc_fault = false;
+	boot_way = 1u;
 	/* a byte the slave holds for long services USB meanwhile (S-10a.049) */
 	wb_spi_set_idle(&hw->link_spi, opxy_usb_breathe);
 	return ops;
+}
+
+unsigned opxy_boot_way(void)
+{
+	return boot_way;
+}
+
+/*
+ * BOOT_LINK_FC=2 (S-09.009, S-13b.023). The opening byte and S-09.007's go
+ * one at a time without flow control, as with BOOT_LINK_FC=1, and the
+ * control value changes to the flow-controlled one, with the chip select
+ * high, before the first stream session. A stream session goes to
+ * s09_fast_send(), which sends its parts by DMA4 (wb_spi_dma_send_bytes())
+ * and, after a part the controller gives up with PA6 low, the rest of the
+ * stream one byte at a time at the byte path's set-up and settle time.
+ */
+static struct s09_fast boot_fast;
+static struct s06_clock boot_clock;
+static struct s09_fast_ops boot_fast_ops;
+static bool boot_dma_slow, boot_dma_words;
+static uint32_t boot_dma_fault[4];
+
+static int boot_dma_part(void *ctx, const uint8_t *d, size_t n, size_t *left)
+{
+	struct wb_spi *s = ctx;
+	struct wb_spi_fault f;
+	uint32_t l = 0;
+	const int rc = wb_spi_dma_send_bytes(s, d, n, &l);
+
+	if (rc == WB_SPI_OK)
+		return S09_PART_OK;
+	*left = l;
+	wb_spi_last_fault(s, &f);
+	boot_dma_fault[0] = (uint32_t)f.rc;
+	boot_dma_fault[1] = f.stat;
+	boot_dma_fault[2] = f.left;
+	boot_dma_fault[3] = f.stage;
+	if (rc == WB_SPI_ERR_ARG)
+		return S09_PART_REFUSED;
+	if (rc == WB_SPI_TIMEOUT && !ready_pa6(ctx)) {
+		/* the slave's hold: the stream ends, and nothing of the part
+		 * is left in SPI0 for the bridge's set-up */
+		(void)wb_spi_restart(s, s->ctl, s->clk);
+		return S09_PART_HELD;
+	}
+	switch (f.stage & WB_SPI_STAGE_MASK) {
+	case WB_SPI_STAGE_DMA_ERR:
+		return S09_PART_DMA;
+	case WB_SPI_STAGE_TX_END:
+		return S09_PART_NO_END;
+	default:
+		return S09_PART_STALL;
+	}
+}
+
+/* S-13b.020's set-up in the session open now: SPI0 disabled and enabled
+ * again, which empties its FIFOs of what was not clocked; the select
+ * register is not written. */
+static bool boot_dma_slow_on(void *ctx)
+{
+	struct wb_spi *s = ctx;
+
+	if (wb_spi_reconfigure(s, opxy_spi_boot_link.ctl, opxy_spi_boot_link.clk) != WB_SPI_OK)
+		return false;
+	boot_dma_slow = true;
+	(void)wb_spi_words_begin(s);
+	boot_dma_words = true;
+	return true;
+}
+
+static void boot_dma_byte(void *ctx, uint8_t tx)
+{
+	(void)boot_xfer(ctx, tx);
+}
+
+/* cppcheck-suppress constParameterCallback ; s09_fast_ops fixes the type */
+static bool boot_dma_byte_failed(void *ctx)
+{
+	return wb_spi_words_failed(ctx);
+}
+
+static void boot_dma_select(void *ctx, bool on)
+{
+	struct wb_spi *s = ctx;
+
+	if (on && boot_fc_sessions++ == 1u) {
+		(void)wb_spi_reconfigure(s, opxy_spi_boot_link_fc.ctl,
+					 opxy_spi_boot_link_fc.clk);
+		s09_fast_pause(&boot_fast);	/* the guard after the opening too */
+	}
+	if (!on && boot_dma_words) {
+		(void)wb_spi_words_end(s);
+		boot_dma_words = false;
+	}
+	wb_spi_select(s, on);
+	if (on && boot_dma_slow) {
+		(void)wb_spi_words_begin(s);
+		boot_dma_words = true;
+	}
+}
+
+static bool boot_dma_send(void *ctx, const uint8_t *d, size_t n)
+{
+	(void)ctx;
+	return s09_fast_send(&boot_fast, d, n);
+}
+
+struct s09_boot_ops opxy_boot_ops_dma(struct opxy_hw *hw)
+{
+	const struct s09_boot_ops ops = {
+		&hw->link_spi, ready_pa6, boot_dma_select, boot_fc_xfer, boot_dma_send,
+		boot_fc_failed,
+	};
+
+	boot_fc_sessions = 0u;
+	boot_fc_fault = false;
+	boot_way = 2u;
+	boot_dma_slow = boot_dma_words = false;
+	boot_dma_fault[0] = boot_dma_fault[1] = boot_dma_fault[2] = boot_dma_fault[3] = 0u;
+	boot_clock = opxy_clock(hw);
+	boot_fast_ops.ctx = &hw->link_spi;
+	boot_fast_ops.ready = ready_pa6;
+	boot_fast_ops.part = boot_dma_part;
+	boot_fast_ops.slow = boot_dma_slow_on;
+	boot_fast_ops.byte = boot_dma_byte;
+	boot_fast_ops.failed = boot_dma_byte_failed;
+	s09_fast_init(&boot_fast, &boot_fast_ops, &boot_clock, OPXY_BOOT_LINK_GUARD_US);
+	wb_spi_set_idle(&hw->link_spi, opxy_usb_breathe);
+	return ops;
+}
+
+const struct s09_fast *opxy_boot_fast(void)
+{
+	return &boot_fast;
+}
+
+void opxy_boot_fast_fault(uint32_t out[4])
+{
+	unsigned i;
+
+	for (i = 0; i < 4u; i++)
+		out[i] = boot_dma_fault[i];
 }
 #endif
 

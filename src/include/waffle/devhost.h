@@ -113,7 +113,7 @@ enum {
 	OPXY_DEV_BENCH = 32, OPXY_DEV_CHECK = 33, OPXY_DEV_EXTRACT = 34,
 	OPXY_DEV_LINK_RECORD = 35, OPXY_DEV_LINK_TEST = 36,
 	OPXY_DEV_BOOT_START = 37, OPXY_DEV_CAL_START = 38,
-	OPXY_DEV_QUAD_REPLY = 39,
+	OPXY_DEV_QUAD_REPLY = 39, OPXY_DEV_STREAM = 40,
 };
 /* OPXY_DEV_PUT sub-ops: open (then the name), write (then the bytes), close. */
 enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
@@ -133,6 +133,13 @@ enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
  * tried or none failed (held mode by its keys, its reason or the boot
  * prompt). What S-15.163 shows on the main screen and Device Info, and the
  * load's log line, come from the same account.
+ */
+
+/*
+ * OPXY_DEV_STREAM answers how this start's slave boot stream went
+ * (S-09.009), at any time: opxy_stream_report()'s OPXY_STREAM_REPORT bytes
+ * after the status byte, laid out in waffle/board/opxy_boot.h. Only a build
+ * with BOOT_LINK_FC=1 or 2 has it; any other answers OPXY_DEV_BAD.
  */
 
 /*

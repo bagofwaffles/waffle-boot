@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "waffle/boot_time.h"
+#include "waffle/s09_fast.h"
 #include "waffle/s09_master.h"
 #include "waffle/s06_bytes.h"
 #include "waffle/s06_clock.h"
@@ -636,7 +637,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 106u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 115u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -722,6 +723,59 @@ static void test_record(void)
 	CHECK(!boot_time_unpack(rec, &back, &mhz));
 }
 
+/*
+ * Fed by DMA (S-09.009, S-13b.023): lines 4 and 5 after the milestones give
+ * the parts and their guards, then the fall-back, in place of the line after
+ * a byte, which no byte shows there. The record carries them across.
+ */
+static void test_dma_lines(void)
+{
+	struct boot_time t = fresh(), back;
+	uint8_t rec[BOOT_TIME_RECORD];
+	uint32_t mhz = 0;
+
+	boot_time_mark(&t, BOOT_TIME_STREAM_END, US(900000));
+	t.flags = BOOT_TIME_LINK_FC;
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 4u));
+	t.flags |= BOOT_TIME_LINK_DMA;
+	t.dma_parts = 437u;
+	t.dma_guard = 20u;
+	t.dma_guard_us = 9180u;
+	t.dma_high = 3u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 4u,
+		      "stream by DMA: 437 parts, guard 20 us, 9.180 ms in the guards, "
+		      "3 parts began with the ready line high"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 5u, "stream fall-back: none"));
+	t.dma_held = 1u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 5u,
+		      "stream fall-back: none; the slave held the line past T_STREAM"));
+	t.dma_held = 0u;
+	t.dma_fell = S09_PART_STALL;
+	t.dma_fell_session = 7u;
+	t.dma_fell_at = 6200u;
+	t.dma_slow_bytes = 415176u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 5u,
+		      "stream fall-back at byte 6200 of session 7: the controller stopped with "
+		      "the line low, then 415176 bytes one at a time"));
+	t.dma_fell = S09_PART_DMA;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 5u,
+		      "stream fall-back at byte 6200 of session 7: a DMA error, "
+		      "then 415176 bytes one at a time"));
+	t.dma_fell = 99u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 5u,
+		      "stream fall-back at byte 6200 of session 7: ?, then 415176 bytes one at a time"));
+	t.dma_fell = S09_PART_NO_END;
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 6u));
+	boot_time_pack(&t, MHZ, rec);
+	CHECK(boot_time_unpack(rec, &back, &mhz));
+	CHECK(back.dma_parts == 437u && back.dma_guard == 20u && back.dma_guard_us == 9180u &&
+	      back.dma_high == 3u && back.dma_fell == S09_PART_NO_END && back.dma_fell_session == 7u &&
+	      back.dma_fell_at == 6200u && back.dma_slow_bytes == 415176u && back.dma_held == 0u);
+	CHECK(line_is(&back, BOOT_TIME_COUNT + 5u,
+		      "stream fall-back at byte 6200 of session 7: no end of the transmit with the "
+		      "line low, then 415176 bytes one at a time"));
+}
+
 int main(void)
 {
 	RUN(test_mark);
@@ -736,5 +790,6 @@ int main(void)
 	RUN(test_split);
 	RUN(test_split_fc);
 	RUN(test_record);
+	RUN(test_dma_lines);
 	return check_summary("boot_time");
 }

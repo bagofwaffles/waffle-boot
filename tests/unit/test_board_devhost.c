@@ -394,6 +394,36 @@ static void test_gate(void)
 }
 
 /*
+ * OPXY_DEV_STREAM (S-09.009), in a build with BOOT_LINK_FC as the host's:
+ * refused with developer mode off; on, the report of this start's stream,
+ * read only, its version first and its way the one the start took.
+ */
+static void test_stream_report(void)
+{
+	struct fake_mmr_access w[4];
+	size_t plen;
+
+	fake_mmr_reset();
+	fake_core_reset();
+	memset(&m, 0, sizeof(m));
+	s06_node_init(&m.node, crc8, NULL);
+	s06_link_init(&m.link[S06_LINK_CDC], &port, NULL, S06_ADDR_MASTER,
+		      S06_ADDR_HOST);
+	m.node.link[S06_LINK_CDC] = &m.link[S06_LINK_CDC];
+	opxy_stream_begin();
+	opxy_stream_end(S09_BOOT_STREAMED, S09_END_FINAL);
+	m.sv.menu.dev_mode = false;
+	dev_frame(OPXY_DEV_STREAM, NULL, 0);
+	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED && plen == 1u);
+	m.sv.menu.dev_mode = true;
+	dev_frame(OPXY_DEV_STREAM, NULL, 0);
+	CHECK(reply_status(&plen) == OPXY_DEV_OK && plen == 1u + OPXY_STREAM_REPORT);
+	CHECK(reply[1] == 1u && reply[2] == (uint8_t)opxy_boot_way());
+	CHECK(reply[3] == S09_BOOT_STREAMED && reply[4] == S09_END_FINAL && reply[8] == 1u);
+	CHECK(fake_mmr_writes(w, 4u) == 0u);	/* reading only */
+}
+
+/*
  * S-10c.110: the options apply only to a hand-over a developer request
  * starts. A flags request holds them for the next one and leaves
  * opxy_ho_flags, which the ordinary hand-over reads, at 0; a hand-over
@@ -966,6 +996,7 @@ int main(void)
 	RUN(test_stock);
 	RUN(test_mem_ok);
 	RUN(test_gate);
+	RUN(test_stream_report);
 	RUN(test_options_scope);
 	RUN(test_pa4);
 	RUN(test_marks);

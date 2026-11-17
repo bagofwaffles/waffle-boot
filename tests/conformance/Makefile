@@ -71,7 +71,8 @@ H_s07p_SRCS := src/s07_psoc.c src/s07_program.c src/s07_cypress.c src/s07_rules.
 	src/s15_prompt.c src/s15_console.c src/s15_lines.c src/s14_log.c src/s14_line.c \
 	src/s17_revisions.c src/s11_common.c src/s11_version.c
 H_s08_SRCS := src/s08_rules.c
-H_s09_SRCS := src/s09_bridge.c src/s09_master.c src/s09_slave.c src/s06_frame.c src/s06_rx.c src/s06_link.c
+H_s09_SRCS := src/s09_bridge.c src/s09_master.c src/s09_slave.c src/s09_fast.c src/s06_frame.c src/s06_rx.c \
+	src/s06_link.c
 H_s10c_SRCS := src/s10c_sysex.c src/s10c_text.c src/s11_common.c src/s11_version.c
 # The command server (S-10c.070, S-10c.076).
 H_s10c_SRCS += src/s10c_host.c

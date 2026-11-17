@@ -7,6 +7,8 @@ Each check returns a list of failure strings; empty is a pass.
 
 Exit 0 on a pass, 1 on a failure, 2 on a bad capture. Captures are JSON, byte strings in hex:
   stream       {"sessions": [H, ...]}  the boot link's MOSI sessions in order (--vector)
+  parts        {"parts": [[N, ...], ...]}  S-09.009: each stream session's parts' lengths, the opening
+               session left out (--vector)
   request      {"items": [{"name", "hex"}]} (--side master) or [{"name", "rx_len", "session_len"}] (slave)
   reply        {"items": [{"name", "hex"}]}
   file_read    {"items": [{"name", "pieces": [H, ...]}]}
@@ -56,6 +58,19 @@ def check_stream(vector, sessions):
             fails.append('stream %s: session %d differs (len %d, expected %d; head %s, expected %s)'
                          % (vector, i, len(g), e['len'], g[:20].hex(), e['head_hex']))
     return fails
+
+
+def check_parts(vector, parts):
+    """S-09.009: the parts each stream session went in with the option (lengths, the opening session left
+    out) against slave_stream_parts.json."""
+    exp = _load('slave_stream_parts.json')[vector]['session_parts']
+    got = [list(p) for p in parts]
+    if got == exp:
+        return []
+    for i, (g, e) in enumerate(zip(got, exp)):
+        if g != e:
+            return ['parts %s: session %d went as %s, expected %s' % (vector, i + 1, g, e)]
+    return ['parts %s: %d sessions, expected %d' % (vector, len(got), len(exp))]
 
 
 def check_requests(items, side='master'):
@@ -659,7 +674,7 @@ def _hexify(obj):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('check', choices=['stream', 'request', 'reply', 'file_read', 'record', 'master',
+    ap.add_argument('check', choices=['stream', 'parts', 'request', 'reply', 'file_read', 'record', 'master',
                                       'session_end', 'pad_trail'])
     ap.add_argument('capture')
     ap.add_argument('--side', choices=['master', 'slave'], default='master')
@@ -675,6 +690,10 @@ def main(argv=None):
             if not a.vector:
                 ap.error('stream needs --vector')
             fails = check_stream(a.vector, [_b(x) for x in cap['sessions']])
+        elif a.check == 'parts':
+            if not a.vector:
+                ap.error('parts needs --vector')
+            fails = check_parts(a.vector, cap['parts'])
         elif a.check == 'master':
             fails = check_master(_hexify(cap['sessions']), a.absent, a.room_gaps)
         else:

@@ -159,6 +159,61 @@ bool opxy_stream_checked(struct opxy_master *m, unsigned slot, const uint8_t **s
  * the trial mark (S-02.016): this start runs a tried slot. */
 bool opxy_stream_trial(unsigned slot);
 
+/*
+ * With BOOT_LINK_FC=1 or 2 (S-09.009): how this start's stream went, kept
+ * from the slave start for its log line and a developer's request
+ * (src/board/opxy_stream.c). begin() before the stream, end() with
+ * s09_boot_slave()'s outcome, linked() once the bridge's start-up has ended
+ * either way, which logs the line. report() writes OPXY_STREAM_REPORT bytes,
+ * little-endian:
+ *   +0  version (1)
+ *   +1  the way: 0 byte by byte, 1 by the controller fed by the core, 2 fed by DMA
+ *   +2  s09_boot_slave()'s outcome (S09_BOOT_*), +3 how it ended (S09_END_*)
+ *   +4  the fall-back's cause (S09_PART_*, 0 none), +5 1 when the bridge linked,
+ *   +6  1 when the slave held the line for T_STREAM, +7 1 when the stream ran
+ *   +8  stream sessions, +12 parts by the controller, +16 bytes it clocked,
+ *   +20 bytes sent one at a time after a fall-back, +24 the fall-back's session,
+ *   +28 the slot's bytes before it, +32 the stream's time in us (from the wait
+ *   for the ready line), +36 the guards' time, +40 the waits for the line,
+ *   +44 the longest such wait, +48 parts begun with the line high, +52 the
+ *   guard's length, +56 the driver's four fault words of the part that fell back.
+ * The macros sit on the slave start's own lines and are empty in every other build.
+ */
+/*
+ * S-09.019, with BOOT_LINK_FC=1 or 2: the slave checks its L1 code, which the
+ * front's check of the loaded image does not read (S-01.023), before it
+ * serves the bridge or touches the eMMC, against the mark tools/mkldr.py
+ * fills (mark_l1()): the address and length of the run the stream loads into
+ * L1 code and the CRC-32 of its bytes. opxy_l1_check() takes the mark and a
+ * reader of one word; opxy_l1_code_ok() reads L1 code with L1DM_DCTL.ENX set
+ * (target only). A mark left as compiled fails.
+ */
+struct opxy_l1_mark {
+	uint32_t magic, addr, len, crc;
+};
+#define OPXY_L1_MARK_EMPTY 0x4C314D30u	/* as compiled */
+#define OPXY_L1_MARK_FULL  0x4C314D31u	/* as mkldr.py fills it */
+#if OPXY_BOOT_LINK_FC && !defined(OPXY_TEST_OS)
+extern const volatile struct opxy_l1_mark opxy_l1_mark;
+bool opxy_l1_check(const volatile struct opxy_l1_mark *mk, uint32_t (*word)(uint32_t addr));
+bool opxy_l1_code_ok(void);
+#endif
+
+#define OPXY_STREAM_REPORT 72u
+#if OPXY_BOOT_LINK_FC && !defined(OPXY_TEST_OS)
+void opxy_stream_begin(void);
+void opxy_stream_end(int rc, int end);
+void opxy_stream_linked(struct opxy_master *m);
+size_t opxy_stream_report(uint8_t *out);
+#define OPXY_STREAM_BEGIN() opxy_stream_begin()
+#define OPXY_STREAM_END(rc, end) opxy_stream_end((rc), (end))
+#define OPXY_STREAM_LINKED(m) opxy_stream_linked(m)
+#else
+#define OPXY_STREAM_BEGIN() ((void)0)
+#define OPXY_STREAM_END(rc, end) ((void)0)
+#define OPXY_STREAM_LINKED(m) ((void)0)
+#endif
+
 /* The UART software buffers (S-06's links; S-13b.070, .071). */
 #define OPXY_UART_BUF 0x800u
 /* S-13b.070: the PSoC link's DMA receive ring, 40.96 ms of the line. */

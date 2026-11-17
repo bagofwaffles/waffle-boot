@@ -46,7 +46,12 @@
 #   BOOT_TIMING_WINDOW_US=<n>  with BOOT_TIMING=1, how long PA6 is watched after
 #                 each stream byte, when longer than the settle time
 #   BOOT_LINK_FC=1  the slave's boot stream paced by the SPI controller's own
-#                 flow control on PA6 (S-13b.022), off by default
+#                 flow control on PA6 (S-13b.022), fed by the core; off by default
+#   BOOT_LINK_FC=2  the same fed by DMA4, with a pause after each block header
+#                 and before each session, and the rest sent byte by byte
+#                 after a failure of the controller (S-09.009, S-13b.023)
+#   BOOT_LINK_GUARD_US=<n>  with BOOT_LINK_FC=2, the pause in microseconds,
+#                 default 20
 #   REPLY_END=count  the slave's replies end at their received-word count
 #                 from the start; default (REPLY_END=factory) the factory's
 #                 end, TF (S-13b.083)
@@ -137,12 +142,23 @@ TARGET_CFLAGS += -DOPXY_BOOT_TIMING_WINDOW_US=$(BOOT_TIMING_WINDOW_US)u
 endif
 # BOOT_LINK_FC=1: the slave's boot stream sent through the transmit FIFO with
 # SPI0's flow control on PA6 holding off each byte, in place of a sample of
-# PA6 before each byte (S-13b.022). Off by default: how soon the slave's boot
-# ROM raises PA6 after a byte is not measured (wiki/Test-OS.md). The host
-# build has it on, so that its code is built, analyzed and tested there:
-# make installer BOOT_LINK_FC=1 BOOT_TIMING=1 BUILD=build/linkfc
-ifneq ($(BOOT_LINK_FC),)
+# PA6 before each byte (S-13b.022). BOOT_LINK_FC=2: the same fed by DMA4, in
+# parts with a pause before each, a failure of the controller's own sending
+# the rest of the stream byte by byte in the same start, and the slave's
+# check of its L1 code before it serves the bridge (S-09.009, S-09.019,
+# S-13b.023). Off by default: how soon the slave's boot ROM raises PA6 after
+# a byte is not measured (wiki/Test-OS.md). The host build has 1 on, which
+# builds both, so that their code is built, analyzed and tested there:
+# make installer BOOT_LINK_FC=2 BOOT_TIMING=1 BUILD=build/linkdma
+ifeq ($(BOOT_LINK_FC),1)
 TARGET_CFLAGS += -DOPXY_BOOT_LINK_FC=1
+else ifeq ($(BOOT_LINK_FC),2)
+TARGET_CFLAGS += -DOPXY_BOOT_LINK_FC=2
+else ifneq ($(BOOT_LINK_FC),)
+$(error BOOT_LINK_FC is 1 or 2)
+endif
+ifneq ($(BOOT_LINK_GUARD_US),)
+TARGET_CFLAGS += -DOPXY_BOOT_LINK_GUARD_US=$(BOOT_LINK_GUARD_US)u
 endif
 # REPLY_END=count: the slave's single-I/O replies end at their received-word
 # count (REN set) from the start, in place of the factory's end, TF with REN

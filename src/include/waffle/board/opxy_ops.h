@@ -24,6 +24,7 @@
 #include "waffle/s03_emmc.h"
 #include "waffle/s06_clock.h"
 #include "waffle/s06_link.h"
+#include "waffle/s09_fast.h"
 #include "waffle/s09_master.h"
 #include "waffle/s11_package.h"
 #include "waffle/s14_log.h"
@@ -77,7 +78,23 @@ uint8_t opxy_boot_byte(void *ctx, uint8_t tx);
 /* BOOT_LINK_FC=1: the stream's sessions paced by SPI0's own flow control on
  * PA6; the controller's word timeout must be T_STREAM (S-09.060). */
 struct s09_boot_ops opxy_boot_ops_fc(struct opxy_hw *hw);
+/*
+ * BOOT_LINK_FC=2 (S-09.009, S-13b.023): the same fed by DMA4, in parts with
+ * a guard before each, and the fall-back to one byte at a time after a part
+ * the controller gives up with PA6 low. Both are built whenever either is.
+ */
+struct s09_boot_ops opxy_boot_ops_dma(struct opxy_hw *hw);
+/* The DMA-fed stream's state and account (waffle/s09_fast.h), and the
+ * driver's four fault words of the part that started a fall-back. */
+const struct s09_fast *opxy_boot_fast(void);
+void opxy_boot_fast_fault(uint32_t out[4]);
+/* Which of the two this start's stream took: 1 core-fed, 2 DMA-fed, 0 neither. */
+unsigned opxy_boot_way(void);
+#if OPXY_BOOT_LINK_FC == 2
+#define OPXY_BOOT_OPS(hw) opxy_boot_ops_dma(hw)
+#else
 #define OPXY_BOOT_OPS(hw) opxy_boot_ops_fc(hw)
+#endif
 #define OPXY_BOOT_LINK_WORD_US S09_T_STREAM_US
 #else
 #define OPXY_BOOT_OPS(hw) opxy_boot_ops(hw)

@@ -66,8 +66,9 @@ struct s09_boot_ops {
 
 /*
  * The stream paced by the controller's flow control, a property of the
- * build: make BOOT_LINK_FC=1 defines OPXY_BOOT_LINK_FC=1. Off by default:
- * without it send() is never called and its code is not in the image.
+ * build: make BOOT_LINK_FC=1 defines OPXY_BOOT_LINK_FC=1, fed by the core,
+ * and BOOT_LINK_FC=2 defines 2, fed by DMA (waffle/s09_fast.h). Off by
+ * default: without it send() is never called and its code is not in the image.
  */
 #ifndef OPXY_BOOT_LINK_FC
 #define OPXY_BOOT_LINK_FC 0

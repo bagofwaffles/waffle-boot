@@ -682,6 +682,11 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 	case OPXY_DEV_BOOT_START:	/* S-15.163's account, at any time */
 		n = 1u + opxy_start_report(m, out + 1);
 		break;
+#if OPXY_BOOT_LINK_FC
+	case OPXY_DEV_STREAM:		/* S-09.009: this start's stream, at any time */
+		n = 1u + opxy_stream_report(out + 1);
+		break;
+#endif
 	case OPXY_DEV_CAL_START:
 		/* The answer first: the restart does not return. */
 		(void)s06_send(&m->node, S06_LINK_CDC, s06_swap_route(f->route),

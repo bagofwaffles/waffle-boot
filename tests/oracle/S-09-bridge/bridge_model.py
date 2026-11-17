@@ -549,6 +549,31 @@ def slave_stream(slot):
 NO_OPEN_SESSION = b'\x03' + b'\x0f' * 11     # S-09.007, as the master sends it
 
 
+def fast_parts(sessions):
+    """S-09.009: the parts of each stream session (the opening one left out) as the option sends them: a
+    block's 16-byte header alone, then the payload of that session after it. A list per session of the
+    parts' lengths; their sum is the session's length."""
+    out, have, left, head = [], 0, 0, b''
+    for s in sessions[1:]:
+        parts, i = [], 0
+        while i < len(s):
+            if left:
+                k = min(left, len(s) - i)
+                left -= k
+            else:
+                k = min(16 - have, len(s) - i)
+                head += s[i:i + k]
+                have += k
+                if have == 16:
+                    code, _, count, _ = struct.unpack('<IIII', head)
+                    left = 0 if code & 0x100 else count
+                    have, head = 0, b''
+            parts.append(k)
+            i += k
+        out.append(parts)
+    return out
+
+
 # ---- S-09.040: the erase request ----
 
 ERASE_ARG = 0                                    # CMD38's erase argument: the only one a 0x14 may carry

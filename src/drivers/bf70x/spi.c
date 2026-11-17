@@ -1018,6 +1018,104 @@ void wb_spi_dma_close(const struct wb_spi *s)
 	rx_open[s->n] = false;
 }
 
+#if WB_SPI_BOOT_DMA
+/* How long a failed part's controller is given to clock what its FIFO holds,
+ * and how long its count must then stay still. */
+#define BOOT_DRAIN_US 100u
+#define BOOT_STILL_US 10u
+
+/*
+ * A part given up: recorded, nothing more fed, the controller left to clock
+ * what its FIFO holds while the ready line lets it (SPI_TWC and the FIFO's
+ * level still for BOOT_STILL_US, or BOOT_DRAIN_US in all), then the words not
+ * clocked read from SPI_TWC (HRM, SPI_TWC: the words remaining to be
+ * transmitted), the transmit channel closed and the status cleared. EN stays
+ * set: the select is the controller's.
+ */
+static uint32_t boot_part_fail(const struct wb_spi *s, int rc, uint32_t stage)
+{
+	const unsigned n = s->n, ch = WB_DMA_SPI0_TX + 2u * n;
+	const uint64_t still = (uint64_t)BOOT_STILL_US * s->t->cycles_per_us;
+	const uint64_t from = wb_core_cycles();
+	const uint64_t bound = (uint64_t)BOOT_DRAIN_US * s->t->cycles_per_us;
+	uint64_t moved = from;
+	uint32_t was = UINT32_MAX, left;
+
+	(void)fault_record(n, rc, wb_mmr_read32(SPI_STAT(n)), wb_mmr_read32(SPI_TWC(n)),
+			   stage, false);
+	wb_dma_stop_idle(ch, s->t);
+	for (;;) {
+		const uint64_t t = wb_core_cycles();
+		const uint32_t v = (wb_mmr_read32(SPI_TWC(n)) & 0xFFFFu) |
+				   (wb_mmr_read32(SPI_STAT(n)) & SPI_STAT_TFS_MASK);
+
+		if (v != was) {
+			was = v;
+			moved = t;
+		} else if (t - moved >= still || t - from >= bound) {
+			break;
+		}
+	}
+	left = wb_mmr_read32(SPI_TWC(n)) & 0xFFFFu;
+	wb_mmr_write32(SPI_TXCTL(n), 0u);
+	wb_mmr_write32(SPI_STAT(n), SPI_STAT_W1C);
+	wb_mmr_sync();
+	return left;
+}
+
+int wb_spi_dma_send_bytes(const struct wb_spi *s, const uint8_t *buf, size_t n,
+			  uint32_t *left)
+{
+	const unsigned ch = WB_DMA_SPI0_TX + 2u * s->n;
+	struct wb_spi_array *a = &wb_spi_tx_array;
+	uint32_t stage = WB_SPI_STAGE_NONE;
+	uint64_t end;
+	int rc;
+
+	*left = (uint32_t)n;
+	if (wb_spi_word_bytes(s) != 1u || !(s->ctl & SPI_CTL_MSTR) ||
+	    (s->ctl & SPI_CTL_MIOM_MASK) || !counted_ok(s, n))
+		return refused(s);
+	arr_reset(a);
+	if (!arr_put(a, WB_DMA_ARRAY_SEND8, (uint8_t *)(uintptr_t)buf, NULL, n, false))
+		return refused(s);
+	arr_done(a);
+	wb_dma_cache_send((uint32_t)(uintptr_t)buf, (uint32_t)n);
+	fault_open(s->n);
+	wb_mmr_write32(SPI_TXCTL(s->n), 0u);
+	wb_mmr_write32(SPI_RXCTL(s->n), 0u);
+	wb_mmr_write32(SPI_STAT(s->n), SPI_STAT_W1C);
+	wb_mmr_write32(DMA_STAT(ch), DMA_W1C);
+	wb_dma_array_start(ch, a->d, WB_DMA_ARRAY_SEND8);
+	wb_mmr_write32(SPI_TWC(s->n), (uint32_t)n);
+	wb_mmr_write32(SPI_TXCTL(s->n), WB_SPI_BOOT_TXCTL);
+	wb_mmr_write32(SPI_TXCTL(s->n), WB_SPI_BOOT_TXCTL | SPI_XCTL_EN);	/* TEN last */
+	wb_mmr_sync();
+	rc = dma_wait(s, ch, SPI_TWC(s->n), 0u, NULL, NULL, &stage);
+	if (rc != WB_SPI_OK) {
+		*left = boot_part_fail(s, rc, stage);
+		return rc;
+	}
+	wb_mmr_write32(DMA_STAT(ch), DMA_STAT_IRQDONE);
+	rc = tx_end(s);
+	if (rc != WB_SPI_OK) {
+		*left = boot_part_fail(s, rc, WB_SPI_STAGE_TX_END);
+		return rc;
+	}
+	/* TF may come as the last byte starts: four bytes' time at SCLK0 / 3
+	 * before the select may rise */
+	end = wb_core_cycles() + s->t->cycles_per_us;
+	while (wb_core_cycles() < end)
+		;
+	wb_mmr_write32(SPI_TXCTL(s->n), 0u);
+	wb_mmr_write32(SPI_STAT(s->n), SPI_STAT_W1C);
+	wb_dma_stop(ch);
+	wb_mmr_sync();
+	*left = 0u;
+	return WB_SPI_OK;
+}
+#endif
+
 /* S-13b.040: EN cleared with the rest of SPI_CTL kept, MIOM above all, so
  * that the next write, which may change MIOM, finds EN clear. */
 static void en_off(const struct wb_spi *p)

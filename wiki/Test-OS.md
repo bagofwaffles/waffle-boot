@@ -86,11 +86,11 @@ developer menu. The bootloader stamps the cycle counter at each milestone
 - The slave stream's own steps sit among the milestones, numbered 30 to 34: `stream ready wait` and
   `stream ready` (S-09.003's wait), `stream opened`, `stream first header`, `stream last byte`.
 - `stream split` (two lines) divides the stream's time from that wait to its end: the wait, the byte
-  transfers, the ready line's windows (with `BOOT_LINK_FC=1`, the sends), the ready samples, the waits on a
+  transfers, the ready line's windows (with `BOOT_LINK_FC`, the sends), the ready samples, the waits on a
   high line (or the sends' time beyond the wire), the chip select, and the rest, the loop's own.
   `stream blocks` counts blocks, fill or header-only blocks, sessions and bytes; `stream bytes` gives a
   transfer's average, shortest and longest, less a counter read, and the bytes' time on the wire alone
-  (`stream sends` with `BOOT_LINK_FC=1`); `stream longest waits` lists the eight longest, each with the
+  (`stream sends` with `BOOT_LINK_FC`); `stream longest waits` lists the eight longest, each with the
   bytes sent before it and its block; `stream measuring` gives the counter reads the split adds and their
   cost.
 - In the boot menu, `testos_mon.py log` prints the same report. A trial start has no serial port.
@@ -114,3 +114,24 @@ on PA6. It is off by default and in every release; try it only as a trial, and l
 at the commit, so that the next start is the old bootloader's:
 
     make installer test-os-mon BOOT_LINK_FC=1 BOOT_TIMING=1 BUILD=build/linkfc
+
+`BOOT_LINK_FC=2` does the same with DMA4 feeding SPI0, so the core is off the stream (S-09.009,
+S-13b.023):
+
+    make installer test-os-mon BOOT_LINK_FC=2 BOOT_TIMING=1 BUILD=build/linkdma
+
+- Each session goes in parts, a block's header alone and then its payload, each part once PA6 reads low
+  and at least `BOOT_LINK_GUARD_US` (default 20 µs) after the last part ended.
+- A part the controller gives up with PA6 low (a DMA error, a stall, no end of the transmit) sends the rest
+  of the stream byte by byte, the default way, from the first byte not sent, in the same start, once. A part
+  the slave holds for T_STREAM ends the stream, as a held byte does.
+- The slave checks its L1 code before it answers the bridge or touches the eMMC (S-09.019): a damaged stream
+  ends with the slave not answering, not running.
+- The master cannot restart the slave, so a stream it sent whole but the slave did not take whole still ends
+  with the slave absent for that start; the next start tries again.
+
+The boot log has a line with the way, the sessions, bytes and time, any fall-back and whether the bridge
+linked; `testos_mon.py dev-stream` prints the same at any time in that start
+([Developer Host Link](Developer-Host-Link#the-slaves-boot-stream)). With `BOOT_TIMING=1`, `stream by DMA`
+gives the parts, the guards' time and the parts that began with PA6 high, and `stream fall-back` whether and
+where it fell back.

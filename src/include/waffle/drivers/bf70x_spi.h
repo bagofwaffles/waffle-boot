@@ -324,6 +324,36 @@ int wb_spi_dma_recv(const struct wb_spi *s, uint8_t *buf, size_t n);
 void wb_spi_dma_close(const struct wb_spi *s);
 
 /*
+ * The slave boot link's sessions by DMA (S-13b.023), built only with the
+ * board's BOOT_LINK_FC (OPXY_BOOT_LINK_FC): no other build has the code.
+ *
+ * dma_send_bytes(): one part of a session, n 8-bit words from buf (at most
+ * SPI_TWC_MAX), through the transmit DMA with 8-bit peripheral words, under
+ * the controller's control value as it stands, which has MSTR, 8-bit words
+ * and, for the stream, FCEN. EN stays set throughout, since the chip select
+ * is the controller's own (SPI_SLVSEL); the order is the HRM's for a master
+ * by DMA: the channels off and the status cleared, the DMA started,
+ * SPI_TWC, SPI_TXCTL without TEN, then TEN last. The end is SPI_STAT.TF and
+ * then a microsecond more, since TF may come as the last word starts; then
+ * TEN is cleared and the DMA stopped. A part whose DMA, SPI_TWC and FIFO do
+ * not move for the word timeout, whose DMA reports an error, or whose TF
+ * does not come, fails: its DMA stopped, the controller left at most 100 us
+ * to clock what its FIFO holds, *left set to SPI_TWC then (the words not
+ * clocked) and the transmit channel closed, EN still set.
+ */
+#if defined(OPXY_BOOT_LINK_FC)
+#define WB_SPI_BOOT_DMA (OPXY_BOOT_LINK_FC != 0)
+#else
+#define WB_SPI_BOOT_DMA 0
+#endif
+#if WB_SPI_BOOT_DMA
+#define WB_SPI_BOOT_TXCTL   0x0001001Cu	/* TTI, TWCEN, TDR 1, TUWM 1; TEN after */
+#define WB_DMA_ARRAY_SEND8  0x00035001u	/* WB_DMA_ARRAY_SEND, 8-bit peripheral words */
+int wb_spi_dma_send_bytes(const struct wb_spi *s, const uint8_t *buf, size_t n,
+			  uint32_t *left);
+#endif
+
+/*
  * The slave end of a link whose ready line is a GPIO between transfers:
  * the slave end of the bridge (S-13b.042, S-13b.043, S-09.011), SPI2 with
  * PA4 as ready and PB15 as master-ready. (The slave's end of the boot
