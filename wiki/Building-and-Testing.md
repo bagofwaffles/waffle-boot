@@ -15,7 +15,7 @@ aliases). Use `tools/ci-local.sh` there.
 | `make cross` | The cross build with every gate: `build/bf703/waffle-boot.ldr` (the boot stream), `.elf`, `.layout.json` |
 | `make image LOGO=my-logo.png` | Your own 480 × 222 picture at the OS hand-over |
 | `make image OPXY_BL_BUILD=n` | A build number, so two builds differ |
-| `make bump-version` | Raise the patch version. Do it once per build that goes onto a unit |
+| `make bump-version` | Raise the patch version. Do it once per build that goes onto a unit, then redraw the screenshots (`tools/ui-shots.sh docs/ui`): `make check` compares their version with the tree's |
 | `make test-os` | The [Test OS](Test-OS) |
 | `make installer` | The installer ([Installer Reference](Installer-Reference#building-it)) |
 

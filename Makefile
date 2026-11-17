@@ -64,7 +64,8 @@
 #                 (S-15.132; tools/png2logo.py)
 #   OPXY_BL_BUILD=<n>  the bootloader's build number (S-17.032), default 0
 #   OPXY_BL_VERSION=A.B.C  a test build's own version, in place of the header's
-#   make bump-version  raise the patch version, once per build for a unit
+#   make bump-version  raise the patch version, once per build for a unit; then
+#                 redraw docs/ui/ (tools/ui-shots.sh), which make check compares
 #   make clean
 #
 # Variables: CC (host compiler), CROSS_COMPILE (default: the toolchain built
@@ -314,7 +315,14 @@ $(HOST_TESTS): | $(VEC_HEADERS)
 
 check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check/layering check/mtpcp \
 	check/testos_mon check/wbrecover check/web check/bump_version check/generated check/leak \
-	check/wiki_links
+	check/wiki_links check/ui_version
+
+# The screenshots in docs/ui/ are drawn at this tree's version (tools/ui_shots.py
+# --check): after make bump-version, redraw them (wiki/Screen-Style-Guide.md).
+.PHONY: check/ui_version
+check/ui_version:
+	$(PYTHON) -I -B tests/tools/test_ui_shots.py
+	$(PYTHON) -I -B tools/ui_shots.py --check docs/ui
 
 # The image tools' own tests (tests/tools/test_image_tools.py).
 .PHONY: check/image_tools
@@ -378,6 +386,7 @@ ui-update: $(GEN_VEC)/s15_vectors.h
 # Run once for each build that goes onto a unit: raises the patch version.
 bump-version:
 	$(PYTHON) -I -B tools/bump_version.py
+	@echo 'bump-version: redraw docs/ui/ at the new version (tools/ui-shots.sh, wiki/Screen-Style-Guide.md)' >&2
 
 # Nothing personal or foreign is tracked (tools/leak-check.py).
 .PHONY: check/leak

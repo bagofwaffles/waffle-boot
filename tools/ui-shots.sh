@@ -17,9 +17,17 @@ make -s BUILD="$build" "$build/host/libwaffle.a"
 raw="$build/ui-shots"
 rm -rf "$raw"
 mkdir -p "$raw" "$out"
-${CC:-cc} -std=c11 -O2 -Isrc -Isrc/include tools/ui_shots.c src/front/fr_draw.c src/front/fr_font.c \
+# The pictures show this tree's version (tools/bump_version.py), and each PNG
+# carries it, so that `tools/ui_shots.py --check` finds pictures left behind.
+ver=$(python3 -I -B tools/bump_version.py --show)
+major=${ver%%.*}
+rest=${ver#*.}
+minor=${rest%%.*}
+patch=${rest#*.}
+${CC:-cc} -std=c11 -O2 -DSHOT_MAJOR="$major" -DSHOT_MINOR="$minor" -DSHOT_PATCH="$patch" \
+	-Isrc -Isrc/include tools/ui_shots.c src/front/fr_draw.c src/front/fr_font.c \
 	src/front/fr_recscreen.c src/front/fr_recui.c src/front/fr_proto.c src/front/fr_slots.c \
 	src/front/fr_image.c src/front/fr_util.c \
 	"$build/host/libwaffle.a" -o "$raw/ui-shots"
 "$raw/ui-shots" "$raw"
-python3 -I -B tools/ui_shots.py "$raw" "$out"
+python3 -I -B tools/ui_shots.py "$raw" "$out" "$ver"

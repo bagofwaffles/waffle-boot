@@ -27,6 +27,16 @@
 #include "waffle/display.h"
 #include "waffle/s15_menu.h"
 
+/* This tree's version, from tools/ui-shots.sh: the pictures show it, slot 2
+ * one patch older and an offered upgrade one patch newer. */
+#if !defined(SHOT_MAJOR) || !defined(SHOT_MINOR) || !defined(SHOT_PATCH)
+#error "build with tools/ui-shots.sh, which gives the version"
+#endif
+#if SHOT_PATCH < 1
+#error "the samples need a patch of at least 1"
+#endif
+static char ver[24], ver_next[24];
+
 static uint8_t fb[S13C_FRAME_BYTES];
 static struct wb_display disp;
 static struct s15_boot boot;
@@ -103,7 +113,7 @@ static void start_lost(void)
 static void setup(void)
 {
 	memset(&boot, 0, sizeof boot);
-	boot.version = "0.9.13";
+	boot.version = ver;
 	boot.reason = 10;
 	boot.unit_serial = "XY-0000000";
 	boot.chip_serial = "0000-0000-00";
@@ -213,7 +223,8 @@ static void e_osw(void *c, struct s15_osw_end *end)
 }
 
 /* Recovery's own composer (src/front/fr_recscreen.c) over a sample unit:
- * slot 1 running and selected with v0.9.13, slot 2 good with v0.9.12, both
+ * slot 1 running and selected with this version, slot 2 good with the patch
+ * before it, both
  * with the running front, USB connected. ui NULL is the main screen; p
  * the protocol's state. */
 static struct fr_rec_status rec_st;
@@ -221,7 +232,8 @@ static struct fr_proto rec_p;
 
 static void recovery_unit(void)
 {
-	static const uint16_t v[2][4] = { { 0, 9, 13, 0 }, { 0, 9, 12, 0 } };
+	static const uint16_t v[2][4] = { { SHOT_MAJOR, SHOT_MINOR, SHOT_PATCH, 0 },
+					   { SHOT_MAJOR, SHOT_MINOR, SHOT_PATCH - 1, 0 } };
 
 	memset(&rec_st, 0, sizeof rec_st);
 	memset(&rec_p, 0, sizeof rec_p);
@@ -270,8 +282,8 @@ static void front_shot(const struct fr_screen *s)
  * done, and a locked install. */
 static int installer_shots(const char *dir)
 {
-	static const struct s15_frame fr = { "Installer", "1.0.3", 0, S15_SLOT_UNKNOWN,
-					     false, false, true };
+	const struct s15_frame fr = { "Installer", ver, 0, S15_SLOT_UNKNOWN,
+				      false, false, true };
 	static const struct {
 		const char *name;
 		uint8_t phase, lock, trial;
@@ -302,7 +314,7 @@ static int installer_shots(const char *dir)
 
 		memset(&sc, 0, sizeof sc);
 		sc.phase = shots[k].phase;
-		sc.version = "1.0.3";
+		sc.version = ver;
 		sc.target = 1u;
 		sc.lock = shots[k].lock;
 		sc.last_rc = 0xFFu;
@@ -331,6 +343,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: ui-shots <directory>\n");
 		return 2;
 	}
+	snprintf(ver, sizeof ver, "%u.%u.%u", SHOT_MAJOR, SHOT_MINOR, SHOT_PATCH);
+	snprintf(ver_next, sizeof ver_next, "%u.%u.%u", SHOT_MAJOR, SHOT_MINOR, SHOT_PATCH + 1);
 	d = argv[1];
 	wb_display_init(&disp, fb);
 
@@ -368,8 +382,9 @@ int main(int argc, char **argv)
 		rec_p.w.way = FR_WAY_PLAIN;
 		rec_p.w.target = 1;
 		rec_p.has_version = true;
-		rec_p.version[1] = 9;
-		rec_p.version[2] = 14;
+		rec_p.version[0] = SHOT_MAJOR;
+		rec_p.version[1] = SHOT_MINOR;
+		rec_p.version[2] = SHOT_PATCH + 1;
 		rec_p.count_left = 9;
 		recovery_shot(&rs, NULL);
 		front_shot(&rs);
@@ -508,8 +523,8 @@ int main(int argc, char **argv)
 	s15_up_tick(&menu, 102000);
 	s15_up_phase(&menu, S15_PH_EXTRACT_FIRMWARE);
 	{
-		const struct s15_confirm_info info = { S15_STEP_BOOTLOADER, "0.9.14",
-							"0.9.13", 0 };
+		const struct s15_confirm_info info = { S15_STEP_BOOTLOADER, ver_next,
+							ver, 0 };
 
 		s15_up_confirm(&menu, &info);
 		s15_up_confirm_bar(&menu, 40, 52);

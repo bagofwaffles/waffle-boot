@@ -257,7 +257,10 @@ cost little, while gradients, photos and dithering may not fit
 Rendered by `tools/ui-shots.sh` from `tools/ui_shots.c`, at the
 panel's own size, with the color off. Two things are in color: Settings with
 the color on, as an example, and recovery, which the setting does not
-reach. `tour.gif` shows a few of them in turn, for the README.
+reach. `tour.gif` shows a few of them in turn, for the README. They show the
+tree's version (recovery's other slot one patch older, an offered upgrade one
+newer), and each PNG carries it: after `make bump-version`, redraw them, or
+`make check` fails (`tools/ui_shots.py --check`).
 
 | | |
 | --- | --- |
