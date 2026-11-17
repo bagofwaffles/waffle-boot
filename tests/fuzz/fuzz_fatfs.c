@@ -61,7 +61,7 @@ static int fz_write(void *ctx, uint32_t lba, const void *buf, uint32_t count)
 }
 
 static const struct wb_blockdev disk = {
-	NULL, DISK_SECTORS, fz_read, fz_write, NULL, NULL,
+	NULL, DISK_SECTORS, fz_read, fz_write, NULL, NULL, NULL,
 };
 
 static void read_file(const char *path)
