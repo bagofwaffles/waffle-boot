@@ -161,6 +161,10 @@ def emmc_map():
 
 
 def main(argv):
+    # An option is never taken for the output directory: -h and --help print the usage.
+    if len(argv) > 2 or (len(argv) > 1 and argv[1].startswith('-')):
+        print(__doc__)
+        return 0 if argv[1:] in (['-h'], ['--help']) else 2
     out = argv[1] if len(argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs', 'maps')
     os.makedirs(out, exist_ok=True)
     for page, suffix in (('light', ''), ('dark', '-dark')):
