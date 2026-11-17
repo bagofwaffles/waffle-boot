@@ -73,8 +73,11 @@ void opxy_timing_front(const struct fr_handoff *ho);
  * deciding sample of the ready line found it high and the time waited, and
  * the line watched through a window after each byte, in place of the settle
  * time (struct boot_time_watch). The window is the settle time, or longer
- * with make BOOT_TIMING_WINDOW_US=n, which a build without timing ignores. */
+ * with make BOOT_TIMING_WINDOW_US=n, which a build without timing ignores.
+ * The stream's steps, its time split by where it went, and its blocks
+ * (struct boot_time_split); the stream's end stamped by the second. */
 void opxy_timing_stream(struct s09_boot_ops *ops);
+void opxy_timing_stream_end(void);
 /* The stream's read by the flash's faster read: how it came, after
  * s02_image_read(), and what its CRC then made of it, after
  * s02_image_check(). */
@@ -95,6 +98,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_BATTERY(on) opxy_timing_battery(on)
 #define OPXY_TIMING_FRONT(m) opxy_timing_front(&(m)->ho)
 #define OPXY_TIMING_STREAM(ops) opxy_timing_stream(ops)
+#define OPXY_TIMING_STREAM_END() opxy_timing_stream_end()
 #define OPXY_TIMING_SLOT_READ(im) opxy_timing_slot_read(im)
 #define OPXY_TIMING_SLOT_CHECK(im) opxy_timing_slot_check(im)
 #define OPXY_TIMING_COPY(on) opxy_timing_copy(on)
@@ -109,6 +113,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_BATTERY(on) ((void)0)
 #define OPXY_TIMING_FRONT(m) ((void)(m))
 #define OPXY_TIMING_STREAM(ops) ((void)0)
+#define OPXY_TIMING_STREAM_END() ((void)0)
 #define OPXY_TIMING_SLOT_READ(im) ((void)0)
 #define OPXY_TIMING_SLOT_CHECK(im) ((void)0)
 #define OPXY_TIMING_COPY(on) ((void)0)

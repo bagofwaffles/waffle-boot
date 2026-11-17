@@ -5,9 +5,13 @@
  */
 #include "support/check.h"
 
+#include <stddef.h>
 #include <string.h>
 
 #include "waffle/boot_time.h"
+#include "waffle/s09_master.h"
+#include "waffle/s06_bytes.h"
+#include "waffle/s06_clock.h"
 
 #define MHZ 400u
 #define US(n) ((uint64_t)(n) * MHZ)
@@ -234,9 +238,9 @@ static void test_summary(void)
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 6u));	/* none to place */
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 7u));
 	/* the stream's reads at the faster rate */
-	CHECK(line_empty(&t, BOOT_TIME_COUNT + 8u));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 15u));
 	t.slot_fast = 1u;
-	CHECK(line_is(&t, BOOT_TIME_COUNT + 8u,
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 15u,
 		      "slot read at the faster rate: 1 whole, 0 failed and read again, "
 		      "0 failed the CRC and read again, 0 of those then good; "
 		      "0 kept by a trial mark's CRC"));
@@ -244,11 +248,11 @@ static void test_summary(void)
 	t.slot_reread = 3u;
 	t.slot_reread_good = 1u;
 	t.slot_trial = 1u;
-	CHECK(line_is(&t, BOOT_TIME_COUNT + 8u,
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 15u,
 		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
 		      "3 failed the CRC and read again, 1 of those then good; "
 		      "1 kept by a trial mark's CRC"));
-	CHECK(line_is(&t, BOOT_TIME_COUNT + 9u, "end of report"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u, "end of report"));
 	CHECK(line_empty(&t, BOOT_TIME_LINES));
 	CHECK(line_of(&t, "end of report") == BOOT_TIME_LINES - 1u);
 }
@@ -342,6 +346,289 @@ static void test_watch(void)
 		      "35 37 39 41 43"));
 }
 
+/* ---- the stream's split ---- */
+
+/* An LDR block's header: the code, with 0xAD in its top byte, and a count. */
+static size_t put_block(uint8_t *at, uint32_t flags, uint32_t count, bool payload)
+{
+	size_t i;
+
+	memset(at, 0, 16);
+	s06_wr_le32(at, 0xAD000001u | flags);
+	s06_wr_le32(at + 8, count);
+	if (!payload)
+		return 16u;
+	for (i = 0; i < count; i++)
+		at[16 + i] = (uint8_t)(i * 7u);
+	return 16u + count;
+}
+
+/* A stream of five blocks: an ordinary one, a fill, one with a count of 0,
+ * one in three pieces (S-09.005), and the final one. */
+static size_t five_blocks(uint8_t *slot)
+{
+	size_t n = 0;
+
+	n += put_block(slot + n, 0u, 20u, true);
+	n += put_block(slot + n, 0x0100u, 64u, false);
+	n += put_block(slot + n, 0u, 0u, false);
+	n += put_block(slot + n, 0u, 2500u, true);
+	n += put_block(slot + n, 0x8000u, 4u, true);
+	return n;
+}
+
+/* The board's stream ops, as opxy_timing.c counts them, against a slave that
+ * is always ready and answers the opening byte. */
+struct fake_split {
+	struct boot_time t;
+	struct boot_time_walk w;
+	bool begun;
+	uint32_t pieces;	/* sessions the stream made, by its own count */
+};
+
+static bool fs_ready(void *ctx)
+{
+	(void)ctx;
+	return true;
+}
+
+static void fs_select(void *ctx, bool on)
+{
+	struct fake_split *f = ctx;
+
+	if (on && f->begun)
+		f->t.split.sessions++;
+}
+
+static uint8_t fs_xfer(void *ctx, uint8_t tx)
+{
+	struct fake_split *f = ctx;
+
+	boot_time_xfer(&f->t, 100u);
+	if (!f->begun) {
+		f->begun = true;
+		return 0xFF;
+	}
+	boot_time_walk_byte(&f->t, &f->w, tx);
+	return 0;
+}
+
+static bool fs_send(void *ctx, const uint8_t *d, size_t n)
+{
+	struct fake_split *f = ctx;
+
+	boot_time_walk(&f->t, &f->w, d, (uint32_t)n);
+	f->pieces++;
+	return true;
+}
+
+/* A clock that moves only when idled: the slave here never holds a byte. */
+static uint32_t fake_us;
+
+static uint32_t fake_now(void *ctx)
+{
+	(void)ctx;
+	return fake_us;
+}
+
+static void fake_idle(void *ctx, uint32_t until)
+{
+	(void)ctx;
+	fake_us = until;
+}
+
+static void test_walk(void)
+{
+	static uint8_t slot[4096];
+	static struct fake_split f;
+	const struct s06_clock clock = { fake_now, fake_idle, NULL };
+	struct s09_boot_ops ops = { &f, fs_ready, fs_select, fs_xfer, NULL, NULL };
+	const size_t len = five_blocks(slot);
+	int end;
+
+	/* byte by byte */
+	memset(&f, 0, sizeof f);
+	f.t.split.xfer_min = UINT32_MAX;
+	CHECK(s09_boot_slave(&ops, &clock, slot, len, true, &end) == S09_BOOT_STREAMED);
+	CHECK(end == S09_END_FINAL);
+	CHECK(f.t.split.blocks == 5u);
+	CHECK(f.t.split.fills == 2u);			/* the fill and the count of 0 */
+	CHECK(f.t.split.sessions == 7u);		/* 1, 1, 1, 3 and 1 */
+	CHECK(f.t.split.bytes == len && len == 2604u);
+	CHECK(f.t.split.xfers == len + 1u);		/* and the opening byte */
+	CHECK(f.t.split.xfer == 100u * (len + 1u));
+	CHECK(f.t.split.xfer_min == 100u && f.t.split.xfer_max == 100u);
+	CHECK(f.w.have == 0u && f.w.left == 0u);	/* ended on a block's end */
+
+	/* paced by the controller: a session's bytes at once */
+	memset(&f, 0, sizeof f);
+	ops.send = fs_send;
+	CHECK(s09_boot_slave(&ops, &clock, slot, len, true, &end) == S09_BOOT_STREAMED);
+	CHECK(f.t.split.blocks == 5u && f.t.split.fills == 2u);
+	CHECK(f.t.split.sessions == 7u && f.pieces == 7u);
+	CHECK(f.t.split.bytes == 2604u);
+	CHECK(f.t.split.xfers == 1u);			/* the opening byte alone */
+
+	/* a run that splits a header is counted as the bytes one at a time */
+	memset(&f, 0, sizeof f);
+	boot_time_walk(&f.t, &f.w, slot, 7u);
+	CHECK(f.t.split.blocks == 1u && f.w.have == 7u);
+	boot_time_walk(&f.t, &f.w, slot + 7, 30u);
+	CHECK(f.t.split.blocks == 2u && f.w.have == 1u && f.t.split.bytes == 37u);
+}
+
+static void test_gaps(void)
+{
+	static const uint32_t waits[] = { 5, 9, 1, 9, 12, 0, 3, 7, 8, 2, 10, 4 };
+	static const uint32_t want[BOOT_TIME_GAPS][2] = {
+		{ 12, 4 }, { 10, 10 }, { 9, 1 }, { 9, 3 }, { 8, 8 }, { 7, 7 }, { 5, 0 }, { 4, 11 },
+	};
+	struct boot_time t = fresh();
+	unsigned i;
+
+	for (i = 0; i < sizeof waits / sizeof waits[0]; i++) {
+		t.split.blocks = i;		/* none begun before the first */
+		boot_time_gap(&t, waits[i], 100u * i);
+	}
+	for (i = 0; i < BOOT_TIME_GAPS; i++) {
+		const uint32_t n = want[i][1];
+
+		CHECK(t.split.gap[i].cycles == want[i][0]);
+		CHECK(t.split.gap[i].at == 100u * n);
+		CHECK(t.split.gap[i].block == (n == 0u ? BOOT_TIME_NO_BLOCK : n - 1u));
+	}
+	/* one no longer than the shortest kept changes nothing */
+	boot_time_gap(&t, 4u, 99u);
+	CHECK(t.split.gap[BOOT_TIME_GAPS - 1u].at == 1100u);
+	/* a count past 32 bits is kept as the most a word holds */
+	boot_time_gap(&t, (uint64_t)1 << 40, 5u);
+	CHECK(t.split.gap[0].cycles == UINT32_MAX && t.split.gap[1].cycles == 12u);
+}
+
+/* The split's lines over a stream of 3000 ms: its parts and the rest add up
+ * to the whole. */
+static struct boot_time split_stream(void)
+{
+	struct boot_time t = fresh();
+	unsigned i;
+
+	boot_time_mark(&t, BOOT_TIME_SLOT_FOUND, US(500000));
+	boot_time_mark(&t, BOOT_TIME_STREAM_WAIT, US(500100));
+	boot_time_mark(&t, BOOT_TIME_STREAM_READY, US(500110));
+	boot_time_mark(&t, BOOT_TIME_STREAM_OPENED, US(500111));
+	boot_time_mark(&t, BOOT_TIME_STREAM_HEADER, US(500120));
+	boot_time_mark(&t, BOOT_TIME_STREAM_LAST, US(3500000));
+	boot_time_mark(&t, BOOT_TIME_STREAM_END, US(3500100));
+	t.stream_high = 31u;
+	t.stream_wait = US(500000);
+	t.split.xfers = 421377u;
+	t.split.xfer = (uint64_t)421377u * 120u;		/* 0.30 us a transfer */
+	t.split.xfer_min = 110u;
+	t.split.xfer_max = 2000u;
+	t.split.window = US(2106880);
+	t.split.sample = US(30000);
+	t.split.select = US(1000);
+	t.split.bytes = 421376u;
+	t.split.blocks = 29u;
+	t.split.fills = 3u;
+	t.split.sessions = 435u;
+	t.split.wire_byte = 96u;
+	t.split.read = 6u;
+	t.split.reads = 843000u;
+	for (i = 0; i < 5u; i++) {
+		t.split.gap[i].cycles = (uint32_t)US(200000 - 1000 * i);
+		t.split.gap[i].at = 16u + 4096u * i;
+		t.split.gap[i].block = i == 0u ? BOOT_TIME_NO_BLOCK : 2u * i;
+	}
+	return t;
+}
+
+static void test_split(void)
+{
+	struct boot_time t = split_stream();
+
+	/* the steps in time order, among the other milestones */
+	CHECK(line_is(&t, 0u, "17 slot found: 500.000 ms"));
+	CHECK(line_is(&t, 1u, "30 stream ready wait: 500.100 ms, +0.100 ms"));
+	CHECK(line_is(&t, 2u, "31 stream ready: 500.110 ms, +0.010 ms"));
+	CHECK(line_is(&t, 3u, "32 stream opened: 500.111 ms, +0.001 ms"));
+	CHECK(line_is(&t, 4u, "33 stream first header: 500.120 ms, +0.009 ms"));
+	CHECK(line_is(&t, 5u, "34 stream last byte: 3500.000 ms, +2999.880 ms"));
+	CHECK(line_is(&t, 6u, "18 stream end: 3500.100 ms, +0.100 ms"));
+
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 8u,
+		      "stream split: 3000.000 ms in all, ready wait 0.010 ms, transfers 126.413 ms, "
+		      "windows 2106.880 ms, samples 30.000 ms"));
+	/* 3000 - 0.010 - 126.413 - 2106.880 - 30 - 500 - 1 */
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 9u,
+		      "stream split: waits on a high line 500.000 ms, chip select 1.000 ms, "
+		      "the rest 235.696 ms"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 10u,
+		      "stream blocks: 29 blocks, 3 fill or header-only, 435 sessions, "
+		      "421376 bytes"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 11u,
+		      "stream bytes: 421377 transfers less a counter read, avg 0.28 us, "
+		      "min 0.26 us, max 4.98 us; on the wire alone 101.130 ms, "
+		      "in this build 126.413 ms"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 12u,
+		      "stream longest waits: 200.000 ms at byte 16, no block yet; "
+		      "199.000 ms at byte 4112, block 2; 198.000 ms at byte 8208, block 4; "
+		      "197.000 ms at byte 12304, block 6"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 13u,
+		      "stream longest waits, more: 196.000 ms at byte 16400, block 8"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 14u,
+		      "stream measuring: 843000 counter reads added, 6 cycles a read, "
+		      "at most 12.645 ms"));
+	/* fewer waits: no second line; none: no first */
+	t.split.gap[4].cycles = 0u;
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 13u));
+	t.split.gap[0].cycles = 0u;
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 12u));
+
+	/* parts beyond the whole show a negative rest, not a wrapped one */
+	t.split.select = US(300000);
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 9u,
+		      "stream split: waits on a high line 500.000 ms, chip select 300.000 ms, "
+		      "the rest -63.303 ms"));
+
+	/* without the wait's stamps (an older stream, or none) no split */
+	t = split_stream();
+	t.set &= ~((uint64_t)1 << BOOT_TIME_STREAM_WAIT);
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 8u));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 14u));
+}
+
+/* Paced by the controller: sessions, not bytes, and the waits inside them. */
+static void test_split_fc(void)
+{
+	struct boot_time t = split_stream();
+
+	t.flags = BOOT_TIME_LINK_FC;
+	t.split.xfers = 1u;
+	t.split.xfer = 200u;
+	t.split.window = 0u;
+	t.split.send = US(2900000);
+	t.split.send_max = (uint32_t)US(150000);
+	t.stream_wait = US(2798870);
+	t.split.sample = US(50);
+	t.split.reads = 1310u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 8u,
+		      "stream split: 3000.000 ms in all, ready wait 0.010 ms, transfers 0.000 ms, "
+		      "sends 2900.000 ms, samples 0.050 ms"));
+	/* the waits are inside the sends: 3000 - 0.010 - 0.0005 - 2900 - 0.05 - 1 */
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 9u,
+		      "stream split: beyond the wire in the sends 2798.870 ms, "
+		      "chip select 1.000 ms, the rest 98.939 ms"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 11u,
+		      "stream sends: 435 sessions in 2900.000 ms, the longest 150.000 ms; "
+		      "on the wire alone 101.130 ms"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 14u,
+		      "stream measuring: 1310 counter reads added, 6 cycles a read, "
+		      "at most 0.019 ms"));
+	/* the watch's lines stay out of it */
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 4u));
+}
+
 static void test_record(void)
 {
 	struct boot_time t = fresh(), back;
@@ -349,7 +636,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 60u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 106u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -372,6 +659,29 @@ static void test_record(void)
 	t.slot_reread = 7u;
 	t.slot_reread_good = 8u;
 	t.slot_trial = 9u;
+	/* a milestone past bit 31 of set */
+	boot_time_mark(&t, BOOT_TIME_STREAM_LAST, 0x1122334455667788ull);
+	t.split.xfer = 0x0000000100000002ull;
+	t.split.window = 0x0000000300000004ull;
+	t.split.sample = 5u;
+	t.split.select = 0x0000000600000007ull;
+	t.split.send = 8u;
+	t.split.bytes = 421360u;
+	t.split.blocks = 30u;
+	t.split.fills = 4u;
+	t.split.sessions = 440u;
+	t.split.xfers = 421361u;
+	t.split.xfer_min = 100u;
+	t.split.xfer_max = 900u;
+	t.split.send_max = 12u;
+	t.split.wire_byte = 96u;
+	t.split.read = 3u;
+	t.split.reads = 1000000u;
+	for (i = 0; i < BOOT_TIME_GAPS; i++) {
+		t.split.gap[i].cycles = 5000u - i;
+		t.split.gap[i].at = 16u * i;
+		t.split.gap[i].block = i;
+	}
 	boot_time_pack(&t, MHZ, rec);
 	CHECK(rec[0] == 'B' && rec[1] == 'T' && rec[2] == 'I' && rec[3] == 'M');
 	memset(&back, 0xA5, sizeof back);
@@ -387,6 +697,14 @@ static void test_record(void)
 	CHECK(back.slot_fast == 5u && back.slot_fast_failed == 6u && back.slot_reread == 7u &&
 	      back.slot_reread_good == 8u && back.slot_trial == 9u);
 	CHECK(memcmp(back.at, t.at, sizeof t.at) == 0);
+	/* the split's fields, not its tail padding */
+	CHECK(back.split.xfer == t.split.xfer && back.split.window == t.split.window &&
+	      back.split.sample == t.split.sample && back.split.select == t.split.select &&
+	      back.split.send == t.split.send);
+	CHECK(memcmp(&back.split.bytes, &t.split.bytes,
+		     offsetof(struct boot_time_split, gap) + sizeof t.split.gap -
+		     offsetof(struct boot_time_split, bytes)) == 0);
+	CHECK(back.set >> BOOT_TIME_STREAM_LAST & 1u);
 
 	/* any one byte changed is refused, the magic and the version included */
 	for (i = 0; i < BOOT_TIME_RECORD; i++) {
@@ -413,6 +731,10 @@ int main(void)
 	RUN(test_since_on);
 	RUN(test_summary);
 	RUN(test_watch);
+	RUN(test_walk);
+	RUN(test_gaps);
+	RUN(test_split);
+	RUN(test_split_fc);
 	RUN(test_record);
 	return check_summary("boot_time");
 }

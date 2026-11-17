@@ -83,6 +83,16 @@ developer menu. The bootloader stamps the cycle counter at each milestone
   record is cleared once read.
 - After a charge wait (on USB with the switch off), lines also show `since on`, from the
   `panel light sent` line.
+- The slave stream's own steps sit among the milestones, numbered 30 to 34: `stream ready wait` and
+  `stream ready` (S-09.003's wait), `stream opened`, `stream first header`, `stream last byte`.
+- `stream split` (two lines) divides the stream's time from that wait to its end: the wait, the byte
+  transfers, the ready line's windows (with `BOOT_LINK_FC=1`, the sends), the ready samples, the waits on a
+  high line (or the sends' time beyond the wire), the chip select, and the rest, the loop's own.
+  `stream blocks` counts blocks, fill or header-only blocks, sessions and bytes; `stream bytes` gives a
+  transfer's average, shortest and longest, less a counter read, and the bytes' time on the wire alone
+  (`stream sends` with `BOOT_LINK_FC=1`); `stream longest waits` lists the eight longest, each with the
+  bytes sent before it and its block; `stream measuring` gives the counter reads the split adds and their
+  cost.
 - In the boot menu, `testos_mon.py log` prints the same report. A trial start has no serial port.
 
 ## The slave's ready line after a byte

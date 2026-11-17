@@ -50,6 +50,14 @@ enum boot_time_id {
 	BOOT_TIME_RELEASED,		/* the slave's release reply in */
 	BOOT_TIME_HELD,			/* held mode entered */
 	BOOT_TIME_OS_ENTRY,		/* the test OS entered, after a hand-over */
+	/* The slave's stream in steps, numbered after the rest so that those
+	 * keep their numbers; the report orders every line by its stamp. */
+	BOOT_TIME_STREAM_WAIT,		/* S-09.003's wait for the ready line began */
+	BOOT_TIME_STREAM_READY,		/* it ended: the line read low */
+	BOOT_TIME_STREAM_OPENED,	/* the opening byte sent (S-09.004) */
+	BOOT_TIME_STREAM_HEADER,	/* the first block's header sent; paced by the
+					 * controller, the session with its first piece */
+	BOOT_TIME_STREAM_LAST,		/* the stream's last byte sent */
 	BOOT_TIME_COUNT
 };
 
@@ -62,10 +70,42 @@ enum boot_time_id {
 
 #define BOOT_TIME_RAISE_STEPS 8u
 #define BOOT_TIME_FIRST 16u
+#define BOOT_TIME_GAPS 8u
+
+/* A wait on the slave's ready line: its cycles, the slot's bytes sent by
+ * then, and the block of the last of them (BOOT_TIME_NO_BLOCK: none yet). */
+struct boot_time_gap {
+	uint32_t cycles, at, block;
+};
+#define BOOT_TIME_NO_BLOCK UINT32_MAX
+
+/*
+ * The stream's time from S-09.003's wait to its end, split by where it went,
+ * in cycles: the wait itself is the two milestones' difference; then inside
+ * the byte transfers (from the write to the byte in), in the ready line's
+ * window after each, in the sample of the line that decides the next byte,
+ * in waits on a line found high there (struct boot_time's stream_wait), in
+ * the chip select's changes, and, paced by the controller, in its sends.
+ * What is left over is the loop's own: the report gives it as the rest.
+ */
+struct boot_time_split {
+	uint64_t xfer, window, sample, select, send;
+	uint32_t bytes;		/* the slot's bytes sent */
+	uint32_t blocks;	/* blocks begun */
+	uint32_t fills;		/* of those, fill or header-only blocks */
+	uint32_t sessions;	/* chip-select sessions after the opening one */
+	uint32_t xfers;		/* bytes through a single transfer, the opening one too */
+	uint32_t xfer_min, xfer_max;	/* a transfer's shortest and longest */
+	uint32_t send_max;	/* the longest send of a session */
+	uint32_t wire_byte;	/* a byte's cycles at the link's clock */
+	uint32_t read;		/* a counter read's cost: two back to back */
+	uint32_t reads;		/* counter reads the split adds */
+	struct boot_time_gap gap[BOOT_TIME_GAPS];	/* the longest waits, longest first */
+};
 
 struct boot_time {
 	uint64_t at[BOOT_TIME_COUNT];	/* the cycle counter at each milestone */
-	uint32_t set;			/* bit n: milestone n was reached */
+	uint64_t set;			/* bit n: milestone n was reached */
 	uint32_t bytes;			/* bytes the OS image's copy read */
 	uint32_t flags;
 	/* The slave's stream: the bytes whose first sample of the ready line
@@ -94,16 +134,17 @@ struct boot_time {
 	 * whose CRC was then good, which says the faster read is marginal. */
 	uint32_t slot_fast, slot_fast_failed, slot_reread, slot_reread_good;
 	uint32_t slot_trial;	/* faster reads a trial mark's CRC confirmed: kept */
+	struct boot_time_split split;
 };
 
-_Static_assert(BOOT_TIME_COUNT <= 32u, "a bit of set for each milestone");
+_Static_assert(BOOT_TIME_COUNT <= 64u, "a bit of set for each milestone");
 
 /* The cost of a stamp: one store of the count and one bit. */
 static inline void boot_time_mark(struct boot_time *t, unsigned id, uint64_t cycles)
 {
 	if (id < BOOT_TIME_COUNT) {
 		t->at[id] = cycles;
-		t->set |= 1u << id;
+		t->set |= (uint64_t)1 << id;
 	}
 }
 
@@ -127,6 +168,51 @@ void boot_time_watch_sample(struct boot_time *t, struct boot_time_watch *w, bool
 			    uint64_t since_byte, bool in_window);
 
 /*
+ * The stream's bytes as they go, which finds its blocks (S-09.005): a
+ * 16-byte header, then its count of bytes unless it is a fill or its count
+ * is 0. boot_time_walk_byte() for a byte, boot_time_walk() for a run; the
+ * slot's bytes only, the opening byte not. A byte inside a block's payload
+ * costs a test and two counts.
+ */
+struct boot_time_walk {
+	uint8_t head[16];
+	uint32_t have;		/* the header's bytes so far */
+	uint32_t left;		/* the payload's bytes still to come */
+};
+
+void boot_time_walk_head(struct boot_time *t, struct boot_time_walk *w, uint8_t b);
+void boot_time_walk(struct boot_time *t, struct boot_time_walk *w, const uint8_t *d,
+		    uint32_t n);
+
+static inline void boot_time_walk_byte(struct boot_time *t, struct boot_time_walk *w,
+				       uint8_t b)
+{
+	t->split.bytes++;
+	if (w->left != 0u)
+		w->left--;
+	else
+		boot_time_walk_head(t, w, b);
+}
+
+/* A single transfer's cycles: summed, counted, the shortest and longest
+ * kept. xfer_min starts at UINT32_MAX. */
+static inline void boot_time_xfer(struct boot_time *t, uint64_t cycles)
+{
+	const uint32_t c = cycles > UINT32_MAX ? UINT32_MAX : (uint32_t)cycles;
+
+	t->split.xfer += cycles;
+	t->split.xfers++;
+	if (c < t->split.xfer_min)
+		t->split.xfer_min = c;
+	if (c > t->split.xfer_max)
+		t->split.xfer_max = c;
+}
+
+/* A wait of `cycles` after `at` of the slot's bytes, kept when it is among
+ * the BOOT_TIME_GAPS longest; of equal ones the earlier stays first. */
+void boot_time_gap(struct boot_time *t, uint64_t cycles, uint32_t at);
+
+/*
  * The report's lines, k = 0 to BOOT_TIME_LINES - 1. First a line per
  * milestone reached, in the order of their stamps, each with its number,
  * its time and the time since the line before; after a charge wait (the
@@ -134,11 +220,12 @@ void boot_time_watch_sample(struct boot_time *t, struct boot_time_watch *w, bool
  * line also has its time since that wait's end, when the switch went on.
  * Then the PSoC and battery-wait outcome, the front's waits, the copy's
  * rate, the stream's pacing, the ready line after a byte (four lines), the
- * stream's faster reads, and an end line. A line k with nothing to say
+ * stream's split, blocks, bytes, longest waits and the measuring's own cost
+ * (seven lines), the stream's faster reads, and an end line. A line k with nothing to say
  * leaves *out empty and returns false. cycles_per_us converts counts after
  * INIT's clock set-up; counts taken before it are shown as they are.
  */
-#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 10u)
+#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 17u)
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out);
 
@@ -148,8 +235,9 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 6u
-#define BOOT_TIME_WORDS   (20u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST)
+#define BOOT_TIME_VERSION 7u
+#define BOOT_TIME_WORDS   (42u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+			   3u * BOOT_TIME_GAPS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,
 		    uint8_t rec[BOOT_TIME_RECORD]);

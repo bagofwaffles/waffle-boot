@@ -12,7 +12,8 @@ static const char *const names[BOOT_TIME_COUNT] = {
 	"slave ready",
 	"bridge linked", "slave done", "pre-load", "os copy start",
 	"os copy last read", "os staged", "os checked", "release reply", "held mode",
-	"test os entry",
+	"test os entry", "stream ready wait", "stream ready", "stream opened",
+	"stream first header", "stream last byte",
 };
 
 static bool reached(const struct boot_time *t, unsigned id)
@@ -99,6 +100,63 @@ void boot_time_watch_sample(struct boot_time *t, struct boot_time_watch *w, bool
 	w->first = false;
 }
 
+void boot_time_walk_head(struct boot_time *t, struct boot_time_walk *w, uint8_t b)
+{
+	uint32_t code, count;
+
+	if (w->have == 0u)
+		t->split.blocks++;
+	w->head[w->have++] = b;
+	if (w->have < sizeof w->head)
+		return;
+	w->have = 0;
+	code = wb_get_le32(w->head);
+	count = wb_get_le32(w->head + 8);
+	/* S-09.005: a fill, or a count of 0, has no payload */
+	if ((code & 0x0100u) || count == 0u) {
+		t->split.fills++;
+		w->left = 0;
+	} else {
+		w->left = count;
+	}
+}
+
+void boot_time_walk(struct boot_time *t, struct boot_time_walk *w, const uint8_t *d,
+		    uint32_t n)
+{
+	while (n != 0u) {
+		if (w->left != 0u) {
+			const uint32_t k = w->left < n ? w->left : n;
+
+			t->split.bytes += k;
+			w->left -= k;
+			d += k;
+			n -= k;
+		} else {
+			boot_time_walk_byte(t, w, *d++);
+			n--;
+		}
+	}
+}
+
+void boot_time_gap(struct boot_time *t, uint64_t cycles, uint32_t at)
+{
+	struct boot_time_gap *g = t->split.gap;
+	const uint32_t c = cycles > UINT32_MAX ? UINT32_MAX : (uint32_t)cycles;
+	unsigned i = BOOT_TIME_GAPS;
+
+	if (c == 0u || c <= g[BOOT_TIME_GAPS - 1u].cycles)
+		return;
+	while (i > 0u && g[i - 1u].cycles < c) {
+		if (i < BOOT_TIME_GAPS)
+			g[i] = g[i - 1u];
+		i--;
+	}
+	g[i].cycles = c;
+	g[i].at = at;
+	g[i].block = t->split.blocks != 0u ? t->split.blocks - 1u : BOOT_TIME_NO_BLOCK;
+}
+
 /* From one count to a later one; 0 when it is not later. */
 static uint64_t span_us(const struct boot_time *t, unsigned from, unsigned to,
 			uint32_t cycles_per_us)
@@ -176,6 +234,141 @@ static bool milestone(const struct boot_time *t, unsigned k, uint32_t cpu,
 		text_ms(out, span_us(t, on, id, cpu));
 	}
 	return true;
+}
+
+/* Cycles as milliseconds. */
+static void text_cycles_ms(struct s14_text *out, uint64_t cycles, uint32_t cpu)
+{
+	text_ms(out, cycles / cpu);
+}
+
+static void text_part(struct s14_text *out, const char *name, uint64_t cycles, uint32_t cpu)
+{
+	s14_text_str(out, name);
+	text_cycles_ms(out, cycles, cpu);
+}
+
+/* The stream's split, its blocks, its bytes, its longest waits (two lines)
+ * and the measuring's own cost: lines 0 to 6. */
+static bool stream_line(const struct boot_time *t, unsigned k, uint32_t cpu,
+			struct s14_text *out)
+{
+	const struct boot_time_split *sp = &t->split;
+	const bool fc = (t->flags & BOOT_TIME_LINK_FC) != 0u;
+
+	if (!reached(t, BOOT_TIME_STREAM_END) || !reached(t, BOOT_TIME_STREAM_WAIT) ||
+	    !reached(t, BOOT_TIME_STREAM_READY))
+		return false;
+	switch (k) {
+	case 0: {
+		const uint64_t whole = t->at[BOOT_TIME_STREAM_END] - t->at[BOOT_TIME_STREAM_WAIT];
+		const uint64_t open = t->at[BOOT_TIME_STREAM_READY] - t->at[BOOT_TIME_STREAM_WAIT];
+
+		s14_text_str(out, "stream split: ");
+		text_cycles_ms(out, whole, cpu);
+		text_part(out, " in all, ready wait ", open, cpu);
+		text_part(out, ", transfers ", sp->xfer, cpu);
+		if (fc)
+			text_part(out, ", sends ", sp->send, cpu);
+		else
+			text_part(out, ", windows ", sp->window, cpu);
+		text_part(out, ", samples ", sp->sample, cpu);
+		return true;
+	}
+	case 1: {
+		const uint64_t whole = t->at[BOOT_TIME_STREAM_END] - t->at[BOOT_TIME_STREAM_WAIT];
+		/* paced by the controller, the waits are inside the sends */
+		const uint64_t parts = t->at[BOOT_TIME_STREAM_READY] - t->at[BOOT_TIME_STREAM_WAIT] +
+				       sp->xfer + sp->window + sp->sample + sp->select + sp->send +
+				       (fc ? 0u : t->stream_wait);
+
+		s14_text_str(out, "stream split: ");
+		if (fc)
+			text_part(out, "beyond the wire in the sends ", t->stream_wait, cpu);
+		else
+			text_part(out, "waits on a high line ", t->stream_wait, cpu);
+		text_part(out, ", chip select ", sp->select, cpu);
+		if (parts <= whole) {
+			text_part(out, ", the rest ", whole - parts, cpu);
+		} else {
+			s14_text_str(out, ", the rest -");
+			text_cycles_ms(out, parts - whole, cpu);
+		}
+		return true;
+	}
+	case 2:
+		s14_text_str(out, "stream blocks: ");
+		s14_text_dec(out, sp->blocks);
+		s14_text_str(out, " blocks, ");
+		s14_text_dec(out, sp->fills);
+		s14_text_str(out, " fill or header-only, ");
+		s14_text_dec(out, sp->sessions);
+		s14_text_str(out, " sessions, ");
+		s14_text_dec(out, sp->bytes);
+		s14_text_str(out, " bytes");
+		return true;
+	case 3: {
+		const uint64_t wire = (uint64_t)sp->wire_byte * sp->xfers;
+
+		if (fc) {
+			s14_text_str(out, "stream sends: ");
+			s14_text_dec(out, sp->sessions);
+			text_part(out, " sessions in ", sp->send, cpu);
+			text_part(out, ", the longest ", sp->send_max, cpu);
+			text_part(out, "; on the wire alone ", (uint64_t)sp->wire_byte * sp->bytes, cpu);
+			return true;
+		}
+		if (sp->xfers == 0u)
+			return false;
+		s14_text_str(out, "stream bytes: ");
+		s14_text_dec(out, sp->xfers);
+		s14_text_str(out, " transfers less a counter read, avg ");
+		{
+			const uint64_t avg = sp->xfer / sp->xfers;
+
+			text_us(out, avg > sp->read ? avg - sp->read : 0u, cpu);
+		}
+		s14_text_str(out, ", min ");
+		text_us(out, sp->xfer_min > sp->read ? sp->xfer_min - sp->read : 0u, cpu);
+		s14_text_str(out, ", max ");
+		text_us(out, sp->xfer_max > sp->read ? sp->xfer_max - sp->read : 0u, cpu);
+		text_part(out, "; on the wire alone ", wire, cpu);
+		text_part(out, ", in this build ", sp->xfer, cpu);
+		return true;
+	}
+	case 4:
+	case 5: {
+		const unsigned from = (k - 4u) * (BOOT_TIME_GAPS / 2u);
+		unsigned i;
+
+		if (sp->gap[from].cycles == 0u)
+			return false;
+		s14_text_str(out, k == 4u ? "stream longest waits:" : "stream longest waits, more:");
+		for (i = from; i < from + BOOT_TIME_GAPS / 2u && sp->gap[i].cycles != 0u; i++) {
+			s14_text_str(out, i == from ? " " : "; ");
+			text_cycles_ms(out, sp->gap[i].cycles, cpu);
+			s14_text_str(out, " at byte ");
+			s14_text_dec(out, sp->gap[i].at);
+			if (sp->gap[i].block == BOOT_TIME_NO_BLOCK) {
+				s14_text_str(out, ", no block yet");
+			} else {
+				s14_text_str(out, ", block ");
+				s14_text_dec(out, sp->gap[i].block);
+			}
+		}
+		return true;
+	}
+	case 6:
+		s14_text_str(out, "stream measuring: ");
+		s14_text_dec(out, sp->reads);
+		s14_text_str(out, " counter reads added, ");
+		s14_text_dec(out, sp->read);
+		s14_text_str(out, " cycles a read, at most ");
+		text_cycles_ms(out, (uint64_t)sp->reads * sp->read, cpu);
+		return true;
+	default:
+		return false;
+	}
 }
 
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
@@ -290,6 +483,14 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 		return true;
 	}
 	case 8:
+	case 9:
+	case 10:
+	case 11:
+	case 12:
+	case 13:
+	case 14:
+		return stream_line(t, k - BOOT_TIME_COUNT - 8u, cpu, out);
+	case 15:
 		if (t->slot_fast + t->slot_fast_failed == 0u)
 			return false;
 		s14_text_str(out, "slot read at the faster rate: ");
@@ -304,7 +505,7 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 		s14_text_dec(out, t->slot_trial);
 		s14_text_str(out, " kept by a trial mark's CRC");
 		return true;
-	case 9:
+	case 16:
 		s14_text_str(out, "end of report");
 		return true;
 	default:
@@ -332,12 +533,18 @@ static uint32_t check_of(const uint8_t *rec)
 
 static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 {
-	uint32_t wait[2] = { (uint32_t)t->stream_wait, (uint32_t)(t->stream_wait >> 32) };
+	struct boot_time_split *sp = &t->split;
+	uint64_t *const two[] = {
+		&t->set, &t->stream_wait, &sp->xfer, &sp->window, &sp->sample, &sp->select,
+		&sp->send,
+	};
 	uint32_t *const one[] = {
-		&t->set, &t->bytes, &t->flags, &t->stream_high, &wait[0], &wait[1],
+		&t->bytes, &t->flags, &t->stream_high,
 		&t->line_window, &t->line_high_first, &t->line_late, &t->line_late_max,
 		&t->line_hold_max, &t->slot_fast, &t->slot_fast_failed, &t->slot_reread,
 		&t->slot_reread_good, &t->slot_trial,
+		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
+		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};
 	const struct { uint32_t *p; unsigned n; } many[] = {
 		{ t->line_raise, BOOT_TIME_RAISE_STEPS },
@@ -346,6 +553,17 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 	};
 	unsigned i, j, k = 0;
 
+	_Static_assert(2u * (sizeof two / sizeof two[0]) + sizeof one / sizeof one[0] +
+		       BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + 3u * BOOT_TIME_GAPS ==
+		       COUNT_WORDS, "every count has its words in the record");
+	for (i = 0; i < sizeof two / sizeof two[0]; i++, k += 2u) {
+		if (unpack) {
+			*two[i] = (uint64_t)w[k] | (uint64_t)w[k + 1u] << 32;
+		} else {
+			w[k] = (uint32_t)*two[i];
+			w[k + 1u] = (uint32_t)(*two[i] >> 32);
+		}
+	}
 	for (i = 0; i < sizeof one / sizeof one[0]; i++, k++) {
 		if (unpack)
 			*one[i] = w[k];
@@ -359,8 +577,19 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 			else
 				w[k] = many[i].p[j];
 		}
-	if (unpack)
-		t->stream_wait = (uint64_t)wait[0] | (uint64_t)wait[1] << 32;
+	for (i = 0; i < BOOT_TIME_GAPS; i++, k += 3u) {
+		struct boot_time_gap *g = &sp->gap[i];
+
+		if (unpack) {
+			g->cycles = w[k];
+			g->at = w[k + 1u];
+			g->block = w[k + 2u];
+		} else {
+			w[k] = g->cycles;
+			w[k + 1u] = g->at;
+			w[k + 2u] = g->block;
+		}
+	}
 }
 
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,

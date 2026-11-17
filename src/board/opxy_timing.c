@@ -84,7 +84,7 @@ void opxy_timing_front(const struct fr_handoff *ho)
 }
 
 /*
- * The stream's pacing (S-09.005): the board's ops behind these two. After a
+ * The stream's pacing (S-09.005): the board's ops behind these. After a
  * byte the line is sampled through the window, which stands in for the
  * settle time and is never shorter; the sample after it decides the next
  * byte, as in a normal build. That deciding sample, when it finds the line
@@ -92,49 +92,101 @@ void opxy_timing_front(const struct fr_handoff *ho)
  * counted: the first byte is the opening one, and when the slave does not
  * answer it as S-09.004 says, what follows is S-09.007's, where PA6 is
  * waited for high.
+ *
+ * The split (struct boot_time_split) brackets each op with the counter:
+ * a byte costs two counter reads more than the pacing's own (one before
+ * its transfer, one before its deciding sample), three 64-bit sums, two
+ * compares for the shortest and longest transfer, two counts and the block
+ * walk's test, with no division and no call to the log. A chip-select
+ * change costs two reads. A counter read's cost is taken at the start, so
+ * that the report can take it off.
  */
 static struct s09_boot_ops stream_ops;
-static bool stream_first, stream_waiting, stream_begun, stream_open;
+static bool stream_first, stream_waiting, stream_begun, stream_open, stream_selected;
 static uint32_t stream_sent;
 static uint64_t stream_from, stream_byte_end;
 static struct boot_time_watch stream_watch;
+static struct boot_time_walk stream_walk;
+
+#define SPLIT (opxy_boot_time.split)
 
 #define STREAM_WINDOW_US \
 	(OPXY_BOOT_TIMING_WINDOW_US > OPXY_BOOT_LINK_SETTLE_US ? \
 	 OPXY_BOOT_TIMING_WINDOW_US : OPXY_BOOT_LINK_SETTLE_US)
 #define STREAM_WINDOW_CYCLES ((uint64_t)(STREAM_WINDOW_US) * OPXY_CCLK_MHZ)
 
+static bool stream_reached(unsigned id)
+{
+	return (opxy_boot_time.set >> id & 1u) != 0u;
+}
+
 static bool stream_ready(void *ctx)
 {
+	const uint64_t at = wb_core_cycles();
 	const bool low = stream_ops.ready(ctx);
 	const uint64_t now = wb_core_cycles();
 
+	if (!stream_selected) {
+		/* S-09.003's wait, before the opening byte */
+		if (!stream_reached(BOOT_TIME_STREAM_WAIT))
+			boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_WAIT, at);
+		if (low)
+			boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_READY, now);
+		return low;
+	}
+	SPLIT.reads++;
 	boot_time_watch_sample(&opxy_boot_time, &stream_watch, !low, now - stream_byte_end,
 			       false);
 	if (stream_first && !low) {
+		SPLIT.sample += now - at;
 		opxy_boot_time.stream_high++;
 		stream_from = now;
 		stream_waiting = true;
 	} else if (stream_waiting && low) {
 		opxy_boot_time.stream_wait += now - stream_from;
+		boot_time_gap(&opxy_boot_time, now - stream_from, SPLIT.bytes);
 		stream_waiting = false;
+	} else if (!stream_waiting) {
+		SPLIT.sample += now - at;
 	}
 	stream_first = false;
 	return low;
 }
 
+static void stream_select(void *ctx, bool on)
+{
+	const uint64_t at = wb_core_cycles();
+
+	stream_ops.select(ctx, on);
+	SPLIT.select += wb_core_cycles() - at;
+	SPLIT.reads += 2u;
+	if (on && stream_begun && stream_open)
+		SPLIT.sessions++;
+	stream_selected = true;
+}
+
 static uint8_t stream_xfer(void *ctx, uint8_t tx)
 {
 	const bool paced = stream_ops.send != NULL;	/* by the controller: no window */
+	const uint64_t at = wb_core_cycles();
 	const uint8_t rx = paced ? stream_ops.xfer(ctx, tx) : opxy_boot_byte(ctx, tx);
 	uint64_t since;
 
 	stream_byte_end = wb_core_cycles();
+	boot_time_xfer(&opxy_boot_time, stream_byte_end - at);
+	SPLIT.reads++;
 	if (!stream_begun) {
 		stream_begun = true;
 		stream_open = rx == 0xFFu;
+		boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_OPENED, stream_byte_end);
 	} else {
 		stream_sent++;
+		if (stream_open) {
+			boot_time_walk_byte(&opxy_boot_time, &stream_walk, tx);
+			if (SPLIT.bytes == 16u)
+				boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_HEADER,
+					       stream_byte_end);
+		}
 	}
 	stream_first = stream_open;
 	stream_waiting = false;
@@ -149,26 +201,45 @@ static uint8_t stream_xfer(void *ctx, uint8_t tx)
 		since = wb_core_cycles() - stream_byte_end;
 		boot_time_watch_sample(&opxy_boot_time, &stream_watch, !low, since, true);
 	} while (since < STREAM_WINDOW_CYCLES);
+	SPLIT.window += since;
 	return rx;
 }
 
+/* A byte's cycles at the link's clock. */
+#define STREAM_WIRE_BYTE \
+	(8u * (opxy_spi_boot_link.clk + 1u) * (OPXY_CCLK_MHZ * 1000000u / OPXY_SCLK0_HZ))
+
 #if OPXY_BOOT_LINK_FC
 /* Paced by the controller, a byte is not seen: the line at a session's
- * start, and the session's time beyond its bytes' own at the link's rate. */
+ * start, the session's whole time, and its time beyond its bytes' own at
+ * the link's rate, which is where the slave held them off. */
 static bool stream_send(void *ctx, const uint8_t *d, size_t n)
 {
-	const uint64_t wire = (uint64_t)n * 8u * (opxy_spi_boot_link.clk + 1u) *
-			      (OPXY_CCLK_MHZ * 1000000u / OPXY_SCLK0_HZ);
-	const uint64_t from = wb_core_cycles();
-	uint64_t took;
+	const uint64_t wire = (uint64_t)n * STREAM_WIRE_BYTE;
+	const uint64_t at = wb_core_cycles();
+	const uint32_t before = SPLIT.bytes;
+	uint64_t from, took;
 	bool sent;
 
 	if (!stream_ops.ready(ctx))
 		opxy_boot_time.stream_high++;
+	from = wb_core_cycles();
 	sent = stream_ops.send(ctx, d, n);
-	took = wb_core_cycles() - from;
-	if (took > wire)
+	stream_byte_end = wb_core_cycles();
+	took = stream_byte_end - from;
+	SPLIT.sample += from - at;
+	SPLIT.send += took;
+	SPLIT.reads++;
+	if (took > SPLIT.send_max)
+		SPLIT.send_max = took > UINT32_MAX ? UINT32_MAX : (uint32_t)took;
+	if (sent)
+		boot_time_walk(&opxy_boot_time, &stream_walk, d, (uint32_t)n);
+	if (took > wire) {
 		opxy_boot_time.stream_wait += took - wire;
+		boot_time_gap(&opxy_boot_time, took - wire, before);
+	}
+	if (before < 16u && SPLIT.bytes >= 16u)
+		boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_HEADER, stream_byte_end);
 	opxy_boot_time.flags |= BOOT_TIME_LINK_FC;
 	return sent;
 }
@@ -176,14 +247,35 @@ static bool stream_send(void *ctx, const uint8_t *d, size_t n)
 
 void opxy_timing_stream(struct s09_boot_ops *ops)
 {
+	unsigned i;
+
 	stream_ops = *ops;
 	opxy_boot_time.line_window = (uint32_t)STREAM_WINDOW_CYCLES;
+	SPLIT.xfer_min = UINT32_MAX;
+	SPLIT.wire_byte = STREAM_WIRE_BYTE;
+	/* a counter read's cost: the least of a few pairs back to back */
+	SPLIT.read = UINT32_MAX;
+	for (i = 0; i < 8u; i++) {
+		const uint64_t a = wb_core_cycles();
+		const uint64_t b = wb_core_cycles();
+
+		if (b - a < SPLIT.read)
+			SPLIT.read = (uint32_t)(b - a);
+	}
 	ops->ready = stream_ready;
+	ops->select = stream_select;
 	ops->xfer = stream_xfer;
 #if OPXY_BOOT_LINK_FC
 	if (ops->send != NULL)
 		ops->send = stream_send;
 #endif
+}
+
+void opxy_timing_stream_end(void)
+{
+	if (stream_begun)
+		boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_LAST, stream_byte_end);
+	OPXY_TIME(BOOT_TIME_STREAM_END);
 }
 
 static bool slot_was_fast;

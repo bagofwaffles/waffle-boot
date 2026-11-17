@@ -349,7 +349,7 @@ static bool slave_start(void *ctx)
 			  &m->hw.time, OPXY_BOOT_LINK_WORD_US);
 	m->boot_ops = OPXY_BOOT_OPS(&m->hw); OPXY_TIMING_STREAM(&m->boot_ops);
 	rc = OPXY_TESTOS_OR(((void)len, (void)good, (void)end, (void)stream, S09_BOOT_STREAMED), /* S-05.022: the loading bootloader booted the slave too */
-			    s09_boot_slave(&m->boot_ops, &m->clock, stream, len, good, &end)); OPXY_TIME(BOOT_TIME_STREAM_END);
+			    s09_boot_slave(&m->boot_ops, &m->clock, stream, len, good, &end)); OPXY_TIMING_STREAM_END();
 	/* S-09.060: T_INIT for the init request session runs from the
 	 * stream's last byte; the slave's start-up and its eMMC bring-up come
 	 * first (S-09.018). */
