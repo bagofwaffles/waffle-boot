@@ -136,8 +136,8 @@ extern const struct wb_spi_config opxy_spi_boot_link;
 extern const struct wb_spi_config opxy_spi_boot_link_fc;
 #endif
 /* S-09.019: the slave's check of its L1 code, in every build with
- * BOOT_LINK_FC and, with make BOOT_L1_CHECK=1, in one that sends the stream
- * byte by byte. */
+ * BOOT_LINK_FC unless make BOOT_L1_CHECK=0, and with BOOT_L1_CHECK=1 in one
+ * that sends the stream byte by byte. */
 #ifndef OPXY_BOOT_L1_CHECK
 #define OPXY_BOOT_L1_CHECK (OPXY_BOOT_LINK_FC != 0)
 #endif

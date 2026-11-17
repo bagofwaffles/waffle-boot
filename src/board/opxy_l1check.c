@@ -51,21 +51,35 @@ bool opxy_l1_check(const volatile struct opxy_l1_mark *mk, uint32_t (*word)(uint
 }
 
 /* PRM, Extended Data Access: with ENX set, loads may read L1 instruction
- * memory. */
+ * memory, through DAG0 only (DAG1 raises a protection violation). One load
+ * of its own, never issued in parallel with another, is DAG0's. */
 static uint32_t l1_word(uint32_t addr)
 {
+#if defined(__bfin__)
+	uint32_t v;
+
+	__asm__ volatile("%0 = [%1];" : "=d"(v) : "a"(addr) : "memory");
+	return v;
+#else
 	return *(const volatile uint32_t *)(uintptr_t)addr;
+#endif
 }
 
 bool opxy_l1_code_ok(void)
 {
 	const uint32_t saved = wb_mmr_read32(L1DM_DCTL);
 	const uint32_t mask = wb_core_cli();
+	const volatile struct opxy_l1_mark *mark = &opxy_l1_mark;
 	bool ok;
+
+	/* The mark's values are mkldr.py's, never its initializer: its address
+	 * hidden from the compiler, which may otherwise fold the compiled
+	 * values into the check, volatile or not. */
+	__asm__("" : "+r"(mark));
 
 	wb_mmr_write32(L1DM_DCTL, saved | L1DM_DCTL_ENX);
 	wb_core_csync();
-	ok = opxy_l1_check(&opxy_l1_mark, l1_word);
+	ok = opxy_l1_check(mark, l1_word);
 	wb_mmr_write32(L1DM_DCTL, saved);
 	wb_core_csync();
 	wb_core_sti(mask);

@@ -128,7 +128,7 @@ S-13b.023):
   the slave holds for T_STREAM ends the stream, as a held byte does.
 - The slave checks its L1 code before it answers the bridge or touches the eMMC (S-09.019): a damaged stream
   ends with the slave not answering, not running. `BOOT_L1_CHECK=1` adds the same check to a build that sends
-  the stream byte by byte.
+  the stream byte by byte, and `BOOT_L1_CHECK=0` leaves it out of a `BOOT_LINK_FC` build.
 - The master cannot restart the slave, so a stream it sent whole but the slave did not take whole still ends
   with the slave absent for that start; the next start tries again.
 
