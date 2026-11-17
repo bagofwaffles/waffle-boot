@@ -418,7 +418,7 @@ static void test_stream_report(void)
 	m.sv.menu.dev_mode = true;
 	dev_frame(OPXY_DEV_STREAM, NULL, 0);
 	CHECK(reply_status(&plen) == OPXY_DEV_OK && plen == 1u + OPXY_STREAM_REPORT);
-	CHECK(reply[1] == 1u && reply[2] == (uint8_t)opxy_boot_way());
+	CHECK(reply[1] == 2u && reply[2] == (uint8_t)opxy_boot_way());
 	CHECK(reply[3] == S09_BOOT_STREAMED && reply[4] == S09_END_FINAL && reply[8] == 1u);
 	CHECK(fake_mmr_writes(w, 4u) == 0u);	/* reading only */
 }

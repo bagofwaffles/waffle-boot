@@ -51,7 +51,9 @@
 #                 and before each session, and the rest sent byte by byte
 #                 after a failure of the controller (S-09.009, S-13b.023)
 #   BOOT_LINK_GUARD_US=<n>  with BOOT_LINK_FC=2, the pause in microseconds,
-#                 default 20
+#                 default 20; before a session it passes with the chip select high
+#   BOOT_L1_CHECK=1  the second processor's check of its L1 code (S-09.019)
+#                 with the stream sent byte by byte; BOOT_LINK_FC has it anyway
 #   REPLY_END=count  the slave's replies end at their received-word count
 #                 from the start; default (REPLY_END=factory) the factory's
 #                 end, TF (S-13b.083)
@@ -159,6 +161,14 @@ $(error BOOT_LINK_FC is 1 or 2)
 endif
 ifneq ($(BOOT_LINK_GUARD_US),)
 TARGET_CFLAGS += -DOPXY_BOOT_LINK_GUARD_US=$(BOOT_LINK_GUARD_US)u
+endif
+# BOOT_L1_CHECK=1: S-09.019's check in a build without BOOT_LINK_FC, so that a
+# trial of the byte path tries the check alone:
+# make installer BOOT_L1_CHECK=1 BOOT_TIMING=1 BUILD=build/l1
+ifeq ($(BOOT_L1_CHECK),1)
+TARGET_CFLAGS += -DOPXY_BOOT_L1_CHECK=1
+else ifneq ($(BOOT_L1_CHECK),)
+$(error BOOT_L1_CHECK is 1)
 endif
 # REPLY_END=count: the slave's single-I/O replies end at their received-word
 # count (REN set) from the start, in place of the factory's end, TF with REN

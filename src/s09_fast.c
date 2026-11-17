@@ -90,6 +90,12 @@ static void guard(struct s09_fast *f)
 	f->st.guard_us += t - from;
 }
 
+void s09_fast_session_guard(struct s09_fast *f)
+{
+	if (!f->slow)
+		guard(f);
+}
+
 /* The next part of n bytes: what is left of a header, or of a payload. */
 static size_t part_len(const struct s09_fast *f, size_t n)
 {

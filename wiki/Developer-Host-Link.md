@@ -131,6 +131,7 @@ this start's stream: by the controller under flow control, fed by DMA
   bridge:   linked
   sent:     412 sessions, 437 parts by DMA, 421376 bytes by the controller, 0 one at a time
   pacing:   guard 20 us, 9.180 ms in the guards; 3 parts began with the line high, 0.030 ms waited, the longest 12 us
+  held:     SPI_STAT.FCS set in 2400 of 91000 samples, in 380 parts, the first at byte 16
   fell back: no
 ```
 

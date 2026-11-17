@@ -1022,7 +1022,7 @@ static void bringup(void *ctx)
 	(void)wb_spi_slave_init(&s->hw.link_slave, OPXY_SPI_BRIDGE_SLAVE,
 				&opxy_spi_bridge_slave_pre, OPXY_PA4, OPXY_PB15,
 				&s->hw.time, S09_T_REPLY_US);
-#if OPXY_BOOT_LINK_FC && !defined(OPXY_TEST_OS)
+#if OPXY_BOOT_L1_CHECK && !defined(OPXY_TEST_OS)
 	/*
 	 * S-09.019: the L1 code the stream loaded, checked before anything is
 	 * served or the eMMC touched. A stream that arrived damaged there

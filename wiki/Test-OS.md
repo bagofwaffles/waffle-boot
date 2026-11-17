@@ -121,17 +121,19 @@ S-13b.023):
     make installer test-os-mon BOOT_LINK_FC=2 BOOT_TIMING=1 BUILD=build/linkdma
 
 - Each session goes in parts, a block's header alone and then its payload, each part once PA6 reads low
-  and at least `BOOT_LINK_GUARD_US` (default 20 µs) after the last part ended.
+  and at least `BOOT_LINK_GUARD_US` (default 20 µs) after the last part ended. Before a session, a piece of
+  up to 1,024 bytes or a new block, that time passes with the chip select high.
 - A part the controller gives up with PA6 low (a DMA error, a stall, no end of the transmit) sends the rest
   of the stream byte by byte, the default way, from the first byte not sent, in the same start, once. A part
   the slave holds for T_STREAM ends the stream, as a held byte does.
 - The slave checks its L1 code before it answers the bridge or touches the eMMC (S-09.019): a damaged stream
-  ends with the slave not answering, not running.
+  ends with the slave not answering, not running. `BOOT_L1_CHECK=1` adds the same check to a build that sends
+  the stream byte by byte.
 - The master cannot restart the slave, so a stream it sent whole but the slave did not take whole still ends
   with the slave absent for that start; the next start tries again.
 
 The boot log has a line with the way, the sessions, bytes and time, any fall-back and whether the bridge
 linked; `testos_mon.py dev-stream` prints the same at any time in that start
 ([Developer Host Link](Developer-Host-Link#the-slaves-boot-stream)). With `BOOT_TIMING=1`, `stream by DMA`
-gives the parts, the guards' time and the parts that began with PA6 high, and `stream fall-back` whether and
-where it fell back.
+gives the parts, the guards' time, the parts that began with PA6 high and how often `SPI0_STAT.FCS` read set
+while the parts ran (the slave holding the controller), and `stream fall-back` whether and where it fell back.

@@ -143,6 +143,10 @@ struct boot_time {
 	 * the slave held the line past T_STREAM. */
 	uint32_t dma_parts, dma_guard, dma_guard_us, dma_high;
 	uint32_t dma_fell, dma_fell_session, dma_fell_at, dma_slow_bytes, dma_held;
+	/* SPI0_STAT read in the parts' waits, those with FCS set (the slave's
+	 * line holding the controller), the parts that saw it, and the slot's
+	 * bytes before the first of them plus one, 0 for none. */
+	uint32_t dma_fcs_samples, dma_fcs_held, dma_fcs_parts, dma_fcs_first;
 	struct boot_time_split split;
 };
 
@@ -244,8 +248,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 8u
-#define BOOT_TIME_WORDS   (51u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+#define BOOT_TIME_VERSION 9u
+#define BOOT_TIME_WORDS   (55u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,

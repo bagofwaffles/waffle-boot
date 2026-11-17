@@ -52,7 +52,7 @@
  *                                     RELEASE: us from the last byte to the chip select's release;
  *                                     ELAPSED: us of the whole call; each SESSION hex
  *   bootf PATH STUCK LATE BOUND GUARD FAULT AT -> RESULT END HIGH RELEASE ELAPSED EARLY FELL FELL_AT
- *                                     SLOW AFTER NPARTS PART... SESSION...: the stream as BOOT_LINK_FC=2
+ *                                     SLOW AFTER GAP NPARTS PART... SESSION...: the stream as BOOT_LINK_FC=2
  *                                     sends it (s09_fast_send(), S-09.009) over the same model, its
  *                                     parts moved by the model controller, GUARD us apart (the
  *                                     board's guard), and after a fall-back one byte at a time with
@@ -62,8 +62,9 @@
  *                                     model controller's own failure (an S09_PART_* cause, 0 none)
  *                                     before its AT-th byte. FELL: the fall-back's cause, FELL_AT the
  *                                     slot's bytes clocked before it, SLOW the bytes sent one at a
- *                                     time, AFTER the parts given after it, then the parts' lengths
- *                                     in order;
+ *                                     time, AFTER the parts given after it, GAP the least time
+ *                                     with the select high before a stream session (us), then the
+ *                                     parts' lengths in order;
  *   sreq HEX                       -> RX REPLY: HEX handed to the slave directly as one request
  *                                     session (RX: the bytes it takes; HEX zero padded to the
  *                                     s09_slave_rx_keep() of them it keeps), then the reply session it
@@ -661,6 +662,8 @@ static struct {
 	uint32_t left, in_block;
 	unsigned nparts, after;	/* parts given, and given after a fall-back */
 	size_t part[1024];
+	unsigned selects;	/* chip-select assertions so far */
+	uint32_t gap_min;	/* the least select-high time before a stream session, us */
 } bf;
 static struct s09_fast bf_fast;
 
@@ -811,8 +814,25 @@ static bool bf_send(void *ctx, const uint8_t *d, size_t n)
 	return s09_fast_send(&bf_fast, d, n);
 }
 
+/* As the board's DMA ops: before a stream session's select falls, the guard
+ * with the select high (S-13b.023); the least such gap is kept. */
+static void bf_select(void *ctx, bool on)
+{
+	if (on && bf.selects++ >= 1u) {
+		uint32_t gap;
+
+		if (bf.selects == 2u)
+			s09_fast_pause(&bf_fast);
+		s09_fast_session_guard(&bf_fast);
+		gap = clock_us - bl.release_t;
+		if (gap < bf.gap_min)
+			bf.gap_min = gap;
+	}
+	bl_select(ctx, on);
+}
+
 static const struct s09_boot_ops boot_ops = { NULL, bl_ready, bl_select, bl_xfer, NULL, NULL };
-static const struct s09_boot_ops boot_ops_dma = { NULL, bl_ready, bl_select, bl_xfer, bf_send, NULL };
+static const struct s09_boot_ops boot_ops_dma = { NULL, bl_ready, bf_select, bl_xfer, bf_send, NULL };
 static const struct s09_boot_ops boot_ops_fc = { NULL, bl_ready, bl_select, bl_xfer, bl_send, NULL };
 
 static void do_boot(const struct h_cmd *c)
@@ -868,6 +888,7 @@ static void do_bootf(const struct h_cmd *c)
 	fclose(f);
 	memset(&bl, 0, sizeof bl);
 	memset(&bf, 0, sizeof bf);
+	bf.gap_min = UINT32_MAX;
 	bl.rng = 1u;
 	bl.stuck = h_num(c, 2);
 	bl.late = (uint32_t)h_num(c, 3);
@@ -886,6 +907,7 @@ static void do_bootf(const struct h_cmd *c)
 	h_putu(bf_fast.st.fell_at);
 	h_putu(bf_fast.st.slow_bytes);
 	h_putu(bf.after);
+	h_putu(bf.gap_min == UINT32_MAX ? 0u : bf.gap_min);
 	h_putu(bf.nparts);
 	for (unsigned i = 0; i < bf.nparts && i < sizeof bf.part / sizeof bf.part[0]; i++)
 		h_putu(bf.part[i]);

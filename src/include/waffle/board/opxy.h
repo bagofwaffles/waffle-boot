@@ -135,12 +135,19 @@ extern const struct wb_spi_config opxy_spi_boot_link;
 #if OPXY_BOOT_LINK_FC
 extern const struct wb_spi_config opxy_spi_boot_link_fc;
 #endif
+/* S-09.019: the slave's check of its L1 code, in every build with
+ * BOOT_LINK_FC and, with make BOOT_L1_CHECK=1, in one that sends the stream
+ * byte by byte. */
+#ifndef OPXY_BOOT_L1_CHECK
+#define OPXY_BOOT_L1_CHECK (OPXY_BOOT_LINK_FC != 0)
+#endif
 /*
  * S-13b.023: with BOOT_LINK_FC=2, the least time from the end of one part of
  * the stream (a block header, or the payload after it) to the start of the
  * next, in microseconds (make BOOT_LINK_GUARD_US=n). Longer than the byte
  * path's own gap between bytes (the settle time and the loop), so that where
  * the slave's boot ROM changes state it gets at least that byte path's time.
+ * Before a session (a piece or a block) it passes with the chip select high.
  */
 #ifndef OPXY_BOOT_LINK_GUARD_US
 #define OPXY_BOOT_LINK_GUARD_US 20u

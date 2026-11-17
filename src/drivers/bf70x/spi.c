@@ -324,6 +324,23 @@ static uint64_t ms_cycles(const struct wb_spi *s)
  * a word, not the transfer. The idle hook runs once a millisecond. *stat is
  * the last STAT read.
  */
+#if WB_SPI_BOOT_DMA
+/* SPI_STAT.FCS, the slave's ready line holding the controller, sampled by
+ * the waits of a boot part (wb_spi_dma_send_bytes()) and nothing else. */
+static struct wb_spi_fcs boot_fcs;
+static bool boot_fcs_on;
+#define FCS_NOTE(v)                                                     \
+	do {                                                            \
+		if (boot_fcs_on) {                                      \
+			boot_fcs.samples++;                             \
+			if ((v) & SPI_STAT_FCS)                         \
+				boot_fcs.held++;                        \
+		}                                                       \
+	} while (0)
+#else
+#define FCS_NOTE(v) ((void)0)
+#endif
+
 static int wait_stat(const struct wb_spi *s, uint32_t mask, uint32_t want,
 		     uint32_t level_mask, uint32_t *stat)
 {
@@ -336,6 +353,7 @@ static int wait_stat(const struct wb_spi *s, uint32_t mask, uint32_t want,
 		const uint32_t v = wb_mmr_read32(SPI_STAT(s->n));
 
 		*stat = v;
+		FCS_NOTE(v);
 		if ((v & mask) == want)
 			return WB_SPI_OK;
 		if ((v & level_mask) != level) {
@@ -799,6 +817,10 @@ static int dma_wait(const struct wb_spi *s, unsigned ch, wb_mmr_addr count,
 		};
 
 		OPXY_TESTOS(if (watch != NULL) (void)testos_stat(s);)
+#if WB_SPI_BOOT_DMA
+		if (boot_fcs_on)
+			FCS_NOTE(wb_mmr_read32(SPI_STAT(s->n)));
+#endif
 		if (dstat & DMA_STAT_IRQERR) {
 			*stage = WB_SPI_STAGE_DMA_ERR |
 				 ((dstat & DMA_STAT_ERRC_MASK) >> DMA_STAT_ERRC_SHIFT)
@@ -1063,6 +1085,13 @@ static uint32_t boot_part_fail(const struct wb_spi *s, int rc, uint32_t stage)
 	return left;
 }
 
+void wb_spi_boot_fcs(struct wb_spi_fcs *out, bool clear)
+{
+	*out = boot_fcs;
+	if (clear)
+		boot_fcs = (struct wb_spi_fcs){ 0 };
+}
+
 int wb_spi_dma_send_bytes(const struct wb_spi *s, const uint8_t *buf, size_t n,
 			  uint32_t *left)
 {
@@ -1082,6 +1111,7 @@ int wb_spi_dma_send_bytes(const struct wb_spi *s, const uint8_t *buf, size_t n,
 	arr_done(a);
 	wb_dma_cache_send((uint32_t)(uintptr_t)buf, (uint32_t)n);
 	fault_open(s->n);
+	boot_fcs_on = true;
 	wb_mmr_write32(SPI_TXCTL(s->n), 0u);
 	wb_mmr_write32(SPI_RXCTL(s->n), 0u);
 	wb_mmr_write32(SPI_STAT(s->n), SPI_STAT_W1C);
@@ -1093,11 +1123,13 @@ int wb_spi_dma_send_bytes(const struct wb_spi *s, const uint8_t *buf, size_t n,
 	wb_mmr_sync();
 	rc = dma_wait(s, ch, SPI_TWC(s->n), 0u, NULL, NULL, &stage);
 	if (rc != WB_SPI_OK) {
+		boot_fcs_on = false;
 		*left = boot_part_fail(s, rc, stage);
 		return rc;
 	}
 	wb_mmr_write32(DMA_STAT(ch), DMA_STAT_IRQDONE);
 	rc = tx_end(s);
+	boot_fcs_on = false;
 	if (rc != WB_SPI_OK) {
 		*left = boot_part_fail(s, rc, WB_SPI_STAGE_TX_END);
 		return rc;

@@ -142,7 +142,8 @@ DEV_LINK_RECORD, DEV_LINK_TEST = 35, 36
 DEV_BOOT_START, START_REPORT = 37, 61   # OPXY_DEV_BOOT_START and OPXY_START_REPORT's bytes
 DEV_CAL_START = 38      # OPXY_DEV_CAL_START
 DEV_QUAD_REPLY = 39     # OPXY_DEV_QUAD_REPLY (S-09.080)
-DEV_STREAM, STREAM_REPORT = 40, 72     # OPXY_DEV_STREAM and OPXY_STREAM_REPORT's bytes (S-09.009)
+DEV_STREAM, STREAM_REPORT = 40, 88     # OPXY_DEV_STREAM and OPXY_STREAM_REPORT's bytes (S-09.009)
+STREAM_REPORT_V1 = 72                  # version 1's, without the FCS counts
 STREAM_WAYS = ['byte by byte', 'by the controller under flow control, fed by the core',
                'by the controller under flow control, fed by DMA']
 STREAM_OUTCOMES = ['streamed', "the slot's CRC failed, nothing sent", 'the slave never showed ready',
@@ -1787,7 +1788,7 @@ def show_start(mon):
 
 def stream_lines(r):
     """OPXY_DEV_STREAM's reply (after the status byte) in plain words."""
-    if len(r) < STREAM_REPORT or r[0] != 1:
+    if not ((r[:1] == b'\x01' and len(r) >= STREAM_REPORT_V1) or (r[:1] == b'\x02' and len(r) >= STREAM_REPORT)):
         return ["this start's stream: no report (an older bootloader, or not this build's)"]
     way, rc, end, fell, linked, held, ran = r[1], r[2], r[3], r[4], r[5], r[6], r[7]
     (sessions, parts, fast, slow, fell_session, fell_at, us, guard_us, wait_us, wait_max,
@@ -1807,6 +1808,10 @@ def stream_lines(r):
         out.append('  pacing:   guard %d us, %.3f ms in the guards; %d parts began with the line high, '
                    '%.3f ms waited, the longest %d us' % (guard, guard_us / 1000.0, high, wait_us / 1000.0,
                                                            wait_max))
+        if r[0] >= 2:
+            samples, fcs, fcs_parts, first = struct.unpack_from('<4I', r, 72)
+            out.append('  held:     SPI_STAT.FCS set in %d of %d samples, in %d parts%s' % (
+                fcs, samples, fcs_parts, ', the first at byte %d' % (first - 1) if first else ''))
         if fell:
             out.append('  fell back at byte %d of session %d: %s; the rest one byte at a time' % (
                 fell_at, fell_session, STREAM_CAUSES[fell] if fell < len(STREAM_CAUSES) else 'cause %d' % fell))

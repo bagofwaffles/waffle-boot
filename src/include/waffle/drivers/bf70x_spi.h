@@ -351,6 +351,13 @@ void wb_spi_dma_close(const struct wb_spi *s);
 #define WB_DMA_ARRAY_SEND8  0x00035001u	/* WB_DMA_ARRAY_SEND, 8-bit peripheral words */
 int wb_spi_dma_send_bytes(const struct wb_spi *s, const uint8_t *buf, size_t n,
 			  uint32_t *left);
+/* SPI_STAT read in the waits of the parts so far, and how often FCS was set
+ * (the slave's ready line holding the controller, HRM SPI_STAT); clear
+ * starts the count again. */
+struct wb_spi_fcs {
+	uint32_t samples, held;
+};
+void wb_spi_boot_fcs(struct wb_spi_fcs *out, bool clear);
 #endif
 
 /*

@@ -425,12 +425,26 @@ static struct s09_fast_ops boot_fast_ops;
 static bool boot_dma_slow, boot_dma_words;
 static uint32_t boot_dma_fault[4];
 
+static struct opxy_boot_fcs boot_fcs;
+
 static int boot_dma_part(void *ctx, const uint8_t *d, size_t n, size_t *left)
 {
 	struct wb_spi *s = ctx;
 	struct wb_spi_fault f;
+	struct wb_spi_fcs was, now;
 	uint32_t l = 0;
-	const int rc = wb_spi_dma_send_bytes(s, d, n, &l);
+	int rc;
+
+	wb_spi_boot_fcs(&was, false);
+	rc = wb_spi_dma_send_bytes(s, d, n, &l);
+	wb_spi_boot_fcs(&now, false);
+	boot_fcs.samples = now.samples;
+	boot_fcs.held = now.held;
+	if (now.held != was.held) {
+		boot_fcs.parts++;
+		if (boot_fcs.first == 0u)
+			boot_fcs.first = boot_fast.st.fast_bytes + 1u;
+	}
 
 	if (rc == WB_SPI_OK)
 		return S09_PART_OK;
@@ -497,6 +511,8 @@ static void boot_dma_select(void *ctx, bool on)
 		(void)wb_spi_words_end(s);
 		boot_dma_words = false;
 	}
+	if (on && boot_fc_sessions > 1u)
+		s09_fast_session_guard(&boot_fast);	/* the select high through it */
 	wb_spi_select(s, on);
 	if (on && boot_dma_slow) {
 		(void)wb_spi_words_begin(s);
@@ -516,12 +532,15 @@ struct s09_boot_ops opxy_boot_ops_dma(struct opxy_hw *hw)
 		&hw->link_spi, ready_pa6, boot_dma_select, boot_fc_xfer, boot_dma_send,
 		boot_fc_failed,
 	};
+	struct wb_spi_fcs none;
 
 	boot_fc_sessions = 0u;
 	boot_fc_fault = false;
 	boot_way = 2u;
 	boot_dma_slow = boot_dma_words = false;
 	boot_dma_fault[0] = boot_dma_fault[1] = boot_dma_fault[2] = boot_dma_fault[3] = 0u;
+	boot_fcs = (struct opxy_boot_fcs){ 0 };
+	wb_spi_boot_fcs(&none, true);
 	boot_clock = opxy_clock(hw);
 	boot_fast_ops.ctx = &hw->link_spi;
 	boot_fast_ops.ready = ready_pa6;
@@ -537,6 +556,11 @@ struct s09_boot_ops opxy_boot_ops_dma(struct opxy_hw *hw)
 const struct s09_fast *opxy_boot_fast(void)
 {
 	return &boot_fast;
+}
+
+void opxy_boot_fcs_stats(struct opxy_boot_fcs *out)
+{
+	*out = boot_fcs;
 }
 
 void opxy_boot_fast_fault(uint32_t out[4])

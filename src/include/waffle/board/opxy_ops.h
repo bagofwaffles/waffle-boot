@@ -88,6 +88,13 @@ struct s09_boot_ops opxy_boot_ops_dma(struct opxy_hw *hw);
  * driver's four fault words of the part that started a fall-back. */
 const struct s09_fast *opxy_boot_fast(void);
 void opxy_boot_fast_fault(uint32_t out[4]);
+/* SPI0_STAT.FCS in the DMA-fed parts (S-13b.023): the status reads taken
+ * while they ran, those with FCS set, the parts that saw it set, and the
+ * slot's bytes clocked before the first such part, plus one (0: none). */
+struct opxy_boot_fcs {
+	uint32_t samples, held, parts, first;
+};
+void opxy_boot_fcs_stats(struct opxy_boot_fcs *out);
 /* Which of the two this start's stream took: 1 core-fed, 2 DMA-fed, 0 neither. */
 unsigned opxy_boot_way(void);
 #if OPXY_BOOT_LINK_FC == 2

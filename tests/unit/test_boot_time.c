@@ -637,7 +637,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 115u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 119u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -744,7 +744,15 @@ static void test_dma_lines(void)
 	t.dma_high = 3u;
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 4u,
 		      "stream by DMA: 437 parts, guard 20 us, 9.180 ms in the guards, "
-		      "3 parts began with the ready line high"));
+		      "3 parts began with the ready line high; FCS set in 0 of 0 samples, 0 parts"));
+	t.dma_fcs_samples = 91000u;
+	t.dma_fcs_held = 2400u;
+	t.dma_fcs_parts = 380u;
+	t.dma_fcs_first = 17u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 4u,
+		      "stream by DMA: 437 parts, guard 20 us, 9.180 ms in the guards, "
+		      "3 parts began with the ready line high; FCS set in 2400 of 91000 samples, "
+		      "380 parts, the first at byte 16"));
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 5u, "stream fall-back: none"));
 	t.dma_held = 1u;
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 5u,
@@ -770,7 +778,9 @@ static void test_dma_lines(void)
 	CHECK(boot_time_unpack(rec, &back, &mhz));
 	CHECK(back.dma_parts == 437u && back.dma_guard == 20u && back.dma_guard_us == 9180u &&
 	      back.dma_high == 3u && back.dma_fell == S09_PART_NO_END && back.dma_fell_session == 7u &&
-	      back.dma_fell_at == 6200u && back.dma_slow_bytes == 415176u && back.dma_held == 0u);
+	      back.dma_fell_at == 6200u && back.dma_slow_bytes == 415176u && back.dma_held == 0u &&
+	      back.dma_fcs_samples == 91000u && back.dma_fcs_held == 2400u &&
+	      back.dma_fcs_parts == 380u && back.dma_fcs_first == 17u);
 	CHECK(line_is(&back, BOOT_TIME_COUNT + 5u,
 		      "stream fall-back at byte 6200 of session 7: no end of the transmit with the "
 		      "line low, then 415176 bytes one at a time"));

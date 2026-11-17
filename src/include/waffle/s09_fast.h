@@ -90,6 +90,10 @@ void s09_fast_init(struct s09_fast *f, const struct s09_fast_ops *ops,
  * mode. */
 void s09_fast_pause(struct s09_fast *f);
 
+/* S-13b.023: before a stream session's chip select falls, the guard from the
+ * last part's end, so that the gap at every piece and block boundary is one
+ * with the select high. Nothing after a fall-back. */
+void s09_fast_session_guard(struct s09_fast *f);
 /*
  * One stream session's bytes, the chip select asserted by the caller: true
  * when all of them went, by the controller or after a fall-back one at a

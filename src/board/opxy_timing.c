@@ -279,6 +279,7 @@ void opxy_timing_stream_end(void)
 {
 #if OPXY_BOOT_LINK_FC
 	const struct s09_fast_stats *f = &opxy_boot_fast()->st;
+	struct opxy_boot_fcs fcs;
 
 	if (opxy_boot_way() == 2u && f->sessions != 0u) {
 		opxy_boot_time.flags |= BOOT_TIME_LINK_DMA;
@@ -291,6 +292,11 @@ void opxy_timing_stream_end(void)
 		opxy_boot_time.dma_fell_at = f->fell_at;
 		opxy_boot_time.dma_slow_bytes = f->slow_bytes;
 		opxy_boot_time.dma_held = f->held ? 1u : 0u;
+		opxy_boot_fcs_stats(&fcs);
+		opxy_boot_time.dma_fcs_samples = fcs.samples;
+		opxy_boot_time.dma_fcs_held = fcs.held;
+		opxy_boot_time.dma_fcs_parts = fcs.parts;
+		opxy_boot_time.dma_fcs_first = fcs.first;
 	}
 #endif
 	if (stream_begun)

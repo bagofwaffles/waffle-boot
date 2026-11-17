@@ -389,7 +389,17 @@ static bool dma_line(const struct boot_time *t, bool fell, struct s14_text *out)
 		text_ms(out, t->dma_guard_us);
 		s14_text_str(out, " in the guards, ");
 		s14_text_dec(out, t->dma_high);
-		s14_text_str(out, " parts began with the ready line high");
+		s14_text_str(out, " parts began with the ready line high; FCS set in ");
+		s14_text_dec(out, t->dma_fcs_held);
+		s14_text_str(out, " of ");
+		s14_text_dec(out, t->dma_fcs_samples);
+		s14_text_str(out, " samples, ");
+		s14_text_dec(out, t->dma_fcs_parts);
+		s14_text_str(out, " parts");
+		if (t->dma_fcs_first != 0u) {
+			s14_text_str(out, ", the first at byte ");
+			s14_text_dec(out, t->dma_fcs_first - 1u);
+		}
 		return true;
 	}
 	if (t->dma_fell == 0u) {
@@ -589,6 +599,7 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->slot_reread_good, &t->slot_trial,
 		&t->dma_parts, &t->dma_guard, &t->dma_guard_us, &t->dma_high, &t->dma_fell,
 		&t->dma_fell_session, &t->dma_fell_at, &t->dma_slow_bytes, &t->dma_held,
+		&t->dma_fcs_samples, &t->dma_fcs_held, &t->dma_fcs_parts, &t->dma_fcs_first,
 		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
 		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};

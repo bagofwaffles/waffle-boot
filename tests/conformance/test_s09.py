@@ -700,9 +700,9 @@ class BootStream(unittest.TestCase):
         path = spec_path('S-09-bridge', 'vectors', 'slave_stream_%s.bin' % vector)
         f = run('s09', ['bootf %s %d %d %d %d %d %d' % (path, stuck, late, bound, guard, fault,
                                                         at)])[0].split()
-        rc, end, high, release, elapsed, early, fell, fell_at, slow, after, nparts = (int(x) for x in f[:11])
-        flat = [int(x) for x in f[11:11 + nparts]]
-        sessions = [unhex(x) for x in f[11 + nparts:]]
+        rc, end, high, release, elapsed, early, fell, fell_at, slow, after, gap, nparts = (int(x) for x in f[:12])
+        flat = [int(x) for x in f[12:12 + nparts]]
+        sessions = [unhex(x) for x in f[12 + nparts:]]
         parts, k = [], 0
         for s in sessions[1:]:
             group, n = [], 0
@@ -712,7 +712,7 @@ class BootStream(unittest.TestCase):
                 k += 1
             parts.append(group)
         return {'rc': rc, 'end': end, 'high': high, 'release': release, 'elapsed': elapsed, 'early': early,
-                'fell': fell, 'fell_at': fell_at, 'slow': slow, 'after': after, 'nparts': nparts,
+                'fell': fell, 'fell_at': fell_at, 'slow': slow, 'after': after, 'gap': gap, 'nparts': nparts,
                 'parts': parts, 'sessions': sessions}
 
     @scenario('S-09/B-STREAM')
@@ -749,6 +749,14 @@ class BootStream(unittest.TestCase):
         self.assertGreater(self.bootf('final', late=25, bound=1, guard=20)['early'], 0)
         self.assertEqual(self.bootf('final', late=25, bound=1, guard=40)['early'], 0)
         self.assertGreater(self.bootf('final', late=3, bound=0, guard=20)['early'], 0)
+        # before each stream session the guard passes with the chip select high (S-13b.023): a long
+        # guard covers a slave that raises PA6 late at a piece or a block, with the select high
+        for guard in (20, 200, 1000):
+            r = self.bootf('final', late=guard * 3 // 4, bound=1, guard=guard)
+            with self.subTest(guard=guard):
+                self.assertEqual((r['rc'], r['high'], r['early']), (0, 0, 0))
+                self.assertGreaterEqual(r['gap'], guard)
+                self.assertEqual(r['sessions'], self.boot('final')['sessions'])
         # the byte path's settle time covers none of these past 2 us
         self.assertGreater(self.bootx('final', 0, late=5, settle=2)['early'], 0)
 

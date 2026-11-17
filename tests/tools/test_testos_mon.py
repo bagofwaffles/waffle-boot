@@ -798,12 +798,27 @@ class Stream(unittest.TestCase):
     """dev-stream: OPXY_DEV_STREAM's report of this start's slave boot stream (S-09.009), as
     opxy_stream_report() lays it out (waffle/board/opxy_boot.h)."""
 
-    def report(self, way=2, rc=0, end=0, fell=0, linked=1, held=0, ran=1, words=(), fault=(0, 0, 0, 0)):
+    def report(self, way=2, rc=0, end=0, fell=0, linked=1, held=0, ran=1, words=(), fault=(0, 0, 0, 0),
+               fcs=(0, 0, 0, 0), version=2):
         w = list(words) + [0] * (12 - len(words))
-        r = bytes([1, way, rc, end, fell, linked, held, ran]) + struct.pack('<12I', *w) + \
+        r = bytes([version, way, rc, end, fell, linked, held, ran]) + struct.pack('<12I', *w) + \
             struct.pack('<4I', *fault)
-        self.assertEqual(len(r), m.STREAM_REPORT)
+        if version >= 2:
+            r += struct.pack('<4I', *fcs)
+        self.assertEqual(len(r), m.STREAM_REPORT if version >= 2 else m.STREAM_REPORT_V1)
         return r
+
+    def test_fcs(self):
+        words = (412, 437, 421376, 0, 0, 0, 120500, 9180, 30, 12, 3, 1000)
+        lines = m.stream_lines(self.report(words=words, fcs=(91000, 2400, 380, 17)))
+        self.assertIn('  held:     SPI_STAT.FCS set in 2400 of 91000 samples, in 380 parts, the first at byte 16',
+                      lines)
+        lines = m.stream_lines(self.report(words=words, fcs=(91000, 0, 0, 0)))
+        self.assertIn('  held:     SPI_STAT.FCS set in 0 of 91000 samples, in 0 parts', lines)
+        lines = m.stream_lines(self.report(words=words, version=1))
+        self.assertFalse(any(x.startswith('  held:') for x in lines))
+        self.assertIn('  fell back: no', lines)
+        self.assertIn('no report', m.stream_lines(self.report(words=words)[:80])[0])
 
     def test_none(self):
         self.assertIn('no report', m.stream_lines(b'')[0])
@@ -844,7 +859,7 @@ class Stream(unittest.TestCase):
         class New:
             def checked(self, payload, timeout=5.0):
                 self.asked = payload
-                return bytes([1, 2, 0, 0, 0, 1, 0, 1]) + bytes(64)
+                return bytes([2, 2, 0, 0, 0, 1, 0, 1]) + bytes(80)
         out = io.StringIO()
         new = New()
         with contextlib.redirect_stdout(out):

@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-09.019, with BOOT_LINK_FC=1 or 2: the slave's check of the L1 code the
+ * S-09.019, with OPXY_BOOT_L1_CHECK (waffle/board/opxy.h): the slave's check of the L1 code the
  * stream loaded, the one part of the main image the front's check does not
  * read (waffle/board/opxy_boot.h).
  */
 #include "waffle/board/opxy_boot.h"
 
-#if OPXY_BOOT_LINK_FC && !defined(OPXY_TEST_OS)
+#if OPXY_BOOT_L1_CHECK && !defined(OPXY_TEST_OS)
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_coremmr.h"
 #include "waffle/drivers/bf70x_cplb.h"

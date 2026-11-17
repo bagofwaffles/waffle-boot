@@ -48,6 +48,9 @@ static struct {
 	/* what came */
 	unsigned long bytes, fc_bytes, core_bytes, while_high, core_fc;
 	bool selected;
+	/* the select high before each session after the opening: the least */
+	uint64_t raised_at, gap_min;
+	bool gap_seen;
 	unsigned n;
 	size_t len[MAX_SESS];
 	uint8_t sess[MAX_SESS][1100];
@@ -159,10 +162,17 @@ static bool hook(void *ctx, enum fake_mmr_op op, unsigned width, wb_mmr_addr add
 		} else if (addr == SPI_SLVSEL(N)) {
 			const bool on = (*value & SPI_SLVSEL_SSE(3)) && !(*value & SPI_SLVSEL_SSEL(3));
 
+			if (on && !bd.selected && bd.n >= 1u &&
+			    (!bd.gap_seen || cycles_now() - bd.raised_at < bd.gap_min)) {
+				bd.gap_min = cycles_now() - bd.raised_at;
+				bd.gap_seen = true;
+			}
 			if (on && !bd.selected && bd.n < MAX_SESS)
 				bd.len[bd.n] = 0;
-			if (!on && bd.selected)
+			if (!on && bd.selected) {
 				bd.n++;
+				bd.raised_at = cycles_now();
+			}
 			bd.selected = on;
 		}
 		return true;
@@ -388,6 +398,7 @@ static void test_stream(void)
 	for (size_t i = 0; i < s09v_streams_count; i++) {
 		const struct s09v_stream *v = &s09v_streams[i];
 		const struct s09_fast_stats *f;
+		struct opxy_boot_fcs fcs;
 		uint8_t r[OPXY_STREAM_REPORT];
 
 		reset();
@@ -398,14 +409,21 @@ static void test_stream(void)
 		CHECK(bd.core_bytes == 1u && bd.fc_bytes == slot_bytes(v));
 		CHECK(bd.while_high == 0u && bd.dma_cfg_bad == 0u && bd.dma_without_fc == 0u);
 		CHECK(left_clean());
-		/* the guard after the opening session too */
+		/* the guard after the opening session too, and before every
+		 * stream session with the select high (S-13b.023) */
 		CHECK(bd.first_part_at - bd.opened_at >= (uint64_t)OPXY_BOOT_LINK_GUARD_US * OPXY_CCLK_MHZ);
+		CHECK(bd.gap_seen && bd.gap_min >= (uint64_t)OPXY_BOOT_LINK_GUARD_US * OPXY_CCLK_MHZ);
+		/* SPI0_STAT read while the parts ran; PA6 never high, so no FCS */
+		opxy_boot_fcs_stats(&fcs);
+		CHECK(fcs.samples != 0u && fcs.held == 0u && fcs.parts == 0u && fcs.first == 0u);
 		f = &opxy_boot_fast()->st;
 		CHECK(f->fell == S09_PART_OK && !f->held && f->slow_bytes == 0u);
 		CHECK(f->parts == bd.dma_starts && f->fast_bytes == slot_bytes(v));
 		CHECK(opxy_boot_way() == 2u);
 		CHECK(opxy_stream_report(r) == OPXY_STREAM_REPORT);
-		CHECK(r[0] == 1u && r[1] == 2u && r[2] == S09_BOOT_STREAMED && r[3] == (uint8_t)v->end);
+		CHECK(r[0] == 2u && r[1] == 2u && r[2] == S09_BOOT_STREAMED && r[3] == (uint8_t)v->end);
+		CHECK(s06_rd_le32(r + 72) == fcs.samples && s06_rd_le32(r + 76) == 0u &&
+		      s06_rd_le32(r + 80) == 0u && s06_rd_le32(r + 84) == 0u);
 		CHECK(r[4] == 0u && r[6] == 0u && r[7] == 1u);
 		CHECK(s06_rd_le32(r + 8) == v->sn - 1u);
 		CHECK(s06_rd_le32(r + 12) == f->parts);
@@ -433,6 +451,15 @@ static void test_holds(void)
 			CHECK(same_sessions(v));
 			CHECK(bd.while_high == 0u);
 			CHECK(opxy_boot_fast()->st.fell == S09_PART_OK);
+			/* a hold inside a payload part holds the controller: FCS
+			 * read set in that part, at or before the held byte */
+			if (at[a] == 500u && us[u] >= 300u) {
+				struct opxy_boot_fcs fcs;
+
+				opxy_boot_fcs_stats(&fcs);
+				CHECK(fcs.held != 0u && fcs.parts >= 1u);
+				CHECK(fcs.first != 0u && fcs.first - 1u <= 500u);
+			}
 		}
 }
 
