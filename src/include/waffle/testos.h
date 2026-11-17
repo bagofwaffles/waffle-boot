@@ -328,6 +328,13 @@ void opxy_testos_bus_note(char what, int rc, const uint8_t *d, size_t n);
 #else
 #define OPXY_TESTOS_MON_ON false
 #endif
+/* The full-screen paint at each start-up stage (src/testos/opxy_testos_paint.c):
+ * the panel variants have it; the monitor and the installer paint only a fatal. */
+#if defined(OPXY_TESTOS_MONITOR) || defined(OPXY_TESTOS_INSTALLER)
+#define OPXY_TESTOS_STAGE_PAINTS false
+#else
+#define OPXY_TESTOS_STAGE_PAINTS true
+#endif
 /* Whether this address range may be read, or (write) written. */
 bool opxy_testos_mem_ok(uint32_t addr, uint32_t len, bool write);
 /*

@@ -181,7 +181,7 @@ void opxy_testos_entry_paint(void)
 	} else if (!record_initialized()) {
 		outcome = PAINT_NORECORD;
 	} else {
-		if (!OPXY_TESTOS_MON_ON) {
+		if (OPXY_TESTOS_STAGE_PAINTS) {
 			paint_private(paints[OPXY_PAINT_RED].rgb565);
 			hold();
 		}
@@ -243,10 +243,9 @@ void opxy_testos_paint(enum opxy_testos_paint which)
 		record(which, PAINT_SLAVE);
 		return;
 	}
-	/* The monitor's image logs its milestones and paints only a fatal. Its
-	 * panel starts in the early logo, with the backlight already off
-	 * (opxy_testos_started()), so the first thing seen is the logo. */
-	if (OPXY_TESTOS_MON_ON && which != OPXY_PAINT_MAGENTA) {
+	/* The monitor's and the installer's images log their milestones and
+	 * paint only a fatal, so the first thing seen is the early logo. */
+	if (!OPXY_TESTOS_STAGE_PAINTS && which != OPXY_PAINT_MAGENTA) {
 		record(which, PAINT_DONE);
 		return;
 	}

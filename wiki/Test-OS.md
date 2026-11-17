@@ -48,6 +48,7 @@ S-15.092 to S-15.094; S-15.170 says how to reach it).
 ### The color trail
 
 The panel changes color at each start-up milestone, so a unit that shows nothing else shows how far it got.
+The monitor and the installer leave the trail out and paint only a fatal stop (magenta).
 
 ## The USB monitor
 
