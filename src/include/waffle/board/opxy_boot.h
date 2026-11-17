@@ -207,6 +207,9 @@ struct opxy_master {
 	struct s09_bus_ops bus_ops;
 	struct s09_master bridge;
 	bool slave_present;
+	/* S-09.075: the highest rung opxy_bridge_fast() raises the link to,
+	 * OPXY_LINK_CEILING from the bridge's start */
+	uint8_t link_ceiling;
 	struct s09_clock_msg clock_msg;	/* S-09.046: the last 0xBD sent */
 	struct s03_emmc_ops emmc_ops;
 	struct s03_env emmc;

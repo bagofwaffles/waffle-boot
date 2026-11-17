@@ -204,6 +204,8 @@ static struct {
 	unsigned fail_read;
 	/* every link test outside the plain mode arrives with a bit wrong */
 	bool bad_tests;
+	int phase;			/* the bus's last configure() */
+	unsigned quad_sends;		/* request sessions sent on rung 3 or 4 */
 } lb;
 
 static bool lb_ready(void *c)
@@ -259,6 +261,8 @@ static bool lb_send(void *c, const uint8_t *d, size_t n)
 	(void)c;
 	if (lb.dead || lb.reply_session || lb.req_n + n > sizeof lb.req)
 		return false;
+	if (lb.phase >= S09_PHASE_RUNG(S09_RUNG_QUAD))
+		lb.quad_sends++;
 	memcpy(lb.req + lb.req_n, d, n);
 	lb.req_n += n;
 	lb.done = true;
@@ -289,7 +293,7 @@ static bool lb_recv(void *c, uint8_t *d, size_t n)
 static void lb_configure(void *c, int phase)
 {
 	(void)c;
-	(void)phase;
+	lb.phase = phase;
 }
 
 static const struct s09_bus_ops bus = {
@@ -451,6 +455,7 @@ static void fresh(void)
 	m.hw.time = opxy_time;
 	m.clock = opxy_clock(&m.hw);
 	s09_master_init(&m.bridge, &bus, &sim.clock);
+	m.link_ceiling = OPXY_LINK_CEILING;	/* as the bridge's start sets it */
 	CHECK(s09_master_start(&m.bridge));
 	m.slave_present = true;
 	s09_files_init(&m.sv.files, &m.bridge);
@@ -709,16 +714,38 @@ static void test_spiboot_step(void)
 }
 
 /* S-09.075: the link is brought up to speed before an extraction; the
- * run's steps then work on its rung, and the log says where it is. */
+ * run's steps then work on its rung, and the log says where it is. The
+ * board's ceiling is single I/O at 50 MHz: no quad request is sent. */
 static void test_link_fast(void)
 {
 	t_case = "link";
 	fresh();
+	CHECK_EQ(m.link_ceiling, S09_RUNG_CHECKED_FAST);
+	CHECK_EQ(s09_master_rung(&m.bridge), S09_RUNG_PLAIN);
+	opxy_bridge_fast(&m);
+	CHECK_EQ(s09_master_rung(&m.bridge), S09_RUNG_CHECKED_FAST);
+	CHECK_EQ(s09_slave_mode(&sl), S09_MODE_CHECKED);
+	CHECK_EQ(m.sv.files.link, S09_RUNG_CHECKED_FAST);
+	stage_all();
+	extracted();
+	CHECK(step.bootloader_write(step.ctx));
+	CHECK(slot1_holds_image());
+	CHECK_EQ(s09_master_fell(&m.bridge), 0u);
+	CHECK_EQ(s09_master_rung(&m.bridge), S09_RUNG_CHECKED_FAST);
+	opxy_bridge_plain(&m);
+	CHECK_EQ(s09_master_rung(&m.bridge), S09_RUNG_PLAIN);
+	CHECK_EQ(s09_slave_mode(&sl), S09_MODE_PLAIN);
+	CHECK_EQ(lb.quad_sends, 0u);
+
+	/* the quad rungs, through the board, with the ceiling at the top */
+	fresh();
+	m.link_ceiling = S09_RUNG_TOP;
 	CHECK_EQ(s09_master_rung(&m.bridge), S09_RUNG_PLAIN);
 	opxy_bridge_fast(&m);
 	CHECK_EQ(s09_master_rung(&m.bridge), S09_RUNG_TOP);
 	CHECK_EQ(s09_slave_mode(&sl), S09_MODE_QUAD);
 	CHECK_EQ(m.sv.files.link, S09_RUNG_TOP);
+	CHECK(lb.quad_sends != 0u);		/* the count sees quad requests */
 	stage_all();
 	extracted();
 	CHECK(step.bootloader_write(step.ctx));
@@ -801,6 +828,27 @@ static void test_link_log(void)
 	m.node.link[S06_LINK_CDC] = &m.link[S06_LINK_CDC];
 	m.sv.host_ops.cdc_open = cdc_is_open;
 	m.sv.log.cdc_on = true;
+	cdc_n = 0;
+	opxy_bridge_fast(&m);
+	CHECK(cdc_has("bridge: tried rung 2 (single I/O at 50 MHz, checked): tests passed"));
+	CHECK(cdc_has(" us: kept"));
+	CHECK(cdc_has("bridge: requests run in single I/O at 50 MHz, checked"));
+	CHECK(!cdc_has("rung 3") && !cdc_has("rung 4") && !cdc_has("quad"));
+	cdc_n = 0;
+	opxy_bridge_plain(&m);
+	CHECK(cdc_has("bridge: requests ran in single I/O at 50 MHz, checked"));
+	CHECK(cdc_has("bridge: the link was lowered to plain when it ended"));
+	CHECK_EQ(lb.quad_sends, 0u);
+
+	/* with the ceiling at the top: the quad rungs, and a fall-back
+	 * from rung 4 */
+	fresh();
+	s06_link_init(&m.link[S06_LINK_CDC], &cdc_port, NULL, S06_ADDR_MASTER,
+		      S06_ADDR_HOST);
+	m.node.link[S06_LINK_CDC] = &m.link[S06_LINK_CDC];
+	m.sv.host_ops.cdc_open = cdc_is_open;
+	m.sv.log.cdc_on = true;
+	m.link_ceiling = S09_RUNG_TOP;
 	cdc_n = 0;
 	opxy_bridge_fast(&m);
 	CHECK(cdc_has("bridge: tried rung 4 (quad I/O at 50 MHz, checked): tests passed"));
@@ -1603,6 +1651,10 @@ static void test_whole_hold(void)
 	CHECK(res.reason == S11_REASON_NONE);
 	CHECK_EQ(ks.asks, 2u);
 	CHECK(res.run.end == S11_RUN_DONE);
+	/* S-09.075: the board's ceiling, single I/O at 50 MHz; no quad
+	 * request session in the whole install */
+	CHECK(cdc_has("bridge: requests run in single I/O at 50 MHz, checked"));
+	CHECK_EQ(lb.quad_sends, 0u);
 	CHECK(slot1_holds_image());
 	CHECK(first_stage_is(v_boot_fs_good, sizeof v_boot_fs_good));
 	/* each confirmed when its hold reached 5 s, not before; the key

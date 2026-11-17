@@ -362,6 +362,7 @@ static bool slave_start(void *ctx)
 	(void)wb_gpio_input(OPXY_PC5);
 	m->bus_ops = opxy_bus_ops(&m->hw);
 	s09_master_init(&m->bridge, &m->bus_ops, &m->clock);
+	m->link_ceiling = OPXY_LINK_CEILING;	/* S-09.075 */
 	s09_master_fault_source(&m->bridge, bridge_fault, &m->hw);	/* the link's record */
 	s09_master_fault_more(&m->bridge, bridge_fault_more, &m->hw);
 	s09_master_quad_recv(&m->bridge, opxy_bus_quad_recv, &m->hw.link_spi);	/* S-09.080 */

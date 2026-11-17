@@ -52,13 +52,22 @@ int32_t opxy_slave_emmc(const struct s03_emmc_ops *emmc,
 			uint32_t n);
 
 /*
- * S-09.075: the link brought to the best rung that passes its tests and its
- * gate, once a master has work that is worth it (an install's extraction);
- * nothing with the slave absent. The log gets a line for each rung the
- * negotiation tried, then where requests run and how they are sent.
+ * S-09.075: the link brought to the best rung up to the master's
+ * link_ceiling that passes its tests and its gate, once a master has work
+ * that is worth it (an install's extraction); nothing with the slave absent.
+ * A staging file's open brings it back up to the same ceiling. The log gets
+ * a line for each rung the negotiation tried, then where requests run and
+ * how they are sent.
  */
 struct opxy_master;
 void opxy_bridge_fast(struct opxy_master *m);
+/*
+ * S-09.075: the board's ceiling, the field link_ceiling of struct
+ * opxy_master. Single I/O at 50 MHz for now: the quad request rungs fail
+ * the link's tests at 64 bytes. The quad rungs stay defined, and the link
+ * test and the quad reply test still run them.
+ */
+#define OPXY_LINK_CEILING S09_RUNG_CHECKED_FAST
 /* The link's record that the log has not had yet: a line for each rung of
  * a negotiation since, and one for each fall-back of a request. */
 void opxy_bridge_report(struct opxy_master *m);

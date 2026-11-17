@@ -431,8 +431,8 @@ void opxy_bridge_fast(struct opxy_master *m)
 {
 	if (!m->slave_present)
 		return;
-	(void)s09_master_link_fast(&m->bridge, S09_RUNG_TOP);
-	m->sv.files.link = S09_RUNG_TOP;
+	(void)s09_master_link_fast(&m->bridge, m->link_ceiling);
+	m->sv.files.link = m->link_ceiling;
 	if (s09_master_check_bad(&m->bridge))	/* S-09.072 */
 		s14_log_str(&m->sv.log, S14_ERROR, S14_NO_TAG,
 			    "bridge: the check failed its own test; requests stay plain");

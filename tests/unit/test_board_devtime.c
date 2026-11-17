@@ -267,6 +267,8 @@ static struct {
 	size_t req_n;
 	const uint8_t *rep;
 	size_t rep_n, rep_at;
+	int phase;			/* the bus's last configure() */
+	unsigned quad_sends;		/* request sessions sent on rung 3 or 4 */
 } lb;
 
 static bool lb_ready(void *c)
@@ -306,6 +308,8 @@ static bool lb_send(void *c, const uint8_t *d, size_t n)
 	(void)c;
 	if (lb.reply_session || lb.req_n + n > sizeof lb.req)
 		return false;
+	if (lb.phase >= S09_PHASE_RUNG(S09_RUNG_QUAD))
+		lb.quad_sends++;
 	memcpy(lb.req + lb.req_n, d, n);
 	lb.req_n += n;
 	lb.done = true;
@@ -326,7 +330,7 @@ static bool lb_recv(void *c, uint8_t *d, size_t n)
 static void lb_configure(void *c, int phase)
 {
 	(void)c;
-	(void)phase;
+	lb.phase = phase;
 }
 
 /* S-13b.084 on the master: the test reply's session, whole. */
@@ -376,6 +380,7 @@ static bool bridge_up(void)
 	s09_slave_qtest_source(&sl, st_qtest, NULL);
 	s09_master_init(&m.bridge, &bus, &clk);
 	s09_master_quad_recv(&m.bridge, lb_quad, NULL);
+	m.link_ceiling = OPXY_LINK_CEILING;	/* as the bridge's start sets it */
 	if (!s09_master_start(&m.bridge))
 		return false;
 	m.slave_present = true;
@@ -499,6 +504,7 @@ static void test_extract(void)
 	memcpy(vol_before, vol, VOL_LEN);
 	memset(reqs, 0, sizeof(reqs));
 	wrote = 0;
+	lb.quad_sends = 0;
 
 	memset(reply, 0xEE, sizeof(reply));
 	reply[0] = OPXY_DEV_OK;		/* as opxy_dev_host() sets it */
@@ -545,11 +551,13 @@ static void test_extract(void)
 	CHECK(!memcmp(before, disk, (size_t)DISK_SECTORS * 512u),
 	      "extract: the disk is as it was");
 	CHECK(!memcmp(vol_before, vol, VOL_LEN), "extract: the volume is as it was");
-	/* the link was brought up as an install's extraction would have it */
+	/* the link was brought up as an install's extraction would have it:
+	 * to the board's ceiling, single I/O at 50 MHz, no quad request */
 	{
 		const uint8_t *link = batch(OPXY_PROBE_BATCHES) + 2;
 
-		CHECK(link[0] == S09_RUNG_TOP && link[1] == 0u &&
+		CHECK(lb.quad_sends == 0u, "extract: no quad request (%u)", lb.quad_sends);
+		CHECK(link[0] == S09_RUNG_CHECKED_FAST && link[1] == 0u &&
 		      link[2] == S09_WRITE_MAX / 1024u && reqs[S09_LINK_TEST] != 0u,
 		      "extract: the link's rung %u, fell %u, %u KiB a write",
 		      link[0], link[1], link[2]);
@@ -649,7 +657,8 @@ static void test_link_record(void)
 	for (unsigned p = 0; p < OPXY_RECORD_PARTS; p++)
 		CHECK(1u + opxy_bridge_record(&m.bridge, p, big_reply) <= 249u,
 		      "record: part %u fits", p);
-	/* a fall-back, then its part */
+	/* a fall-back from rung 4, then its part: the ceiling at the top */
+	m.link_ceiling = S09_RUNG_TOP;
 	opxy_bridge_fast(&m);
 	s09_slave_link_fault(&sl);
 	{
@@ -774,6 +783,13 @@ static void test_link_bench(void)
 	opxy_bridge_fast(&m);
 	CHECK(s09_master_rung(&m.bridge) == S09_RUNG_QUAD && ceiling == S09_RUNG_QUAD,
 	      "link test: raised again after");
+	opxy_bridge_plain(&m);
+	/* the board's own ceiling */
+	m.link_ceiling = OPXY_LINK_CEILING;
+	lb.quad_sends = 0;
+	opxy_bridge_fast(&m);
+	CHECK(s09_master_rung(&m.bridge) == S09_RUNG_CHECKED_FAST && lb.quad_sends == 0u,
+	      "link test: an install after it at the board's ceiling");
 	opxy_bridge_plain(&m);
 }
 

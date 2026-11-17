@@ -130,8 +130,8 @@ For `dev-check` and `dev-extract`, copy the package, run `sync`, and **do not ej
 install). Nothing is written, so the package still installs. All three are refused during a long
 operation, a scan or install, or a host-link transfer.
 
-`dev-extract` raises the bridge to its fastest working rung first (S-09.075) and lowers it to plain mode at
-the end (S-09.078). USB is not serviced during the link tests, usually under a second. If the tool says the
+`dev-extract` raises the bridge first as an install does (S-09.075): to single I/O at 50 MHz (rung 2), or
+the fastest rung below it that works. It lowers it to plain mode at the end (S-09.078). USB is not serviced during the link tests, usually under a second. If the tool says the
 slave is absent, installs are refused until a restart; restart too if it says the slave could not be told
 the link is plain.
 
@@ -142,7 +142,8 @@ the link is plain.
 | `dev-link-record` | The link's record for this start (S-09.070 to S-09.079): the last negotiation per rung, whether the slave is settled (if not, restart), the last 16 fall-backs, the last link test's faults |
 | `dev-link-test [N]` | N tests (default 16, 1 to 255) of each length from 12 bytes to 64 KiB on rungs 1 to 4 and plain mode; a table of passes, faults and speed against plain (under 1 is faster) |
 
-`dev-link-test` needs no package, writes nothing to the eMMC and sends only echoes, `0x19`, `0x1A` and
+An install raises the link no higher than rung 2; the quad I/O rungs 3 and 4 are run only by
+`dev-link-test` and `dev-quad-reply`. `dev-link-test` needs no package, writes nothing to the eMMC and sends only echoes, `0x19`, `0x1A` and
 `0x1B`. The default run sends about 17 MB in about 6 s, plus about 1 s per fault, bounded at 90 s. It is
 refused as the timing requests are, and without the slave. If the slave could not be told the link is
 plain at the end, restart. Reply formats: `src/include/waffle/devhost.h`.
