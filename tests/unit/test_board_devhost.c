@@ -882,6 +882,29 @@ static void test_boot_start(void)
 	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED && plen == 1u);
 }
 
+/*
+ * OPXY_DEV_QUAD_REPLY (S-09.080): malformed, refused with no slave, and with
+ * developer mode off refused as every request is, nothing sent on the bridge.
+ */
+static void test_quad_reply_gate(void)
+{
+	static const uint8_t cell[] = { 1, 0, 0, 12, 0, 0, 0, 1, 0 };
+	static const uint8_t bad[] = { 1, 3, 0, 12, 0, 0, 0, 1, 0 };
+	size_t plen;
+
+	host_reset();
+	dev_frame(OPXY_DEV_QUAD_REPLY, bad, sizeof(bad));
+	CHECK(reply_status(&plen) == OPXY_DEV_BAD && plen == 1u);
+	dev_frame(OPXY_DEV_QUAD_REPLY, cell, 3);
+	CHECK(reply_status(&plen) == OPXY_DEV_BAD && plen == 1u);
+	dev_frame(OPXY_DEV_QUAD_REPLY, cell, sizeof(cell));
+	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED && plen == 1u);	/* no slave */
+	m.sv.menu.dev_mode = false;
+	dev_frame(OPXY_DEV_QUAD_REPLY, cell, sizeof(cell));
+	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED && plen == 1u);
+	m.sv.menu.dev_mode = true;
+}
+
 /* OPXY_DEV_CAL_START: the answer, then S-04's W10: the shutdown, reason
  * 70 in the record, the hard reset (S-04.012). Refused with developer mode
  * off, and then nothing is written. */
@@ -951,6 +974,7 @@ int main(void)
 	RUN(test_ydump_gate);
 	RUN(test_files_no_slave);
 	RUN(test_boot_start);
+	RUN(test_quad_reply_gate);
 	RUN(test_cal_start);
 	return check_summary("test_board_devhost");
 }

@@ -90,6 +90,10 @@ void opxy_bus_fault(struct opxy_hw *hw, uint32_t out[4]);
 /* With it, as read at the failure: DMA4's DMA_STAT and DMA_CFG, SPI0_TXCTL,
  * SPI0_TWC (wb_spi_last_fault_more()). */
 void opxy_bus_fault_more(struct opxy_hw *hw, uint32_t out[4]);
+/* S-09.080, S-13b.084: the quad reply test's reply session on SPI0
+ * (s09_quad_recv_fn), ctx the bridge's controller. */
+bool opxy_bus_quad_recv(void *ctx, uint8_t *d, size_t n, unsigned clock,
+			uint32_t out[4]);
 /* S-16.095 Q0, K0 and K1 through the ROM's OTP read. S-11 passes its
  * package ctx, which these do not use. */
 extern const struct s11_unit_ops opxy_unit_ops;

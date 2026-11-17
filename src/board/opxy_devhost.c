@@ -676,6 +676,9 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 	case OPXY_DEV_LINK_TEST:
 		n = opxy_dev_link_test(m, f->payload + 1, f->len - 1u, out);
 		break;
+	case OPXY_DEV_QUAD_REPLY:	/* S-09.080, S-13b.084 */
+		n = opxy_dev_quad_reply(m, f->payload + 1, f->len - 1u, out);
+		break;
 	case OPXY_DEV_BOOT_START:	/* S-15.163's account, at any time */
 		n = 1u + opxy_start_report(m, out + 1);
 		break;

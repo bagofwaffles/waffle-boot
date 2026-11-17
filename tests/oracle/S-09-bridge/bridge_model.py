@@ -10,7 +10,8 @@ LINK_MODE = 0x19
 LINK_TEST = 0x1A
 LINK_STATUS = 0x1B                       # S-09.079
 STATUS_LEN = 36                          # S-09.079: its reply session's bytes
-IMMEDIATE = {0x01, 0x03, 0x05, 0x07, 0x0A, LINK_MODE, LINK_TEST, LINK_STATUS}
+QUAD_TEST = 0x1C                         # S-09.080: a developer's quad reply test
+IMMEDIATE = {0x01, 0x03, 0x05, 0x07, 0x0A, LINK_MODE, LINK_TEST, LINK_STATUS, QUAD_TEST}
 PUSH = {0x1E, 0x1F}
 PULL = 0x20
 POLL = 0x06
@@ -19,7 +20,7 @@ WRITE = 0x2B
 READ = 0x2A
 CLOCK_SYNC = 0x0B
 DEFINED = ({0x01, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x11, 0x12, 0x13, 0x14, 0x15,
-            0x16, 0x18, LINK_MODE, LINK_TEST, LINK_STATUS, 0x1E, 0x1F, 0x20} | set(range(0x21, 0x33)) |
+            0x16, 0x18, LINK_MODE, LINK_TEST, LINK_STATUS, QUAD_TEST, 0x1E, 0x1F, 0x20} | set(range(0x21, 0x33)) |
            {0x34, 0x35, 0x36})
 TEST_MAX = 0x10000                       # S-09.071: a link test's most bytes, the largest request's
 GATE_TIMES = 3                           # S-09.075: the gate's timed tests of TEST_MAX bytes
@@ -164,7 +165,7 @@ ECHO_RECOVER = 0x6B3D90E5                # S-09.074: the recovery echo's arg0 (a
 REPEATS = 3                              # S-09.076: a request sent again at most
 UNNUMBERED = {0x0A, 0x19, 0x1A, 0x1B}    # S-09.076: the requests with no number
 # S-09.013 rule 4: plain requests whose failed exchange is recovered by echo and drain
-PLAIN_SAFE = {0x03, 0x05, 0x11, 0x12, 0x18, 0x21, 0x22, 0x23, 0x31, 0x32}
+PLAIN_SAFE = {0x03, 0x05, 0x11, 0x12, 0x18, 0x21, 0x22, 0x23, 0x31, 0x32, QUAD_TEST}
 PLAIN_DRAIN = 5                          # S-09.013 rule 4: the polls of the drain, at most
 EIO = 5                                  # S-09.013 rule 4: the master's errno for such a request
 
@@ -617,3 +618,67 @@ def session_end_ok(expect, moved, rose, fell_again):
     if fell_again:
         return False
     return rose if moved == expect else True
+
+
+# ---- S-09.080: the quad reply test ----
+
+QT_ARM, QT_SEND, QT_RECORD = 0, 1, 2     # arg0's operation, bits 3-0
+QT_TF_DMA, QT_TF_CORE, QT_SPIF = 1, 2, 3  # the candidates, arg0 bits 5-4
+QT_REN = 0x40                            # arg0 bit 6, with a TF candidate only
+QT_PATS = 6                              # arg0 bits 11-8; bits 31-16 the seed
+QT_MIN, QT_MAX = 12, 0x10000             # the reply's bytes, whole words
+QT_ARMED, QT_BAD, QT_NOT_PLAIN, QT_NOT_ARMED, QT_NO_SLAVE = 0, 1, 2, 3, 4
+QT_REC_WORDS = 18                        # RECORD's reply, the header word first
+QT_REC_LEN = 4 * QT_REC_WORDS
+
+
+def qt_arg0(cand, ren, pat, seed):
+    """ARM's arg0."""
+    return QT_ARM | (cand & 3) << 4 | (QT_REN if ren else 0) | (pat & 0xF) << 8 | (seed & 0xFFFF) << 16
+
+
+def qt_args_ok(arg0, arg1):
+    """S-09.080: ARM's arguments in range."""
+    cand, pat = arg0 >> 4 & 3, arg0 >> 8 & 0xF
+    return (arg0 & 0xF == QT_ARM and QT_TF_DMA <= cand <= QT_SPIF and not arg0 & 0x80 and
+            not (arg0 & QT_REN and cand == QT_SPIF) and pat < QT_PATS and not arg0 & 0xF000 and
+            QT_MIN <= arg1 <= QT_MAX and arg1 % 4 == 0)
+
+
+def qt_word(pat, seed, j):
+    """Word j of a pattern's payload, k = j + seed."""
+    k = (j + seed) & M32
+    if pat == 0:
+        return 1 << (k % 32)
+    if pat == 1:
+        return ~(1 << (k % 32)) & M32
+    if pat == 2:
+        return 0x11111111 << (k % 4) & M32
+    if pat == 3:
+        return ~(0x11111111 << (k % 4)) & M32
+    if pat == 4:
+        return 0xAAAAAAAA if k & 1 else 0x55555555
+    x = (k * 0x9E3779B9 & M32) ^ (seed << 7 & M32)
+    x ^= x >> 16
+    x = x * 0x85EBCA6B & M32
+    x ^= x >> 13
+    x = x * 0xC2B2AE35 & M32
+    return x ^ x >> 16
+
+
+def qt_reply(slot, arg0, n):
+    """S-09.080: SEND's test reply of n bytes: 0x1C's header word, the pattern, the check word of the rest
+    (S-09.072)."""
+    pat, seed = arg0 >> 8 & 0xF, arg0 >> 16
+    body = hdr_word(QUAD_TEST, slot) + b''.join(struct.pack('<I', qt_word(pat, seed, j))
+                                                for j in range(n // 4 - 2))
+    return body + struct.pack('<I', check_word(body))
+
+
+def qt_lines(diff):
+    """The quad data lines a word's wrong bits were on: line k carries bit k of each nibble."""
+    lines = 0
+    for i in range(8):
+        lines |= diff >> (4 * i)
+    return lines & 0xF
+

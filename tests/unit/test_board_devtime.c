@@ -22,6 +22,7 @@
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/board/opxy_services.h"
+#include "waffle/bytes.h"
 #include "waffle/devhost.h"
 #include "waffle/s09_slave.h"
 #include "waffle/s11_common.h"
@@ -196,6 +197,46 @@ static int32_t st_read(void *c, uint32_t fd, uint8_t *buf, uint32_t n,
 	return wire_s09_read(&S, fd, buf, n, err);
 }
 
+/* S-09.080: the quad reply test's slave end, as the board's keeps it: the
+ * arm, the test reply, the record (the end the flag unless no_flag). */
+static struct {
+	bool armed, due, no_flag;
+	uint32_t arg0, len;
+	uint32_t rec[S09_QT_REC_WORDS];
+	uint8_t small[8], out[S09_QT_REC_LEN];
+	_Alignas(4) uint8_t buf[S09_QT_MAX];
+} qs;
+
+static size_t st_qtest(void *c, const struct s09_req *r, const uint8_t **out)
+{
+	const bool armed = qs.armed;
+
+	(void)c;
+	qs.armed = qs.due = false;
+	*out = qs.small;
+	wb_put_le32(qs.small, s09_hdr_word(S09_QUAD_TEST, r->slot));
+	wb_put_le32(qs.small + 4, S09_QT_BAD);
+	if (S09_QT_OP(r->arg0) == S09_QT_ARM && s09_qt_args_ok(r->arg0, r->arg1) &&
+	    s09_check_ready()) {
+		qs.armed = true;
+		qs.arg0 = r->arg0;
+		qs.len = r->arg1;
+		wb_put_le32(qs.small + 4, S09_QT_ARMED);
+	} else if (r->arg0 == S09_QT_SEND && armed) {
+		s09_qt_build(qs.buf, qs.len, r->slot, qs.arg0);
+		qs.due = true;
+		*out = qs.buf;
+		return qs.len;
+	} else if (r->arg0 == S09_QT_RECORD) {
+		qs.rec[S09_QR_HDR] = s09_hdr_word(S09_QUAD_TEST, r->slot);
+		for (unsigned k = 0; k < S09_QT_REC_WORDS; k++)
+			wb_put_le32(qs.out + 4u * k, qs.rec[k]);
+		*out = qs.out;
+		return S09_QT_REC_LEN;
+	}
+	return 8u;
+}
+
 static const struct s09_store_ops store = {
 	0, st_erase_group, st_boot_size, NULL /* dev_cmd */, st_emmc, st_file,
 	st_read, st_os, st_cycles, st_adjust,
@@ -288,6 +329,34 @@ static void lb_configure(void *c, int phase)
 	(void)phase;
 }
 
+/* S-13b.084 on the master: the test reply's session, whole. */
+static unsigned quads;
+
+static bool lb_quad(void *c, uint8_t *d, size_t n, unsigned clock, uint32_t out[4])
+{
+	(void)c;
+	(void)clock;
+	quads++;
+	if (!lb.reply_session || !qs.due || lb.rep != qs.buf || n != lb.rep_n)
+		return false;
+	qs.due = false;
+	memcpy(d, lb.rep, n);
+	lb.rep_at = n;
+	lb.done = true;
+	memset(qs.rec, 0, sizeof qs.rec);
+	qs.rec[S09_QR_ARM] = qs.arg0;
+	qs.rec[S09_QR_LEN] = qs.len;
+	qs.rec[S09_QR_END] = qs.no_flag ? S09_QE_BOUND | S09_QF_FED : S09_QE_FLAG | S09_QF_TF_ILAT;
+	qs.rec[S09_QR_T_FEED] = 100u;
+	qs.rec[S09_QR_T_FLAG] = qs.no_flag ? S09_QT_NONE : 160u;
+	qs.rec[S09_QR_STAT] = 0x00C40801u;
+	out[0] = 1u << 10;
+	out[1] = 0u;
+	out[2] = 1234u;
+	out[3] = 1u;
+	return true;
+}
+
 static const struct s09_bus_ops bus = {
 	0, lb_ready, lb_attention, lb_select, lb_send, lb_recv, lb_configure, NULL,
 };
@@ -304,7 +373,9 @@ static bool bridge_up(void)
 		return false;
 	wire_s09_init(&S, &Y);
 	s09_slave_init(&sl, &store);
+	s09_slave_qtest_source(&sl, st_qtest, NULL);
 	s09_master_init(&m.bridge, &bus, &clk);
+	s09_master_quad_recv(&m.bridge, lb_quad, NULL);
 	if (!s09_master_start(&m.bridge))
 		return false;
 	m.slave_present = true;
@@ -839,6 +910,104 @@ static void test_reader_synthetic(void)
 	      "reader: a plaintext zip passes through");
 }
 
+/* ---- OPXY_DEV_QUAD_REPLY: the quad reply test, one cell ---- */
+
+static size_t quad_req(uint8_t cand, uint8_t ren, uint8_t clock, uint32_t len,
+		       uint16_t n, size_t req_n)
+{
+	uint8_t req[9];
+
+	req[0] = cand;
+	req[1] = ren;
+	req[2] = clock;
+	wb_put_le32(req + 3, len);
+	req[7] = (uint8_t)n;
+	req[8] = (uint8_t)(n >> 8);
+	memset(big_reply, 0xEE, sizeof(big_reply));
+	big_reply[0] = OPXY_DEV_OK;
+	return opxy_dev_quad_reply(&m, req, req_n, big_reply);
+}
+
+static uint16_t le16(const uint8_t *p)
+{
+	return (uint16_t)(p[0] | p[1] << 8);
+}
+
+/* The reply's layout (waffle/devhost.h), its counts, refusals while busy
+ * and for bad arguments, and nothing written: no storage request, the
+ * volume as it was, the link plain after. */
+static void test_quad_reply(void)
+{
+	const struct s09_record *r = s09_master_record(&m.bridge);
+	const uint32_t falls = r->falls, negs = r->negotiations;
+	size_t n;
+
+	CHECK(OPXY_QUAD_REPLY == 168u && OPXY_QUAD_REPLY <= 249u, "quad: the reply fits");
+	CHECK(quad_req(1, 2, 0, 12, 1, 9) == 1u && big_reply[0] == OPXY_DEV_BAD,
+	      "quad: REN is 0 or 1");
+	CHECK(quad_req(1, 0, 0, 12, 4097, 9) == 1u && big_reply[0] == OPXY_DEV_BAD,
+	      "quad: at most 4096 trials");
+	CHECK(quad_req(1, 0, 0, 12, 1, 6) == 1u && big_reply[0] == OPXY_DEV_BAD,
+	      "quad: a short request");
+	s15_menu_hold(&m.sv.menu);
+	CHECK(quad_req(1, 0, 0, 12, 1, 9) == 1u && big_reply[0] == OPXY_DEV_REFUSED,
+	      "quad: refused during a long operation");
+	s15_menu_release(&m.sv.menu);
+	memset(reqs, 0, sizeof(reqs));
+	wrote = 0;
+	memcpy(vol_before, vol, VOL_LEN);
+	opxy_bridge_fast(&m);			/* lowered first */
+	quads = 0;
+	n = quad_req(S09_QT_TF_DMA, 0, S09_QT_FMODE, 0x1000u, 0, 7);	/* n left out */
+	CHECK(n == OPXY_QUAD_REPLY && big_reply[0] == OPXY_DEV_OK, "quad: a cell (%zu)", n);
+	CHECK(big_reply[1] == S09_QT_TF_DMA && big_reply[2] == 0u && big_reply[3] == S09_QT_FMODE &&
+	      le32(big_reply + 4) == 0x1000u && le16(big_reply + 8) == OPXY_QUAD_N &&
+	      big_reply[10] == 0u, "quad: as asked, flags %02x", big_reply[10]);
+	CHECK(le16(big_reply + 12) == OPXY_QUAD_N && le16(big_reply + 14) == OPXY_QUAD_N &&
+	      le16(big_reply + 16) == OPXY_QUAD_N && le16(big_reply + 18) == 0u &&
+	      le16(big_reply + 24) == 0u && le16(big_reply + 26) == 0u &&
+	      le16(big_reply + 28 + 2u * S09_QE_FLAG) == OPXY_QUAD_N,
+	      "quad: every reply whole, its flag each");
+	CHECK(le32(big_reply + 44) == 60u && le32(big_reply + 48) == 60u && big_reply[52] == 0u &&
+	      le32(big_reply + 53) == (1u << 10) && le32(big_reply + 57) == (1u << 10) &&
+	      le64(big_reply + 65) != 0u && big_reply[73] == S09_QX_OK,
+	      "quad: the delay, the master's RF, no failure");
+	CHECK(quads == OPXY_QUAD_N, "quad: %u quad receives", quads);
+	{
+		unsigned others = 0;
+
+		for (unsigned c = 0; c < 256u; c++)
+			others += c != S09_QUAD_TEST && c != S09_ECHO && c != S09_LINK_MODE &&
+				  c != S09_LINK_TEST && c != S09_LINK_STATUS ? reqs[c] : 0u;
+		CHECK(others == 0u && wrote == 0u && reqs[S09_QUAD_TEST] == 3u * OPXY_QUAD_N,
+		      "quad: nothing but 0x1C and the link's own (%u others)", others);
+	}
+	CHECK(!memcmp(vol, vol_before, VOL_LEN), "quad: the volume as it was");
+	CHECK(s09_master_rung(&m.bridge) == S09_RUNG_PLAIN && s09_slave_mode(&sl) == S09_MODE_PLAIN &&
+	      m.sv.files.link == 0u && s09_master_settled(&m.bridge) && r->falls == falls,
+	      "quad: plain after, settled");
+	(void)negs;
+	/* no flag: the first failure and the slave's record of it */
+	qs.no_flag = true;
+	n = quad_req(S09_QT_SPIF, 0, 0, 64u, 3, 9);
+	qs.no_flag = false;
+	CHECK(n == OPXY_QUAD_REPLY && le16(big_reply + 12) == 3u && le16(big_reply + 14) == 3u &&
+	      le16(big_reply + 16) == 0u && le16(big_reply + 18) == 3u &&
+	      le16(big_reply + 28 + 2u * S09_QE_BOUND) == 3u &&
+	      le32(big_reply + 44) == S09_QT_NONE && big_reply[73] == S09_QX_NO_FLAG &&
+	      le16(big_reply + 74) == 0u && le32(big_reply + 76) == S09_QT_NONE &&
+	      le32(big_reply + 80) == (1u << 10) && le32(big_reply + 88) == 1234u &&
+	      le32(big_reply + 96 + 4u * S09_QR_LEN) == 64u &&
+	      (le32(big_reply + 96 + 4u * S09_QR_END) & 0xFFu) == S09_QE_BOUND &&
+	      le32(big_reply + 96 + 4u * S09_QR_T_FLAG) == S09_QT_NONE,
+	      "quad: the flag missing, the record of the first");
+	/* refused by the slave's arm: REN with SPIF, refused before anything */
+	n = quad_req(S09_QT_SPIF, 1, 0, 64u, 3, 9);
+	CHECK(n == OPXY_QUAD_REPLY && (big_reply[10] & OPXY_QUAD_REFUSED) &&
+	      big_reply[11] == S09_QT_BAD && le16(big_reply + 12) == 0u,
+	      "quad: REN with SPIF refused");
+}
+
 int main(void)
 {
 	struct opxy_disk_part part[OPXY_DISK_PARTS];
@@ -868,6 +1037,7 @@ int main(void)
 	test_extract();
 	test_link_record();
 	test_link_bench();
+	test_quad_reply();
 	test_reader_vector();
 	test_reader_synthetic();
 	free(vol_before);

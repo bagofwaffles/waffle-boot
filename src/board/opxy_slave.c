@@ -10,6 +10,7 @@
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/mmr.h"
 #include "waffle/drivers/bf70x_sec.h"
+#include "waffle/bytes.h"
 #include "waffle/s09_bridge.h"
 #include "waffle/devhost.h"
 #include "waffle/wire_crc.h"
@@ -628,6 +629,117 @@ static void receive_fault(void *ctx, uint32_t out[4])
 	out[3] = f.stage;
 }
 
+#if !defined(OPXY_TEST_OS)
+/*
+ * S-09.080, S-13b.084: the quad reply test, a developer's measurement. ARM
+ * keeps its arguments; SEND builds the test reply in rxbuf, which holds no
+ * request until the next listen, and serve_until_release() sends it in quad
+ * I/O through wb_spi_slave_qtest(); RECORD answers what that send saw. It
+ * touches no storage. The bounds: the candidate's end within QT_FLAG_US of
+ * the master's first word, far under the master's T_REPLY for PA6 to rise
+ * (S-09.060); SPIF's end once SPI_STAT has not changed for QT_QUIET_US,
+ * many words' time at every clock, far under 1 ms (S-13b.045).
+ */
+#define QT_FLAG_US 30000u
+#define QT_QUIET_US 20u
+_Static_assert(RXBUF_LEN >= S09_QT_MAX, "a test reply overruns rxbuf");
+_Static_assert(WB_SPI_QE_FLAG == S09_QE_FLAG && WB_SPI_QE_BOUND == S09_QE_BOUND &&
+	       WB_SPI_QE_MASTER == S09_QE_MASTER && WB_SPI_QE_TX_ERR == S09_QE_TX_ERR &&
+	       WB_SPI_QE_DMA_ERR == S09_QE_DMA_ERR &&
+	       WB_SPI_QE_NO_START == S09_QE_NO_START &&
+	       WB_SPI_QE_REFUSED == S09_QE_REFUSED &&
+	       WB_SPI_QF_TF_STAT == S09_QF_TF_STAT && WB_SPI_QF_TF_ILAT == S09_QF_TF_ILAT &&
+	       WB_SPI_QF_FED == S09_QF_FED && WB_SPI_QF_BEGAN == S09_QF_BEGAN &&
+	       WB_SPI_QF_ENDED == S09_QF_ENDED && WB_SPI_QF_SINGLE == S09_QF_SINGLE &&
+	       WB_SPI_QT_TF_DMA == S09_QT_TF_DMA && WB_SPI_QT_TF_CORE == S09_QT_TF_CORE &&
+	       WB_SPI_QT_SPIF == S09_QT_SPIF && WB_SPI_QT_NONE == S09_QT_NONE,
+	       "the driver's and S-09.080's codes");
+
+static struct {
+	bool armed, due;
+	uint32_t arg0, len, sends;
+	uint32_t rec[S09_QT_REC_WORDS];
+	uint8_t small[8];
+	uint8_t out[S09_QT_REC_LEN];
+} qt;
+
+static size_t qt_value(uint8_t slot, uint32_t v)
+{
+	wb_put_le32(qt.small, s09_hdr_word(S09_QUAD_TEST, slot));
+	wb_put_le32(qt.small + 4, v);
+	return sizeof qt.small;
+}
+
+/* cppcheck-suppress constParameterCallback ; s09_qtest_fn fixes the type */
+static size_t qtest(void *ctx, const struct s09_req *r, const uint8_t **out)
+{
+	const bool armed = qt.armed;
+
+	(void)ctx;
+	qt.armed = false;	/* a 0x1C that does not send the test disarms it */
+	qt.due = false;
+	*out = qt.small;
+	switch (S09_QT_OP(r->arg0)) {
+	case S09_QT_ARM:
+		if (r->len != 0u || !s09_qt_args_ok(r->arg0, r->arg1) || !s09_check_ready())
+			return qt_value(r->slot, S09_QT_BAD);
+		qt.armed = true;
+		qt.arg0 = r->arg0;
+		qt.len = r->arg1;
+		return qt_value(r->slot, S09_QT_ARMED);
+	case S09_QT_SEND:
+		if (!armed || r->arg0 != S09_QT_SEND || r->arg1 != 0u || r->len != 0u)
+			return qt_value(r->slot, S09_QT_NOT_ARMED);
+		s09_qt_build(rxbuf, qt.len, r->slot, qt.arg0);
+		qt.due = true;
+		*out = rxbuf;
+		return qt.len;
+	case S09_QT_RECORD:
+		if (r->arg0 != S09_QT_RECORD || r->arg1 != 0u || r->len != 0u)
+			return qt_value(r->slot, S09_QT_BAD);
+		qt.rec[S09_QR_HDR] = s09_hdr_word(S09_QUAD_TEST, r->slot);
+		for (unsigned k = 0; k < S09_QT_REC_WORDS; k++)
+			wb_put_le32(qt.out + 4u * k, qt.rec[k]);
+		*out = qt.out;
+		return S09_QT_REC_LEN;
+	default:
+		return qt_value(r->slot, S09_QT_BAD);
+	}
+}
+
+/* The armed test reply, sent in quad I/O; its record kept for RECORD.
+ * The driver leaves SPI2 disabled in single I/O, the session over. */
+static bool qt_send(struct opxy_slave *s, const uint8_t *d, size_t n)
+{
+	struct wb_spi_qt q;
+	uint32_t *r = qt.rec;
+	int rc;
+
+	qt.due = false;
+	rc = wb_spi_slave_qtest(&s->hw.link_slave, d, n, S09_QT_CAND(qt.arg0),
+				(qt.arg0 & S09_QT_REN) != 0u, S09_T_REPLY_US,
+				QT_FLAG_US, QT_QUIET_US, &q);
+	r[S09_QR_NO] = ++qt.sends;
+	r[S09_QR_ARM] = qt.arg0;
+	r[S09_QR_LEN] = qt.len;
+	r[S09_QR_END] = q.end;
+	r[S09_QR_STAT] = q.stat;
+	r[S09_QR_DMA] = q.dma;
+	r[S09_QR_TWC] = q.twc;
+	r[S09_QR_STAT_OR] = q.stat_or;
+	r[S09_QR_STAT_BOUND] = q.stat_bound;
+	r[S09_QR_HAND] = q.hand;
+	r[S09_QR_T_START] = q.t_start;
+	r[S09_QR_T_FEED] = q.t_feed;
+	r[S09_QR_T_FLAG] = q.t_flag;
+	r[S09_QR_T_END] = q.t_end;
+	r[S09_QR_SPIF] = q.spif;
+	r[S09_QR_RX] = q.rx;
+	r[S09_QR_STAGE] = (uint32_t)q.rc << 8 | (q.stage & 0xFFu);
+	return rc == WB_SPI_OK;
+}
+#endif
+
 /* The reply is clocked out completely, or given up (S-13b.045, S-09.013),
  * before this returns; then the master ends the session with PC11 high,
  * which the slave reads on PB15. */
@@ -790,7 +902,9 @@ static uint8_t serve_until_release(void *ctx)
 			/* S-09.013: a reply not sent whole is dropped, not
 			 * sent again, and the slave waits for the next
 			 * session (PB15 high first, the loop's test). */
-			bool sent = session_tx(s, d, n);
+			bool sent = OPXY_TESTOS_OR(session_tx(s, d, n),
+						   qt.due && d == rxbuf ? qt_send(s, d, n) :
+									 session_tx(s, d, n));
 
 			REACHED(sent ? OPXY_TESTOS_BEACON_SENT : OPXY_TESTOS_BEACON_SEND_FAIL);
 			OPXY_TESTOS(testos_rows[OPXY_TESTOS_STEP_SEND] = OPXY_TESTOS_ROW(OPXY_TESTOS_STEP_SEND, sent ? 0u : 1u, n);)
@@ -1077,6 +1191,7 @@ void opxy_slave_storage(struct opxy_slave *s)
 	s09_slave_init(&s->server, &s->store);
 	/* S-09.079: a failed receive's own account, for 0x1B */
 	s09_slave_fault_source(&s->server, receive_fault, &s->hw.link_slave);
+	OPXY_TESTOS_OR((void)0, s09_slave_qtest_source(&s->server, qtest, s));	/* S-09.080 */
 	OPXY_TESTOS((void)testos_note(s, OPXY_TESTOS_STEP_SERVER, 0);)
 }
 

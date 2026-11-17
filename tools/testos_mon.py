@@ -74,6 +74,14 @@
                          every session by DMA as requests go; a table of passes, faults by where
                          they broke, and microseconds per request and per 4 KiB; dev-link-record has
                          each fault. Writes nothing to the eMMC
+    dev-quad-reply [N] [--cand tf-dma,tf-core,spif] [--ren 0,1] [--clock 25,50,25f,50f]
+                   [--len 12,64,...] [--json]
+                         the quad reply test from held mode (S-09.080): N test replies (default 16, up
+                         to 4096) a cell, each sent by the slave in quad I/O and ended by one candidate
+                         (TF fed by the DMA, TF fed by the core, or SPIF read alone), REN clear and set
+                         for the TF candidates, the master at 25 and 50 MHz with fast mode on and off
+                         (f), at each length from 12 bytes to 64 KiB; a table per candidate and clock
+                         and a verdict per candidate. Writes nothing to storage
     dev-handover [FLAGS] [MD] [SD]
                          hand over the active-partition OS with FLAGS (default: the set options);
                          MD/SD are ms delays before the master/slave jump. With the trace option
@@ -130,6 +138,32 @@ DEV_BENCH, DEV_CHECK, DEV_EXTRACT = 32, 33, 34
 DEV_LINK_RECORD, DEV_LINK_TEST = 35, 36
 DEV_BOOT_START, START_REPORT = 37, 61   # OPXY_DEV_BOOT_START and OPXY_START_REPORT's bytes
 DEV_CAL_START = 38      # OPXY_DEV_CAL_START
+DEV_QUAD_REPLY = 39     # OPXY_DEV_QUAD_REPLY (S-09.080)
+QUAD_N, QUAD_N_MAX, QUAD_LIMIT_S = 16, 4096, 120
+QUAD_LAYOUT = '<BBBIHBB8H8HIIBIIIQBHI4I18I'     # the reply after its status byte
+QUAD_REPLY = 167
+QUAD_LENS = [12, 64, 256, 0x1000, 0x4000, 0x8000, 0x10000]
+# the candidates (S09_QT_...), the master's clocks (S09_QT_FAST 1, S09_QT_FMODE 2)
+QUAD_CANDS = {'tf-dma': 1, 'tf-core': 2, 'spif': 3}
+QUAD_CAND_TEXT = {1: 'TF, DMA feed', 2: 'TF, core feed', 3: 'SPIF, SPI_STAT alone'}
+QUAD_CLOCKS = {'25': 0, '50': 1, '25f': 2, '50f': 3}
+QUAD_FLAGS = [(0x01, 'THE SLAVE STOPPED ANSWERING: restart the unit'),
+              (0x02, 'cut short by its bound (%d s)' % QUAD_LIMIT_S),
+              (0x04, 'the slave did not answer after it: restart the unit'),
+              (0x08, 'refused')]
+# how a test reply ended on the slave (S09_QE_...) and what it saw (S09_QF_...)
+QUAD_ENDS = ['no reply', 'the flag', 'the bound', 'the master ended it', 'underrun or collision',
+             'a DMA error', 'the master never began', 'the driver refused it']
+QUAD_SEEN = [(0x100, 'TF in SPI_STAT'), (0x200, 'TF in SPI_ILAT'), (0x400, 'fed whole'),
+             (0x800, 'the master began'), (0x1000, 'the master ended'), (0x2000, 'single I/O after')]
+QUAD_FIRST = ['-', 'the session broke', 'the last word was wrong', 'a word was wrong',
+              'the flag did not come', "the slave's record did not come"]
+QUAD_REFUSED = ['armed', 'an argument out of range', 'the link not plain', 'not armed',
+                "the slave's build has no test"]
+QUAD_REC = ['hdr', 'no', 'arm', 'len', 'end', 'stat', 'dma', 'twc', 'stat_or', 'stat_bound', 'hand',
+            't_start', 't_feed', 't_flag', 't_end', 'spif', 'rx', 'stage']
+QUAD_NONE = 0xFFFFFFFF
+SPI_STAT_RF, SPI_STAT_TF = 1 << 10, 1 << 11
 RECORD_PARTS, RECORD_RUNG_PARTS, RECORD_FALL_PARTS = 19, 4, 6
 LINK_TEST_N, LINK_TEST_PARTS = 16, 5
 LINK_TEST_LIMIT_S = 90  # OPXY_LINK_TEST_LIMIT_S: the unit's bound on a run; the tool waits a minute more
@@ -1344,6 +1378,8 @@ def run(mon, argv):
         if not 1 <= n <= 255:
             raise SystemExit('dev-link-test: N is 1 to 255')
         show_link_test(mon, n)
+    elif c == 'dev-quad-reply':
+        quad_reply(mon, a)
     elif c == 'encode':
         print(frame(bytes([num(a[0])]) + bytes.fromhex(a[1] if len(a) > 1 else ''), 1).hex())
     elif c == 'continue-os' and a == ['--sysex']:
@@ -1800,6 +1836,197 @@ def show_link_test(mon, n):
             rung_name(rung), length, passed, sent, each, per4k, each / plain if passed else 0.0, faults))
     print('vs plain: a request\'s time over the plain wire\'s for its words (32 bits at 25 MHz a word);'
           ' under 1 is faster than plain')
+
+
+def quad_parse(r):
+    """OPXY_DEV_QUAD_REPLY's answer after its status byte, as a dict."""
+    if len(r) < QUAD_REPLY:
+        raise SystemExit('dev-quad-reply: a short answer: a bootloader older than this tool')
+    v = struct.unpack(QUAD_LAYOUT, r[:QUAD_REPLY])
+    d = dict(zip(['cand', 'ren', 'clock', 'len', 'n', 'flags', 'why', 'sent', 'whole', 'flag', 'missing',
+                  'last_wrong', 'word_wrong', 'broke', 'no_record'], v[:15]))
+    d['ends'] = list(v[15:23])
+    (d['dmin'], d['dmax'], d['lines'], d['m_or'], d['m_and'], d['s_or'], d['cycles'], d['first'],
+     d['first_no'], d['first_word']) = v[23:33]
+    d['first_m'] = list(v[33:37])
+    d['first_rec'] = dict(zip(QUAD_REC, v[37:55]))
+    return d
+
+
+def clock_text(clock):
+    return '%d MHz, fast mode %s' % (50 if clock & 1 else 25, 'on' if clock & 2 else 'off')
+
+
+def cand_text(cand, ren):
+    return '%s%s' % (QUAD_CAND_TEXT.get(cand, 'candidate %d' % cand), ', REN set' if ren else '')
+
+
+def quad_delay(d):
+    if d['dmin'] == QUAD_NONE:
+        return '-'
+    return '%d-%d' % (d['dmin'], d['dmax'])
+
+
+def quad_lines(lines):
+    return ','.join('D%d' % k for k in range(4) if lines >> k & 1) or '-'
+
+
+def quad_rec_text(r):
+    """The slave's record of a test reply (S09_QR_...), in words."""
+    if not r['arm'] and not r['len']:
+        return "the slave's record: none"
+
+    def at(v):
+        return '-' if v == QUAD_NONE else '%.1f us' % (v / CCLK_HZ * 1e6)
+    end = r['end'] & 0xFF
+    seen = ', '.join(t for b, t in QUAD_SEEN if r['end'] & b) or 'nothing'
+    spif = r['spif']
+    return ("the slave: ended by %s; saw %s; SPI_STAT %08x at the end (or-ed %08x, at the bound %08x), "
+            "SPI_TWC %d, DMA_STAT %08x; from the hand-over: began %s, fed %s, flag %s, end %s; "
+            "SPIF fell %d and rose %d time(s); %d word(s) received; stage %d" % (
+                QUAD_ENDS[end] if end < len(QUAD_ENDS) else end, seen, r['stat'], r['stat_or'],
+                r['stat_bound'], r['twc'], r['dma'], at(r['t_start']), at(r['t_feed']), at(r['t_flag']),
+                at(r['t_end']), spif & 0xFFFF, spif >> 16, r['rx'], r['stage'] & 0xFF))
+
+
+def quad_fail_text(d):
+    """A cell's first failure, in words; '' when it had none."""
+    k = d['first']
+    if not k:
+        return ''
+    what = QUAD_FIRST[k] if k < len(QUAD_FIRST) else str(k)
+    if d['first_word'] != QUAD_NONE:
+        what += ' (word %d of %d first)' % (d['first_word'], d['len'] // 4)
+    return 'trial %d: %s; the master: SPI_STAT %08x, %d word(s) left, %d cycles; %s' % (
+        d['first_no'], what, d['first_m'][0], d['first_m'][1], d['first_m'][2],
+        quad_rec_text(d['first_rec']))
+
+
+def quad_verdict(cells):
+    """A candidate's verdict over its cells, in the order run."""
+    sent = sum(c['sent'] for c in cells)
+    if all(c['flags'] & 8 for c in cells):
+        return 'refused: %s' % QUAD_REFUSED[min(cells[0]['why'], len(QUAD_REFUSED) - 1)]
+    if not sent:
+        return 'nothing was sent'
+    if all(c['whole'] == c['sent'] and c['flag'] == c['sent'] and not c['flags'] & 7 for c in cells):
+        return 'ended every reply and every reply was whole (%d replies)' % sent
+    for c in cells:
+        bad = [(c['broke'], 'the session broke'), (c['last_wrong'], 'the last word was wrong'),
+               (c['word_wrong'], 'a word was wrong'), (c['missing'], 'the flag did not come'),
+               (c['no_record'], "the slave's record did not come")]
+        bad = [(n, t) for n, t in bad if n]
+        if bad or c['flags'] & 7:
+            what = '; '.join('%s on %d of %d' % (t, n, c['sent']) for n, t in bad)
+            flags = '; '.join(t for b, t in QUAD_FLAGS if c['flags'] & b and b != 8)
+            return 'failed first at %s, %d bytes: %s' % (clock_text(c['clock']), c['len'],
+                                                        '; '.join(x for x in (what, flags) if x))
+    return 'failed'
+
+
+def quad_args(a):
+    """dev-quad-reply's arguments: N, the cells to run, --json."""
+    opts = {'--cand': 'tf-dma,tf-core,spif', '--ren': '0,1', '--clock': '25,50,25f,50f',
+            '--len': ','.join(str(n) for n in QUAD_LENS)}
+    n, js, i = QUAD_N, False, 0
+    while i < len(a):
+        if a[i] == '--json':
+            js = True
+        elif a[i] in opts and i + 1 < len(a):
+            opts[a[i]] = a[i + 1]
+            i += 1
+        elif not a[i].startswith('-'):
+            n = num(a[i])
+        else:
+            raise SystemExit('dev-quad-reply: unknown option %s' % a[i])
+        i += 1
+    if not 1 <= n <= QUAD_N_MAX:
+        raise SystemExit('dev-quad-reply: N is 1 to %d' % QUAD_N_MAX)
+    try:
+        cands = [QUAD_CANDS[x] for x in opts['--cand'].split(',')]
+        rens = [int(x) for x in opts['--ren'].split(',')]
+        clocks = [QUAD_CLOCKS[x] for x in opts['--clock'].split(',')]
+        lens = [num(x) for x in opts['--len'].split(',')]
+    except (KeyError, ValueError):
+        raise SystemExit('dev-quad-reply: --cand tf-dma,tf-core,spif --ren 0,1 --clock 25,50,25f,50f '
+                         '--len BYTES,...')
+    if any(r not in (0, 1) for r in rens) or any(not 12 <= x <= 0x10000 or x % 4 for x in lens):
+        raise SystemExit('dev-quad-reply: REN is 0 or 1, a length 12 to 65536 bytes in whole words')
+    cells = []
+    for cand in cands:
+        for ren in rens:
+            if ren and cand == 3:
+                continue        # SPIF reads SPI_STAT alone: no receive channel to read
+            for clock in clocks:
+                for length in lens:
+                    cells.append((cand, ren, clock, length))
+    return n, cells, js
+
+
+def quad_request(cand, ren, clock, length, n):
+    return bytes([DEV_QUAD_REPLY, cand, ren, clock]) + struct.pack('<IH', length, n)
+
+
+def quad_reply(mon, a):
+    """OPXY_DEV_QUAD_REPLY, one request a cell, then the tables and the verdicts."""
+    n, todo, js = quad_args(a)
+    cells = []
+    for cand, ren, clock, length in todo:
+        d = quad_parse(mon.checked(quad_request(cand, ren, clock, length, n), QUAD_LIMIT_S + 60.0))
+        cells.append(d)
+        if d['flags'] & 1:
+            break       # the slave is gone: nothing more can run
+    if js:
+        import json
+        groups = {}
+        for c in cells:
+            groups.setdefault((c['cand'], c['ren']), []).append(c)
+        print(json.dumps({'cells': cells, 'verdicts': [
+            {'cand': k[0], 'ren': k[1], 'name': cand_text(*k), 'verdict': quad_verdict(v)}
+            for k, v in groups.items()]}, indent=1))
+        return
+    print(quad_table(cells))
+
+
+def quad_table(cells):
+    """The text: a table per candidate and clock, a line per length, then a verdict per candidate."""
+    out, groups, order = [], {}, []
+    for c in cells:
+        key = (c['cand'], c['ren'])
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(c)
+    for key in order:
+        clocks = []
+        for c in groups[key]:
+            if c['clock'] not in clocks:
+                clocks.append(c['clock'])
+        for clock in clocks:
+            out.append('%s; the master at %s' % (cand_text(*key), clock_text(clock)))
+            out.append('  %8s %6s %6s %6s %7s %9s %9s %6s %13s %6s  %s' % (
+                'bytes', 'trials', 'whole', 'flag', 'missing', 'last word', 'a word', 'broke',
+                'delay cycles', 'lines', 'master RF'))
+            for c in groups[key]:
+                if c['clock'] != clock:
+                    continue
+                came = c['whole'] + c['last_wrong'] + c['word_wrong']
+                rf = 'every reply' if c['m_and'] & SPI_STAT_RF and came else \
+                    'some' if c['m_or'] & SPI_STAT_RF else '-'
+                note = '; '.join(t for b, t in QUAD_FLAGS if c['flags'] & b)
+                out.append('  %8d %6d %6d %6d %7d %9d %9d %6d %13s %6s  %s%s' % (
+                    c['len'], c['sent'], c['whole'], c['flag'], c['missing'], c['last_wrong'],
+                    c['word_wrong'], c['broke'], quad_delay(c), quad_lines(c['lines']), rf,
+                    ('  [' + note + ']') if note else ''))
+                fail = quad_fail_text(c)
+                if fail:
+                    out.append('    ' + fail)
+    out.append('verdicts:')
+    for key in order:
+        out.append('  %s: %s' % (cand_text(*key), quad_verdict(groups[key])))
+    out.append('delay: the slave\'s cycles from its last feed to the flag (SPIF: from its last fall to its '
+               'last rise); lines: the data lines of every wrong bit')
+    return '\n'.join(out)
 
 
 def print_crc(flags):

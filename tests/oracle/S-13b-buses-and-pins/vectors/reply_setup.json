@@ -376,6 +376,75 @@
     "txctl": 65821,
     "words": 2
    }
+  },
+  {
+   "expect": [],
+   "name": "quad_test_tf_dma",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "stat",
+     "dma",
+     "twc",
+     "txctl",
+     "rxctl",
+     "en",
+     "dma_done",
+     "tf_unmask"
+    ],
+    "queued": 2,
+    "rxctl": 0,
+    "twc": 16384,
+    "txctl": 65821,
+    "words": 16384
+   }
+  },
+  {
+   "expect": [],
+   "name": "quad_test_tf_core",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "stat",
+     "twc",
+     "txctl",
+     "rxctl",
+     "en",
+     "tf_unmask"
+    ],
+    "queued": 2,
+    "rxctl": 0,
+    "twc": 3,
+    "txctl": 65821,
+    "words": 3
+   }
+  },
+  {
+   "expect": [
+    "reply_rx_quad"
+   ],
+   "name": "quad_test_ren",
+   "setup": {
+    "ctl": 2123025,
+    "link": "quad",
+    "order": [
+     "stat",
+     "dma",
+     "twc",
+     "txctl",
+     "rxctl",
+     "en",
+     "dma_done",
+     "tf_unmask"
+    ],
+    "queued": 2,
+    "rxctl": 1,
+    "twc": 2,
+    "txctl": 65821,
+    "words": 2
+   }
   }
  ]
 }

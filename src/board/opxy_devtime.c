@@ -890,4 +890,90 @@ size_t opxy_dev_link_test(struct opxy_master *m, const uint8_t *req, size_t n,
 	}
 }
 
+/* --- OPXY_DEV_QUAD_REPLY: the quad reply test, one cell --- */
+
+static struct s09_qt_cell cell;
+
+static size_t put16(uint8_t *out, size_t o, uint32_t v)
+{
+	out[o] = (uint8_t)v;
+	out[o + 1u] = (uint8_t)(v >> 8);
+	return o + 2u;
+}
+
+static size_t put32(uint8_t *out, size_t o, uint32_t v)
+{
+	wb_put_le32(out + o, v);
+	return o + 4u;
+}
+
+size_t opxy_dev_quad_reply(struct opxy_master *m, const uint8_t *req, size_t n,
+			   uint8_t *out)
+{
+	const uint32_t len = n >= 7u ? wb_get_le32(req + 3) : 0u;
+	uint32_t count = n >= 9u ? (uint32_t)req[7] | (uint32_t)req[8] << 8 : 0u;
+	uint64_t t0;
+	size_t o = 1u;
+	bool ok;
+
+	if (count == 0u)
+		count = OPXY_QUAD_N;
+	if (n < 7u || req[1] > 1u || count > OPXY_QUAD_N_MAX) {
+		out[0] = OPXY_DEV_BAD;
+		return 1u;
+	}
+	/* as the link test: not inside a long operation, a scan or an install */
+	if (busy(m) || !m->slave_present || m->bridge.absent) {
+		out[0] = OPXY_DEV_REFUSED;
+		return 1u;
+	}
+	memset(&cell, 0, sizeof(cell));
+	cell.cand = req[0];
+	cell.ren = req[1] != 0u;
+	cell.clock = req[2];
+	cell.len = len;
+	cell.n = (uint16_t)count;
+	cell.limit_us = OPXY_QUAD_LIMIT_S * 1000000u;
+	cell.between = bench_between;
+	t0 = wb_core_cycles();
+	ok = s09_master_quad_test(&m->bridge, &cell);
+	t0 = wb_core_cycles() - t0;
+	m->sv.files.link = 0;		/* S-09.078: plain after it */
+	out[o++] = cell.cand;
+	out[o++] = cell.ren ? 1u : 0u;
+	out[o++] = cell.clock;
+	o = put32(out, o, cell.len);
+	o = put16(out, o, cell.n);
+	out[o++] = (uint8_t)((ok ? 0u : OPXY_QUAD_LOST) | (cell.cut ? OPXY_QUAD_CUT : 0u) |
+			     (ok && !cell.refused && !cell.settled ? OPXY_QUAD_UNSETTLED : 0u) |
+			     (cell.refused ? OPXY_QUAD_REFUSED : 0u));
+	out[o++] = cell.why;
+	o = put16(out, o, cell.sent);
+	o = put16(out, o, cell.whole);
+	o = put16(out, o, cell.flag);
+	o = put16(out, o, cell.missing);
+	o = put16(out, o, cell.last_wrong);
+	o = put16(out, o, cell.word_wrong);
+	o = put16(out, o, cell.broke);
+	o = put16(out, o, cell.no_record);
+	for (unsigned k = 0; k < S09_QE_COUNT; k++)
+		o = put16(out, o, cell.ends[k]);
+	o = put32(out, o, cell.dmin);
+	o = put32(out, o, cell.dmax);
+	out[o++] = cell.lines;
+	o = put32(out, o, cell.m_stat_or);
+	o = put32(out, o, cell.m_stat_and);
+	o = put32(out, o, cell.s_stat_or);
+	wb_put_le64(out + o, t0);
+	o += 8u;
+	out[o++] = cell.first;
+	o = put16(out, o, cell.first_no);
+	o = put32(out, o, cell.first_word);
+	for (unsigned k = 0; k < 4u; k++)
+		o = put32(out, o, cell.first_m[k]);
+	for (unsigned k = 0; k < S09_QT_REC_WORDS; k++)
+		o = put32(out, o, cell.first_rec[k]);
+	return o;
+}
+
 #endif /* !OPXY_TEST_OS */

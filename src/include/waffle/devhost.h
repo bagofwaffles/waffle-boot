@@ -22,6 +22,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "waffle/s09_bridge.h"
+
 /* The hand-over options. 0 is the normal hand-over. */
 #define OPXY_HO_MSI_ASFOUND   0x0001u	/* leave the slave's MSI controller as found */
 #define OPXY_HO_SEC_ASFOUND   0x0002u	/* leave every SEC source as found */
@@ -111,6 +113,7 @@ enum {
 	OPXY_DEV_BENCH = 32, OPXY_DEV_CHECK = 33, OPXY_DEV_EXTRACT = 34,
 	OPXY_DEV_LINK_RECORD = 35, OPXY_DEV_LINK_TEST = 36,
 	OPXY_DEV_BOOT_START = 37, OPXY_DEV_CAL_START = 38,
+	OPXY_DEV_QUAD_REPLY = 39,
 };
 /* OPXY_DEV_PUT sub-ops: open (then the name), write (then the bytes), close. */
 enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
@@ -388,6 +391,41 @@ enum { OPXY_LINK_TEST_RUN = 0, OPXY_LINK_TEST_PART = 1 };
 #define OPXY_LINK_TEST_LIMIT_S 90u
 
 /*
+ * OPXY_DEV_QUAD_REPLY (cand:1 ren:1 clock:1 len:4 n:2), the quad reply test
+ * (S-09.080, S-13b.084, s09_master_quad_test()), from held mode: one cell, n
+ * test replies (1 to OPXY_QUAD_N_MAX, OPXY_QUAD_N when n is left out or 0)
+ * of len bytes (12 to 0x10000, whole words) under candidate cand (S09_QT_...),
+ * with REN when ren is 1, the master at clock (S09_QT_FAST, S09_QT_FMODE). It
+ * writes nothing to storage and sends nothing but 0x1C, and S-09.013 rule
+ * 4's echoes, polls and 0x1B when a session fails; it ends with the link
+ * plain and the slave answering, the boot's struck rungs and gate verdicts
+ * as they were. Refused as OPXY_DEV_LINK_TEST is. The reply after the status
+ * byte, little-endian:
+ *   cand:1 ren:1 clock:1 len:4 n:2, as asked
+ *   flags:1 (OPXY_QUAD_...) why:1 (refused: the arm's value, S09_QT_...)
+ *   sent:2 whole:2 flag:2 missing:2 last_wrong:2 word_wrong:2 broke:2
+ *   no_record:2, the trials (struct s09_qt_cell)
+ *   ends:2 x S09_QE_COUNT, the slave's records by how each reply ended
+ *   dmin:4 dmax:4, the flag's delay after the last feed in the slave's
+ *   cycles (0xFFFFFFFF: none), lines:1, the data lines of every wrong bit
+ *   m_or:4 m_and:4 s_or:4, SPI_STAT at the end of each reply, the master's
+ *   or-ed and and-ed, and the slave's or-ed over the reply
+ *   cycles:8, the cell's core cycles
+ *   first:1 (S09_QX_...) first_no:2 first_word:4 (0xFFFFFFFF none), the
+ *   first failed trial, then the master's four words for it and the
+ *   slave's record of it (S09_QT_REC_WORDS words, zeros when none came)
+ */
+#define OPXY_QUAD_N 16u
+#define OPXY_QUAD_N_MAX 4096u
+#define OPXY_QUAD_LIMIT_S 120u
+#define OPXY_QUAD_LOST 0x01u		/* flags: the slave stopped answering */
+#define OPXY_QUAD_CUT 0x02u		/* ... the bound ended the cell */
+#define OPXY_QUAD_UNSETTLED 0x04u	/* ... the slave not answering after it: restart */
+#define OPXY_QUAD_REFUSED 0x08u		/* ... refused: nothing was sent but the arm */
+#define OPXY_QUAD_REPLY (1u + 9u + 2u + 16u + 2u * S09_QE_COUNT + 9u + 12u + 8u + \
+			 7u + 16u + S09_QT_REC_LEN)
+
+/*
  * OPXY_DEV_EXTRACT's reader of the zip, a wire_source read at package
  * offsets: read's bytes as they are or, encrypted, decrypted as they are
  * read (AES-256-CBC in software, iv the chain value at the zip's start).
@@ -412,6 +450,8 @@ size_t opxy_dev_check(struct opxy_master *m, uint8_t *out);
 size_t opxy_dev_extract(struct opxy_master *m, uint8_t *out);
 size_t opxy_dev_link_test(struct opxy_master *m, const uint8_t *req, size_t n,
 			  uint8_t *out);
+size_t opxy_dev_quad_reply(struct opxy_master *m, const uint8_t *req, size_t n,
+			   uint8_t *out);
 
 /* From held mode's loop, once a pass: one queued key event to the menus;
  * with developer mode off, the hand-over options dropped. */

@@ -126,6 +126,16 @@ struct s09_bus_ops {
 typedef uint32_t (*s09_check_fn)(void *ctx, const uint8_t *d, size_t n);
 
 /*
+ * S-09.080, S-13b.084: a quad reply test's reply session on the bus, its n
+ * bytes into d in quad I/O at `clock` (S09_QT_FAST, S09_QT_FMODE), the
+ * controller in single I/O again after it, as after any reply; out the
+ * master's own words at its end (SPI_STAT, the word count, the cycles from
+ * EN to the DMA's done status, the DMA's status). False as recv's.
+ */
+typedef bool (*s09_quad_recv_fn)(void *ctx, uint8_t *d, size_t n, unsigned clock,
+				 uint32_t out[4]);
+
+/*
  * S-09.075: the rungs of the link, slowest first. A rung is a link mode
  * (S-09.070) and the master's clock for request sessions.
  */
@@ -365,6 +375,9 @@ struct s09_master {
 	_Alignas(4) uint8_t stat[S09_STATUS_LEN + 4u];	/* 0x1B's reply */
 	/* S-09.076: the last number given */
 	uint32_t seq;
+	/* S-09.080: the bus's quad reply test receive, NULL for none */
+	s09_quad_recv_fn quad_recv;
+	void *quad_ctx;
 	/* S-09.072: the check's engine, NULL for the table; given up */
 	s09_check_fn check;
 	void *check_ctx;
@@ -540,6 +553,60 @@ struct s09_bench {
 	uint16_t end_req;
 };
 bool s09_master_link_bench(struct s09_master *m, struct s09_bench *b);
+/*
+ * S-09.080, S-13b.084: a developer's quad reply test, one cell: n test
+ * replies of len bytes, each armed (0x1C ARM), sent by the slave in quad I/O
+ * under candidate cand (with REN when ren) and taken by the master at clock
+ * (S09_QT_FAST: SCLK0 / 2, S09_QT_FMODE: fast mode) through the receive
+ * s09_master_quad_recv() gave, then the slave's record fetched (0x1C RECORD), all in the plain mode with nothing else sent but
+ * S-09.013 rule 4's echoes, polls and 0x1B. Trial i has pattern i mod
+ * S09_QT_PATS and seed i. The link is lowered and the slave settled first
+ * (S-09.078, S-09.074); a trial whose session fails is S-09.013 rule 4's,
+ * and the cell goes on. limit_us bounds the cell (cut). False: the slave is
+ * absent. A bus or slave with no test, a refused arm, or arguments out of
+ * range: refused, nothing sent but the arm.
+ */
+#define S09_QT_FAST 0x1u
+#define S09_QT_FMODE 0x2u
+#define S09_QT_CLOCKS 4u
+/* What failed first in a cell. */
+#define S09_QX_OK 0u
+#define S09_QX_BROKE 1u		/* the session did not complete */
+#define S09_QX_LAST 2u		/* only the last word was wrong */
+#define S09_QX_WORD 3u		/* another word was wrong */
+#define S09_QX_NO_FLAG 4u	/* whole, but the candidate's flag missing */
+#define S09_QX_NO_RECORD 5u	/* the slave's record did not come */
+struct s09_qt_cell {
+	uint8_t cand, clock;
+	bool ren;
+	uint32_t len;
+	uint16_t n;
+	uint32_t limit_us;
+	void (*between)(void *ctx);	/* after each trial (USB) */
+	void *ctx;
+	/* the trials */
+	uint16_t sent, whole, flag, missing, last_wrong, word_wrong, broke;
+	uint16_t no_record;
+	uint16_t ends[S09_QE_COUNT];	/* by the slave's end (S09_QE_...) */
+	uint32_t dmin, dmax;		/* the flag's delay after the last feed */
+	uint8_t lines;			/* the data lines of every wrong bit */
+	/* SPI_STAT at the end, the master's or-ed and and-ed over the
+	 * replies that came whole, the slave's or-ed over its records */
+	uint32_t m_stat_or, m_stat_and, s_stat_or;
+	bool refused, cut, settled;
+	uint8_t why;			/* refused: the arm's value */
+	/* the first trial that failed: which, how, the slave's record and
+	 * the master's own words */
+	uint8_t first;			/* S09_QX_... */
+	uint16_t first_no;
+	uint32_t first_rec[S09_QT_REC_WORDS];
+	uint32_t first_m[4];
+	uint32_t first_word;		/* its first wrong word's index */
+};
+bool s09_master_quad_test(struct s09_master *m, struct s09_qt_cell *c);
+/* The bus's receive for it; without one every cell is refused. */
+void s09_master_quad_recv(struct s09_master *m, s09_quad_recv_fn fn, void *ctx);
+
 /* The rung, the fall-backs so far, and a file write's most bytes on this
  * rung (S-09.023). */
 unsigned s09_master_rung(const struct s09_master *m);

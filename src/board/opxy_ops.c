@@ -238,6 +238,25 @@ static void bus_end(void *ctx)
 	wb_spi_dma_close(ctx);
 }
 
+/*
+ * S-09.080, S-13b.084: a quad reply test's reply session, in quad I/O at the
+ * pre-link control value with MIOM 2, with or without fast mode, at
+ * SCLK0 / 4 or SCLK0 / 2; SPI0_CTL 0 and the pre-link clock after it, as
+ * after a rung's send.
+ */
+/* cppcheck-suppress constParameterPointer ; s09_quad_recv_fn fixes the type */
+bool opxy_bus_quad_recv(void *ctx, uint8_t *d, size_t n, unsigned clock,
+			  uint32_t out[4])
+{
+	const uint32_t ctl = opxy_spi_bridge_pre.ctl | SPI_CTL_MIOM_QUAD |
+			     ((clock & S09_QT_FMODE) != 0u ? SPI_CTL_FMODE : 0u);
+	const int rc = wb_spi_qtest_recv(ctx, ctl, (clock & S09_QT_FAST) != 0u ? 1u : 3u,
+					 d, n, out);
+
+	OPXY_TESTOS(opxy_testos_bus_note('R', rc, d, n);)
+	return rc == WB_SPI_OK;
+}
+
 /* S-13b.040, .041: single I/O before the link and after it. After a failed
  * operation, or with a DMA channel of SPI0 still enabled, the plain set-up
  * is a restart, so that the plain exchanges that follow (S-09.074) start

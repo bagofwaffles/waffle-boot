@@ -180,7 +180,8 @@ def check_records(items):
 
 # ---- the master's protocol rules over a whole run ----
 
-NEVER_SENT = {m.CLOCK_SYNC, 0x1F, 0x36}
+# ... and 0x1C, a developer's request alone (S-09.080): no boot, install or service sends it
+NEVER_SENT = {m.CLOCK_SYNC, 0x1F, 0x36, m.QUAD_TEST}
 RUNG_MODE = {0: m.PLAIN, 1: m.CHECKED, 2: m.CHECKED, 3: m.QUAD, 4: m.QUAD}
 
 

@@ -55,6 +55,9 @@
  *                                     session (RX: the bytes it takes; HEX zero padded to the
  *                                     s09_slave_rx_keep() of them it keeps), then the reply session it
  *                                     has ("-": none)
+ *   qtargs ARG0 ARG1               -> 1|0 (s09_qt_args_ok, S-09.080)
+ *   qtbuild SLOT ARG0 N            -> HEX: the test reply of N bytes (s09_qt_build)
+ *   qtlines DIFF                   -> LINES (s09_qt_lines)
  *   satt                           -> 1|0: PB2 low (s09_slave_attention)
  *   stake                          -> 1 VALUE | 0: the release hook (s09_slave_take_release)
  *   cpu AUTO                       -> ok: S-06 nodes on both ends of channel 0 (the master's own
@@ -1137,6 +1140,24 @@ int main(void)
 			do_boot(&c);
 		} else if (strcmp(k, "sreq") == 0 && c.n == 2) {
 			do_sreq(&c);
+		} else if (strcmp(k, "qtargs") == 0 && c.n == 3) {
+			h_putu(s09_qt_args_ok((uint32_t)h_num(&c, 1), (uint32_t)h_num(&c, 2)));
+			h_end();
+		} else if (strcmp(k, "qtbuild") == 0 && c.n == 4) {
+			const uint32_t n = (uint32_t)h_num(&c, 3);
+
+			if (n < S09_QT_MIN || n > S09_QT_MAX || n % 4u != 0u || !s09_check_ready()) {
+				h_put("bad");
+			} else {
+				static uint8_t qt[S09_QT_MAX];
+
+				s09_qt_build(qt, n, (uint8_t)h_num(&c, 1), (uint32_t)h_num(&c, 2));
+				h_puthex(qt, n);
+			}
+			h_end();
+		} else if (strcmp(k, "qtlines") == 0 && c.n == 2) {
+			h_putu(s09_qt_lines((uint32_t)h_num(&c, 1)));
+			h_end();
 		} else if (strcmp(k, "satt") == 0) {
 			h_putu(s09_slave_attention(&slave));
 			h_end();

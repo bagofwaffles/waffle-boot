@@ -34,6 +34,7 @@
 #define S09_LINK_MODE 0x19u	/* S-09.070 */
 #define S09_LINK_TEST 0x1Au	/* S-09.071 */
 #define S09_LINK_STATUS 0x1Bu	/* S-09.079 */
+#define S09_QUAD_TEST 0x1Cu	/* S-09.080: a developer's quad reply test */
 #define S09_PUSH0 0x1Eu
 #define S09_PUSH1 0x1Fu
 #define S09_PULL 0x20u
@@ -232,6 +233,112 @@ static inline bool s09_status_exact(const struct s09_req *r)
 /* S-09.071: a link test's reply value for its n payload bytes (padded to
  * whole words with zeros by the caller). */
 uint32_t s09_test_value(const uint8_t *d, uint32_t n);
+
+/*
+ * S-09.080, S-13b.084: the quad reply test, a developer's measurement of
+ * what ends a reply sent in quad I/O. 0x1C is an immediate request with no
+ * payload, served in the plain mode only. arg0's low four bits are its
+ * operation:
+ *   ARM (arg1 the reply's bytes, S09_QT_MIN to S09_QT_MAX, whole words):
+ *     arg0 also carries the candidate ending, REN, the pattern and a seed;
+ *     the reply is [hdr][S09_QT_ARMED or a refusal], single I/O;
+ *   SEND (arg0 1, arg1 0): the armed test reply, sent in quad I/O under
+ *     the armed candidate; unarmed, [hdr][S09_QT_NOT_ARMED] in single I/O;
+ *   RECORD (arg0 2, arg1 0): the slave's record of the last test reply,
+ *     S09_QT_REC_WORDS words, single I/O.
+ * Every 0x1C request disarms an armed test it does not send.
+ */
+#define S09_QT_ARM 0u
+#define S09_QT_SEND 1u
+#define S09_QT_RECORD 2u
+#define S09_QT_OP(a) ((a) & 0xFu)
+#define S09_QT_CAND(a) (((a) >> 4) & 3u)
+#define S09_QT_REN 0x40u
+#define S09_QT_PAT(a) (((a) >> 8) & 0xFu)
+#define S09_QT_SEED(a) ((a) >> 16)
+#define S09_QT_ARG0(cand, ren, pat, seed) \
+	(S09_QT_ARM | ((uint32_t)(cand) & 3u) << 4 | ((ren) ? S09_QT_REN : 0u) | \
+	 ((uint32_t)(pat) & 0xFu) << 8 | ((uint32_t)(seed) & 0xFFFFu) << 16)
+/* The candidate endings (S-13b.084). */
+#define S09_QT_TF_DMA 1u	/* TF, fed by the transmit DMA */
+#define S09_QT_TF_CORE 2u	/* TF, fed by the core */
+#define S09_QT_SPIF 3u		/* SPIF, a loop that reads SPI_STAT alone */
+/* The patterns: a walking one, a walking zero, one data line high, one
+ * line low, the lines alternating, pseudo-random words. */
+#define S09_QT_PATS 6u
+#define S09_QT_MIN 12u
+#define S09_QT_MAX 0x10000u
+/* ARM's and an unarmed SEND's value. */
+#define S09_QT_ARMED 0u
+#define S09_QT_BAD 1u		/* an argument out of range */
+#define S09_QT_NOT_PLAIN 2u	/* the link is not in the plain mode */
+#define S09_QT_NOT_ARMED 3u	/* SEND with no test armed */
+#define S09_QT_NO_SLAVE 4u	/* the slave's build has no test */
+
+/* RECORD's reply: these words, little-endian. Times are the slave's core
+ * cycles from the hand-over of its ready line, S09_QT_NONE when not seen. */
+enum {
+	S09_QR_HDR,		/* the header word */
+	S09_QR_NO,		/* test replies sent since the server started */
+	S09_QR_ARM,		/* the arm's arg0 */
+	S09_QR_LEN,		/* the reply's bytes */
+	S09_QR_END,		/* S09_QE_... and S09_QF_... */
+	S09_QR_STAT,		/* SPI_STAT at the end */
+	S09_QR_DMA,		/* the transmit DMA's DMA_STAT at the end */
+	S09_QR_TWC,		/* SPI_TWC at the end */
+	S09_QR_STAT_OR,		/* SPI_STAT or-ed over the reply */
+	S09_QR_STAT_BOUND,	/* SPI_STAT when the bound ran out, else 0 */
+	S09_QR_HAND,		/* the cycle counter at the hand-over */
+	S09_QR_T_START,		/* the master-ready pin first read low */
+	S09_QR_T_FEED,		/* the last word fed; SPIF: SPIF's last fall */
+	S09_QR_T_FLAG,		/* the candidate's flag; SPIF: its last rise */
+	S09_QR_T_END,		/* the end: the flag taken, or the give-up */
+	S09_QR_SPIF,		/* SPIF's falls, and its rises << 16 */
+	S09_QR_RX,		/* words received with REN set */
+	S09_QR_STAGE,		/* the driver's code (bits 31-8) and stage */
+	S09_QT_REC_WORDS
+};
+#define S09_QT_REC_LEN (4u * S09_QT_REC_WORDS)
+#define S09_QT_NONE 0xFFFFFFFFu
+/* How a test reply ended (S09_QR_END bits 7-0). */
+#define S09_QE_NONE 0u		/* no test reply sent */
+#define S09_QE_FLAG 1u		/* the candidate's flag */
+#define S09_QE_BOUND 2u		/* no flag within the bound */
+#define S09_QE_MASTER 3u	/* the master-ready pin rose first */
+#define S09_QE_TX_ERR 4u	/* a transmit underrun or collision */
+#define S09_QE_DMA_ERR 5u	/* the transmit DMA reported an error */
+#define S09_QE_NO_START 6u	/* the master never began */
+#define S09_QE_REFUSED 7u	/* the driver refused the reply */
+#define S09_QE_COUNT 8u
+/* ... and what was seen (S09_QR_END bits 8 on). */
+#define S09_QF_TF_STAT 0x100u	/* SPI_STAT.TF read set */
+#define S09_QF_TF_ILAT 0x200u	/* SPI_ILAT.TF read set */
+#define S09_QF_FED 0x400u	/* every word fed */
+#define S09_QF_BEGAN 0x800u	/* the master-ready pin read low */
+#define S09_QF_ENDED 0x1000u	/* ... and high again after the end */
+#define S09_QF_SINGLE 0x2000u	/* the controller back in single I/O */
+
+/* S-09.080: arm's arguments in range: an operation, a candidate, REN only
+ * with a TF candidate, a pattern, and a length of whole words. */
+bool s09_qt_args_ok(uint32_t arg0, uint32_t arg1);
+/* Word j of a pattern's payload. */
+uint32_t s09_qt_word(unsigned pat, uint32_t seed, uint32_t j);
+/*
+ * A test reply of n bytes for arg0's pattern and seed: the header word of
+ * 0x1C in slot, the pattern's words, then the check word of every word
+ * before it (s09_check_word(), whose tables the caller has built).
+ */
+void s09_qt_build(uint8_t *d, uint32_t n, uint8_t slot, uint32_t arg0);
+/* The data lines a word's wrong bits were on, bit k for line k: a quad
+ * clock carries a nibble, line k its bit k. */
+static inline uint8_t s09_qt_lines(uint32_t diff)
+{
+	uint32_t l = 0;
+
+	for (unsigned i = 0; i < 8u; i++)
+		l |= diff >> (4u * i);
+	return (uint8_t)(l & 0xFu);
+}
 
 /* S-09.023, S-09.037: is a multi-sector request's count (arg1) in 1-128? */
 static inline bool s09_count_ok(const struct s09_req *r)

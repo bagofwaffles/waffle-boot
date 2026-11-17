@@ -474,6 +474,76 @@ void wb_spi_slave_last_fault(const struct wb_spi_slave *s,
 			     struct wb_spi_fault *out);
 
 /*
+ * A developer's quad reply test (S-09.080, S-13b.084): what ends a reply
+ * sent in quad I/O, as the slave alone sees it.
+ *
+ * wb_spi_slave_qtest(): one reply of n bytes (32-bit words) from tx in quad
+ * I/O, ended by one candidate: the TF end fed by the transmit DMA
+ * (WB_SPI_QT_TF_DMA), the TF end fed by the core (WB_SPI_QT_TF_CORE), or
+ * SPIF in a loop that reads SPI_STAT alone (WB_SPI_QT_SPIF, fed by the
+ * DMA). The set-up is S-13b.044's, in its order with EN clear, MIOM written
+ * by a write that finds EN clear and EN set last; SPI_RXCTL is 0, or with
+ * `ren` REN alone (a TF candidate only), and then each received word is
+ * read and counted. Two words follow the reply's, uncounted. With the
+ * master-ready pin high (at most start_us) the ready pin is handed over.
+ * TF is unmasked once every word has been fed, and the TF end is
+ * SPI_ILAT.TF read set; the SPIF end is SPIF read set again after a fall,
+ * with SPI_STAT unchanged for quiet_us since. At the end the ready pin is
+ * taken back first, then the transmit stopped as a reply's end stops it
+ * (TF masked, TEN cleared, TF acknowledged, the DMA disabled, EN left set).
+ * No end within flag_us of the master-ready pin's first low (for a TF
+ * candidate, and of the last feed after it), that pin high
+ * again first, a transmit underrun or collision, a DMA error, or no begin
+ * within start_us: the reply is given up as a failed one (S-13b.045). Then,
+ * whatever happened, the master-ready pin is waited for high (at most
+ * start_us) and SPI2 is left disabled in single I/O, both channels off,
+ * TF masked, the status cleared and the DMA stopped. *q says what was seen.
+ * WB_SPI_OK only when the candidate's end came.
+ *
+ * wb_spi_qtest_recv(): the master's end, one reply session of n bytes into
+ * buf by DMA5 in one part, under ctl (with MIOM) and clk: SPI_CTL 0, the
+ * clock, ctl (the write that changes MIOM), the transmit channel off, the
+ * status cleared, DMA5 given its array, SPI_RWC, SPI_RXCTL, EN last. At
+ * DMA5's done status out[0] SPI_STAT, out[1] SPI_RWC, out[2] the core cycles
+ * from EN set to it, out[3] DMA5's status; then REN and EN cleared (MIOM
+ * kept), SPI_CTL 0 and the clock put back. A failure is wb_spi_dma_recv()'s.
+ */
+#define WB_SPI_QT_TF_DMA  1u
+#define WB_SPI_QT_TF_CORE 2u
+#define WB_SPI_QT_SPIF    3u
+#define WB_SPI_QT_NONE    0xFFFFFFFFu
+/* How it ended (end bits 7-0), then what was seen (bits 8 on). */
+enum {
+	WB_SPI_QE_NONE, WB_SPI_QE_FLAG, WB_SPI_QE_BOUND, WB_SPI_QE_MASTER,
+	WB_SPI_QE_TX_ERR, WB_SPI_QE_DMA_ERR, WB_SPI_QE_NO_START, WB_SPI_QE_REFUSED,
+};
+#define WB_SPI_QF_TF_STAT 0x100u	/* SPI_STAT.TF read set */
+#define WB_SPI_QF_TF_ILAT 0x200u	/* SPI_ILAT.TF read set */
+#define WB_SPI_QF_FED     0x400u	/* every word fed */
+#define WB_SPI_QF_BEGAN   0x800u	/* the master-ready pin read low */
+#define WB_SPI_QF_ENDED   0x1000u	/* ... and high again after the end */
+#define WB_SPI_QF_SINGLE  0x2000u	/* SPI_CTL single I/O again, EN clear */
+/* Registers at the end, and times in core cycles from the hand-over
+ * (WB_SPI_QT_NONE: not seen). */
+struct wb_spi_qt {
+	uint32_t end;
+	uint32_t stat, dma, twc;	/* at the end, the ready pin just back */
+	uint32_t stat_or;		/* SPI_STAT or-ed over the reply */
+	uint32_t stat_bound;		/* SPI_STAT as the bound ran out */
+	uint32_t hand;			/* the cycle counter at the hand-over */
+	uint32_t t_start, t_feed, t_flag, t_end;
+	uint32_t spif;			/* SPIF's falls, its rises << 16 */
+	uint32_t rx;			/* words received with REN */
+	int32_t rc;
+	uint32_t stage;			/* WB_SPI_STAGE_..., the failure's */
+};
+int wb_spi_slave_qtest(const struct wb_spi_slave *s, const uint8_t *tx,
+		       size_t n, unsigned cand, bool ren, uint32_t start_us,
+		       uint32_t flag_us, uint32_t quiet_us, struct wb_spi_qt *q);
+int wb_spi_qtest_recv(const struct wb_spi *s, uint32_t ctl, uint32_t clk,
+		      uint8_t *buf, size_t n, uint32_t out[4]);
+
+/*
  * The bridge's descriptor arrays (S-13b.083), in L1: what each channel is
  * given, and where each descriptor's bytes are in memory (mem) and, for a
  * receive through a separate 32-byte buffer, where they are copied to at

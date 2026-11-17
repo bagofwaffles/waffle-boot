@@ -602,6 +602,106 @@ class Link(unittest.TestCase):
         self.assertFalse(any('words' in ln.split() or 'halves' in ln.split() for ln in table))
 
 
+class QuadReply(unittest.TestCase):
+    """dev-quad-reply: OPXY_DEV_QUAD_REPLY's answer laid out as waffle/devhost.h gives it, the cells asked
+    for, the tables and the verdicts."""
+
+    @staticmethod
+    def answer(cand=1, ren=0, clock=2, length=12, n=16, flags=0, why=0, counts=(16, 16, 16, 0, 0, 0, 0, 0),
+               ends=None, dmin=40, dmax=52, lines=0, m_or=1 << 10, m_and=1 << 10, s_or=0x800,
+               first=0, first_no=0, first_word=0xFFFFFFFF, first_m=(0, 0, 0, 0), rec=None):
+        ends = ends or [0, counts[2], counts[3], 0, 0, 0, 0, 0]
+        rec = rec or [0] * 18
+        return struct.pack(m.QUAD_LAYOUT, cand, ren, clock, length, n, flags, why, *counts, *ends, dmin, dmax,
+                           lines, m_or, m_and, s_or, 400000, first, first_no, first_word, *first_m, *rec)
+
+    def test_layout(self):
+        self.assertEqual(struct.calcsize(m.QUAD_LAYOUT), m.QUAD_REPLY)
+        self.assertEqual(m.QUAD_REPLY + 1, 168)         # OPXY_QUAD_REPLY, its status byte included
+        d = m.quad_parse(self.answer(length=0x10000, n=4096))
+        self.assertEqual((d['cand'], d['clock'], d['len'], d['n'], d['whole']), (1, 2, 0x10000, 4096, 16))
+        self.assertEqual(d['first_rec']['stage'], 0)
+        with self.assertRaises(SystemExit):
+            m.quad_parse(b'\0' * 20)
+
+    def test_request(self):
+        r = m.quad_request(3, 0, 1, 0x4000, 4096)
+        self.assertEqual(r, bytes([m.DEV_QUAD_REPLY, 3, 0, 1]) + struct.pack('<IH', 0x4000, 4096))
+
+    def test_args(self):
+        n, cells, js = m.quad_args([])
+        self.assertEqual((n, js, len(cells)), (16, False, 140))       # REN only for the TF candidates
+        self.assertFalse(any(c[0] == 3 and c[1] for c in cells))
+        n, cells, js = m.quad_args(['4096', '--cand', 'spif', '--clock', '50f', '--len', '12,0x10000', '--json'])
+        self.assertEqual((n, js, cells), (4096, True, [(3, 0, 3, 12), (3, 0, 3, 0x10000)]))
+        for bad in (['0'], ['4097'], ['--cand', 'tf'], ['--len', '14'], ['--ren', '2'], ['--what']):
+            with self.assertRaises(SystemExit):
+                m.quad_args(bad)
+
+    def test_verdict_good(self):
+        cells = [m.quad_parse(self.answer(clock=c, length=ln)) for c in (0, 1) for ln in (12, 64)]
+        self.assertEqual(m.quad_verdict(cells), 'ended every reply and every reply was whole (64 replies)')
+        text = m.quad_table(cells)
+        self.assertIn('TF, DMA feed; the master at 25 MHz, fast mode off', text)
+        self.assertIn('TF, DMA feed; the master at 50 MHz, fast mode off', text)
+        self.assertIn('40-52', text)
+        self.assertIn('every reply', text)
+        self.assertIn('  TF, DMA feed: ended every reply and every reply was whole', text)
+
+    def test_verdict_failures(self):
+        rec = [0] * 18
+        rec[3], rec[4], rec[5], rec[7] = 64, 2 | 0x400 | 0x800 | 0x1000 | 0x2000, 0x00C40001, 1
+        rec[12], rec[13], rec[14] = 400, 0xFFFFFFFF, 12000000
+        missing = m.quad_parse(self.answer(cand=2, ren=1, length=64, counts=(16, 16, 0, 16, 0, 0, 0, 0),
+                                           dmin=0xFFFFFFFF, dmax=0xFFFFFFFF, first=4, rec=rec))
+        last = m.quad_parse(self.answer(cand=3, clock=1, length=256, counts=(8, 5, 8, 0, 3, 0, 0, 0),
+                                        lines=0x1, first=2, first_no=2, first_word=63))
+        self.assertEqual(m.quad_verdict([missing]),
+                         'failed first at 25 MHz, fast mode on, 64 bytes: the flag did not come on 16 of 16')
+        self.assertEqual(m.quad_verdict([last]), 'failed first at 50 MHz, fast mode off, 256 bytes: '
+                         'the last word was wrong on 3 of 8')
+        text = m.quad_table([missing, last])
+        self.assertIn('TF, core feed, REN set', text)
+        self.assertIn('SPIF, SPI_STAT alone', text)
+        self.assertIn('trial 0: the flag did not come; the master', text)
+        self.assertIn('the slave: ended by the bound; saw fed whole, the master began, the master ended, '
+                      'single I/O after', text)
+        self.assertIn('flag -', text)
+        self.assertIn('trial 2: the last word was wrong (word 63 of 64 first)', text)
+        self.assertIn(' D0 ', text)
+        lost = m.quad_parse(self.answer(flags=1, counts=(3, 2, 2, 0, 0, 0, 1, 0)))
+        self.assertIn('THE SLAVE STOPPED ANSWERING: restart the unit', m.quad_verdict([lost]))
+        self.assertIn('the session broke on 1 of 3', m.quad_verdict([lost]))
+        refused = m.quad_parse(self.answer(cand=3, ren=1, flags=8, why=1, counts=(0,) * 8))
+        self.assertEqual(m.quad_verdict([refused]), 'refused: an argument out of range')
+
+    def test_run(self):
+        """The cells in order, each its own request; a lost slave stops the run; --json."""
+        asked = []
+
+        class Unit:
+            def checked(unit, payload, timeout=5.0):
+                asked.append(payload)
+                self.assertGreaterEqual(timeout, m.QUAD_LIMIT_S)
+                lost = len(asked) == 3
+                return self.answer(cand=payload[1], ren=payload[2], clock=payload[3],
+                                   length=struct.unpack_from('<I', payload, 4)[0], flags=1 if lost else 0)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            m.quad_reply(Unit(), ['2', '--cand', 'tf-dma', '--ren', '0', '--clock', '25,50'])
+        self.assertEqual(len(asked), 3)                 # 14 cells asked for, the third lost the slave
+        self.assertEqual(asked[0], m.quad_request(1, 0, 0, 12, 2))
+        self.assertIn('THE SLAVE STOPPED ANSWERING', out.getvalue())
+        asked.clear()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            m.quad_reply(Unit(), ['--cand', 'spif', '--clock', '25', '--len', '12,64', '--json'])
+        import json
+        got = json.loads(out.getvalue())
+        self.assertEqual(len(got['cells']), 2)
+        self.assertEqual(got['verdicts'][0]['name'], 'SPIF, SPI_STAT alone')
+
+
 class Start(unittest.TestCase):
     """dev-start: OPXY_DEV_BOOT_START's report in the words the unit's screens use for it."""
 

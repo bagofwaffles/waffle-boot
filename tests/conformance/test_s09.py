@@ -717,6 +717,45 @@ class Records(unittest.TestCase):
 
 
 
+class QuadTest(unittest.TestCase):
+    """S-09.080: the quad reply test's request and reply words (quad_test.json), and the slave's answer
+    to 0x1C without a board test behind it."""
+
+    @requirement('S-09.080')
+    def test_S09_080_args_and_replies(self):
+        import hashlib
+        v = vectors('quad_test.json')
+        cmds = ['qtargs %d %d' % (a['arg0'], a['arg1']) for a in v['args']]
+        cmds += ['qtbuild %d %d %d' % (r['slot'], r['arg0'], r['n']) for r in v['replies']]
+        cmds += ['qtlines %d' % ln['diff'] for ln in v['lines']]
+        out = run('s09', cmds)
+        na, nr = len(v['args']), len(v['replies'])
+        for a, o in zip(v['args'], out[:na]):
+            self.assertEqual(o, '1' if a['ok'] else '0', a['name'])
+        for r, o in zip(v['replies'], out[na:na + nr]):
+            if 'reply_hex' in r:
+                self.assertEqual(o, r['reply_hex'], r['name'])
+            else:
+                self.assertEqual(hashlib.sha256(unhex(o)).hexdigest(), r['reply_sha256'], r['name'])
+        for ln, o in zip(v['lines'], out[na + nr:]):
+            self.assertEqual(int(o), ln['lines'], ln['diff'])
+
+    @requirement('S-09.080', 'S-09.023')
+    def test_S09_080_slave_without_test(self):
+        """0x1C is defined and immediate: a slave with no test behind it answers each operation with the
+        8-byte reply S09_QT_NO_SLAVE, in single I/O, and stays in the plain mode."""
+        v = vectors('quad_test.json')
+        out = run('s09', ['rig', 'start'] + ['sreq ' + r['hex'] for r in v['requests']] + ['smode'])
+        for r, o in zip(v['requests'], out[2:5]):
+            rx, rep = o.split()
+            self.assertEqual(int(rx), 12, r['name'])
+            rep = unhex(rep)
+            self.assertEqual(len(rep), 8, r['name'])
+            self.assertEqual(rep[0], bm.QUAD_TEST)
+            self.assertEqual(struct.unpack_from('<I', rep, 4)[0], v['values']['no_slave'], r['name'])
+        self.assertEqual(out[5].split()[0], '0')
+
+
 # ---- the link modes (S-09.070-S-09.075) ----
 
 LINK_REQ = {it['name']: it for it in vectors('link_requests.json')}

@@ -19,6 +19,7 @@ int s09_kind(uint8_t cmd)
 	case S09_LINK_MODE:
 	case S09_LINK_TEST:
 	case S09_LINK_STATUS:
+	case S09_QUAD_TEST:
 	OPXY_TESTOS(case OPXY_TESTOS_ROW_REQ: case OPXY_TESTOS_PEEK_REQ: case OPXY_TESTOS_POKE_REQ:)
 #if !defined(OPXY_TEST_OS)
 	case OPXY_DEV_PEEK_REQ: case OPXY_DEV_POKE_REQ:
@@ -66,10 +67,60 @@ bool s09_plain_safe(uint8_t cmd)
 	case S09_STATFS:
 	case S09_FREE_SPACE:
 	case S09_TOTAL_SPACE:
+	case S09_QUAD_TEST:	/* S-09.080: it writes no storage */
 		return true;
 	default:
 		return false;
 	}
+}
+
+/* S-09.080 */
+bool s09_qt_args_ok(uint32_t arg0, uint32_t arg1)
+{
+	const uint32_t cand = S09_QT_CAND(arg0);
+
+	return S09_QT_OP(arg0) == S09_QT_ARM && cand >= S09_QT_TF_DMA &&
+	       cand <= S09_QT_SPIF && (arg0 & 0x80u) == 0u &&
+	       ((arg0 & S09_QT_REN) == 0u || cand != S09_QT_SPIF) &&
+	       S09_QT_PAT(arg0) < S09_QT_PATS && (arg0 & 0xF000u) == 0u &&
+	       arg1 >= S09_QT_MIN && arg1 <= S09_QT_MAX && arg1 % 4u == 0u;
+}
+
+uint32_t s09_qt_word(unsigned pat, uint32_t seed, uint32_t j)
+{
+	const uint32_t k = j + seed;
+	uint32_t x;
+
+	switch (pat) {
+	case 0u:		/* a walking one */
+		return 1u << (k % 32u);
+	case 1u:		/* a walking zero */
+		return ~(1u << (k % 32u));
+	case 2u:		/* one data line high in every nibble */
+		return 0x11111111u << (k % 4u);
+	case 3u:		/* ... one low */
+		return ~(0x11111111u << (k % 4u));
+	case 4u:		/* adjacent lines at opposite levels */
+		return (k & 1u) != 0u ? 0xAAAAAAAAu : 0x55555555u;
+	default:		/* pseudo-random */
+		x = k * 0x9E3779B9u ^ seed << 7;
+		x ^= x >> 16;
+		x *= 0x85EBCA6Bu;
+		x ^= x >> 13;
+		x *= 0xC2B2AE35u;
+		return x ^ x >> 16;
+	}
+}
+
+void s09_qt_build(uint8_t *d, uint32_t n, uint8_t slot, uint32_t arg0)
+{
+	const uint32_t words = n / 4u;
+
+	wb_put_le32(d, s09_hdr_word(S09_QUAD_TEST, slot));
+	for (uint32_t j = 0; j + 2u < words; j++)
+		wb_put_le32(d + 4u + 4u * j,
+			    s09_qt_word(S09_QT_PAT(arg0), S09_QT_SEED(arg0), j));
+	wb_put_le32(d + n - 4u, s09_check_word(d, n - 4u));
 }
 
 /* S-09.020 */

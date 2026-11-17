@@ -277,7 +277,7 @@ static bool rx(struct s09_master *m, uint8_t *d, uint32_t n)
 }
 
 /* What follows a request session at once (S-09.030-S-09.034). */
-enum { X_NONE, X_IMM, X_PULL, X_POLL, X_STATUS };
+enum { X_NONE, X_IMM, X_PULL, X_POLL, X_STATUS, X_QREC };
 
 /*
  * One exchange: a request session and the reply session that follows it
@@ -541,8 +541,10 @@ static bool reply(struct s09_master *m, const struct xreq *x)
 		return false;
 	}
 	m->why.at = S09_AT_NONE;
-	if (x->reply == X_IMM || x->reply == X_STATUS) {	/* S-09.030 */
-		got = x->reply == X_IMM ? 8u : S09_STATUS_LEN;
+	if (x->reply == X_IMM || x->reply == X_STATUS || x->reply == X_QREC) {
+		/* S-09.030; S-09.079's 36 bytes, S-09.080's record */
+		got = x->reply == X_IMM ? 8u :
+		      x->reply == X_STATUS ? S09_STATUS_LEN : S09_QT_REC_LEN;
 		ok = rx(m, at, got) &&
 		     s06_rd_le32(at) == s09_hdr_word(x->r.cmd, x->r.slot);
 	} else if (x->reply == X_PULL) {	/* S-09.034 */
@@ -1164,6 +1166,12 @@ void s09_master_init(struct s09_master *m, const struct s09_bus_ops *bus,
 	m->ceiling = S09_RUNG_TOP;
 	m->plain_word_ns = S09_PLAIN_WORD_NS;
 	m->t_quiet_us = S09_T_QUIET_US;
+}
+
+void s09_master_quad_recv(struct s09_master *m, s09_quad_recv_fn fn, void *ctx)
+{
+	m->quad_recv = fn;
+	m->quad_ctx = ctx;
 }
 
 void s09_master_check_engine(struct s09_master *m, s09_check_fn fn, void *ctx)
@@ -2119,6 +2127,242 @@ bool s09_master_link_bench(struct s09_master *m, struct s09_bench *b)
 	b->settled = !m->absent && !m->unsettled;
 	/* the boot's sticky state as it was: a rung struck, a gate's verdict;
 	 * its fall-back count stays as it is */
+	m->ceiling = ceiling;
+	m->gate_ok = gate_ok;
+	m->check_bad = check_bad;
+	return !m->absent;
+}
+
+/* ---- the quad reply test (S-09.080, S-13b.084) ---- */
+
+/* S-09.013 rule 4 for a 0x1C exchange that failed: the slave kept, or
+ * absent (false). */
+static bool qt_recover(struct s09_master *m, const struct xreq *x)
+{
+	if (plain_recover(m, x))
+		return true;
+	absent(m);
+	return false;
+}
+
+/* An ARM or RECORD exchange, plain; *ok whether it got through. False:
+ * the slave is absent. */
+static bool qt_call(struct s09_master *m, uint32_t arg0, uint32_t arg1,
+		    uint8_t kind, bool *ok)
+{
+	struct s09_req r = { S09_QUAD_TEST, 0, 0, arg0, arg1 };
+	const int s = lowest_free(m);
+	struct xreq x;
+
+	*ok = false;
+	if (s < 0)
+		return true;
+	r.slot = (uint8_t)s;
+	xreq_init(&x, &r, NULL, 0, kind);
+	serving(m, S09_QUAD_TEST, arg0);
+	if (exchange_once(m, &x)) {
+		*ok = true;
+		return true;
+	}
+	return qt_recover(m, &x);
+}
+
+/* SEND's request session, then the test reply's session in quad I/O, whole
+ * in m->rep; *through whether the session completed, *slot its slot. False:
+ * the slave is absent. */
+static bool qt_send(struct s09_master *m, const struct s09_qt_cell *c,
+		    uint8_t *slot, uint32_t mw[4], bool *through)
+{
+	struct s09_req r = { S09_QUAD_TEST, 0, 0, S09_QT_SEND, 0 };
+	const int s = lowest_free(m);
+	struct xreq x;
+
+	*through = false;
+	if (s < 0)
+		return true;
+	r.slot = (uint8_t)s;
+	*slot = r.slot;
+	xreq_init(&x, &r, NULL, 0, X_NONE);
+	serving(m, S09_QUAD_TEST, S09_QT_SEND);
+	if (!request(m, &x))
+		return qt_recover(m, &x);
+	if (!session_begin(m, S09_T_REPLY_US)) {
+		broke(m, S09_AT_REPLY_START);
+		return qt_recover(m, &x);
+	}
+	if (!m->quad_recv(m->quad_ctx, m->rep, c->len, c->clock, mw)) {
+		broke(m, S09_AT_REPLY_BROKE);
+		let_go(m);
+		return qt_recover(m, &x);
+	}
+	if (!session_end(m))
+		return qt_recover(m, &x);
+	*through = true;
+	return true;
+}
+
+/* The reply against the pattern, word by word: the first wrong word's
+ * index (S09_QT_NONE: none), *only_last when it is the last alone. */
+static uint32_t qt_compare(struct s09_master *m, struct s09_qt_cell *c,
+			   uint8_t slot, uint32_t arg0, bool *only_last)
+{
+	const uint32_t words = c->len / 4u;
+	uint32_t first = S09_QT_NONE;
+
+	s09_qt_build(m->buf, c->len, slot, arg0);
+	*only_last = false;
+	for (uint32_t k = 0; k < words; k++) {
+		const uint32_t d = s06_rd_le32(m->rep + 4u * k) ^
+				   s06_rd_le32(m->buf + 4u * k);
+
+		if (d == 0u)
+			continue;
+		if (first == S09_QT_NONE)
+			first = k;
+		c->lines |= s09_qt_lines(d);
+	}
+	*only_last = first == words - 1u;
+	return first;
+}
+
+/* One trial: armed, sent, compared, the record fetched. False: the slave
+ * is absent. */
+static bool qt_trial(struct s09_master *m, struct s09_qt_cell *c, uint16_t i)
+{
+	const uint32_t arg0 = S09_QT_ARG0(c->cand, c->ren, i % S09_QT_PATS, i);
+	uint32_t mw[4] = { 0u, 0u, 0u, 0u }, rec[S09_QT_REC_WORDS];
+	uint32_t wrong = S09_QT_NONE;
+	unsigned what = S09_QX_OK;
+	uint8_t slot = 0;
+	bool ok, through = false, only_last = false, recd = false;
+
+	s06_fill((uint8_t *)rec, 0, sizeof rec);
+	if (!qt_call(m, arg0, c->len, X_IMM, &ok))
+		return false;
+	if (ok && s06_rd_le32(m->imm + 4) != S09_QT_ARMED) {
+		c->refused = true;	/* the slave refused the arm */
+		c->why = (uint8_t)s06_rd_le32(m->imm + 4);
+		return true;
+	}
+	c->sent++;
+	if (ok && !qt_send(m, c, &slot, mw, &through))
+		return false;
+	if (through) {
+		c->m_stat_or |= mw[0];
+		c->m_stat_and &= mw[0];
+		wrong = qt_compare(m, c, slot, arg0, &only_last);
+		if (wrong == S09_QT_NONE)
+			c->whole++;
+		else if (only_last)
+			c->last_wrong++;
+		else
+			c->word_wrong++;
+	} else {
+		c->broke++;
+	}
+	if (!qt_call(m, S09_QT_RECORD, 0, X_QREC, &ok))
+		return false;
+	recd = ok && s06_rd_le32(m->rep + 4u * S09_QR_ARM) == arg0 &&
+	       s06_rd_le32(m->rep + 4u * S09_QR_LEN) == c->len;
+	if (recd) {
+		uint32_t end;
+
+		for (unsigned k = 0; k < S09_QT_REC_WORDS; k++)
+			rec[k] = s06_rd_le32(m->rep + 4u * k);
+		end = rec[S09_QR_END] & 0xFFu;
+		c->ends[end < S09_QE_COUNT ? end : S09_QE_NONE]++;
+		c->s_stat_or |= rec[S09_QR_STAT_OR];
+		if (end == S09_QE_FLAG) {
+			const uint32_t feed = rec[S09_QR_T_FEED], flag = rec[S09_QR_T_FLAG];
+
+			c->flag++;
+			if (feed != S09_QT_NONE && flag != S09_QT_NONE && flag >= feed) {
+				if (flag - feed < c->dmin)
+					c->dmin = flag - feed;
+				if (flag - feed > c->dmax || c->dmax == S09_QT_NONE)
+					c->dmax = flag - feed;
+			}
+		} else {
+			c->missing++;
+		}
+	} else {
+		c->no_record++;
+	}
+	what = !through ? S09_QX_BROKE :
+	       wrong != S09_QT_NONE ? (only_last ? S09_QX_LAST : S09_QX_WORD) :
+	       !recd ? S09_QX_NO_RECORD :
+	       (rec[S09_QR_END] & 0xFFu) != S09_QE_FLAG ? S09_QX_NO_FLAG : S09_QX_OK;
+	if (what != S09_QX_OK && c->first == S09_QX_OK) {
+		c->first = (uint8_t)what;
+		c->first_no = i;
+		c->first_word = wrong;
+		for (unsigned k = 0; k < S09_QT_REC_WORDS; k++)
+			c->first_rec[k] = rec[k];
+		for (unsigned k = 0; k < 4u; k++)
+			c->first_m[k] = mw[k];
+	}
+	return true;
+}
+
+bool s09_master_quad_test(struct s09_master *m, struct s09_qt_cell *c)
+{
+	const uint8_t ceiling = m->ceiling, gate_ok = m->gate_ok;
+	const bool check_bad = m->check_bad;
+	uint32_t t0;
+
+	c->dmin = S09_QT_NONE;
+	c->dmax = S09_QT_NONE;
+	c->m_stat_and = S09_QT_NONE;
+	c->first = S09_QX_OK;
+	if (m->absent || m->released || !m->linked || m->busy) {
+		c->refused = true;
+		c->why = S09_QT_NO_SLAVE;
+		return !m->absent;
+	}
+	if (m->quad_recv == NULL || c->n == 0u || c->clock >= S09_QT_CLOCKS ||
+	    !s09_qt_args_ok(S09_QT_ARG0(c->cand, c->ren, 0u, 0u), c->len)) {
+		c->refused = true;
+		c->why = S09_QT_BAD;
+		return true;
+	}
+	bg_settle(m);
+	if (m->absent)
+		return false;
+	/* the plain mode, the slave settled (S-09.078, S-09.074) */
+	serving(m, S09_LINK_MODE, S09_MODE_PLAIN);
+	lower(m);
+	if (m->absent)
+		return false;
+	/* the test reply's check word (S-09.072's) */
+	if (!s09_check_ready()) {
+		c->refused = true;
+		c->why = S09_QT_BAD;
+		return true;
+	}
+	m->quiet = true;
+	t0 = now(m->clock);
+	for (uint16_t i = 0; i < c->n && !c->refused; i++) {
+		if (c->limit_us != 0u &&
+		    s06_time_reached(now(m->clock), t0 + c->limit_us)) {
+			c->cut = true;
+			break;
+		}
+		if (!qt_trial(m, c, i))
+			break;
+		if (c->between != NULL)
+			c->between(c->ctx);
+	}
+	m->quiet = false;
+	/* the end: the slave settled, answering in single I/O */
+	if (!m->absent) {
+		serving(m, S09_ECHO, S09_ECHO_ARG);
+		if (m->unsettled)
+			(void)settle_plain(m);
+		c->settled = !m->absent && !m->unsettled &&
+			     echo_until(m, S09_ECHO_ARG, 1u);
+		if (!c->settled && !m->absent)
+			absent(m);	/* no echo answered: the slave is lost */
+	}
 	m->ceiling = ceiling;
 	m->gate_ok = gate_ok;
 	m->check_bad = check_bad;

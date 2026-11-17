@@ -62,6 +62,15 @@ struct s09_store_ops {
 	void (*adjust)(void *ctx, int64_t delta);
 };
 
+/*
+ * S-09.080: a quad reply test request (0x1C) taken in the plain mode: its
+ * reply's bytes in *out and their length; the board sends a SEND's test
+ * reply in quad I/O. Without one (s09_slave_qtest_source()) the slave
+ * answers S09_QT_NO_SLAVE.
+ */
+typedef size_t (*s09_qtest_fn)(void *ctx, const struct s09_req *r,
+			       const uint8_t **out);
+
 #define S09_SLAVE_TUNNEL 0x2000u
 #define S09_SLAVE_SMALL (S09_HDR + S09_READ_CHUNK + 8u)
 /* a sector read's reply, and its check outside the plain mode (S-09.072) */
@@ -110,6 +119,9 @@ struct s09_slave {
 	bool why_held;
 	void (*fault_words)(void *ctx, uint32_t out[4]);
 	void *fault_ctx;
+	/* S-09.080: the board's quad reply test, NULL for none */
+	s09_qtest_fn qtest;
+	void *qtest_ctx;
 	/*
 	 * S-09.076: what the slave keeps for repeats, number 0: none.
 	 * The last numbered request other than a poll: its number, its check
@@ -249,6 +261,8 @@ void s09_slave_reply_end_changed(struct s09_slave *s, uint8_t cmd, size_t n);
  * board's driver: rc, status, words left, stage); NULL, zeros. */
 void s09_slave_fault_source(struct s09_slave *s,
 			    void (*fn)(void *ctx, uint32_t out[4]), void *ctx);
+/* S-09.080: the board's quad reply test (s09_qtest_fn); NULL, none. */
+void s09_slave_qtest_source(struct s09_slave *s, s09_qtest_fn fn, void *ctx);
 
 /* The slave's CPU link port (channel 0 of the tunnel). */
 extern const struct s06_port_ops s09_slave_tunnel_port;

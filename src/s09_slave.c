@@ -36,6 +36,12 @@ void s09_slave_fault_source(struct s09_slave *s,
 	s->fault_ctx = ctx;
 }
 
+void s09_slave_qtest_source(struct s09_slave *s, s09_qtest_fn fn, void *ctx)
+{
+	s->qtest = fn;
+	s->qtest_ctx = ctx;
+}
+
 /* S-09.079: what the last fall-back met; the words from the hook for a
  * failed receive, zeros else. A cause 9 not yet reported stays (false). */
 static bool note_why(struct s09_slave *s, unsigned why, const uint8_t *hdr,
@@ -541,7 +547,18 @@ static void immediate(struct s09_slave *s, const struct s09_req *r,
 {
 	uint32_t v = 0;
 
+	/* S-09.080: the quad reply test, the board's, in the plain mode alone */
+	if (r->cmd == S09_QUAD_TEST && s->mode == S09_MODE_PLAIN && s->qtest != NULL) {
+		const uint8_t *d = NULL;
+		const size_t n = s->qtest(s->qtest_ctx, r, &d);
+
+		set_reply(s, d, n);
+		return;
+	}
 	switch (r->cmd) {			/* S-09.030 */
+	case S09_QUAD_TEST:
+		v = s->mode == S09_MODE_PLAIN ? S09_QT_NO_SLAVE : S09_QT_NOT_PLAIN;
+		break;
 	case S09_LINK_MODE:
 		v = link_mode(s, r);
 		break;
@@ -788,6 +805,8 @@ static void start_again(struct s09_slave *s)
 	void *check_ctx = s->check_ctx;
 	void (*words)(void *ctx, uint32_t out[4]) = s->fault_words;
 	void *words_ctx = s->fault_ctx;
+	const s09_qtest_fn qtest = s->qtest;
+	void *qtest_ctx = s->qtest_ctx;
 	const uint32_t fell = s->fell, len = s->why_len, got = s->why_got;
 	const uint8_t why = s->why, cmd = s->why_cmd, mode = s->why_mode;
 	const bool held = s->why_held;
@@ -799,6 +818,8 @@ static void start_again(struct s09_slave *s)
 	s->check_ctx = check_ctx;
 	s->fault_words = words;
 	s->fault_ctx = words_ctx;
+	s->qtest = qtest;
+	s->qtest_ctx = qtest_ctx;
 	s->fell = fell;
 	s->why = why;
 	s->why_cmd = cmd;

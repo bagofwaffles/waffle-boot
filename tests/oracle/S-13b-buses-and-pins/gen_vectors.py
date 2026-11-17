@@ -276,6 +276,14 @@ def reply_setup():
         ('quad_tf_before_dma_done', s('quad', 0x206511, good_tx, 0x0, order=dma + ['tf_unmask', 'dma_done']),
          ['reply_tf_unmask']),
         ('quad_rx_on', s('quad', 0x206511, good_tx, good_rx, order=list(last)), ['reply_rx_quad']),
+        # S-13b.084, the quad reply test: its TF candidates' set-up is this order's, the core feed's
+        # words written once EN is set; its REN variant departs from S-13b.044 knowingly
+        ('quad_test_tf_dma', s('quad', 0x206511, good_tx, 0x0, words=0x4000,
+                               order=dma + ['dma_done', 'tf_unmask']), []),
+        ('quad_test_tf_core', s('quad', 0x206511, good_tx, 0x0, words=3,
+                                order=['stat', 'twc', 'txctl', 'rxctl', 'en', 'tf_unmask']), []),
+        ('quad_test_ren', s('quad', 0x206511, good_tx, good_rx, order=dma + ['dma_done', 'tf_unmask']),
+         ['reply_rx_quad']),
     ]
     return {'rows': [dict(name=n, setup=x, expect=e) for n, x, e in rows]}
 

@@ -364,6 +364,7 @@ static bool slave_start(void *ctx)
 	s09_master_init(&m->bridge, &m->bus_ops, &m->clock);
 	s09_master_fault_source(&m->bridge, bridge_fault, &m->hw);	/* the link's record */
 	s09_master_fault_more(&m->bridge, bridge_fault_more, &m->hw);
+	s09_master_quad_recv(&m->bridge, opxy_bus_quad_recv, &m->hw.link_spi);	/* S-09.080 */
 	if (rc != S09_BOOT_STREAMED)
 		s09_master_set_absent(&m->bridge);
 	else if (!OPXY_TESTOS_OR(opxy_testos_bridge_ready(&m->bus_ops, init_by), opxy_bridge_init_ready(&m->bus_ops, init_by)) ||

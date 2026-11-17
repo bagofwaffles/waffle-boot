@@ -44,9 +44,10 @@ outside the drive can be reached, and the bootloader's own files on it (`bootloa
 | `dev-start` | Why this start's OS start failed ([below](#why-the-os-did-not-start)) |
 | `log [S]` | The log for S seconds (default 10), including an install's failed step and cause |
 | `nordic-info` | The Nordic's `mode`, `sw_version`, `bl_version`, `boot_slot`; changes nothing |
-| `continue-os` | Restart the unit so that its next start boots the OS (S-10c.076), even with Start in boot menu on. If the second processor does not answer, the restart is a plain one and Start in boot menu applies. Needs no developer mode; `continue-os --sysex` prints it as a MIDI SysEx message for a unit without a serial port |
+| `continue-os` | Restart the unit so that its next start boots the OS (S-10c.076), even with Start in boot menu on. If the slave does not answer, the restart is a plain one and Start in boot menu applies. Needs no developer mode; `continue-os --sysex` prints it as a MIDI SysEx message for a unit without a serial port |
 | `dev-bench`, `dev-check`, `dev-extract` | Time the firmware package check and extraction ([below](#timing-the-package-check)) |
 | `dev-link-record`, `dev-link-test [N]` | The bridge link's record and its bench ([below](#the-bridge-link)) |
+| `dev-quad-reply [N] [options]` | What ends a reply sent in quad I/O, tried on the unit ([below](#the-quad-reply-test)) |
 
 - A file request while the slave is not answering fails with status 3 (`the slave is not answering`), not
   1 (refused volume): restart the unit.
@@ -145,6 +146,52 @@ the link is plain.
 `0x1B`. The default run sends about 17 MB in about 6 s, plus about 1 s per fault, bounded at 90 s. It is
 refused as the timing requests are, and without the slave. If the slave could not be told the link is
 plain at the end, restart. Reply formats: `src/include/waffle/devhost.h`.
+
+## The quad reply test
+
+Replies over the bridge travel in single I/O, because nothing yet shows the slave when a reply
+sent in quad I/O has ended. `dev-quad-reply` tries the candidate ends on the unit itself (S-09.080,
+S-13b.084): for each, the slave sends test replies in quad I/O, ends each one on that
+candidate's flag, and keeps a record of what its SPI controller showed; the master checks every
+word of each reply and then fetches the record in single I/O.
+
+    tools/testos_mon.py dev-quad-reply [N] [--cand tf-dma,tf-core,spif] [--ren 0,1]
+                                           [--clock 25,50,25f,50f] [--len 12,64,...] [--json]
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `N` | 16 | Test replies per cell, 1 to 4096 |
+| `--cand` | all three | `tf-dma`: the transmit-finished flag, fed by DMA; `tf-core`: the same, fed by the core; `spif`: the SPI-finished flag, read by a loop that reads nothing else |
+| `--ren` | `0,1` | The receive channel off and on, for the `tf-` candidates |
+| `--clock` | all four | The master at 25 or 50 MHz, `f` with its fast mode on |
+| `--len` | 12 to 65536 | The reply lengths, in bytes, whole 32-bit words |
+
+Each cell (a candidate, the receive channel, a clock and a length) is one request to the unit, bounded at
+120 s, so the default run is 140 cells. The table, per candidate and clock, one line per length:
+
+| Column | Meaning |
+| --- | --- |
+| `trials` | Test replies sent |
+| `whole` | Replies whose every word was right, the last included |
+| `flag` | Replies the candidate's flag ended |
+| `missing` | Replies whose flag did not come within the bound (30 ms); the reply was given up |
+| `last word` | Replies whose last word alone was wrong: a flag that came before the last word had left |
+| `a word` | Replies with another word wrong |
+| `broke` | Sessions that did not complete; the bridge was brought back and the run went on |
+| `delay cycles` | The flag's delay after the last word was fed, least and most, in the slave's cycles (400 a microsecond) |
+| `lines` | The data lines (D0 to D3) of every wrong bit: one line alone points at a stuck or open line |
+| `master RF` | Whether the master's receive-finished flag was set at the end of every reply |
+
+The first failure in a cell is printed under it with the slave's record: how the reply ended,
+`SPI_STAT`, the transmit word count and the DMA status at the end, and the times from the hand-over of
+its ready line. A verdict per candidate follows: `ended every reply and every reply was whole`, or where
+it failed first. `--json` prints every cell and the verdicts as JSON.
+
+The test writes nothing to the eMMC or the flash and sends nothing but its own requests; a session that
+breaks is followed by the bridge's usual way back (echoes and polls). Both processors are back in single
+I/O after each reply, and the run ends with the link plain and the slave answering. If the
+tool says the slave stopped answering, or did not answer after a cell, restart the unit. It is
+refused as `dev-link-test` is. Reply format: `OPXY_DEV_QUAD_REPLY` in `src/include/waffle/devhost.h`.
 
 ## Wire format
 

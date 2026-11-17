@@ -723,6 +723,62 @@ def session_ends():
              'note': note} for n, d, e, mv, r, f, ok, note in rows]
 
 
+# ---- quad_test.json (S-09.080) ----
+
+def qt_payload_word(pat, seed, j):
+    """Word j of a test reply's pattern, written out from each pattern's statement."""
+    k = (j + seed) % 2 ** 32
+    if pat in (0, 1):                    # one bit set (clear), moving up from bit seed mod 32
+        w = int('1' + '0' * (k % 32), 2)
+        return w if pat == 0 else 0xFFFFFFFF - w
+    if pat in (2, 3):                    # one data line high (low): bit k mod 4 of every nibble
+        w = int(('%x' % (1 << (k % 4))) * 8, 16)
+        return w if pat == 2 else 0xFFFFFFFF - w
+    if pat == 4:                         # adjacent lines at opposite levels, 0x55555555 first
+        return int(('a' if k % 2 else '5') * 8, 16)
+    x = ((k * 0x9E3779B9) % 2 ** 32) ^ ((seed * 128) % 2 ** 32)
+    for mul, sh in ((0x85EBCA6B, 16), (0xC2B2AE35, 13)):
+        x = ((x ^ (x >> sh)) * mul) % 2 ** 32
+    return x ^ (x >> 16)
+
+
+def quad_tests():
+    """S-09.080: ARM's arguments, the test replies (header word, pattern, check word in the wire's bit
+    order), the requests' headers, RECORD's length and the data lines of wrong bits."""
+    def arg0(cand, ren, pat, seed, op=0):
+        return op | cand << 4 | (0x40 if ren else 0) | pat << 8 | seed << 16
+
+    args = []
+    for name, a0, a1, ok in [
+            ('tf_dma_12', arg0(1, 0, 0, 0), 12, True), ('tf_core_ren_max', arg0(2, 1, 5, 0xFFFF), 0x10000, True),
+            ('spif', arg0(3, 0, 4, 7), 64, True), ('spif_ren', arg0(3, 1, 0, 0), 64, False),
+            ('no_candidate', arg0(0, 0, 0, 0), 12, False), ('pattern_6', arg0(1, 0, 6, 0), 12, False),
+            ('pattern_15', arg0(1, 0, 15, 0), 12, False), ('bit_7', arg0(1, 0, 0, 0) | 0x80, 12, False),
+            ('bits_15_12', arg0(1, 0, 0, 0) | 0x1000, 12, False), ('short_8', arg0(1, 0, 0, 0), 8, False),
+            ('not_words', arg0(1, 0, 0, 0), 14, False), ('long', arg0(1, 0, 0, 0), 0x10004, False),
+            ('send_op', 1, 12, False), ('record_op', 2, 12, False)]:
+        args.append({'name': name, 'arg0': a0, 'arg1': a1, 'ok': ok})
+    replies = []
+    for pat in range(6):
+        for n, seed, slot in ((12, 0, 0), (64, 3, 1), (256, pat * 1000 + 31, 2)):
+            ws = [0x1C | slot << 8] + [qt_payload_word(pat, seed, j) for j in range(n // 4 - 2)]
+            body = words(*ws)
+            reply = body + struct.pack('<I', crc32_bzip2(wire_order(body)))
+            replies.append({'name': 'pattern_%d_%d' % (pat, n), 'slot': slot, 'arg0': arg0(1, 0, pat, seed),
+                            'n': n, 'reply_hex': reply.hex()})
+    big = [0x1C] + [qt_payload_word(5, 9, j) for j in range(0x10000 // 4 - 2)]
+    body = words(*big)
+    replies.append({'name': 'random_max', 'slot': 0, 'arg0': arg0(2, 0, 5, 9), 'n': 0x10000,
+                    'reply_sha256': sha(body + struct.pack('<I', crc32_bzip2(wire_order(body))))})
+    requests = [{'name': 'arm', 'hex': (words(0x1C, arg0(1, 0, 2, 5), 64)).hex()},
+                {'name': 'send', 'hex': words(0x11C, 1, 0).hex()},
+                {'name': 'record', 'hex': words(0x21C, 2, 0).hex()}]
+    lines = [{'diff': d, 'lines': l} for d, l in ((0, 0), (1, 1), (0x80000000, 8), (0x22, 2),
+                                                 (0x11111111, 1), (0xF0000000, 0xF), (0x48, 0xC))]
+    return {'args': args, 'replies': replies, 'requests': requests, 'record_len': 72, 'lines': lines,
+            'values': {'armed': 0, 'bad': 1, 'not_plain': 2, 'not_armed': 3, 'no_slave': 4}}
+
+
 def main():
     os.makedirs(V, exist_ok=True)
     dump('session_end.json', session_ends())
@@ -741,6 +797,7 @@ def main():
     dump('link_modes.json', link_modes())
     dump('link_rungs.json', link_rungs())
     dump('link_seq.json', link_seq())
+    dump('quad_test.json', quad_tests())
     streams()
 
 

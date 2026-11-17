@@ -1565,3 +1565,358 @@ int wb_spi_slave_send(const struct wb_spi_slave *s, const uint8_t *tx,
 			  tf_end ? wb_mmr_read32(SPI_TWC(p->n)) :
 				   (uint32_t)((n - in) / w));
 }
+
+/* ---- a developer's quad reply test (S-09.080, S-13b.084) ---- */
+
+static uint32_t qt_since(uint64_t from, uint64_t now)
+{
+	return (uint32_t)(now - from);
+}
+
+/* The core feed: words while the transmit FIFO has room, then the two
+ * uncounted ones (zeros). True once every word has been written. */
+static bool qt_feed(const struct wb_spi *p, const uint8_t *tx, size_t n,
+		    size_t *out, unsigned *pads)
+{
+	while ((*out < n || *pads != 0u) &&
+	       !(wb_mmr_read32(SPI_STAT(p->n)) & SPI_STAT_TFF)) {
+		if (*out < n) {
+			wb_mmr_write32(SPI_TFIFO(p->n), get_word(tx + *out, 4u));
+			*out += 4u;
+		} else {
+			wb_mmr_write32(SPI_TFIFO(p->n), 0u);
+			(*pads)--;
+		}
+	}
+	return *out == n && *pads == 0u;
+}
+
+/* SPIF's falls and rises between two reads of SPI_STAT; for the SPIF
+ * candidate (times) its last fall and rise are the feed's and the flag's. */
+static void qt_spif(struct wb_spi_qt *q, uint32_t was, uint32_t stat,
+		    uint32_t at, bool times)
+{
+	if (!((was ^ stat) & SPI_STAT_SPIF))
+		return;
+	if (stat & SPI_STAT_SPIF) {
+		q->spif += 1u << 16;
+		if (times)
+			q->t_flag = at;
+	} else {
+		q->spif += 1u;
+		if (times)
+			q->t_feed = at;
+	}
+}
+
+/* The TF candidates: the feed, TF unmasked once it is whole, the end
+ * SPI_ILAT.TF; with REN each received word read and counted. The bound
+ * runs from the master's first word, and again from the last feed, so a
+ * slow core feed is not taken for a missing flag. */
+static uint32_t qt_tf_loop(const struct wb_spi_slave *s, const uint8_t *tx,
+			   size_t n, bool dma, bool ren, uint64_t hand,
+			   uint64_t start, uint64_t flag, size_t *out,
+			   unsigned *pads, struct wb_spi_qt *q)
+{
+	const struct wb_spi *p = &s->spi;
+	const unsigned ch = WB_DMA_SPI0_TX + 2u * p->n;
+	uint32_t was = wb_mmr_read32(SPI_STAT(p->n));
+	uint64_t began = 0;
+	bool begun = false;
+
+	for (;;) {
+		const uint32_t stat = wb_mmr_read32(SPI_STAT(p->n));
+		const uint64_t now = wb_core_cycles();
+		const uint32_t at = qt_since(hand, now);
+
+		q->stat_or |= stat;
+		qt_spif(q, was, stat, at, false);
+		was = stat;
+		if (stat & SPI_STAT_TF)
+			q->end |= WB_SPI_QF_TF_STAT;
+		if (stat & (SPI_STAT_TUR | SPI_STAT_TC))
+			return WB_SPI_QE_TX_ERR;
+		if (ren && !(stat & SPI_STAT_RFE)) {
+			/* two at once when the receive FIFO is full */
+			(void)wb_mmr_read32(SPI_RFIFO(p->n));
+			q->rx++;
+			if ((stat & SPI_STAT_RFS_MASK) == SPI_STAT_RFS_FULL) {
+				(void)wb_mmr_read32(SPI_RFIFO(p->n));
+				q->rx++;
+			}
+		}
+		if (!(q->end & WB_SPI_QF_FED)) {
+			bool fed;
+
+			if (dma) {
+				const uint32_t dstat = wb_mmr_read32(DMA_STAT(ch));
+
+				if (dstat & DMA_STAT_IRQERR)
+					return WB_SPI_QE_DMA_ERR;
+				fed = (dstat & DMA_STAT_IRQDONE) != 0u;
+				if (fed)
+					wb_mmr_write32(DMA_STAT(ch), DMA_STAT_IRQDONE);
+			} else {
+				fed = qt_feed(p, tx, n, out, pads);
+			}
+			if (fed) {
+				/* S-13b.044: TF unmasked here, and nowhere else;
+				 * the flag's bound runs from the last feed on */
+				q->end |= WB_SPI_QF_FED;
+				q->t_feed = qt_since(hand, wb_core_cycles());
+				if (begun)
+					began = now;
+				wb_mmr_write32(SPI_IMSK_SET(p->n), SPI_STAT_TF);
+				wb_mmr_sync();
+			}
+		} else if (wb_mmr_read32(SPI_ILAT(p->n)) & SPI_STAT_TF) {
+			q->end |= WB_SPI_QF_TF_ILAT;
+			q->t_flag = qt_since(hand, wb_core_cycles());
+			return WB_SPI_QE_FLAG;
+		}
+		if (!wb_gpio_get(s->master_pin)) {
+			if (!begun) {
+				begun = true;
+				began = now;
+				q->end |= WB_SPI_QF_BEGAN;
+				q->t_start = at;
+			}
+		} else if (begun) {
+			return WB_SPI_QE_MASTER;	/* S-09.013: the master ended it */
+		}
+		if (!begun && now - hand >= start)
+			return WB_SPI_QE_NO_START;
+		if (begun && now - began >= flag) {
+			q->stat_bound = stat;
+			return WB_SPI_QE_BOUND;
+		}
+	}
+}
+
+/* The SPIF candidate: once the master has begun, a loop that reads
+ * SPI_STAT and the cycle counter alone; the end is SPIF set again after a
+ * fall with SPI_STAT unchanged for `quiet`. */
+static uint32_t qt_spif_loop(const struct wb_spi_slave *s, uint64_t hand,
+			     uint64_t start, uint64_t flag, uint64_t quiet,
+			     struct wb_spi_qt *q)
+{
+	const struct wb_spi *p = &s->spi;
+	uint64_t began, changed;
+	uint32_t was;
+	bool fell = false;
+
+	while (wb_gpio_get(s->master_pin))
+		if (wb_core_cycles() - hand >= start)
+			return WB_SPI_QE_NO_START;
+	began = changed = wb_core_cycles();
+	q->end |= WB_SPI_QF_BEGAN;
+	q->t_start = qt_since(hand, began);
+	was = wb_mmr_read32(SPI_STAT(p->n));
+	for (;;) {
+		const uint32_t stat = wb_mmr_read32(SPI_STAT(p->n));
+		const uint64_t now = wb_core_cycles();
+
+		q->stat_or |= stat;
+		if (stat & SPI_STAT_TF)
+			q->end |= WB_SPI_QF_TF_STAT;
+		if (stat != was) {
+			qt_spif(q, was, stat, qt_since(hand, now), true);
+			fell = fell || !(stat & SPI_STAT_SPIF);
+			changed = now;
+			was = stat;
+		}
+		if (stat & (SPI_STAT_TUR | SPI_STAT_TC))
+			return WB_SPI_QE_TX_ERR;
+		if (fell && (stat & SPI_STAT_SPIF) && now - changed >= quiet)
+			return WB_SPI_QE_FLAG;
+		if (now - began >= flag) {
+			q->stat_bound = stat;
+			return WB_SPI_QE_BOUND;
+		}
+	}
+}
+
+int wb_spi_slave_qtest(const struct wb_spi_slave *s, const uint8_t *tx,
+		       size_t n, unsigned cand, bool ren, uint32_t start_us,
+		       uint32_t flag_us, uint32_t quiet_us, struct wb_spi_qt *q)
+{
+	static const uint32_t stages[] = {
+		[WB_SPI_QE_BOUND] = WB_SPI_STAGE_REPLY_BOUND,
+		[WB_SPI_QE_MASTER] = WB_SPI_STAGE_MASTER_END,
+		[WB_SPI_QE_TX_ERR] = WB_SPI_STAGE_TX_ERR,
+		[WB_SPI_QE_DMA_ERR] = WB_SPI_STAGE_DMA_ERR,
+		[WB_SPI_QE_NO_START] = WB_SPI_STAGE_MASTER_READY,
+	};
+	const struct wb_spi *p = &s->spi;
+	const unsigned ch = WB_DMA_SPI0_TX + 2u * p->n;
+	/* S-13b.044's reply value, single I/O and quad */
+	const uint32_t single = dir_ctl(p, true) & ~SPI_CTL_MIOM_MASK;
+	const uint32_t ctl = single | SPI_CTL_MIOM_QUAD;
+	const bool dma = cand != WB_SPI_QT_TF_CORE;
+	const uint64_t cpu = p->t->cycles_per_us;
+	struct wb_spi_array *a = &wb_spi_tx_array;
+	uint32_t end = WB_SPI_QE_NO_START;
+	uint64_t hand, until;
+	size_t out = 0u;
+	unsigned pads = 2u;
+	int rc;
+
+	*q = (struct wb_spi_qt){ 0 };
+	q->t_start = q->t_feed = q->t_flag = q->t_end = WB_SPI_QT_NONE;
+	q->end = WB_SPI_QE_REFUSED;
+	if (!words_ok(p, n) || wb_spi_word_bytes(p) != 4u || n / 4u > SPI_TWC_MAX ||
+	    n + sizeof queued >= WB_SPI_BRIDGE_MAX || cand < WB_SPI_QT_TF_DMA ||
+	    cand > WB_SPI_QT_SPIF || (ren && cand == WB_SPI_QT_SPIF))
+		return refused(p);
+	if (dma) {
+		arr_reset(a);
+		if (!arr_put(a, WB_DMA_ARRAY_SEND, (uint8_t *)(uintptr_t)tx, NULL, n,
+			     false) ||
+		    !arr_put(a, WB_DMA_ARRAY_SEND, (uint8_t *)queued, NULL,
+			     sizeof queued, false))
+			return refused(p);
+		arr_done(a);
+		wb_dma_cache_send((uint32_t)(uintptr_t)tx, (uint32_t)n);
+	}
+	q->end = WB_SPI_QE_NONE;
+	/* S-13b.044's order, EN clear throughout: MIOM by a write that finds EN clear */
+	en_off(p);
+	wb_mmr_write32(SPI_CTL(p->n), ctl);
+	fault_open(p->n);
+	wb_mmr_write32(SPI_IMSK_CLR(p->n), SPI_STAT_TF);	/* TF masked until fed */
+	wb_mmr_write32(SPI_ILAT_CLR(p->n), SPI_STAT_TF);
+	wb_mmr_write32(SPI_STAT(p->n), 0xFFFFFFFFu);		/* 1 */
+	if (dma) {
+		wb_mmr_write32(DMA_STAT(ch), DMA_W1C);		/* 2 */
+		wb_dma_array_start(ch, a->d, WB_DMA_ARRAY_SEND);
+	}
+	wb_mmr_write32(SPI_TWC(p->n), (uint32_t)(n / 4u));	/* 3 */
+	wb_mmr_write32(SPI_TXCTL(p->n), SPI_TXCTL_REPLY);	/* 4 */
+	wb_mmr_write32(SPI_RXCTL(p->n), ren ? SPI_XCTL_EN : 0u);	/* 5 */
+	wb_mmr_write32(SPI_CTL(p->n), ctl | SPI_CTL_EN);	/* 6: EN last */
+	wb_mmr_sync();
+	if (!dma)
+		(void)qt_feed(p, tx, n, &out, &pads);	/* the FIFO's first words */
+	rc = hand_over(s, WB_SPI_SLAVE_SESSION, start_us);
+	hand = wb_core_cycles();
+	q->hand = (uint32_t)hand;
+	if (rc == WB_SPI_OK && cand == WB_SPI_QT_SPIF)
+		end = qt_spif_loop(s, hand, start_us * cpu, flag_us * cpu,
+				   quiet_us * cpu, q);
+	else if (rc == WB_SPI_OK)
+		end = qt_tf_loop(s, tx, n, dma, ren, hand, start_us * cpu,
+				 flag_us * cpu, &out, &pads, q);
+	q->t_end = qt_since(hand, wb_core_cycles());
+	/* S-13b.043: the ready pin back first, then the registers as they are */
+	(void)wb_gpio_gpio(s->ready_pin);
+	wb_mmr_sync();
+	q->stat = wb_mmr_read32(SPI_STAT(p->n));
+	q->dma = dma ? wb_mmr_read32(DMA_STAT(ch)) : 0u;
+	q->twc = wb_mmr_read32(SPI_TWC(p->n));
+	if (dma && (q->dma & DMA_STAT_IRQDONE))
+		q->end |= WB_SPI_QF_FED;
+	wb_mmr_write32(SPI_IMSK_CLR(p->n), SPI_STAT_TF);
+	if (end == WB_SPI_QE_FLAG) {
+		/* as a reply's end (S-13b.083): TEN cleared, TF acknowledged,
+		 * the DMA disabled; EN stays set until the session is over */
+		wb_mmr_write32(SPI_TXCTL(p->n), SPI_TXCTL_REPLY & ~SPI_XCTL_EN);
+		wb_mmr_write32(SPI_STAT(p->n), SPI_STAT_TF);
+		wb_mmr_write32(SPI_ILAT_CLR(p->n), SPI_STAT_TF);
+		if (dma)
+			wb_dma_stop(ch);
+		q->rc = WB_SPI_OK;
+	} else {
+		/* given up (S-09.013, S-13b.045): recorded, then stopped */
+		q->rc = end == WB_SPI_QE_TX_ERR || end == WB_SPI_QE_DMA_ERR ?
+			WB_SPI_ERR_HW : WB_SPI_TIMEOUT;
+		q->stage = end < sizeof stages / sizeof stages[0] ? stages[end] : 0u;
+		(void)fault_note(p->n, q->rc, q->stat, q->twc, q->stage);
+		wb_mmr_write32(SPI_TXCTL(p->n), 0u);
+		wb_mmr_write32(SPI_RXCTL(p->n), 0u);
+		if (dma)
+			wb_dma_stop_idle(ch, p->t);
+		en_off(p);
+	}
+	wb_mmr_sync();
+	/* the session's end: the master raises its select once the line is back */
+	until = wb_time_deadline(p->t, start_us);
+	while (!wb_gpio_get(s->master_pin) && !wb_time_passed(until))
+		;
+	if (wb_gpio_get(s->master_pin))
+		q->end |= WB_SPI_QF_ENDED;
+	/* single I/O again: EN cleared with MIOM kept, then MIOM cleared by a
+	 * write that finds EN clear (S-13b.040); disabled until the next set-up */
+	en_off(p);
+	wb_mmr_write32(SPI_CTL(p->n), single);
+	wb_mmr_write32(SPI_TXCTL(p->n), 0u);
+	wb_mmr_write32(SPI_RXCTL(p->n), 0u);
+	wb_mmr_write32(SPI_IMSK_CLR(p->n), SPI_STAT_TF);
+	wb_mmr_write32(SPI_ILAT_CLR(p->n), 0xFFFFFFFFu);
+	wb_mmr_write32(SPI_STAT(p->n), SPI_STAT_W1C);
+	if (dma)
+		wb_dma_stop_idle(ch, p->t);
+	wb_mmr_sync();
+	if (wb_mmr_read32(SPI_CTL(p->n)) == single)
+		q->end |= WB_SPI_QF_SINGLE;
+	q->end |= end;
+	return q->rc;
+}
+
+int wb_spi_qtest_recv(const struct wb_spi *s, uint32_t ctl, uint32_t clk,
+		      uint8_t *buf, size_t n, uint32_t out[4])
+{
+	const unsigned ch = WB_DMA_SPI0_RX + 2u * s->n;
+	const struct wb_spi_config c = { ctl, clk, 0u, 0u };
+	struct wb_spi_array *a = &wb_spi_rx_array;
+	uint32_t stage = WB_SPI_STAGE_NONE;
+	uint64_t t0;
+	int rc;
+
+	out[0] = out[1] = out[2] = out[3] = 0u;
+	if (!counted_ok(s, n) || n >= WB_SPI_BRIDGE_MAX ||
+	    wb_spi_check(s->n, &c) != WB_SPI_OK ||
+	    ((ctl ^ s->ctl) & SPI_CTL_SIZE_MASK) != 0u ||
+	    (ctl & SPI_CTL_MIOM_MASK) == 0u)
+		return refused(s);
+	arr_reset(a);
+	if (!arr_recv(a, buf, n))
+		return refused(s);
+	arr_done(a);
+	fresh[s->n] = true;
+	fault_open(s->n);
+	rx_open[s->n] = false;
+	last_clk[s->n] = wb_mmr_read32(SPI_CLK(s->n));
+	wb_mmr_write32(SPI_CTL(s->n), 0u);
+	wb_mmr_write32(SPI_CLK(s->n), clk);
+	wb_mmr_write32(SPI_CTL(s->n), ctl);	/* EN clear: the write that changes MIOM */
+	wb_mmr_write32(SPI_TXCTL(s->n), 0u);	/* one channel alone in quad I/O */
+	wb_mmr_write32(SPI_STAT(s->n), SPI_STAT_W1C);
+	wb_mmr_write32(DMA_STAT(ch), DMA_W1C);
+	wb_dma_array_start(ch, a->d, WB_DMA_ARRAY_RECV);
+	wb_mmr_write32(SPI_RWC(s->n), (uint32_t)(n / wb_spi_word_bytes(s)));
+	wb_mmr_write32(SPI_RXCTL(s->n), MASTER_RXCTL);
+	t0 = wb_core_cycles();
+	wb_mmr_write32(SPI_CTL(s->n), ctl | SPI_CTL_EN);	/* EN last */
+	wb_mmr_sync();
+	rc = dma_wait(s, ch, SPI_RWC(s->n), 0u, NULL, NULL, &stage);
+	if (rc != WB_SPI_OK)
+		return master_fail(s, rc, stage == WB_SPI_STAGE_DMA_STALL ?
+				   WB_SPI_STAGE_RX_WORD : stage, true, ctl, true);
+	out[2] = (uint32_t)(wb_core_cycles() - t0);
+	out[0] = wb_mmr_read32(SPI_STAT(s->n));
+	out[1] = wb_mmr_read32(SPI_RWC(s->n));
+	out[3] = wb_mmr_read32(DMA_STAT(ch));
+	wb_mmr_write32(DMA_STAT(ch), DMA_STAT_IRQDONE);
+	wb_mmr_write32(SPI_RXCTL(s->n), MASTER_RXCTL & ~SPI_XCTL_EN);
+	wb_mmr_write32(SPI_CTL(s->n), ctl);	/* EN cleared, MIOM kept */
+	wb_dma_stop(ch);
+	wb_mmr_write32(SPI_STAT(s->n), out[0] & SPI_STAT_W1C);
+	wb_mmr_write32(SPI_CTL(s->n), 0u);
+	wb_mmr_write32(SPI_CLK(s->n), last_clk[s->n]);
+	wb_mmr_sync();
+	arr_copy(a);
+	if (out[0] & (SPI_STAT_ROR | SPI_STAT_MF))
+		return fault_note(s->n, WB_SPI_ERR_HW, out[0], 0u,
+				  WB_SPI_STAGE_OVERRUN);
+	return WB_SPI_OK;
+}
