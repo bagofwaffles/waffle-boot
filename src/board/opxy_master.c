@@ -275,10 +275,11 @@ unsigned opxy_stream_slot(struct opxy_master *m, const struct opxy_stream_src *s
 }
 
 /* S-09.002: the stream of `slot` in slot_stream, read now if another slot's
- * or none is there, and S-02.016's verdict on it; *len is 0 for a slot that
- * is not to be sent. */
-bool opxy_stream_checked(struct opxy_master *m, unsigned slot, const uint8_t **stream,
-			 uint32_t *len)
+ * or none is there, and S-02.016's verdict on it: good, or tried while
+ * `running` (this start runs that slot, its trial start); *len is 0 for a
+ * slot that is not to be sent. */
+bool opxy_stream_checked(struct opxy_master *m, unsigned slot, bool running,
+			 const uint8_t **stream, uint32_t *len)
 {
 	struct s02_image *im = &stream_image;
 
@@ -287,7 +288,7 @@ bool opxy_stream_checked(struct opxy_master *m, unsigned slot, const uint8_t **s
 		(void)s02_image_check(&m->flash, im); OPXY_TIMING_SLOT_CHECK(im);
 	}
 	*stream = slot_stream;
-	*len = im->slot == slot && im->good ? im->len : 0u;
+	*len = im->slot == slot && (im->good || (running && im->trial)) ? im->len : 0u;
 	return *len != 0u;
 }
 
@@ -340,8 +341,9 @@ static bool slave_start(void *ctx)
 	/* S-01.002: for the status bar and the prompt's Running value. */
 	m->running_established = OPXY_TESTOS_OR(false, established);	/* the test OS streams no slot */
 	m->running_slot = (uint8_t)slot;
-	/* S-09.002: the slot's CRC first (S-02.016), over the bytes to be sent. */
-	good = OPXY_TESTOS_OR(((void)slot, false), opxy_stream_checked(m, slot, &stream, &len));
+	/* S-09.002: the slot's CRC first (S-02.016), over the bytes to be sent;
+	 * a tried slot's stream goes on its trial start. */
+	good = OPXY_TESTOS_OR(((void)slot, false), opxy_stream_checked(m, slot, established, &stream, &len));
 	/* S-02.095: a trial start's boot menu marks the tried slot's log */
 	m->running_trial = OPXY_TESTOS_OR(false, established && opxy_stream_trial(slot));
 	/* S-13b.020, .021: the boot link on SPI0, SEL3. */
@@ -628,12 +630,14 @@ static void load_failed(void *ctx, enum s05_fail cause)
 }
 
 #if !defined(OPXY_TEST_OS)
-/* S-15.175: the boot store's setting, as metadata() read it. */
+/* S-15.175: the boot store's setting, as metadata() read it. S-02.095: a
+ * trial start opens the boot menu as the setting does, so that its mark is
+ * made with the slave started too. */
 static bool start_in_menu(void *ctx)
 {
 	const struct opxy_master *m = ctx;
 
-	return m->sv.store.start_menu;
+	return m->sv.store.start_menu || m->running_trial;
 }
 #endif
 

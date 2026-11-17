@@ -513,7 +513,16 @@ def file_read(file_bytes, pos, n, chunk=0x1000, fail_piece=None, fail_errno=19):
             return pieces, (received, 0)
 
 
-# ---- S-09.004 .. S-09.006: the slave boot stream ----
+# ---- S-09.002 .. S-09.006: the slave boot stream ----
+
+def stream_sent(record_crc, computed_crc, trial_start):
+    """S-09.002: whether the running slot's stream goes on the boot link: its record's crc32 equals the
+    CRC of its bytes (S-02.016), or is that CRC's complement, the trial mark, while this start is the
+    slot's trial start."""
+    if record_crc == computed_crc:
+        return True
+    return bool(trial_start) and record_crc == computed_crc ^ 0xFFFFFFFF
+
 
 def slave_stream(slot):
     """The chip-select sessions on the boot link for a running slot whose stored stream is `slot`

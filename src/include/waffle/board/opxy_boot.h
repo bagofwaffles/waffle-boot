@@ -141,7 +141,8 @@ void opxy_testos_timing_log(struct opxy_master *m);
  * the selected one and a log line, its stream read once into the stream
  * buffer when it can be. opxy_stream_checked() gives the stream of the slot
  * to send, read now if the buffer holds another's, and whether it is to be
- * sent: S-02.016 good over those bytes; *len is 0 when it is not. Not in
+ * sent: S-02.016 good over those bytes, or tried (the trial mark) when
+ * `running` says this start runs that slot; *len is 0 when it is not. Not in
  * the test OS, which streams nothing.
  */
 struct opxy_stream_src {
@@ -153,8 +154,8 @@ struct opxy_stream_src {
 
 unsigned opxy_stream_slot(struct opxy_master *m, const struct opxy_stream_src *src,
 			  bool *established);
-bool opxy_stream_checked(struct opxy_master *m, unsigned slot, const uint8_t **stream,
-			 uint32_t *len);
+bool opxy_stream_checked(struct opxy_master *m, unsigned slot, bool running,
+			 const uint8_t **stream, uint32_t *len);
 /* Whether the last slot opxy_stream_checked() judged was slot, read under
  * the trial mark (S-02.016): this start runs a tried slot. */
 bool opxy_stream_trial(unsigned slot);

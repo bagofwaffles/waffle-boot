@@ -1,0 +1,42 @@
+{
+ "_doc": "S-09.002: the stream is sent when the record's crc32 equals the CRC of the slot's bytes, or its complement (the trial mark, S-02.016) while this start is that slot's trial start; otherwise no byte goes on the boot link.",
+ "computed_crc": 472456355,
+ "rows": [
+  {
+   "name": "good",
+   "record_crc": 472456355,
+   "send": true,
+   "trial_start": false
+  },
+  {
+   "name": "good_trial_start",
+   "record_crc": 472456355,
+   "send": true,
+   "trial_start": true
+  },
+  {
+   "name": "badcrc",
+   "record_crc": 472456354,
+   "send": false,
+   "trial_start": false
+  },
+  {
+   "name": "badcrc_trial_start",
+   "record_crc": 472456354,
+   "send": false,
+   "trial_start": true
+  },
+  {
+   "name": "trial_mark",
+   "record_crc": 3822510940,
+   "send": true,
+   "trial_start": true
+  },
+  {
+   "name": "trial_mark_not_its_trial",
+   "record_crc": 3822510940,
+   "send": false,
+   "trial_start": false
+  }
+ ]
+}

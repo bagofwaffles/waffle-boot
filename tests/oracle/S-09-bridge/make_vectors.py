@@ -801,8 +801,28 @@ def quad_tests():
             'values': {'armed': 0, 'bad': 1, 'not_plain': 2, 'not_armed': 3, 'no_slave': 4}}
 
 
+def stream_sources():
+    """S-09.002: whether the running slot's stream is sent, by its record against the CRC of its bytes
+    (S-02.016) and whether this start is that slot's trial start. Written out row by row."""
+    crc = 0x1C291CA3
+    rows = [
+        ('good', crc, False, True),
+        ('good_trial_start', crc, True, True),
+        ('badcrc', crc ^ 1, False, False),
+        ('badcrc_trial_start', crc ^ 1, True, False),
+        ('trial_mark', crc ^ 0xFFFFFFFF, True, True),
+        ('trial_mark_not_its_trial', crc ^ 0xFFFFFFFF, False, False),
+    ]
+    return {'_doc': 'S-09.002: the stream is sent when the record\'s crc32 equals the CRC of the slot\'s '
+                    'bytes, or its complement (the trial mark, S-02.016) while this start is that '
+                    'slot\'s trial start; otherwise no byte goes on the boot link.',
+            'computed_crc': crc,
+            'rows': [{'name': n, 'record_crc': r, 'trial_start': t, 'send': x} for n, r, t, x in rows]}
+
+
 def main():
     os.makedirs(V, exist_ok=True)
+    dump('slave_stream_source.json', stream_sources())
     dump('session_end.json', session_ends())
     dump('requests.json', requests())
     dump('pad_trail.json', pad_trails())

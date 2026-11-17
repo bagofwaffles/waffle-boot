@@ -574,6 +574,14 @@ class BootStream(unittest.TestCase):
     def test_B_STREAM_variants(self):
         r = self.boot('final', crc=0)                           # bad_crc: S-09.002
         self.assertEqual((r['rc'], r['sessions']), (1, []))
+        # trial: S-09.002's verdict by the vector, the trial mark sent only in its trial start
+        src = vectors('slave_stream_source.json')
+        for row in src['rows']:
+            sent = row['record_crc'] == src['computed_crc'] or (
+                row['trial_start'] and row['record_crc'] == src['computed_crc'] ^ 0xFFFFFFFF)
+            self.assertEqual(sent, row['send'], row['name'])
+            r = self.boot('final', crc=1 if row['send'] else 0)
+            self.assertEqual(r['rc'] == 0 and len(r['sessions']) > 1, row['send'], row['name'])
         r = self.boot('final', mode=1)                          # no_ready: S-09.003
         self.assertEqual((r['rc'], r['sessions']), (2, []))
         self.assertLessEqual(r['elapsed'], T_BOOT_READY + 1000000)

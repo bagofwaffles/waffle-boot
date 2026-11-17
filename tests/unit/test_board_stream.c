@@ -3,7 +3,7 @@
  * The slave's stream source on the board (src/board/opxy_master.c): the two
  * steps the slave start takes, called as it calls them, on a fake flash.
  * A normal start; a trial start (the tried slot runs, is established, and
- * is not sent: S-09.002); byte-identical slots (established: the slot
+ * is sent, its trial start: S-09.002); byte-identical slots (established: the slot
  * later starts settle on, with no log line), a trial of the image the kept
  * slot holds among them; a selector that cannot be read (not established:
  * the log line); a slot that runs while the selector names the other; a slot that is not the one read first; and a faster read
@@ -155,7 +155,7 @@ int main(void)
 		slot = opxy_stream_slot(&m, &g_src, &established);
 		CHECK(established);
 		CHECK_EQ(slot, sel);
-		CHECK(opxy_stream_checked(&m, slot, &stream, &len));
+		CHECK(opxy_stream_checked(&m, slot, established, &stream, &len));
 		CHECK_EQ(len, sel ? g_blen : g_alen);
 		CHECK(memcmp(stream, sel ? g_b : g_a, len) == 0);
 		CHECK_EQ(g_fast, 1u);
@@ -163,15 +163,19 @@ int main(void)
 	}
 
 	/* a trial start: the tried slot runs while the selector names the
-	 * other; it is established, and with its trial mark it is not sent */
+	 * other; it is established, and with its trial mark it is sent
+	 * (S-09.002), but not as any slot but the one this start runs */
 	set_up(0, g_b);
 	put_slot(0, g_a, g_alen, 0);
 	put_slot(1, g_b, g_blen, 2);
 	slot = opxy_stream_slot(&m, &g_src, &established);
 	CHECK(established);
 	CHECK_EQ(slot, 1u);
-	CHECK(!opxy_stream_checked(&m, slot, &stream, &len));
+	CHECK(!opxy_stream_checked(&m, slot, false, &stream, &len));
 	CHECK_EQ(len, 0u);
+	CHECK(opxy_stream_checked(&m, slot, established, &stream, &len));
+	CHECK_EQ(len, g_blen);
+	CHECK(memcmp(stream, g_b, len) == 0);
 	CHECK_EQ(g_warned, 0u);
 	/* its stream read once, by the faster read: the trial mark's CRC
 	 * confirms the bytes, and no read of the whole slot follows */
@@ -185,7 +189,7 @@ int main(void)
 	slot = opxy_stream_slot(&m, &g_src, &established);
 	CHECK(established);
 	CHECK_EQ(slot, 0u);
-	CHECK(!opxy_stream_checked(&m, slot, &stream, &len));
+	CHECK(!opxy_stream_checked(&m, slot, established, &stream, &len));
 	CHECK_EQ(len, 0u);
 
 	/* byte-identical slots: established, the slot later starts settle on
@@ -212,13 +216,14 @@ int main(void)
 		CHECK_EQ(g_fast, 1u);
 		for (unsigned i = 0; i < g_f.nlog && i < FF_LOG_MAX; i++)
 			CHECK(g_f.log[i].len <= 2048u || rs == 1u);
-		/* S-09.002: sent when good; a selected slot that is not good is
-		 * the answer only under a verified selector, and is not sent */
-		if (want == sel && rs != 0u) {
-			CHECK(!opxy_stream_checked(&m, slot, &stream, &len));
+		/* S-09.002: sent when good, or tried in its trial start; a
+		 * selected slot whose CRC fails is the answer only under a
+		 * verified selector, and is not sent */
+		if (want == sel && rs == 1u) {
+			CHECK(!opxy_stream_checked(&m, slot, established, &stream, &len));
 			CHECK_EQ(len, 0u);
 		} else {
-			CHECK(opxy_stream_checked(&m, slot, &stream, &len));
+			CHECK(opxy_stream_checked(&m, slot, established, &stream, &len));
 			CHECK_EQ(len, g_alen);
 			CHECK(memcmp(stream, g_a, len) == 0);
 		}
@@ -234,7 +239,7 @@ int main(void)
 	CHECK(!established);
 	CHECK_EQ(slot, 0u);
 	CHECK_EQ(g_warned, 1u);
-	CHECK(opxy_stream_checked(&m, slot, &stream, &len));
+	CHECK(opxy_stream_checked(&m, slot, established, &stream, &len));
 	CHECK_EQ(len, g_alen);
 
 	/* slot 1 runs while the selector names slot 0: slot 1 is established
@@ -245,7 +250,7 @@ int main(void)
 	slot = opxy_stream_slot(&m, &g_src, &established);
 	CHECK(established);
 	CHECK_EQ(slot, 1u);
-	CHECK(opxy_stream_checked(&m, slot, &stream, &len));
+	CHECK(opxy_stream_checked(&m, slot, established, &stream, &len));
 	CHECK_EQ(len, g_blen);
 	CHECK(memcmp(stream, g_b, len) == 0);
 
@@ -255,7 +260,7 @@ int main(void)
 	put_slot(1, g_b, g_blen, 0);
 	slot = opxy_stream_slot(&m, &g_src, &established);
 	CHECK_EQ(slot, 0u);
-	CHECK(opxy_stream_checked(&m, 1u, &stream, &len));
+	CHECK(opxy_stream_checked(&m, 1u, false, &stream, &len));
 	CHECK_EQ(len, g_blen);
 	CHECK(memcmp(stream, g_b, len) == 0);
 	CHECK_EQ(g_fast, 2u);
@@ -269,7 +274,7 @@ int main(void)
 	slot = opxy_stream_slot(&m, &g_src, &established);
 	CHECK(established);
 	CHECK_EQ(slot, 1u);
-	CHECK(opxy_stream_checked(&m, slot, &stream, &len));
+	CHECK(opxy_stream_checked(&m, slot, established, &stream, &len));
 	CHECK_EQ(len, g_blen);
 	CHECK(memcmp(stream, g_b, len) == 0);
 	CHECK_EQ(g_fast, 1u);
