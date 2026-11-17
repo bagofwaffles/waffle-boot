@@ -38,6 +38,10 @@
  * Every paint restores the frame window (S-13c.014) and holds the color
  * for OPXY_TESTOS_PAINT_HOLD_US, long enough to be seen.
  *
+ * The monitor and the installer paint only a fatal. In their place, once
+ * the early logo shows, a gray line under it names the stage that starts
+ * (stage_line()), until the first frame of held mode replaces the logo.
+ *
  * The slave has no panel: a paint on it does nothing, which the strap
  * sample decides (S-13b.001, read before any pin is touched). The entry
  * paint samples PA2 alone: PA8, the revision strap's other bit, is also
@@ -49,6 +53,8 @@
 #include "waffle/testos.h"
 
 #if defined(OPXY_TEST_OS)
+
+#include <string.h>
 
 #include "waffle/board/opxy.h"
 #include "waffle/board/opxy_boot.h"
@@ -94,6 +100,20 @@ static const struct paint paints[OPXY_PAINT_COUNT] = {
 	[OPXY_PAINT_NAVY] = { "navy", "held mode services started", 0x0010u },
 };
 
+/* The stage lines of the monitor and the installer: the stage starting at
+ * each milestone after the early logo; NULL for none. Before the logo the
+ * panel is not yet initialized in these images. */
+static const char *const stages[OPXY_PAINT_COUNT] = {
+	[OPXY_PAINT_VIOLET] = "Starting: keys and battery",
+	[OPXY_PAINT_OLIVE] = "Starting: second processor",
+	[OPXY_PAINT_PINK] = "Starting: bridge",
+	[OPXY_PAINT_TEAL] = "Starting: bridge check",
+	[OPXY_PAINT_BLUE] = "Starting: the eMMC",
+	[OPXY_PAINT_BROWN] = "No second processor, going on",
+	[OPXY_PAINT_LIME] = "Starting: USB and files",
+	[OPXY_PAINT_NAVY] = "Starting: installer",
+};
+
 /* The whole frame memory, then S-13c.014's frame window again: columns
  * 49-272 (s13c_panel.c's p_caset_frame) and rows 0-479. */
 static const uint8_t caset_all[4] = { 0x00, 0x00, 0x01, 0x3F };
@@ -134,6 +154,78 @@ static void fill(const struct s13c_bus *b, uint16_t rgb565)
 	b->data(b->ctx, caset_frame, sizeof caset_frame);
 	b->cmd(b->ctx, S13C_RASET);
 	b->data(b->ctx, raset_all, sizeof raset_all);
+}
+
+/* The stage line's band: screen y STAGE_Y to STAGE_Y + 15, under the
+ * logo's squares (y 104-117), across the whole width. */
+#define STAGE_Y 140u
+
+/*
+ * The stage line, centered in its band, in place of the last: the band's
+ * panel columns and every row, written straight into the frame memory by
+ * CPU writes, one window row (one screen x, S-13c.023) at a time, then the
+ * frame window again. The frame buffer is not touched, so held mode's first
+ * frame draws over it.
+ */
+static void stage_line(const struct s13c_bus *b, const char *s)
+{
+	const unsigned n = (unsigned)strlen(s);
+	const unsigned x0 = (WB_DISPLAY_W - n * WB_FONT_W) / 2u;
+	const unsigned c0 = 0x31u + STAGE_Y, c1 = c0 + WB_FONT_H - 1u;
+	const uint8_t caset[4] = { 0x00, (uint8_t)c0, 0x00, (uint8_t)c1 };
+	static const uint8_t blank[WB_FONT_H];
+	uint8_t px[2u * WB_FONT_H];
+	unsigned r, j;
+
+	b->select(b->ctx, true);
+	b->cmd(b->ctx, S13C_CASET);
+	b->data(b->ctx, caset, sizeof caset);
+	b->cmd(b->ctx, S13C_RASET);
+	b->data(b->ctx, raset_all, sizeof raset_all);
+	b->cmd(b->ctx, S13C_RAMWR);
+	for (r = 0; r < S13C_ROWS; r++) {
+		const unsigned x = WB_DISPLAY_W - 1u - r;
+		const uint8_t *g = blank;
+		unsigned bit = 0;
+
+		if (x >= x0 && x < x0 + n * WB_FONT_W) {
+			unsigned ch = (unsigned char)s[(x - x0) / WB_FONT_W];
+
+			if (ch < WB_FONT_FIRST || ch >= WB_FONT_FIRST + WB_FONT_COUNT)
+				ch = '?';
+			g = wb_display_font[ch - WB_FONT_FIRST];
+			bit = WB_FONT_W - 1u - (x - x0) % WB_FONT_W;
+		}
+		for (j = 0; j < WB_FONT_H; j++) {
+			const uint16_t c = (((unsigned)g[j] >> bit) & 1u) != 0u ?
+						   S15_DIM : S15_BLACK;
+
+			px[2u * j] = (uint8_t)(c >> 8);
+			px[2u * j + 1u] = (uint8_t)c;
+		}
+		b->data(b->ctx, px, sizeof px);
+	}
+	b->cmd(b->ctx, S13C_CASET);
+	b->data(b->ctx, caset_frame, sizeof caset_frame);
+	b->cmd(b->ctx, S13C_RASET);
+	b->data(b->ctx, raset_all, sizeof raset_all);
+}
+
+/* A stage's line, while the early logo is what the panel shows: on, the
+ * logo's frame sent, no frame of held mode since (S-13c.016). */
+static void stage(enum opxy_testos_paint which)
+{
+	struct wb_display *d = opxy_testos_display();
+	uint64_t end;
+
+	if (stages[which] == NULL || d == NULL || d->panel.state != S13C_ON ||
+	    !d->panel.boot_frame)
+		return;
+	end = wb_time_deadline(&opxy_time, FRAME_END_US);
+	while (wb_display_busy(d) && !wb_time_passed(end))
+		;
+	if (!wb_display_busy(d))
+		stage_line(d->panel.bus, stages[which]);
 }
 
 /*
@@ -244,8 +336,10 @@ void opxy_testos_paint(enum opxy_testos_paint which)
 		return;
 	}
 	/* The monitor's and the installer's images log their milestones and
-	 * paint only a fatal, so the first thing seen is the early logo. */
+	 * paint only a fatal, so the first thing seen is the early logo; the
+	 * stages after it get a line under it. */
 	if (!OPXY_TESTOS_STAGE_PAINTS && which != OPXY_PAINT_MAGENTA) {
+		stage(which);
 		record(which, PAINT_DONE);
 		return;
 	}

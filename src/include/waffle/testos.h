@@ -329,7 +329,8 @@ void opxy_testos_bus_note(char what, int rc, const uint8_t *d, size_t n);
 #define OPXY_TESTOS_MON_ON false
 #endif
 /* The full-screen paint at each start-up stage (src/testos/opxy_testos_paint.c):
- * the panel variants have it; the monitor and the installer paint only a fatal. */
+ * the panel variants have it; the monitor and the installer paint only a fatal,
+ * and name each stage after the early logo in a line under it. */
 #if defined(OPXY_TESTOS_MONITOR) || defined(OPXY_TESTOS_INSTALLER)
 #define OPXY_TESTOS_STAGE_PAINTS false
 #else
