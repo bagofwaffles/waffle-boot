@@ -36,8 +36,8 @@
 #define S15_AMBER 0xfd84u    /* FFB020 */
 #define S15_RED   0xfa88u    /* FF5040 */
 #define S15_GREEN 0x56ceu    /* 50D870 */
-#define S15_AMBER_DARK 0x82c2u /* 805810: the squares on amber */
-#define S15_RED_DARK   0x8103u /* 802018: the squares on red */
+#define S15_AMBER_DARK 0xc423u /* C08418: the squares on amber */
+#define S15_RED_DARK   0xc1e6u /* C03C30: the squares on red */
 #define S15_STATUS_BG  0x2124u /* 212421: the status bar */
 
 /*

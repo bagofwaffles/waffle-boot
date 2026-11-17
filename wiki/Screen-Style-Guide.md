@@ -50,14 +50,14 @@ The bars are flat, with no texture. The constants are in
 
 | Bar | Fill | Squares |
 | --- | --- | --- |
-| title, amber | `FD84` (amber) | `82C2` (dark amber, `805810`) |
-| title, red | `FA88` (red) | `8103` (dark red, `802018`) |
+| title, amber | `FD84` (amber) | `C423` (dark amber, `C08418`) |
+| title, red | `FA88` (red) | `C1E6` (dark red, `C03C30`) |
 | status | `2124` (`212421`) | none |
 
 Recovery's screens are drawn by the front (`src/front/`), which holds its
 own red title bar and status bar. Its title bar is solid to x 382 and
-black after it, with the first square red and the others outlined in dark
-red on the black; a unit test keeps its text part and its status bar
+black after it, with the first square red and the others outlined in `8103`
+(`802018`) on the black; a unit test keeps its text part and its status bar
 equal to these, pixel for pixel.
 
 ## Font

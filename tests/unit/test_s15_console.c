@@ -620,7 +620,7 @@ static void test_render_frame(void)
 	      "no indicator, a gray status bar");
 
 	/* S-15.173: color off, every pixel its gray; the squares on amber
-	 * near 606060. */
+	 * near 8C8C8C. */
 	{
 		static const bool reds[3][2] = { { false, false },
 						  { true, false },
@@ -651,8 +651,8 @@ static void test_render_frame(void)
 			unsigned g8 = (unsigned)(s15_gray(S15_AMBER_DARK) >> 5 &
 						 0x3fu) * 4u;
 
-			CHECK(g8 >= 88u && g8 <= 100u,
-			      "the squares' gray near 96 (%u)", g8);
+			CHECK(g8 >= 132u && g8 <= 148u,
+			      "the squares' gray near 140 (%u)", g8);
 		}
 		f.gray = false;
 		f.fatal = false;

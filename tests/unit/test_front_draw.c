@@ -178,7 +178,8 @@ static void test_bars(void)
 		CHECK(bad == 0u);
 		for (unsigned i = 0; i < S15_MARK_COUNT; i++) {
 			const unsigned x = mx + i * (S15_MARK_SIZE + S15_MARK_GAP);
-			const uint16_t edge = i == 0u ? S15_RED : S15_RED_DARK;
+			/* the front's own dark red */
+			const uint16_t edge = i == 0u ? S15_RED : 0x8103u;
 
 			CHECK(fr_screen_pixel(&s, x, my) == edge);
 			CHECK(fr_screen_pixel(&s, x + 13u, my + 13u) == edge);
