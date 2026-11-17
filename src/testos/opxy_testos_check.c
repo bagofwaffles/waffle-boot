@@ -624,19 +624,22 @@ static void t_file(struct opxy_master *m)
 	mark(TCHK_EMMC_FILE);
 }
 
-/* Five bars across the window, red, green, blue, white, gray. */
+/* Five blocks side by side in the window, red, green, blue, white, gray. */
 static void bars(struct opxy_master *m, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 {
 	static const uint16_t c[5] = { 0xF800u, 0x07E0u, 0x001Fu, 0xFFFFu, 0x8410u };
 	unsigned i;
 
 	for (i = 0; i < 5u; i++) {
-		const uint16_t y0 = (uint16_t)(y + h * i / 5u);
-		const uint16_t y1 = (uint16_t)(y + h * (i + 1u) / 5u);
+		const uint16_t x0 = (uint16_t)(x + w * i / 5u);
+		const uint16_t x1 = (uint16_t)(x + w * (i + 1u) / 5u);
 
-		m->sv.draw.fill(m->sv.draw.ctx, x, y0, w, (uint16_t)(y1 - y0), c[i]);
+		m->sv.draw.fill(m->sv.draw.ctx, x0, y, (uint16_t)(x1 - x0), h, c[i]);
 	}
 }
+
+#define BARS_W 90u
+#define BARS_H 10u
 
 static void t_panel(struct opxy_master *m)
 {
@@ -660,7 +663,8 @@ static void t_panel(struct opxy_master *m)
 	opxy_testos_check_kept(&regs, &n, &replied, &te0, &fr0);
 	/* three whole frames of the pattern, each waited for */
 	for (i = 0; i < 3u; i++) {
-		bars(m, 0, 0, g->width, g->height);
+		/* a strip in the body's last row, empty while the checks run */
+		bars(m, g->margin, s15_row_y(g, S15_ROWS - 1u), BARS_W, BARS_H);
 		opxy_display_settle();
 		pass(m);
 	}

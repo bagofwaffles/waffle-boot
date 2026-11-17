@@ -586,6 +586,13 @@ static void item(struct lines *o, const struct inst_screen *s, unsigned digit, c
 	add(o, S15_ST_ARMED, row, NULL);
 }
 
+/* Under the items a hold chooses, while none is held. */
+static void hold_line(struct lines *o, const struct inst_screen *s)
+{
+	if (s->hold_digit == 0u)
+		add(o, S15_ST_DIM, s15_hold_line, NULL);
+}
+
 /* The hold's bar on the last row, while a key is held. */
 static void bar(struct lines *o, const struct inst_screen *s)
 {
@@ -619,12 +626,12 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		break;
 	case INST_GUIDED:
 		/* the one guided test: reading this shows the panel works */
-		add(&o, S15_ST_HEAD, "Press com, then M4 (4 under the display), to go on", NULL);
+		add(&o, S15_ST_HEAD, "Press com, then M4, to go on", NULL);
 		add(&o, S15_ST_TEXT, "These two presses are the key check.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		add(&o, (s->keys_seen & 1u) ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com",
 		    (s->keys_seen & 1u) ? "\tpressed" : "\twaiting");
-		add(&o, (s->keys_seen & 2u) ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "M4",
+		add(&o, (s->keys_seen & 2u) ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "M4 (under display)",
 		    (s->keys_seen & 2u) ? "\tpressed" : "\twaiting");
 		add(&o, S15_ST_TEXT, "", NULL);
 		add(&o, S15_ST_ITEM, "8 End: the install is then not offered", NULL);
@@ -637,6 +644,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "", NULL);
 		if (os_ok) {
 			item(&o, s, 8u, "Make your OS active again");
+			hold_line(&o, s);
 		} else {
 			add(&o, S15_ST_TEXT, "Write your OS file from the developer menu", NULL);
 			add(&o, S15_ST_TEXT, "to start it again.", NULL);
@@ -651,6 +659,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Write the trial");
 		item(&o, s, 8u, "Leave, your OS active again");
+		hold_line(&o, s);
 		break;
 	case INST_WRITING_TRIAL:
 		add(&o, S15_ST_HEAD, "Writing the trial", NULL);
@@ -674,6 +683,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Keep the new bootloader");
 		item(&o, s, 8u, "Leave, keep the old one");
+		hold_line(&o, s);
 		break;
 	case INST_COMMITTING:
 		add(&o, S15_ST_HEAD, "Keeping the new bootloader", NULL);
@@ -689,6 +699,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		if (os_ok) {
 			add(&o, S15_ST_TEXT, "", NULL);
 			item(&o, s, 8u, "Make your OS active again");
+			hold_line(&o, s);
 		}
 		break;
 	case INST_FAILED:
@@ -701,6 +712,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		item(&o, s, 1u, "Try again");
 		if (os_ok)
 			item(&o, s, 8u, "Leave, your OS active again");
+		hold_line(&o, s);
 		break;
 	case INST_TRIAL_FAILED:
 		add(&o, S15_ST_HEAD, "The trial did not reach the boot menu", NULL);
@@ -712,6 +724,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		item(&o, s, 1u, "Write the trial again");
 		if (os_ok)
 			item(&o, s, 8u, "Leave, your OS active again");
+		hold_line(&o, s);
 		break;
 	case INST_LEFT:
 		add(&o, S15_ST_HEAD, "Left without installing", NULL);

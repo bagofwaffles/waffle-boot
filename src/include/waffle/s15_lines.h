@@ -225,6 +225,8 @@ extern const char s15_reset_needed[];
 extern const char s15_nothing_skipped[];
 extern const char s15_fs_warning[];
 extern const char s15_stock_line[];
+/* S-15.015: the line under items chosen by a hold (S15_ST_DIM). */
+extern const char s15_hold_line[];
 /* S-15.015: a hold's item hint ("Hold 7 for 5 s"), and its last row
  * (S15_ST_STEP_RUN): the bar at fill percent, then the seconds left. */
 void s15_hold_hint(struct s15_buf *out, unsigned digit);

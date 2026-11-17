@@ -447,6 +447,9 @@ const char s15_nothing_skipped[] = "Nothing was installed.";
 const char s15_fs_warning[] = "Writing the first stage: keep the power on";
 const char s15_stock_line[] = "This run replaces waffle-boot: back to stock";
 
+/* S-15.015: under the items a hold chooses, while none is held. */
+const char s15_hold_line[] = "   Hold key to make selection";
+
 /* S-15.015: the held item's hint. */
 void s15_hold_hint(struct s15_buf *out, unsigned digit)
 {

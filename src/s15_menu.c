@@ -415,11 +415,15 @@ static void read_packs(struct s15_menu *m)
 }
 
 /* S-15.042: the list; pack `pending` (0: none) held, its hold's row to
- * follow. The blank rows go first when they would not fit. */
-static void draw_packs(struct s15_menu *m, unsigned pending)
+ * follow, or `after` rows of the caller's. With none held, the hold line
+ * under the packs when it fits. The blank rows go first when they would
+ * not fit. */
+static void draw_packs(struct s15_menu *m, unsigned pending, unsigned after)
 {
 	struct s15_buf b;
-	const unsigned need = m->npacks + 1u + (pending != 0u ? 1u : 0u);
+	const unsigned base = m->npacks + 1u + (pending != 0u ? 1u : after);
+	const bool hint = pending == 0u && base + 1u <= S15_ROWS;
+	const unsigned need = base + (hint ? 1u : 0u);
 
 	enter(m, S15_SCR_PACKS, "Content Packs");
 	m->pending = pending;
@@ -436,6 +440,8 @@ static void draw_packs(struct s15_menu *m, unsigned pending)
 		s15_buf_str(&b, m->labels[i]);
 		sline(m, S15_ST_ITEM, b.s);
 	}
+	if (hint)
+		sline(m, S15_ST_DIM, s15_hold_line);
 	if (need + 1u <= S15_ROWS)
 		blank(m);
 	sline(m, S15_ST_BACK, "8 Back to System");
@@ -450,7 +456,7 @@ static void open_packs(struct s15_menu *m)
 		draw_system(m, false);
 		return;
 	}
-	draw_packs(m, 0);
+	draw_packs(m, 0, 0);
 }
 
 /* S-15.043 */
@@ -478,7 +484,7 @@ static void remove_pack(struct s15_menu *m, unsigned n)
 			m->packs_item = false;
 			draw_system(m, false);
 		} else {
-			draw_packs(m, 0);
+			draw_packs(m, 0, 1);
 		}
 		s15_pack_failed_line(&b, label);
 		sline(m, S15_ST_ERROR, b.s);
@@ -490,7 +496,7 @@ static void remove_pack(struct s15_menu *m, unsigned n)
 	sline(m, S15_ST_OK, b.s);
 	read_packs(m);
 	if (m->npacks != 0u) {
-		draw_packs(m, 0);
+		draw_packs(m, 0, 0);
 		return;
 	}
 	(void)m->env->remove_tree(m->env->ctx, DLC);
@@ -512,7 +518,7 @@ static void packs_key(struct s15_menu *m, unsigned key)
 	}
 	if (d < 1u || d > 7u || d > m->npacks || knob_click(key))
 		return;
-	draw_packs(m, d);
+	draw_packs(m, d, 0);
 	hold_begin(m, S15_ARM_PACK, key);
 }
 
@@ -652,10 +658,12 @@ static void draw_system(struct s15_menu *m, bool armed)
 	if (m->packs_item)
 		sline(m, S15_ST_ITEM, "3 Remove content packs");
 	sline(m, S15_ST_ITEM, "5 Format drive\tWipes the drive: reinstall after");
-	if (armed)
+	if (armed) {
 		held_item(m, 7u, "Factory reset");
-	else
+	} else {
 		sline(m, S15_ST_ITEM, "7 Factory reset\tRemoves your data only");
+		sline(m, S15_ST_DIM, s15_hold_line);
+	}
 	/* No pack item then: dir_exists() does not answer. */
 	if (slave_lost(m))
 		sline(m, S15_ST_WARN, s15_drive_lost);
@@ -724,8 +732,9 @@ static void system_key(struct s15_menu *m, unsigned key)
 
 /* ---- the format menu: S-15.071 - S-15.073 --------------------------- */
 
-/* S-15.071, S-15.073: the menu, its item held or not. */
-static void draw_format(struct s15_menu *m, bool armed)
+/* S-15.071, S-15.073: the menu, its item held, or offered (the hold
+ * line under it), or neither while the format runs. */
+static void draw_format(struct s15_menu *m, bool armed, bool offer)
 {
 	enter(m, S15_SCR_FORMAT, "Format Drive");
 	blank(m);
@@ -737,6 +746,8 @@ static void draw_format(struct s15_menu *m, bool armed)
 		held_item(m, 1u, "Format drive");
 	else
 		sline(m, S15_ST_ITEM, "1 Format drive\tWipes the drive: reinstall after");
+	if (!armed && offer)
+		sline(m, S15_ST_DIM, s15_hold_line);
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to System");
 }
@@ -744,7 +755,7 @@ static void draw_format(struct s15_menu *m, bool armed)
 static void open_format(struct s15_menu *m)
 {
 	m->refused = refused(m);
-	draw_format(m, false);
+	draw_format(m, false, true);
 }
 
 /* S-15.072: the mount after the format alone sets the refused state; a
@@ -753,7 +764,7 @@ static void run_format(struct s15_menu *m)
 {
 	bool ok;
 
-	draw_format(m, false);
+	draw_format(m, false, false);
 	line(m, "Formatting the drive. Please wait...");
 	ok = m->env->format(m->env->ctx);
 	m->refused = refused(m);
@@ -768,7 +779,7 @@ static void run_format(struct s15_menu *m)
 static void format_key(struct s15_menu *m, unsigned key)
 {
 	if (key == 0x06u || key == 0x0eu) {     /* not 0x0A: S-15.071 */
-		draw_format(m, true);
+		draw_format(m, true, false);
 		hold_begin(m, S15_ARM_FORMAT, key);
 	}
 	else if (s15_digit(key) == 8u)
@@ -1404,10 +1415,10 @@ static void hold_cancel(struct s15_menu *m)
 		draw_system(m, false);
 		break;
 	case S15_ARM_FORMAT:
-		draw_format(m, false);
+		draw_format(m, false, true);
 		break;
 	case S15_ARM_PACK:
-		draw_packs(m, 0);
+		draw_packs(m, 0, 0);
 		break;
 	case S15_ARM_OPTION:
 		draw_settings(m);
