@@ -20,18 +20,17 @@
 #define AMBER      0xfd84u
 #define RED        0xfa88u
 #define GREEN      0x56ceu
-#define RED_DARK   0x8103u	/* the outlined squares (S15_RED_DARK) */
+#define RED_DARK   0xc1e6u	/* C03C30: the squares (S15_RED_DARK) */
 #define STATUS_BG  0x2124u	/* the status bar (S15_STATUS_BG) */
 
 /* The title bar's group of squares (S15_MARK_*): four, MARK pixels each
- * and MARK_GAP apart, the last one EDGE from the right side; the solid
- * part of the bar ends MARK_CLEAR pixels left of the first. */
+ * and MARK_GAP apart, the last one EDGE from the right side. */
 #define MARK       14u
 #define MARK_GAP   8u
 #define MARK_LINE  2u
 #define MARK_X     392u		/* 480 - EDGE - 4 * MARK - 3 * MARK_GAP */
 #define MARK_Y     5u		/* (BAR_H - MARK) / 2 */
-#define BAR_W      383u		/* MARK_X - 10 + 1: solid from x 0 to 382 */
+#define MARK_END   (MARK_X + 4u * MARK + 3u * MARK_GAP)
 
 /* Held mode's geometry (wb_display_geometry). */
 #define EDGE      8u	/* x of the bars' text */
@@ -205,8 +204,8 @@ static uint16_t logo(unsigned x, unsigned y)
 }
 
 /* The title bar (s15_console.c's frame() and logo_squares(), for the red
- * bar): solid red with the title, then black, and the four squares at its
- * right, the first filled red, the others outlined in dark red. */
+ * bar): solid red from side to side with the title, and the four squares
+ * at its right in dark red, the first filled, the others outlined. */
 static uint16_t title_bar(const struct pen *p, unsigned x, unsigned y)
 {
 	const struct fr_screen *s = p->s;
@@ -225,20 +224,18 @@ static uint16_t title_bar(const struct pen *p, unsigned x, unsigned y)
 				return WHITE;
 		}
 	}
-	if (x < BAR_W)
-		return RED;
-	if (x >= MARK_X && y >= MARK_Y && y < MARK_Y + MARK) {
+	if (x >= MARK_X && x < MARK_END && y >= MARK_Y && y < MARK_Y + MARK) {
 		unsigned dx = (x - MARK_X) % (MARK + MARK_GAP), dy = y - MARK_Y;
 
 		if (dx >= MARK)
-			return BLACK;
-		if (x < MARK_X + MARK)
 			return RED;
+		if (x < MARK_X + MARK)
+			return RED_DARK;
 		if (dx < MARK_LINE || dy < MARK_LINE || dx >= MARK - MARK_LINE ||
 		    dy >= MARK - MARK_LINE)
 			return RED_DARK;
 	}
-	return BLACK;
+	return RED;
 }
 
 static uint16_t status_bar(const struct pen *p, unsigned x, unsigned y)

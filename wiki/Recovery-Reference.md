@@ -1,4 +1,4 @@
-Reference for recovery in front version 15: every write, refusal and result. Step-by-step guides are in
+Reference for recovery in front version 16: every write, refusal and result. Step-by-step guides are in
 [How to Recover](How-to-Recover); the safety rules are in [The Front](The-Front#the-failsafes). This page is
 also the reference for the recovery round on a unit that a changed front needs before it is committed to a
 slot ([The Front](The-Front#changing-it)).
@@ -32,7 +32,7 @@ Some failures leave a unit that only an external SPI flash programmer brings bac
 
 It shows each slot's version and state (`good`, `bad`, `tried`, `tried, started`), which slot runs and
 which is selected, and what a write would replace. The status bar shows `USB` and the image and front
-versions (`v1.0.10 F15`). No key acts until every key has been released once; an unreadable key counts as
+versions (`v1.0.10 F16`). No key acts until every key has been released once; an unreadable key counts as
 not pressed.
 
 ### The slot menu (key 1)

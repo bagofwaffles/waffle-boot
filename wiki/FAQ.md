@@ -43,7 +43,7 @@ or Linux, with Python 3 and a clone of this repository, for `tools/wbrecover.py`
 [How to Recover](How-to-Recover#write-a-slot-from-a-computer).
 
 **How do I tell two builds apart on screen?**
-The status bar shows the version, and in recovery the front's too (`v0.9.13 F15`). Run `make bump-version`
+The status bar shows the version, and in recovery the front's too (`v0.9.13 F16`). Run `make bump-version`
 before each build you put on a unit.
 
 **Where do I report a problem?**

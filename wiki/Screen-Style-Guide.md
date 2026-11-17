@@ -55,10 +55,8 @@ The bars are flat, with no texture. The constants are in
 | status | `2124` (`212421`) | none |
 
 Recovery's screens are drawn by the front (`src/front/`), which holds its
-own red title bar and status bar. Its title bar is solid to x 382 and
-black after it, with the first square red and the others outlined in `8103`
-(`802018`) on the black; a unit test keeps its text part and its status bar
-equal to these, pixel for pixel.
+own copy of the red title bar and the status bar; a unit test keeps the
+copy equal to these, pixel for pixel.
 
 ## Font
 

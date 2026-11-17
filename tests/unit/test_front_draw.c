@@ -143,12 +143,9 @@ static void test_bars(void)
 		held_frame(titles[t]);
 		rows_of(&s, frame);
 		for (unsigned x = 0; x < 480u; x++) {
-			/* the title bar's text part, and the rows under it;
-			 * right of it the front's bar is black around its
-			 * squares, checked below */
+			/* the title bar whole, and the rows under it */
 			for (unsigned y = 0; y < 27u; y++)
-				if (x < 383u || y >= 24u)
-					bad += at(frame, x, y) != at(fb, x, y);
+				bad += at(frame, x, y) != at(fb, x, y);
 			/* the status bar where held mode draws no words */
 			for (unsigned y = 202; y < 222u; y++)
 				if (x >= 100u && x < 320u)
@@ -156,40 +153,38 @@ static void test_bars(void)
 		}
 		CHECK(bad == 0u);
 	}
-	/* The one style there is: solid red to the end of the solid part,
-	 * black after it, the first square red and the others outlined in
-	 * dark red, and the status bar flat from its first row to the
-	 * bottom, edge to edge. */
+	/* The one style there is: solid red from side to side, the squares
+	 * in dark red over it, the first filled and the others outlined, and
+	 * the status bar flat from its first row to the bottom, edge to
+	 * edge. */
 	{
 		struct fr_screen s;
-		const unsigned bw = S15_TEXT_W(g), mx = S15_MARK_X(g);
+		const unsigned mx = S15_MARK_X(g);
 		const unsigned my = (g->bar_h - S15_MARK_SIZE) / 2u;
+		const unsigned end = mx + S15_MARK_COUNT * S15_MARK_SIZE +
+				     (S15_MARK_COUNT - 1u) * S15_MARK_GAP;
 		unsigned bad = 0;
 
 		fr_screen_text(&s, "");
-		CHECK(g->bar_h == 24u && bw == 383u && mx == 392u && my == 5u);
+		CHECK(g->bar_h == 24u && S15_TEXT_W(g) == 383u && mx == 392u && my == 5u &&
+		      end == 480u - g->edge);
+		CHECK(S15_RED_DARK == 0xc1e6u);
 		for (unsigned x = 0; x < 480u; x++)
 			for (unsigned y = 0; y < g->bar_h; y++)
-				if (x < bw)
+				if (x < mx || x >= end || y < my || y >= my + S15_MARK_SIZE ||
+				    (x - mx) % (S15_MARK_SIZE + S15_MARK_GAP) >= S15_MARK_SIZE)
 					bad += fr_screen_pixel(&s, x, y) != S15_RED;
-				else if (x < mx || x >= 480u - g->edge || y < my ||
-					 y >= my + S15_MARK_SIZE)
-					bad += fr_screen_pixel(&s, x, y) != S15_BLACK;
 		CHECK(bad == 0u);
 		for (unsigned i = 0; i < S15_MARK_COUNT; i++) {
 			const unsigned x = mx + i * (S15_MARK_SIZE + S15_MARK_GAP);
-			/* the front's own dark red */
-			const uint16_t edge = i == 0u ? S15_RED : 0x8103u;
+			const uint16_t in = i == 0u ? S15_RED_DARK : S15_RED;
 
-			CHECK(fr_screen_pixel(&s, x, my) == edge);
-			CHECK(fr_screen_pixel(&s, x + 13u, my + 13u) == edge);
-			CHECK(fr_screen_pixel(&s, x + 1u, my + 7u) == edge);
-			CHECK(fr_screen_pixel(&s, x + 7u, my + 7u) ==
-			      (i == 0u ? S15_RED : S15_BLACK));
-			CHECK(fr_screen_pixel(&s, x + 2u, my + 2u) ==
-			      (i == 0u ? S15_RED : S15_BLACK));
-			if (i != 0u)
-				CHECK(fr_screen_pixel(&s, x - 1u, my + 7u) == S15_BLACK);
+			CHECK(fr_screen_pixel(&s, x, my) == S15_RED_DARK);
+			CHECK(fr_screen_pixel(&s, x + 13u, my + 13u) == S15_RED_DARK);
+			CHECK(fr_screen_pixel(&s, x + 1u, my + 7u) == S15_RED_DARK);
+			CHECK(fr_screen_pixel(&s, x + 7u, my + 7u) == in);
+			CHECK(fr_screen_pixel(&s, x + 2u, my + 2u) == in);
+			CHECK(fr_screen_pixel(&s, x - 1u, my + 7u) == S15_RED);
 		}
 		bad = 0;
 		for (unsigned x = 0; x < 480u; x++) {
@@ -330,7 +325,7 @@ static void test_rows_match_pixels(void)
 		fr_screen_text(&s, "Recovery");
 		fr_screen_line(&s, 5, FR_INK_TEXT, "Writing slot 2");
 		fr_screen_line(&s, 6, FR_INK_TEXT, wide);
-		fr_screen_status(&s, "USB", "v1.0.10 F15");
+		fr_screen_status(&s, "USB", "v1.0.10 F16");
 		s.bar_line = b % 2u == 0u ? 6 : 8;
 		s.bar_col = bars[b].col;
 		s.bar_cols = bars[b].cols;
@@ -411,7 +406,7 @@ static const struct fr_ui *rui;		/* the screen with keys; NULL: the main one */
 static const char *rows[FR_LINES + 1u];
 
 static const uint16_t v_a[4] = { 1, 2, 3, 0 }, v_b[4] = { 1, 3, 0, 0 };
-static const char *want_status = "v1.2.3 F15";	/* the running image's, v_a */
+static const char *want_status = "v1.2.3 F16";	/* the running image's, v_a */
 
 /* Slot 0 runs and is selected, both slots good and waffle-boot images;
  * Power + M4; nothing received. */
@@ -437,7 +432,7 @@ static void rec_base(void)
 	rp.st = &rst;
 	rp.phase = FR_PH_IDLE;
 	rp.w.target = FR_NO_SLOT;
-	want_status = "v1.2.3 F15";
+	want_status = "v1.2.3 F16";
 }
 
 /* The screen; rows[0] is the title, then the body rows. Every row whole:
@@ -460,8 +455,8 @@ static void rec_draw(bool usb)
 	}
 	/* the status bar: the running image's version and the front's, and
 	 * no key hint */
-	CHECK(strcmp(rs.status_right, rst.own_desc ? want_status : "F15") == 0);
-	CHECK(FR_FRONT_VERSION == 15u);
+	CHECK(strcmp(rs.status_right, rst.own_desc ? want_status : "F16") == 0);
+	CHECK(FR_FRONT_VERSION == 16u);
 	CHECK(strcmp(rs.status_left, usb ? "USB" : "") == 0);
 }
 
@@ -1345,12 +1340,12 @@ static void test_rec_main(void)
 	ui_base();
 	memcpy(rst.desc.bl_version, v_real, sizeof v_real);
 	memcpy(rst.slot[0].desc.bl_version, v_real, sizeof v_real);
-	want_status = "v1.0.10 F15";
+	want_status = "v1.0.10 F16";
 	rec_draw(true);
 	CHECK(strcmp(rs.line[0], "Slot 1  v1.0.10  good  running  selected") == 0);
 	CHECK(strcmp(rs.line[1], "Slot 2  v1.3.0  good") == 0);
 	CHECK(rs.ink[0] == FR_INK_TEXT && rs.ink[1] == FR_INK_TEXT);
-	CHECK(strcmp(rs.status_right, "v1.0.10 F15") == 0 && strcmp(rs.status_left, "USB") == 0);
+	CHECK(strcmp(rs.status_right, "v1.0.10 F16") == 0 && strcmp(rs.status_left, "USB") == 0);
 	/* no key hint in the status bar, with or without USB */
 	CHECK(!s15t_word_in(rs.status_left, "1", NULL) && !s15t_word_in(rs.status_right, "key", NULL));
 	rec_draw(false);
@@ -1381,7 +1376,7 @@ static void test_rec_main(void)
 	ui_base();
 	rst.own_desc = false;
 	rec_draw(false);
-	CHECK(strcmp(rs.status_right, "F15") == 0);
+	CHECK(strcmp(rs.status_right, "F16") == 0);
 	/* the running slot not known: neither line says running */
 	ui_base();
 	rst.running.established = false;
@@ -1784,7 +1779,7 @@ static void test_rec_fits(void)
 				memcpy(rst.slot[0].desc.bl_version, v_real, sizeof v_real);
 				memcpy(rst.slot[1].desc.bl_version, v_real, sizeof v_real);
 				memcpy(rst.desc.bl_version, v_real, sizeof v_real);
-				want_status = "v1.0.10 F15";
+				want_status = "v1.0.10 F16";
 				fr_rec_target(&rst);
 				rp.made = (v & 1u) != 0u;
 				rp.flags = (v & 2u) ? FR_BEGIN_F_SELECT : 0u;

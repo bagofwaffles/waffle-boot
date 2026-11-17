@@ -2854,7 +2854,7 @@ static void test_rec_trial(void)
 		CHECK(!wrote_in(FR_RECORD_OFF(0), FR_RECORD_OFF(0) + FR_SECTOR));
 		CHECK(screen_says(&st.screen, "Done: slot 2 is written for one trial start"));
 		CHECK(screen_says(&st.screen, "If it does not start, switch off and on: slot 1 boots"));
-		CHECK(strcmp(st.screen.status_right, "v1.0.0 F15") == 0);
+		CHECK(strcmp(st.screen.status_right, "v1.0.0 F16") == 0);
 
 		/* the trial start */
 		CHECK(first_stage() == 1u);
