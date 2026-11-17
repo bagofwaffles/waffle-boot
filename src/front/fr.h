@@ -107,11 +107,14 @@ void fr_sha256_init(struct fr_sha256 *s);
 void fr_sha256_add(struct fr_sha256 *s, const uint8_t *p, size_t n);
 void fr_sha256_end(struct fr_sha256 *s, uint8_t out[FR_SHA256_LEN]);
 
-/* Place a function in L1 code on the target (front.ld's .fr_fast). */
+/* Place a function in L1 code on the target (front.ld's .fr_fast), and an
+ * uninitialized variable in L1 data (.bss.fr_fast), not cleared. */
 #if defined(__bfin__)
 #define FR_FAST __attribute__((section(".fr_fast")))
+#define FR_FAST_BSS __attribute__((section(".bss.fr_fast")))
 #else
 #define FR_FAST
+#define FR_FAST_BSS
 #endif
 
 #endif /* FR_H */

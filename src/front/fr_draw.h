@@ -42,11 +42,13 @@ void fr_screen_logo(struct fr_screen *s);
 void fr_screen_line(struct fr_screen *s, unsigned i, enum fr_ink ink, const char *text);
 void fr_screen_status(struct fr_screen *s, const char *left, const char *right);
 
-/* The RGB565 pixel at screen (x, y). */
+/* The RGB565 pixel at screen (x, y): a pixel at a time, the model the
+ * window rows are tested against and the screenshots' source. */
 uint16_t fr_screen_pixel(const struct fr_screen *s, unsigned x, unsigned y);
 /* Window row r (screen column 479 - r, S-13c.023): FR_PANEL_COLS pixels,
  * top down, big-endian RGB565, black past the visible 222. ctx is the
- * struct fr_screen. */
+ * struct fr_screen. Row 0 measures its texts, which later rows reuse:
+ * rows come from 0 up, as fr_panel_frame() asks for them. */
 void fr_screen_row(void *ctx, unsigned r, uint8_t *out);
 
 /* Text helpers for the screens, no NUL written: a decimal, and a version

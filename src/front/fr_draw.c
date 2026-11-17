@@ -330,19 +330,205 @@ uint16_t fr_screen_pixel(const struct fr_screen *s, unsigned x, unsigned y)
 	return pixel(&p, x, y);
 }
 
+/* ---- window rows ----
+ *
+ * fr_screen_row() draws a whole screen column at once, the same pixels as
+ * pixel(): each part's runs and each glyph's column, with no division in
+ * a loop. It runs from L1 code with its row in L1 data, since the front
+ * runs with the caches off. */
+
+/* The texts' lengths, measured at a frame's row 0 (fr_panel_frame() sends
+ * rows 0 to 479 in order) or for another screen. */
+static struct pen row_pen FR_FAST_BSS;
+
+/* n pixels from y0 in color c. */
+FR_FAST static void run(uint8_t *out, unsigned y0, unsigned n, uint16_t c)
+{
+	uint8_t *o = out + 2u * y0;
+	const uint8_t hi = (uint8_t)(c >> 8), lo = (uint8_t)c;
+
+	while (n-- != 0u) {
+		*o++ = hi;
+		*o++ = lo;
+	}
+}
+
+FR_FAST static unsigned glyph_index(char c)
+{
+	unsigned ch = (unsigned char)c;
+
+	if (ch < FR_FONT_FIRST || ch >= FR_FONT_FIRST + FR_FONT_COUNT)
+		ch = '?';
+	return ch - FR_FONT_FIRST;
+}
+
+/* Column x of text t (n glyphs from (x0, y0)) in color c, over what is
+ * there. */
+FR_FAST static void text_col(uint8_t *out, const char *t, size_t n,
+			     unsigned x0, unsigned y0, unsigned x, uint16_t c)
+{
+	const uint8_t *g;
+	unsigned dx, bit, i;
+
+	if (x < x0)
+		return;
+	dx = x - x0;
+	if (dx / FR_FONT_W >= n)
+		return;
+	g = fr_font[glyph_index(t[dx / FR_FONT_W])];
+	bit = FR_FONT_W - 1u - dx % FR_FONT_W;
+	for (i = 0; i < FR_FONT_H; i++)
+		if (((unsigned)g[i] >> bit & 1u) != 0u)
+			run(out, y0 + i, 1u, c);
+}
+
+/* logo()'s column x. */
+FR_FAST static void logo_col(uint8_t *out, unsigned x)
+{
+	unsigned i, left = 0, dx;
+
+	for (i = 0; i < 16u; i++) {
+		left = 59u + 22u * i + 6u * (i / 4u);
+		if (x < left)
+			return;
+		if (x < left + 14u)
+			break;
+	}
+	if (i == 16u)
+		return;
+	dx = x - left;
+	if (i % 4u == 0u) {
+		run(out, 104u, 14u, WHITE);
+	} else if (dx < 2u || dx > 11u) {
+		run(out, 104u, 14u, FAINT);
+	} else {
+		run(out, 104u, 2u, FAINT);
+		run(out, 116u, 2u, FAINT);
+	}
+}
+
+/* title_bar()'s column x. */
+FR_FAST static void title_col(uint8_t *out, const struct fr_screen *s, unsigned x)
+{
+	run(out, 0, BAR_H, RED);
+	if (x >= MARK_X && x < MARK_END) {
+		unsigned dx = x - MARK_X;
+		bool first = true;
+
+		while (dx >= MARK + MARK_GAP) {
+			dx -= MARK + MARK_GAP;
+			first = false;
+		}
+		if (dx >= MARK) {
+			/* between two squares */
+		} else if (first || dx < MARK_LINE || dx >= MARK - MARK_LINE) {
+			run(out, MARK_Y, MARK, RED_DARK);
+		} else {
+			run(out, MARK_Y, MARK_LINE, RED_DARK);
+			run(out, MARK_Y + MARK - MARK_LINE, MARK_LINE, RED_DARK);
+		}
+	}
+	if (x >= EDGE && (x - EDGE) / FR_TITLE_W < row_pen.n_title) {
+		const unsigned dx = x - EDGE;
+		const uint16_t *g = fr_title_font[glyph_index(s->title[dx / FR_TITLE_W])];
+		const unsigned bit = FR_TITLE_W - 1u - dx % FR_TITLE_W;
+		unsigned i;
+
+		for (i = 0; i < FR_TITLE_H; i++)
+			if (((unsigned)g[i] >> bit & 1u) != 0u)
+				run(out, TITLE_Y + i, 1u, WHITE);
+	}
+}
+
+/* bar()'s column x of the bar on the row from y0, x inside the bar. */
+FR_FAST static void bar_col(uint8_t *out, const struct fr_screen *s, unsigned x,
+			    unsigned y0, unsigned cols)
+{
+	const unsigned x0 = MARGIN + s->bar_col * FR_FONT_W, w = cols * FR_FONT_W;
+	const unsigned by = y0 + 3u, bh = FR_FONT_H - 6u;
+	unsigned fill = 0;
+
+	if (w >= 4u)
+		fill = (w - 4u) * (s->bar_pct > 100u ? 100u : s->bar_pct) / 100u;
+	if (x == x0 || x == x0 + w - 1u) {
+		run(out, by, bh, AMBER);
+		return;
+	}
+	run(out, by, 1u, AMBER);
+	run(out, by + bh - 1u, 1u, AMBER);
+	if (x >= x0 + 2u && x < x0 + 2u + fill)
+		run(out, by + 2u, bh - 4u, AMBER);
+}
+
+FR_FAST static uint16_t ink_of(uint8_t ink)
+{
+	switch (ink) {
+	case FR_INK_DIM:
+		return DIM;
+	case FR_INK_HEAD:
+	case FR_INK_WARN:
+		return AMBER;
+	case FR_INK_OK:
+		return GREEN;
+	case FR_INK_ERROR:
+		return RED;
+	default:
+		return TEXT;
+	}
+}
+
+/* body()'s column x, on black. */
+FR_FAST static void body_col(uint8_t *out, const struct fr_screen *s, unsigned x)
+{
+	unsigned i;
+
+	for (i = 0; i < FR_LINES; i++) {
+		const unsigned y0 = TOP + i * PITCH;
+
+		if (s->bar_line == (int)i && s->bar_cols != 0u) {
+			const unsigned x0 = MARGIN + s->bar_col * FR_FONT_W;
+			unsigned cols = s->bar_col < FR_COLS ? FR_COLS - s->bar_col : 0u;
+
+			if (cols > s->bar_cols)
+				cols = s->bar_cols;
+			if (x >= x0 && x < x0 + cols * FR_FONT_W) {
+				bar_col(out, s, x, y0, cols);
+				continue;
+			}
+		}
+		text_col(out, s->line[i], row_pen.n_line[i], MARGIN, y0, x,
+			 ink_of(s->ink[i]));
+	}
+}
+
+/* status_bar()'s column x: the right text over the left. */
+FR_FAST static void status_col(uint8_t *out, const struct fr_screen *s, unsigned x)
+{
+	const size_t nr = row_pen.n_right;
+
+	run(out, STATUS_Y, FR_SCREEN_H - STATUS_Y, STATUS_BG);
+	text_col(out, s->status_left, row_pen.n_left, EDGE, STATUS_TY, x, AMBER);
+	text_col(out, s->status_right, nr, FR_SCREEN_W - EDGE - (unsigned)nr * FR_FONT_W,
+		 STATUS_TY, x, DIM);
+}
+
 /* S-13c.023: window row r is screen column 479 - r, top down; S-13c.015:
  * high byte first; S-13c.014: columns past the visible 222 black. */
-void fr_screen_row(void *ctx, unsigned r, uint8_t *out)
+FR_FAST void fr_screen_row(void *ctx, unsigned r, uint8_t *out)
 {
 	const struct fr_screen *s = ctx;
-	struct pen pen;
-	unsigned x = FR_SCREEN_W - 1u - r, c;
+	const unsigned x = FR_SCREEN_W - 1u - r;
 
-	pen_on(&pen, s);
-	for (c = 0; c < FR_PANEL_COLS; c++) {
-		uint16_t p = c < FR_PANEL_VISIBLE ? pixel(&pen, x, c) : BLACK;
-
-		out[2u * c] = (uint8_t)(p >> 8);
-		out[2u * c + 1u] = (uint8_t)p;
+	run(out, 0, FR_PANEL_COLS, BLACK);
+	if (r >= FR_SCREEN_W)
+		return;
+	if (s->kind == FR_SCREEN_LOGO) {
+		logo_col(out, x);
+		return;
 	}
+	if (r == 0u || row_pen.s != s)
+		pen_on(&row_pen, s);
+	title_col(out, s, x);
+	body_col(out, s, x);
+	status_col(out, s, x);
 }

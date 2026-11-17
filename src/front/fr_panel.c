@@ -204,13 +204,15 @@ void fr_panel_start(struct fr_panel *p)
 	p->ready = true;
 }
 
+/* A window row, in L1 data on the target. */
+static uint8_t line[FR_PANEL_ROW_BYTES] FR_FAST_BSS;
+
 /* S-13c.015, S-13c.016: RAMWR and the 480 rows, by the CPU, with nothing
  * between them; the frame has ended when this returns. */
 void fr_panel_frame(struct fr_panel *p,
 		    void (*row)(void *ctx, unsigned r, uint8_t *out), void *ctx)
 {
 	const struct fr_panel_bus *b = p->bus;
-	uint8_t line[FR_PANEL_ROW_BYTES];
 	unsigned r;
 
 	if (!p->ready)
