@@ -57,7 +57,7 @@ static struct {
 	struct s03_env env;
 	struct s15_console con;
 	char version[24];
-	bool gray;		/* S-15.173: the unit's color setting off */
+	bool gray;		/* S-15.173's gray rendering */
 	char report[TCHK_REPORT_MAX];
 	size_t report_len;
 	/* key events from the PSoC (S-07.031), for the loop */
@@ -626,8 +626,8 @@ static void t_file(struct opxy_master *m)
 }
 
 /* Five blocks side by side in the window, red, green, blue, white, gray:
- * in color with the color setting off too, since they check that the panel
- * shows colors. */
+ * in color when the rest is gray, since they check that the panel shows
+ * colors. */
 static void bars(struct opxy_master *m, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 {
 	static const uint16_t c[5] = { 0xF800u, 0x07E0u, 0x001Fu, 0xFFFFu, 0x8410u };
@@ -833,8 +833,13 @@ void opxy_testos_check_start(struct opxy_master *m)
 {
 	ck.f.held_ms = (uint32_t)wb_time_ms(&m->hw.time);
 	version();
-	/* the settings were read as held mode's services started */
+	/* The installer draws in gray always; the check suite follows the color
+	 * setting, read as held mode's services started. */
+#if defined(OPXY_TESTOS_INSTALLER)
+	ck.gray = true;
+#else
 	ck.gray = !m->sv.settings.color;
+#endif
 	/* S-08.011 in state 0: a bootloader's greeting is told to start the
 	 * application, any other answered 0x06 {40}; the gate holds back every
 	 * other frame, every other 0x0D form above all */
