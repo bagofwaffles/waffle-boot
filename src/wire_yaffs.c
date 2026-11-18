@@ -113,6 +113,68 @@ static bool remove_at(char *path, size_t len)
 	return yaffs_rmdir(path) == 0;
 }
 
+/* ---- the guard (S-12.062) ---- */
+
+static int g_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
+{
+	struct wire_yaffs *y = ctx;
+	const int rc = y->bd->read(y->bd->ctx, lba, buf, count);
+
+	y->reads++;
+	if (rc != 0)
+		y->read_failed++;
+	return rc;
+}
+
+static bool refuse(struct wire_yaffs *y)
+{
+	if (y->guarded)
+		y->rep.writes_refused++;
+	return y->guarded;
+}
+
+static int g_write(void *ctx, uint32_t lba, const void *buf, uint32_t count)
+{
+	struct wire_yaffs *y = ctx;
+
+	if (refuse(y))
+		return -1;
+	return y->bd->write(y->bd->ctx, lba, buf, count);
+}
+
+/* bd's reliable write, or its plain write where it has none, as the glue
+ * would choose (src/glue/yaffs2/yaffs_blockdev.c) */
+static int g_write_reliable(void *ctx, uint32_t lba, const void *buf, uint32_t count)
+{
+	struct wire_yaffs *y = ctx;
+
+	if (refuse(y))
+		return -1;
+	if (y->bd->write_reliable != NULL)
+		return y->bd->write_reliable(y->bd->ctx, lba, buf, count);
+	return y->bd->write(y->bd->ctx, lba, buf, count);
+}
+
+static int g_erase(void *ctx, uint32_t lba, uint32_t count)
+{
+	struct wire_yaffs *y = ctx;
+
+	if (refuse(y))
+		return -1;
+	return y->bd->erase(y->bd->ctx, lba, count);
+}
+
+/* bd has an erase that empties a block to zeros; without one the glue
+ * writes the zeros itself */
+static bool g_erase_zeroes(void *ctx)
+{
+	const struct wire_yaffs *y = ctx;
+
+	if (y->bd->erase == NULL)
+		return false;
+	return y->bd->erase_zeroes == NULL || y->bd->erase_zeroes(y->bd->ctx);
+}
+
 /* ---- mounting ---- */
 
 bool wire_yaffs_add(struct wire_yaffs *y, const char *mount,
@@ -128,14 +190,129 @@ bool wire_yaffs_add(struct wire_yaffs *y, const char *mount,
 	y->first_block = first;
 	y->last_block = last;
 	y->fd = -1;
-	if (wb_yaffs_add_blockdev(&y->dev, y->mount, bd, first, last) != 0)
+	y->guard.ctx = y;
+	y->guard.n_sectors = bd->n_sectors;
+	y->guard.read = g_read;
+	y->guard.write = g_write;
+	y->guard.erase = g_erase;
+	y->guard.erase_zeroes = g_erase_zeroes;
+	y->guard.write_reliable = g_write_reliable;
+	if (wb_yaffs_add_blockdev(&y->dev, y->mount, &y->guard, first, last) != 0)
 		return false;
 	y->added = true;
 	return true;
 }
 
+static uint32_t since(const struct wire_yaffs *y, uint64_t t0)
+{
+	uint64_t d;
+
+	if (y->now_us == NULL)
+		return 0;
+	d = y->now_us() - t0;
+	return d > UINT32_MAX ? UINT32_MAX : (uint32_t)d;
+}
+
+static uint64_t now(const struct wire_yaffs *y)
+{
+	return y->now_us != NULL ? y->now_us() : 0u;
+}
+
+static uint32_t children(const struct yaffs_obj *dir)
+{
+	const struct list_head *i;
+	uint32_t n = 0;
+
+	if (dir == NULL)
+		return 0;
+	for (i = dir->variant.dir_variant.children.next;
+	     i != &dir->variant.dir_variant.children; i = i->next)
+		n++;
+	return n;
+}
+
+/* The objects a walk of the tree meets: yaffs2's, but its unlinked and
+ * deleted directories and what they hold. */
+static uint32_t objects(const struct yaffs_dev *d)
+{
+	const uint32_t hidden = 2u + children(d->unlinked_dir) + children(d->del_dir);
+
+	return d->n_obj > (int)hidden ? (uint32_t)d->n_obj - hidden : 0u;
+}
+
+/* A mount by the scan, read-write (S-12.050), as without a checkpoint;
+ * its time and reads into *us and *reads. */
+static bool scan(struct wire_yaffs *y, uint32_t *us, uint32_t *reads)
+{
+	const uint64_t t0 = now(y);
+	const uint32_t r0 = y->reads;
+	bool ok;
+
+	y->guarded = false;
+	y->restored = false;
+	y->dev.param.skip_checkpt_rd = 1;
+	ok = yaffs_mount(y->mount) == 0;
+	*us = since(y, t0);
+	*reads = y->reads - r0;
+	return ok;
+}
+
+/*
+ * S-12.061: the checkpoint restored, then the stale check; on any doubt
+ * the mount is undone and the volume scanned. The guard refuses every
+ * write throughout, though none is made: a mount writes nothing
+ * (S-12.054), and the unmount of a restored mount saves no checkpoint
+ * (skip_checkpt_wr) and flushes nothing (nothing was changed).
+ */
+static bool restore(struct wire_yaffs *y)
+{
+	struct wire_yaffs_report *rep = &y->rep;
+	uint64_t t0 = now(y);
+	uint32_t r0 = y->reads, f0 = y->read_failed;
+
+	y->guarded = true;
+	y->dev.param.skip_checkpt_rd = 0;
+	if (yaffs_mount(y->mount) != 0) {
+		y->dev.param.skip_checkpt_rd = 1;
+		y->guarded = false;
+		return false;
+	}
+	y->dev.param.skip_checkpt_rd = 1;
+	rep->restore_us = since(y, t0);
+	rep->restore_reads = y->reads - r0;
+	if (!y->dev.is_checkpointed) {
+		/* yaffs2 took no checkpoint and scanned on its own */
+		rep->way = y->dev.blocks_in_checkpt == 0 ? WIRE_WAY_NO_CKPT :
+			   y->read_failed != f0 ? WIRE_WAY_CKPT_UNREADABLE :
+						  WIRE_WAY_CKPT_INVALID;
+		y->guarded = false;
+		return true;
+	}
+	t0 = now(y);
+	r0 = y->reads;
+	f0 = y->read_failed;
+	if (!wire_ckpt_stale(&y->dev, &rep->stale, NULL, NULL) &&
+	    yaffs_remount(y->mount, 0, 1) == 0) {
+		rep->check_us = since(y, t0);
+		rep->check_reads = y->reads - r0;
+		rep->way = WIRE_WAY_RESTORED;
+		y->restored = true;
+		return true;
+	}
+	rep->check_us = since(y, t0);
+	rep->check_reads = y->reads - r0;
+	rep->way = rep->stale.failed != 0u || y->read_failed != f0 ?
+		   WIRE_WAY_CKPT_UNREADABLE :
+		   rep->stale.newer != 0u || rep->stale.disagree != 0u ||
+		   rep->stale.alloc_used != 0u ? WIRE_WAY_CKPT_STALE : WIRE_WAY_CKPT_INVALID;
+	(void)yaffs_unmount2(y->mount, 1);
+	return scan(y, &rep->scan_us, &rep->scan_reads);
+}
+
 enum wire_mount wire_yaffs_mount(struct wire_yaffs *y)
 {
+	bool ok;
+
 	if (!y->added)
 		return WIRE_MOUNT_FAILED;
 	if (y->mounted)
@@ -144,10 +321,41 @@ enum wire_mount wire_yaffs_mount(struct wire_yaffs *y)
 					   y->last_block, y->buf);
 	if (y->refused)
 		return WIRE_MOUNT_REFUSED;
-	if (yaffs_mount(y->mount) != 0)
+	memset(&y->rep, 0, sizeof y->rep);
+	if (y->may_restore && !y->write_scanned) {
+		ok = restore(y);
+	} else {
+		y->rep.way = y->write_scanned ? WIRE_WAY_FOR_WRITE : WIRE_WAY_NONE;
+		ok = scan(y, &y->rep.scan_us, &y->rep.scan_reads);
+	}
+	if (!ok)
 		return WIRE_MOUNT_FAILED;
+	y->rep.objects = objects(&y->dev);
 	y->mounted = true;
 	return WIRE_MOUNT_OK;
+}
+
+bool wire_yaffs_for_write(struct wire_yaffs *y, bool busy)
+{
+	struct wire_yaffs_report *rep = &y->rep;
+	bool ok;
+
+	if (!y->mounted || !y->restored) {
+		y->write_scanned = true;
+		return y->mounted;
+	}
+	/* files open on the restored mount: it stays, read only */
+	if (busy || yaffs_unmount2(y->mount, 0) != 0)
+		return false;
+	y->write_scanned = true;
+	y->mounted = false;
+	ok = scan(y, &rep->write_scan_us, &rep->write_scan_reads);
+	rep->way = WIRE_WAY_FOR_WRITE;
+	if (!ok)
+		return false;
+	rep->objects = objects(&y->dev);
+	y->mounted = true;
+	return true;
 }
 
 void wire_yaffs_unmount(struct wire_yaffs *y)
@@ -157,6 +365,8 @@ void wire_yaffs_unmount(struct wire_yaffs *y)
 	if (y->mounted)
 		(void)yaffs_unmount(y->mount);
 	y->mounted = false;
+	y->restored = false;
+	y->guarded = false;
 }
 
 void wire_yaffs_detach(struct wire_yaffs *y)

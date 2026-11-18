@@ -4,6 +4,7 @@
  */
 #include "waffle/s15_lines.h"
 #include "waffle/s15_confirm.h"
+#include "waffle/s15_menu.h"
 
 /* ---- keys ------------------------------------------------------------ */
 
@@ -429,6 +430,30 @@ const char s15_slave_no_start[] = "Not started";
 const char s15_slave_lost[] = "Not answering";
 const char s15_drive_lost[] = "DSP2 is not answering: the drive can't be used";
 const char s15_reset_lost[] = "User data not removed: DSP2 is not answering";
+const char s15_checking_files[] = "Checking files...";
+
+void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects)
+{
+	static const char *const why[] = {
+		[S15_FILES_NO_CKPT] = "Scanned (no checkpoint)",
+		[S15_FILES_CKPT_INVALID] = "Scanned (checkpoint not valid)",
+		[S15_FILES_CKPT_STALE] = "Scanned (checkpoint stale)",
+		[S15_FILES_CKPT_UNREADABLE] = "Scanned (checkpoint unreadable)",
+		[S15_FILES_FOR_WRITE] = "Scanned (before a write)",
+		[S15_FILES_SCANNED] = "Scanned",
+	};
+
+	s15_buf_init(out);
+	if (way == S15_FILES_RESTORED) {
+		s15_buf_str(out, "Restored (");
+		s15_buf_dec(out, objects);
+		s15_buf_str(out, " objects)");
+	} else if (way < sizeof why / sizeof why[0] && why[way] != NULL) {
+		s15_buf_str(out, why[way]);
+	} else {
+		s15_buf_str(out, "Not mounted");
+	}
+}
 const char s15_os_reinstall[] =
 	"OS needs reinstalling: install a TE firmware update";
 const char *const s15_interrupted[S15_INTERRUPTED_LINES] = {

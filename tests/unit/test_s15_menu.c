@@ -81,6 +81,13 @@ struct fake {
 	/* S-15.082: the start log read again, and what it reads then */
 	unsigned log_reads;
 	bool log_change;
+	/* S-15.191: the scans before a write, when each came in the order,
+	 * and whether the console's last line was the checking line then */
+	unsigned files_scans, files_at;
+	bool files_line;
+	unsigned usb_at_files;            /* USB sets started before the scan */
+	unsigned removed_at_files;        /* removals made before it */
+	unsigned saves_at_files;
 };
 
 static struct fake F;
@@ -175,11 +182,16 @@ static bool f_remove(void *c, const char *path)
 }
 
 static void f_erase(void *c) { (void)c; s15_menu_hold(&M); F.erase_fat++; }
+static struct s15_boot BOOT;
+
 static bool f_format(void *c)
 {
 	(void)c;
 	s15_menu_hold(&M);
 	F.format++;
+	/* the remount scans the erased volume (S-12.057) */
+	if (BOOT.files_way == S15_FILES_RESTORED)
+		BOOT.files_way = S15_FILES_NO_CKPT;
 	F.refused = F.refused_after;	/* the remount after every format */
 	return !F.format_fails;
 }
@@ -222,7 +234,6 @@ static void f_continue(void *c)
 	F.leds_end_at_cont = F.leds_end;
 }
 
-static struct s15_boot BOOT;
 
 /* S-15.082: a read of the start log that finds one more start each time. */
 static void f_logread(void *c)
@@ -231,6 +242,25 @@ static void f_logread(void *c)
 	F.log_reads++;
 	if (F.log_change)
 		BOOT.start_log_used++;
+}
+
+/* S-12.062: the board's scan; the mount is a scanned one afterwards. */
+static void f_files(void *c)
+{
+	size_t n = 0;
+	const char *s = M.con.count != 0u ?
+			s15_console_row(&M.con, M.con.count - 1u, &n) : "";
+
+	(void)c;
+	s15_menu_hold(&M);
+	F.files_scans++;
+	F.files_at = ++F.order;
+	F.usb_at_files = F.n_usb;
+	F.removed_at_files = F.n_removed;
+	F.saves_at_files = F.saves;
+	F.files_line = n == strlen(s15_checking_files) &&
+		       memcmp(s, s15_checking_files, n) == 0;
+	BOOT.files_way = S15_FILES_FOR_WRITE;
 }
 
 static enum s15_store_save f_store(void *c, bool on, bool *now)
@@ -246,7 +276,7 @@ static const struct s15_env_ops env = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, f_settings, NULL, f_lost, f_continue,
-	f_store, f_logread,
+	f_store, f_logread, f_files,
 };
 
 /* A board with no boot store and no continue_os for the host. */
@@ -254,7 +284,7 @@ static const struct s15_env_ops env_bare = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, f_settings, NULL, f_lost, NULL, NULL,
-	NULL,
+	NULL, NULL,
 };
 
 static void clear_records(void)
@@ -1112,6 +1142,135 @@ static void rules_hold(const struct rstate *st)
 	rule(R_HOLD, got.n == 0u && M.screen == before, st->name, hk, false, &got);
 }
 
+/* The order a line was logged in, or MAXLINES when it was not. */
+static unsigned app_at(const char *s)
+{
+	for (unsigned i = 0; i < n_app; i++)
+		if (strcmp(app[i], s) == 0)
+			return i;
+	return MAXLINES;
+}
+
+/*
+ * S-15.191, S-12.062: on a mount restored from a checkpoint, the scan
+ * before the session's first write, under its line, when a write screen
+ * opens: before the disk or the MTP drive is offered, before a factory
+ * reset's or a pack's removal, at a host's begin. Once only; never for a
+ * format or a settings change; never on a scanned mount.
+ */
+static void test_files_scan(void)
+{
+	struct s15_buf b;
+
+	/* Install firmware: the scan, then the screen as always, then the disk */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
+	press(0x06);
+	CHECK(F.files_scans == 1u && F.files_line && F.files_at < F.disk_at &&
+	      appended(s15_checking_files), "S-15.191 Install firmware: the scan first");
+	CHECK(M.screen == S15_SCR_UPGRADE, "S-15.191 then the upgrade screen");
+	expect_screen("upgrade_disk");
+	press(0x15);
+	press(0x06);
+	CHECK(F.files_scans == 1u, "S-12.062 once per session");
+
+	/* on a scanned mount nothing is checked, and the screen is the same */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_NO_CKPT; start();
+	press(0x06);
+	CHECK(F.files_scans == 0u && !appended(s15_checking_files),
+	      "S-12.062 a scanned mount: no scan");
+	expect_screen("upgrade_disk");
+	reset_fake(); default_boot(); start();
+	press(0x06);
+	CHECK(F.files_scans == 0u, "S-12.062 no mount reported: no scan");
+
+	/* a boot into the upgrade screen, the MIDI form too */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; BOOT.reason = 40;
+	start();
+	CHECK(F.files_scans == 1u && F.files_line && M.screen == S15_SCR_UPGRADE,
+	      "S-15.191 the MIDI form opens after the scan");
+	expect_screen("upgrade_midi");
+
+	/* MTP: the scan before the drive's USB set */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
+	press(0x08);
+	clear_records();
+	press(0x07);
+	CHECK(F.files_scans == 1u && F.files_line && F.usb_at_files == 0u &&
+	      (usb_called(S15_USB_MTP) || usb_called(S15_USB_MTP_VENDOR)),
+	      "S-15.191 MTP: the scan before the drive");
+	expect_screen("factory_mtp");
+
+	/* the factory reset: the scan, then the removals */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
+	press(0x12);
+	hold(0x14);
+	CHECK(F.files_scans == 1u && F.files_line && F.removed_at_files == 0u &&
+	      F.n_removed == 3u && app_at(s15_checking_files) < app_at("Removing user data..."),
+	      "S-15.191 factory reset: the scan before the removals");
+
+	/* a pack's removal */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED;
+	F.dlc = true; F.npacks = 1;
+	F.pack_names[0] = "bass_pack"; F.manifests[0] = "{\"name\": \"Bass\"}";
+	start();
+	press(0x12);
+	press(0x08);
+	hold(0x06);
+	CHECK(F.files_scans == 1u && F.files_line && F.removed_at_files == 0u &&
+	      removed("/yaffs2/content/dlc/bass_pack"), "S-15.191 a pack's removal");
+
+	/* a host's begin: the scan while the host waits for its reply */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
+	s15_up_transfer_begin(&M, 1000u);
+	CHECK(F.files_scans == 1u && F.files_line && M.screen == S15_SCR_UPGRADE,
+	      "S-15.191 a host's begin");
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
+	s15_check_files(&M);
+	s15_check_files(&M);
+	CHECK(F.files_scans == 1u, "S-15.191 a host's own write: once");
+
+	/* no scan for a format (it erases), a settings change, or the OS write */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
+	press(0x12);
+	press(0x12);
+	hold(0x06);
+	CHECK(F.format == 1u && F.files_scans == 0u, "S-12.062 a format: no scan");
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
+	press(0x07);
+	press(0x08);
+	CHECK(F.saves == 1u && F.files_scans == 0u, "S-12.062 a setting saved: no scan");
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
+	press(0x08);
+	press(0x12);
+	CHECK(F.os_write == 1u && F.files_scans == 0u, "S-12.062 the OS write: no scan");
+
+	/* a slave that stopped answering: no scan is asked of it */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; F.lost = true;
+	start();
+	press(0x06);
+	CHECK(F.files_scans == 0u, "S-15.191 the slave lost: no scan");
+
+	/* S-15.192: Device Info 2's Files row */
+	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED;
+	BOOT.files_objects = 1007u;
+	start();
+	press(0x09);
+	press(0x06);
+	expect_screen("info2_files");
+	s15_files_text(&b, S15_FILES_CKPT_STALE, 9u);
+	CHECK(strcmp(b.s, "Scanned (checkpoint stale)") == 0, "S-15.192 stale");
+	s15_files_text(&b, S15_FILES_NO_CKPT, 9u);
+	CHECK(strcmp(b.s, "Scanned (no checkpoint)") == 0, "S-15.192 none");
+	s15_files_text(&b, S15_FILES_CKPT_UNREADABLE, 9u);
+	CHECK(strcmp(b.s, "Scanned (checkpoint unreadable)") == 0, "S-15.192 unreadable");
+	s15_files_text(&b, S15_FILES_CKPT_INVALID, 9u);
+	CHECK(strcmp(b.s, "Scanned (checkpoint not valid)") == 0, "S-15.192 not valid");
+	s15_files_text(&b, S15_FILES_FOR_WRITE, 9u);
+	CHECK(strcmp(b.s, "Scanned (before a write)") == 0, "S-15.192 for a write");
+	s15_files_text(&b, 99u, 9u);
+	CHECK(strcmp(b.s, "Not mounted") == 0, "S-15.192 other");
+}
+
 static void test_rules(void)
 {
 	unsigned osw_rows = 0;
@@ -1688,6 +1847,7 @@ static void test_screens(void)
 	press(0x00);
 	expect_screen("info_slave_absent");
 	test_info2();
+	test_files_scan();
 	reset_fake(); default_boot(); start();     /* No dev mode */
 	press(0x08);
 	expect_screen("factory");

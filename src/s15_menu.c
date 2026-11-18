@@ -101,6 +101,38 @@ static bool slave_lost(struct s15_menu *m)
 	return m->env->slave_lost != NULL && m->env->slave_lost(m->env->ctx);
 }
 
+/* S-15.191, S-12.062: before the session's first write to the drive, a
+ * mount restored from a checkpoint gives way to a scan, under this line. */
+static bool files_restored(struct s15_menu *m)
+{
+	return m->boot->files_way == S15_FILES_RESTORED && m->env->files_scan != NULL &&
+	       !slave_lost(m);
+}
+
+static void check_files(struct s15_menu *m)
+{
+	if (!files_restored(m))
+		return;
+	sline(m, S15_ST_DIM, s15_checking_files);
+	m->env->files_scan(m->env->ctx);
+}
+
+void s15_check_files(struct s15_menu *m)
+{
+	if (m->boot != NULL && m->env != NULL)
+		check_files(m);
+}
+
+/* The same as the first thing a screen shows, before its own lines. */
+static void check_files_on(struct s15_menu *m, enum s15_screen s, const char *title)
+{
+	if (!files_restored(m))
+		return;
+	enter(m, s, title);
+	blank(m);
+	check_files(m);
+}
+
 static bool path_join(char *out, size_t cap, const char *a, const char *b)
 {
 	size_t n = 0, i;
@@ -369,6 +401,7 @@ static void factory_reset(struct s15_menu *m)
 	bool ok = true;
 
 	enter(m, S15_SCR_RESULT, "Factory Reset");
+	check_files(m);
 	line(m, "Removing user data...");
 	if (refused(m) || slave_lost(m)) {
 		/* S-12.052: nothing removed or erased on the yaffs2 volume;
@@ -470,6 +503,7 @@ static void remove_pack(struct s15_menu *m, unsigned n)
 	for (size_t i = 0; i < sizeof label; i++)
 		label[i] = m->labels[n - 1u][i];
 	view(m, "Content Packs");
+	check_files(m);
 	s15_buf_init(&b);
 	s15_buf_str(&b, "Removing ");
 	s15_buf_str(&b, label);
@@ -642,6 +676,10 @@ static void open_info2(struct s15_menu *m)
 		s15_buf_str(&v, " used");
 		info_row(m, "Erased at", v.s, NULL, NULL);
 	}
+	if (b->files_way != S15_FILES_NONE) {			/* S-15.192 */
+		s15_files_text(&v, b->files_way, b->files_objects);
+		info_row(m, "Files", v.s, NULL, NULL);
+	}
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Device Info");
 }
@@ -812,6 +850,7 @@ static void open_factory(struct s15_menu *m)
 static void mtp_on(struct s15_menu *m, enum s15_mtp mtp)
 {
 	m->mtp = mtp;
+	check_files_on(m, S15_SCR_FACTORY, "MTP File Transfer");	/* before the drive */
 	usb(m, mtp == S15_MTP_VENDOR ? S15_USB_MTP_VENDOR : S15_USB_MTP);
 	enter(m, S15_SCR_FACTORY, "MTP File Transfer");
 	blank(m);
@@ -995,6 +1034,7 @@ static void open_upgrade(struct s15_menu *m, bool midi)
 {
 	m->midi = midi;
 	m->scan_due_set = false;
+	check_files_on(m, S15_SCR_UPGRADE, "Install Firmware");
 	if (midi) {
 		usb(m, S15_USB_MAIN);  /* S-15.102 */
 		draw_upgrade(m);
@@ -1119,6 +1159,7 @@ void s15_up_transfer_begin(struct s15_menu *m, uint32_t len)
 	m->from_disk = false;
 	m->transfer_total = len;
 	prepare(m);
+	check_files(m);		/* the host waits for the begin's reply */
 }
 
 /* The Transfer row is appended at a begin that starts a

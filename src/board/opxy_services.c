@@ -689,6 +689,40 @@ void opxy_startup_read(struct opxy_master *m, wb_otp_get_fn get)
 						  : S17_META_SERIAL_FAILED);
 }
 
+/* --- S-12.061, S-12.062: how the drive's volume was mounted --- */
+
+/* S-09.041's way as S-15's (enum s15_files). */
+static uint8_t files_way(const struct s09_files *f)
+{
+	if (!f->mounted)
+		return S15_FILES_NONE;
+	if (f->way == 0u || f->way > S15_FILES_FOR_WRITE)
+		return S15_FILES_SCANNED;
+	return f->way;
+}
+
+/* Each mount's way, into the log and Device Info 2 (S-15.192). */
+static void files_note(struct opxy_master *m)
+{
+	const struct s09_files *f = &m->sv.files;
+	struct s15_buf b;
+	struct s14_text t;
+
+	m->sv.boot.files_way = files_way(f);
+	m->sv.boot.files_objects = f->objects;
+	if (!f->mount_sent || f->mount_lost)
+		return;
+	s15_files_text(&b, files_way(f), f->objects);
+	s14_text_init(&t);
+	s14_text_str(&t, b.s);
+	if (f->mounted && files_way(f) != S15_FILES_RESTORED && f->objects != 0u) {
+		s14_text_str(&t, ", ");
+		s14_text_dec(&t, f->objects);
+		s14_text_str(&t, " objects");
+	}
+	s14_log_text(&m->sv.log, S14_INFO, S14_TAG("files"), &t);
+}
+
 void opxy_services_start(struct opxy_master *m)
 {
 	struct opxy_services *sv = &m->sv;
@@ -732,6 +766,7 @@ void opxy_services_start(struct opxy_master *m)
 		OPXY_TIME(BOOT_TIME_MOUNT_SENT);
 		rc = s09_files_mount(&sv->files);
 		OPXY_TIMING_MOUNT(rc, sv->files.err);
+		files_note(m);
 	}
 	opxy_settings_read(m, &sv->settings); OPXY_TIME(BOOT_TIME_SETTINGS);
 	opxy_menu_env(m, &sv->env);
@@ -1126,6 +1161,8 @@ static void boot_info(struct opxy_master *m, const struct boot_held *h)
 	b->ble_version = m->sv.ble_text;
 	b->psoc_version = m->sv.psoc_text;
 	b->provisioned = m->sv.provisioned;
+	b->files_way = files_way(&m->sv.files);			/* S-15.192 */
+	b->files_objects = m->sv.files.objects;
 }
 
 void opxy_held_screen(struct opxy_master *m, const struct boot_held *h)
@@ -1255,6 +1292,22 @@ static void env_erase_os_fat(void *ctx)
 	long_end(m, offered);
 }
 
+/* S-12.062: the scan before the session's first write, its line on the
+ * panel first; the host waits meanwhile. */
+static void env_files_scan(void *ctx)
+{
+	struct opxy_master *m = ctx;
+	const bool offered = long_begin(m);
+
+	s15_menu_hold(&m->sv.menu);
+	opxy_menu_show_now(m);
+	if (!s09_files_for_write(&m->sv.files) && s09_files_restored(&m->sv.files))
+		s14_log_str(&m->sv.log, S14_WARNING, S14_TAG("files"),
+			    "scan before a write not made: files open");
+	files_note(m);
+	long_end(m, offered);
+}
+
 /* S-15.072: s09_files_format() mounts again after every format, which
  * alone sets the refused state from then on. */
 static bool env_format(void *ctx)
@@ -1266,6 +1319,7 @@ static bool env_format(void *ctx)
 	s15_menu_hold(&m->sv.menu);
 	opxy_menu_show_now(m);
 	ok = s09_files_format(&m->sv.files);
+	files_note(m);
 	if (!ok)
 		s14_log_str(&m->sv.log, S14_ERROR, S14_NO_TAG,
 			    "yaffs2 format failed");
@@ -1459,6 +1513,7 @@ void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 	env->continue_os = OPXY_TESTOS_OR(NULL, env_continue_os);
 	env->boot_store_save = OPXY_TESTOS_OR(NULL, env_store_save);
 	env->start_log_read = env_start_log_read;
+	env->files_scan = env_files_scan;
 }
 
 __attribute__((weak)) const struct s15_geometry *opxy_display_geometry(void)

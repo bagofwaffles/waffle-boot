@@ -550,6 +550,8 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 			if (path == NULL) {
 				out[0] = OPXY_DEV_BAD;
 			} else {
+				/* S-12.062: the scan first, the host waiting */
+				s15_check_files(&m->sv.menu);
 				dev_put_fd = s09_files_open(&m->sv.files, path,
 					S09_O_WRONLY | S09_O_CREAT | S09_O_TRUNC);
 				if (dev_put_fd < 0)

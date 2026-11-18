@@ -54,6 +54,10 @@ struct s09_files {
 	bool mount_failed;	/* the last one's result was negative */
 	bool mount_lost;	/* the last one met an absent slave (ENODEV) */
 	bool mounted;		/* the last one mounted, and no 0x09 since */
+	/* S-09.041: how it was mounted (S-12.061; 0: no checkpoint read) and
+	 * the objects of its tree */
+	uint8_t way;
+	uint32_t objects;
 	char path[S09_FILES_PATH_MAX];	/* the tree walk's and pack's path */
 	uint8_t req[2u * S09_FILES_PATH_MAX];	/* a rename's payload */
 	uint8_t rec[S09_DIRENT_LEN];
@@ -75,8 +79,21 @@ void s09_files_init(struct s09_files *f, struct s09_master *m);
 
 /* ---- the requests (S-09.041) ---- */
 
-/* 0x08: 0 when /yaffs2 is mounted, negative when the mount failed. */
+/* 0x08: 0 or more when /yaffs2 is mounted (way and objects set),
+ * negative when the mount failed. */
 int32_t s09_files_mount(struct s09_files *f);
+/* The ways of S-09.041's 0x08 result (S-12.061). */
+#define S09_FILES_RESTORED 1u
+#define S09_FILES_FOR_WRITE 6u
+/* The volume is mounted from the OS's checkpoint, read only. */
+bool s09_files_restored(const struct s09_files *f);
+/*
+ * S-12.062: the scan before the session's first write. On a restored
+ * mount, 0x08 with arg0 1 (its reply after the scan, within T_EXEC);
+ * nothing otherwise. A failed mount then counts as any failed mount. True
+ * when the volume is mounted by a scan afterwards.
+ */
+bool s09_files_for_write(struct s09_files *f);
 /* 0x09: true when the slave answered, with a result not negative. The
  * volume counts as unmounted from then on, whatever the answer. */
 bool s09_files_unmount(struct s09_files *f);

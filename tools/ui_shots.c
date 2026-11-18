@@ -94,7 +94,7 @@ static enum s15_store_save e_store(void *c, bool on, bool *now)
 static const struct s15_env_ops env = {
 	e_usb, e_none, e_leds, e_refused, e_dir, e_pack, e_manifest,
 	e_remove, e_none, e_format, e_osw, e_none, e_none, e_none, e_option,
-	e_settings, NULL, e_lost, e_continue, e_store, NULL,
+	e_settings, NULL, e_lost, e_continue, e_store, NULL, NULL,
 };
 
 /* S-15.163: the image read lost the slave, as on a unit. */

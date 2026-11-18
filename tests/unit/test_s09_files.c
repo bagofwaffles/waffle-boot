@@ -4277,6 +4277,30 @@ static void test_absent(void)
 	}
 }
 
+/*
+ * S-09.041's 0x08 ways (S-12.061) as the master reads them, and the scan
+ * before a write (S-12.062): asked for only of a restored mount.
+ */
+static void test_mount_ways(void)
+{
+	fresh();
+	CHECK(F.mounted && F.way == 0u && !s09_files_restored(&F));
+	CHECK(s09_files_for_write(&F) && !Y.write_scanned);	/* no request */
+	/* restoring on: this volume has no checkpoint */
+	wire_s09_release(&S);
+	wire_yaffs_unmount(&Y);
+	Y.may_restore = true;
+	CHECK(s09_files_mount(&F) > 0 && F.way == 2u && F.objects == 2u);
+	/* a restored mount's scan is 0x08 with arg0 1 */
+	F.way = S09_FILES_RESTORED;
+	CHECK(s09_files_restored(&F) && s09_files_for_write(&F) && Y.write_scanned &&
+	      !s09_files_restored(&F) && F.mounted);
+	/* and no later mount of the session restores */
+	wire_yaffs_unmount(&Y);
+	CHECK(s09_files_mount(&F) > 0 && F.way == S09_FILES_FOR_WRITE);
+	Y.may_restore = false;
+}
+
 int main(void)
 {
 	vol = calloc(1, VOL_LEN);
@@ -4290,6 +4314,8 @@ int main(void)
 		for (int h = 0; h < 200; h++)
 			(void)yaffs_close(h);
 		test_requests();
+		if (pass == 0u)
+			test_mount_ways();
 		test_mtp_store(pass == 0u);
 		test_long_files();
 		test_close_sync();

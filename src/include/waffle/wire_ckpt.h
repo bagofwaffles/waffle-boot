@@ -3,8 +3,9 @@
 #define WAFFLE_WIRE_CKPT_H
 
 /*
- * A read-only test of the volume's yaffs2 checkpoint (S-12.055 leaves it
- * unread by the bootloader's own mount): a second device on the volume's
+ * A read-only test of the volume's yaffs2 checkpoint (the bootloader's own
+ * mount restores it, S-12.061, with the same stale check, wire_ckpt_stale()
+ * below; the test compares the trees too): a second device on the volume's
  * blocks, mounted read only with the checkpoint restored, its tree compared
  * with the scanned mount's, then every block's chunk-0 tags read against
  * the block states and sequence number the checkpoint records. The test
@@ -80,6 +81,8 @@ struct wire_ckpt_report {
 	bool alloc_used;
 	uint32_t disagree;
 	char disagreement[WIRE_CKPT_KEPT][WIRE_CKPT_TEXT];
+	/* the guard's tags reads that failed (not in the summary) */
+	uint32_t read_failed;
 	/* the whole test's time */
 	uint32_t test_us;
 };
@@ -98,5 +101,44 @@ enum wire_ckpt_outcome wire_ckpt_run(const struct wb_blockdev *bd, uint32_t firs
  * counts the attempt into the report of the run under way, or of the
  * last. */
 int wire_ckpt_refused_write(void *ctx, uint32_t lba, const void *buf, uint32_t count);
+
+/*
+ * The stale check of a mount restored from a checkpoint (S-12.061), the
+ * test's guard and the bootloader's mount alike: chunk 0's tags of every
+ * block read against the state and sequence number the restored mount
+ * records for it, and every page of the allocating block from the
+ * allocating page on, each of which must be unused. A block agrees when
+ *   - its chunk 0 is checkpoint data and the mount records a checkpoint
+ *     block, or
+ *   - the mount records it empty and chunk 0 is unused, or
+ *   - the mount records it allocating, full, dirty or being collected and
+ *     chunk 0 is in use with the sequence number recorded;
+ * any other pairing disagrees (a dead block among them: the eMMC has
+ * none). Counted apart: data blocks newer than the checkpoint's sequence
+ * number, used pages at or after the allocating page, and tags reads
+ * that failed. d is mounted; nothing is written.
+ */
+struct yaffs_dev;
+struct yaffs_block_info;
+struct wire_ckpt_stale {
+	uint32_t ckpt_seq;	/* the restored mount's sequence number */
+	int32_t alloc_block;	/* the volume's numbering; -1: none */
+	uint32_t alloc_page;
+	uint32_t blocks;	/* blocks whose chunk 0 was read */
+	uint32_t ckpt_blocks;	/* of them, checkpoint data */
+	uint32_t newer;
+	uint32_t disagree;
+	uint32_t alloc_used;	/* pages of the allocating block in use */
+	uint32_t failed;	/* tags reads that failed */
+};
+/* Each disagreeing block (the volume's numbering), with what the mount
+ * records and what its chunk 0 holds; NULL: not told. */
+typedef void (*wire_ckpt_disagree_fn)(void *ctx, uint32_t block,
+				      const struct yaffs_block_info *bi, bool used,
+				      uint32_t seq);
+/* True when the checkpoint cannot be trusted: d not restored from one, or
+ * any disagreement, newer block, used page or failed read. */
+bool wire_ckpt_stale(struct yaffs_dev *d, struct wire_ckpt_stale *s,
+		     wire_ckpt_disagree_fn each, void *ctx);
 
 #endif /* WAFFLE_WIRE_CKPT_H */

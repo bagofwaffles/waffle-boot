@@ -1208,6 +1208,15 @@ static uint32_t dev_cmd(void *ctx, uint8_t cmd, uint32_t addr, uint32_t val)
 }
 #endif
 
+#if !defined(OPXY_TEST_OS)
+static const struct opxy_slave *clock_of;
+
+static uint64_t volume_us(void)
+{
+	return wb_time_us(&clock_of->hw.time);
+}
+#endif
+
 void opxy_slave_storage(struct opxy_slave *s)
 {
 #if defined(OPXY_TEST_OS)
@@ -1234,6 +1243,13 @@ void opxy_slave_storage(struct opxy_slave *s)
 	if (s->emmc_up && !s->emmc_other)
 		(void)wire_yaffs_add(&yaffs, "/yaffs2", &user_bd, 0u,
 				     WB_YAFFS_LAST_BLOCK);
+#if !defined(OPXY_TEST_OS)
+	/* S-12.061: the boot menu's mount restores the OS's checkpoint; the
+	 * test OS scans, as before */
+	clock_of = s;
+	yaffs.may_restore = true;
+	yaffs.now_us = volume_us;
+#endif
 	wire_s09_init(&files, &yaffs);
 
 	s->store.ctx = s;

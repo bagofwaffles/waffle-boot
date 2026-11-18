@@ -78,6 +78,7 @@
  "info2_odd": ["kv:Start log\tSlot 1", "kv:Starts logged\tNot valid", "kv:Erased at\t256 used", "", "back:8 Back to Device Info"],
  "info2_none": ["kv:Start log\tSlot 2", "kv:Starts logged\tNot used", "kv:Erased at\t256 used", "", "back:8 Back to Device Info"],
  "info2_unread": ["kv:Start log\tNot read", "kv:Starts logged\tNot read", "kv:Erased at\t256 used", "", "back:8 Back to Device Info"],
+ "info2_files": ["kv:Start log\tSlot 1", "kv:Starts logged\t41 of 16384", "kv:Unfinished\t0 at the end", "kv:Erased at\t256 used", "kv:Files\tRestored (1007 objects)", "", "back:8 Back to Device Info"],
  "system_lost": ["", "item:1 Key test", "item:2 Reset volume calibration", "item:5 Format drive\tWipes the drive: reinstall after", "item:7 Factory reset\tRemoves your data only", "dim:   Hold key to make selection", "warn:DSP2 is not answering: the drive can't be used", "", "back:8 Back to Main Menu"],
  "format_lost": ["", "warn:DSP2 is not answering: the drive can't be used", "item:1 Format drive\tWipes the drive: reinstall after", "dim:   Hold key to make selection", "", "back:8 Back to System"],
  "factory_reset_lost": ["Removing user data...", "error:User data not removed: DSP2 is not answering", "", "back:8 Back to System"],

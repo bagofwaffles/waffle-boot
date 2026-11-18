@@ -212,6 +212,9 @@ extern const char s15_slave_absent[];
 extern const char s15_slave_lost[];	/* it stopped answering after the start */
 extern const char s15_drive_lost[];	/* S15_ST_WARN: the drive with it */
 extern const char s15_reset_lost[];	/* S15_ST_ERROR: a reset that could not run */
+extern const char s15_checking_files[];	/* S15_ST_DIM: the scan before a write (S-15.191) */
+/* S-15.192: Device Info 2's Files value for a way of enum s15_files. */
+void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects);
 extern const char s15_os_reinstall[];         /* exact text, S-15.161 */
 #define S15_INTERRUPTED_LINES 2u
 extern const char *const s15_interrupted[S15_INTERRUPTED_LINES];  /* S-11.080 */

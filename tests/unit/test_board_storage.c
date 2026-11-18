@@ -575,16 +575,17 @@ static void test_mount_on_request(void)
 			   out, &err) == -1 && err == S09_ENODEV);
 	CHECK(count(17) == 0u && count(18) == 0u);
 
-	/* The 0x08 reads the volume and mounts it; a repeat returns 0. */
-	CHECK(s.store.file(s.store.ctx, &mount, "", "", NULL, 0u, out,
-			   &err) == 0 && err == 0);
+	/* The 0x08 reads the volume and mounts it, the checkpoint tried first
+	 * (S-12.061): this volume has none; a repeat answers the same. */
+	CHECK(S09_MOUNT_WAY(s.store.file(s.store.ctx, &mount, "", "", NULL, 0u, out,
+					 &err)) == 2u && err == 0);
 	CHECK(count(17) + count(18) > 0u);
 	CHECK(emmc.cmd6_at_read == 5u && features() == 3u);	/* S-03.009 first */
 	CHECK(s.hw.msi.c == &opxy_msi);
 	CHECK(count(24) == 0u && count(25) == 0u && count(38) == 0u);
 	n = emmc.n;
-	CHECK(s.store.file(s.store.ctx, &mount, "", "", NULL, 0u, out,
-			   &err) == 0 && err == 0);
+	CHECK(S09_MOUNT_WAY(s.store.file(s.store.ctx, &mount, "", "", NULL, 0u, out,
+					 &err)) == 2u && err == 0);
 	CHECK(emmc.n == n);
 	CHECK(s.store.file(s.store.ctx, &stat, "/yaffs2", "", NULL, 0u, out,
 			   &err) == 0 && err == 0);
@@ -712,7 +713,7 @@ static void test_shutdown_unmount(void)
 
 		/* the mount brings the eMMC up again and mounts */
 		log_start();
-		CHECK(file_req(S09_MOUNT, "", &err) == 0 && err == 0u);
+		CHECK(file_req(S09_MOUNT, "", &err) >= 0 && err == 0u);
 		woken(first_logged(17) < first_logged(18) ? first_logged(17) :
 							    first_logged(18));
 		CHECK(file_req(S09_STAT, "/yaffs2", &err) == 0);
@@ -726,7 +727,7 @@ static void test_shutdown_unmount(void)
 	woken(find_switch(switch_arg(179, 0), 0));
 	CHECK(find_switch(switch_arg(179, 0), 0) < LOG_N);
 	/* mounted again, as test_mount_on_request left it */
-	CHECK(file_req(S09_MOUNT, "", &err) == 0 && s.features);
+	CHECK(file_req(S09_MOUNT, "", &err) >= 0 && s.features);
 }
 
 /* S-03.009 with the first eMMC request; not again for the load. */

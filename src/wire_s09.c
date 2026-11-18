@@ -337,6 +337,67 @@ static int32_t utime_cmd(const struct s09_req *r, const char *path,
 			    yaffs_futime((int)r->arg0, &t), err);
 }
 
+/* 0x08's result when mounted (S-09.041): 0 when no checkpoint was read,
+ * else the way and the objects. */
+static int32_t mounted(const struct wire_yaffs *y)
+{
+	const uint32_t n = y->rep.objects < S09_MOUNT_OBJECTS_MAX ? y->rep.objects :
+								 S09_MOUNT_OBJECTS_MAX;
+
+	if (y->rep.way == WIRE_WAY_NONE)
+		return 0;
+	return (int32_t)(n << 8 | (uint32_t)y->rep.way);
+}
+
+_Static_assert(WIRE_WAY_RESTORED == 1 && WIRE_WAY_FOR_WRITE == 6,
+	       "the ways are S-09.041's");
+
+/* Files or directories held open: the volume is not mounted again under
+ * them. */
+static bool busy(const struct wire_s09 *s)
+{
+	for (size_t i = 0; i < WIRE_S09_DIRS; i++)
+		if (s->dir[i] != NULL)
+			return true;
+	return false;
+}
+
+/* 0x08: arg0 1 is the scan before a write (S-12.062): a restored mount
+ * is scanned again, an unmounted volume mounted by the scan; a mount with
+ * handles open stays restored, and the result says so. */
+static int32_t mount_cmd(struct wire_s09 *s, uint32_t arg0)
+{
+	if (arg0 == S09_MOUNT_FOR_WRITE) {
+		if (s->y->mounted)
+			(void)wire_yaffs_for_write(s->y, busy(s));
+		else
+			s->y->write_scanned = true;
+	}
+	if (wire_yaffs_mount(s->y) != WIRE_MOUNT_OK)
+		return -1;
+	return mounted(s->y);
+}
+
+/* The commands that may write the volume (S-12.062). */
+static bool writes(const struct s09_req *r)
+{
+	switch (r->cmd) {
+	case S09_RENAME:
+	case S09_UNLINK:
+	case S09_MKDIR:
+	case S09_RMDIR:
+	case S09_WRITE:
+	case S09_UTIME:
+	case S09_FUTIMENS:
+		return true;
+	case S09_OPEN:
+		return (r->arg0 & 3u) != S09_O_RDONLY ||
+		       (r->arg0 & (S09_O_CREAT | S09_O_TRUNC | S09_O_APPEND)) != 0u;
+	default:
+		return false;
+	}
+}
+
 int32_t wire_s09_file(void *ctx, const struct s09_req *r, const char *path,
 		      const char *path2, const uint8_t *data, uint32_t n,
 		      uint8_t *out, uint32_t *err)
@@ -346,7 +407,7 @@ int32_t wire_s09_file(void *ctx, const struct s09_req *r, const char *path,
 	switch (r->cmd) {
 	case S09_MOUNT:
 		*err = 0;
-		return wire_yaffs_mount(s->y) == WIRE_MOUNT_OK ? 0 : -1;
+		return mount_cmd(s, r->arg0);
 	case S09_UNMOUNT:
 		wire_s09_release(s);
 		wire_yaffs_unmount(s->y);
@@ -360,6 +421,17 @@ int32_t wire_s09_file(void *ctx, const struct s09_req *r, const char *path,
 	    on_fat32(path) || on_fat32(path2)) {
 		*err = S09_ENODEV;
 		return failure(r->cmd);
+	}
+	/* S-12.062: a write that finds the mount restored has the scan made
+	 * first, unless handles are open; the restored mount is read only,
+	 * so the write then fails with EROFS and nothing reaches the eMMC */
+	if (s->y->restored && writes(r)) {
+		s->implicit_scans++;
+		(void)wire_yaffs_for_write(s->y, busy(s));
+		if (!s->y->mounted) {
+			*err = S09_ENODEV;
+			return failure(r->cmd);
+		}
 	}
 	switch (r->cmd) {
 	case S09_ACCESS:

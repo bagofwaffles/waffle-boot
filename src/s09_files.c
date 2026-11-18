@@ -65,6 +65,8 @@ void s09_files_init(struct s09_files *f, struct s09_master *m)
 	f->mount_failed = false;
 	f->mount_lost = false;
 	f->mounted = false;
+	f->way = 0;
+	f->objects = 0;
 	f->path[0] = '\0';
 	f->stage_fd = -1;
 	f->stage_sent = 0;
@@ -75,9 +77,9 @@ void s09_files_init(struct s09_files *f, struct s09_master *m)
 
 /* ---- the requests ---- */
 
-int32_t s09_files_mount(struct s09_files *f)
+static int32_t mount_as(struct s09_files *f, uint32_t arg0)
 {
-	int32_t r = call(f, S09_MOUNT, 0, 0, NULL, 0, NULL, 0, NULL);
+	int32_t r = call(f, S09_MOUNT, arg0, 0, NULL, 0, NULL, 0, NULL);
 
 	/* A negative result the slave sent (errno 0, S-09.041); a slave that
 	 * is absent (ENODEV) has refused nothing. */
@@ -86,7 +88,28 @@ int32_t s09_files_mount(struct s09_files *f)
 	f->mount_lost = r < 0 && f->err == S09_ENODEV && f->m->absent;
 	f->mounted = r >= 0;
 	f->made_len = 0;
+	/* S-09.041: how it was mounted (S-12.061) */
+	f->way = r > 0 ? (uint8_t)S09_MOUNT_WAY(r) : 0u;
+	f->objects = r > 0 ? S09_MOUNT_OBJECTS(r) : 0u;
 	return r;
+}
+
+int32_t s09_files_mount(struct s09_files *f)
+{
+	return mount_as(f, 0);
+}
+
+bool s09_files_restored(const struct s09_files *f)
+{
+	return f->mounted && f->way == S09_FILES_RESTORED;
+}
+
+bool s09_files_for_write(struct s09_files *f)
+{
+	if (!s09_files_restored(f))
+		return f->mounted;
+	(void)mount_as(f, S09_MOUNT_FOR_WRITE);
+	return f->mounted && f->way != S09_FILES_RESTORED;
 }
 
 bool s09_files_unmount(struct s09_files *f)
@@ -95,6 +118,7 @@ bool s09_files_unmount(struct s09_files *f)
 
 	f->made_len = 0;
 	f->mounted = false;
+	f->way = 0;
 	r = call(f, S09_UNMOUNT, 0, 0, NULL, 0, NULL, 0, NULL);
 	return r >= 0 && f->err == 0;
 }

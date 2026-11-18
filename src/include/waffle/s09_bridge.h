@@ -22,6 +22,14 @@
 #define S09_RELEASE 0x07u
 #define S09_MOUNT 0x08u
 #define S09_UNMOUNT 0x09u
+/* S-09.041: 0x08 with arg0 1 is the scan before a write (S-12.062). Its
+ * result when mounted is 0 for a mount that read no checkpoint, otherwise
+ * the way (S-12.061: 1 restored, 2 to 5 scanned and why, 6 scanned for a
+ * write) in bits 0-7 and the objects of the tree in bits 8-30. */
+#define S09_MOUNT_FOR_WRITE 1u
+#define S09_MOUNT_WAY(r) ((uint32_t)(r) & 0xFFu)
+#define S09_MOUNT_OBJECTS(r) ((uint32_t)(r) >> 8)
+#define S09_MOUNT_OBJECTS_MAX 0x7FFFFFu
 #define S09_ECHO 0x0Au
 #define S09_CLOCK_SYNC 0x0Bu
 #define S09_READ_SECTOR 0x11u

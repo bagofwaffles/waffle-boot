@@ -59,6 +59,19 @@ enum s15_slave {
 	S15_SLAVE_LOST		/* present at the start, then stopped answering */
 };
 
+/* S-12.061: how the drive's volume was mounted, S-09.041's ways 1 - 6;
+ * none: no mount reported. */
+enum s15_files {
+	S15_FILES_NONE,
+	S15_FILES_RESTORED,
+	S15_FILES_NO_CKPT,
+	S15_FILES_CKPT_INVALID,
+	S15_FILES_CKPT_STALE,
+	S15_FILES_CKPT_UNREADABLE,
+	S15_FILES_FOR_WRITE,
+	S15_FILES_SCANNED	/* no checkpoint read */
+};
+
 /* S-10a.010 descriptor sets. */
 enum s15_usb_set {
 	S15_USB_MAIN,          /* the main screen's set */
@@ -122,6 +135,10 @@ struct s15_boot {
 	uint16_t start_log_used;   /* with S15_LOG_OK */
 	uint16_t start_log_unfinished; /* with S15_LOG_OK: unfinished entries at the end */
 	uint16_t start_log_erase;  /* used entries the main image erases the log at; 0: none */
+	/* S-12.061: the drive's mount (enum s15_files), kept current by the
+	 * board, and the objects of its tree */
+	uint8_t files_way;
+	uint32_t files_objects;
 	/* S-17.030 */
 	const char *unit_serial, *chip_serial, *psoc_serial;
 	const char *os_version, *sw_version, *ble_version, *psoc_version;
@@ -199,6 +216,10 @@ struct s15_env_ops {
 	/* S-15.082: read the selected slot's start log again into the boot's
 	 * start_log fields. NULL: they stay as held mode began with them. */
 	void (*start_log_read)(void *ctx);
+	/* S-12.062: the scan before the session's first write, made while
+	 * boot->files_way is S15_FILES_RESTORED, the line on the panel first;
+	 * the board updates files_way. NULL: there is no such scan. */
+	void (*files_scan)(void *ctx);
 };
 
 /* What the upgrade screen is doing (S-15.103). */
@@ -322,6 +343,9 @@ void s15_menu_start(struct s15_menu *m);
 void s15_menu_keys_down(struct s15_menu *m, const uint8_t bitmap[(S15_NKEYS + 7u) / 8u]);
 /* A key event (S-07.031), before or after the start. */
 void s15_menu_key(struct s15_menu *m, unsigned key, bool down);
+/* S-15.191: on the current screen, the scan before a write when the
+ * mount is restored (a host's write that comes outside the menu's own). */
+void s15_check_files(struct s15_menu *m);
 /*
  * A long call of the environment (the OS write, a format, a removal, the
  * FAT erase) holds the keys: key downs during it, and those the board reads

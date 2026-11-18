@@ -28,6 +28,9 @@ struct wire_s09 {
 	yaffs_DIR *dir[WIRE_S09_DIRS];
 	char dir_path[WIRE_S09_DIRS][WIRE_YAFFS_PATH_MAX];
 	char path[WIRE_YAFFS_PATH_MAX];
+	/* writes that found the mount restored and had the scan made first
+	 * (S-12.062); the master's own scan request comes before them */
+	uint32_t implicit_scans;
 };
 
 void wire_s09_init(struct wire_s09 *s, struct wire_yaffs *y);

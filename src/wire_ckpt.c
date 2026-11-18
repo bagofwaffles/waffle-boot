@@ -392,64 +392,124 @@ static void disagree(struct wire_ckpt_report *r, uint32_t b, const struct yaffs_
 	r->disagree++;
 }
 
-/* Chunk 0 of every block, and the allocating block's next page, against
- * what the restored mount records; also counts the checkpoint's blocks. */
+/* The restored mount's state for a block against its chunk 0 on the
+ * eMMC (wire_ckpt.h). */
+static bool agrees(const struct yaffs_block_info *bi, bool used, uint32_t seq)
+{
+	if (used && seq == YAFFS_SEQUENCE_CHECKPOINT_DATA)
+		return bi->block_state == YAFFS_BLOCK_STATE_CHECKPOINT;
+	switch (bi->block_state) {
+	case YAFFS_BLOCK_STATE_EMPTY:
+		return !used;
+	case YAFFS_BLOCK_STATE_ALLOCATING:
+	case YAFFS_BLOCK_STATE_FULL:
+	case YAFFS_BLOCK_STATE_DIRTY:
+	case YAFFS_BLOCK_STATE_COLLECTING:
+		return used && seq == bi->seq_number;
+	case YAFFS_BLOCK_STATE_CHECKPOINT:
+	case YAFFS_BLOCK_STATE_DEAD:
+	case YAFFS_BLOCK_STATE_UNKNOWN:
+	case YAFFS_BLOCK_STATE_SCANNING:
+	case YAFFS_BLOCK_STATE_NEEDS_SCAN:
+	default:
+		return false;
+	}
+}
+
+/* A chunk's tags (the driver's numbering); false when the read failed. */
+static bool tags_of(struct yaffs_dev *d, int chunk, bool *used, uint32_t *seq)
+{
+	struct yaffs_ext_tags t;
+
+	memset(&t, 0, sizeof t);
+	if (d->tagger.read_chunk_tags_fn(d, chunk, NULL, &t) != YAFFS_OK)
+		return false;
+	*used = t.chunk_used != 0u;
+	*seq = t.seq_number;
+	return true;
+}
+
+bool wire_ckpt_stale(struct yaffs_dev *d, struct wire_ckpt_stale *s,
+		     wire_ckpt_disagree_fn each, void *ctx)
+{
+	const int per = (int)d->param.chunks_per_block;
+	uint32_t b;
+
+	memset(s, 0, sizeof *s);
+	s->ckpt_seq = d->seq_number;
+	s->alloc_block = d->alloc_block >= 0 ? d->alloc_block - d->block_offset : -1;
+	s->alloc_page = d->alloc_page;
+	for (b = d->internal_start_block; b <= d->internal_end_block; b++) {
+		const struct yaffs_block_info *bi = yaffs_get_block_info(d, (int)b);
+		const uint32_t fb = b - (uint32_t)d->block_offset;	/* the volume's numbering */
+		bool used = false;
+		uint32_t seq = 0;
+
+		if (!tags_of(d, (int)fb * per, &used, &seq)) {
+			s->failed++;
+			continue;
+		}
+		s->blocks++;
+		if (used && seq == YAFFS_SEQUENCE_CHECKPOINT_DATA)
+			s->ckpt_blocks++;
+		else if (used && seq > s->ckpt_seq && seq <= YAFFS_HIGHEST_SEQUENCE_NUMBER)
+			s->newer++;
+		if (!agrees(bi, used, seq)) {
+			s->disagree++;
+			if (each != NULL)
+				each(ctx, fb, bi, used, seq);
+		}
+	}
+	/* yaffs2 writes a block's pages in order, so a write after the
+	 * checkpoint into the block it was filling lies at or after the
+	 * allocating page; every one of them is read */
+	if (d->alloc_block >= 0) {
+		for (uint32_t p = d->alloc_page; p < d->param.chunks_per_block; p++) {
+			bool used = false;
+			uint32_t seq = 0;
+
+			if (!tags_of(d, d->alloc_block * per + (int)p - d->chunk_offset, &used, &seq))
+				s->failed++;
+			else if (used)
+				s->alloc_used++;
+		}
+	}
+	return !d->is_checkpointed || s->newer != 0u || s->disagree != 0u ||
+	       s->alloc_used != 0u || s->failed != 0u;
+}
+
+static void told(void *ctx, uint32_t block, const struct yaffs_block_info *bi, bool used,
+		 uint32_t seq)
+{
+	disagree(ctx, block, bi, used, seq);
+}
+
+/* The stale check on a restored mount (wire_ckpt_stale()); on a scanned
+ * one, the checkpoint's blocks counted only. */
 static void guard(struct yaffs_dev *d, struct wire_ckpt_report *r, bool restored)
 {
+	struct wire_ckpt_stale s;
 	uint32_t b;
 
 	r->ckpt_seq = d->seq_number;
 	r->alloc_block = d->alloc_block >= 0 ? d->alloc_block - d->block_offset : -1;
 	r->alloc_page = d->alloc_page;
-	for (b = d->internal_start_block; b <= d->internal_end_block; b++) {
-		const struct yaffs_block_info *bi = yaffs_get_block_info(d, (int)b);
-		const uint32_t fb = b - (uint32_t)d->block_offset;	/* the volume's numbering */
-		enum yaffs_block_state st = YAFFS_BLOCK_STATE_UNKNOWN;
-		u32 seq = 0;
-		bool used, agree;
-
-		(void)d->tagger.query_block_fn(d, (int)fb, &st, &seq);
-		used = st == YAFFS_BLOCK_STATE_NEEDS_SCAN;
-		if (used && seq == YAFFS_SEQUENCE_CHECKPOINT_DATA) {
-			r->ckpt_blocks++;
-			continue;
-		}
-		if (!restored)
-			continue;
-		if (used && seq > r->ckpt_seq && seq <= YAFFS_HIGHEST_SEQUENCE_NUMBER)
-			r->newer++;
-		switch (bi->block_state) {
-		case YAFFS_BLOCK_STATE_EMPTY:
-			agree = !used;
-			break;
-		case YAFFS_BLOCK_STATE_ALLOCATING:
-		case YAFFS_BLOCK_STATE_FULL:
-		case YAFFS_BLOCK_STATE_DIRTY:
-		case YAFFS_BLOCK_STATE_COLLECTING:
-			agree = used && seq == bi->seq_number;
-			break;
-		case YAFFS_BLOCK_STATE_DEAD:
-		case YAFFS_BLOCK_STATE_CHECKPOINT:
-			agree = true;
-			break;
-		case YAFFS_BLOCK_STATE_UNKNOWN:
-		case YAFFS_BLOCK_STATE_SCANNING:
-		case YAFFS_BLOCK_STATE_NEEDS_SCAN:
-		default:
-			agree = false;
-			break;
-		}
-		if (!agree)
-			disagree(r, fb, bi, used, seq);
+	if (restored) {
+		(void)wire_ckpt_stale(d, &s, told, r);
+		r->ckpt_blocks = s.ckpt_blocks;
+		r->newer = s.newer;
+		r->alloc_used = s.alloc_used != 0u;
+		r->read_failed = s.failed;
+		return;
 	}
-	if (restored && d->alloc_block >= 0 && d->alloc_page < d->param.chunks_per_block) {
-		struct yaffs_ext_tags tags;
+	for (b = d->internal_start_block; b <= d->internal_end_block; b++) {
+		bool used = false;
+		uint32_t seq = 0;
 
-		memset(&tags, 0, sizeof tags);
-		if (d->tagger.read_chunk_tags_fn(d, d->alloc_block * (int)d->param.chunks_per_block +
-						 (int)d->alloc_page - d->chunk_offset, NULL,
-						 &tags) == YAFFS_OK)
-			r->alloc_used = tags.chunk_used != 0u;
+		if (tags_of(d, (int)((b - (uint32_t)d->block_offset) * d->param.chunks_per_block),
+			    &used, &seq) &&
+		    used && seq == YAFFS_SEQUENCE_CHECKPOINT_DATA)
+			r->ckpt_blocks++;
 	}
 }
 
