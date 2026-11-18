@@ -109,7 +109,7 @@ const struct s15_geometry *opxy_display_geometry(void)
 void opxy_display_send(void)
 {
 	if (up)
-		(void)wb_display_update(&disp);
+		(void)OPXY_DISPLAY_UPDATE(&disp);
 }
 
 const uint8_t *opxy_display_fb(void)
@@ -132,6 +132,11 @@ void opxy_display_held_start(struct opxy_master *m)
 	(void)m;
 	if (up)
 		(void)wb_display_start(&disp, false);
+}
+
+bool opxy_display_logo_line(const char *s)
+{
+	return up && wb_display_logo_line(&disp, s) == S13C_OK;
 }
 
 /* The frame drawn since the last one sent now, and ended on the return. */
@@ -360,7 +365,8 @@ static void os_frame_calibration(void)
 
 /*
  * S-05.004, S-13c.020: the panel shows the hand-over frame already when its
- * last frame is the early logo frame, nothing sent since but the gamma load,
+ * last frame is the early logo frame, nothing sent since but the gamma load
+ * (no line under it, S-13c.025),
  * and that frame has this build's image: the front's is the logo, so a
  * build-time image (S-15.132) is sent all the same.
  */
@@ -368,8 +374,9 @@ static bool logo_kept(void)
 {
 	const struct s13c_panel *p = &disp.panel;
 
-	return up && p->state == S13C_ON && p->boot_frame && p->gamma_on &&
-	       !p->frame && (!adopted || wb_display_boot_image.data == NULL);
+	return up && p->state == S13C_ON && p->boot_frame && !p->lined &&
+	       p->gamma_on && !p->frame &&
+	       (!adopted || wb_display_boot_image.data == NULL);
 }
 
 bool opxy_display_boot_logo(void)

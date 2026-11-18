@@ -170,6 +170,22 @@ class Held(Base):
         self.assertEqual(sum(1 for x in c.tr.txns if x.cmd == C.SLPOUT), 1)
         self.assertEqual(sum(1 for x in c.tr.txns if x.cmd == 0xE2), 1)
 
+    @requirement('S-13c.025')
+    def test_logo_line(self):
+        """S-13c.025: the line under the logo at held mode's entry, over the early logo frame (held) or the
+        hand-over frame (fail): one band of 16 panel columns under the logo, its text in dim gray, then held
+        mode's frames in S-13c.014's window."""
+        for path in ('held', 'fail'):
+            with self.subTest(path=path):
+                lines, frames, _ = trace('line_' + path, path, line=1)
+                c = self.check(lines, [path])
+                self.assertEqual(frames, 4)
+                self.assertEqual(len(c.lines), 1)
+                x, window = c.lines[0]
+                self.assertEqual(window, (49 + 140, 49 + 155, 0, 479))
+                self.assertIn(b'\x8c\x71', bytes(x.params))
+                self.assertTrue(all(f.t > x.t_end for f, _ in c.frames[-4:]))
+
     @scenario('S-13c/D-TE')
     def test_te_rates(self):
         # one run per rate: 60 Hz, 50 Hz and 65 Hz, a menu change each frame

@@ -99,6 +99,7 @@ struct s08_nordic {
 	const struct s08_ops *ops;
 	int state;		/* the metadata state (S-08 Terms) */
 	bool greeted;		/* S-08.002 made */
+	unsigned greet_tries;	/* S-08.002's greetings sent */
 	bool connected;		/* a greeting handled (S-08.031 step 4) */
 	bool replied;		/* the last info exchange had a reply */
 	int power_status;	/* the first nonzero power() return */

@@ -206,6 +206,18 @@ def frame(b, pixels=None, byte_ns=70, short=0, runs=None):
         b.data(pixels, byte_ns)
 
 
+def logo_line(b, how=True):
+    """S-13c.025: the line under the logo, screen y 140-155 (panel columns 189-204) over all 480 rows, then
+    S-13c.014's window again. how: True; 'short' (a pixel short); 'keep_window' (the band's window left for the
+    next frame)."""
+    b.cmd(0x2A, hx('00 BD 00 CC'))
+    b.cmd(0x2B, hx('00 00 01 DF'))
+    b.cmd(0x2C)
+    b.run(16 * 480 - (1 if how == 'short' else 0), b'\x8c\x71', 70)
+    if how != 'keep_window':
+        b.cmd(0x2A, hx('00 31 01 10'))
+
+
 def record(reset_ms):
     r = bytearray(44)
     r[0] = 1
@@ -316,6 +328,10 @@ def build(path='boot', handshake=True, reads=True, **o):
             # a frame of its own between the early logo frame and held mode (S-13c.019)
             b.wait(1 * MS)
             frame(b, runs=logo_runs())
+        if o.get('line') == 'boot':
+            # a line under the logo on the boot path (S-13c.025)
+            b.wait(1 * MS)
+            logo_line(b)
         b.wait(500 * MS)
     if o.get('prompt'):
         # S-05.025, S-13c.019: a boot prompt, lit by the early logo's 3C FF 02, before
@@ -381,6 +397,12 @@ def build(path='boot', handshake=True, reads=True, **o):
             return b.text(), expect
         b.wait(200 * MS)                       # the load fails (S-05.006)
     b.wait(20 * MS)
+    line = o.get('line')
+    if line and line not in ('boot', 'late'):
+        # S-13c.025: held mode's start: the line under the logo, then the mount and the rest before its
+        # first frame
+        logo_line(b, line)
+        b.wait(4000 * MS)
     if not o.get('held_dark'):
         b.ev('MSG51', '3C FF 02')
     b.ev('MARK', 'held')
@@ -407,6 +429,9 @@ def build(path='boot', handshake=True, reads=True, **o):
         frame(b, byte_ns=o.get('frame_byte_ns', 70))
         if k == 1 and o.get('two_frames_one_te'):
             frame(b)
+        if k == 1 and o.get('line') == 'late':
+            b.wait(1 * MS)
+            logo_line(b)                       # a line over held mode's screen (S-13c.025)
         if k == 1 and o.get('fatal'):
             b.at(te0 + k * period + 8 * MS)    # mid-period: a fatal error is shown at once
             b.ev('MARK', 'fatal')
@@ -511,6 +536,14 @@ VECTORS = {
     'good_logo_first_kept_gamma': (dict(path='boot', logo_first=True, kept='gamma'), None,
                                    'S-05.004, S-13c.012, S-13c.020'),
     'bad_logo_kept_cmd':     (dict(path='boot', kept='cmd'), 'handover', 'S-13c.020'),
+    # S-13c.025: the line under the logo in held mode's start, over the early logo or the hand-over frame
+    'good_held_logo_line':   (dict(path='held', line=True), None, 'S-13c.025'),
+    'good_fail_logo_line':   (dict(path='fail', line=True), None, 'S-13c.025'),
+    'good_fail_kept_logo_line': (dict(path='fail', kept=True, line=True), None, 'S-05.004, S-13c.025'),
+    'bad_logo_line_short':   (dict(path='held', line='short'), 'lines', 'S-13c.025'),
+    'bad_logo_line_window':  (dict(path='held', line='keep_window'), 'frames', 'S-13c.014, S-13c.025'),
+    'bad_logo_line_late':    (dict(path='held', line='late'), 'lines', 'S-13c.025'),
+    'bad_logo_line_boot':    (dict(path='boot', line='boot'), 'lines', 'S-13c.025'),
     'bad_record':            (dict(path='boot', record=record(0)), 'record', 'S-13c.021'),
     'bad_record_stale':      (dict(path='boot', handshake=False, record=record(1)), 'record', 'S-13c.021'),
     'bad_record_future':     (dict(path='boot', record=record(0x7FFFFFF0)), 'record', 'S-13c.021'),

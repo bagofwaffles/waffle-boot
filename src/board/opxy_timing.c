@@ -14,8 +14,13 @@
 #include "waffle/board/opxy_boot.h"
 
 #if OPXY_BOOT_TIMING
+#include <string.h>
+
 #include "waffle/board/opxy.h"
+#include "waffle/devhost.h"
+#include "waffle/display.h"
 #include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x_msi.h"
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/s01_memmap.h"
 
@@ -513,6 +518,187 @@ void opxy_timing_leave(void)
 	wb_dcache_flush_range(OPXY_BOOT_TIME_RECORD, BOOT_TIME_RECORD);
 }
 
+/* --- held mode's start (BOOT_TIME_MENU_LINE to BOOT_TIME_MENU_SHOWN) --- */
+
+static bool reached(unsigned id)
+{
+	return (opxy_boot_time.set >> id & 1u) != 0u;
+}
+
+void opxy_timing_line(bool drawn)
+{
+	if (drawn)
+		opxy_boot_time.flags |= BOOT_TIME_LINE_DRAWN;
+	OPXY_TIME(BOOT_TIME_MENU_LINE);
+}
+
+void opxy_timing_mount(int32_t rc, uint32_t err)
+{
+	OPXY_TIME(BOOT_TIME_MOUNT_REPLY);
+	opxy_boot_time.mount_rc = (uint32_t)rc;
+	opxy_boot_time.mount_err = err;
+}
+
+void opxy_timing_greeting(bool answered, unsigned tries)
+{
+	OPXY_TIME(BOOT_TIME_NORDIC_GREETING);
+	opxy_boot_time.greet_tries = tries;
+	if (answered)
+		opxy_boot_time.flags |= BOOT_TIME_NORDIC_ANSWERED;
+}
+
+/* Held mode's first frame: its start, when an update from held mode's entry
+ * starts one, then its end, seen at a later update (each pass makes one). */
+int opxy_timing_display_update(struct wb_display *d)
+{
+	const bool due = d->dirty;
+	const int rc = wb_display_update(d);
+
+	if (!reached(BOOT_TIME_HELD))
+		return rc;
+	if (!reached(BOOT_TIME_MENU_FRAME)) {
+		if (due && !d->dirty && rc == S13C_OK)
+			OPXY_TIME(BOOT_TIME_MENU_FRAME);
+	} else if (!reached(BOOT_TIME_MENU_SHOWN) && !wb_display_busy(d)) {
+		OPXY_TIME(BOOT_TIME_MENU_SHOWN);
+	}
+	return rc;
+}
+
+/*
+ * The slave's side of the mount (struct boot_time_mount): this image runs
+ * on both CPUs, so the master reads the slave's copy at its own copy's
+ * address, with the developer requests' word read (S-10c.110), once held
+ * mode reports. Counting costs a counter read and a few sums at each
+ * phase's end and each read's start and end, only while a mount runs.
+ */
+_Static_assert(WB_MSI_PH_CACHE == BOOT_TIME_PH_CACHE && WB_MSI_PH_SETUP == BOOT_TIME_PH_SETUP &&
+	       WB_MSI_PH_CMD == BOOT_TIME_PH_CMD && WB_MSI_PH_DATA == BOOT_TIME_PH_DATA &&
+	       WB_MSI_PH_STOP == BOOT_TIME_PH_STOP, "the driver's phases are the record's");
+
+struct boot_time_mount opxy_mount_time;
+static bool mount_on, in_read;
+static uint64_t mount_from, read_from, phase_from, read_sum;
+static uint64_t phase_sum[BOOT_TIME_PHASES];
+static uint32_t phase_now[BOOT_TIME_PHASES];
+
+static uint32_t clamp32(uint64_t v)
+{
+	return v > UINT32_MAX ? UINT32_MAX : (uint32_t)v;
+}
+
+void opxy_timing_mount_slave(bool start)
+{
+	struct boot_time_mount *t = &opxy_mount_time;
+	const uint64_t now = wb_core_cycles();
+	const uint32_t cpu = opxy_time.cycles_per_us != 0u ? opxy_time.cycles_per_us : 1u;
+	unsigned i;
+
+	if (start) {
+		memset(t, 0, sizeof *t);
+		t->read_min = UINT32_MAX;
+		for (i = 0; i < BOOT_TIME_PHASES; i++) {
+			t->phase_min[i] = UINT32_MAX;
+			phase_sum[i] = 0;
+		}
+		read_sum = 0;
+		in_read = false;
+		mount_from = now;
+		mount_on = true;
+		return;
+	}
+	if (!mount_on)
+		return;
+	mount_on = false;
+	t->cpu = cpu;
+	t->mount_us = clamp32((now - mount_from) / cpu);
+	t->read_us = clamp32(read_sum / cpu);
+	if (t->reads == 0u)
+		t->read_min = 0;
+	for (i = 0; i < BOOT_TIME_PHASES; i++) {
+		t->phase_us[i] = clamp32(phase_sum[i] / cpu);
+		if (t->reads == 0u)
+			t->phase_min[i] = 0;
+	}
+	t->valid = BOOT_TIME_MOUNT_MAGIC;
+}
+
+void opxy_timing_chunk(bool start, bool ok)
+{
+	struct boot_time_mount *t = &opxy_mount_time;
+	const uint64_t now = wb_core_cycles();
+	uint32_t c;
+	unsigned i;
+
+	if (!mount_on)
+		return;
+	if (start) {
+		read_from = now;
+		phase_from = now;
+		for (i = 0; i < BOOT_TIME_PHASES; i++)
+			phase_now[i] = 0;
+		in_read = true;
+		return;
+	}
+	in_read = false;
+	c = clamp32(now - read_from);
+	t->reads++;
+	if (!ok)
+		t->failed++;
+	read_sum += c;
+	if (c < t->read_min)
+		t->read_min = c;
+	if (c > t->read_max)
+		t->read_max = c;
+	for (i = 0; i < BOOT_TIME_PHASES; i++) {
+		phase_sum[i] += phase_now[i];
+		if (phase_now[i] < t->phase_min[i])
+			t->phase_min[i] = phase_now[i];
+		if (phase_now[i] > t->phase_max[i])
+			t->phase_max[i] = phase_now[i];
+	}
+}
+
+void wb_msi_phase(unsigned phase)
+{
+	uint64_t now;
+
+	if (!in_read || phase >= BOOT_TIME_PHASES)
+		return;
+	now = wb_core_cycles();
+	phase_now[phase] = clamp32((uint64_t)phase_now[phase] + (now - phase_from));
+	phase_from = now;
+}
+
+/* The slave's figures, word by word, once; kept only whole and filled. */
+static void mount_figures(struct opxy_master *m)
+{
+	static bool tried;
+	uint32_t w[BOOT_TIME_MOUNT_WORDS];
+	const uint32_t at = (uint32_t)(uintptr_t)&opxy_mount_time;
+	unsigned i;
+
+	/* after the first frame's end, which this would otherwise delay */
+	if (tried || !reached(BOOT_TIME_MOUNT_REPLY) ||
+	    (reached(BOOT_TIME_MENU_FRAME) && !reached(BOOT_TIME_MENU_SHOWN)))
+		return;
+	tried = true;
+	for (i = 0; i < BOOT_TIME_MOUNT_WORDS; i++) {
+		struct s09_req r = { OPXY_DEV_PEEK_REQ, 0, 0, at + 4u * i, 0 };
+		uint32_t err = 0;
+
+		if (!m->slave_present || m->bridge.absent)
+			return;
+		w[i] = (uint32_t)s09_master_call(&m->bridge, &r, NULL, 0, NULL, 0, NULL, &err);
+		if (err != 0u)
+			return;
+	}
+	if (w[0] != BOOT_TIME_MOUNT_MAGIC)
+		return;
+	memcpy(&opxy_boot_time.mount, w, sizeof w);
+	opxy_boot_time.flags |= BOOT_TIME_MOUNT_READ;
+}
+
 #define LINE_GAP_US   100000u
 #define REPORT_GAP_US 2000000u
 
@@ -522,6 +708,7 @@ void opxy_timing_held(struct opxy_master *m)
 	static uint64_t next;
 	struct s14_text t;
 
+	mount_figures(m);
 	if (next != 0u && !wb_time_passed(next))
 		return;
 	while (k < BOOT_TIME_LINES && !boot_time_line(&opxy_boot_time, k, opxy_time.cycles_per_us, &t))

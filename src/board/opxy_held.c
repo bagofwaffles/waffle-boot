@@ -134,8 +134,9 @@ int opxy_held_settle(struct opxy_master *m)
 static void greeting(void *ctx)
 {
 	struct opxy_master *m = ctx;
+	const bool answered = s08_link_greeting(&m->nordic);
 
-	(void)s08_link_greeting(&m->nordic);
+	OPXY_TIMING_GREETING(answered, m->nordic.greet_tries);
 }
 
 static void info(void *ctx)
@@ -145,7 +146,8 @@ static void info(void *ctx)
 
 	psoc_info_len = s07_info_request(&m->psoc, psoc_info,
 					 sizeof(psoc_info), &status);
-	opxy_copro_held(m, psoc_info, psoc_info_len);
+	OPXY_TIME(BOOT_TIME_PSOC_INFO);
+	opxy_copro_held(m, psoc_info, psoc_info_len); OPXY_TIME(BOOT_TIME_NORDIC_INFO);
 }
 
 static void held_state(void *ctx)
@@ -182,11 +184,17 @@ void opxy_held_service(void *ctx, const struct boot_held *h)
 	opxy_powered_off(m);
 }
 
+/* Under the logo from held mode's entry until its first frame, while the
+ * volume is mounted and the settings read (S-13c.025); the test OS has its
+ * stage lines instead. */
+static const char loading_line[] = "Loading boot menu...";
+
 void opxy_held(void *ctx, const struct boot_held *h)
 {
 	struct opxy_master *m = ctx;
 	struct boot_held_ops ops;
 	OPXY_CRUMB(10u); OPXY_TIME(BOOT_TIME_HELD);
+	OPXY_TESTOS_OR((void)loading_line, OPXY_TIMING_LINE(opxy_display_logo_line(loading_line)));
 	OPXY_TESTOS(opxy_testos_paint(OPXY_PAINT_LIME);)
 	opxy_held_psoc(m);
 	/* S-13b.071: UART1 for the Nordic link, first used now (S-08.001). */

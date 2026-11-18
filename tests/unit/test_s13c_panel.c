@@ -2,7 +2,7 @@
 /*
  * S-13c the display panel (src/s13c_panel.c) over a recording bus.
  * Requirements: S-13c.004 - S-13c.007, S-13c.011 - S-13c.013, S-13c.017,
- * S-13c.020 - S-13c.022. The whole runs are checked against
+ * S-13c.020 - S-13c.022, S-13c.025. The whole runs are checked against
  * tests/oracle/S-13c-display/check_trace.py in tests/conformance/test_s13c.py;
  * these are the decision table, the record and the calls' states.
  */
@@ -343,6 +343,75 @@ static void test_handover(void)
 	CHECK(s13c_handover(&p, rec) == S13C_ERR_STATE);
 }
 
+static unsigned line_rows, line_bytes;
+
+static void line_row(void *ctx, unsigned r, uint8_t *out)
+{
+	const unsigned *h = ctx;
+
+	CHECK(r == line_rows);
+	memset(out, 0x5A, 2u * *h);
+	line_rows++;
+	line_bytes += 2u * *h;
+}
+
+/* S-13c.025: the line under the logo, only while the panel shows the early
+ * logo or the hand-over frame; the hand-over refused after it until the
+ * next hand-over frame. */
+static void test_logo_line(void)
+{
+	struct s13c_panel p;
+	uint8_t rec[S13C_RECORD_SIZE];
+	unsigned rows = 0, h = 16;
+
+	fresh(50000);
+	s13c_begin(&p, &bus, 0, 0, 1);
+	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_ERR_STATE);	/* not on */
+	CHECK(s13c_start(&p, true) == S13C_OK);
+	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_ERR_STATE);	/* no logo yet */
+	CHECK(s13c_boot_frame(&p, black_row, &rows) == S13C_OK);
+	g.len = 0;
+	g.log[0] = '\0';
+	line_rows = line_bytes = 0;
+	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_OK);
+	CHECK(strcmp(g.log, "2A 2B 2C 2A ") == 0);
+	CHECK(line_rows == S13C_ROWS && line_bytes == 2u * 16u * S13C_ROWS);
+	CHECK(p.lined && p.boot_frame && !p.frame);
+	/* another line in its place */
+	line_rows = 0;
+	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_OK);
+	/* the panel no longer shows the hand-over frame alone */
+	CHECK(s13c_handover(&p, rec) == S13C_ERR_STATE);
+	rows = 0;
+	CHECK(s13c_boot_frame(&p, black_row, &rows) == S13C_OK);
+	CHECK(!p.lined && s13c_handover(&p, rec) == S13C_OK);
+
+	/* outside the visible window, or taller than a line */
+	fresh(50000);
+	s13c_begin(&p, &bus, 0, 0, 1);
+	CHECK(s13c_start(&p, true) == S13C_OK);
+	rows = 0;
+	CHECK(s13c_boot_frame(&p, black_row, &rows) == S13C_OK);
+	g.len = 0;
+	CHECK(s13c_logo_line(&p, S13C_VIS_W - 15u, h, line_row, &h) == S13C_ERR_STATE);
+	h = S13C_LINE_MAX_H + 1u;
+	CHECK(s13c_logo_line(&p, 0, h, line_row, &h) == S13C_ERR_STATE);
+	h = 0;
+	CHECK(s13c_logo_line(&p, 0, h, line_row, &h) == S13C_ERR_STATE);
+	CHECK(g.len == 0);
+	/* a held-mode frame replaces the logo: no line over it */
+	h = 16;
+	CHECK(s13c_frame(&p, fb, true) == S13C_OK);
+	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_ERR_STATE);
+
+	/* the front's logo taken on: the panel selected first */
+	fresh(900000);
+	s13c_adopt(&p, &bus, 40);
+	line_rows = 0;
+	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_OK);
+	CHECK(strcmp(g.log, "S 2A 2B 2C 2A ") == 0);
+}
+
 /* S-01.023: the front's panel taken on. This run's bus set-up leaves CS
  * high, so the first transaction selects it, once; the board then loads the
  * digital gamma itself (S-13c.012), and nothing of the init is resent. */
@@ -479,6 +548,7 @@ int main(void)
 	RUN(test_start);
 	RUN(test_frames);
 	RUN(test_handover);
+	RUN(test_logo_line);
 	RUN(test_adopt);
 	RUN(test_poweroff);
 	return check_summary("test_s13c_panel");

@@ -342,6 +342,40 @@ static void test_adopted_logo(void)
 	CHECK(last() == S13C_RAMWR);
 }
 
+/* S-13c.025: the line under the logo, from the front's logo or this run's,
+ * by the CPU; after it the hand-over frame is sent again (S-05.004), and no
+ * line goes over a frame of held mode's. */
+static void test_logo_line(void)
+{
+	struct opxy_master *m = &opxy_master;
+	struct s15_draw_ops ops;
+
+	reset();
+	fake_core_set_cycles(400u * 50000u);
+	opxy_display_adopt(2u);
+	clear();
+	CHECK(opxy_display_logo_line("Loading boot menu..."));
+	CHECK(ncmds == 4 && cmds[0] == S13C_CASET && cmds[1] == S13C_RASET &&
+	      cmds[2] == S13C_RAMWR && cmds[3] == S13C_CASET && starts == 0);
+	clear();
+	CHECK(!opxy_display_boot_logo());
+	CHECK(ncmds == 1 && cmds[0] == S13C_RAMWR && starts == 0);
+
+	reset();
+	fake_core_set_cycles(400u * 50000u);
+	opxy_display_handshake(S13C_HANDSHAKE_MAGIC, 2);
+	CHECK(opxy_display_early_logo());
+	clear();
+	CHECK(opxy_display_logo_line("Loading boot menu..."));
+	CHECK(last() == S13C_CASET && starts == 0);
+	opxy_display_draw_ops(m, &ops);
+	ops.fill(ops.ctx, 0, 0, 8, 8, 0xFFFFu);
+	opxy_display_show();
+	clear();
+	CHECK(!opxy_display_logo_line("Loading boot menu..."));
+	CHECK(ncmds == 0);
+}
+
 /* The restart's last frame: sent and waited for, and given up after the
  * frame's timeout when it never ends, so the caller always goes on. */
 static void test_settle(void)
@@ -497,6 +531,7 @@ int main(void)
 	RUN(test_calibration);
 	RUN(test_early_logo);
 	RUN(test_adopted_logo);
+	RUN(test_logo_line);
 	RUN(test_settle);
 	RUN(test_render_whole);
 	return check_summary("test_display_board");

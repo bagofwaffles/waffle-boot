@@ -284,4 +284,23 @@ struct wb_msi_leave {
  */
 int wb_msi_leave(const struct wb_msi *m, const struct wb_msi_leave *v);
 
+/*
+ * A timing build's phases of a data command (make BOOT_TIMING=1): the
+ * driver marks where each ends, the board counts them. The cache
+ * maintenance before and after the transfer, the controller's set-up, the
+ * command to its response, the data to its end, the stop command with its
+ * busy wait. Nothing in any other build.
+ */
+#define WB_MSI_PH_CACHE 0u
+#define WB_MSI_PH_SETUP 1u
+#define WB_MSI_PH_CMD   2u
+#define WB_MSI_PH_DATA  3u
+#define WB_MSI_PH_STOP  4u
+#if defined(OPXY_BOOT_TIMING_ON) && !defined(OPXY_TEST_OS)
+void wb_msi_phase(unsigned phase);
+#define WB_MSI_PHASE(ph) wb_msi_phase(ph)
+#else
+#define WB_MSI_PHASE(ph) ((void)0)
+#endif
+
 #endif /* WAFFLE_DRIVERS_BF70X_MSI_H */

@@ -14,6 +14,10 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "waffle/board/opxy_boot.h"
+#include "waffle/board/opxy_display.h"
+#include "waffle/drivers/bf70x_lcd.h"
+#include "waffle/drivers/bf70x_port.h"
+#include "waffle/s13c_panel.h"
 #include "waffle/wire_crc.h"
 
 static struct opxy_master m;
@@ -283,6 +287,75 @@ static void test_held(void)
 	opxy_usb_stop();
 }
 
+/* S-13c.025: the line under the logo, seen on the panel bus as its first
+ * CASET (a command byte: PA5, D/C, low, on SMC bank 0) after the front's
+ * logo was taken on; what had been done by then is kept. */
+static unsigned casets;
+static int dc = -1;
+static struct {
+	bool mount_sent;	/* the mount requested */
+	bool usb;		/* USB up */
+	bool greeted;		/* the Nordic greeted */
+} at_line;
+
+static bool panel_hook(void *ctx, enum fake_mmr_op op, unsigned width,
+		       wb_mmr_addr addr, uint32_t *value)
+{
+	(void)ctx;
+	(void)width;
+	if (op != FAKE_MMR_WRITE)
+		return true;
+	if (addr == PORT_DATA_CLR(WB_PORT_A) && (*value & (1u << 5)))
+		dc = 0;
+	else if (addr == PORT_DATA_SET(WB_PORT_A) && (*value & (1u << 5)))
+		dc = 1;
+	else if (addr == WB_LCD_SMC_BANK0 && dc == 0 && (uint8_t)*value == S13C_CASET &&
+		 casets++ == 0u) {
+		at_line.mount_sent = m.sv.files.mount_sent;
+		at_line.usb = opxy_usb_up();
+		at_line.greeted = m.nordic.greeted;
+	}
+	return true;
+}
+
+/* Held mode's entry, whole, to its first pass: the line is sent first,
+ * before the mount is requested (S-09.018), USB starts and the Nordic is
+ * greeted, and once only; the first screen still waits for them. */
+static void test_held_line(void)
+{
+	static struct boot_held h;
+	int r;
+
+	board(true);
+	m.slave_present = true;		/* the bridge absent: the mount goes to no one */
+	casets = 0;
+	memset(&at_line, 0, sizeof at_line);
+	fake_mmr_set_hook(panel_hook, NULL);
+	/* the panel as the front leaves it: on, its logo the last frame */
+	opxy_master.hw.time = opxy_time;
+	opxy_display_adopt(2u);
+	CHECK(opxy_display() != NULL && casets == 0u);
+	memset(&h, 0, sizeof(h));
+	h.reason = BOOT_REASON_NONE;
+	/* 10 us per counter read: the Nordic's greeting and the info
+	 * exchanges time out on the silent links in a bounded loop */
+	fake_core_set_cycle_step(4000u);
+	jump = true;
+	r = setjmp(loop_jmp);
+	if (r == 0)
+		opxy_held(&m, &h);
+	jump = false;
+	fake_core_set_cycle_step(1u);
+	CHECK(r == 1 && programs == 1u);
+	/* the line's CASET and the frame window's after it, once */
+	CHECK(casets == 2u);
+	CHECK(!at_line.mount_sent && !at_line.usb && !at_line.greeted);
+	CHECK(m.sv.files.mount_sent && m.nordic.greeted);
+	CHECK(m.sv.menu.screen == S15_SCR_MAIN);
+	fake_mmr_set_hook(NULL, NULL);
+	opxy_usb_stop();
+}
+
 /* The battery wait marks at its loop's start: USB up, and before the loop's
  * first battery query. */
 static void test_battery(void)
@@ -413,6 +486,7 @@ int main(void)
 	RUN(test_once);
 	RUN(test_nothing_named);
 	RUN(test_held);
+	RUN(test_held_line);
 	RUN(test_battery);
 	RUN(test_boot_path);
 	RUN(test_no_record);

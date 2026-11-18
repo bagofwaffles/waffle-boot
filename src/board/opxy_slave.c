@@ -280,10 +280,14 @@ static bool user_area(const struct opxy_slave *s)
 static int bd_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
 {
 	const struct opxy_slave *s = ctx;
+	int rc;
 
 	if (!user_area(s))
 		return -1;
-	return s->emmc_ops.read(s->emmc_ops.ctx, lba, count, buf);
+	OPXY_TIMING_CHUNK(true, true);
+	rc = s->emmc_ops.read(s->emmc_ops.ctx, lba, count, buf);
+	OPXY_TIMING_CHUNK(false, rc == 0);
+	return rc;
 }
 
 /* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
@@ -541,6 +545,27 @@ static int32_t file(void *ctx, const struct s09_req *r, const char *path,
 #endif
 	return wire_s09_file(&files, r, path, path2, data, n, out, err);
 }
+
+#if OPXY_BOOT_TIMING
+/* A timing build: the mount's handling timed, with its chunk reads. */
+static int32_t file_timed(void *ctx, const struct s09_req *r, const char *path,
+			  const char *path2, const uint8_t *data, uint32_t n,
+			  uint8_t *out, uint32_t *err)
+{
+	const bool mount = r->cmd == S09_MOUNT;
+	int32_t v;
+
+	if (mount)
+		OPXY_TIMING_MOUNT_SLAVE(true);
+	v = file(ctx, r, path, path2, data, n, out, err);
+	if (mount)
+		OPXY_TIMING_MOUNT_SLAVE(false);
+	return v;
+}
+#define FILE_OP file_timed
+#else
+#define FILE_OP file
+#endif
 
 /* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
 static int32_t read_file(void *ctx, uint32_t fd, uint8_t *buf, uint32_t n,
@@ -1215,7 +1240,7 @@ void opxy_slave_storage(struct opxy_slave *s)
 	s->store.erase_group = erase_group;
 	s->store.boot_size = boot_size;
 	s->store.emmc = emmc_command;
-	s->store.file = file;
+	s->store.file = FILE_OP;
 	s->store.read = read_file;
 	s->store.os_status = os_status;
 	s->store.cycles = cycles;

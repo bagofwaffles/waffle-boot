@@ -123,6 +123,17 @@ int wb_display_update(struct wb_display *d);
  * the panel with gamma if not yet started; the frame buffer is not used. */
 int wb_display_boot_logo(struct wb_display *d, const struct wb_display_image *image);
 
+/*
+ * S-13c.025: a line of text centered under the logo, in place of the last
+ * one: screen y WB_LOGO_LINE_Y to WB_LOGO_LINE_Y + WB_FONT_H - 1 across the
+ * width, dim gray (S15_DIM) on black, written into the panel's memory
+ * while it shows the early logo or the hand-over frame (s13c_logo_line()).
+ * The frame buffer is not used, so held mode's first frame draws over it.
+ * S13C_ERR_STATE when the panel shows anything else.
+ */
+#define WB_LOGO_LINE_Y 140u
+int wb_display_logo_line(struct wb_display *d, const char *s);
+
 /* The same frame into frame (S13C_FRAME_BYTES): for pictures and tests, and
  * what the boot path leaves for the OS (S-05.016). */
 void wb_display_handover_frame(const struct wb_display_image *image, uint8_t *frame);

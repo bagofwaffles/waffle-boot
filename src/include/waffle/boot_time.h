@@ -80,6 +80,18 @@ enum boot_time_id {
 	BOOT_TIME_SLAVE_KERNEL,
 	BOOT_TIME_SLAVE_RETURNED,
 	BOOT_TIME_SLAVE_JUMP,
+	/* Held mode's start to its first frame, after BOOT_TIME_HELD. */
+	BOOT_TIME_MENU_LINE,		/* the line under the logo sent, or found
+					 * not drawable (BOOT_TIME_LINE_DRAWN) */
+	BOOT_TIME_MOUNT_SENT,		/* the mount request next (S-09.018) */
+	BOOT_TIME_MOUNT_REPLY,		/* its reply in, or given up */
+	BOOT_TIME_SETTINGS,		/* the settings file read */
+	BOOT_TIME_USB,			/* USB started */
+	BOOT_TIME_NORDIC_GREETING,	/* the Nordic's greeting answered or given up */
+	BOOT_TIME_PSOC_INFO,		/* the PSoC's info reply in, or given up */
+	BOOT_TIME_NORDIC_INFO,		/* S-17.021's Nordic info exchange done */
+	BOOT_TIME_MENU_FRAME,		/* the first menu frame started on the panel */
+	BOOT_TIME_MENU_SHOWN,		/* and ended: its last byte on the panel */
 	BOOT_TIME_COUNT
 };
 
@@ -102,6 +114,41 @@ enum boot_time_id {
 #define BOOT_TIME_COPY_CRC_AGAIN 0x2000u	/* and computed again in software */
 #define BOOT_TIME_LOGO_KEPT     0x4000u	/* the panel showed the hand-over frame
 					 * already: none sent (S-05.004) */
+#define BOOT_TIME_LINE_DRAWN    0x8000u	/* the line under the logo drawn */
+#define BOOT_TIME_NORDIC_ANSWERED 0x10000u	/* the Nordic answered its greeting */
+#define BOOT_TIME_MOUNT_READ    0x20000u	/* mount holds the slave's figures */
+
+/*
+ * The slave's side of the mount (S-09.018), gathered on the slave in a
+ * timing build and read by the master over the bridge afterwards, word by
+ * word: valid is BOOT_TIME_MOUNT_MAGIC once filled. Times in us but for
+ * the shortest and longest, which are in the slave's cycles (cpu per us).
+ * A chunk read is yaffs2's (S-12.041); its phases are the eMMC driver's:
+ * the cache maintenance before and after the transfer, the set-up of the
+ * controller, the command to its response, the data to its end, and the
+ * stop command with its busy wait. The rest of a read is what the
+ * phases leave.
+ */
+#define BOOT_TIME_MOUNT_MAGIC 0x544E4D42u	/* "BMNT" */
+#define BOOT_TIME_PHASES 5u
+#define BOOT_TIME_MOUNT_WORDS (8u + 3u * BOOT_TIME_PHASES)
+enum boot_time_phase {
+	BOOT_TIME_PH_CACHE,
+	BOOT_TIME_PH_SETUP,
+	BOOT_TIME_PH_CMD,
+	BOOT_TIME_PH_DATA,
+	BOOT_TIME_PH_STOP,
+};
+struct boot_time_mount {
+	uint32_t valid, cpu;
+	uint32_t mount_us;	/* the request's handling, its eMMC wake-up too */
+	uint32_t reads, failed;	/* chunk reads, and those that failed */
+	uint32_t read_us, read_min, read_max;
+	uint32_t phase_us[BOOT_TIME_PHASES];
+	uint32_t phase_min[BOOT_TIME_PHASES], phase_max[BOOT_TIME_PHASES];
+};
+_Static_assert(sizeof(struct boot_time_mount) == 4u * BOOT_TIME_MOUNT_WORDS,
+	       "the slave's figures are whole words");
 
 /* slot_dma: moved by DMA whole; whole but its CRC failed; or the read
  * failed: the channel's done without the words moved, words left in the
@@ -213,6 +260,10 @@ struct boot_time {
 	 * << 16 (struct s09_qdata_rec); the quad reply test's time before it,
 	 * in us, 0 when it did not run. */
 	uint32_t copy_quad, copy_qbytes, copy_qstate, copy_qtest_us;
+	/* Held mode's start: the mount's result and error (S-09.041), the
+	 * Nordic greeting's tries (S-08.002), and the slave's figures. */
+	uint32_t mount_rc, mount_err, greet_tries;
+	struct boot_time_mount mount;
 	struct boot_time_split split;
 };
 
@@ -301,11 +352,12 @@ void boot_time_gap(struct boot_time *t, uint64_t cycles, uint32_t at);
  * rate, the stream's pacing, the ready line after a byte (four lines), the
  * stream's split, blocks, bytes, longest waits and the measuring's own cost
  * (seven lines), the stream's faster reads, the power at the start, the start
- * into the OS in spans (two lines), and an end line. A line k with nothing to say
+ * into the OS in spans (two lines), held mode's start to its first frame in
+ * spans (two lines), the slave's mount (two lines), and an end line. A line k with nothing to say
  * leaves *out empty and returns false. cycles_per_us converts counts after
  * INIT's clock set-up; counts taken before it are shown as they are.
  */
-#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 20u)
+#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 24u)
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out);
 
@@ -315,9 +367,9 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 14u
-#define BOOT_TIME_WORDS   (65u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
-			   3u * BOOT_TIME_GAPS)
+#define BOOT_TIME_VERSION 15u
+#define BOOT_TIME_WORDS   (68u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+			   3u * BOOT_TIME_GAPS + BOOT_TIME_MOUNT_WORDS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,
 		    uint8_t rec[BOOT_TIME_RECORD]);

@@ -225,6 +225,34 @@
   "fails_rule": "handover",
   "requirement": "S-13c.020"
  },
+ "bad_logo_line_boot": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "lines",
+  "requirement": "S-13c.025"
+ },
+ "bad_logo_line_late": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "lines",
+  "requirement": "S-13c.025"
+ },
+ "bad_logo_line_short": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "lines",
+  "requirement": "S-13c.025"
+ },
+ "bad_logo_line_window": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": "frames",
+  "requirement": "S-13c.014, S-13c.025"
+ },
  "bad_missing_e8": {
   "expect": [
    "boot"
@@ -451,6 +479,20 @@
   "fails_rule": null,
   "requirement": "S-13c.019"
  },
+ "good_fail_kept_logo_line": {
+  "expect": [
+   "fail"
+  ],
+  "fails_rule": null,
+  "requirement": "S-05.004, S-13c.025"
+ },
+ "good_fail_logo_line": {
+  "expect": [
+   "fail"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.025"
+ },
  "good_fail_then_held": {
   "expect": [
    "fail"
@@ -471,6 +513,13 @@
   ],
   "fails_rule": null,
   "requirement": "S-13c.017"
+ },
+ "good_held_logo_line": {
+  "expect": [
+   "held"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.025"
  },
  "good_held_poweroff": {
   "expect": [

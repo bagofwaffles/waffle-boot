@@ -180,6 +180,7 @@ class Checker:
         self.frame_sha = frame_sha
         self.fail = []
         self.frames = []          # (txn, window): the early logo frame if before DISPON, then each RAMWR after
+        self.lines = []           # (txn, window): each line under the logo after DISPON (S-13c.025)
         self.logo_before = None   # the early logo frame sent before DISPON, or None
         self.notes = []
 
@@ -307,7 +308,10 @@ class Checker:
                 ys, ye = x.params[0] << 8 | x.params[1], x.params[2] << 8 | x.params[3]
             elif x.cmd == RAMWR:
                 w = xe - xs + 1
-                (self.frames if dispon_seen else before).append((x, (xs, xe, ys, ye)))
+                if dispon_seen and self.is_line((xs, xe, ys, ye), len(x.params)):
+                    self.lines.append((x, (xs, xe, ys, ye)))
+                else:
+                    (self.frames if dispon_seen else before).append((x, (xs, xe, ys, ye)))
                 data = bytes(x.params)
                 pos, y = 0, ys
                 while pos + 1 < len(data) and y <= ye and y < ROWS:
@@ -322,6 +326,38 @@ class Checker:
                 dispon_seen = True
                 self.visible_at_dispon(gram, wr, before, x)
         return dispon_seen
+
+    @staticmethod
+    def is_line(window, n):
+        """S-13c.025: n bytes, no more than the band holds, into a band of whole panel columns inside the
+        visible window, narrower than it, over all 480 rows: the line under the logo, not a frame. More bytes
+        are a frame sent into the wrong window (rule frames)."""
+        xs, xe, ys, ye = window
+        return (VIS_X0 <= xs <= xe <= VIS_X1 and xe - xs + 1 < VIS_X1 - VIS_X0 + 1 and ys == 0 and
+                ye == ROWS - 1 and n <= 2 * (xe - xs + 1) * ROWS)
+
+    def rule_lines(self):
+        """S-13c.025: each line under the logo comes in held mode's start (never on the boot path) while the
+        panel shows the early logo frame or the hand-over frame: the last frame before it is the early logo
+        frame, or a frame that 0x51 3C FF 32 followed before the line. Its bytes are whole (S-13c.016's rule
+        for its band); S-13c.014's window is set again before the next frame (rule frames)."""
+        early = self.early_logo()
+        for x, (xs, xe, ys, ye) in self.lines:
+            if 'boot' in self.expect:
+                self.err('lines', 'S-13c.025', 'a line under the logo at %d ns on the boot path' % x.t)
+                continue
+            need = 2 * (xe - xs + 1) * (ye - ys + 1)
+            if len(x.params) != need or x.reads:
+                self.err('lines', 'S-13c.025', 'line at %d ns of %d bytes, expected %d' % (x.t, len(x.params), need))
+            prior = [f for f, _ in self.frames if f.t < x.t]
+            if not prior:
+                self.err('lines', 'S-13c.025', 'line at %d ns before any frame' % x.t)
+                continue
+            last = prior[-1]
+            bright = any(p == bytes.fromhex('3cff32') and last.t_end < t < x.t for t, p in self.tr.msg51)
+            if last is not early and not bright:
+                self.err('lines', 'S-13c.025', 'line at %d ns after the frame at %d ns, which is neither the early '
+                         'logo frame nor the hand-over frame' % (x.t, last.t))
 
     def visible_at_dispon(self, gram, wr, before, don):
         """S-13c.010, S-13c.019 at the first DISPON."""
@@ -706,6 +742,7 @@ class Checker:
         self.rule_te()
         self.rule_msg51()
         self.rule_held_start()
+        self.rule_lines()
         self.rule_handover()
         self.rule_record()
         self.rule_poweroff()

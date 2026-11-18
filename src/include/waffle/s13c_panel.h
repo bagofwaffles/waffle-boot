@@ -124,6 +124,7 @@ struct s13c_panel {
 	bool gamma_on;		/* the last B9 is 42 E0 */
 	bool frame;		/* a frame may be in flight */
 	bool boot_frame;	/* the last frame is the hand-over frame */
+	bool lined;		/* a line under the logo written since (S-13c.025) */
 	bool select_due;	/* adopted: CS low before the next transaction */
 	/* S-13c.011: the identification reads, informative only. */
 	bool id_valid;
@@ -193,6 +194,21 @@ bool s13c_frame_stop(struct s13c_panel *p);
 int s13c_boot_frame(struct s13c_panel *p,
 		    void (*row)(void *ctx, unsigned r, uint8_t *out),
 		    void *ctx);
+
+/*
+ * S-13c.025: a line under the logo while the panel shows the early logo or
+ * the hand-over frame (the last frame s13c_boot_frame()'s or the front's):
+ * columns 49 + y to 49 + y + h - 1 (screen y to y + h - 1, S-13c.023) and
+ * rows 0-479, whose rows row(ctx, r, out) gives (2 * h bytes each,
+ * r = 0..479), written at once, then S-13c.014's window again. The panel
+ * no longer shows the hand-over frame alone: s13c_handover() refuses until
+ * the next s13c_boot_frame(). S13C_ERR_STATE when the panel shows anything
+ * else, or for a band outside the visible window or taller than
+ * S13C_LINE_MAX_H.
+ */
+#define S13C_LINE_MAX_H 16u
+int s13c_logo_line(struct s13c_panel *p, unsigned y, unsigned h,
+		   void (*row)(void *ctx, unsigned r, uint8_t *out), void *ctx);
 
 /*
  * S-13c.020, S-13c.021: at the kernel call, after s13c_boot_frame() and

@@ -706,9 +706,14 @@ void opxy_services_start(struct opxy_master *m)
 	s09_files_fs_ops(&sv->files, &sv->staging);
 	sv->scan_due = false;
 	sv->working = false;
-	if (m->slave_present)
-		(void)s09_files_mount(&sv->files);
-	opxy_settings_read(m, &sv->settings);
+	if (m->slave_present) {
+		int32_t rc;
+
+		OPXY_TIME(BOOT_TIME_MOUNT_SENT);
+		rc = s09_files_mount(&sv->files);
+		OPXY_TIMING_MOUNT(rc, sv->files.err);
+	}
+	opxy_settings_read(m, &sv->settings); OPXY_TIME(BOOT_TIME_SETTINGS);
 	opxy_menu_env(m, &sv->env);
 	opxy_install_ops(m, &sv->run, &sv->step);
 
@@ -726,7 +731,7 @@ void opxy_services_start(struct opxy_master *m)
 	sv->host_ops.continue_check = OPXY_TESTOS_OR(NULL, host_continue_check);
 	sv->host_ops.continue_os = OPXY_TESTOS_OR(NULL, host_continue);
 	s10c_host_init(&sv->host, &sv->host_ops, m);
-	opxy_usb_start(m);
+	opxy_usb_start(m); OPXY_TIME(BOOT_TIME_USB);
 }
 
 /* Rendered, then sent: what was drawn reaches the panel on this call. */
@@ -1464,6 +1469,12 @@ __attribute__((weak)) void opxy_display_settle(void)
 __attribute__((weak)) void opxy_display_held_start(struct opxy_master *m)
 {
 	(void)m;
+}
+
+__attribute__((weak)) bool opxy_display_logo_line(const char *s)
+{
+	(void)s;
+	return false;
 }
 
 __attribute__((weak)) const uint8_t *opxy_display_fb(void)

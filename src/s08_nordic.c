@@ -66,6 +66,7 @@ void s08_init(struct s08_nordic *n, struct s06_node *node, unsigned link,
 	n->ops = ops;
 	n->state = state;
 	n->greeted = false;
+	n->greet_tries = 0;
 	n->connected = false;
 	n->replied = false;
 	n->power_status = 0;
@@ -188,13 +189,15 @@ bool s08_link_greeting(struct s08_nordic *n)
 {
 	static const uint8_t hello[2] = { 0x01, 0x03 };
 	bool answered = false;
+	int i;
 
 	if (n->greeted)
 		return false;		/* once per power-on */
 	n->greeted = true;
-	for (int i = 0; i < GREET_TRIES && !answered; i++)
+	for (i = 0; i < GREET_TRIES && !answered; i++)
 		answered = s06_transact(n->node, n->link, ID_GREET, hello, 2,
 					GREET_US, 0) == 1;
+	n->greet_tries = (unsigned)i;
 	if (!answered)
 		log_ev(n, S08_LOG_GREETING_UNANSWERED, 0, 0, 0);
 	routes(n, true);	/* S-08.004: forwarding from the end on */

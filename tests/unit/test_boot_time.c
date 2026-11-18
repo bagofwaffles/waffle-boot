@@ -288,7 +288,11 @@ static void test_summary(void)
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 16u));	/* no power reported */
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 17u));	/* no hand-over begun */
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 18u));
-	CHECK(line_is(&t, BOOT_TIME_COUNT + 19u, "end of report"));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 19u));	/* no held mode */
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 20u));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 21u));	/* no mount */
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 22u));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 23u, "end of report"));
 	CHECK(line_empty(&t, BOOT_TIME_LINES));
 	CHECK(line_of(&t, "end of report") == BOOT_TIME_LINES - 1u);
 }
@@ -672,7 +676,8 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 129u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 155u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_COUNT == 59u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -705,9 +710,26 @@ static void test_record(void)
 	t.copy_qbytes = 2359296u;
 	t.copy_qstate = 0x00000302u;
 	t.copy_qtest_us = 15600u;
+	t.mount_rc = 0xFFFFFFFFu;
+	t.mount_err = 19u;
+	t.greet_tries = 1000u;
+	t.mount.valid = BOOT_TIME_MOUNT_MAGIC;
+	t.mount.cpu = 400u;
+	t.mount.mount_us = 4500000u;
+	t.mount.reads = 1234u;
+	t.mount.failed = 1u;
+	t.mount.read_us = 4200000u;
+	t.mount.read_min = 40000u;
+	t.mount.read_max = 3600000u;
+	for (i = 0; i < BOOT_TIME_PHASES; i++) {
+		t.mount.phase_us[i] = 10000u * (i + 1u);
+		t.mount.phase_min[i] = 100u + i;
+		t.mount.phase_max[i] = 9000u + i;
+	}
 	/* milestones past bit 31 of set */
 	boot_time_mark(&t, BOOT_TIME_STREAM_LAST, 0x1122334455667788ull);
 	boot_time_mark(&t, BOOT_TIME_KERNEL_CALL, 0x2122334455667788ull);
+	boot_time_mark(&t, BOOT_TIME_MENU_SHOWN, 0x3122334455667788ull);
 	t.split.xfer = 0x0000000100000002ull;
 	t.split.window = 0x0000000300000004ull;
 	t.split.sample = 5u;
@@ -747,6 +769,8 @@ static void test_record(void)
 	      back.copy_link == 0x00040101u && back.copy_fell == 2u);
 	CHECK(back.copy_quad == 37u && back.copy_qbytes == 2359296u &&
 	      back.copy_qstate == 0x00000302u && back.copy_qtest_us == 15600u);
+	CHECK(back.mount_rc == 0xFFFFFFFFu && back.mount_err == 19u && back.greet_tries == 1000u);
+	CHECK(memcmp(&back.mount, &t.mount, sizeof t.mount) == 0);
 	CHECK(memcmp(back.at, t.at, sizeof t.at) == 0);
 	/* the split's fields, not its tail padding */
 	CHECK(back.split.xfer == t.split.xfer && back.split.window == t.split.window &&
@@ -757,6 +781,7 @@ static void test_record(void)
 		     offsetof(struct boot_time_split, bytes)) == 0);
 	CHECK(back.set >> BOOT_TIME_STREAM_LAST & 1u);
 	CHECK(back.set >> BOOT_TIME_KERNEL_CALL & 1u);
+	CHECK(back.set >> BOOT_TIME_MENU_SHOWN & 1u);
 
 	/* any one byte changed is refused, the magic and the version included */
 	for (i = 0; i < BOOT_TIME_RECORD; i++) {
@@ -1005,6 +1030,97 @@ static void test_os_start(void)
 		      "user area 0.100 ms, check 0.010 ms"));
 }
 
+/* Held mode's start to its first frame, in spans from the step reached
+ * before each, and the slave's mount (struct boot_time_mount). */
+static void test_boot_menu(void)
+{
+	struct boot_time t = fresh();
+	unsigned i;
+
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 19u));
+	boot_time_mark(&t, BOOT_TIME_HELD, US(6000000));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 19u, "boot menu split:"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 20u, "boot menu split, links and frame:"));
+	boot_time_mark(&t, BOOT_TIME_MENU_LINE, US(6000300));
+	boot_time_mark(&t, BOOT_TIME_MOUNT_SENT, US(6001300));
+	boot_time_mark(&t, BOOT_TIME_MOUNT_REPLY, US(10501300));
+	boot_time_mark(&t, BOOT_TIME_SETTINGS, US(10621300));
+	boot_time_mark(&t, BOOT_TIME_USB, US(10631300));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 19u,
+		      "boot menu split: line 0.300 ms (not drawn), to mount 1.000 ms, "
+		      "mount 4500.000 ms, settings 120.000 ms, usb 10.000 ms"));
+	t.flags |= BOOT_TIME_LINE_DRAWN;
+	t.mount_rc = (uint32_t)-1;
+	t.mount_err = 5u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 19u,
+		      "boot menu split: line 0.300 ms (drawn), to mount 1.000 ms, "
+		      "mount 4500.000 ms (failed, error 5), settings 120.000 ms, usb 10.000 ms"));
+	t.mount_rc = 0u;
+	boot_time_mark(&t, BOOT_TIME_NORDIC_GREETING, US(10636300));
+	t.greet_tries = 1u;
+	t.flags |= BOOT_TIME_NORDIC_ANSWERED;
+	boot_time_mark(&t, BOOT_TIME_PSOC_INFO, US(10637300));
+	boot_time_mark(&t, BOOT_TIME_NORDIC_INFO, US(10640300));
+	boot_time_mark(&t, BOOT_TIME_MENU_FRAME, US(10660300));
+	boot_time_mark(&t, BOOT_TIME_MENU_SHOWN, US(10675300));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 20u,
+		      "boot menu split, links and frame: nordic greeting 5.000 ms (1 tries, "
+		      "answered), psoc info 1.000 ms, nordic info 3.000 ms, to the frame "
+		      "20.000 ms, frame 15.000 ms, in all 4675.300 ms"));
+	t.flags &= ~BOOT_TIME_NORDIC_ANSWERED;
+	t.greet_tries = 1000u;
+	CHECK(line_of(&t, "boot menu split, links and frame: nordic greeting 5.000 ms "
+			  "(1000 tries, not answered)") == BOOT_TIME_COUNT + 20u);
+	CHECK(line_of(&t, "49 loading line: 6000.300 ms, +0.300 ms") < BOOT_TIME_COUNT);
+	CHECK(line_of(&t, "58 first menu frame ended: 10675.300 ms") < BOOT_TIME_COUNT);
+
+	/* no second processor: no mount, each span from the step before */
+	t = fresh();
+	boot_time_mark(&t, BOOT_TIME_HELD, US(1000));
+	boot_time_mark(&t, BOOT_TIME_MENU_LINE, US(1100));
+	boot_time_mark(&t, BOOT_TIME_SETTINGS, US(1200));
+	boot_time_mark(&t, BOOT_TIME_USB, US(1300));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 19u,
+		      "boot menu split: line 0.100 ms (not drawn), settings 0.100 ms, "
+		      "usb 0.100 ms, no mount"));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 21u));
+
+	/* the slave's figures, or their absence after a mount */
+	boot_time_mark(&t, BOOT_TIME_MOUNT_REPLY, US(1150));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 21u, "slave mount: no figures from the slave"));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 22u));
+	t.flags |= BOOT_TIME_MOUNT_READ;
+	t.mount.valid = BOOT_TIME_MOUNT_MAGIC;
+	t.mount.cpu = 400u;
+	t.mount.mount_us = 4500000u;
+	t.mount.reads = 1000u;
+	t.mount.failed = 0u;
+	t.mount.read_us = 4200000u;
+	t.mount.read_min = 400u * 1000u;	/* 1 ms */
+	t.mount.read_max = 400u * 9000u;
+	for (i = 0; i < BOOT_TIME_PHASES; i++) {
+		t.mount.phase_us[i] = 1000u * (i + 1u);	/* means of 1 to 5 us */
+		t.mount.phase_min[i] = 200u;		/* 0.50 us */
+		t.mount.phase_max[i] = 4000u;		/* 10.00 us */
+	}
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 21u,
+		      "slave mount: 4500.000 ms in all, 1000 chunk reads in 4200.000 ms, a read "
+		      "min/mean/max 1000.00/4200.00/9000.00 us, 0 failed"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 22u,
+		      "slave mount, a read's phases min/mean/max: cache 0.50/1.00/10.00 us, "
+		      "set-up 0.50/2.00/10.00 us, command 0.50/3.00/10.00 us, "
+		      "data 0.50/4.00/10.00 us, stop 0.50/5.00/10.00 us, the rest mean 4185.00 us"));
+	/* within a log line */
+	{
+		struct s14_text out;
+
+		for (i = BOOT_TIME_COUNT + 19u; i <= BOOT_TIME_COUNT + 22u; i++) {
+			CHECK(boot_time_line(&t, i, MHZ, &out) || i == BOOT_TIME_COUNT + 20u);
+			CHECK(!out.overflow && out.len < S14_LINE_MAX - 16u);
+		}
+	}
+}
+
 int main(void)
 {
 	RUN(test_mark);
@@ -1022,5 +1138,6 @@ int main(void)
 	RUN(test_dma_lines);
 	RUN(test_power);
 	RUN(test_os_start);
+	RUN(test_boot_menu);
 	return check_summary("boot_time");
 }

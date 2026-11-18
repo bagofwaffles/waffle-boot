@@ -310,6 +310,49 @@ int wb_display_boot_logo(struct wb_display *d, const struct wb_display_image *im
 	return s13c_boot_frame(&d->panel, handover_row, &h);
 }
 
+/* The logo line's window row r: screen x 479 - r, its column from the top. */
+struct logo_line {
+	const char *s;
+	unsigned x0, n;
+};
+
+static void logo_line_row(void *ctx, unsigned r, uint8_t *out)
+{
+	const struct logo_line *l = ctx;
+	const unsigned x = WB_DISPLAY_W - 1u - r;
+	const uint8_t *g = NULL;
+	unsigned bit = 0, j;
+
+	if (x >= l->x0 && x < l->x0 + l->n * WB_FONT_W) {
+		unsigned ch = (unsigned char)l->s[(x - l->x0) / WB_FONT_W];
+
+		if (ch < WB_FONT_FIRST || ch >= WB_FONT_FIRST + WB_FONT_COUNT)
+			ch = '?';
+		g = wb_display_font[ch - WB_FONT_FIRST];
+		bit = WB_FONT_W - 1u - (x - l->x0) % WB_FONT_W;
+	}
+	for (j = 0; j < WB_FONT_H; j++) {
+		const uint16_t c = g != NULL && (((unsigned)g[j] >> bit) & 1u) != 0u ?
+					   S15_DIM : S15_BLACK;
+
+		out[2u * j] = (uint8_t)(c >> 8);
+		out[2u * j + 1u] = (uint8_t)c;
+	}
+}
+
+int wb_display_logo_line(struct wb_display *d, const char *s)
+{
+	struct logo_line l;
+	size_t n = strlen(s);
+
+	if (n > WB_DISPLAY_W / WB_FONT_W)
+		n = WB_DISPLAY_W / WB_FONT_W;
+	l.s = s;
+	l.n = (unsigned)n;
+	l.x0 = (WB_DISPLAY_W - l.n * WB_FONT_W) / 2u;
+	return s13c_logo_line(&d->panel, WB_LOGO_LINE_Y, WB_FONT_H, logo_line_row, &l);
+}
+
 void wb_display_handover_frame(const struct wb_display_image *image, uint8_t *frame)
 {
 	struct handover h;

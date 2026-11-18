@@ -441,6 +441,9 @@ void opxy_display_send(void);
  * timeout (S-13c.016). */
 void opxy_display_settle(void);
 void opxy_display_power_off(struct opxy_master *m);
+/* S-13c.025: s as the line under the logo while the panel shows it; false
+ * when it does not, or without a panel. */
+bool opxy_display_logo_line(const char *s);
 /* S-10c.057: the FSN's four words; false while no OTP item is known. */
 bool opxy_read_fsn(uint32_t words[4]);
 

@@ -282,6 +282,7 @@ static int data(struct wb_msi *m, uint32_t idx, uint32_t arg,
 		wb_dcache_flush_range(addr, len);
 	else
 		wb_dcache_invalidate_range(addr, len);
+	WB_MSI_PHASE(WB_MSI_PH_CACHE);
 
 	wb_mmr_write32(MSI_CTL, wb_mmr_read32(MSI_CTL) | MSI_CTL_FIFORST);
 	rc = poll(m, MSI_CTL, MSI_CTL_FIFORST, 0, m->c->xfer_timeout_us);
@@ -295,11 +296,13 @@ static int data(struct wb_msi *m, uint32_t idx, uint32_t arg,
 	flags = WB_MSI_R1 | MSI_CMD_DXPECT;
 	if (write)
 		flags |= MSI_CMD_RDWR;
+	WB_MSI_PHASE(WB_MSI_PH_SETUP);
 	rc = send(m, idx, arg, flags, NULL);
 	if (rc == WB_MSI_OK)
 		m->last_r1 = wb_mmr_read32(MSI_RESP0);
 	if (rc == WB_MSI_OK && (m->last_r1 & WB_MMC_R1_ERRORS))
 		rc = WB_MSI_ERR_EMMC;
+	WB_MSI_PHASE(WB_MSI_PH_CMD);
 	if (rc != WB_MSI_OK) {
 		stop_dma();
 		return rc;
@@ -344,8 +347,10 @@ static int data(struct wb_msi *m, uint32_t idx, uint32_t arg,
 		}
 		if (is & MSI_IS_DTO) {
 			wb_mmr_write32(MSI_ISTAT, MSI_IS_DTO);
+			WB_MSI_PHASE(WB_MSI_PH_DATA);
 			if (!write)
 				wb_dcache_invalidate_range(addr, len);
+			WB_MSI_PHASE(WB_MSI_PH_CACHE);
 			return WB_MSI_OK;
 		}
 	} while (!late);
@@ -494,8 +499,10 @@ int wb_msi_emmc_read(void *ctx, uint32_t sector, uint32_t count,
 			rc = data(m, 17, sector, buf, 1, false);
 		} else {
 			rc = data(m, 18, sector, buf, n, false);
-			if (rc == WB_MSI_OK)
+			if (rc == WB_MSI_OK) {
 				rc = stop_read(m);
+				WB_MSI_PHASE(WB_MSI_PH_STOP);
+			}
 		}
 		sector += n;
 		buf += n * WB_MSI_BLOCK;

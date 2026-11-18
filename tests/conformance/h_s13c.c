@@ -60,6 +60,8 @@
  *                 logo, MARK prompt and the prompt's frame (S-15.180), lit
  *                 by the early logo's message; it waits 3 s, then the path
  *                 goes on (boot: digit 1; held: digit 2, S-15.021)
+ *   line=1        held or fail: at held mode's entry, the line under the
+ *                 logo (S-13c.025), 4 s before held mode's 3C FF 02
  *   cont=1        after held mode's frames, Continue to the OS (S-05.033,
  *                 S-15.190), a restart: the restarting view as
  *                 s15_menu_continue() draws it, with the lines of
@@ -377,7 +379,7 @@ static void orient_mark(const struct s15_draw_ops *o)
 struct opts {
 	unsigned long hs, strap, te_us, frames, pattern, orient, fatal,
 		poweroff, regreet, option, status, slot, prompt, image;
-	unsigned long cont;
+	unsigned long cont, line;
 	unsigned long xmod, ymod;
 	bool xmod_set, ymod_set;
 };
@@ -424,6 +426,8 @@ static bool parse(const struct h_cmd *c, int from, struct opts *o)
 			o->prompt = v;
 		else if (KEY("cont"))
 			o->cont = v;
+		else if (KEY("line"))
+			o->line = v;
 		else if (KEY("image"))
 			o->image = v;
 		else if (KEY("option"))
@@ -835,6 +839,13 @@ static void run(const struct h_cmd *c)
 	}
 	if (!boot) {
 		s.t += 20u * MS;
+		if (o.line) {
+			/* S-13c.025: the line under the logo at held mode's
+			 * entry, then the mount and the rest before the first
+			 * frame. */
+			(void)wb_display_logo_line(&d, "Loading boot menu...");
+			s.t += 4000u * MS;
+		}
 		held(&s, &d, &o);
 		if (o.cont)
 			continue_os(&s, &d, &o);

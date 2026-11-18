@@ -102,8 +102,23 @@ void opxy_timing_pa6(bool start, bool high);
  * (start true: its level taken, the count afresh); each fall is the slave's
  * next step (opxy_handover.c's ho_beacon()). */
 void opxy_timing_pc5(bool start);
-/* Each pass of held mode: the report, a line every 100 ms, then 2 s apart. */
+/* Each pass of held mode: the report, a line every 100 ms, then 2 s apart.
+ * The slave's mount figures are read over the bridge before the first. */
 void opxy_timing_held(struct opxy_master *m);
+/* Held mode's start: the line under the logo sent (drawn or not), the
+ * mount's reply with its result and error, the Nordic greeting's outcome
+ * and tries; the first menu frame sent, and seen ended (a display update
+ * in place of wb_display_update()). */
+void opxy_timing_line(bool drawn);
+void opxy_timing_mount(int32_t rc, uint32_t err);
+void opxy_timing_greeting(bool answered, unsigned tries);
+struct wb_display;
+int opxy_timing_display_update(struct wb_display *d);
+/* The slave's side of the mount: its handling of the request (start true,
+ * then false) and, in it, each chunk read (start true, then false with its
+ * outcome); the eMMC driver's phases go to wb_msi_phase(). */
+void opxy_timing_mount_slave(bool start);
+void opxy_timing_chunk(bool start, bool ok);
 #define OPXY_STARTUP opxy_timing_startup
 #define OPXY_TIMING_START() opxy_timing_start()
 #define OPXY_TIMING_BATTERY(on) opxy_timing_battery(on)
@@ -120,6 +135,12 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_PC5(start) opxy_timing_pc5(start)
 #define OPXY_TIMING_LOGO_KEPT(kept) \
 	((kept) ? (void)(opxy_boot_time.flags |= BOOT_TIME_LOGO_KEPT) : (void)0)
+#define OPXY_TIMING_LINE(drawn) opxy_timing_line(drawn)
+#define OPXY_TIMING_MOUNT(rc, err) opxy_timing_mount(rc, err)
+#define OPXY_TIMING_GREETING(answered, tries) opxy_timing_greeting(answered, tries)
+#define OPXY_DISPLAY_UPDATE(d) opxy_timing_display_update(d)
+#define OPXY_TIMING_MOUNT_SLAVE(start) opxy_timing_mount_slave(start)
+#define OPXY_TIMING_CHUNK(start, ok) opxy_timing_chunk(start, ok)
 #else
 #define OPXY_BOOT_TIMING 0
 #define OPXY_TIME(id) ((void)0)
@@ -138,6 +159,12 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_HELD(m) ((void)0)
 #define OPXY_TIMING_PC5(start) ((void)0)
 #define OPXY_TIMING_LOGO_KEPT(kept) ((void)(kept))
+#define OPXY_TIMING_LINE(drawn) ((void)(drawn))
+#define OPXY_TIMING_MOUNT(rc, err) ((void)(rc))
+#define OPXY_TIMING_GREETING(answered, tries) ((void)(answered))
+#define OPXY_DISPLAY_UPDATE(d) wb_display_update(d)
+#define OPXY_TIMING_MOUNT_SLAVE(start) ((void)0)
+#define OPXY_TIMING_CHUNK(start, ok) ((void)0)
 #endif
 #if defined(OPXY_BOOT_TIMING_ON) && defined(OPXY_TEST_OS)
 /* The test OS: the loading bootloader's record, taken at entry, then logged. */

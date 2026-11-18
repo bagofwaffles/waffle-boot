@@ -332,7 +332,12 @@ static void test_forwarding(void)
 	s06_node_poll(&nrig.node);
 	CHECK_EQ(nrig.port.ntx, 0);
 	/* the Nordic answers the third greeting request */
-	(void)s08_link_greeting(&nrig.nordic);
+	CHECK_EQ(nrig.nordic.greet_tries, 0u);
+	/* the tries made: every one of S-08.002's 1000 when none is answered */
+	if (!s08_link_greeting(&nrig.nordic))
+		CHECK_EQ(nrig.nordic.greet_tries, 1000u);
+	else
+		CHECK(nrig.nordic.greet_tries >= 1u && nrig.nordic.greet_tries < 1000u);
 	t_port_inject(&nrig.cdc, nrig.sim.now, w, n);
 	s06_node_poll(&nrig.node);
 	CHECK(nrig.port.ntx >= n);

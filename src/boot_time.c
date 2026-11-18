@@ -17,6 +17,9 @@ static const char *const names[BOOT_TIME_COUNT] = {
 	"boot report queued", "os crc done", "release sent", "slave server stopped",
 	"slave os started", "teardown begun", "kernel call", "copy link up",
 	"slave teardown begun", "slave kernel call", "slave kernel returned", "slave jump",
+	"loading line", "mount sent", "mount reply", "settings read", "usb started",
+	"nordic greeting done", "psoc info done", "nordic info done", "first menu frame",
+	"first menu frame ended",
 };
 
 static bool reached(const struct boot_time *t, unsigned id)
@@ -74,10 +77,9 @@ static void text_ms(struct s14_text *out, uint64_t us)
 	s14_text_str(out, " ms");
 }
 
-/* Cycles as microseconds with two decimals. */
-static void text_us(struct s14_text *out, uint64_t cycles, uint32_t cpu)
+/* Hundredths of a microsecond as microseconds with two decimals, no unit. */
+static void text_hundredths(struct s14_text *out, uint64_t hundredths)
 {
-	const uint64_t hundredths = cycles * 100u / cpu;
 	char d[3];
 
 	s14_text_dec(out, (uint32_t)(hundredths / 100u));
@@ -85,6 +87,12 @@ static void text_us(struct s14_text *out, uint64_t cycles, uint32_t cpu)
 	d[1] = (char)('0' + hundredths / 10u % 10u);
 	d[2] = (char)('0' + hundredths % 10u);
 	s14_text_bytes(out, (const uint8_t *)d, sizeof d);
+}
+
+/* Cycles as microseconds with two decimals. */
+static void text_us(struct s14_text *out, uint64_t cycles, uint32_t cpu)
+{
+	text_hundredths(out, cycles * 100u / cpu);
 	s14_text_str(out, " us");
 }
 
@@ -617,6 +625,131 @@ static bool start_line(const struct boot_time *t, uint32_t cpu, struct s14_text 
 	return true;
 }
 
+/*
+ * Held mode's start to its first frame in spans, each from the step reached
+ * before it, held mode's entry first, in two lines: the line under the
+ * logo, the set-up to the mount request, the mount (its result when it
+ * failed), the settings and USB; then the Nordic's greeting with its tries,
+ * the PSoC's and the Nordic's info, the first menu frame's wait and its
+ * transfer, and the whole from held mode's entry.
+ */
+static const struct { const char *name; uint8_t id; } menu_steps[] = {
+	{ "line", BOOT_TIME_MENU_LINE },
+	{ "to mount", BOOT_TIME_MOUNT_SENT },
+	{ "mount", BOOT_TIME_MOUNT_REPLY },
+	{ "settings", BOOT_TIME_SETTINGS },
+	{ "usb", BOOT_TIME_USB },
+	{ "nordic greeting", BOOT_TIME_NORDIC_GREETING },
+	{ "psoc info", BOOT_TIME_PSOC_INFO },
+	{ "nordic info", BOOT_TIME_NORDIC_INFO },
+	{ "to the frame", BOOT_TIME_MENU_FRAME },
+	{ "frame", BOOT_TIME_MENU_SHOWN },
+};
+#define MENU_FIRST_LINE 5u	/* the steps on the first line */
+
+static bool menu_line(const struct boot_time *t, bool second, uint32_t cpu,
+		      struct s14_text *out)
+{
+	const unsigned n = sizeof menu_steps / sizeof menu_steps[0];
+	unsigned i, from = BOOT_TIME_HELD, last = BOOT_TIME_HELD;
+	bool first = true;
+
+	if (!reached(t, BOOT_TIME_HELD))
+		return false;
+	s14_text_str(out, second ? "boot menu split, links and frame:" : "boot menu split:");
+	for (i = 0; i < n; i++) {
+		const unsigned id = menu_steps[i].id;
+
+		if (!reached(t, id))
+			continue;
+		if (second == (i >= MENU_FIRST_LINE)) {
+			start_span(t, out, menu_steps[i].name, from, id, cpu, &first);
+			if (id == BOOT_TIME_MENU_LINE)
+				s14_text_str(out, (t->flags & BOOT_TIME_LINE_DRAWN) ?
+					     " (drawn)" : " (not drawn)");
+			if (id == BOOT_TIME_MOUNT_REPLY && (int32_t)t->mount_rc < 0) {
+				s14_text_str(out, " (failed, error ");
+				s14_text_dec(out, t->mount_err);
+				s14_text_str(out, ")");
+			}
+			if (id == BOOT_TIME_NORDIC_GREETING) {
+				s14_text_str(out, " (");
+				s14_text_dec(out, t->greet_tries);
+				s14_text_str(out, (t->flags & BOOT_TIME_NORDIC_ANSWERED) ?
+					     " tries, answered)" : " tries, not answered)");
+			}
+		}
+		from = id;
+		last = id;
+	}
+	if (!second && !reached(t, BOOT_TIME_MOUNT_SENT) && reached(t, BOOT_TIME_SETTINGS))
+		s14_text_str(out, first ? " no mount" : ", no mount");
+	if (second && last != BOOT_TIME_HELD)
+		start_span(t, out, "in all", BOOT_TIME_HELD, last, cpu, &first);
+	return true;
+}
+
+/* min/mean/max in us: the shortest and longest in cycles at cpu, the mean
+ * from a total in us over n. */
+static void text_spread(struct s14_text *out, uint32_t min, uint64_t total_us, uint32_t n,
+			uint32_t max, uint32_t cpu)
+{
+	text_hundredths(out, (uint64_t)min * 100u / cpu);
+	s14_text_str(out, "/");
+	text_hundredths(out, n != 0u ? total_us * 100u / n : 0u);
+	s14_text_str(out, "/");
+	text_hundredths(out, (uint64_t)max * 100u / cpu);
+	s14_text_str(out, " us");
+}
+
+/* The slave's mount (struct boot_time_mount), in two lines: its time, its
+ * chunk reads and their time; then a read's phases and the rest. */
+static bool mount_line(const struct boot_time *t, bool phases, struct s14_text *out)
+{
+	static const char *const names_ph[BOOT_TIME_PHASES] = {
+		"cache ", "set-up ", "command ", "data ", "stop ",
+	};
+	const struct boot_time_mount *mt = &t->mount;
+	const uint32_t cpu = mt->cpu != 0u ? mt->cpu : 1u;
+	uint64_t sum = 0;
+	unsigned i;
+
+	if (!(t->flags & BOOT_TIME_MOUNT_READ)) {
+		if (phases || !reached(t, BOOT_TIME_MOUNT_REPLY))
+			return false;
+		s14_text_str(out, "slave mount: no figures from the slave");
+		return true;
+	}
+	if (!phases) {
+		s14_text_str(out, "slave mount: ");
+		text_ms(out, mt->mount_us);
+		s14_text_str(out, " in all, ");
+		s14_text_dec(out, mt->reads);
+		s14_text_str(out, " chunk reads in ");
+		text_ms(out, mt->read_us);
+		s14_text_str(out, ", a read min/mean/max ");
+		text_spread(out, mt->read_min, mt->read_us, mt->reads, mt->read_max, cpu);
+		s14_text_str(out, ", ");
+		s14_text_dec(out, mt->failed);
+		s14_text_str(out, " failed");
+		return true;
+	}
+	if (mt->reads == 0u)
+		return false;
+	s14_text_str(out, "slave mount, a read's phases min/mean/max:");
+	for (i = 0; i < BOOT_TIME_PHASES; i++) {
+		s14_text_str(out, i == 0u ? " " : ", ");
+		s14_text_str(out, names_ph[i]);
+		text_spread(out, mt->phase_min[i], mt->phase_us[i], mt->reads, mt->phase_max[i],
+			    cpu);
+		sum += mt->phase_us[i];
+	}
+	s14_text_str(out, ", the rest mean ");
+	text_hundredths(out, mt->read_us > sum ? (mt->read_us - sum) * 100u / mt->reads : 0u);
+	s14_text_str(out, " us");
+	return true;
+}
+
 /* The faster read's way (slot_dma): "; by DMA: whole", or the fall-back to
  * the core's read and its reason, with the receive FIFO's words read off. */
 static void slot_dma_text(uint32_t v, struct s14_text *out)
@@ -811,6 +944,12 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 	case 18:
 		return start_line(t, cpu, out);
 	case 19:
+	case 20:
+		return menu_line(t, k - BOOT_TIME_COUNT == 20u, cpu, out);
+	case 21:
+	case 22:
+		return mount_line(t, k - BOOT_TIME_COUNT == 22u, out);
+	case 23:
 		s14_text_str(out, "end of report");
 		return true;
 	default:
@@ -853,6 +992,9 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->dma_fcs_samples, &t->dma_fcs_held, &t->dma_fcs_parts, &t->dma_fcs_first,
 		&t->power_state, &t->battery, &t->battery_ma, &t->copy_link, &t->copy_fell,
 		&t->copy_quad, &t->copy_qbytes, &t->copy_qstate, &t->copy_qtest_us,
+		&t->mount_rc, &t->mount_err, &t->greet_tries, &t->mount.valid, &t->mount.cpu,
+		&t->mount.mount_us, &t->mount.reads, &t->mount.failed, &t->mount.read_us,
+		&t->mount.read_min, &t->mount.read_max,
 		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
 		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};
@@ -860,12 +1002,16 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		{ t->line_raise, BOOT_TIME_RAISE_STEPS },
 		{ t->line_high_at, BOOT_TIME_FIRST },
 		{ t->line_late_at, BOOT_TIME_FIRST },
+		{ t->mount.phase_us, BOOT_TIME_PHASES },
+		{ t->mount.phase_min, BOOT_TIME_PHASES },
+		{ t->mount.phase_max, BOOT_TIME_PHASES },
 	};
 	unsigned i, j, k = 0;
 
 	_Static_assert(2u * (sizeof two / sizeof two[0]) + sizeof one / sizeof one[0] +
-		       BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + 3u * BOOT_TIME_GAPS ==
-		       COUNT_WORDS, "every count has its words in the record");
+		       BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + 3u * BOOT_TIME_PHASES +
+		       3u * BOOT_TIME_GAPS == COUNT_WORDS,
+		       "every count has its words in the record");
 	for (i = 0; i < sizeof two / sizeof two[0]; i++, k += 2u) {
 		if (unpack) {
 			*two[i] = (uint64_t)w[k] | (uint64_t)w[k + 1u] << 32;

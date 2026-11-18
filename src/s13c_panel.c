@@ -71,6 +71,7 @@ void s13c_begin(struct s13c_panel *p, const struct s13c_bus *bus,
 	p->gamma_on = false;
 	p->frame = false;
 	p->boot_frame = false;
+	p->lined = false;
 	p->select_due = false;
 	p->id_valid = false;
 	p->te_misses = 0;
@@ -116,6 +117,7 @@ void s13c_adopt(struct s13c_panel *p, const struct s13c_bus *bus,
 	p->gamma_on = false;
 	p->frame = false;
 	p->boot_frame = true;
+	p->lined = false;
 	p->select_due = true;
 	p->id_valid = false;
 	p->te_misses = 0;
@@ -378,12 +380,46 @@ int s13c_boot_frame(struct s13c_panel *p,
 		b->data(b->ctx, line, sizeof line);
 	}
 	p->boot_frame = true;
+	p->lined = false;
+	return S13C_OK;
+}
+
+int s13c_logo_line(struct s13c_panel *p, unsigned y, unsigned h,
+		   void (*row)(void *ctx, unsigned r, uint8_t *out), void *ctx)
+{
+	const struct s13c_bus *b = p->bus;
+	const unsigned c0 = S13C_VIS_X0 + y, c1 = c0 + h - 1u;
+	const uint8_t caset[4] = { (uint8_t)(c0 >> 8), (uint8_t)c0,
+				   (uint8_t)(c1 >> 8), (uint8_t)c1 };
+	uint8_t line[2u * S13C_LINE_MAX_H];
+	unsigned r;
+	int rc;
+
+	if (h == 0u || h > S13C_LINE_MAX_H || y + h > S13C_VIS_W)
+		return S13C_ERR_STATE;
+	if (p->state != S13C_ON || !p->boot_frame)
+		return S13C_ERR_STATE;
+	rc = s13c_frame_wait(p);
+	if (rc != S13C_OK)
+		return rc;
+	claim(p);
+	/* S-13c.025: the band's columns and every row, then S-13c.014's
+	 * columns again; its rows are the band's. */
+	send(p, S13C_CASET, caset, sizeof caset);
+	send(p, S13C_RASET, p_raset, sizeof p_raset);
+	b->cmd(b->ctx, S13C_RAMWR);
+	for (r = 0; r < S13C_ROWS; r++) {
+		row(ctx, r, line);
+		b->data(b->ctx, line, 2u * h);
+	}
+	send(p, S13C_CASET, p_caset_frame, sizeof p_caset_frame);
+	p->lined = true;
 	return S13C_OK;
 }
 
 int s13c_handover(struct s13c_panel *p, uint8_t rec[S13C_RECORD_SIZE])
 {
-	if (p->state != S13C_ON || !p->boot_frame || !p->gamma_on ||
+	if (p->state != S13C_ON || !p->boot_frame || p->lined || !p->gamma_on ||
 	    s13c_frame_busy(p))
 		return S13C_ERR_STATE;
 	p->state = S13C_HANDED;

@@ -250,6 +250,11 @@ int main(int argc, char **argv)
 					    peer_seq++, x->id, x->p, x->len);
 		}
 		result = run();
+		/* S-08.002's tries: all 1000 when none was answered */
+		if (cur->proc == 0)
+			CHECK(result ? nrig.nordic.greet_tries >= 1u &&
+				       nrig.nordic.greet_tries < 1000u :
+				       nrig.nordic.greet_tries == 1000u);
 		check(result, nrig.sim.now);
 		check_stop(result);
 	}
