@@ -191,8 +191,9 @@ These rules are fixed: only the maintainer changes them.
 - Settings: 1 Developer mode, 2 Protected writes, 3 Color, 5 MTP target,
   6 Start in boot menu; never a digit the white knob also gives.
 - Start in boot menu is off by default. On, every start that would boot
-  the OS opens the boot menu instead (S-15.175). It is kept in the SPI
-  flash, not in the settings file; when it cannot be saved, Settings says
+  the OS opens the boot menu instead (S-15.175). It is kept with the
+  other settings in the running slot's settings sector in the SPI flash;
+  when it cannot be saved, Settings says
   so and the item shows what the next start will read.
 - 6 Restart after an install that completed and after an OS write that
   succeeded is Continue to the OS; elsewhere on the developer menu it is
@@ -227,8 +228,9 @@ These rules are fixed: only the maintainer changes them.
   releases the disk.
 - Shift + 8 leaves the key test.
 - The color setting is on by default; off draws in gray (S-15.173).
-- The settings are kept in one file, each at its default when the file is
-  missing or corrupt (S-15.172).
+- The settings are kept per slot in the SPI flash, each at its default
+  when the slot's settings sector holds no valid record for the image it
+  runs (S-15.172).
 - The main screen shows the failed-start notice only when this boot's start
   of the OS failed (S-15.163): under the items, `The OS could not be
   started.` and a `   Reason: …` line; for an image marked encrypted the
