@@ -505,8 +505,20 @@ static bool power_line(const struct boot_time *t, struct s14_text *out)
 	s14_text_str(out, " %, ");
 	s14_text_dec(out, t->battery >> 16);
 	s14_text_str(out, " mV, ");
-	s14_text_dec(out, t->battery_ma);
+	/* the report's current is a signed 16-bit value, negative leaving the
+	 * battery */
+	if (t->battery_ma & 0x8000u) {
+		s14_text_str(out, "-");
+		s14_text_dec(out, 0x10000u - (t->battery_ma & 0xFFFFu));
+	} else {
+		s14_text_dec(out, t->battery_ma & 0xFFFFu);
+	}
 	s14_text_str(out, " mA");
+	/* switched on, not charging, full: a battery start and a USB start
+	 * whose charger has stopped report the same */
+	if ((t->flags & BOOT_TIME_POWER_KNOWN) && st == 0x10u && status == 1u &&
+	    (t->battery >> 8 & 0xFFu) == 100u)
+		s14_text_str(out, "; battery or USB at a full charge, not told apart");
 	return true;
 }
 

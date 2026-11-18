@@ -831,6 +831,16 @@ static void test_power(void)
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u,
 		      "power at start: state 0x16 (charging, switch off), battery status 0x01, "
 		      "60 %, 3900 mV, 512 mA"));
+	/* the current signed; on, not charging and full: battery or USB */
+	t.power_state = 0x10u;
+	t.battery = 0x10626401u;	/* 100 %, 4194 mV */
+	t.battery_ma = 65445u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u,
+		      "power at start: state 0x10 (on), battery status 0x01, 100 %, 4194 mV, -91 mA; "
+		      "battery or USB at a full charge, not told apart"));
+	t.battery = 0x10626301u;	/* 99 % */
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u,
+		      "power at start: state 0x10 (on), battery status 0x01, 99 %, 4194 mV, -91 mA"));
 	t.flags = BOOT_TIME_BATTERY_KNOWN;
 	t.battery = 0u;
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u,
