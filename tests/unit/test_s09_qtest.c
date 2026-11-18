@@ -658,10 +658,10 @@ static void test_slave_rules(void)
 
 /* An ordinary start and plain requests: no 0x1C, no quad receive, and the
  * sessions' bytes as without the test: the same with a bus that has no
- * quad receive, and the same as this loopback hashed them before the test
- * existed (TRACE_BEFORE, 48 sessions: the start, 0x03, a raise to rung 4
+ * quad receive, and the same as this loopback hashes them with the test
+ * left out (TRACE_BEFORE, 48 sessions: the start, 0x03, a raise to rung 4
  * with its trial, tests and gate, and the lowering). */
-#define TRACE_BEFORE 0xE09CA053u
+#define TRACE_BEFORE 0xBD151DFCu
 #define TRACE_SESSIONS 48u
 
 static void test_ordinary(void)

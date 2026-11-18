@@ -1605,10 +1605,13 @@ static const struct {
 	uint8_t pat;
 	uint32_t len;
 } link_test[] = {
+	/* S-09.073: every pattern and every length once at least; the fills
+	 * and the walks at 0x1000, which carries each walk's 32 bits many
+	 * times over, so that a raise sends as few bytes as the cover needs */
 	{ PAT_RANDOM, 4u }, { PAT_RANDOM, 61u }, { PAT_COUNT, 0x1000u },
-	{ PAT_RANDOM, 0x1004u }, { PAT_00, 0x8000u }, { PAT_FF, 0x8000u },
-	{ PAT_AA, 0x8000u }, { PAT_55, 0x8000u }, { PAT_0F, 0x7FFCu },
-	{ PAT_F0, 0x8000u }, { PAT_WALK, 0x8000u }, { PAT_WALK0, 0x8000u },
+	{ PAT_RANDOM, 0x1004u }, { PAT_00, 0x1000u }, { PAT_FF, 0x1000u },
+	{ PAT_AA, 0x1000u }, { PAT_55, 0x1000u }, { PAT_0F, 0x7FFCu },
+	{ PAT_F0, 0x1000u }, { PAT_WALK, 0x1000u }, { PAT_WALK0, 0x1000u },
 	{ PAT_RANDOM, 0x8000u },
 	/* the largest request, a 128-sector write's bytes (S-09.071) */
 	{ PAT_RANDOM, S09_TEST_MAX },
@@ -2446,13 +2449,15 @@ bool s09_master_quad_test(struct s09_master *m, struct s09_qt_cell *c)
 /* ---- quad data replies (S-09.081) ---- */
 
 /* The quad reply test's cells before a take-up: the least and the most of
- * a sector read's data, each pattern at the most; each cell's bound. */
+ * a sector read's data, one trial each (the walking one); each cell's
+ * bound. The data check, the copy's CRC and its read again in single I/O
+ * judge the data themselves (S-09.081). */
 static const struct {
 	uint32_t len;
 	uint16_t n;
 } qd_cells[S09_QD_CELLS] = {
-	{ 2u * S09_SECTOR, 2u },
-	{ S09_MAX_SECTORS * S09_SECTOR, S09_QT_PATS },
+	{ 2u * S09_SECTOR, 1u },
+	{ S09_MAX_SECTORS * S09_SECTOR, 1u },
 };
 #define QD_CELL_LIMIT_US S06_MS(3000)
 

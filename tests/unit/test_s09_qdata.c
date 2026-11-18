@@ -431,9 +431,10 @@ static void test_take_up(void)
 	CHECK(s09_master_link_qdata(&m, S09_RUNG_CHECKED_FAST));
 	CHECK_EQ(q->state, S09_QD_ON);
 	CHECK_EQ(q->why, S09_QW_NONE);
-	CHECK_EQ(q->test_sent, 8u);
-	CHECK_EQ(q->test_whole, 8u);
-	CHECK_EQ(lb.test_quad, 8u);
+	/* one trial at the least and one at the most of a read's data */
+	CHECK_EQ(q->test_sent, 2u);
+	CHECK_EQ(q->test_whole, 2u);
+	CHECK_EQ(lb.test_quad, 2u);
 	CHECK_EQ(s09_master_rung(&m), S09_RUNG_CHECKED_FAST);
 	CHECK_EQ(s09_slave_mode(&sl), S09_MODE_QDATA);
 	CHECK(read_ok(100u, S09_MAX_SECTORS));
@@ -442,7 +443,7 @@ static void test_take_up(void)
 	CHECK_EQ(lb.data_sessions, 2u);
 	CHECK_EQ(q->replies, 2u);
 	CHECK_EQ(q->bytes, (S09_MAX_SECTORS + 2u) * S09_SECTOR);
-	CHECK_EQ(lb.clocks[S09_QD_CLOCK], 8u + 2u);
+	CHECK_EQ(lb.clocks[S09_QD_CLOCK], 2u + 2u);
 	CHECK_EQ(s09_master_fell(&m), 0u);
 	CHECK_EQ(emmc_reads, 3u);
 	CHECK(s09_master_link_plain(&m));

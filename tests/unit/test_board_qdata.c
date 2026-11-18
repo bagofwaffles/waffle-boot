@@ -134,8 +134,8 @@ static void test_report(void)
 	m.bridge.rung = S09_RUNG_CHECKED_FAST;
 	q->state = S09_QD_DROPPED;
 	q->why = S09_QW_DATA_CHECK;
-	q->test_sent = 8u;
-	q->test_whole = 8u;
+	q->test_sent = 2u;
+	q->test_whole = 2u;
 	q->test_first = 0u;
 	q->test_len = 0u;
 	q->test_us = 41000u;
@@ -147,7 +147,7 @@ static void test_report(void)
 	CHECK_EQ(opxy_bridge_qdata_report(&m.bridge, out) + 1u, OPXY_QDATA_REPLY);
 	CHECK(out[0] == S09_QD_DROPPED && out[1] == S09_QW_DATA_CHECK &&
 	      out[2] == S09_RUNG_CHECKED_FAST);
-	CHECK(out[3] == 8u && out[4] == 0u && out[5] == 8u && out[6] == 0u && out[7] == 0u);
+	CHECK(out[3] == 2u && out[4] == 0u && out[5] == 2u && out[6] == 0u && out[7] == 0u);
 	CHECK_EQ(wb_get_le32(out + 12), 41000u);
 	CHECK_EQ(wb_get_le32(out + 16), 20u);
 	CHECK_EQ(wb_get_le32(out + 20), 20u * 65536u);

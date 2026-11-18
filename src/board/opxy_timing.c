@@ -422,6 +422,7 @@ void opxy_timing_copy(struct opxy_master *m, bool on)
 		opxy_boot_time.copy_qbytes = q->bytes;
 		opxy_boot_time.copy_qstate = q->state | (uint32_t)q->why << 8 |
 					     (uint32_t)q->test_first << 16;
+		opxy_boot_time.copy_qtest_us = q->test_us;
 	}
 }
 

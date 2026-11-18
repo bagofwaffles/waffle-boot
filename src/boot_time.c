@@ -523,7 +523,8 @@ static void start_span(const struct boot_time *t, struct s14_text *out, const ch
 }
 
 /* The start into the OS in spans, from the hand-over's start to the kernel
- * call, in two lines. First the pre-load in its steps, the copy's reads,
+ * call, in two lines. First the pre-load in its steps, the link's raise
+ * with the quad reply test in it, the copy's reads,
  * its CRC, the return to the user area and the image check; then the log's
  * tidy, the release (the slave's own staging, CRC and check, with its
  * request and reply), the slave's server stop, the slave's OS start, the
@@ -538,6 +539,12 @@ static bool load_line(const struct boot_time *t, uint32_t cpu, struct s14_text *
 	start_span(t, out, "pmic", BOOT_TIME_HANDOFF, BOOT_TIME_PMIC, cpu, &first);
 	start_span(t, out, "logo and report", BOOT_TIME_PMIC, BOOT_TIME_BOOT_REPORT, cpu, &first);
 	start_span(t, out, "drain", BOOT_TIME_BOOT_REPORT, BOOT_TIME_PRE_LOAD, cpu, &first);
+	start_span(t, out, "link up", BOOT_TIME_PRE_LOAD, BOOT_TIME_LINK_UP, cpu, &first);
+	if (reached(t, BOOT_TIME_LINK_UP) && t->copy_qtest_us != 0u) {
+		s14_text_str(out, " (quad reply test ");
+		text_ms(out, t->copy_qtest_us);
+		s14_text_str(out, ")");
+	}
 	start_span(t, out, "reads", BOOT_TIME_COPY_START, BOOT_TIME_COPY_LAST, cpu, &first);
 	start_span(t, out, "crc", BOOT_TIME_COPY_LAST, BOOT_TIME_COPY_CRC, cpu, &first);
 	if (reached(t, BOOT_TIME_COPY_CRC) && (t->flags & BOOT_TIME_COPY_CRC_HW))
@@ -772,7 +779,7 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->dma_fell_session, &t->dma_fell_at, &t->dma_slow_bytes, &t->dma_held,
 		&t->dma_fcs_samples, &t->dma_fcs_held, &t->dma_fcs_parts, &t->dma_fcs_first,
 		&t->power_state, &t->battery, &t->battery_ma, &t->copy_link, &t->copy_fell,
-		&t->copy_quad, &t->copy_qbytes, &t->copy_qstate,
+		&t->copy_quad, &t->copy_qbytes, &t->copy_qstate, &t->copy_qtest_us,
 		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
 		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};

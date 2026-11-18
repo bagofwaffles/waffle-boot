@@ -646,7 +646,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 127u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 128u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -677,6 +677,7 @@ static void test_record(void)
 	t.copy_quad = 37u;
 	t.copy_qbytes = 2359296u;
 	t.copy_qstate = 0x00000302u;
+	t.copy_qtest_us = 15600u;
 	/* milestones past bit 31 of set */
 	boot_time_mark(&t, BOOT_TIME_STREAM_LAST, 0x1122334455667788ull);
 	boot_time_mark(&t, BOOT_TIME_KERNEL_CALL, 0x2122334455667788ull);
@@ -718,7 +719,7 @@ static void test_record(void)
 	CHECK(back.power_state == 0x10u && back.battery == 0x0FA05502u && back.battery_ma == 812u &&
 	      back.copy_link == 0x00040101u && back.copy_fell == 2u);
 	CHECK(back.copy_quad == 37u && back.copy_qbytes == 2359296u &&
-	      back.copy_qstate == 0x00000302u);
+	      back.copy_qstate == 0x00000302u && back.copy_qtest_us == 15600u);
 	CHECK(memcmp(back.at, t.at, sizeof t.at) == 0);
 	/* the split's fields, not its tail padding */
 	CHECK(back.split.xfer == t.split.xfer && back.split.window == t.split.window &&
@@ -933,9 +934,19 @@ static void test_os_start(void)
 		      "os copy 1000000 bytes in 500.000 ms, 2000 kB/s, link rung 2 (checked at 50 MHz), "
 		      "ceiling 2, 1 fall-backs, replies single I/O, quad data not taken up (why 2, "
 		      "test 0x03)"));
-	/* the link's raise before the copy has its milestone */
-	boot_time_mark(&t, BOOT_TIME_LINK_UP, 123456789u);
+	/* the link's raise before the copy has its milestone, and its span
+	 * with the quad reply test's time in it */
+	boot_time_mark(&t, BOOT_TIME_LINK_UP, US(1650));
 	CHECK(line_of(&t, "44 copy link up") < BOOT_TIME_COUNT);
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 17u,
+		      "os load split: pmic 0.200 ms, logo and report 0.300 ms, drain 0.100 ms, "
+		      "link up 0.050 ms, reads 500.000 ms, crc 10.000 ms, user area 0.100 ms, "
+		      "check 0.010 ms"));
+	t.copy_qtest_us = 20u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 17u,
+		      "os load split: pmic 0.200 ms, logo and report 0.300 ms, drain 0.100 ms, "
+		      "link up 0.050 ms (quad reply test 0.020 ms), reads 500.000 ms, crc 10.000 ms, "
+		      "user area 0.100 ms, check 0.010 ms"));
 }
 
 int main(void)

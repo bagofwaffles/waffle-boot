@@ -182,8 +182,9 @@ struct boot_time {
 	uint32_t copy_link, copy_fell;
 	/* Its quad data replies (S-09.081): the data sessions taken whole,
 	 * their bytes, and the state | why << 8 | the test's first failure
-	 * << 16 (struct s09_qdata_rec). */
-	uint32_t copy_quad, copy_qbytes, copy_qstate;
+	 * << 16 (struct s09_qdata_rec); the quad reply test's time before it,
+	 * in us, 0 when it did not run. */
+	uint32_t copy_quad, copy_qbytes, copy_qstate, copy_qtest_us;
 	struct boot_time_split split;
 };
 
@@ -286,8 +287,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 11u
-#define BOOT_TIME_WORDS   (63u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+#define BOOT_TIME_VERSION 12u
+#define BOOT_TIME_WORDS   (64u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,
