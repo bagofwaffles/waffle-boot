@@ -22,20 +22,32 @@ static int flash_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 	return rc;
 }
 
+static struct opxy_stream_read last_stream_read;
+
 /* S-13b.011: a slot's stream, read at 50 MHz for the slave's boot, its data
  * moved by DMA9 (S-13b.080). A read that fails, or whose CRC fails, is read
  * again at the usual rate by the core (s02_image_read(), s02_image_check()).
  * DMA9_XMOD, which carries S-01.006's handshake, is put back as it was. */
 int opxy_flash_read_stream(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 {
+	const struct wb_spiflash *f = ctx;
 	const wb_mmr_addr xmod = DMA_XMOD(WB_DMA_SPI0_RX + 2u * OPXY_SPI_FLASH);
 	const uint32_t was = wb_mmr_read32(xmod);
 	const int rc = wb_spiflash_read_dma(ctx, OPXY_SPI_FLASH_STREAM_CLK, off, buf, len);
+	struct wb_spi_fault fault;
 
 	wb_mmr_write32(xmod, was);
 	wb_mmr_sync();
+	wb_spi_last_fault(f->spi, &fault);
+	last_stream_read.stage = (uint8_t)(rc != 0 ? fault.stage & WB_SPI_STAGE_MASK : WB_SPI_STAGE_NONE);
+	last_stream_read.drained = (uint8_t)wb_spi_recv_dma_drained(f->spi);
 	opxy_usb_breathe();
 	return rc;
+}
+
+struct opxy_stream_read opxy_stream_read_last(void)
+{
+	return last_stream_read;
 }
 
 static OPXY_TESTOS_UNUSED int flash_erase(void *ctx, uint32_t sector_off)

@@ -716,16 +716,21 @@ static void test_flash_read_fast(void)
  * when its status is read (none while rxd.stall), into the buffer
  * registered in rxd.base (the register holds the low 32 bits of the host's
  * address), and shows done once
- * its count is moved. It notes a start that is not a byte-wide receive with
- * the done interrupt, one made with the receive channel already on, and a
- * receive channel on with no data request while it runs.
+ * its count is moved; its current address and SPI_RWC follow the words
+ * moved. It notes a start that is not a byte-wide receive with the done
+ * interrupt, one made with the receive channel already on, and a receive
+ * channel on with no data request while it runs. With no_move it shows done
+ * at once with nothing moved, its address 0, while the device fills the
+ * receive FIFO; with `extra` it leaves that many more words in the FIFO at
+ * its done. The device keeps its receive FIFO when the controller is
+ * disabled, so a word left there leads the next read unless it is read off.
  */
 #define RXD_CH 9u
 
 static struct {
 	uint8_t *base;
-	bool on, error, running, stall;
-	uint32_t addr, count, done, stat;
+	bool on, error, running, stall, no_move;
+	uint32_t addr, count, done, stat, extra;
 	unsigned starts, bad, core_reads;
 	uint32_t first_addr[4];
 } rxd;
@@ -762,6 +767,11 @@ static bool rxd_hook(void *ctx, enum fake_mmr_op op, unsigned width, wb_mmr_addr
 		}
 		if (rxd.on && rxd.error) {
 			rxd.stat |= DMA_STAT_IRQERR;
+		} else if (rxd.on && rxd.no_move && (dev.rxctl & SPI_XCTL_EN)) {
+			/* the FIFO full, no word taken, and done */
+			for (; dev.qt - dev.qh < 8u && dev.rx_due > 0u; dev.rx_due--)
+				dev.q[dev.qt++ % ARRAY_LEN(dev.q)] = dev.reply(&dev, 0);
+			rxd.stat |= DMA_STAT_IRQDONE;
 		} else if (rxd.on && !rxd.stall && (dev.rxctl & SPI_XCTL_EN)) {
 			if ((dev.rxctl & SPI_XCTL_DR_NE) == 0u)
 				rxd.bad++;
@@ -775,14 +785,25 @@ static bool rxd_hook(void *ctx, enum fake_mmr_op op, unsigned width, wb_mmr_addr
 				rxd.base[rxd.addr - (uint32_t)(uintptr_t)rxd.base + rxd.done] = (uint8_t)w;
 				rxd.done++;
 			}
-			if (rxd.done == rxd.count)
+			if (rxd.done == rxd.count && !(rxd.stat & DMA_STAT_IRQDONE)) {
+				for (; rxd.extra > 0u; rxd.extra--)
+					dev.q[dev.qt++ % ARRAY_LEN(dev.q)] = 0xEEu;
 				rxd.stat |= DMA_STAT_IRQDONE;
+			}
 		}
 		*value = rxd.stat;
 		return false;
 	}
 	if (op == FAKE_MMR_READ && addr == DMA_XCNT_CUR(RXD_CH)) {
-		*value = rxd.count - rxd.done;
+		*value = rxd.no_move ? 0u : rxd.count - rxd.done;
+		return false;
+	}
+	if (op == FAKE_MMR_READ && addr == DMA_ADDR_CUR(RXD_CH)) {
+		*value = rxd.no_move ? 0u : rxd.addr + rxd.done;
+		return false;
+	}
+	if (op == FAKE_MMR_READ && addr == SPI_RWC(2) && rxd.starts != 0u) {
+		*value = dev.rx_due;
 		return false;
 	}
 	if (op == FAKE_MMR_READ && addr == SPI_RFIFO(2) && rxd.on)
@@ -883,6 +904,119 @@ static void test_flash_read_dma(void)
 	CHECK(wb_spiflash_read_dma(&f, 1u, at, buf, 64u) == WB_SPIFLASH_ERR_IO);
 	CHECK(rxd.starts == 0u && !dev.selected);
 	CHECK(fake_mmr_get(SPI_CLK(2)) == 3u);
+}
+
+/*
+ * S-13b.080: a done counts only with the words moved. A channel that shows
+ * done with nothing moved (its address and SPI_RWC unchanged) while the
+ * device fills the receive FIFO, and one that leaves words in the FIFO,
+ * fail the read with their stages; the FIFO is read empty after it, so the
+ * next read, as S-02's core-fed read again, gets the flash's bytes from its
+ * first. A read that moves every word reads nothing off.
+ */
+static void test_flash_read_dma_checks(void)
+{
+	static uint8_t buf[0x9000u];
+	const uint32_t at = 0x10000u, n = sizeof(buf);
+	struct wb_spi s;
+	struct wb_spiflash f;
+	struct wb_spi_fault fault;
+	uint8_t b[8];
+	uint32_t i;
+
+	for (unsigned c = 0; c < 4u; c++) {
+		rxd_setup(&s, &f, buf);
+		for (i = 0; i < FLASH_SIZE; i++)
+			dev.mem[i] = (uint8_t)(i * 13u + (i >> 8) * 3u + 1u);
+		memset(buf, 0, sizeof(buf));
+		if (c == 1u)
+			rxd.no_move = true;
+		else if (c == 2u)
+			rxd.extra = 8u;
+		else if (c == 3u)
+			rxd.extra = 200u;	/* more than the drain's bound */
+		if (c == 0u) {
+			CHECK(wb_spiflash_read_dma(&f, 1u, at, buf, n) == WB_SPIFLASH_OK);
+			CHECK(memcmp(buf, dev.mem + at, n) == 0);
+			CHECK(wb_spi_recv_dma_drained(&s) == 0u && rxd.core_reads == 0u);
+		} else {
+			CHECK(wb_spiflash_read_dma(&f, 1u, at, buf, n) == WB_SPIFLASH_ERR_IO);
+			wb_spi_last_fault(&s, &fault);
+			CHECK(fault.rc == WB_SPI_ERR_HW);
+			CHECK(fault.stage == (c == 1u ? WB_SPI_STAGE_DMA_UNMOVED : WB_SPI_STAGE_DMA_LEFT));
+			CHECK(rxd.starts == 1u && !wb_dma_enabled(RXD_CH) && !rxd.on);
+			CHECK(wb_spi_recv_dma_drained(&s) == (c == 3u ? 64u : 8u));
+			if (c == 3u)	/* the controller's disable is left to clear the rest */
+				dev.qh = dev.qt;
+			CHECK(dev.qh == dev.qt);
+		}
+		CHECK(fake_mmr_get(SPI_CLK(2)) == 3u);
+		CHECK(!dev.selected && dev.rxctl == 0 && dev.txctl == 0);
+		CHECK(wb_spiflash_read(&f, at, b, sizeof(b)) == WB_SPIFLASH_OK);
+		CHECK(memcmp(b, dev.mem + at, sizeof(b)) == 0);
+	}
+}
+
+/*
+ * S-02.016 over the DMA read: a slot whose read by DMA fails, done with
+ * nothing moved or with words left in the receive FIFO, is read again by
+ * the core from the flash's first byte and found good; one read whole by
+ * DMA is good from the DMA's bytes.
+ */
+/* CRC-32, zlib's convention, bit by bit. */
+static uint32_t crc32_bits(uint32_t crc, const uint8_t *p, uint32_t n)
+{
+	crc = ~crc;
+	while (n--) {
+		crc ^= *p++;
+		for (unsigned k = 0; k < 8u; k++)
+			crc = crc >> 1 ^ (0xEDB88320u & (0u - (crc & 1u)));
+	}
+	return ~crc;
+}
+
+static int read_dma_50(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
+{
+	return wb_spiflash_read_dma(ctx, 1u, off, buf, len);
+}
+
+static void test_flash_read_dma_fallback(void)
+{
+	static uint8_t buf[0x9000u];
+	static uint8_t scratch[512];
+	const uint32_t len = 0x8C21u;
+	struct wb_spi s;
+	struct wb_spiflash f;
+	struct s02_flash_ops ops;
+	struct s02_env env;
+	struct s02_image im;
+	struct s02_record rec;
+	uint8_t raw[S02_RECORD_SIZE];
+	uint32_t i;
+
+	for (unsigned c = 0; c < 3u; c++) {
+		rxd_setup(&s, &f, buf);
+		for (i = 0; i < len; i++)
+			dev.mem[S02_SLOT0_OFF + i] = (uint8_t)(i * 7u + (i >> 9));
+		rec.crc32 = crc32_bits(0, dev.mem + S02_SLOT0_OFF, len);
+		rec.length = len;
+		rec.tag = S02_RECORD_TAG;
+		s02_record_encode(&rec, raw);
+		memcpy(dev.mem + S02_RECORD0_OFF, raw, sizeof(raw));
+		rxd.no_move = c == 1u;
+		rxd.extra = c == 2u ? 8u : 0u;
+		ops = (struct s02_flash_ops){
+			&f, wb_spiflash_read, wb_spiflash_erase, wb_spiflash_program,
+		};
+		env = (struct s02_env){ &ops, crc32_bits, scratch, sizeof(scratch), NULL };
+		memset(buf, 0, sizeof(buf));
+		s02_image_init(&im, buf, sizeof(buf), read_dma_50, &f);
+		CHECK(s02_image_read(&env, 0u, &im) == S02_OK);
+		CHECK(im.by_fast == (c == 0u) && im.len == len);
+		CHECK(s02_image_check(&env, &im) == S02_OK);
+		CHECK(im.good && memcmp(buf, dev.mem + S02_SLOT0_OFF, len) == 0);
+		CHECK(rxd.starts == (c == 0u ? 2u : 1u) && dev.qh == dev.qt);
+	}
 }
 
 /* The s02_flash_ops adapter is an initializer. */
@@ -2088,6 +2222,8 @@ int main(void)
 	RUN(test_flash_first_frame);
 	RUN(test_flash_read_fast);
 	RUN(test_flash_read_dma);
+	RUN(test_flash_read_dma_checks);
+	RUN(test_flash_read_dma_fallback);
 	RUN(test_s02_adapter);
 	RUN(test_bridge_words);
 	RUN(test_timeouts_and_errors);

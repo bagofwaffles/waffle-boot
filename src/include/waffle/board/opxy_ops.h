@@ -51,6 +51,14 @@ void opxy_flash_writer(struct opxy_hw *hw, bool on);
 /* A read of many bytes at S-13b.011's highest rate, for the slot's stream
  * the slave is booted with (an s02_read_fn; ctx is the hw's flash). */
 int opxy_flash_read_stream(void *ctx, uint32_t off, uint8_t *buf, uint32_t len);
+/* How the last such read went, for the timing report: the SPI failure's
+ * stage (WB_SPI_STAGE_..., NONE when it did not fail), and the receive
+ * FIFO's words read off after it (wb_spi_recv_dma_drained()). */
+struct opxy_stream_read {
+	uint8_t stage;
+	uint8_t drained;
+};
+struct opxy_stream_read opxy_stream_read_last(void);
 /* S-03 over the MSI driver. */
 struct s03_emmc_ops opxy_emmc_ops(struct opxy_hw *hw);
 /* S-13b.059: an eMMC whose bring-up failed. Every operation returns

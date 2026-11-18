@@ -103,6 +103,21 @@ enum boot_time_id {
 #define BOOT_TIME_LOGO_KEPT     0x4000u	/* the panel showed the hand-over frame
 					 * already: none sent (S-05.004) */
 
+/* slot_dma: moved by DMA whole; whole but its CRC failed; or the read
+ * failed: the channel's done without the words moved, words left in the
+ * receive FIFO, a DMA error, a count that stopped, the start refused, or
+ * the frame's command */
+#define BOOT_TIME_SLOT_DMA_WHOLE    1u
+#define BOOT_TIME_SLOT_DMA_CRC      2u
+#define BOOT_TIME_SLOT_DMA_UNMOVED  3u
+#define BOOT_TIME_SLOT_DMA_LEFT     4u
+#define BOOT_TIME_SLOT_DMA_ERROR    5u
+#define BOOT_TIME_SLOT_DMA_STALL    6u
+#define BOOT_TIME_SLOT_DMA_REFUSED  7u
+#define BOOT_TIME_SLOT_DMA_FRAME    8u
+#define BOOT_TIME_SLOT_DMA_MASK     0xFFu
+#define BOOT_TIME_SLOT_DRAINED_SHIFT 8u
+
 #define BOOT_TIME_RAISE_STEPS 8u
 #define BOOT_TIME_FIRST 16u
 #define BOOT_TIME_GAPS 8u
@@ -169,6 +184,10 @@ struct boot_time {
 	 * whose CRC was then good, which says the faster read is marginal. */
 	uint32_t slot_fast, slot_fast_failed, slot_reread, slot_reread_good;
 	uint32_t slot_trial;	/* faster reads a trial mark's CRC confirmed: kept */
+	/* The last faster read's way: BOOT_TIME_SLOT_DMA_* in bits 0-7, 0 for
+	 * none, and the receive FIFO's words read off after a failure in bits
+	 * 8-15. */
+	uint32_t slot_dma;
 	/* Fed by DMA (BOOT_TIME_LINK_DMA, struct s09_fast_stats): the parts the
 	 * controller sent whole, the guard's length and the time in the guards
 	 * (us), the parts whose guard ended with the line high, the fall-back's
@@ -296,8 +315,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 13u
-#define BOOT_TIME_WORDS   (64u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+#define BOOT_TIME_VERSION 14u
+#define BOOT_TIME_WORDS   (65u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,

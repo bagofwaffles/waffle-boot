@@ -617,6 +617,38 @@ static bool start_line(const struct boot_time *t, uint32_t cpu, struct s14_text 
 	return true;
 }
 
+/* The faster read's way (slot_dma): "; by DMA: whole", or the fall-back to
+ * the core's read and its reason, with the receive FIFO's words read off. */
+static void slot_dma_text(uint32_t v, struct s14_text *out)
+{
+	static const char *const why[] = {
+		[BOOT_TIME_SLOT_DMA_CRC] = "its CRC failed",
+		[BOOT_TIME_SLOT_DMA_UNMOVED] = "done without the words moved",
+		[BOOT_TIME_SLOT_DMA_LEFT] = "words left in the receive FIFO",
+		[BOOT_TIME_SLOT_DMA_ERROR] = "a DMA error",
+		[BOOT_TIME_SLOT_DMA_STALL] = "its count stopped",
+		[BOOT_TIME_SLOT_DMA_REFUSED] = "the start refused",
+		[BOOT_TIME_SLOT_DMA_FRAME] = "the frame's command failed",
+	};
+	const uint32_t how = v & BOOT_TIME_SLOT_DMA_MASK;
+	const uint32_t drained = (v >> BOOT_TIME_SLOT_DRAINED_SHIFT) & 0xFFu;
+
+	if (how == 0u)
+		return;
+	if (how == BOOT_TIME_SLOT_DMA_WHOLE) {
+		s14_text_str(out, "; by DMA: whole");
+		return;
+	}
+	s14_text_str(out, "; by DMA: fell back to the core, ");
+	s14_text_str(out, how < sizeof why / sizeof why[0] && why[how] != NULL ? why[how] :
+								      "a failure");
+	if (drained != 0u) {
+		s14_text_str(out, ", ");
+		s14_text_dec(out, drained);
+		s14_text_str(out, " words read off the receive FIFO");
+	}
+}
+
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out)
 {
@@ -770,6 +802,7 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 		s14_text_str(out, " kept by a trial mark's CRC");
 		if (t->flags & BOOT_TIME_SLOT_CRC_HW)
 			s14_text_str(out, "; its CRC by the peripheral");
+		slot_dma_text(t->slot_dma, out);
 		return true;
 	case 16:
 		return power_line(t, out);
@@ -814,7 +847,7 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->bytes, &t->flags, &t->stream_high,
 		&t->line_window, &t->line_high_first, &t->line_late, &t->line_late_max,
 		&t->line_hold_max, &t->slot_fast, &t->slot_fast_failed, &t->slot_reread,
-		&t->slot_reread_good, &t->slot_trial,
+		&t->slot_reread_good, &t->slot_trial, &t->slot_dma,
 		&t->dma_parts, &t->dma_guard, &t->dma_guard_us, &t->dma_high, &t->dma_fell,
 		&t->dma_fell_session, &t->dma_fell_at, &t->dma_slow_bytes, &t->dma_held,
 		&t->dma_fcs_samples, &t->dma_fcs_held, &t->dma_fcs_parts, &t->dma_fcs_first,

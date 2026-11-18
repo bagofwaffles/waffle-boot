@@ -338,8 +338,30 @@ void opxy_timing_stream_end(void)
 
 static bool slot_was_fast;
 
+/* A failed stream read's stage as the report's reason. */
+static uint32_t slot_dma_reason(unsigned stage)
+{
+	switch (stage) {
+	case WB_SPI_STAGE_DMA_UNMOVED:
+		return BOOT_TIME_SLOT_DMA_UNMOVED;
+	case WB_SPI_STAGE_DMA_LEFT:
+		return BOOT_TIME_SLOT_DMA_LEFT;
+	case WB_SPI_STAGE_DMA_ERR:
+		return BOOT_TIME_SLOT_DMA_ERROR;
+	case WB_SPI_STAGE_RX_WORD:
+		return BOOT_TIME_SLOT_DMA_STALL;
+	case WB_SPI_STAGE_ARG:
+	case WB_SPI_STAGE_DMA_START:
+		return BOOT_TIME_SLOT_DMA_REFUSED;
+	default:
+		return BOOT_TIME_SLOT_DMA_FRAME;
+	}
+}
+
 void opxy_timing_slot_read(const struct s02_image *im)
 {
+	const struct opxy_stream_read r = opxy_stream_read_last();
+
 	slot_was_fast = im->by_fast;
 	if (im->fast == NULL || im->len == 0u)
 		return;
@@ -347,6 +369,8 @@ void opxy_timing_slot_read(const struct s02_image *im)
 		opxy_boot_time.slot_fast++;
 	else
 		opxy_boot_time.slot_fast_failed++;
+	opxy_boot_time.slot_dma = (im->by_fast ? BOOT_TIME_SLOT_DMA_WHOLE : slot_dma_reason(r.stage)) |
+				  (uint32_t)r.drained << BOOT_TIME_SLOT_DRAINED_SHIFT;
 }
 
 void opxy_timing_slot_check(const struct s02_image *im)
@@ -357,6 +381,7 @@ void opxy_timing_slot_check(const struct s02_image *im)
 		opxy_boot_time.slot_trial++;
 	if (!slot_was_fast || im->by_fast)
 		return;
+	opxy_boot_time.slot_dma = BOOT_TIME_SLOT_DMA_CRC;
 	opxy_boot_time.slot_reread++;
 	if (im->good)
 		opxy_boot_time.slot_reread_good++;

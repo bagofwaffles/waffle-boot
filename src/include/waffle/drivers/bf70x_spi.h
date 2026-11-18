@@ -182,6 +182,10 @@ struct wb_spi_fault {
  * bits 16-31 and the reply's words in bits 0-15.
  */
 #define WB_SPI_STAGE_REPLY_OVERRUN 16u
+/* wb_spi_recv_dma(): the channel's done with SPI_RWC not run out or its
+ * address short of the length, and with the receive FIFO not empty */
+#define WB_SPI_STAGE_DMA_UNMOVED 17u
+#define WB_SPI_STAGE_DMA_LEFT    18u
 #define WB_SPI_STAGE_MASK        0xFFu
 /* With WB_SPI_STAGE_DMA_ERR: DMA_STAT.ERRC in bits 8-10. */
 #define WB_SPI_STAGE_ERRC_SHIFT  8u
@@ -267,8 +271,13 @@ int wb_spi_send(const struct wb_spi *s, const uint8_t *tx, size_t n);
 int wb_spi_recv(const struct wb_spi *s, uint8_t *rx, size_t n);
 /* recv() with the words moved by the receive DMA channel (SPIn RX =
  * DMA5 + 2n): single I/O and bytes only; the buffer's cache lines are
- * invalidated before and after. The same failures and record as recv(). */
+ * invalidated before and after. The same failures and record as recv(),
+ * and a done without the words moved (WB_SPI_STAGE_DMA_UNMOVED,
+ * WB_SPI_STAGE_DMA_LEFT); after a failure the receive FIFO is read empty. */
 int wb_spi_recv_dma(const struct wb_spi *s, uint8_t *rx, size_t n);
+/* The words the last wb_spi_recv_dma() read off the receive FIFO after
+ * its failure; 0 after one that did not fail. */
+unsigned wb_spi_recv_dma_drained(const struct wb_spi *s);
 
 /*
  * A run of single words on a master in single I/O, each started by the

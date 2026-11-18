@@ -258,6 +258,32 @@ static void test_summary(void)
 		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
 		      "3 failed the CRC and read again, 1 of those then good; "
 		      "1 kept by a trial mark's CRC; its CRC by the peripheral"));
+	/* the faster read's way: by DMA whole, or the fall-back and why */
+	t.flags &= ~BOOT_TIME_SLOT_CRC_HW;
+	t.slot_dma = BOOT_TIME_SLOT_DMA_WHOLE;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 15u,
+		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
+		      "3 failed the CRC and read again, 1 of those then good; "
+		      "1 kept by a trial mark's CRC; by DMA: whole"));
+	t.slot_dma = BOOT_TIME_SLOT_DMA_UNMOVED | 8u << BOOT_TIME_SLOT_DRAINED_SHIFT;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 15u,
+		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
+		      "3 failed the CRC and read again, 1 of those then good; "
+		      "1 kept by a trial mark's CRC; by DMA: fell back to the core, "
+		      "done without the words moved, 8 words read off the receive FIFO"));
+	t.slot_dma = BOOT_TIME_SLOT_DMA_CRC;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 15u,
+		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
+		      "3 failed the CRC and read again, 1 of those then good; "
+		      "1 kept by a trial mark's CRC; by DMA: fell back to the core, "
+		      "its CRC failed"));
+	t.slot_dma = 0x7Fu;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 15u,
+		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
+		      "3 failed the CRC and read again, 1 of those then good; "
+		      "1 kept by a trial mark's CRC; by DMA: fell back to the core, "
+		      "a failure"));
+	t.slot_dma = 0u;
 	t.flags &= ~BOOT_TIME_SLOT_CRC_HW;
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 16u));	/* no power reported */
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 17u));	/* no hand-over begun */
@@ -646,7 +672,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 128u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 129u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -669,6 +695,7 @@ static void test_record(void)
 	t.slot_reread = 7u;
 	t.slot_reread_good = 8u;
 	t.slot_trial = 9u;
+	t.slot_dma = 0x0803u;
 	t.power_state = 0x10u;
 	t.battery = 0x0FA05502u;
 	t.battery_ma = 812u;
@@ -715,7 +742,7 @@ static void test_record(void)
 	CHECK(memcmp(back.line_high_at, t.line_high_at, sizeof t.line_high_at) == 0);
 	CHECK(memcmp(back.line_late_at, t.line_late_at, sizeof t.line_late_at) == 0);
 	CHECK(back.slot_fast == 5u && back.slot_fast_failed == 6u && back.slot_reread == 7u &&
-	      back.slot_reread_good == 8u && back.slot_trial == 9u);
+	      back.slot_reread_good == 8u && back.slot_trial == 9u && back.slot_dma == 0x0803u);
 	CHECK(back.power_state == 0x10u && back.battery == 0x0FA05502u && back.battery_ma == 812u &&
 	      back.copy_link == 0x00040101u && back.copy_fell == 2u);
 	CHECK(back.copy_quad == 37u && back.copy_qbytes == 2359296u &&

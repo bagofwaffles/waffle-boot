@@ -614,12 +614,39 @@ int wb_spi_recv(const struct wb_spi *s, uint8_t *rx, size_t n)
  * asks the channel for its move. The wait ends at the channel's done status
  * (its interrupt is not enabled at the SEC); it gives up on a DMA error, or
  * after a word's bound with the channel's count still, the idle hook once a
- * millisecond. The buffer's cache lines are invalidated before the start
- * (wb_dma_start()) and after the end, so no line holds a byte the channel
- * did not write. A channel found running refuses the call; every other
- * return leaves the channel stopped.
+ * millisecond. A done counts only with the words moved: SPI_RWC run out,
+ * the channel's address advanced by the length, and the receive FIFO
+ * empty. On any failure the receive channel is turned off and the core
+ * reads the receive FIFO empty (bounded), so no word a channel left there
+ * can lead the next read. The buffer's cache lines are invalidated before
+ * the start (wb_dma_start()) and after the end, so no line holds a byte
+ * the channel did not write. A channel found running refuses the call;
+ * every other return leaves the channel stopped.
  */
 #define RECV_DMA_RXCTL (SPI_XCTL_EN | SPI_XCTL_TI | SPI_XCTL_WCEN | SPI_XCTL_DR_NE)
+/* More reads than the receive FIFO holds words. */
+#define RECV_DMA_DRAIN 64u
+
+static uint8_t recv_drained[WB_SPI_COUNT];
+
+unsigned wb_spi_recv_dma_drained(const struct wb_spi *s)
+{
+	return s->n < WB_SPI_COUNT ? recv_drained[s->n] : 0u;
+}
+
+/* The receive channel off, then the receive FIFO read until it is empty. */
+static unsigned recv_drain(const struct wb_spi *s)
+{
+	unsigned k = 0;
+
+	wb_mmr_write32(SPI_RXCTL(s->n), 0);
+	wb_mmr_sync();
+	while (k < RECV_DMA_DRAIN && !(wb_mmr_read32(SPI_STAT(s->n)) & SPI_STAT_RFE)) {
+		(void)wb_mmr_read32(SPI_RFIFO(s->n));
+		k++;
+	}
+	return k;
+}
 
 static int recv_dma_wait(const struct wb_spi *s, unsigned ch, uint32_t *stage)
 {
@@ -662,6 +689,8 @@ int wb_spi_recv_dma(const struct wb_spi *s, uint8_t *rx, size_t n)
 	uint32_t stage = WB_SPI_STAGE_NONE;
 	int rc;
 
+	if (s->n < WB_SPI_COUNT)
+		recv_drained[s->n] = 0u;
 	if (!counted_ok(s, n) || wb_spi_word_bytes(s) != 1u ||
 	    (s->ctl & SPI_CTL_MIOM_MASK) ||
 	    (wb_dma_enabled(ch) && (wb_mmr_read32(DMA_STAT(ch)) & DMA_STAT_RUN_MASK) != 0u))
@@ -684,10 +713,22 @@ int wb_spi_recv_dma(const struct wb_spi *s, uint8_t *rx, size_t n)
 	wb_mmr_write32(SPI_RXCTL(s->n), RECV_DMA_RXCTL);
 	wb_mmr_sync();
 	rc = recv_dma_wait(s, ch, &stage);
+	if (rc == WB_SPI_OK) {
+		if (wb_mmr_read32(SPI_RWC(s->n)) != 0u ||
+		    wb_mmr_read32(DMA_ADDR_CUR(ch)) != at + (uint32_t)n) {
+			rc = WB_SPI_ERR_HW;
+			stage = WB_SPI_STAGE_DMA_UNMOVED;
+		} else if (!(wb_mmr_read32(SPI_STAT(s->n)) & SPI_STAT_RFE)) {
+			rc = WB_SPI_ERR_HW;
+			stage = WB_SPI_STAGE_DMA_LEFT;
+		}
+	}
 	if (rc != WB_SPI_OK)
 		(void)fault_record(s->n, rc, wb_mmr_read32(SPI_STAT(s->n)),
 				   wb_mmr_read32(DMA_XCNT_CUR(ch)), stage, true);
 	wb_dma_stop_idle(ch, s->t);
+	if (rc != WB_SPI_OK)
+		recv_drained[s->n] = (uint8_t)recv_drain(s);
 	wb_dcache_invalidate_range(at, (uint32_t)n);
 	return finish(s, rc);
 }
