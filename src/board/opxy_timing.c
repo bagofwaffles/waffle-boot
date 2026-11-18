@@ -22,6 +22,22 @@ _Static_assert(OPXY_BOOT_TIME_RECORD + BOOT_TIME_RECORD <= S01_DISPLAY_RECORD_ST
 struct boot_time opxy_boot_time;
 static bool copying;
 
+/* The power at the start: the PSoC's state and the battery report's status
+ * byte, charge, mV and mA (S-07.050, S-07.053). */
+static void power_known(bool state_known, unsigned state, bool batt_known, uint8_t status,
+			const struct s07_battery *b)
+{
+	if (state_known) {
+		opxy_boot_time.power_state = state;
+		opxy_boot_time.flags |= BOOT_TIME_POWER_KNOWN;
+	}
+	if (!batt_known)
+		return;
+	opxy_boot_time.battery = status | (uint32_t)b->charge << 8 | (uint32_t)b->mv << 16;
+	opxy_boot_time.battery_ma = b->ma;
+	opxy_boot_time.flags |= BOOT_TIME_BATTERY_KNOWN;
+}
+
 void opxy_timing_start(void)
 {
 	unsigned i;
@@ -51,6 +67,8 @@ int opxy_timing_startup(struct s07_psoc *p, struct s07_key_status *ks)
 	s07_subscribe(p);
 	rc = s07_key_status(p, ks);
 	OPXY_TIME(BOOT_TIME_KEYS);
+	power_known(p->state != S07_POWER_NONE, p->state, p->batt.present,
+		    p->batt.charging ? 2u : 1u, &p->batt);
 	if (rc)
 		return rc;
 	return s07_battery_rest(p);
@@ -81,6 +99,16 @@ void opxy_timing_front(const struct fr_handoff *ho)
 	for (i = 0; i < sizeof flag / sizeof flag[0]; i++)
 		if ((ho->flags & flag[i].from) != 0u)
 			opxy_boot_time.flags |= flag[i].to;
+	if (ho->battery_len != 0u) {
+		struct s07_battery b;
+
+		s07_battery_decode(ho->battery, ho->battery_len, &b);
+		power_known((ho->flags & FR_HO_POWER_KNOWN) != 0u, ho->power_state, true,
+			    ho->battery[0], &b);
+	} else {
+		power_known((ho->flags & FR_HO_POWER_KNOWN) != 0u, ho->power_state, false, 0u,
+			    NULL);
+	}
 }
 
 /*
@@ -334,10 +362,55 @@ void opxy_timing_battery(bool on)
 	opxy_boot_time.flags |= BOOT_TIME_BATTERY_RAN;
 }
 
-void opxy_timing_copy(bool on)
+/* The copy's CRC (S-03.044), its end stamped. */
+static s03_crc32_fn copy_crc_of;
+
+static uint32_t copy_crc(uint32_t crc, const uint8_t *buf, uint32_t len)
 {
+	const uint32_t c = copy_crc_of(crc, buf, len);
+
+	OPXY_TIME(BOOT_TIME_COPY_CRC);
+	return c;
+}
+
+void opxy_timing_copy(struct opxy_master *m, bool on)
+{
+	static uint32_t fell;
+
 	copying = on;
-	OPXY_TIME(on ? BOOT_TIME_COPY_START : BOOT_TIME_STAGED);
+	if (on) {
+		opxy_boot_time.bytes = 0u;
+		opxy_boot_time.copy_link = m->bridge.rung | (uint32_t)m->link_ceiling << 16;
+		opxy_boot_time.flags |= BOOT_TIME_COPY_LINK;
+		fell = m->bridge.fell;
+		copy_crc_of = m->emmc.crc32;
+		m->emmc.crc32 = copy_crc;
+		OPXY_TIME(BOOT_TIME_COPY_START);
+		return;
+	}
+	OPXY_TIME(BOOT_TIME_STAGED);
+	m->emmc.crc32 = copy_crc_of;
+	opxy_boot_time.copy_link = (opxy_boot_time.copy_link & ~0xFF00u) |
+				   (uint32_t)m->bridge.rung << 8;
+	opxy_boot_time.copy_fell = m->bridge.fell - fell;
+}
+
+void opxy_timing_pa6(bool start, bool high)
+{
+	static bool low_seen, high_seen;
+
+	if (start) {
+		low_seen = false;
+		high_seen = false;
+		opxy_boot_time.flags |= BOOT_TIME_PA6_POLLED;
+	}
+	if (!high && !low_seen) {
+		low_seen = true;
+		OPXY_TIME(BOOT_TIME_SERVER_STOP);
+	} else if (high && low_seen && !high_seen) {
+		high_seen = true;
+		OPXY_TIME(BOOT_TIME_SLAVE_OS);
+	}
 }
 
 void opxy_timing_read(uint32_t bytes)

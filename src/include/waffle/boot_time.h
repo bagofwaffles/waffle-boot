@@ -58,6 +58,19 @@ enum boot_time_id {
 	BOOT_TIME_STREAM_HEADER,	/* the first block's header sent; paced by the
 					 * controller, the session with its first piece */
 	BOOT_TIME_STREAM_LAST,		/* the stream's last byte sent */
+	/* The start into the OS in steps (S-05.018), numbered after the rest
+	 * for the same reason. */
+	BOOT_TIME_HANDOFF,		/* the hand-over begun: the pre-load next */
+	BOOT_TIME_PMIC,			/* the pre-load's PMIC step done */
+	BOOT_TIME_BOOT_REPORT,		/* the logo redrawn, 0x51 {3C FF 32} queued; the
+					 * drain next */
+	BOOT_TIME_COPY_CRC,		/* the OS image's CRC computed (S-03.044) */
+	BOOT_TIME_RELEASE_SENT,		/* the log tidied: the release request next */
+	BOOT_TIME_SERVER_STOP,		/* PA6 low after the release: the slave's
+					 * server stopped (S-05.032) */
+	BOOT_TIME_SLAVE_OS,		/* PA6 high: the slave's OS started */
+	BOOT_TIME_TEARDOWN,		/* the master's teardown begun (S-05.016) */
+	BOOT_TIME_KERNEL_CALL,		/* the teardown done: the kernel call next */
 	BOOT_TIME_COUNT
 };
 
@@ -68,6 +81,11 @@ enum boot_time_id {
 #define BOOT_TIME_CHARGE_WAITED 0x8u	/* the front's charge wait ran (S-07.054) */
 #define BOOT_TIME_LINK_FC       0x10u	/* the stream was paced by the controller */
 #define BOOT_TIME_LINK_DMA      0x20u	/* and fed by DMA (S-09.009, S-13b.023) */
+#define BOOT_TIME_POWER_KNOWN   0x40u	/* power_state holds a reported state */
+#define BOOT_TIME_BATTERY_KNOWN 0x80u	/* battery holds a battery report */
+#define BOOT_TIME_COPY_LINK     0x100u	/* copy_link holds the copy's link */
+#define BOOT_TIME_PA6_POLLED    0x200u	/* a developer hand-over's line window took
+					 * the slave's server stop and OS start */
 
 #define BOOT_TIME_RAISE_STEPS 8u
 #define BOOT_TIME_FIRST 16u
@@ -147,6 +165,14 @@ struct boot_time {
 	 * line holding the controller), the parts that saw it, and the slot's
 	 * bytes before the first of them plus one, 0 for none. */
 	uint32_t dma_fcs_samples, dma_fcs_held, dma_fcs_parts, dma_fcs_first;
+	/* The power at the start, as the PSoC last reported it before the
+	 * hand-off to the main image (S-07.050, S-07.053): the state (0x10 on,
+	 * 0x16 charging with the switch off), and the battery report's status
+	 * byte (0 none, 2 charging), charge in % << 8 and mV << 16. */
+	uint32_t power_state, battery, battery_ma;
+	/* The OS image's copy over the bridge (S-09.075): the rung at its start,
+	 * at its end << 8 and the link's ceiling << 16; fall-backs during it. */
+	uint32_t copy_link, copy_fell;
 	struct boot_time_split split;
 };
 
@@ -234,11 +260,12 @@ void boot_time_gap(struct boot_time *t, uint64_t cycles, uint32_t at);
  * Then the PSoC and battery-wait outcome, the front's waits, the copy's
  * rate, the stream's pacing, the ready line after a byte (four lines), the
  * stream's split, blocks, bytes, longest waits and the measuring's own cost
- * (seven lines), the stream's faster reads, and an end line. A line k with nothing to say
+ * (seven lines), the stream's faster reads, the power at the start, the start
+ * into the OS in spans (two lines), and an end line. A line k with nothing to say
  * leaves *out empty and returns false. cycles_per_us converts counts after
  * INIT's clock set-up; counts taken before it are shown as they are.
  */
-#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 17u)
+#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 20u)
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out);
 
@@ -248,8 +275,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 9u
-#define BOOT_TIME_WORDS   (55u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+#define BOOT_TIME_VERSION 10u
+#define BOOT_TIME_WORDS   (60u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,

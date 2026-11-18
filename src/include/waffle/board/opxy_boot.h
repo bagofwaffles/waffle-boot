@@ -55,7 +55,7 @@ void opxy_crumb_read(uint32_t addr);
  * at OPXY_BOOT_TIME_RECORD, between the frame buffers and the display record;
  * the test OS built with the option reads it at entry and logs it.
  */
-#define OPXY_BOOT_TIME_RECORD 0x8FFFFC00u
+#define OPXY_BOOT_TIME_RECORD 0x8FFFF800u
 #if defined(OPXY_BOOT_TIMING_ON) && !defined(OPXY_TEST_OS)
 #define OPXY_BOOT_TIMING 1
 #include "waffle/boot_time.h"
@@ -86,11 +86,16 @@ void opxy_timing_slot_check(const struct s02_image *im);
 #ifndef OPXY_BOOT_TIMING_WINDOW_US
 #define OPXY_BOOT_TIMING_WINDOW_US OPXY_BOOT_LINK_SETTLE_US
 #endif
-/* The OS image's copy: armed for its eMMC reads, each read counted. */
-void opxy_timing_copy(bool on);
+/* The OS image's copy: armed for its eMMC reads, each read counted, the
+ * link it went on and its CRC's end. */
+void opxy_timing_copy(struct opxy_master *m, bool on);
 void opxy_timing_read(uint32_t bytes);
 /* The record an OS finds after the hand-over. */
 void opxy_timing_leave(void);
+/* A developer hand-over's line window that no wait on PA6 came before:
+ * PA6 at its start (start true), then at each sample; its first low is
+ * the slave's server stop, the first high after it the slave's OS. */
+void opxy_timing_pa6(bool start, bool high);
 /* Each pass of held mode: the report, a line every 100 ms, then 2 s apart. */
 void opxy_timing_held(struct opxy_master *m);
 #define OPXY_STARTUP opxy_timing_startup
@@ -101,7 +106,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_STREAM_END() opxy_timing_stream_end()
 #define OPXY_TIMING_SLOT_READ(im) opxy_timing_slot_read(im)
 #define OPXY_TIMING_SLOT_CHECK(im) opxy_timing_slot_check(im)
-#define OPXY_TIMING_COPY(on) opxy_timing_copy(on)
+#define OPXY_TIMING_COPY(m, on) opxy_timing_copy(m, on)
 #define OPXY_TIMING_READ(n) opxy_timing_read(n)
 #define OPXY_TIMING_LEAVE() opxy_timing_leave()
 #define OPXY_TIMING_HELD(m) opxy_timing_held(m)
@@ -116,7 +121,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_STREAM_END() ((void)0)
 #define OPXY_TIMING_SLOT_READ(im) ((void)0)
 #define OPXY_TIMING_SLOT_CHECK(im) ((void)0)
-#define OPXY_TIMING_COPY(on) ((void)0)
+#define OPXY_TIMING_COPY(m, on) ((void)0)
 #define OPXY_TIMING_READ(n) ((void)0)
 #define OPXY_TIMING_LEAVE() ((void)0)
 #define OPXY_TIMING_HELD(m) ((void)0)

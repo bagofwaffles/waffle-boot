@@ -80,7 +80,7 @@ them all.
 
 Install the timing build with its installer, then write `waffle-test-mon.ldr` as the OS from waffle-boot's
 developer menu. The bootloader stamps the cycle counter at each milestone
-(`src/include/waffle/boot_time.h`), at 400 MHz from INIT (earlier counts raw), in a record at `0x8FFFFC00`.
+(`src/include/waffle/boot_time.h`), at 400 MHz from INIT (earlier counts raw), in a record at `0x8FFFF800`.
 
 - After a hand-over to the monitor's test OS, `testos_mon.py report` prints a `time` line per milestone,
   then the PSoC greeting, battery and charge waits, the OS copy's rate and the slave stream's pacing. The
@@ -97,7 +97,17 @@ developer menu. The bootloader stamps the cycle counter at each milestone
   (`stream sends` with `BOOT_LINK_FC`); `stream longest waits` lists the eight longest, each with the
   bytes sent before it and its block; `stream measuring` gives the counter reads the split adds and their
   cost.
+- The start into the OS has its own milestones, numbered 35 to 43, from `hand-over begun` to
+  `kernel call`. `os load split` and `os start split` give its spans: the pre-load's PMIC step, logo and report and drain,
+  the copy's reads, its CRC, the return to the user area, the image check, the log's tidy, the release
+  (the slave's own staging, CRC and check), the slave's server stop and OS start on PA6, the teardown,
+  and the kernel's load to the test OS's entry. `os copy` adds the link's rung, ceiling and fall-backs;
+  `power at start` the PSoC's power state and battery report, which tell a USB start from a battery one.
 - In the boot menu, `testos_mon.py log` prints the same report. A trial start has no serial port.
+- To time the start with the real OS, from the boot menu with developer mode on:
+  `testos_mon.py dev-handover 0x10000`, then `testos_mon.py log 15`. It runs the whole start but
+  stays in held mode after the slave's OS has started; PA6 is polled there, and the teardown and the
+  kernel's load are not timed.
 
 ## The slave's ready line after a byte
 

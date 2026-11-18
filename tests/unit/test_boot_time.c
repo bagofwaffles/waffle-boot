@@ -253,7 +253,10 @@ static void test_summary(void)
 		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
 		      "3 failed the CRC and read again, 1 of those then good; "
 		      "1 kept by a trial mark's CRC"));
-	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u, "end of report"));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 16u));	/* no power reported */
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 17u));	/* no hand-over begun */
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 18u));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 19u, "end of report"));
 	CHECK(line_empty(&t, BOOT_TIME_LINES));
 	CHECK(line_of(&t, "end of report") == BOOT_TIME_LINES - 1u);
 }
@@ -637,7 +640,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 119u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 124u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -660,8 +663,14 @@ static void test_record(void)
 	t.slot_reread = 7u;
 	t.slot_reread_good = 8u;
 	t.slot_trial = 9u;
-	/* a milestone past bit 31 of set */
+	t.power_state = 0x10u;
+	t.battery = 0x0FA05502u;
+	t.battery_ma = 812u;
+	t.copy_link = 0x00040101u;
+	t.copy_fell = 2u;
+	/* milestones past bit 31 of set */
 	boot_time_mark(&t, BOOT_TIME_STREAM_LAST, 0x1122334455667788ull);
+	boot_time_mark(&t, BOOT_TIME_KERNEL_CALL, 0x2122334455667788ull);
 	t.split.xfer = 0x0000000100000002ull;
 	t.split.window = 0x0000000300000004ull;
 	t.split.sample = 5u;
@@ -697,6 +706,8 @@ static void test_record(void)
 	CHECK(memcmp(back.line_late_at, t.line_late_at, sizeof t.line_late_at) == 0);
 	CHECK(back.slot_fast == 5u && back.slot_fast_failed == 6u && back.slot_reread == 7u &&
 	      back.slot_reread_good == 8u && back.slot_trial == 9u);
+	CHECK(back.power_state == 0x10u && back.battery == 0x0FA05502u && back.battery_ma == 812u &&
+	      back.copy_link == 0x00040101u && back.copy_fell == 2u);
 	CHECK(memcmp(back.at, t.at, sizeof t.at) == 0);
 	/* the split's fields, not its tail padding */
 	CHECK(back.split.xfer == t.split.xfer && back.split.window == t.split.window &&
@@ -706,6 +717,7 @@ static void test_record(void)
 		     offsetof(struct boot_time_split, gap) + sizeof t.split.gap -
 		     offsetof(struct boot_time_split, bytes)) == 0);
 	CHECK(back.set >> BOOT_TIME_STREAM_LAST & 1u);
+	CHECK(back.set >> BOOT_TIME_KERNEL_CALL & 1u);
 
 	/* any one byte changed is refused, the magic and the version included */
 	for (i = 0; i < BOOT_TIME_RECORD; i++) {
@@ -786,6 +798,95 @@ static void test_dma_lines(void)
 		      "line low, then 415176 bytes one at a time"));
 }
 
+/* The power at the start: the PSoC's state and its battery report. */
+static void test_power(void)
+{
+	struct boot_time t = fresh();
+
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 16u));
+	t.flags = BOOT_TIME_POWER_KNOWN;
+	t.power_state = 0x10u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u,
+		      "power at start: state 0x10 (on), no battery report"));
+	t.flags |= BOOT_TIME_BATTERY_KNOWN;
+	t.battery = 2u | 85u << 8 | 4012u << 16;
+	t.battery_ma = 512u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u,
+		      "power at start: state 0x10 (on), battery status 0x02 (charging), "
+		      "85 %, 4012 mV, 512 mA"));
+	t.battery = 1u | 60u << 8 | 3900u << 16;
+	t.power_state = 0x16u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u,
+		      "power at start: state 0x16 (charging, switch off), battery status 0x01, "
+		      "60 %, 3900 mV, 512 mA"));
+	t.flags = BOOT_TIME_BATTERY_KNOWN;
+	t.battery = 0u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 16u,
+		      "power at start: no state reported, battery status 0x00 (none)"));
+}
+
+/* The start into the OS: the copy's link, and the spans from the
+ * hand-over's start to the OS. */
+static void test_os_start(void)
+{
+	struct boot_time t = fresh();
+
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 17u));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 18u));
+	boot_time_mark(&t, BOOT_TIME_HANDOFF, US(1000));
+	boot_time_mark(&t, BOOT_TIME_PMIC, US(1200));
+	boot_time_mark(&t, BOOT_TIME_BOOT_REPORT, US(1500));
+	boot_time_mark(&t, BOOT_TIME_PRE_LOAD, US(1600));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 17u,
+		      "os load split: pmic 0.200 ms, logo and report 0.300 ms, drain 0.100 ms"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 18u, "os start split:"));
+	boot_time_mark(&t, BOOT_TIME_COPY_START, US(1700));
+	boot_time_mark(&t, BOOT_TIME_COPY_LAST, US(501700));
+	boot_time_mark(&t, BOOT_TIME_COPY_CRC, US(511700));
+	boot_time_mark(&t, BOOT_TIME_STAGED, US(511800));
+	boot_time_mark(&t, BOOT_TIME_CHECKED, US(511810));
+	boot_time_mark(&t, BOOT_TIME_RELEASE_SENT, US(512810));
+	boot_time_mark(&t, BOOT_TIME_RELEASED, US(612810));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 17u,
+		      "os load split: pmic 0.200 ms, logo and report 0.300 ms, drain 0.100 ms, "
+		      "reads 500.000 ms, crc 10.000 ms, user area 0.100 ms, check 0.010 ms"));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 18u,
+		      "os start split: log 1.000 ms, release 100.000 ms"));
+	boot_time_mark(&t, BOOT_TIME_SERVER_STOP, US(612850));
+	boot_time_mark(&t, BOOT_TIME_SLAVE_OS, US(812850));
+	t.flags |= BOOT_TIME_PA6_POLLED;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 18u,
+		      "os start split: log 1.000 ms, release 100.000 ms, server stop 0.040 ms, "
+		      "slave os 200.000 ms, in all 811.850 ms; PA6 polled in the line window"));
+	t.flags &= ~BOOT_TIME_PA6_POLLED;
+	boot_time_mark(&t, BOOT_TIME_TEARDOWN, US(812900));
+	boot_time_mark(&t, BOOT_TIME_KERNEL_CALL, US(813400));
+	boot_time_mark(&t, BOOT_TIME_OS_ENTRY, US(913400));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 18u,
+		      "os start split: log 1.000 ms, release 100.000 ms, server stop 0.040 ms, "
+		      "slave os 200.000 ms, teardown 0.500 ms, kernel to os 100.000 ms, "
+		      "in all 912.400 ms"));
+	/* the new milestones take their names */
+	CHECK(line_of(&t, "36 pmic step done: 1.200 ms, +0.200 ms") < BOOT_TIME_COUNT);
+	CHECK(line_of(&t, "38 os crc done: 511.700 ms") < BOOT_TIME_COUNT);
+	CHECK(line_of(&t, "41 slave os started: 812.850 ms") < BOOT_TIME_COUNT);
+	CHECK(line_of(&t, "43 kernel call: 813.400 ms, +0.500 ms") < BOOT_TIME_COUNT);
+
+	/* the copy's link: its rung at the start and the end, the ceiling and
+	 * the fall-backs */
+	t.bytes = 1000000u;
+	t.flags |= BOOT_TIME_COPY_LINK;
+	t.copy_link = 0x00040101u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 2u,
+		      "os copy 1000000 bytes in 500.000 ms, 2000 kB/s, link rung 1 (checked), "
+		      "ceiling 4, 0 fall-backs"));
+	t.copy_link = 0x00040003u;
+	t.copy_fell = 1u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 2u,
+		      "os copy 1000000 bytes in 500.000 ms, 2000 kB/s, link rung 3 (quad) to rung "
+		      "0 (plain), ceiling 4, 1 fall-backs"));
+}
+
 int main(void)
 {
 	RUN(test_mark);
@@ -801,5 +902,7 @@ int main(void)
 	RUN(test_split_fc);
 	RUN(test_record);
 	RUN(test_dma_lines);
+	RUN(test_power);
+	RUN(test_os_start);
 	return check_summary("boot_time");
 }

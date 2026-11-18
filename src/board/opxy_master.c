@@ -534,9 +534,10 @@ static void pre_load(void *ctx)
 {
 	struct opxy_master *m = ctx;
 
-	(void)s07_pmic(&m->psoc);
+	OPXY_TIME(BOOT_TIME_HANDOFF);
+	(void)s07_pmic(&m->psoc); OPXY_TIME(BOOT_TIME_PMIC);
 	opxy_display_boot_logo();
-	s07_report(&m->psoc, S07_REPORT_BOOT);
+	s07_report(&m->psoc, S07_REPORT_BOOT); OPXY_TIME(BOOT_TIME_BOOT_REPORT);
 	(void)opxy_psoc_drain(m); OPXY_TIME(BOOT_TIME_PRE_LOAD);
 }
 
@@ -552,8 +553,8 @@ static enum s05_fail stage(void *ctx, uint32_t *length)
 	struct opxy_master *m = ctx;
 	const struct s03_load *ld = &stage_load;
 
-	OPXY_TIMING_COPY(true); s03_load_os(&m->emmc, (uint8_t *)(uintptr_t)OPXY_STAGING, S03_OS_MAX,
-		    &stage_load); OPXY_TIMING_COPY(false);
+	OPXY_TIMING_COPY(m, true); s03_load_os(&m->emmc, (uint8_t *)(uintptr_t)OPXY_STAGING, S03_OS_MAX,
+		    &stage_load); OPXY_TIMING_COPY(m, false);
 	*length = ld->length;
 	return opxy_stage_fail(ld);
 }
@@ -574,7 +575,7 @@ static int release(void *ctx, uint8_t *reply)
 	 * waits for it with no bound of its own, and from the release on the
 	 * hand-over leaves no time for a sector erase. */
 	opxy_start_finished(m);
-	opxy_start_log_tidy(m);
+	opxy_start_log_tidy(m); OPXY_TIME(BOOT_TIME_RELEASE_SENT);
 	v = s09_master_release(&m->bridge);
 
 	OPXY_CRUMB(19u); OPXY_TIME(BOOT_TIME_RELEASED);
@@ -591,7 +592,6 @@ static int release(void *ctx, uint8_t *reply)
 		*reply = S05_REPLY_NO_START;
 		return 0;
 	}
-	OPXY_TIMING_LEAVE();
 	return 0;
 }
 

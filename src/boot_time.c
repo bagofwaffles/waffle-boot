@@ -13,7 +13,9 @@ static const char *const names[BOOT_TIME_COUNT] = {
 	"bridge linked", "slave done", "pre-load", "os copy start",
 	"os copy last read", "os staged", "os checked", "release reply", "held mode",
 	"test os entry", "stream ready wait", "stream ready", "stream opened",
-	"stream first header", "stream last byte",
+	"stream first header", "stream last byte", "hand-over begun", "pmic step done",
+	"boot report queued", "os crc done", "release sent", "slave server stopped",
+	"slave os started", "teardown begun", "kernel call",
 };
 
 static bool reached(const struct boot_time *t, unsigned id)
@@ -421,6 +423,115 @@ static bool dma_line(const struct boot_time *t, bool fell, struct s14_text *out)
 	return true;
 }
 
+/* S-09.075's rungs, slowest first. */
+static void text_rung(struct s14_text *out, uint32_t r)
+{
+	static const char *const wire[] = {
+		"plain", "checked", "checked at 50 MHz", "quad", "quad at 50 MHz",
+	};
+
+	s14_text_dec(out, r);
+	if (r < sizeof wire / sizeof wire[0]) {
+		s14_text_str(out, " (");
+		s14_text_str(out, wire[r]);
+		s14_text_str(out, ")");
+	}
+}
+
+/* The power at the start: the PSoC's state and its battery report. */
+static bool power_line(const struct boot_time *t, struct s14_text *out)
+{
+	const uint32_t st = t->power_state, status = t->battery & 0xFFu;
+
+	if (!(t->flags & (BOOT_TIME_POWER_KNOWN | BOOT_TIME_BATTERY_KNOWN)))
+		return false;
+	s14_text_str(out, "power at start: ");
+	if (t->flags & BOOT_TIME_POWER_KNOWN) {
+		s14_text_str(out, "state 0x");
+		s14_text_hex(out, st, 2u);
+		s14_text_str(out, st == 0x10u ? " (on)" : st == 0x14u ? " (off)" :
+				  st == 0x16u ? " (charging, switch off)" : "");
+	} else {
+		s14_text_str(out, "no state reported");
+	}
+	if (!(t->flags & BOOT_TIME_BATTERY_KNOWN)) {
+		s14_text_str(out, ", no battery report");
+		return true;
+	}
+	s14_text_str(out, ", battery status 0x");
+	s14_text_hex(out, status, 2u);
+	if (status == 0u) {
+		s14_text_str(out, " (none)");
+		return true;
+	}
+	s14_text_str(out, status == 2u ? " (charging), " : ", ");
+	s14_text_dec(out, t->battery >> 8 & 0xFFu);
+	s14_text_str(out, " %, ");
+	s14_text_dec(out, t->battery >> 16);
+	s14_text_str(out, " mV, ");
+	s14_text_dec(out, t->battery_ma);
+	s14_text_str(out, " mA");
+	return true;
+}
+
+/* A span of the start into the OS, when both its ends were reached. */
+static void start_span(const struct boot_time *t, struct s14_text *out, const char *name,
+		       unsigned from, unsigned to, uint32_t cpu, bool *first)
+{
+	if (!reached(t, from) || !reached(t, to))
+		return;
+	s14_text_str(out, *first ? " " : ", ");
+	s14_text_str(out, name);
+	s14_text_str(out, " ");
+	text_ms(out, span_us(t, from, to, cpu));
+	*first = false;
+}
+
+/* The start into the OS in spans, from the hand-over's start to the kernel
+ * call, in two lines. First the pre-load in its steps, the copy's reads,
+ * its CRC, the return to the user area and the image check; then the log's
+ * tidy, the release (the slave's own staging, CRC and check, with its
+ * request and reply), the slave's server stop, the slave's OS start, the
+ * master's teardown and the kernel's load to the OS's entry. */
+static bool load_line(const struct boot_time *t, uint32_t cpu, struct s14_text *out)
+{
+	bool first = true;
+
+	if (!reached(t, BOOT_TIME_HANDOFF))
+		return false;
+	s14_text_str(out, "os load split:");
+	start_span(t, out, "pmic", BOOT_TIME_HANDOFF, BOOT_TIME_PMIC, cpu, &first);
+	start_span(t, out, "logo and report", BOOT_TIME_PMIC, BOOT_TIME_BOOT_REPORT, cpu, &first);
+	start_span(t, out, "drain", BOOT_TIME_BOOT_REPORT, BOOT_TIME_PRE_LOAD, cpu, &first);
+	start_span(t, out, "reads", BOOT_TIME_COPY_START, BOOT_TIME_COPY_LAST, cpu, &first);
+	start_span(t, out, "crc", BOOT_TIME_COPY_LAST, BOOT_TIME_COPY_CRC, cpu, &first);
+	start_span(t, out, "user area", BOOT_TIME_COPY_CRC, BOOT_TIME_STAGED, cpu, &first);
+	start_span(t, out, "check", BOOT_TIME_STAGED, BOOT_TIME_CHECKED, cpu, &first);
+	return true;
+}
+
+static bool start_line(const struct boot_time *t, uint32_t cpu, struct s14_text *out)
+{
+	bool first = true;
+
+	if (!reached(t, BOOT_TIME_HANDOFF))
+		return false;
+	s14_text_str(out, "os start split:");
+	start_span(t, out, "log", BOOT_TIME_CHECKED, BOOT_TIME_RELEASE_SENT, cpu, &first);
+	start_span(t, out, "release", BOOT_TIME_RELEASE_SENT, BOOT_TIME_RELEASED, cpu, &first);
+	start_span(t, out, "server stop", BOOT_TIME_RELEASED, BOOT_TIME_SERVER_STOP, cpu, &first);
+	start_span(t, out, "slave os", BOOT_TIME_SERVER_STOP, BOOT_TIME_SLAVE_OS, cpu, &first);
+	start_span(t, out, "teardown", BOOT_TIME_TEARDOWN, BOOT_TIME_KERNEL_CALL, cpu, &first);
+	start_span(t, out, "kernel to os", BOOT_TIME_KERNEL_CALL, BOOT_TIME_OS_ENTRY, cpu, &first);
+	start_span(t, out, "in all", BOOT_TIME_HANDOFF,
+		   reached(t, BOOT_TIME_OS_ENTRY) ? BOOT_TIME_OS_ENTRY :
+		   reached(t, BOOT_TIME_KERNEL_CALL) ? BOOT_TIME_KERNEL_CALL : BOOT_TIME_SLAVE_OS,
+		   cpu, &first);
+	if (t->flags & BOOT_TIME_PA6_POLLED)
+		s14_text_str(out, "; PA6 polled in the line window");
+	return true;
+}
+
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out)
 {
@@ -469,6 +580,19 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 			s14_text_str(out, ", ");
 			s14_text_dec(out, (uint32_t)((uint64_t)t->bytes * 1000u / us));
 			s14_text_str(out, " kB/s");
+		}
+		if (t->flags & BOOT_TIME_COPY_LINK) {
+			s14_text_str(out, ", link rung ");
+			text_rung(out, t->copy_link & 0xFFu);
+			if ((t->copy_link >> 8 & 0xFFu) != (t->copy_link & 0xFFu)) {
+				s14_text_str(out, " to rung ");
+				text_rung(out, t->copy_link >> 8 & 0xFFu);
+			}
+			s14_text_str(out, ", ceiling ");
+			s14_text_dec(out, t->copy_link >> 16 & 0xFFu);
+			s14_text_str(out, ", ");
+			s14_text_dec(out, t->copy_fell);
+			s14_text_str(out, " fall-backs");
 		}
 		return true;
 	}
@@ -560,6 +684,12 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 		s14_text_str(out, " kept by a trial mark's CRC");
 		return true;
 	case 16:
+		return power_line(t, out);
+	case 17:
+		return load_line(t, cpu, out);
+	case 18:
+		return start_line(t, cpu, out);
+	case 19:
 		s14_text_str(out, "end of report");
 		return true;
 	default:
@@ -600,6 +730,7 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->dma_parts, &t->dma_guard, &t->dma_guard_us, &t->dma_high, &t->dma_fell,
 		&t->dma_fell_session, &t->dma_fell_at, &t->dma_slow_bytes, &t->dma_held,
 		&t->dma_fcs_samples, &t->dma_fcs_held, &t->dma_fcs_parts, &t->dma_fcs_first,
+		&t->power_state, &t->battery, &t->battery_ma, &t->copy_link, &t->copy_fell,
 		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
 		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};

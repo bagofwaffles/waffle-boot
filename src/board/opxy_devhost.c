@@ -148,6 +148,13 @@ static void line_window(struct opxy_master *m, uint8_t route, uint32_t ms)
 	uint32_t n = 0;
 	uint8_t last = lines();
 
+#if OPXY_BOOT_TIMING
+	/* the slave's server stop and OS start, when no wait stamped them */
+	const bool timed = OPXY_HO_BIT(OPXY_HO_STAY) || OPXY_HO_BIT(OPXY_HO_NO_OS_WAIT);
+
+	if (timed)
+		opxy_timing_pa6(true, (last & OPXY_HO_LINE_PA6) != 0u);
+#endif
 	out[1] = OPXY_HO_PA6_MARK;
 	/* The initial levels at t = 0. */
 	wr32(out + 3, 0u);
@@ -156,6 +163,10 @@ static void line_window(struct opxy_master *m, uint8_t route, uint32_t ms)
 	for (;;) {
 		const uint8_t lvl = lines();
 
+#if OPXY_BOOT_TIMING
+		if (timed)
+			opxy_timing_pa6(false, (lvl & OPXY_HO_LINE_PA6) != 0u);
+#endif
 		if (lvl != last) {
 			last = lvl;
 			if (n < LINE_LOG_MAX) {

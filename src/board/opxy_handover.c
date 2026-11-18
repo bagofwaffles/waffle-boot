@@ -473,11 +473,13 @@ int opxy_os_wait(struct opxy_master *m)
 	while (wb_gpio_get(OPXY_PA6))
 		if (wb_time_passed(end))
 			return -1;
+	OPXY_TIME(BOOT_TIME_SERVER_STOP);
 	wb_mmr_write32(PINT_LATCH(0u), PA6_PINT_BIT);		/* W1C */
 	wb_mmr_sync();
 	while ((wb_mmr_read32(PINT_LATCH(0u)) & PA6_PINT_BIT) == 0u)
 		if (wb_time_passed(end))
 			return -1;
+	OPXY_TIME(BOOT_TIME_SLAVE_OS);
 	return 0;
 }
 
@@ -486,6 +488,7 @@ void opxy_teardown_master(void *ctx)
 {
 	struct opxy_master *m = ctx;
 
+	OPXY_TIME(BOOT_TIME_TEARDOWN);
 	ho_marks_cpu = 0u;		/* OPXY_HO_SLAVE_MARKS is the slave's alone */
 	ho_cpu_us = m->hw.time.cycles_per_us;
 	ho_mark(OPXY_HO_M_TEARDOWN);
@@ -498,6 +501,8 @@ void opxy_teardown_master(void *ctx)
 	opxy_handover_os = opxy_os_entry_master;
 	ho_entry(&opxy_handover_os);
 	ho_mark(OPXY_HO_M_ENTRY);
+	/* the record for an OS that reads it, once nothing more is timed */
+	OPXY_TIME(BOOT_TIME_KERNEL_CALL); OPXY_TIMING_LEAVE();
 }
 
 /* S-05.016, the slave's rows: the bridge stopped by S-05.020 step 3, and
