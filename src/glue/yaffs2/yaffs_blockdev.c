@@ -11,6 +11,7 @@
 
 #include "waffle/drivers/bf70x_msi.h"	/* WB_MSI_TIMEOUT */
 #include "wb_yaffs.h"
+#include "yaffs_packedtags2.h"
 
 static struct wb_blockdev *bdev(const struct yaffs_dev *dev)
 {
@@ -68,6 +69,124 @@ static int drv_read_chunk(struct yaffs_dev *dev, int nand_chunk, u8 *data,
 		return YAFFS_FAIL;
 	if (bd->read(bd->ctx, lba, data, WB_YAFFS_SECTORS_PER_CHUNK))
 		return YAFFS_FAIL;
+	return YAFFS_OK;
+}
+
+/*
+ * The tags of a chunk without its data (S-12.044): with in-band tags they
+ * are the chunk's last bytes, after its data_bytes_per_chunk, so only the
+ * sectors that hold them are read, as one read of them (a single block on
+ * the eMMC when they lie in one sector). The bytes are those a read of the
+ * whole chunk gives at that place, and they are unpacked as yaffs2's own
+ * marshaller unpacks them, so the tags are the same. Any failure of that
+ * read, or a layout where it does not save a read, reads the whole chunk
+ * into a buffer of yaffs2's, as the marshaller does. A read with data is
+ * the whole chunk, as before.
+ */
+#define TAGS_SECTORS 2u
+static _Alignas(32) uint8_t tags_buf[TAGS_SECTORS * WB_SECTOR_SIZE];
+static bool tags_reads = true;
+static struct wb_yaffs_read_counts read_counts;
+
+void wb_yaffs_tags_reads(bool on)
+{
+	tags_reads = on;
+}
+
+void wb_yaffs_read_counts(struct wb_yaffs_read_counts *out, bool clear)
+{
+	*out = read_counts;
+	if (clear)
+		memset(&read_counts, 0, sizeof read_counts);
+}
+
+static void unpack(struct yaffs_dev *dev, struct yaffs_ext_tags *tags,
+		   const u8 *at)
+{
+	struct yaffs_packed_tags2_tags_only pt;
+
+	memcpy(&pt, at, sizeof pt);
+	yaffs_unpack_tags2_tags_only(dev, tags, &pt);
+}
+
+/* The sectors that hold the tags, read; false when that is no shorter
+ * than the whole chunk or the read fails. */
+static bool tags_only(struct yaffs_dev *dev, uint32_t lba,
+		      struct yaffs_ext_tags *tags)
+{
+	struct wb_blockdev *bd = bdev(dev);
+	const uint32_t at = (uint32_t)dev->data_bytes_per_chunk;
+	const uint32_t first = at / WB_SECTOR_SIZE;
+	const uint32_t end = at + (uint32_t)sizeof(struct yaffs_packed_tags2_tags_only);
+	const uint32_t n = (end + WB_SECTOR_SIZE - 1u) / WB_SECTOR_SIZE - first;
+
+	if (!tags_reads || at == 0u || end > WB_YAFFS_CHUNK_BYTES ||
+	    n > TAGS_SECTORS || n >= WB_YAFFS_SECTORS_PER_CHUNK)
+		return false;
+	if (bd->read(bd->ctx, lba + first, tags_buf, n)) {
+		read_counts.fell_back++;
+		return false;
+	}
+	read_counts.tags_only++;
+	unpack(dev, tags, tags_buf + (at - first * WB_SECTOR_SIZE));
+	return true;
+}
+
+/* yaffs2's tagger read (struct yaffs_tags_handler) for in-band tags. */
+static int read_tags_of(struct yaffs_dev *dev, int nand_chunk, u8 *data,
+			struct yaffs_ext_tags *tags)
+{
+	enum yaffs_ecc_result ecc;
+	uint32_t lba = chunk_lba(dev, nand_chunk);
+	u8 *buf = data;
+	int rc;
+
+	if (data == NULL && tags != NULL && lba != UINT32_MAX &&
+	    tags_only(dev, lba, tags))
+		return YAFFS_OK;
+	if (buf == NULL)
+		buf = yaffs_get_temp_buffer(dev);
+	rc = dev->drv.drv_read_chunk_fn(dev, nand_chunk, buf,
+					(int)dev->param.total_bytes_per_chunk,
+					NULL, 0, &ecc);
+	if (rc != YAFFS_FAIL) {
+		read_counts.whole++;
+		if (tags != NULL)
+			unpack(dev, tags, buf + dev->data_bytes_per_chunk);
+	}
+	if (data == NULL)
+		yaffs_release_temp_buffer(dev, buf);
+	return rc == YAFFS_FAIL ? YAFFS_FAIL : YAFFS_OK;
+}
+
+static int read_tags(struct yaffs_dev *dev, int nand_chunk, u8 *data,
+		     struct yaffs_ext_tags *tags)
+{
+	int rc;
+
+	WB_YAFFS_TIME(WB_YAFFS_T_TAGS, true, 0u);
+	rc = read_tags_of(dev, nand_chunk, data, tags);
+	WB_YAFFS_TIME(WB_YAFFS_T_TAGS, false, 0u);
+	return rc;
+}
+
+/* yaffs2's block query for in-band tags, as its marshaller's: chunk 0's
+ * tags (read by read_tags()) say whether the block is in use and its
+ * sequence number. The eMMC has no bad blocks (drv_check_bad). */
+static int query_block(struct yaffs_dev *dev, int block_no,
+		       enum yaffs_block_state *state, u32 *seq_number)
+{
+	struct yaffs_ext_tags t;
+
+	memset(&t, 0, sizeof t);
+	(void)read_tags(dev, block_no * (int)dev->param.chunks_per_block, NULL, &t);
+	if (t.chunk_used) {
+		*seq_number = t.seq_number;
+		*state = YAFFS_BLOCK_STATE_NEEDS_SCAN;
+	} else {
+		*seq_number = 0;
+		*state = YAFFS_BLOCK_STATE_EMPTY;
+	}
 	return YAFFS_OK;
 }
 
@@ -185,6 +304,10 @@ int wb_yaffs_add_blockdev(struct yaffs_dev *dev, const char *name,
 	drv->drv_check_bad_fn = drv_check_bad;
 	drv->drv_initialise_fn = drv_initialize;
 	drv->drv_deinitialise_fn = drv_initialize;
+	/* In-band tags: the tagger's reads are the glue's; its writes and
+	 * marking stay yaffs2's own (yaffs_tags_marshall_install()). */
+	dev->tagger.read_chunk_tags_fn = read_tags;
+	dev->tagger.query_block_fn = query_block;
 	dev->driver_context = bd;
 
 	yaffs_add_device(dev);

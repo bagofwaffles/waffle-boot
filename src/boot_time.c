@@ -4,6 +4,8 @@
 
 #include "waffle/bytes.h"
 
+#define CPLB_VALID_BIT 1u	/* PRM: bit 0 of a CPLB data word */
+
 static const char *const names[BOOT_TIME_COUNT] = {
 	"init entry", "init clocks", "init ddr", "front entry", "front hand-off",
 	"main", "bring-up", "ddr check", "metadata", "psoc open",
@@ -731,7 +733,15 @@ static bool mount_line(const struct boot_time *t, bool phases, struct s14_text *
 		text_spread(out, mt->read_min, mt->read_us, mt->reads, mt->read_max, cpu);
 		s14_text_str(out, ", ");
 		s14_text_dec(out, mt->failed);
-		s14_text_str(out, " failed");
+		s14_text_str(out, " failed; ");
+		s14_text_dec(out, mt->tags_reads);
+		s14_text_str(out, " tags only in ");
+		text_ms(out, mt->tags_us);
+		s14_text_str(out, ", ");
+		s14_text_dec(out, mt->whole_reads);
+		s14_text_str(out, " whole, ");
+		s14_text_dec(out, mt->fell_back);
+		s14_text_str(out, " fell back");
 		return true;
 	}
 	if (mt->reads == 0u)
@@ -747,6 +757,74 @@ static bool mount_line(const struct boot_time *t, bool phases, struct s14_text *
 	s14_text_str(out, ", the rest mean ");
 	text_hundredths(out, mt->read_us > sum ? (mt->read_us - sum) * 100u / mt->reads : 0u);
 	s14_text_str(out, " us");
+	return true;
+}
+
+/* A CPLB data word's caching (BOOT_TIME_CPLB_DFLT: the default's). */
+static void text_cplb(struct s14_text *out, uint32_t w, bool code)
+{
+	static const char *const data[8] = {
+		"not cached", "write-back", "props 2", "props 3", "I/O", "write-through", "props 6",
+		"props 7",
+	};
+
+	s14_text_hex(out, w & ~BOOT_TIME_CPLB_DFLT, 8u);
+	s14_text_str(out, " (");
+	if (!code && !(w & CPLB_VALID_BIT))
+		s14_text_str(out, "invalid");
+	else if (code)
+		s14_text_str(out, (w >> 12 & 3u) != 0u ? "cached" : "not cached");
+	else
+		s14_text_str(out, data[w >> 12 & 7u]);
+	if (w & BOOT_TIME_CPLB_DFLT)
+		s14_text_str(out, ", default");
+	s14_text_str(out, ")");
+}
+
+/* The slave's mount outside its reads, and its caches at the mount's start. */
+static bool mount_more(const struct boot_time *t, bool caches, struct s14_text *out)
+{
+	const struct boot_time_mount *mt = &t->mount;
+	const uint32_t outside = mt->mount_us > mt->read_us ? mt->mount_us - mt->read_us : 0u;
+	const uint32_t known = mt->alloc_us + mt->glue_us;
+
+	if (!(t->flags & BOOT_TIME_MOUNT_READ))
+		return false;
+	if (!caches) {
+		s14_text_str(out, "slave mount, outside the reads: ");
+		text_ms(out, outside);
+		s14_text_str(out, "; ");
+		s14_text_dec(out, mt->allocs);
+		s14_text_str(out, " allocations and ");
+		s14_text_dec(out, mt->frees);
+		s14_text_str(out, " frees in ");
+		text_ms(out, mt->alloc_us);
+		s14_text_str(out, ", the tags reads' own ");
+		text_ms(out, mt->glue_us);
+		s14_text_str(out, ", the rest (yaffs2's scan) ");
+		text_ms(out, outside > known ? outside - known : 0u);
+		return true;
+	}
+	s14_text_str(out, "slave mount, caches: L1DM_DCTL ");
+	s14_text_hex(out, mt->dctl, 8u);
+	s14_text_str(out, (mt->dctl & 2u) && (mt->dctl & 0xCu) ? " (on)" : " (off)");
+	s14_text_str(out, ", L1IM_ICTL ");
+	s14_text_hex(out, mt->ictl, 8u);
+	s14_text_str(out, (mt->ictl & 2u) && (mt->ictl & 4u) ? " (on)" : " (off)");
+	s14_text_str(out, "; heap ");
+	s14_text_hex(out, mt->heap_lo, 8u);
+	s14_text_str(out, "-");
+	s14_text_hex(out, mt->heap_hi, 8u);
+	s14_text_str(out, " ");
+	text_cplb(out, mt->heap_cplb, false);
+	s14_text_str(out, ", static ");
+	s14_text_hex(out, mt->static_at, 8u);
+	s14_text_str(out, " ");
+	text_cplb(out, mt->static_cplb, false);
+	s14_text_str(out, ", code ");
+	s14_text_hex(out, mt->code_at, 8u);
+	s14_text_str(out, " ");
+	text_cplb(out, mt->code_cplb, true);
 	return true;
 }
 
@@ -950,6 +1028,9 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 	case 22:
 		return mount_line(t, k - BOOT_TIME_COUNT == 22u, out);
 	case 23:
+	case 24:
+		return mount_more(t, k - BOOT_TIME_COUNT == 24u, out);
+	case 25:
 		s14_text_str(out, "end of report");
 		return true;
 	default:
@@ -994,7 +1075,12 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->copy_quad, &t->copy_qbytes, &t->copy_qstate, &t->copy_qtest_us,
 		&t->mount_rc, &t->mount_err, &t->greet_tries, &t->mount.valid, &t->mount.cpu,
 		&t->mount.mount_us, &t->mount.reads, &t->mount.failed, &t->mount.read_us,
-		&t->mount.read_min, &t->mount.read_max,
+		&t->mount.read_min, &t->mount.read_max, &t->mount.tags_reads, &t->mount.tags_us,
+		&t->mount.whole_reads, &t->mount.fell_back, &t->mount.allocs, &t->mount.frees,
+		&t->mount.alloc_us, &t->mount.glue_us, &t->mount.dctl, &t->mount.ictl,
+		&t->mount.dcplb_dflt, &t->mount.icplb_dflt, &t->mount.heap_lo, &t->mount.heap_hi,
+		&t->mount.heap_cplb, &t->mount.static_at, &t->mount.static_cplb, &t->mount.code_at,
+		&t->mount.code_cplb,
 		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
 		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};

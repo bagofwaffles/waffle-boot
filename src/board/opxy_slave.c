@@ -284,9 +284,9 @@ static int bd_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
 
 	if (!user_area(s))
 		return -1;
-	OPXY_TIMING_CHUNK(true, true);
+	OPXY_TIMING_CHUNK(true, true, count);
 	rc = s->emmc_ops.read(s->emmc_ops.ctx, lba, count, buf);
-	OPXY_TIMING_CHUNK(false, rc == 0);
+	OPXY_TIMING_CHUNK(false, rc == 0, count);
 	return rc;
 }
 

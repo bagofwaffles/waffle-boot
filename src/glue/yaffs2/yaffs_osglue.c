@@ -68,12 +68,16 @@ void *yaffsfs_malloc(size_t size)
 
 	if (whole < size || whole > SIZE_MAX - lead)
 		return NULL;
+	WB_YAFFS_TIME(WB_YAFFS_T_ALLOC, true, 0u);
 	raw = malloc(whole + lead);
-	if (raw == NULL)
+	if (raw == NULL) {
+		WB_YAFFS_TIME(WB_YAFFS_T_ALLOC, false, 0u);
 		return NULL;
+	}
 	at = ((uintptr_t)raw + sizeof(void *) + BLOCK_ALIGN - 1u) &
 	     ~(uintptr_t)(BLOCK_ALIGN - 1u);
 	memcpy((void *)(at - sizeof(void *)), &raw, sizeof(raw));
+	WB_YAFFS_TIME(WB_YAFFS_T_ALLOC, false, at);
 	/* cppcheck-suppress memleak ; raw is kept just before the block */
 	return (void *)at;
 }
@@ -85,8 +89,10 @@ void yaffsfs_free(void *ptr)
 
 	if (ptr == NULL)
 		return;
+	WB_YAFFS_TIME(WB_YAFFS_T_FREE, true, 0u);
 	memcpy(&raw, (const uint8_t *)ptr - sizeof(raw), sizeof(raw));
 	free(raw);
+	WB_YAFFS_TIME(WB_YAFFS_T_FREE, false, (uintptr_t)ptr);
 }
 
 void yaffsfs_get_malloc_values(unsigned *current, unsigned *high_water)

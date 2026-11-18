@@ -6,6 +6,7 @@
 #ifndef WAFFLE_WB_YAFFS_H
 #define WAFFLE_WB_YAFFS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "yaffs_port.h"
@@ -34,6 +35,33 @@
 int wb_yaffs_add_blockdev(struct yaffs_dev *dev, const char *name,
 			  struct wb_blockdev *bd, uint32_t first_block,
 			  uint32_t last_block);
+
+/*
+ * Reads of a chunk's tags alone (S-12.044) take only the sectors that hold
+ * them; off, every read is the whole chunk. On by default. The counts:
+ * tags read alone, whole chunks read (tags with data, or a fall-back), and
+ * tag reads that failed and fell back to the whole chunk.
+ */
+struct wb_yaffs_read_counts {
+	uint32_t tags_only, whole, fell_back;
+};
+void wb_yaffs_tags_reads(bool on);
+void wb_yaffs_read_counts(struct wb_yaffs_read_counts *out, bool clear);
+
+/*
+ * A timing build's glue points (make BOOT_TIMING=1): an allocation's and a
+ * free's entry and return (at: the block), and the tagger's reads' entry
+ * and return. The board counts them; nothing in any other build.
+ */
+#define WB_YAFFS_T_ALLOC 0u
+#define WB_YAFFS_T_FREE  1u
+#define WB_YAFFS_T_TAGS  2u
+#if defined(OPXY_BOOT_TIMING_ON) && !defined(OPXY_TEST_OS)
+void wb_yaffs_timing(unsigned what, bool enter, uintptr_t at);
+#define WB_YAFFS_TIME(what, enter, at) wb_yaffs_timing(what, enter, at)
+#else
+#define WB_YAFFS_TIME(what, enter, at) ((void)0)
+#endif
 
 /*
  * The clock that yaffs2 stamps object headers with (S-12.059), in seconds

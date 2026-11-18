@@ -19,10 +19,13 @@
 #include "waffle/board/opxy.h"
 #include "waffle/devhost.h"
 #include "waffle/display.h"
+#include "waffle/drivers/bf70x_coremmr.h"
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/drivers/bf70x_msi.h"
+#include "waffle/drivers/mmr.h"
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/s01_memmap.h"
+#include "wb_yaffs.h"
 
 /* The record lies below the display record, clear of it. */
 _Static_assert(OPXY_BOOT_TIME_RECORD + BOOT_TIME_RECORD <= S01_DISPLAY_RECORD_START,
@@ -578,13 +581,69 @@ _Static_assert(WB_MSI_PH_CACHE == BOOT_TIME_PH_CACHE && WB_MSI_PH_SETUP == BOOT_
 
 struct boot_time_mount opxy_mount_time;
 static bool mount_on, in_read;
-static uint64_t mount_from, read_from, phase_from, read_sum;
+static uint64_t mount_from, read_from, phase_from, read_sum, tags_sum;
+static uint64_t alloc_from, alloc_sum, glue_from, glue_sum, glue_reads;
+static unsigned glue_depth;
 static uint64_t phase_sum[BOOT_TIME_PHASES];
 static uint32_t phase_now[BOOT_TIME_PHASES];
 
 static uint32_t clamp32(uint64_t v)
 {
 	return v > UINT32_MAX ? UINT32_MAX : (uint32_t)v;
+}
+
+/* The data word of the CPLB that covers addr, the default's with
+ * BOOT_TIME_CPLB_DFLT when no valid one does. */
+static uint32_t cplb_of(uint32_t addr, bool code)
+{
+	unsigned i;
+
+	for (i = 0; i < 16u; i++) {
+		const uint32_t d = wb_mmr_read32(code ? L1IM_ICPLB_DATA(i) : L1DM_DCPLB_DATA(i));
+		const uint32_t a = wb_mmr_read32(code ? L1IM_ICPLB_ADDR(i) : L1DM_DCPLB_ADDR(i));
+		const uint32_t n = wb_cplb_page_bytes(d);
+
+		if ((d & CPLB_VALID) && n != 0u && addr - a < n)
+			return d;
+	}
+	return wb_mmr_read32(code ? L1IM_ICPLB_DFLT : L1DM_DCPLB_DFLT) | BOOT_TIME_CPLB_DFLT;
+}
+
+/* The glue's points (WB_YAFFS_TIME): allocations and frees timed and the
+ * heap's blocks bounded; the tagger's reads timed, their chunk reads
+ * apart. */
+void wb_yaffs_timing(unsigned what, bool enter, uintptr_t at)
+{
+	struct boot_time_mount *t = &opxy_mount_time;
+	const uint64_t now = wb_core_cycles();
+
+	if (!mount_on)
+		return;
+	if (what == WB_YAFFS_T_TAGS) {
+		if (enter && glue_depth++ == 0u) {
+			glue_from = now;
+			glue_reads = read_sum;
+		} else if (!enter && glue_depth != 0u && --glue_depth == 0u) {
+			const uint64_t in_reads = read_sum - glue_reads;
+
+			glue_sum += now - glue_from > in_reads ? now - glue_from - in_reads : 0u;
+		}
+		return;
+	}
+	if (enter) {
+		alloc_from = now;
+		return;
+	}
+	alloc_sum += now - alloc_from;
+	if (what == WB_YAFFS_T_FREE) {
+		t->frees++;
+		return;
+	}
+	t->allocs++;
+	if (at != 0u && (t->heap_lo == 0u || at < t->heap_lo))
+		t->heap_lo = (uint32_t)at;
+	if (at > t->heap_hi)
+		t->heap_hi = (uint32_t)at;
 }
 
 void opxy_timing_mount_slave(bool start)
@@ -602,7 +661,19 @@ void opxy_timing_mount_slave(bool start)
 			phase_sum[i] = 0;
 		}
 		read_sum = 0;
+		tags_sum = 0;
+		alloc_sum = 0;
+		glue_sum = 0;
+		glue_depth = 0;
 		in_read = false;
+		t->dctl = wb_mmr_read32(L1DM_DCTL);
+		t->ictl = wb_mmr_read32(L1IM_ICTL);
+		t->dcplb_dflt = wb_mmr_read32(L1DM_DCPLB_DFLT);
+		t->icplb_dflt = wb_mmr_read32(L1IM_ICPLB_DFLT);
+		t->static_at = (uint32_t)(uintptr_t)&opxy_mount_time;
+		t->static_cplb = cplb_of(t->static_at, false);
+		t->code_at = (uint32_t)(uintptr_t)&wb_yaffs_tags_reads;
+		t->code_cplb = cplb_of(t->code_at, true);
 		mount_from = now;
 		mount_on = true;
 		return;
@@ -613,6 +684,10 @@ void opxy_timing_mount_slave(bool start)
 	t->cpu = cpu;
 	t->mount_us = clamp32((now - mount_from) / cpu);
 	t->read_us = clamp32(read_sum / cpu);
+	t->tags_us = clamp32(tags_sum / cpu);
+	t->alloc_us = clamp32(alloc_sum / cpu);
+	t->glue_us = clamp32(glue_sum / cpu);
+	t->heap_cplb = t->heap_lo != 0u ? cplb_of(t->heap_lo, false) : 0u;
 	if (t->reads == 0u)
 		t->read_min = 0;
 	for (i = 0; i < BOOT_TIME_PHASES; i++) {
@@ -623,7 +698,7 @@ void opxy_timing_mount_slave(bool start)
 	t->valid = BOOT_TIME_MOUNT_MAGIC;
 }
 
-void opxy_timing_chunk(bool start, bool ok)
+void opxy_timing_chunk(bool start, bool ok, uint32_t sectors)
 {
 	struct boot_time_mount *t = &opxy_mount_time;
 	const uint64_t now = wb_core_cycles();
@@ -645,6 +720,14 @@ void opxy_timing_chunk(bool start, bool ok)
 	t->reads++;
 	if (!ok)
 		t->failed++;
+	if (sectors >= WB_YAFFS_SECTORS_PER_CHUNK) {
+		t->whole_reads++;
+	} else if (ok) {
+		t->tags_reads++;
+		tags_sum += c;
+	} else {
+		t->fell_back++;		/* read again whole by the glue */
+	}
 	read_sum += c;
 	if (c < t->read_min)
 		t->read_min = c;

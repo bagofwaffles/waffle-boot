@@ -16,6 +16,7 @@
 
 #include "waffle/s11_staging.h"
 #include "waffle/wire_yaffs.h"
+#include "wb_yaffs.h"
 
 #define MAX_ENTRIES 64
 #define BLOCKS 40u
@@ -107,10 +108,20 @@ static int (*ram_read)(void *, uint32_t, void *, uint32_t);
 static int (*ram_write)(void *, uint32_t, const void *, uint32_t);
 static unsigned long unaligned;
 
+/* A read of fewer sectors than a chunk fails when short_fail is set, and
+ * is counted (the tags-only reads' fall-back; the S-12.052 check's reads
+ * are short too). */
+static bool short_fail;
+static unsigned long short_failed;
+
 static int emmc_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
 {
 	if ((uintptr_t)buf & 3u) {
 		unaligned++;
+		return -1;
+	}
+	if (short_fail && count < WB_YAFFS_SECTORS_PER_CHUNK) {
+		short_failed++;
 		return -1;
 	}
 	return ram_read(ctx, lba, buf, count);
@@ -129,32 +140,58 @@ static void check_volume(const char *name, bool refused, struct entry *want,
 			 int n_want, char lost[][65], int n_lost)
 {
 	uint8_t *before = tl_xmalloc(image_len);
-	enum wire_mount m;
-	int found_lost = 0;
 
 	memcpy(before, image, image_len);
-	CHECK(wire_yaffs_add(&Y, "/yaffs2", &bd, 0,
-			     (uint32_t)(image_len / (WB_YAFFS_SECTORS_PER_BLOCK *
-						     WB_SECTOR_SIZE)) - 1),
-	      "%s: add", name);
-	/* 8 blocks: below the reserve of 5 plus yaffs2's own 2 (test_yaffs2) */
-	Y.dev.param.n_reserved_blocks = 2;
-	CHECK(wire_yaffs_big_endian(&bd, Y.first_block, Y.last_block, Y.buf) ==
-	      refused, "%s: big-endian", name);
-	m = wire_yaffs_mount(&Y);
-	CHECK(m == (refused ? WIRE_MOUNT_REFUSED : WIRE_MOUNT_OK) &&
-	      wire_yaffs_volume_refused(&Y) == refused, "%s: mount %d", name,
-	      (int)m);
-	if (m == WIRE_MOUNT_OK) {
-		walk("", want, n_want, lost, n_lost, &found_lost);
+	/*
+	 * S-12.044: the same tree from tags read alone (the glue's default),
+	 * from whole chunks only, and from tags-alone reads that all fail and
+	 * fall back to the whole chunk.
+	 */
+	for (int mode = 0; mode < (refused ? 1 : 3); mode++) {
+		struct wb_yaffs_read_counts c;
+		enum wire_mount m;
+		int found_lost = 0;
+
 		for (int k = 0; k < n_want; k++)
-			CHECK(want[k].seen, "%s: %s listed", name, want[k].path);
-		CHECK(found_lost == n_lost, "%s: %d orphans, want %d", name,
-		      found_lost, n_lost);
+			want[k].seen = false;
+		wb_yaffs_tags_reads(mode != 1);
+		short_failed = 0;
+		CHECK(wire_yaffs_add(&Y, "/yaffs2", &bd, 0,
+				     (uint32_t)(image_len / (WB_YAFFS_SECTORS_PER_BLOCK *
+							     WB_SECTOR_SIZE)) - 1),
+		      "%s: add", name);
+		/* 8 blocks: below the reserve of 5 plus yaffs2's own 2 (test_yaffs2) */
+		Y.dev.param.n_reserved_blocks = 2;
+		CHECK(wire_yaffs_big_endian(&bd, Y.first_block, Y.last_block, Y.buf) ==
+		      refused, "%s: big-endian", name);
+		wb_yaffs_read_counts(&c, true);
+		short_fail = mode == 2;
+		m = wire_yaffs_mount(&Y);
+		short_fail = false;
+		CHECK(m == (refused ? WIRE_MOUNT_REFUSED : WIRE_MOUNT_OK) &&
+		      wire_yaffs_volume_refused(&Y) == refused, "%s: mount %d", name,
+		      (int)m);
+		wb_yaffs_read_counts(&c, true);
+		if (m == WIRE_MOUNT_OK) {
+			walk("", want, n_want, lost, n_lost, &found_lost);
+			for (int k = 0; k < n_want; k++)
+				CHECK(want[k].seen, "%s: %s listed", name, want[k].path);
+			CHECK(found_lost == n_lost, "%s: %d orphans, want %d", name,
+			      found_lost, n_lost);
+			CHECK(mode == 0 ? c.tags_only != 0u && c.fell_back == 0u :
+			      mode == 1 ? c.tags_only == 0u && c.fell_back == 0u :
+			      c.tags_only == 0u && c.fell_back != 0u &&
+			      c.fell_back <= short_failed, "%s: mode %d, %lu tags only, "
+			      "%lu whole, %lu fell back, %lu short reads failed", name, mode,
+			      (unsigned long)c.tags_only, (unsigned long)c.whole,
+			      (unsigned long)c.fell_back, short_failed);
+		}
+		wire_yaffs_detach(&Y);
+		wb_yaffs_tags_reads(true);
+		short_fail = false;
+		/* S-12.054: a session that changes nothing writes nothing */
+		CHECK(!memcmp(before, image, image_len), "%s: nothing written", name);
 	}
-	wire_yaffs_detach(&Y);
-	/* S-12.054: a session that changes nothing writes nothing */
-	CHECK(!memcmp(before, image, image_len), "%s: nothing written", name);
 	if (refused) {
 		/* S-12.057: a confirmed format erases a refused volume */
 		bool dir;

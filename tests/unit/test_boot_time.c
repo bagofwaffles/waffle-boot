@@ -292,7 +292,9 @@ static void test_summary(void)
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 20u));
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 21u));	/* no mount */
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 22u));
-	CHECK(line_is(&t, BOOT_TIME_COUNT + 23u, "end of report"));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 23u));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 24u));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 25u, "end of report"));
 	CHECK(line_empty(&t, BOOT_TIME_LINES));
 	CHECK(line_of(&t, "end of report") == BOOT_TIME_LINES - 1u);
 }
@@ -676,7 +678,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 155u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 174u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	CHECK(BOOT_TIME_COUNT == 59u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
@@ -721,6 +723,25 @@ static void test_record(void)
 	t.mount.read_us = 4200000u;
 	t.mount.read_min = 40000u;
 	t.mount.read_max = 3600000u;
+	t.mount.tags_reads = 700u;
+	t.mount.tags_us = 70000u;
+	t.mount.whole_reads = 534u;
+	t.mount.fell_back = 2u;
+	t.mount.allocs = 900u;
+	t.mount.frees = 12u;
+	t.mount.alloc_us = 3000u;
+	t.mount.glue_us = 4000u;
+	t.mount.dctl = 0x0000000Eu;
+	t.mount.ictl = 0x00000006u;
+	t.mount.dcplb_dflt = 0x10u;
+	t.mount.icplb_dflt = 0x20u;
+	t.mount.heap_lo = 0x88400000u;
+	t.mount.heap_hi = 0x89F00000u;
+	t.mount.heap_cplb = 0x0005D01Fu;
+	t.mount.static_at = 0x88100000u;
+	t.mount.static_cplb = 0x0005D01Fu;
+	t.mount.code_at = 0x88050000u;
+	t.mount.code_cplb = 0x80001003u;
 	for (i = 0; i < BOOT_TIME_PHASES; i++) {
 		t.mount.phase_us[i] = 10000u * (i + 1u);
 		t.mount.phase_min[i] = 100u + i;
@@ -1105,16 +1126,50 @@ static void test_boot_menu(void)
 	}
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 21u,
 		      "slave mount: 4500.000 ms in all, 1000 chunk reads in 4200.000 ms, a read "
-		      "min/mean/max 1000.00/4200.00/9000.00 us, 0 failed"));
+		      "min/mean/max 1000.00/4200.00/9000.00 us, 0 failed; 0 tags only in 0.000 ms, "
+		      "0 whole, 0 fell back"));
+	t.mount.tags_reads = 600u;
+	t.mount.tags_us = 60000u;
+	t.mount.whole_reads = 398u;
+	t.mount.fell_back = 2u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 21u,
+		      "slave mount: 4500.000 ms in all, 1000 chunk reads in 4200.000 ms, a read "
+		      "min/mean/max 1000.00/4200.00/9000.00 us, 0 failed; 600 tags only in 60.000 ms, "
+		      "398 whole, 2 fell back"));
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 22u,
 		      "slave mount, a read's phases min/mean/max: cache 0.50/1.00/10.00 us, "
 		      "set-up 0.50/2.00/10.00 us, command 0.50/3.00/10.00 us, "
 		      "data 0.50/4.00/10.00 us, stop 0.50/5.00/10.00 us, the rest mean 4185.00 us"));
+	/* outside the reads, and the caches at the mount's start */
+	t.mount.allocs = 900u;
+	t.mount.frees = 12u;
+	t.mount.alloc_us = 3000u;
+	t.mount.glue_us = 4000u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 23u,
+		      "slave mount, outside the reads: 300.000 ms; 900 allocations and 12 frees in "
+		      "3.000 ms, the tags reads' own 4.000 ms, the rest (yaffs2's scan) 293.000 ms"));
+	t.mount.dctl = 0x0000000Eu;
+	t.mount.ictl = 0x00000006u;
+	t.mount.heap_lo = 0x88400000u;
+	t.mount.heap_hi = 0x89F00000u;
+	t.mount.heap_cplb = 0x0005D01Fu;
+	t.mount.static_at = 0x88100000u;
+	t.mount.static_cplb = 0x0005101Du | BOOT_TIME_CPLB_DFLT;
+	t.mount.code_at = 0x88050000u;
+	t.mount.code_cplb = 0x00051003u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 24u,
+		      "slave mount, caches: L1DM_DCTL 0000000e (on), L1IM_ICTL 00000006 (on); heap "
+		      "88400000-89f00000 0005d01f (write-through), static 88100000 0005101d "
+		      "(write-back, default), code 88050000 00051003 (cached)"));
+	t.mount.dctl = 0u;
+	t.mount.heap_cplb = 0x0005001Eu;
+	CHECK(line_of(&t, "slave mount, caches: L1DM_DCTL 00000000 (off), L1IM_ICTL 00000006 (on); "
+			  "heap 88400000-89f00000 0005001e (invalid)") == BOOT_TIME_COUNT + 24u);
 	/* within a log line */
 	{
 		struct s14_text out;
 
-		for (i = BOOT_TIME_COUNT + 19u; i <= BOOT_TIME_COUNT + 22u; i++) {
+		for (i = BOOT_TIME_COUNT + 19u; i <= BOOT_TIME_COUNT + 24u; i++) {
 			CHECK(boot_time_line(&t, i, MHZ, &out) || i == BOOT_TIME_COUNT + 20u);
 			CHECK(!out.overflow && out.len < S14_LINE_MAX - 16u);
 		}

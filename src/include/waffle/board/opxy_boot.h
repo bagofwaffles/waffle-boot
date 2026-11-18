@@ -116,9 +116,9 @@ struct wb_display;
 int opxy_timing_display_update(struct wb_display *d);
 /* The slave's side of the mount: its handling of the request (start true,
  * then false) and, in it, each chunk read (start true, then false with its
- * outcome); the eMMC driver's phases go to wb_msi_phase(). */
+ * outcome and its sectors: fewer than a chunk's are its tags alone); the eMMC driver's phases go to wb_msi_phase(). */
 void opxy_timing_mount_slave(bool start);
-void opxy_timing_chunk(bool start, bool ok);
+void opxy_timing_chunk(bool start, bool ok, uint32_t sectors);
 #define OPXY_STARTUP opxy_timing_startup
 #define OPXY_TIMING_START() opxy_timing_start()
 #define OPXY_TIMING_BATTERY(on) opxy_timing_battery(on)
@@ -140,7 +140,7 @@ void opxy_timing_chunk(bool start, bool ok);
 #define OPXY_TIMING_GREETING(answered, tries) opxy_timing_greeting(answered, tries)
 #define OPXY_DISPLAY_UPDATE(d) opxy_timing_display_update(d)
 #define OPXY_TIMING_MOUNT_SLAVE(start) opxy_timing_mount_slave(start)
-#define OPXY_TIMING_CHUNK(start, ok) opxy_timing_chunk(start, ok)
+#define OPXY_TIMING_CHUNK(start, ok, sectors) opxy_timing_chunk(start, ok, sectors)
 #else
 #define OPXY_BOOT_TIMING 0
 #define OPXY_TIME(id) ((void)0)
@@ -164,7 +164,7 @@ void opxy_timing_chunk(bool start, bool ok);
 #define OPXY_TIMING_GREETING(answered, tries) ((void)(answered))
 #define OPXY_DISPLAY_UPDATE(d) wb_display_update(d)
 #define OPXY_TIMING_MOUNT_SLAVE(start) ((void)0)
-#define OPXY_TIMING_CHUNK(start, ok) ((void)0)
+#define OPXY_TIMING_CHUNK(start, ok, sectors) ((void)0)
 #endif
 #if defined(OPXY_BOOT_TIMING_ON) && defined(OPXY_TEST_OS)
 /* The test OS: the loading bootloader's record, taken at entry, then logged. */

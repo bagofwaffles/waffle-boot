@@ -126,12 +126,12 @@ enum boot_time_id {
  * A chunk read is yaffs2's (S-12.041); its phases are the eMMC driver's:
  * the cache maintenance before and after the transfer, the set-up of the
  * controller, the command to its response, the data to its end, and the
- * stop command with its busy wait. The rest of a read is what the
- * phases leave.
+ * stop command with its busy wait (none for a single sector). The rest of
+ * a read is what the phases leave.
  */
 #define BOOT_TIME_MOUNT_MAGIC 0x544E4D42u	/* "BMNT" */
 #define BOOT_TIME_PHASES 5u
-#define BOOT_TIME_MOUNT_WORDS (8u + 3u * BOOT_TIME_PHASES)
+#define BOOT_TIME_MOUNT_WORDS (27u + 3u * BOOT_TIME_PHASES)
 enum boot_time_phase {
 	BOOT_TIME_PH_CACHE,
 	BOOT_TIME_PH_SETUP,
@@ -144,6 +144,19 @@ struct boot_time_mount {
 	uint32_t mount_us;	/* the request's handling, its eMMC wake-up too */
 	uint32_t reads, failed;	/* chunk reads, and those that failed */
 	uint32_t read_us, read_min, read_max;
+	/* reads of a chunk's tags alone (S-12.044) and their time; whole
+	 * chunks; tags-alone reads that failed, read again whole */
+	uint32_t tags_reads, tags_us, whole_reads, fell_back;
+	/* Outside the reads: the glue's allocations and frees (yaffs2's
+	 * heap) and their time, and the tagger's own time beside its reads. */
+	uint32_t allocs, frees, alloc_us, glue_us;
+	/* The caches at the mount's start: L1DM_DCTL, L1IM_ICTL, the default
+	 * CPLBs; the heap blocks' lowest and highest address, a static's
+	 * (the glue's) and a code address, each with the data word of the
+	 * CPLB that covers it (the default's when none is valid for it). */
+	uint32_t dctl, ictl, dcplb_dflt, icplb_dflt;
+	uint32_t heap_lo, heap_hi, heap_cplb, static_at, static_cplb, code_at, code_cplb;
+#define BOOT_TIME_CPLB_DFLT 0x80000000u	/* in a *_cplb word: the default's */
 	uint32_t phase_us[BOOT_TIME_PHASES];
 	uint32_t phase_min[BOOT_TIME_PHASES], phase_max[BOOT_TIME_PHASES];
 };
@@ -353,11 +366,12 @@ void boot_time_gap(struct boot_time *t, uint64_t cycles, uint32_t at);
  * stream's split, blocks, bytes, longest waits and the measuring's own cost
  * (seven lines), the stream's faster reads, the power at the start, the start
  * into the OS in spans (two lines), held mode's start to its first frame in
- * spans (two lines), the slave's mount (two lines), and an end line. A line k with nothing to say
+ * spans (two lines), the slave's mount (four lines: its reads, their
+ * phases, the time outside them and the caches), and an end line. A line k with nothing to say
  * leaves *out empty and returns false. cycles_per_us converts counts after
  * INIT's clock set-up; counts taken before it are shown as they are.
  */
-#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 24u)
+#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 26u)
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out);
 
@@ -367,7 +381,7 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 15u
+#define BOOT_TIME_VERSION 16u
 #define BOOT_TIME_WORDS   (68u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS + BOOT_TIME_MOUNT_WORDS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
