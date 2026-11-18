@@ -106,6 +106,13 @@ static int write_extent(const struct s02_env *env, uint32_t off,
 int s02_slot_upgrade(const struct s02_env *env, bool option_on,
 		     const uint8_t *image, uint32_t n, unsigned *target)
 {
+	return s02_slot_upgrade_start(env, option_on, image, n, target, NULL);
+}
+
+int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
+			   const uint8_t *image, uint32_t n, unsigned *target,
+			   struct s02_start *start)
+{
 	struct s02_selector sel;
 	struct s02_record rec, back;
 	uint8_t raw[S02_RECORD_SIZE];
@@ -115,6 +122,8 @@ int s02_slot_upgrade(const struct s02_env *env, bool option_on,
 	int rc;
 
 	*target = 2u;
+	if (start != NULL)
+		start->read = false;
 	/* S-02.056, S-02.057: no option, no write of a slot, record or selector. */
 	if (!option_on)
 		return S02_SKIPPED;
@@ -138,8 +147,18 @@ int s02_slot_upgrade(const struct s02_env *env, bool option_on,
 	rc = s02_read_selector(env, &sel);
 	if (rc != S02_OK)
 		return rc;
-	if (!s02_verified(sel.verified))
+	if (start != NULL) {
+		start->read = true;
+		start->sel = sel;
+		start->selected_good = false;
+	}
+	if (!s02_verified(sel.verified)) {
+		/* reads only: a refused start erases and programs nothing */
+		if (start != NULL &&
+		    s02_check_slot(env, s02_selected_slot(sel.index), &good) == S02_OK)
+			start->selected_good = good;
 		return S02_ERR_START;
+	}
 	/* S-02.090: the selected slot reads good, after that read, before class 1. */
 	rc = s02_check_slot(env, s02_selected_slot(sel.index), &good);
 	if (rc != S02_OK)

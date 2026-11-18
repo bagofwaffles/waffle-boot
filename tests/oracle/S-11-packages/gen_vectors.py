@@ -763,14 +763,16 @@ def step_rows():
             # S-11.068: no version test under the option
             exp = 'OK' if ok else 'Failure'
         rows.append(['bootloader', json.dumps(c, sort_keys=True), exp])
-    # S-11.068 items 4 and 5: a start S-02.090 refuses, for `verified` alone or for a bad selected slot, and
-    # whether this power-on's own bootloader step wrote the selector read
-    for (opt, conf), start, here in itertools.product(opt_conf, ['refused_verified', 'refused_bad'], [0, 1]):
+    # S-11.068 items 4 and 5: a start S-02.090 refuses, for `verified` alone or for a bad selected slot,
+    # whether this power-on's own bootloader step wrote the selector read, and whether the selected slot's
+    # record has the checked image's length and CRC-32
+    for (opt, conf), start, here, match in itertools.product(opt_conf, ['refused_verified', 'refused_bad'], [0, 1],
+                                                             [0, 1]):
         c = dict(present=1, option=opt, confirmed=conf, rel='newer', forced=0, dev=0, write_ok=1, start=start,
-                 written_here=here)
+                 written_here=here, slot_matches=match)
         if not opt or not conf:
             exp = 'Skipped'
-        elif start == 'refused_verified' and here:
+        elif start == 'refused_verified' and here and match:
             exp = 'Skipped'
         else:
             exp = 'Failure'
@@ -826,6 +828,11 @@ def step_rows():
                  'Skipped'),
                 ('bootloader', dict(present=1, option=1, confirmed=0, rel='newer', forced=0, dev=0, write_ok=1),
                  'Skipped'),
+                # S-11.095, S-11.068: the check comes before a refused start, item 5's case included
+                ('bootloader', dict(present=1, option=1, confirmed=1, rel='newer', forced=0, dev=0, write_ok=1,
+                                    start='refused_verified', written_here=1, slot_matches=1), bad),
+                ('bootloader', dict(present=1, option=1, confirmed=1, rel='newer', forced=0, dev=0, write_ok=1,
+                                    start='refused_bad', written_here=0, slot_matches=0), bad),
                 ('spiboot', dict(switched_on=1, present=1, option=1, confirmed=1, write_ok=1), bad),
                 ('spiboot', dict(switched_on=1, present=1, option=0, confirmed=0, write_ok=1), 'Skipped'),
                 ('spiboot', dict(switched_on=1, present=1, option=1, confirmed=0, write_ok=1), 'Skipped'),

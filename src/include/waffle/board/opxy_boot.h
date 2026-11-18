@@ -312,6 +312,12 @@ struct opxy_master {
 	uint8_t meta_raw[S04_META_SIZE];
 	bool meta_failed;		/* the record could not be read */
 	bool meta_restore_failed;	/* S-02.065 failed: no metadata write */
+	/* S-11.068 item 5: the selector this power-on's own bootloader step
+	 * wrote, until the next reset. A bootloader write that may have
+	 * reached the selector and did not end well forgets it; nothing else
+	 * in this image writes the selector. */
+	bool own_selector_set;
+	struct s02_selector own_selector;
 	/* S-09: the boot link, then the bridge, and the eMMC behind it */
 	struct s09_boot_ops boot_ops;
 	struct s09_bus_ops bus_ops;

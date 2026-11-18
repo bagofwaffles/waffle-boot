@@ -161,12 +161,15 @@ enum s15_op s15_result_line(struct s15_buf *out, enum s15_style *style,
 	case S15_RES_SKIPPED:
 	case S15_RES_SKIPPED_UNCONFIRMED:
 	case S15_RES_SKIPPED_OFF:
+	case S15_RES_SKIPPED_WRITTEN:
 		*style = S15_ST_STEP_SKIP;
 		label_open(out, step);
 		s15_buf_str(out, result == S15_RES_SKIPPED ?
 				 "Skipped: protected writes off" :
 				 result == S15_RES_SKIPPED_OFF ?
 				 "Skipped: not in this version" :
+				 result == S15_RES_SKIPPED_WRITTEN ?
+				 "Skipped: written, runs on restart" :
 				 "Skipped: not confirmed");
 		return S15_OP_REPLACE;
 	case S15_RES_FAILURE:

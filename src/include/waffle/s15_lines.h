@@ -49,7 +49,8 @@ enum s15_result {
 	S15_RES_BAD_FILE,
 	S15_RES_INTERNAL,
 	S15_RES_SKIPPED_UNCONFIRMED,	/* a protected step, not confirmed (S-11.096) */
-	S15_RES_SKIPPED_OFF	/* a switched-off step (S-11.073) */
+	S15_RES_SKIPPED_OFF,	/* a switched-off step (S-11.073) */
+	S15_RES_SKIPPED_WRITTEN	/* the bootloader, already written (S-11.068 item 5) */
 };
 
 /* A line under construction. */

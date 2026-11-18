@@ -353,7 +353,8 @@ int main(void)
 			size_t n = s10c_skip_label((unsigned)h_num(&c, 1),
 				strcmp(w, "option_off") == 0 ? S11_SKIP_OPTION_OFF :
 				strcmp(w, "not_confirmed") == 0 ? S11_SKIP_NOT_CONFIRMED :
-				S11_SKIP_SWITCHED_OFF, label);
+				strcmp(w, "already_written") == 0 ?
+				S11_SKIP_ALREADY_WRITTEN : S11_SKIP_SWITCHED_OFF, label);
 
 			put_text(label, n);
 			h_end();

@@ -490,6 +490,16 @@
    "label": "[skipped] backplane: switched off",
    "reason": "switched off",
    "step": 5
+  },
+  {
+   "label": "[skipped] spiboot: switched off",
+   "reason": "switched off",
+   "step": 6
+  },
+  {
+   "label": "[skipped] bootloader: already written",
+   "reason": "already written",
+   "step": 2
   }
  ]
 }

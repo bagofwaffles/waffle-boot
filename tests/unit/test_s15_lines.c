@@ -38,7 +38,7 @@ static enum s15_result result_of(const char *s)
 	static const char *const names[] = {
 		"OK", "Not found", "Already installed", "Skipped", "Failure",
 		"Bad file", "Internal error", "Skipped (not confirmed)",
-		"Skipped (switched off)",
+		"Skipped (switched off)", "Skipped (already written)",
 	};
 
 	for (unsigned i = 0; i < S15V_N(names); i++)
@@ -318,7 +318,15 @@ static void test_results(void)
 			CHECK(row_matches("skipped", b.s, values),
 			      "skipped: '%s'", b.s);
 		}
-		if (res == S15_RES_SKIPPED_UNCONFIRMED || res == S15_RES_SKIPPED_OFF) {
+		if (res == S15_RES_SKIPPED_WRITTEN) {
+			/* S-11.068 item 5, by its token */
+			const char *values[] = { "label", s15_step_label(step), NULL };
+
+			CHECK(row_matches("skipped:written", b.s, values),
+			      "already written: '%s'", b.s);
+		}
+		if (res == S15_RES_SKIPPED_UNCONFIRMED || res == S15_RES_SKIPPED_OFF ||
+		    res == S15_RES_SKIPPED_WRITTEN) {
 			/* not the option's reason: S-11.096, S-11.073 */
 			const char *values[] = { "label", s15_step_label(step), NULL };
 

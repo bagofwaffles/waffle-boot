@@ -308,6 +308,7 @@ static unsigned flash_ops_n;		/* reads, erases and programs */
 static unsigned flash_writes;		/* erases and programs */
 static unsigned flash_one_try;		/* operations made with one try */
 static unsigned flash_fs_ops;		/* any of them in the first stage's area */
+static bool flash_fs_fails;		/* every program there fails */
 
 static void fl_area(uint32_t off)
 {
@@ -351,6 +352,8 @@ static int fl_program(void *ctx, uint32_t off, const uint8_t *buf,
 	fl_area(off);
 	flash_ops_n++;
 	flash_writes++;
+	if (flash_fs_fails && off < S02_FIRST_STAGE_MAX)
+		return -1;
 	for (uint32_t i = 0; i < len; i++)
 		flash_mem[off + i] &= buf[i];
 	return 0;
@@ -592,7 +595,66 @@ static void test_extracted_intact(void)
 	CHECK(slot1_holds_image());
 	CHECK(memcmp(before, flash_mem, sizeof before) != 0);
 	CHECK(step.write_failure(step.ctx) == S11_OK);
-	CHECK(result_of(S11_STEP_BOOTLOADER) == S11_FAILURE); /* S-02.090: {1, 0} */
+	/* S-02.090: {1, 0}, this power-on's own, the same image: already
+	 * written (S-11.068 item 5) */
+	CHECK(result_of(S11_STEP_BOOTLOADER) == S11_SKIPPED);
+}
+
+/*
+ * S-11.068 items 4 and 5: after this power-on's bootloader step wrote
+ * {1, 0}, the same image again is Skipped, already written, with no erase
+ * or program; another image (the record does not match), a selector this
+ * power-on did not write, or a bad selected slot is Failure, the start
+ * refused as before.
+ */
+static void test_already_written(void)
+{
+	struct s11_staged st;
+	struct s11_step_env env;
+	unsigned writes;
+
+	t_case = "already written";
+	fresh();
+	stage_all();
+	extracted();
+	CHECK(step.bootloader_write(step.ctx));
+	CHECK(m.own_selector_set && m.own_selector.index == 1u &&
+	      m.own_selector.verified == 0x00u);
+	writes = flash_writes;
+	CHECK(result_of(S11_STEP_BOOTLOADER) == S11_SKIPPED);
+	CHECK_EQ(flash_writes, writes);			/* nothing erased or programmed */
+	s11_staged_scan(&m.sv.staging, &st);
+	memset(&env, 0, sizeof env);
+	env.staged = &st;
+	env.option = true;
+	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER);
+	CHECK(s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_SKIPPED) ==
+	      S11_SKIP_ALREADY_WRITTEN);
+	/* a selector this power-on did not write (a new power-on): Failure */
+	m.own_selector_set = false;
+	CHECK(result_of(S11_STEP_BOOTLOADER) == S11_FAILURE);
+	CHECK_EQ(flash_writes, writes);
+	m.own_selector_set = true;
+	/* the selected slot bad: Failure */
+	flash_mem[s02_slot_base(1u)] ^= 0x01u;
+	CHECK(result_of(S11_STEP_BOOTLOADER) == S11_FAILURE);
+	flash_mem[s02_slot_base(1u)] ^= 0x01u;
+	CHECK(result_of(S11_STEP_BOOTLOADER) == S11_SKIPPED);
+	/* the slot holding another good image, its record not the staged
+	 * image's: Failure */
+	{
+		struct s02_record rec;
+		uint8_t raw[S02_RECORD_SIZE];
+		const uint32_t n = sizeof v_boot_good - 4u;
+
+		rec.crc32 = wire_crc32(0u, flash_mem + s02_slot_base(1u), n);
+		rec.length = n;
+		rec.tag = S02_RECORD_TAG;
+		s02_record_encode(&rec, raw);
+		memcpy(flash_mem + S02_RECORD1_OFF, raw, sizeof raw);
+		CHECK(result_of(S11_STEP_BOOTLOADER) == S11_FAILURE);
+		CHECK_EQ(flash_writes, writes);
+	}
 }
 
 static void test_extracted_damaged(void)
@@ -1874,6 +1936,42 @@ static void test_whole_first_stage_off(void)
 }
 
 /*
+ * S-11.068 item 5 (SC-11-CONFIRM's rerun-after-first-stage): a package with
+ * both protected images, both confirmed; its first-stage write fails after
+ * its bootloader step wrote {1, 0}. The same package again in this
+ * power-on: the bootloader step reports Skipped, already written, with no
+ * erase or program of the slots, and the run reaches the first-stage step,
+ * which writes it.
+ */
+static void test_whole_rerun_after_first_stage(void)
+{
+	struct s11_install_result res;
+	static uint8_t slots[S02_FLASH_SIZE];
+
+	t_case = "whole: re-run after a failed first stage";
+	whole_setup();
+	ks.ev[0] = hold_5s;
+	ks.ev[1] = rehold_5s;
+	flash_fs_fails = true;
+	whole_install(true, false, &res);
+	flash_fs_fails = false;
+	CHECK(res.run.end == S11_RUN_FAILED && res.run.step == S11_STEP_SPIBOOT);
+	CHECK(slot1_holds_image());
+	memcpy(slots, flash_mem, sizeof slots);
+	cdc_n = 0;
+	ks.ev[0] = rehold_5s;
+	ks.ev[1] = rehold_5s;
+	whole_install(true, false, &res);
+	CHECK_EQ(ks.asks, 2u);
+	CHECK(res.run.end == S11_RUN_DONE);
+	CHECK(cdc_has("[skipped] bootloader: already written"));
+	CHECK(memcmp(flash_mem + S02_SELECTOR_OFF, slots + S02_SELECTOR_OFF,
+		     S02_FLASH_SIZE - S02_SELECTOR_OFF) == 0);
+	CHECK(first_stage_is(v_boot_fs_good, sizeof v_boot_fs_good));
+	whole_end();
+}
+
+/*
  * An install submitted over a host link (the firmware command's form,
  * forced) asks the same: nothing the host sends during it is read, a key
  * bitmap forged as the PSoC's included, so the host cannot answer; the
@@ -1919,6 +2017,7 @@ int main(void)
 		return 2;
 	test_no_stated_values();
 	test_extracted_intact();
+	test_already_written();
 	test_extracted_damaged();
 	test_extracted_stale();
 	test_os_step();
@@ -1940,6 +2039,7 @@ int main(void)
 	test_whole_unreadable();
 	test_whole_option_off();
 	test_whole_first_stage_off();
+	test_whole_rerun_after_first_stage();
 	test_whole_host_and_again();
 	wire_s09_release(&S);
 	wire_yaffs_detach(&Y);

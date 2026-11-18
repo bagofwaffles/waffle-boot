@@ -38,4 +38,5 @@ the bootloader or the first stage.
 | `No valid package found` | No file with `tfw` in its name in the disk's top folder, or the package was refused. The reason line says why |
 | `Upgrade failed.` or `Installation failed.` | A step failed; its row says which. Switch off and on, then install again |
 | `The last install did not finish.` | The unit stopped mid-install. Install the same package again |
+| `Bootloader  Skipped: written, runs on restart` | The same package was installed again before a restart: its bootloader is already in the other slot and starts after the next restart |
 | `OS needs reinstalling: install a TE firmware update` | The OS on the eMMC is stored encrypted, which waffle-boot cannot load. An install of the OS writes it in a form it can |

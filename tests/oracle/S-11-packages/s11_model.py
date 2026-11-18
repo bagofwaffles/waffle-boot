@@ -475,9 +475,10 @@ def skip_reason(step, c):
         if not c.get('confirmed'):
             return SKIP_NOT_CONFIRMED
         # S-11.068 item 5: after the image check, a start refused only for `verified`, the selector being
-        # the one this power-on's own bootloader step wrote
+        # the one this power-on's own bootloader step wrote, and the selected slot's record that of the
+        # checked image
         if (step == 2 and _staged_result(c) is None and c.get('start') == 'refused_verified'
-                and c.get('written_here')):
+                and c.get('written_here') and c.get('slot_matches')):
             return SKIP_ALREADY_WRITTEN
         return None
     if step in SWITCHABLE:

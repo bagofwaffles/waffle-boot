@@ -934,6 +934,7 @@ static void note_skips(const struct s11_fs_ops *fs, bool option)
 		[S11_SKIP_OPTION_OFF] = "option_off",
 		[S11_SKIP_NOT_CONFIRMED] = "not_confirmed",
 		[S11_SKIP_SWITCHED_OFF] = "switched_off",
+		[S11_SKIP_ALREADY_WRITTEN] = "already_written",
 	};
 	struct s11_staged st;
 	struct s11_step_env env;

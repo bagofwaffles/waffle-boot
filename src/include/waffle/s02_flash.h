@@ -288,6 +288,23 @@ int s02_running_image(const struct s02_env *env, const struct s02_mem_ops *mem,
 int s02_slot_upgrade(const struct s02_env *env, bool option_on,
 		     const uint8_t *image, uint32_t n, unsigned *target);
 
+/* What an upgrade's S-02.090 start read: the selector, and for a selector
+ * not verified whether the selected slot reads good. */
+struct s02_start {
+	bool read;			/* sel holds the selector read */
+	struct s02_selector sel;
+	bool selected_good;		/* checked only when not verified */
+};
+
+/*
+ * s02_slot_upgrade(), with what its start read in *start. A start refused
+ * for `verified` alone then also checks the selected slot, by reads only,
+ * so that the caller can tell that case (S-11.068 item 5).
+ */
+int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
+			   const uint8_t *image, uint32_t n, unsigned *target,
+			   struct s02_start *start);
+
 /*
  * S-02.050: a selector write by any mechanism other than the upgrade
  * (the recovery loader, S-02.084).  The slot is checked by reading

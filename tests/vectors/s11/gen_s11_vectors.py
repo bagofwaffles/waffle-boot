@@ -257,15 +257,17 @@ def main():
     step_no = {n: i for i, n in enumerate(s11_model.STEPS)}
     rel_no = {'older': -1, 'equal': 0, 'newer': 1}
     staged_no = {'ok': 0, 'bad': 1, 'read_error': 2}
+    start_no = {'ok': 0, 'refused_verified': 1, 'refused_bad': 2}
     rows = []
     for r in tsv('steps.tsv'):
         c = json.loads(r['conditions'])
-        rows.append('{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d }' % (
+        rows.append('{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d }' % (
             step_no[r['step']], c.get('content_dir', 0), c.get('files', 0), c.get('move_fails', 0),
             c.get('present', 0), c.get('present0', 0), c.get('present1', 0), c.get('option', 0),
             c.get('write_ok', 1), rel_no[c.get('rel', 'newer')], c.get('forced', 0), c.get('dev', 0),
             c.get('in_dfu', 1), c.get('slot', 0), result_code[r['result']], staged_no[c.get('staged', 'ok')],
-            c.get('confirmed', 0), c.get('switched_on', 1)))
+            c.get('confirmed', 0), c.get('switched_on', 1), start_no[c.get('start', 'ok')],
+            c.get('written_here', 0), c.get('slot_matches', 0)))
     table('s11v_steps', 'struct s11v_step', rows)
 
     # ---- staged_check.json: S-11.095
@@ -362,10 +364,12 @@ def main():
              '/* rel: the package version against the installed one: -1 older, 0 equal, 1 newer;',
              ' * staged: S-11.095\'s check of the image, 0 passes, 1 fails, 2 a read fails;',
              ' * confirmed: the protected component confirmed on the unit (S-11.096); switched_on: the',
-             ' * step is switched on (S-11.073) */',
+             ' * step is switched on (S-11.073); start: S-02.090\'s start, 0 allowed, 1 refused for verified',
+             ' * alone, 2 refused for a bad selected slot; written_here: this power-on\'s bootloader step',
+             ' * wrote the selector read; slot_matches: the selected slot\'s record is the image\'s (S-11.068) */',
              'struct s11v_step { unsigned step; int content_dir, files, move_fails, present, present0,',
              '\tpresent1, option, write_ok, rel, forced, dev, in_dfu, slot; unsigned result; int staged;',
-             '\tint confirmed, switched_on; };',
+             '\tint confirmed, switched_on, start, written_here, slot_matches; };',
              '/* S-11.095: the read against the stated values; a read that fails is absent;',
              ' * expect 0 ok, 1 bad, 2 read_error; the bytes a step may write are the read\'s, on ok */',
              'struct s11v_staged_check { const char *name; uint32_t stated_len, stated_crc;',

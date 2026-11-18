@@ -781,9 +781,10 @@ LABELS = [('[decrypting firmware]', 'reading an encrypted package file'),
           ('[done]', 'outcome'), ('[nothing to do]', 'outcome'), ('[failed] ', 'outcome, followed by an error text'),
           ('[skipped] ', 'a step that reported Skipped, followed by the step and the reason'),
           ('', 'a report with no counts between two phases')]
-# S-10c.106: the steps that can report Skipped and the reason (S-11.058, S-11.073)
+# S-10c.106: the steps that can report Skipped and the reason (S-11.058, S-11.068 item 5, S-11.073)
 SKIPS = [(2, 'option off'), (2, 'not confirmed'), (6, 'option off'), (6, 'not confirmed'),
-         (3, 'switched off'), (4, 'switched off'), (5, 'switched off')]
+         (3, 'switched off'), (4, 'switched off'), (5, 'switched off'), (6, 'switched off'),
+         (2, 'already written')]
 REASONS = ['SHORT', 'PREAMBLE', 'TYPE', 'MAGIC', 'PRODUCT', 'DEVICE', 'CRC', 'FORMAT', 'SKU',
            'LENGTH', 'HASH', 'KEY', 'NOKEY', 'NAME', 'ZIPLEN', 'ZIP', 'MEMBER', 'SPACE', 'SPACEQUERY', 'SIZE', 'STREAM']
 

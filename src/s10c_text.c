@@ -286,9 +286,10 @@ size_t s10c_skip_label(unsigned step, enum s11_skip why, char *out)
 		[S11_SKIP_OPTION_OFF] = "option off",
 		[S11_SKIP_NOT_CONFIRMED] = "not confirmed",
 		[S11_SKIP_SWITCHED_OFF] = "switched off",
+		[S11_SKIP_ALREADY_WRITTEN] = "already written",
 	};
 	const char *const parts[] = { "[skipped] ", NULL, ": ",
-				      reasons[why <= S11_SKIP_SWITCHED_OFF ?
+				      reasons[why <= S11_SKIP_ALREADY_WRITTEN ?
 					      why : S11_SKIP_NONE] };
 	const char *label = s10c_step_label(step);
 	size_t n = 0;

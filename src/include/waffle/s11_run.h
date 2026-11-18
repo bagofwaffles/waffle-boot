@@ -118,7 +118,9 @@ struct s11_step_ops {
 	 * image was refused before any byte of it was written or sent:
 	 * S11_BAD_FILE when its check failed (S-11.095) or S-02.091 refused
 	 * it (S-11.068, S-11.072), S11_INTERNAL when a read of it failed
-	 * (S-11.095); any other value, or NULL, means the write itself
+	 * (S-11.095); for bootloader_write alone, S11_SKIPPED when
+	 * S-02.090 refused its start in S-11.068 item 5's case (already
+	 * written); any other value, or NULL, means the write itself
 	 * failed and the step reports its own failure result (Internal
 	 * error for the OS step, S-11.067; Failure otherwise). */
 	enum s11_result (*write_failure)(void *ctx);
@@ -157,8 +159,15 @@ struct s11_step_env {
 enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 				const struct s11_step_ops *ops);
 
-/* Why a step whose component is present reports Skipped (S-11.058). */
+/* Why a step whose component is present reports Skipped (S-11.058), as
+ * decided before the step runs. */
 enum s11_skip s11_step_skip(unsigned step, const struct s11_step_env *env);
+
+/* Why a step that reported r reports Skipped: S11_SKIP_NONE unless r is
+ * S11_SKIPPED; the bootloader step with the option on and confirmed was
+ * skipped in S-11.068 item 5's case. */
+enum s11_skip s11_result_skip(unsigned step, const struct s11_step_env *env,
+			      enum s11_result r);
 
 /* S-11.061 item 2: a Nordic image is present whose step is switched on. */
 bool s11_run_nordic(const struct s11_staged *st, uint8_t off);

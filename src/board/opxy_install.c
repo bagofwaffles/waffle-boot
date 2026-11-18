@@ -79,6 +79,7 @@ static struct {
 	struct s11_step_env env;
 	bool announced;		/* the first stage's start was shown */
 	bool refused_start;	/* S-02.090 refused the bootloader step */
+	bool already_written;	/* in S-11.068 item 5's case */
 	/* For write_failure: S11_BAD_FILE or S11_INTERNAL when the step's
 	 * image was refused or could not be read (S-11.095, S-02.091) before
 	 * any byte of it was written or sent; S11_OK otherwise. */
@@ -328,7 +329,9 @@ static enum s15_result shown(enum s11_result r, enum s11_skip why)
 	case S11_SKIPPED:
 		return why == S11_SKIP_SWITCHED_OFF ? S15_RES_SKIPPED_OFF :
 		       why == S11_SKIP_NOT_CONFIRMED ?
-		       S15_RES_SKIPPED_UNCONFIRMED : S15_RES_SKIPPED;
+		       S15_RES_SKIPPED_UNCONFIRMED :
+		       why == S11_SKIP_ALREADY_WRITTEN ?
+		       S15_RES_SKIPPED_WRITTEN : S15_RES_SKIPPED;
 	case S11_BAD_FILE:
 		return S15_RES_BAD_FILE;
 	case S11_INTERNAL:
@@ -403,7 +406,7 @@ static enum s11_result run_step(void *ctx, unsigned step)
 	/* S-08.014: a greeting that arrived during the last step is answered
 	 * before this one begins. */
 	s08_answer_greetings(&m->nordic);
-	cur.announced = cur.refused_start = false;
+	cur.announced = cur.refused_start = cur.already_written = false;
 	cur.refusal = S11_OK;
 	cur.cause[0] = '\0';
 	host_progress(m, 0u, 1u, s10c_step_label(step));
@@ -423,7 +426,7 @@ static enum s11_result run_step(void *ctx, unsigned step)
 	if (!s11_result_continues(r))
 		step_failed(m, step, r);
 	s15_up_step_result(menu, (enum s15_step)step,
-			   shown(r, s11_step_skip(step, &cur.env)),
+			   shown(r, s11_result_skip(step, &cur.env, r)),
 			   c >= 0 ? v : NULL, cur.refused_start, cur.cause);
 	show(m);
 	host_progress(m, 1u, 1u, s10c_step_label(step));
@@ -432,7 +435,7 @@ static enum s11_result run_step(void *ctx, unsigned step)
 
 		/* S-10c.106: which part was skipped, and why */
 		cur.skipped |= 1u << step;
-		s10c_skip_label(step, s11_step_skip(step, &cur.env), label);
+		s10c_skip_label(step, s11_result_skip(step, &cur.env, r), label);
 		s10c_host_progress(&m->sv.host, 0u, 0u, label);
 		sent.label = NULL;
 	}
@@ -601,12 +604,36 @@ static void flash_cause(int status)
 	}
 }
 
+/*
+ * S-11.068 item 5: S-02.090 refused the start for `verified` alone (the
+ * selected slot good), the selector read is the one this power-on's own
+ * bootloader step wrote, and the selected slot's record has the length
+ * and CRC-32 of the image that was checked.
+ */
+static bool already_written(const struct opxy_master *m,
+			    const struct s02_start *s, const uint8_t *image,
+			    uint32_t len)
+{
+	struct s02_record rec;
+
+	if (!m->own_selector_set || !s->read || s02_verified(s->sel.verified) ||
+	    !s->selected_good || s->sel.index != m->own_selector.index ||
+	    s->sel.verified != m->own_selector.verified)
+		return false;
+	if (s02_read_record(&m->flash, s02_selected_slot(s->sel.index), &rec) !=
+	    S02_OK)
+		return false;
+	return s02_tag_ok(rec.tag) && rec.length == len &&
+	       rec.crc32 == m->flash.crc32(0u, image, len);
+}
+
 /* S-11.068, S-02.042-S-02.053. S-11 runs the step only with the option
  * on (S-11.090); the writer is given the session's option all the same
  * (S-02.056), so an S-11 that ran it with the option off writes nothing. */
 static bool step_bootloader(void *ctx)
 {
 	struct opxy_master *m = ctx;
+	struct s02_start start;
 	unsigned target;
 	uint32_t len;
 	uint8_t *image = staged(m, S11_C_BOOTLOADER, &len);
@@ -616,12 +643,28 @@ static bool step_bootloader(void *ctx)
 	if (image == NULL)
 		return false;
 	opxy_flash_writer(&m->hw, true);	/* S-13b.017 */
-	r = s02_slot_upgrade(&m->flash, cur.env.option, image, len, &target);
+	r = s02_slot_upgrade_start(&m->flash, cur.env.option, image, len,
+				   &target, &start);
+	if (r == S02_ERR_START)
+		cur.already_written = already_written(m, &start, image, len);
 	opxy_flash_writer(&m->hw, false);
 	free(image);
-	cur.refused_start = r == S02_ERR_START;
+	if (r == S02_OK) {
+		m->own_selector_set = true;	/* S-02.048's {target, 0x00} */
+		m->own_selector.index = (uint8_t)target;
+		m->own_selector.verified = 0x00u;
+	} else if (r != S02_ERR_START && r != S02_ERR_SIZE &&
+		   r != S02_ERR_STREAM && r != S02_SKIPPED) {
+		m->own_selector_set = false;	/* the selector may have changed */
+	}
+	cur.refused_start = r == S02_ERR_START && !cur.already_written;
 	cur.write_status = r;
-	cur.refusal = r == S02_ERR_STREAM ? S11_BAD_FILE : S11_OK; /* S-02.091 */
+	cur.refusal = r == S02_ERR_STREAM ? S11_BAD_FILE :	/* S-02.091 */
+		      cur.already_written ? S11_SKIPPED : S11_OK;
+	if (cur.already_written)
+		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
+			    "install: bootloader already written in this "
+			    "power-on, start refused for verified");
 	flash_cause(r);
 	return r == S02_OK;
 }

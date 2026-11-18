@@ -361,7 +361,7 @@ def te_percent(done, total, outcome=False):
 
 
 STEP_LABELS = ['[content]', '[main dsp]', '[bootloader]', '[ble]', '[ble bootloader]', '[backplane]', '[spiboot]']
-SKIP_REASONS = ('option off', 'not confirmed', 'switched off')
+SKIP_REASONS = ('option off', 'not confirmed', 'switched off', 'already written')
 
 
 def skip_label(step, reason):

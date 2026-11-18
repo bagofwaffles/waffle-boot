@@ -202,15 +202,21 @@ static bool s_write(void *ctx)
 	(void)ctx;
 	if (S.v->staged != 0)
 		return false;
+	if (S.v->start != 0)	/* S-02.090: refused, nothing written */
+		return false;
 	S.writes++;
 	return S.v->write_ok != 0;
 }
 
+/* S-11.068 item 5: the writer's refused start, told apart as the board's
+ * writer tells it */
 static enum s11_result s_failure(void *ctx)
 {
 	(void)ctx;
-	return S.v->staged == 1 ? S11_BAD_FILE :
-	       S.v->staged == 2 ? S11_INTERNAL : S11_FAILURE;
+	if (S.v->staged != 0)
+		return S.v->staged == 1 ? S11_BAD_FILE : S11_INTERNAL;
+	return S.v->start == 1 && S.v->written_here && S.v->slot_matches ?
+	       S11_SKIPPED : S11_FAILURE;
 }
 
 static void s_sw(void *ctx, const struct s11_version *v)
@@ -302,10 +308,11 @@ static void test_steps(void)
 			if (r == S11_SKIPPED)
 				want = !v->switched_on ? S11_SKIP_SWITCHED_OFF :
 				       !v->option ? S11_SKIP_OPTION_OFF :
-						    S11_SKIP_NOT_CONFIRMED;
-			CHECK(s11_step_skip(v->step, &env) == want,
+				       !v->confirmed ? S11_SKIP_NOT_CONFIRMED :
+						       S11_SKIP_ALREADY_WRITTEN;
+			CHECK(s11_result_skip(v->step, &env, r) == want,
 			      "row %zu: skip reason %d, want %d", i,
-			      (int)s11_step_skip(v->step, &env), (int)want);
+			      (int)s11_result_skip(v->step, &env, r), (int)want);
 		}
 		if (v->staged != 0)	/* S-11.095: nothing written or sent */
 			CHECK(S.writes == 0 && S.sends == 0,
@@ -336,6 +343,12 @@ static enum s11_result read_error(void *ctx)
 	return S11_INTERNAL;
 }
 
+static enum s11_result written(void *ctx)
+{
+	(void)ctx;
+	return S11_SKIPPED;
+}
+
 static void test_protected_results(void)
 {
 	static const struct s11v_step fail = { 0 };
@@ -362,6 +375,20 @@ static void test_protected_results(void)
 	      "S-02.091: Bad file");
 	CHECK(s11_step_result(S11_STEP_SPIBOOT, &env, &ops) == S11_BAD_FILE,
 	      "S-02.091 first stage: Bad file");
+	/* S-11.068 item 5: the bootloader step alone takes Skipped from its
+	 * writer, with the reason already written */
+	ops.write_failure = written;
+	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &ops) == S11_SKIPPED &&
+	      s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_SKIPPED) ==
+		      S11_SKIP_ALREADY_WRITTEN,
+	      "already written: Skipped");
+	CHECK(s11_step_result(S11_STEP_SPIBOOT, &env, &ops) == S11_FAILURE,
+	      "the first stage never takes already written");
+	CHECK(s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_OK) ==
+		      S11_SKIP_NONE &&
+	      s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_FAILURE) ==
+		      S11_SKIP_NONE, "no reason unless Skipped");
+	ops.write_failure = bad_file;
 	st.size[S11_C_SPIBOOT] = 0;
 	CHECK(s11_step_result(S11_STEP_SPIBOOT, &env, &ops) == S11_NOT_FOUND,
 	      "absent first stage, Not found");

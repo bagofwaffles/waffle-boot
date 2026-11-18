@@ -160,13 +160,15 @@ static bool same(const struct s11_version *a, const struct s11_version *b)
  * Internal error when a read of it failed (S-11.095), else the step's own
  * failure result. */
 static enum s11_result failed(const struct s11_step_ops *ops,
-			      enum s11_result own)
+			      enum s11_result own, bool may_skip)
 {
 	enum s11_result r;
 
 	if (ops->write_failure == NULL)
 		return own;
 	r = ops->write_failure(ops->ctx);
+	if (r == S11_SKIPPED && may_skip)
+		return r;	/* S-11.068 item 5: already written */
 	return r == S11_BAD_FILE || r == S11_INTERNAL ? r : own;
 }
 
@@ -194,7 +196,7 @@ static enum s11_result protected_step(const struct s11_step_env *env,
 		return S11_SKIPPED;	/* S-11.096: as with the option off */
 	if (write(ops->ctx))
 		return S11_OK;
-	return failed(ops, S11_FAILURE);
+	return failed(ops, S11_FAILURE, step == S11_STEP_BOOTLOADER);
 }
 
 enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
@@ -211,7 +213,7 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 		if (!s11_staged_present(st, S11_C_OS))
 			return S11_NOT_FOUND;
 		if (!ops->os_write(ops->ctx))
-			return failed(ops, S11_INTERNAL);
+			return failed(ops, S11_INTERNAL, false);
 		ops->meta_sw_version(ops->ctx, &st->version[S11_C_OS]);
 		return S11_OK;
 	case S11_STEP_BOOTLOADER:		/* S-11.068 */
@@ -229,7 +231,7 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 		 * DFU-mode queries (S-08.042), both inside the send; the
 		 * run-start answer decides nothing here */
 		if (!ops->nordic_send(ops->ctx, S11_C_BLE))
-			return failed(ops, S11_FAILURE);
+			return failed(ops, S11_FAILURE, false);
 		env->copro->nordic_app = *v;
 		return S11_OK;
 	case S11_STEP_BLE_BOOTLOADER:		/* S-11.070 */
@@ -249,7 +251,7 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 			return S11_NOT_FOUND;
 		if (!ops->nordic_send(ops->ctx, slot ? S11_C_NORDIC_BL1 :
 							S11_C_NORDIC_BL0))
-			return failed(ops, S11_FAILURE); /* S-16.032: version unchanged */
+			return failed(ops, S11_FAILURE, false); /* S-16.032: version unchanged */
 		env->copro->nordic_bl = *v;
 		return S11_OK;
 	case S11_STEP_KEYBOARD:			/* S-11.071 */
@@ -261,7 +263,7 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 		if (!env->forced && same(v, &env->copro->psoc))
 			return S11_ALREADY;
 		return ops->psoc_program(ops->ctx) ? S11_OK :
-						     failed(ops, S11_FAILURE);
+						     failed(ops, S11_FAILURE, false);
 	case S11_STEP_SPIBOOT:			/* S-11.072 */
 		return protected_step(env, step, S11_C_SPIBOOT,
 				      ops->spiboot_write, ops);
@@ -305,6 +307,18 @@ enum s11_skip s11_step_skip(unsigned step, const struct s11_step_env *env)
 		return S11_SKIP_NONE;
 	}
 	return off(env, step) ? S11_SKIP_SWITCHED_OFF : S11_SKIP_NONE;
+}
+
+enum s11_skip s11_result_skip(unsigned step, const struct s11_step_env *env,
+			      enum s11_result r)
+{
+	const enum s11_skip why = s11_step_skip(step, env);
+
+	if (r != S11_SKIPPED)
+		return S11_SKIP_NONE;
+	if (why == S11_SKIP_NONE && step == S11_STEP_BOOTLOADER)
+		return S11_SKIP_ALREADY_WRITTEN;
+	return why;
 }
 
 bool s11_run_nordic(const struct s11_staged *st, uint8_t off_steps)
