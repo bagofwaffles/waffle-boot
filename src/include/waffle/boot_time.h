@@ -73,6 +73,13 @@ enum boot_time_id {
 	BOOT_TIME_KERNEL_CALL,		/* the teardown done: the kernel call next */
 	BOOT_TIME_LINK_UP,		/* the link raised for the copy, its quad reply
 					 * test before it (S-09.081) */
+	/* The slave's own steps after its server stop, from its beacons on
+	 * PC5 (opxy_handover.c): its teardown begun, its kernel call next,
+	 * its kernel returned (the OS image loaded), its jump next. */
+	BOOT_TIME_SLAVE_TEARDOWN,
+	BOOT_TIME_SLAVE_KERNEL,
+	BOOT_TIME_SLAVE_RETURNED,
+	BOOT_TIME_SLAVE_JUMP,
 	BOOT_TIME_COUNT
 };
 
@@ -289,7 +296,7 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 12u
+#define BOOT_TIME_VERSION 13u
 #define BOOT_TIME_WORDS   (64u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)

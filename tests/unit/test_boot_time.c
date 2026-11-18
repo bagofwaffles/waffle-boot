@@ -902,6 +902,18 @@ static void test_os_start(void)
 	CHECK(line_of(&t, "38 os crc done: 511.700 ms") < BOOT_TIME_COUNT);
 	CHECK(line_of(&t, "41 slave os started: 812.850 ms") < BOOT_TIME_COUNT);
 	CHECK(line_of(&t, "43 kernel call: 813.400 ms, +0.500 ms") < BOOT_TIME_COUNT);
+	/* the slave's beacons: its teardown, kernel load, entry and OS start */
+	boot_time_mark(&t, BOOT_TIME_SLAVE_TEARDOWN, US(612900));
+	boot_time_mark(&t, BOOT_TIME_SLAVE_KERNEL, US(613850));
+	boot_time_mark(&t, BOOT_TIME_SLAVE_RETURNED, US(783850));
+	boot_time_mark(&t, BOOT_TIME_SLAVE_JUMP, US(783950));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 18u,
+		      "os start split: log 1.000 ms, release 100.000 ms, server stop 0.040 ms, "
+		      "slave os 200.000 ms (its teardown 1.000 ms, kernel load 170.000 ms, "
+		      "entry 0.100 ms, os to PA4 high 28.900 ms), teardown 0.500 ms, "
+		      "kernel to os 100.000 ms, in all 912.400 ms"));
+	CHECK(line_of(&t, "45 slave teardown begun: 612.900 ms") < BOOT_TIME_COUNT);
+	CHECK(line_of(&t, "48 slave jump: 783.950 ms") < BOOT_TIME_COUNT);
 
 	/* the copy's link: its rung at the start and the end, the ceiling and
 	 * the fall-backs */

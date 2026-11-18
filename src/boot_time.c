@@ -16,6 +16,7 @@ static const char *const names[BOOT_TIME_COUNT] = {
 	"stream first header", "stream last byte", "hand-over begun", "pmic step done",
 	"boot report queued", "os crc done", "release sent", "slave server stopped",
 	"slave os started", "teardown begun", "kernel call", "copy link up",
+	"slave teardown begun", "slave kernel call", "slave kernel returned", "slave jump",
 };
 
 static bool reached(const struct boot_time *t, unsigned id)
@@ -509,17 +510,27 @@ static bool power_line(const struct boot_time *t, struct s14_text *out)
 	return true;
 }
 
-/* A span of the start into the OS, when both its ends were reached. */
-static void start_span(const struct boot_time *t, struct s14_text *out, const char *name,
-		       unsigned from, unsigned to, uint32_t cpu, bool *first)
+/* A span of the start into the OS, when both its ends were reached; the
+ * first of a list in parentheses (*first false and *open true) opens them. */
+static void span_in(const struct boot_time *t, struct s14_text *out, const char *name,
+		    unsigned from, unsigned to, uint32_t cpu, bool *first, bool *open)
 {
 	if (!reached(t, from) || !reached(t, to))
 		return;
-	s14_text_str(out, *first ? " " : ", ");
+	s14_text_str(out, *open ? " (" : *first ? " " : ", ");
+	*open = false;
 	s14_text_str(out, name);
 	s14_text_str(out, " ");
 	text_ms(out, span_us(t, from, to, cpu));
 	*first = false;
+}
+
+static void start_span(const struct boot_time *t, struct s14_text *out, const char *name,
+		       unsigned from, unsigned to, uint32_t cpu, bool *first)
+{
+	bool open = false;
+
+	span_in(t, out, name, from, to, cpu, first, &open);
 }
 
 /* The start into the OS in spans, from the hand-over's start to the kernel
@@ -527,7 +538,8 @@ static void start_span(const struct boot_time *t, struct s14_text *out, const ch
  * with the quad reply test in it, the copy's reads,
  * its CRC, the return to the user area and the image check; then the log's
  * tidy, the release (the slave's own staging, CRC and check, with its
- * request and reply), the slave's server stop, the slave's OS start, the
+ * request and reply), the slave's server stop, the slave's OS start (with
+ * its teardown, kernel load, entry and OS start when its beacons came), the
  * master's teardown and the kernel's load to the OS's entry. */
 static bool load_line(const struct boot_time *t, uint32_t cpu, struct s14_text *out)
 {
@@ -568,6 +580,20 @@ static bool start_line(const struct boot_time *t, uint32_t cpu, struct s14_text 
 	start_span(t, out, "release", BOOT_TIME_RELEASE_SENT, BOOT_TIME_RELEASED, cpu, &first);
 	start_span(t, out, "server stop", BOOT_TIME_RELEASED, BOOT_TIME_SERVER_STOP, cpu, &first);
 	start_span(t, out, "slave os", BOOT_TIME_SERVER_STOP, BOOT_TIME_SLAVE_OS, cpu, &first);
+	if (reached(t, BOOT_TIME_SLAVE_OS)) {
+		bool in = false, open = true;
+
+		span_in(t, out, "its teardown", BOOT_TIME_SERVER_STOP, BOOT_TIME_SLAVE_KERNEL, cpu,
+			&in, &open);
+		span_in(t, out, "kernel load", BOOT_TIME_SLAVE_KERNEL, BOOT_TIME_SLAVE_RETURNED, cpu,
+			&in, &open);
+		span_in(t, out, "entry", BOOT_TIME_SLAVE_RETURNED, BOOT_TIME_SLAVE_JUMP, cpu, &in,
+			&open);
+		span_in(t, out, "os to PA4 high", BOOT_TIME_SLAVE_JUMP, BOOT_TIME_SLAVE_OS, cpu, &in,
+			&open);
+		if (!open)
+			s14_text_str(out, ")");
+	}
 	start_span(t, out, "teardown", BOOT_TIME_TEARDOWN, BOOT_TIME_KERNEL_CALL, cpu, &first);
 	start_span(t, out, "kernel to os", BOOT_TIME_KERNEL_CALL, BOOT_TIME_OS_ENTRY, cpu, &first);
 	start_span(t, out, "in all", BOOT_TIME_HANDOFF,

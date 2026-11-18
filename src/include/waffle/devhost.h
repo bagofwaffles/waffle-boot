@@ -92,6 +92,9 @@ extern volatile uint32_t opxy_ho_slave_delay_ms;
 #define OPXY_HO_MARK_RETURNED 7u	/* the kernel returned (after its last load call) */
 #define OPXY_HO_MARK_JUMP     8u	/* the last C before the jump to RCU0_SVECT0 */
 #define OPXY_HO_MARK_MS       2u
+/* A timing build's beacons: the slave's PB2 low this long at each of its
+ * hand-over steps (opxy_handover.c), seen by the master on PC5. */
+#define OPXY_HO_BEACON_US    20u
 #define OPXY_HO_LINE_PA6    0x01u
 #define OPXY_HO_LINE_PC5    0x02u
 

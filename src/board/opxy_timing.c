@@ -7,12 +7,16 @@
  * just switched the CDC sink on (S-14.013) gets all of it. At a hand-over it
  * leaves the report at OPXY_BOOT_TIME_RECORD, outside everything an OS image
  * may load over that this project builds, and the test OS built with the
- * option logs it. That record departs from S-01.018 in this build alone.
+ * option logs it. That record departs from S-01.018 in this build alone, and
+ * so do the slave's beacons on PB2 after its server stop (opxy_handover.c),
+ * which S-09's attention rule does not foresee; the bridge is down by then.
  */
 #include "waffle/board/opxy_boot.h"
 
 #if OPXY_BOOT_TIMING
+#include "waffle/board/opxy.h"
 #include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x_port.h"
 #include "waffle/s01_memmap.h"
 
 /* The record lies below the display record, clear of it. */
@@ -447,6 +451,25 @@ void opxy_timing_pa6(bool start, bool high)
 		high_seen = true;
 		OPXY_TIME(BOOT_TIME_SLAVE_OS);
 	}
+}
+
+void opxy_timing_pc5(bool start)
+{
+	static const uint8_t step[] = {
+		BOOT_TIME_SLAVE_TEARDOWN, BOOT_TIME_SLAVE_KERNEL, BOOT_TIME_SLAVE_RETURNED,
+		BOOT_TIME_SLAVE_JUMP,
+	};
+	static unsigned n;
+	static bool last;
+	const bool high = wb_gpio_get(OPXY_PC5);
+
+	if (start) {
+		n = 0;
+	} else if (last && !high && n < sizeof step) {
+		OPXY_TIME(step[n]);
+		n++;
+	}
+	last = high;
 }
 
 void opxy_timing_read(uint32_t bytes)

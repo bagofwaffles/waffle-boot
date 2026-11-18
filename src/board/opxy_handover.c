@@ -123,6 +123,36 @@ static HO_TEXT void ho_pulse(uint32_t step)
 	ho_wait_us(OPXY_HO_MARK_MS * 1000u);
 }
 
+/*
+ * A timing build (OPXY_BOOT_TIMING): the slave's own steps after its server
+ * stop as low pulses of OPXY_HO_BEACON_US on its attention line PB2, which
+ * the master reads as PC5 while it waits for PA6 (S-05.032): its teardown
+ * begun, the kernel call next, the kernel returned, the jump next. PB2 is
+ * high again before the jump, so the OS finds it as without them, and PA4,
+ * the ready line, is not touched. ho_beacon_on is set by the slave's
+ * teardown alone.
+ */
+#if OPXY_BOOT_TIMING
+static HO_DATA uint32_t ho_beacon_on;
+
+static HO_TEXT void ho_beacon(void)
+{
+	const uint32_t start = (uint32_t)wb_core_cycles();
+	const uint32_t n = OPXY_HO_BEACON_US * ho_cpu_us;
+
+	if (ho_beacon_on == 0u)
+		return;
+	wb_mmr_write32(PORT_DATA_CLR(WB_PORT_B), 1u << 2);	/* PB2 low */
+	while ((uint32_t)wb_core_cycles() - start < n)
+		;
+	wb_mmr_write32(PORT_DATA_SET(WB_PORT_B), 1u << 2);	/* PB2 high */
+}
+#define HO_BEACON(on) (ho_beacon_on = (on))
+#else
+#define ho_beacon() ((void)0)
+#define HO_BEACON(on) ((void)0)
+#endif
+
 /* The hand-over options in force; 0 (the normal hand-over) until a developer
  * request sets them (waffle/devhost.h). */
 volatile uint32_t opxy_ho_flags;
@@ -169,6 +199,7 @@ static void HO_TEXT ho_side(wb_mmr_addr ctl, wb_mmr_addr dflt_reg, wb_mmr_addr a
 /* S-05.011, S-05.014, S-05.016: the last C before the jump. */
 void HO_TEXT opxy_ho_finish(void)
 {
+	ho_beacon();
 	ho_pulse(OPXY_HO_MARK_RETURNED);
 	if (opxy_ho_cache.on != 0u) {
 		ho_side(L1IM_ICTL, L1IM_ICPLB_DFLT, L1IM_ICPLB_ADDR(0), L1IM_ICPLB_DATA(0),
@@ -179,6 +210,7 @@ void HO_TEXT opxy_ho_finish(void)
 	}
 	ho_dmc_idle();
 	ho_pulse(OPXY_HO_MARK_JUMP);
+	ho_beacon();
 }
 
 /*
@@ -474,15 +506,20 @@ int opxy_os_wait(struct opxy_master *m)
 	wb_mmr_write32(PINT_EDGE_CLR(0u), PA6_PINT_BIT);	/* level mode */
 	wb_mmr_write32(PINT_INV_CLR(0u), PA6_PINT_BIT);		/* high is active */
 	wb_mmr_sync();
-	while (wb_gpio_get(OPXY_PA6))
+	OPXY_TIMING_PC5(true);
+	while (wb_gpio_get(OPXY_PA6)) {
+		OPXY_TIMING_PC5(false);
 		if (wb_time_passed(end))
 			return -1;
+	}
 	OPXY_TIME(BOOT_TIME_SERVER_STOP);
 	wb_mmr_write32(PINT_LATCH(0u), PA6_PINT_BIT);		/* W1C */
 	wb_mmr_sync();
-	while ((wb_mmr_read32(PINT_LATCH(0u)) & PA6_PINT_BIT) == 0u)
+	while ((wb_mmr_read32(PINT_LATCH(0u)) & PA6_PINT_BIT) == 0u) {
+		OPXY_TIMING_PC5(false);
 		if (wb_time_passed(end))
 			return -1;
+	}
 	OPXY_TIME(BOOT_TIME_SLAVE_OS);
 	return 0;
 }
@@ -494,6 +531,7 @@ void opxy_teardown_master(void *ctx)
 
 	OPXY_TIME(BOOT_TIME_TEARDOWN);
 	ho_marks_cpu = 0u;		/* OPXY_HO_SLAVE_MARKS is the slave's alone */
+	HO_BEACON(0u);
 	ho_cpu_us = m->hw.time.cycles_per_us;
 	ho_mark(OPXY_HO_M_TEARDOWN);
 	teardown_master(m);
@@ -549,6 +587,8 @@ void opxy_teardown_slave(void *ctx)
 	ho_marks_cpu = OPXY_HO_BIT(OPXY_HO_SLAVE_MARKS) ? s->hw.time.cycles_per_us : 0u;
 	ho_marks_load = 0u;
 	ho_cpu_us = s->hw.time.cycles_per_us;
+	HO_BEACON(1u);
+	ho_beacon();
 	ho_mark(OPXY_HO_M_TEARDOWN);
 	ho_pulse(OPXY_HO_MARK_TEARDOWN);
 	if (OPXY_HO_BIT(OPXY_HO_NO_SLAVE_TEAR)) {
@@ -558,6 +598,7 @@ void opxy_teardown_slave(void *ctx)
 		ho_pulse(OPXY_HO_MARK_ENTRY);
 		slave_jump_delay(s);
 		ho_pulse(OPXY_HO_MARK_DELAYED);
+		ho_beacon();
 		return;
 	}
 	if (!OPXY_HO_BIT(OPXY_HO_NO_TIMER_STOP)) {
@@ -584,6 +625,7 @@ void opxy_teardown_slave(void *ctx)
 	ho_pulse(OPXY_HO_MARK_ENTRY);
 	slave_jump_delay(s);
 	ho_pulse(OPXY_HO_MARK_DELAYED);
+	ho_beacon();
 }
 
 /*

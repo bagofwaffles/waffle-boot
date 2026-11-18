@@ -98,6 +98,10 @@ void opxy_timing_leave(void);
  * PA6 at its start (start true), then at each sample; its first low is
  * the slave's server stop, the first high after it the slave's OS. */
 void opxy_timing_pa6(bool start, bool high);
+/* The slave's beacons on PC5 while the master waits for its OS: PC5 read
+ * (start true: its level taken, the count afresh); each fall is the slave's
+ * next step (opxy_handover.c's ho_beacon()). */
+void opxy_timing_pc5(bool start);
 /* Each pass of held mode: the report, a line every 100 ms, then 2 s apart. */
 void opxy_timing_held(struct opxy_master *m);
 #define OPXY_STARTUP opxy_timing_startup
@@ -113,6 +117,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_REREAD() opxy_timing_reread()
 #define OPXY_TIMING_LEAVE() opxy_timing_leave()
 #define OPXY_TIMING_HELD(m) opxy_timing_held(m)
+#define OPXY_TIMING_PC5(start) opxy_timing_pc5(start)
 #define OPXY_TIMING_LOGO_KEPT(kept) \
 	((kept) ? (void)(opxy_boot_time.flags |= BOOT_TIME_LOGO_KEPT) : (void)0)
 #else
@@ -131,6 +136,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_REREAD() ((void)0)
 #define OPXY_TIMING_LEAVE() ((void)0)
 #define OPXY_TIMING_HELD(m) ((void)0)
+#define OPXY_TIMING_PC5(start) ((void)0)
 #define OPXY_TIMING_LOGO_KEPT(kept) ((void)(kept))
 #endif
 #if defined(OPXY_BOOT_TIMING_ON) && defined(OPXY_TEST_OS)
