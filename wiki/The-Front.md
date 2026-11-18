@@ -92,6 +92,5 @@ Any of these can leave a unit that only an external programmer on the SPI flash 
 - a front that fails before its key read, or one that passes its trial start and fails later;
 - an image that passes the stream check (block headers only) but hangs, since a trusted slot starts on
   every reset;
-- the first stage, which nothing here repairs. The bootloader writes it only in a package install with the
-  session upgrade option (Protected writes) on and the write confirmed on the unit (S-02.070, S-11.096); a cut then leaves
-  nothing that starts (S-02.072).
+- the first stage, which nothing here repairs. The bootloader does not write it: the package's first-stage
+  step is switched off (S-11.073).

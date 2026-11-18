@@ -41,7 +41,8 @@
  * S-11.073: the steps this build runs. A step set false reports Skipped
  * when the package carries its component, and neither writes nor sends
  * anything; setting its line true runs it again. Only the Nordic and PSoC
- * steps can be switched off.
+ * steps and the first-stage step can be switched off; the first stage's
+ * line is the build switch OPXY_FIRST_STAGE_STEP (waffle/board/opxy_services.h).
  */
 static const bool step_on[S11_STEP_DONE] = {
 	[S11_STEP_CONTENT] = true,
@@ -50,8 +51,12 @@ static const bool step_on[S11_STEP_DONE] = {
 	[S11_STEP_BLE] = false,
 	[S11_STEP_BLE_BOOTLOADER] = false,
 	[S11_STEP_KEYBOARD] = false,
-	[S11_STEP_SPIBOOT] = true,
+	[S11_STEP_SPIBOOT] = OPXY_FIRST_STAGE_STEP != 0,
 };
+
+#if OPXY_FIRST_STAGE_STEP
+bool opxy_first_stage_step = true;
+#endif
 
 uint8_t opxy_steps_off(void)
 {
@@ -61,6 +66,10 @@ uint8_t opxy_steps_off(void)
 		if (!step_on[step])
 			off |= S11_STEP_BIT(step);
 	}
+#if OPXY_FIRST_STAGE_STEP
+	if (!opxy_first_stage_step)
+		off |= S11_STEP_BIT(S11_STEP_SPIBOOT);
+#endif
 	return off & S11_STEPS_SWITCHABLE;
 }
 
@@ -1113,7 +1122,8 @@ static void install(struct opxy_master *m, const struct s11_package_ops *pkg,
 	sv->extracted_sizes = sizes;	/* S-11.095: kept for this run */
 	sv->extracted = true;
 	opxy_install_begin(m, in->option, checked.forced, 0);
-	cur.env.confirmed = s11_confirm(&cur.st, in->option, confirm_ask, m);
+	cur.env.confirmed = s11_confirm(&cur.st, in->option, cur.env.off,
+					confirm_ask, m);
 	out->stock = s11_return_to_stock(in->option, checked.te_signed,
 					 (cur.env.confirmed &
 					  S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u);

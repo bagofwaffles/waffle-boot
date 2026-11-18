@@ -134,10 +134,12 @@ struct s11_step_ops {
 
 /* A step's bit in s11_step_env's off and confirmed. */
 #define S11_STEP_BIT(step) ((uint8_t)(1u << (step)))
-/* The steps S-11.073 lets a build switch off. */
+/* The steps S-11.073 lets a build switch off: the Nordic and PSoC steps
+ * and the first-stage step. */
 #define S11_STEPS_SWITCHABLE (S11_STEP_BIT(S11_STEP_BLE) | \
 			      S11_STEP_BIT(S11_STEP_BLE_BOOTLOADER) | \
-			      S11_STEP_BIT(S11_STEP_KEYBOARD))
+			      S11_STEP_BIT(S11_STEP_KEYBOARD) | \
+			      S11_STEP_BIT(S11_STEP_SPIBOOT))
 
 struct s11_step_env {
 	const struct s11_staged *staged;
@@ -164,9 +166,10 @@ bool s11_run_nordic(const struct s11_staged *st, uint8_t off);
 /*
  * S-11.096: the protected components the package carries, the bootloader
  * first, each asked for on the unit; the bits of those confirmed. With the
- * option off, or ask NULL, nothing is asked and none is confirmed.
+ * option off, or ask NULL, nothing is asked and none is confirmed; a step
+ * switched off in `off` (S-11.073) is not asked for.
  */
-uint8_t s11_confirm(const struct s11_staged *st, bool option,
+uint8_t s11_confirm(const struct s11_staged *st, bool option, uint8_t off,
 		    bool (*ask)(void *ctx, enum s11_component c), void *ctx);
 
 /* s11_run with each step's result from s11_step_result(); the run's

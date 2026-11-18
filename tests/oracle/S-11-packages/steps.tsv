@@ -168,18 +168,30 @@ bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""prese
 bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_verified"", ""write_ok"": 1, ""written_here"": 1}"	Skipped
 bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_bad"", ""write_ok"": 1, ""written_here"": 0}"	Failure
 bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_bad"", ""write_ok"": 1, ""written_here"": 1}"	Failure
-spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""write_ok"": 1}"	Not found
-spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""write_ok"": 0}"	Not found
-spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""write_ok"": 1}"	Not found
-spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""write_ok"": 0}"	Not found
-spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 0, ""write_ok"": 1}"	Not found
-spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 0, ""write_ok"": 0}"	Not found
-spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""write_ok"": 1}"	Skipped
-spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""write_ok"": 0}"	Skipped
-spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""write_ok"": 1}"	Skipped
-spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""write_ok"": 0}"	Skipped
-spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""write_ok"": 1}"	OK
-spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""write_ok"": 0}"	Failure
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 0, ""switched_on"": 1, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 0, ""switched_on"": 1, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""switched_on"": 1, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""switched_on"": 1, ""write_ok"": 1}"	OK
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""switched_on"": 1, ""write_ok"": 0}"	Failure
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 0, ""switched_on"": 0, ""write_ok"": 1}"	Not found
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 0, ""switched_on"": 0, ""write_ok"": 0}"	Not found
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""switched_on"": 0, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""switched_on"": 0, ""write_ok"": 0}"	Skipped
 ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
 ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 0}"	Not found
 ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1, ""write_ok"": 1}"	Not found
@@ -480,9 +492,10 @@ os	"{""option"": 0, ""present"": 0, ""staged"": ""bad"", ""write_ok"": 1}"	Not f
 bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""write_ok"": 1}"	Bad file
 bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""write_ok"": 1}"	Skipped
 bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""write_ok"": 1}"	Skipped
-spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""staged"": ""bad"", ""write_ok"": 1}"	Bad file
-spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""staged"": ""bad"", ""write_ok"": 1}"	Skipped
-spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""staged"": ""bad"", ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Bad file
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""staged"": ""bad"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
 ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Bad file
 ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Bad file
 ble bootloader	"{""forced"": 0, ""in_dfu"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""staged"": ""bad"", ""switched_on"": 1, ""write_ok"": 1}"	Bad file
@@ -501,9 +514,10 @@ os	"{""option"": 0, ""present"": 0, ""staged"": ""read_error"", ""write_ok"": 1}
 bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""write_ok"": 1}"	Internal error
 bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""write_ok"": 1}"	Skipped
 bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""write_ok"": 1}"	Skipped
-spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""staged"": ""read_error"", ""write_ok"": 1}"	Internal error
-spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""staged"": ""read_error"", ""write_ok"": 1}"	Skipped
-spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""staged"": ""read_error"", ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Internal error
+spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 1, ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 1, ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Skipped
+spiboot	"{""confirmed"": 1, ""option"": 1, ""present"": 1, ""staged"": ""read_error"", ""switched_on"": 0, ""write_ok"": 1}"	Skipped
 ble	"{""forced"": 0, ""in_dfu"": 1, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Internal error
 ble	"{""forced"": 0, ""in_dfu"": 0, ""present"": 1, ""rel"": ""newer"", ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Internal error
 ble bootloader	"{""forced"": 0, ""in_dfu"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""slot"": 0, ""staged"": ""read_error"", ""switched_on"": 1, ""write_ok"": 1}"	Internal error

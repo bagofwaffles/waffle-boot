@@ -674,7 +674,7 @@ class Runs(unittest.TestCase):
         skips = []
         for step, code in want['ran']:
             if code == m.SKIPPED:
-                if step in m.PROTECTED:
+                if step in m.PROTECTED and step not in steps_off:
                     why = m.SKIP_OPTION_OFF if not option else m.SKIP_NOT_CONFIRMED
                     self.assertNotIn(step, confirmed, tag)
                 else:
@@ -698,7 +698,7 @@ class Runs(unittest.TestCase):
 
     @scenario('S-11/SC-11-SWITCHED-OFF')
     def test_SC_11_SWITCHED_OFF(self):
-        """This version's steps 3-5 switched off (S-11.073). The SC-11-RUN-OK package, option off: no DFU entry,
+        """This version's steps 3-6 switched off (S-11.073). The SC-11-RUN-OK package, option off: no DFU entry,
         no boot-slot query, nothing sent to the Nordic or the PSoC; the version read and the exit query made;
         steps 2-6 Skipped with their reasons; done, os_version the package's, the coprocessor values unchanged;
         as the model's run. Variants: the Nordic refusing DFU (the same, done); a package of only Nordic and
@@ -711,7 +711,7 @@ class Runs(unittest.TestCase):
                           'firmware/backplane/bin/backplane.version': b'1.2.0+0\n',
                           'firmware/firmware.version': b'1.2.0+0\n'})
         os_only = fwzip.build({'os': os_img(300, 1)}, version=(1, 2, 0))
-        off = ['set off 3,4,5', 'set confirm 0 0']
+        off = ['set off 3,4,5,6', 'set confirm 0 0']
         s = Session()
         for tag, zz, extra in (('off', z, off), ('nodfu', z, off + ['set dfu 0']), ('only', only, off),
                                ('os_only', os_only, off)):
@@ -730,7 +730,7 @@ class Runs(unittest.TestCase):
                 self.assertEqual(out[tag + '/copro'], '0.0.0.0 0.0.0.0 0.0.0.0')
         self.assertEqual([t for t in log(out['off/log']) if t.startswith('skip:')],
                          ['skip:2=option_off', 'skip:3=switched_off', 'skip:4=switched_off', 'skip:5=switched_off',
-                          'skip:6=option_off'])
+                          'skip:6=switched_off'])
         for tag in ('off', 'nodfu'):
             self.assertEqual(Result(out[tag]).outcome, 'done', tag)
             self.assertEqual(out[tag + '/meta'], '0x0 1.2.0.0', tag)
@@ -741,12 +741,14 @@ class Runs(unittest.TestCase):
 
     @scenario('S-11/SC-11-CONFIRM')
     def test_SC_11_CONFIRM(self):
-        """S-11.096 with this version's steps. The SC-11-RUN-OK package (TE-signed), option on: the bootloader
+        """S-11.096 with this version's steps 3-5 and the first-stage step switched on, as the host build
+        tests its dormant code. The SC-11-RUN-OK package (TE-signed), option on: the bootloader
         asked first, then the first stage, both before the run's first write; each protected step writes only
         when its own component was confirmed; not confirmed: Skipped, not confirmed, and no return to the
         factory bootloader. The option off: nothing asked. A package without protected components: nothing
         asked. The same package over the CDC firmware command and the MIDI transfer: the same asks. The same
-        package installed again: asked again."""
+        package installed again: asked again. Leg `this_version`, the first stage switched off too (S-11.073):
+        only the bootloader asked, the first stage Skipped, switched off, and not written."""
         z = full_zip(version=(1, 2, 0))
         os_only = fwzip.build({'os': os_img(300, 1)}, version=(1, 2, 0))
         body = package('confirm_body', z, pre=False)
@@ -755,6 +757,7 @@ class Runs(unittest.TestCase):
                 ('option_off', z, 0, (1, 1)), ('no_protected', os_only, 1, (1, 1))]
         for tag, zz, opt, (bl, fs) in legs:
             self.install(s, tag, zz, option=opt, extra=['set off 3,4,5', 'set confirm %d %d' % (bl, fs)])
+        self.install(s, 'this_version', z, option=1, extra=['set off 3,4,5,6', 'set confirm 1 1'])
         for tag, fwcmd in (('cdc', 1), ('midi', 0)):
             s.add(*setup(), 'set off 3,4,5', 'set confirm 1 0', 'load ' + body)
             s.add('install body %d 1 -' % fwcmd, name=tag)
@@ -766,7 +769,7 @@ class Runs(unittest.TestCase):
         for tag, zz, opt, (bl, fs) in legs:
             with self.subTest(leg=tag):
                 answer = {'bootloader': bl, 'spiboot': fs}.get
-                lg, r = self.check_run(out, tag, staged_of(zz), bool(opt), steps_off=m.STEPS_OFF, answer=answer)
+                lg, r = self.check_run(out, tag, staged_of(zz), bool(opt), steps_off=(3, 4, 5), answer=answer)
                 asks = [i for i, t in enumerate(lg) if t.startswith('confirm:')]
                 if asks:
                     first_write = min(i for i, t in enumerate(lg) if t.split(':')[0] in WRITES or t in STEP_OF)
@@ -780,6 +783,14 @@ class Runs(unittest.TestCase):
                                      'S-11.091: a return to the factory bootloader only when confirmed')
         self.assertEqual([t for t in log(out['yes/log']) if t.startswith('confirm:')],
                          ['confirm:bootloader=1', 'confirm:spiboot=1'])
+        self.assertEqual(m.STEPS_OFF, (3, 4, 5, 6))
+        lg, r = self.check_run(out, 'this_version', staged_of(z), True, steps_off=m.STEPS_OFF,
+                               answer=lambda c: True)
+        self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=1'])
+        self.assertIn('skip:6=switched_off', lg)
+        self.assertIn('bootloader_write', lg)
+        self.assertNotIn('spiboot_write', lg)
+        self.assertEqual(r.outcome, 'done')
         self.assertEqual([t for t in log(out['no/log']) if t.startswith('skip:')],
                          ['skip:2=not_confirmed', 'skip:3=switched_off', 'skip:4=switched_off', 'skip:5=switched_off',
                           'skip:6=not_confirmed'])

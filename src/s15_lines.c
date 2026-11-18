@@ -406,17 +406,17 @@ void s15_handover_frame(void (*put)(void *ctx, uint16_t pixel), void *ctx)
 /* S-15.140: the prompt, eight rows naming every effect. */
 const char *const s15_option_prompt[S15_OPTION_PROMPT_LINES] = {
 	"Allow protected writes until the next reset?",
-	"- Bootloader slots and first stage can be",
-	"  written; a TE package's own returns to stock",
+	"- Installs can write the bootloader slots; a TE",
+	"  package's own returns the unit to stock",
 	"- The host can unlock factory mode and change",
 	"  the serial and identity",
-	"Power cut mid first stage: needs a programmer",
+	"- No install writes the first stage",
 	"",
 	"Hold `2` for 5 s to turn it on",
 };
 const enum s15_style s15_option_prompt_style[S15_OPTION_PROMPT_LINES] = {
 	S15_ST_HEAD, S15_ST_TEXT, S15_ST_TEXT, S15_ST_TEXT, S15_ST_TEXT,
-	S15_ST_ERROR, S15_ST_TEXT, S15_ST_KEYS,
+	S15_ST_TEXT, S15_ST_TEXT, S15_ST_KEYS,
 };
 const char s15_option_item_on[] = "2 Protected writes\tOn";
 const char s15_option_item_off[] = "2 Protected writes\tOff";

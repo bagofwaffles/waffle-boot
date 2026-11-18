@@ -186,6 +186,8 @@ static enum s11_result protected_step(const struct s11_step_env *env,
 {
 	if (!s11_staged_present(env->staged, c))
 		return S11_NOT_FOUND;
+	if (off(env, step))
+		return S11_SKIPPED;	/* S-11.073: no SPI flash access */
 	if (!env->option)
 		return S11_SKIPPED;	/* no SPI flash access (S-02.057) */
 	if ((env->confirmed & S11_STEP_BIT(step)) == 0u)
@@ -294,6 +296,8 @@ enum s11_skip s11_step_skip(unsigned step, const struct s11_step_env *env)
 	if (!carried(step, env->staged))
 		return S11_SKIP_NONE;
 	if (step == S11_STEP_BOOTLOADER || step == S11_STEP_SPIBOOT) {
+		if (off(env, step))
+			return S11_SKIP_SWITCHED_OFF;
 		if (!env->option)
 			return S11_SKIP_OPTION_OFF;
 		if ((env->confirmed & S11_STEP_BIT(step)) == 0u)
@@ -313,9 +317,10 @@ bool s11_run_nordic(const struct s11_staged *st, uint8_t off_steps)
 		carried(S11_STEP_BLE_BOOTLOADER, st));
 }
 
-uint8_t s11_confirm(const struct s11_staged *st, bool option,
+uint8_t s11_confirm(const struct s11_staged *st, bool option, uint8_t off,
 		    bool (*ask)(void *ctx, enum s11_component c), void *ctx)
 {
+	const uint8_t on = (uint8_t)~(off & S11_STEPS_SWITCHABLE);
 	uint8_t confirmed = 0;
 
 	if (!option || ask == NULL)
@@ -323,7 +328,8 @@ uint8_t s11_confirm(const struct s11_staged *st, bool option,
 	if (s11_staged_present(st, S11_C_BOOTLOADER) &&
 	    ask(ctx, S11_C_BOOTLOADER))
 		confirmed |= S11_STEP_BIT(S11_STEP_BOOTLOADER);
-	if (s11_staged_present(st, S11_C_SPIBOOT) && ask(ctx, S11_C_SPIBOOT))
+	if ((on & S11_STEP_BIT(S11_STEP_SPIBOOT)) != 0u &&
+	    s11_staged_present(st, S11_C_SPIBOOT) && ask(ctx, S11_C_SPIBOOT))
 		confirmed |= S11_STEP_BIT(S11_STEP_SPIBOOT);
 	return confirmed;
 }

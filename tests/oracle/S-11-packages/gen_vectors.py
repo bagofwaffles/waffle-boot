@@ -775,9 +775,11 @@ def step_rows():
         else:
             exp = 'Failure'
         rows.append(['bootloader', json.dumps(c, sort_keys=True), exp])
-    for p, (opt, conf), ok in itertools.product([0, 1], opt_conf, [1, 0]):
-        c = dict(present=p, option=opt, confirmed=conf, write_ok=ok)
-        exp = 'Not found' if not p else ('Skipped' if not opt or not conf else ('OK' if ok else 'Failure'))
+    # S-11.072 with the step switched on; S-11.073 with it off: Not found or Skipped, whatever the option and
+    # the answers
+    for on, p, (opt, conf), ok in itertools.product([1, 0], [0, 1], opt_conf, [1, 0]):
+        c = dict(switched_on=on, present=p, option=opt, confirmed=conf, write_ok=ok)
+        exp = 'Not found' if not p else ('Skipped' if not on or not opt or not conf else ('OK' if ok else 'Failure'))
         rows.append(['spiboot', json.dumps(c, sort_keys=True), exp])
     # S-11.069-S-11.071 with the step switched on; S-11.073 with it off: Not found or Skipped, nothing else
     for on, p, rel, forced, dfu, ok in itertools.product([1, 0], [0, 1], ['equal', 'newer'], [0, 1], [1, 0],
@@ -824,9 +826,11 @@ def step_rows():
                  'Skipped'),
                 ('bootloader', dict(present=1, option=1, confirmed=0, rel='newer', forced=0, dev=0, write_ok=1),
                  'Skipped'),
-                ('spiboot', dict(present=1, option=1, confirmed=1, write_ok=1), bad),
-                ('spiboot', dict(present=1, option=0, confirmed=0, write_ok=1), 'Skipped'),
-                ('spiboot', dict(present=1, option=1, confirmed=0, write_ok=1), 'Skipped'),
+                ('spiboot', dict(switched_on=1, present=1, option=1, confirmed=1, write_ok=1), bad),
+                ('spiboot', dict(switched_on=1, present=1, option=0, confirmed=0, write_ok=1), 'Skipped'),
+                ('spiboot', dict(switched_on=1, present=1, option=1, confirmed=0, write_ok=1), 'Skipped'),
+                # S-11.073: a switched-off step makes no check
+                ('spiboot', dict(switched_on=0, present=1, option=1, confirmed=1, write_ok=1), 'Skipped'),
                 ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1), bad),
                 # S-11.069: the check before the step's own DFU-mode queries
                 ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=0, write_ok=1), bad),
@@ -901,20 +905,25 @@ def run_rows():
                                    'Not found'], 'done', 1, 1),
         ('content_only_fails', 1, 0, 0, ['Failure'], 'failed', 1, 1),
         ('nordic_no_dfu', 0, 1, 0, [], 'failed', 0, 1),
-        # S-11.073: this version's steps 3-5 switched off. Nordic images present: no DFU entry, so a Nordic
-        # refusal changes nothing
+        # S-11.073: this version's steps 3-6 switched off. Nordic images present: no DFU entry, so a Nordic
+        # refusal changes nothing; the first stage is neither asked for nor written, whatever the option
         ('this_version', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'Skipped'], 'done', 1,
          1, off, ()),
         ('this_version_nordic_refuses_dfu', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
                                                        'Skipped'], 'done', 0, 1, off, ()),
-        ('this_version_confirmed', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'OK'], 'done', 1,
-         1, off, (2, 6)),
+        ('this_version_confirmed', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped'], 'done',
+         1, 1, off, (2,)),
         ('this_version_not_confirmed', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
                                                   'Skipped'], 'done', 1, 1, off, ()),
-        ('this_version_first_stage_only', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'OK'],
-         'done', 1, 1, off, (6,)),
+        ('this_version_first_stage_only', 0, 1, 1, ['OK', 'OK', 'Not found', 'Skipped', 'Skipped', 'Skipped',
+                                                     'Skipped'], 'done', 1, 1, off, ()),
         ('this_version_only_switched_off', 0, 1, 0, ['Not found', 'Not found', 'Not found', 'Skipped', 'Skipped',
-                                                      'Skipped', 'Not found'], 'nothing to do', 1, 1, off, ()),
+                                                      'Skipped', 'Skipped'], 'nothing to do', 1, 1, off, ()),
+        # the first-stage step switched on, as in the host build's tests of its dormant code
+        ('first_stage_on_confirmed', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'OK'], 'done', 1,
+         1, (3, 4, 5), (2, 6)),
+        ('first_stage_on_only', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'OK'], 'done', 1,
+         1, (3, 4, 5), (6,)),
         ('this_version_os_fails', 0, 1, 0, ['OK', 'Internal error'], 'failed', 1, 1, off, ()),
     ]
     rows = []

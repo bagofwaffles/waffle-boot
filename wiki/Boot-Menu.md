@@ -42,7 +42,7 @@ the items, the screen says when the OS could not be started, and why.
 | Item | What it does |
 | --- | --- |
 | 1 Developer mode | Off by default. On: shows the developer menu and adds a USB serial port |
-| 2 Protected writes | Lets installs write the bootloader slots and the first stage, and lets a computer change the unit's serial and identity. Hold 2 for 5 s to turn it on; its warning shows while you hold. One press turns it off. Lasts until the next restart. **A power cut while the first stage is written needs a flash programmer** |
+| 2 Protected writes | Lets installs write the bootloader slots, and lets a computer change the unit's serial and identity. Hold 2 for 5 s to turn it on; its warning shows while you hold. One press turns it off. Lasts until the next restart. No install writes the first stage, with or without it |
 | 3 Color | Off draws every screen in gray |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
 | 6 Start in boot menu | Every start opens this menu. Kept in the SPI flash, not on the drive |

@@ -14,7 +14,7 @@ The master's SPI flash holds everything the unit needs to start: 1 MiB in 256 se
 
 | Offset | Size | Holds | Written by | When |
 | --- | --- | --- | --- | --- |
-| `0x00000` | `0xB000` | The first stage, which picks a slot on every start. Not part of waffle-boot | The package's first-stage step | Only with Protected writes (the session upgrade option) on and the step confirmed on the unit |
+| `0x00000` | `0xB000` | The first stage, which picks a slot on every start. Not part of waffle-boot | Nothing: the package's first-stage step is switched off | Never. A package that carries a first stage installs its other parts and reports this one skipped |
 | `0x0B000` | 1 sector | The metadata mirror: the record and its complement | Every metadata write | Written before the record is erased, and erased once the record reads back |
 | `0x0C000` | 1 sector | The metadata record (`0x34` bytes): serial, versions and install state | Metadata writes; the restore at a start | An OS install (three times), a failed OS load (once), a set-metadata request in factory mode; a start that finds the mirror and the record different |
 | `0x0D000` | 1 sector | The selector: the slot to start, and `verified` (`0x01` means "start it without a check") | The first stage; a slot write; recovery's try, switch and keep | After a slot has been read back; once by the first stage at the start after it |
@@ -65,8 +65,8 @@ longer busy, bounded at 2 s. A part that stays busy fails the operation.
 
 **A footprint for each writer.** Recovery can reach only the slot it writes, that slot's record and the
 selector. The boot store's save can reach only its own sector. A metadata write reaches only the mirror and
-the record. Nothing but the first-stage step, behind Protected writes and a confirmation on the unit,
-writes below `0xB000`.
+the record. Nothing writes below `0xB000`: the package's first-stage step, the only writer of that area,
+is switched off in every build, whatever Protected writes says.
 
 **The slot the unit starts from is not written.** A write goes to the slot the selector does not name. It
 starts only when the selector reads `verified` = `0x01` and, for a package step, the selected slot reads
@@ -113,8 +113,6 @@ These leave a unit that only an **external SPI flash programmer** brings back:
   bad. Recovery refuses it until a plain write has failed, asks for a typed phrase, and holds the power-off,
   but the hold may not close the window.
 - A **front that fails before it reads the keys**, in a slot that is trusted. Recovery lives in the front.
-- A power cut while the **first stage** is written (protected installs only): a cut leaves nothing that
-  starts.
 - Two short windows in a **trial of another front** to Slot 2: a cut during the selector erase at the end
   of the trial write, or in the first instant of the trial start, can leave the tried slot trusted before
   its front has run. They matter only if that new front also fails.

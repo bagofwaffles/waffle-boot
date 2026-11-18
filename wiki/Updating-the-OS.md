@@ -28,9 +28,8 @@ With **Protected writes** off (the default), a package installs content and the 
 the bootloader or the first stage.
 
 > **Warning.** With Protected writes on, an install writes the package's bootloader into a slot in place of
-> waffle-boot, and can write the package's first stage. The unit asks for a 5 s hold of 1 before each.
-> Skip both (8). A power cut while the first stage is written leaves a unit that only a flash programmer
-> brings back.
+> waffle-boot. The unit asks for a 5 s hold of 1 first; skip it with 8. A package's first stage is never
+> written: its step shows `Skipped: not in this version`.
 
 ## If it does not work
 

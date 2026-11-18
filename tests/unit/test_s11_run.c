@@ -480,6 +480,7 @@ static void test_switched_off(void)
 {
 	static const unsigned switchable[] = {
 		S11_STEP_BLE, S11_STEP_BLE_BOOTLOADER, S11_STEP_KEYBOARD,
+		S11_STEP_SPIBOOT,
 	};
 	struct s11_staged st;
 	struct s17_copro copro;
@@ -493,6 +494,8 @@ static void test_switched_off(void)
 	env.copro = &copro;
 	env.nordic_in_dfu = true;
 	env.forced = true;
+	env.option = true;		/* the first stage confirmed: it runs when on */
+	env.confirmed = S11_STEP_BIT(S11_STEP_SPIBOOT);
 
 	/* each switched-off step alone: Skipped, none of its ops called */
 	for (size_t i = 0; i < N(switchable); i++) {
@@ -502,19 +505,20 @@ static void test_switched_off(void)
 		env.off = S11_STEP_BIT(step);
 		CHECK(s11_step_result(step, &env, &count_ops) == S11_SKIPPED,
 		      "step %u switched off: Skipped", step);
-		CHECK(C.sends == 0 && C.slots == 0 && C.psoc == 0,
+		CHECK(C.sends == 0 && C.slots == 0 && C.psoc == 0 &&
+		      C.spiboot == 0,
 		      "step %u switched off: no nordic_send, no nordic_boot_slot, "
-		      "no psoc_program", step);
+		      "no psoc_program, no first-stage write", step);
 		CHECK(s11_step_skip(step, &env) == S11_SKIP_SWITCHED_OFF,
 		      "step %u: the reason", step);
 		env.off = 0;
 		CHECK(s11_step_result(step, &env, &count_ops) == S11_OK &&
-		      (C.sends != 0 || C.psoc != 0),
+		      (C.sends != 0 || C.psoc != 0 || C.spiboot != 0),
 		      "step %u switched on: it runs", step);
 		CHECK(s11_step_skip(step, &env) == S11_SKIP_NONE,
 		      "step %u switched on: no reason", step);
 	}
-	/* only steps 3-5 can be switched off */
+	/* only steps 3-6 can be switched off */
 	env.off = 0xFFu;
 	env.option = true;
 	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER) |
@@ -522,12 +526,22 @@ static void test_switched_off(void)
 	memset(&C, 0, sizeof(C));
 	CHECK(s11_step_result(S11_STEP_OS, &env, &count_ops) == S11_OK &&
 	      s11_step_result(S11_STEP_BOOTLOADER, &env, &count_ops) == S11_OK &&
-	      s11_step_result(S11_STEP_SPIBOOT, &env, &count_ops) == S11_OK &&
-	      C.os == 1 && C.bootloader == 1 && C.spiboot == 1,
-	      "steps 1, 2 and 6 cannot be switched off");
+	      C.os == 1 && C.bootloader == 1,
+	      "steps 1 and 2 cannot be switched off");
+	/* S-11.073: the first stage switched off is Skipped before the option
+	 * and the confirmation, with no SPI flash access */
+	CHECK(s11_step_result(S11_STEP_SPIBOOT, &env, &count_ops) ==
+		      S11_SKIPPED && C.spiboot == 0 &&
+	      s11_step_skip(S11_STEP_SPIBOOT, &env) == S11_SKIP_SWITCHED_OFF,
+	      "step 6 switched off, the option on and confirmed: Skipped");
+	env.option = false;
+	CHECK(s11_step_skip(S11_STEP_SPIBOOT, &env) == S11_SKIP_SWITCHED_OFF,
+	      "step 6 switched off, the option off: switched off");
+	env.option = true;
 	/* absent component: Not found, as switched on (step 4: both images) */
 	st.size[S11_C_BLE] = st.size[S11_C_BACKPLANE] = 0;
 	st.size[S11_C_NORDIC_BL0] = st.size[S11_C_NORDIC_BL1] = 0;
+	st.size[S11_C_SPIBOOT] = 0;
 	for (size_t i = 0; i < N(switchable); i++) {
 		CHECK(s11_step_result(switchable[i], &env, &count_ops) ==
 			      S11_NOT_FOUND &&

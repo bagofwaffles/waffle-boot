@@ -369,6 +369,21 @@ void opxy_install_begin(struct opxy_master *m, bool option, bool forced,
 /* S-11.073: the steps this build has switched off, S11_STEP_BIT() each. */
 uint8_t opxy_steps_off(void);
 /*
+ * S-11.073: the first-stage step. Off in every board build, and nothing at
+ * run time turns it on. The host build has it on (OPXY_FIRST_STAGE_STEP=1),
+ * so that its code is built, analyzed and tested there, and there only a
+ * test can turn it off, through opxy_first_stage_step.
+ */
+#ifndef OPXY_FIRST_STAGE_STEP
+#define OPXY_FIRST_STAGE_STEP 0
+#endif
+#if OPXY_FIRST_STAGE_STEP && defined(__bfin__)
+#error "the first-stage step is off in every board build (S-11.073)"
+#endif
+#if OPXY_FIRST_STAGE_STEP
+extern bool opxy_first_stage_step;
+#endif
+/*
  * S-11.020's crypto on this board (src/board/opxy_crypto.c): SHA-256 and
  * AES on the processor's packet engine when it answers a test of each as
  * the software does, the software otherwise and after any failure. Each

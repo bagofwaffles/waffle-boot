@@ -419,7 +419,7 @@ static void test_confirm_order(void)
 	confirm_st.size[S11_C_BOOTLOADER] = confirm_st.size[S11_C_SPIBOOT] = 1u;
 	confirm_st.size[S11_C_OS] = 1u;
 	W.answers = YES_ALL;
-	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) ==
+	CHECK(s11_confirm(&confirm_st, true, 0u, u_confirm, NULL) ==
 		      (S11_STEP_BIT(S11_STEP_BOOTLOADER) |
 		       S11_STEP_BIT(S11_STEP_SPIBOOT)) &&
 	      W.n_asked == 2 && W.asked[0] == S11_C_BOOTLOADER &&
@@ -427,23 +427,30 @@ static void test_confirm_order(void)
 	      "the bootloader first, then the first stage");
 	memset(&W, 0, sizeof(W));
 	W.answers = 1u << S11_C_SPIBOOT;
-	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) ==
+	CHECK(s11_confirm(&confirm_st, true, 0u, u_confirm, NULL) ==
 		      S11_STEP_BIT(S11_STEP_SPIBOOT) && W.n_asked == 2,
 	      "each answer for its own component");
+	/* S-11.073: a switched-off first stage is not asked for */
 	memset(&W, 0, sizeof(W));
 	W.answers = YES_ALL;
-	CHECK(s11_confirm(&confirm_st, false, u_confirm, NULL) == 0u &&
+	CHECK(s11_confirm(&confirm_st, true, S11_STEPS_SWITCHABLE, u_confirm,
+			  NULL) == S11_STEP_BIT(S11_STEP_BOOTLOADER) &&
+	      W.n_asked == 1 && W.asked[0] == S11_C_BOOTLOADER,
+	      "first stage switched off: only the bootloader asked");
+	memset(&W, 0, sizeof(W));
+	W.answers = YES_ALL;
+	CHECK(s11_confirm(&confirm_st, false, 0u, u_confirm, NULL) == 0u &&
 	      W.n_asked == 0, "option off: nothing asked, nothing confirmed");
-	CHECK(s11_confirm(&confirm_st, true, NULL, NULL) == 0u,
+	CHECK(s11_confirm(&confirm_st, true, 0u, NULL, NULL) == 0u,
 	      "no way to ask: nothing confirmed");
 	confirm_st.size[S11_C_BOOTLOADER] = 0;
-	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) ==
+	CHECK(s11_confirm(&confirm_st, true, 0u, u_confirm, NULL) ==
 		      S11_STEP_BIT(S11_STEP_SPIBOOT) &&
 	      W.n_asked == 1 && W.asked[0] == S11_C_SPIBOOT,
 	      "only what the package carries is asked");
 	confirm_st.size[S11_C_SPIBOOT] = 0;
 	W.n_asked = 0;
-	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) == 0u &&
+	CHECK(s11_confirm(&confirm_st, true, 0u, u_confirm, NULL) == 0u &&
 	      W.n_asked == 0, "no protected component: nothing asked");
 }
 
@@ -528,6 +535,21 @@ static void test_install_confirm(struct s11_check_in *in,
 	copro->nordic_app = (struct s11_version){ 0, 0, 0, 0 };
 	s11_install(&ops, in, copro, &out);
 	CHECK(W.enters == 1 && W.sends == 1, "switched on: entered and sent");
+
+	/* S-11.073: the first-stage step switched off, as in every board
+	 * build: with the option on and every answer yes, only the bootloader
+	 * is asked for, and the first stage is neither checked nor written */
+	in->option = true;
+	ops.off = S11_STEPS_SWITCHABLE;
+	reset(false, true, copro);
+	W.staged_fs = true;
+	s11_install(&ops, in, copro, &out);
+	CHECK(W.n_asked == 1 && W.asked[0] == S11_C_BOOTLOADER &&
+	      W.writes_bl == 1 && W.writes_fs == 0 &&
+	      out.outcome.kind == S11_OUTCOME_DONE,
+	      "first stage switched off: not asked, not written, the run done");
+	ops.off = 0;
+	in->option = false;
 }
 
 int main(void)

@@ -23,7 +23,7 @@
 | **Boot store** | A sector in Slot 2's area (`0xFE000`) holding **Start in boot menu** |
 | **Countdown** | The 15 s before recovery writes for a computer. Switching off in it stops the write |
 | **In-place write** | A write of the running slot while the other slot is bad. The one write with nothing to fall back on |
-| **Protected writes** | A boot menu setting, until the next restart, that lets installs write the slots and the first stage |
+| **Protected writes** | A boot menu setting, until the next restart, that lets installs write the slots. No install writes the first stage |
 | **The eMMC** | The flash memory chip soldered on the board. Holds the OS and the internal drive |
 | **Internal drive** | The yaffs2 volume on the eMMC: user data, content packs, logs, settings |
 | **Boot partitions** | Two eMMC areas holding the OS image; one is active |

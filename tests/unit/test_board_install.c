@@ -307,6 +307,13 @@ static uint8_t flash_scratch[S02_SECTOR_SIZE];
 static unsigned flash_ops_n;		/* reads, erases and programs */
 static unsigned flash_writes;		/* erases and programs */
 static unsigned flash_one_try;		/* operations made with one try */
+static unsigned flash_fs_ops;		/* any of them in the first stage's area */
+
+static void fl_area(uint32_t off)
+{
+	if (off < S02_FIRST_STAGE_MAX)
+		flash_fs_ops++;
+}
 
 /* S-13b.017: the driver's tries while the operation runs. */
 static void fl_tries(void)
@@ -319,6 +326,7 @@ static int fl_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 {
 	(void)ctx;
 	fl_tries();
+	fl_area(off);
 	flash_ops_n++;
 	memcpy(buf, flash_mem + off, len);
 	return 0;
@@ -328,6 +336,7 @@ static int fl_erase(void *ctx, uint32_t off)
 {
 	(void)ctx;
 	fl_tries();
+	fl_area(off);
 	flash_ops_n++;
 	flash_writes++;
 	memset(flash_mem + off, 0xFF, S02_SECTOR_SIZE);
@@ -339,6 +348,7 @@ static int fl_program(void *ctx, uint32_t off, const uint8_t *buf,
 {
 	(void)ctx;
 	fl_tries();
+	fl_area(off);
 	flash_ops_n++;
 	flash_writes++;
 	for (uint32_t i = 0; i < len; i++)
@@ -1831,6 +1841,39 @@ static void test_whole_option_off(void)
 }
 
 /*
+ * S-11.073: the first-stage step switched off, as in every board build. With
+ * the option on and the package carrying both protected images, only the
+ * bootloader is asked for and written; the first stage is not asked for,
+ * reports Skipped on the screen and to the host, and the SPI flash's
+ * first-stage area is not read, erased or programmed.
+ */
+static void test_whole_first_stage_off(void)
+{
+	struct s11_install_result res;
+
+	t_case = "whole: first stage switched off";
+	opxy_first_stage_step = false;
+	CHECK((opxy_steps_off() & S11_STEP_BIT(S11_STEP_SPIBOOT)) != 0u);
+	whole_setup();
+	ks.ev[0] = hold_5s;
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	flash_fs_ops = 0;
+	whole_install(true, false, &res);
+	CHECK(res.reason == S11_REASON_NONE);
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(cdc_has("Install the bootloader?") &&
+	      !cdc_has("Install the first stage?"));
+	CHECK(slot1_holds_image() && first_stage_untouched());
+	CHECK_EQ(flash_fs_ops, 0u);
+	CHECK(cdc_has("[skipped] spiboot: switched off"));
+	CHECK(cdc_has("Not updated: BLE, BLE bootloader, Backplane,") &&
+	      cdc_has("First stage"));
+	CHECK(res.run.end == S11_RUN_DONE);
+	whole_end();
+	opxy_first_stage_step = true;
+}
+
+/*
  * An install submitted over a host link (the firmware command's form,
  * forced) asks the same: nothing the host sends during it is read, a key
  * bitmap forged as the PSoC's included, so the host cannot answer; the
@@ -1896,6 +1939,7 @@ int main(void)
 	test_whole_timeout();
 	test_whole_unreadable();
 	test_whole_option_off();
+	test_whole_first_stage_off();
 	test_whole_host_and_again();
 	wire_s09_release(&S);
 	wire_yaffs_detach(&Y);

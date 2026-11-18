@@ -35,8 +35,8 @@ RESULT_NAMES = ['OK', 'Failure', 'Not found', 'Bad file', 'Internal error', 'CRC
 CONTINUE = {OK, NOT_FOUND, ALREADY, DOWNGRADE, SKIPPED}
 STEPS = ['content', 'os', 'bootloader', 'ble', 'ble bootloader', 'keyboard', 'spiboot']
 PROTECTED = {2, 6}
-SWITCHABLE = (3, 4, 5)    # S-11.073: the steps that can be switched off
-STEPS_OFF = (3, 4, 5)     # S-11.073: the steps this version has switched off
+SWITCHABLE = (3, 4, 5, 6)    # S-11.073: the steps that can be switched off
+STEPS_OFF = (3, 4, 5, 6)     # S-11.073: the steps this version has switched off
 NORDIC_STEPS = (3, 4)
 DONE = 7
 # S-11.096: the protected components, in the order they are asked for, with their steps
@@ -468,6 +468,8 @@ def skip_reason(step, c):
     if step in PROTECTED:
         if not c.get('present'):
             return None
+        if step in SWITCHABLE and not switched_on(step, c):
+            return SKIP_SWITCHED_OFF        # S-11.073: before the option and the confirmation
         if not c.get('option'):
             return SKIP_OPTION_OFF
         if not c.get('confirmed'):
@@ -652,15 +654,16 @@ def return_to_stock(option, te_signed, has_bootloader, bootloader_confirmed=True
 
 # ---- S-11.096
 
-def confirm(components_carried, option, answer):
+def confirm(components_carried, option, answer, steps_off=()):
     """The confirmations before a run: components_carried, the package's components; answer(component) the
-    user's answer on the unit. Returns (asked, confirmed): the components asked for, in order, and the
-    protected steps confirmed. With the option off nothing is asked."""
+    user's answer on the unit; steps_off: the switched-off steps (S-11.073). Returns (asked, confirmed): the
+    components asked for, in order, and the protected steps confirmed. With the option off nothing is asked,
+    nor for a switched-off step."""
     asked, confirmed = [], set()
     if not option:
         return asked, confirmed
     for comp, step in CONFIRM_ORDER:
-        if comp in components_carried:
+        if comp in components_carried and step not in steps_off:
             asked.append(comp)
             if answer(comp):
                 confirmed.add(step)
@@ -726,9 +729,9 @@ def _step_results(dev, option, faults, confirmed=frozenset((2, 6)), steps_off=()
             effect = dict(tree=tree, staged=left)
         elif not any(c in comps for c in _STEP_COMPONENTS[s]):
             r = NOT_FOUND
-        elif s in PROTECTED and (not option or s not in confirmed):
-            r = SKIPPED
         elif s in SWITCHABLE and s in steps_off:
+            r = SKIPPED
+        elif s in PROTECTED and (not option or s not in confirmed):
             r = SKIPPED
         else:
             r = OK
@@ -761,7 +764,7 @@ def install(dev, staged, option=False, faults=None, nordic_dfu_ok=True, cut=None
     component is confirmed). Returns the run dict, with `asked`, or None when cut."""
     extract(dev, staged)
     comps = components(dev.staged)
-    asked, confirmed = confirm(comps, option, answer or (lambda c: False))
+    asked, confirmed = confirm(comps, option, answer or (lambda c: False), tuple(steps_off))
     res, effect = _step_results(dev, option, faults or {}, confirmed, tuple(steps_off))
     co = content_only(dev.staged)
     nordic = [s for s in NORDIC_STEPS if any(c in comps for c in _STEP_COMPONENTS[s])]
