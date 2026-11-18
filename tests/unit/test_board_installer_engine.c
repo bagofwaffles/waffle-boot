@@ -13,6 +13,11 @@
 #define wb_spiflash_erase ram_erase
 #define wb_spiflash_program ram_program
 #define wb_spiflash_status ram_status
+/* The carried image, its length and CRC through pointers, so that a test
+ * can carry another image than the build's. */
+#define opxy_install_image (*inst_image_p)
+#define opxy_install_len (*inst_len_p)
+#define opxy_install_crc (*inst_crc_p)
 #include "../../src/testos/installer_engine.c"
 
 #include <stdio.h>
@@ -23,14 +28,25 @@
 
 /* A stream S-01 boots from a slot: an INIT block of 4 bytes, an empty block
  * and the FINAL block. */
-const uint8_t opxy_install_image[52] = {
+static const uint8_t base_image[52] = {
 	0x04, 0x00, 0x1c, 0xad, 0x00, 0x00, 0xa0, 0x11, 0x04, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x10, 0x17, 0x1e, 0x25, 0x04, 0x08, 0x10, 0xad, 0x00, 0x00,
 	0xa0, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x80, 0x98,
 	0xad, 0x00, 0x00, 0xa0, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
-const uint32_t opxy_install_len = sizeof opxy_install_image;
-const uint32_t opxy_install_crc = 0xDD3F022Cu;
+static uint8_t img[S02_SLOT_CAPACITY + 1u];
+static uint32_t img_len, img_crc;
+const uint8_t (*inst_image_p)[] = (const uint8_t (*)[])img;
+const uint32_t *inst_len_p = &img_len;
+const uint32_t *inst_crc_p = &img_crc;
+
+/* The stream of 52 bytes, the build's image here. */
+static void image_base(void)
+{
+	memcpy(img, base_image, sizeof base_image);
+	img_len = sizeof base_image;
+	img_crc = 0xDD3F022Cu;
+}
 
 static uint8_t mem[S02_FLASH_SIZE], before[S02_FLASH_SIZE];
 static unsigned writes;
@@ -57,6 +73,8 @@ static bool fail_ok;
 static bool fail_rec;		/* a record program reports success, length corrupted */
 static uint8_t fail_left[2];
 static bool right_crc_seen;	/* a record in flash held the image's crc */
+static bool sel_read_fails;	/* every read of the selector fails */
+static bool spoil_on_record;	/* a record program changes a byte of its slot */
 
 /* Byte 0 of slot t's last sector: its start log's first byte (S-02.095). */
 static uint32_t log_byte(unsigned t)
@@ -86,6 +104,8 @@ int ram_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 {
 	(void)ctx;
 	if ((uint64_t)off + len > S02_FLASH_SIZE)
+		return -1;
+	if (sel_read_fails && off <= S02_SELECTOR_OFF && off + len > S02_SELECTOR_OFF)
 		return -1;
 	if (fail_read_op != 0u && sel_nlog == fail_read_op && off <= S02_SELECTOR_OFF &&
 	    off + len > S02_SELECTOR_OFF) {
@@ -133,6 +153,8 @@ int ram_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t len)
 		mem[off + i] &= buf[i];
 	if (fail_rec && (off == S02_RECORD0_OFF || off == S02_RECORD1_OFF) && len > 4u)
 		mem[off + 4u] &= 0x0Fu;
+	if (spoil_on_record && (off == S02_RECORD0_OFF || off == S02_RECORD1_OFF))
+		mem[s02_slot_base(off == S02_RECORD0_OFF ? 0u : 1u) + 20u] ^= 0x01u;
 	if (off >= S02_SELECTOR_OFF && off < S02_SELECTOR_OFF + 2u && sel_nlog < SEL_OPS) {
 		struct sel_op *o = &sel_log[sel_nlog++];
 
@@ -177,6 +199,7 @@ static void setup(unsigned s, bool good)
 	uint8_t *slot = mem + s02_slot_base(s);
 	const uint32_t n = 0x1800u;
 
+	image_base();
 	memset(mem, 0xFF, sizeof mem);
 	memset(mem, 0x5A, S02_MIRROR_OFF);	/* the first stage */
 	for (uint32_t i = 0; i < n; i++)
@@ -195,6 +218,9 @@ static void setup(unsigned s, bool good)
 	fail_ok = false;
 	fail_rec = false;
 	right_crc_seen = false;
+	held_until_restart = false;
+	sel_read_fails = false;
+	spoil_on_record = false;
 	log_prog_n = 0u;
 	log_prog_at = 0u;
 	fail_log = 0u;
@@ -826,13 +852,19 @@ struct fault_case {
 static void test_trial_faults(void)
 {
 	static const struct fault_case cases[] = {
-		/* k = 1, from {00, 01}: every failure ends with index 0x00 programmed. */
+		/* k = 1, from {00, 01}: where verified has bit 0 set, every
+		 * failure ends settled on slot 0, {00, 01}, by programs alone
+		 * (S-02.102 item 6); where it is clear, nothing is written. */
 		{ 0u, 1u, false, { 0x03u, 0x01u }, 0u, S02_ERR_IO, { 0x00u, 0x01u }, 2u },
-		{ 0u, 1u, false, { 0xFFu, 0xFFu }, 0u, S02_ERR_IO, { 0x00u, 0xFFu }, 2u },
-		{ 0u, 1u, false, { 0x00u, 0x01u }, 0u, S02_ERR_IO, { 0x00u, 0x01u }, 2u },
+		{ 0u, 1u, false, { 0xFFu, 0xFFu }, 0u, S02_ERR_IO, { 0x00u, 0x01u }, 3u },
+		{ 0u, 1u, false, { 0x00u, 0x01u }, 0u, S02_ERR_IO, { 0x00u, 0x01u }, 1u },
 		{ 0u, 1u, true, { 0x05u, 0x01u }, 0u, S02_ERR_VERIFY, { 0x00u, 0x01u }, 2u },
-		{ 0u, 1u, true, { 0xFFu, 0x03u }, 0u, S02_ERR_VERIFY, { 0x00u, 0x03u }, 2u },
-		{ 0u, 0u, false, { 0u, 0u }, 1u, S02_ERR_IO, { 0x00u, 0xFFu }, 2u },
+		{ 0u, 1u, true, { 0xFFu, 0x03u }, 0u, S02_ERR_VERIFY, { 0x00u, 0x01u }, 3u },
+		{ 0u, 1u, true, { 0x00u, 0xFFu }, 0u, S02_ERR_VERIFY, { 0x00u, 0x01u }, 2u },
+		{ 0u, 1u, true, { 0x00u, 0x00u }, 0u, S02_ERR_VERIFY, { 0x00u, 0x00u }, 1u },
+		{ 0u, 1u, true, { 0x05u, 0xFEu }, 0u, S02_ERR_VERIFY, { 0x05u, 0xFEu }, 1u },
+		{ 0u, 1u, false, { 0xFFu, 0xFEu }, 0u, S02_ERR_IO, { 0xFFu, 0xFEu }, 1u },
+		{ 0u, 0u, false, { 0u, 0u }, 1u, S02_ERR_IO, { 0x00u, 0x01u }, 3u },
 		/* k = 0, from {01, 01}: nothing is written after a failure. */
 		{ 1u, 1u, false, { 0x03u, 0x05u }, 0u, S02_ERR_IO, { 0x03u, 0x05u }, 1u },
 		{ 1u, 1u, true, { 0x01u, 0x01u }, 0u, S02_ERR_VERIFY, { 0x01u, 0x01u }, 1u },
@@ -864,10 +896,195 @@ static void test_trial_faults(void)
 		CHECK(!trusts((uint32_t)f->sel[0] | (uint32_t)f->sel[1] << 8, k));
 		CHECK(!right_crc_seen);
 		CHECK(only_allowed_changed(k));
-		if (k == 1u) {
-			CHECK(!sel_log[1].erase && sel_log[1].at == 0u && sel_log[1].n == 1u &&
-			      sel_log[1].b[0] == 0x00u);
+		/* no erase after the step's own; the index first, then verified */
+		for (unsigned j = 1; j < sel_nlog; j++)
+			CHECK(!sel_log[j].erase);
+		if (k == 1u && f->nops >= 2u) {
+			const bool index = (f->read_op != 0u ? 0xFFu : f->left[0]) != 0x00u;
+
+			CHECK(!index || (sel_log[1].at == 0u && sel_log[1].n == 1u &&
+					 sel_log[1].b[0] == 0x00u));
+			CHECK(f->nops < (index ? 3u : 2u) ||
+			      (sel_log[f->nops - 1u].at == 1u && sel_log[f->nops - 1u].b[1] == 0x01u));
 		}
+		/* a selector left as it was holds every later write */
+		CHECK(held_until_restart == (k == 1u && f->sel[1] != 0x01u));
+	}
+}
+
+/*
+ * The settling after a failed selector step for slot 1 (S-02.102 item 6),
+ * cut at each of its operations: before it, torn (every result the torn
+ * rules of cut_erase() and cut_program() allow) and after the last. It is
+ * made only where the step left `verified` with bit 0 set, by programs
+ * alone. What one start then reaches, under the factory first stage, slot
+ * 0 (A) good and running, slot 1 (B) whole but tried (its record's check
+ * fails):
+ *   A+   verified 0x01, index 0x00: slot 0 with no check
+ *   A    another verified, index 0x00: slot 0 checked, passes
+ *   B1   another verified, a nonzero index: slot 1 checked, fails; it starts
+ *        once, the trial start, and every later start reaches slot 0
+ *   B+   verified 0x01, a nonzero index: slot 1 with no check, on every start
+ * Each row prints the outcomes reachable. The settling makes no selector
+ * that names slot 1 where the selector it started from did not: every
+ * value cut before or inside the index program keeps the starting
+ * `verified` and a subset of the starting index's bits, and from that
+ * program's end every value names slot 0.
+ */
+#define OUT_A_TRUSTED 0x01u
+#define OUT_A_CHECKED 0x02u
+#define OUT_B_ONCE    0x04u
+#define OUT_B_TRUSTED 0x08u
+
+static unsigned outcome_of(uint32_t v)
+{
+	const bool trusted = (v >> 8) == 0x01u;
+
+	if (s02_selected_slot((uint8_t)v) == 0u)
+		return trusted ? OUT_A_TRUSTED : OUT_A_CHECKED;
+	return trusted ? OUT_B_TRUSTED : OUT_B_ONCE;
+}
+
+static void outcomes_print(const char *cut, unsigned out)
+{
+	printf("    %-30s %s%s%s%s\n", cut, (out & OUT_A_TRUSTED) != 0u ? " A+" : "",
+	       (out & OUT_A_CHECKED) != 0u ? " A" : "", (out & OUT_B_ONCE) != 0u ? " B1" : "",
+	       (out & OUT_B_TRUSTED) != 0u ? " B+" : "");
+}
+
+/* Every value a cut can leave: one value, or every torn result of op over
+ * s; *inherited false when one before the index program's end is not the
+ * starting verified with a subset of the starting index's bits. */
+static unsigned settle_cut(uint32_t s, const struct sel_op *op, uint32_t s0, bool before_index_end,
+			   bool *inherited)
+{
+	unsigned out = 0;
+
+	memset(cut_seen, 0, sizeof cut_seen);
+	cut_nq = 0;
+	if (op == NULL) {
+		cut_reach(s, 1u, 0u);
+	} else if (op->erase) {
+		cut_erase(s, 1u, 0u);
+	} else {
+		uint32_t w = 0xFFFFu;
+
+		for (unsigned j = op->at; j < (unsigned)op->at + op->n; j++)
+			w &= ~(0xFFu << (8u * j)) | ((uint32_t)op->b[j] << (8u * j));
+		cut_program(s, w, 1u, 0u);
+	}
+	for (unsigned q = 0; q < cut_nq; q++) {
+		const uint32_t v = cut_queue[q];
+
+		out |= outcome_of(v);
+		if (before_index_end &&
+		    ((v >> 8) != (s0 >> 8) || ((v & 0xFFu) & ~(s0 & 0xFFu)) != 0u))
+			*inherited = false;
+	}
+	return out;
+}
+
+static void test_settle_cuts(void)
+{
+	static const uint8_t starts[][2] = {
+		{ 0x03u, 0x01u }, { 0xFFu, 0x01u }, { 0x00u, 0x01u }, { 0xFFu, 0xFFu },
+		{ 0x05u, 0x03u }, { 0x00u, 0xFFu },
+	};
+	uint8_t out[512];
+
+	printf("  settling after a failed selector step for slot 1, cut at each op:\n");
+	for (size_t c = 0; c < ARRAY_LEN(starts); c++) {
+		const uint32_t s0 = (uint32_t)starts[c][0] | (uint32_t)starts[c][1] << 8;
+		struct sel_op ops[SEL_OPS];
+		unsigned n, index_op = 0u;
+		uint32_t s = s0;
+		bool inherited = true, index_done = (s0 & 0xFFu) == 0u;
+		char what[48];
+
+		setup(0u, true);
+		fail_op = 1u;
+		/* the erase reports success and reads back wrong; {FF, FF} would
+		 * read right, so there it reports a failure */
+		fail_ok = s0 != 0xFFFFu;
+		fail_left[0] = starts[c][0];
+		fail_left[1] = starts[c][1];
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+		CHECK(out[0] == (uint8_t)(fail_ok ? S02_ERR_VERIFY : S02_ERR_IO));
+		CHECK(mem[S02_SELECTOR_OFF] == 0x00u && mem[S02_SELECTOR_OFF + 1u] == 0x01u);
+		CHECK(only_allowed_changed(1u) && !held_until_restart);
+		n = sel_nlog - 1u;		/* the settling's ops, after the failed erase */
+		memcpy(ops, sel_log + 1, n * sizeof ops[0]);
+		for (unsigned i = 0; i < n; i++) {
+			CHECK(!ops[i].erase);
+			if (ops[i].at == 0u)
+				index_op = i + 1u;
+		}
+		printf("   from {%02x, %02x}, programs alone:\n", starts[c][0], starts[c][1]);
+		for (unsigned i = 0; i < n; i++) {
+			unsigned o;
+
+			snprintf(what, sizeof what, "before op %u (%s)", i + 1u,
+				 ops[i].at == 0u ? "index 00" : "verified 01");
+			o = settle_cut(s, NULL, s0, !index_done, &inherited);
+			outcomes_print(what, o);
+			if (index_done)
+				CHECK((o & (OUT_B_ONCE | OUT_B_TRUSTED)) == 0u);
+			snprintf(what, sizeof what, "op %u torn", i + 1u);
+			o = settle_cut(s, &ops[i], s0, !index_done && i + 1u <= index_op, &inherited);
+			outcomes_print(what, o);
+			if (index_done)
+				CHECK((o & (OUT_B_ONCE | OUT_B_TRUSTED)) == 0u);
+			for (unsigned j = ops[i].at; j < (unsigned)ops[i].at + ops[i].n; j++)
+				s &= ~(0xFFu << (8u * j)) | ((uint32_t)ops[i].b[j] << (8u * j));
+			if (i + 1u == index_op)
+				index_done = true;
+		}
+		outcomes_print("after the last", outcome_of(s));
+		CHECK(s == 0x0100u);
+		CHECK(outcome_of(s) == OUT_A_TRUSTED);
+		CHECK(inherited);
+	}
+}
+
+/*
+ * S-02.102 item 6, the case where the settling writes nothing: the failed
+ * step left `verified` with bit 0 clear. The selector stays as it is, the
+ * log says so, and every later trial or commit is refused, with nothing
+ * written, until a restart (here: the engine's state cleared); the status
+ * form still answers.
+ */
+static void test_settle_held(void)
+{
+	static const uint8_t lefts[][2] = { { 0x00u, 0x00u }, { 0x05u, 0xFEu }, { 0xFFu, 0xFEu },
+					    { 0x00u, 0xFEu } };
+	uint8_t out[512];
+
+	for (size_t c = 0; c < ARRAY_LEN(lefts); c++) {
+		setup(0u, true);
+		fail_op = 1u;
+		fail_ok = true;
+		fail_left[0] = lefts[c][0];
+		fail_left[1] = lefts[c][1];
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+		CHECK(out[0] == (uint8_t)S02_ERR_VERIFY && sel_nlog == 1u);
+		CHECK(out[2] == lefts[c][0] && out[3] == lefts[c][1]);
+		CHECK(held_until_restart);
+		memcpy(before, mem, sizeof mem);
+		writes = 0;
+		sel_nlog = 0;
+		for (unsigned form = OPXY_INSTALL_TRIAL; form <= OPXY_INSTALL_COMMIT; form++) {
+			(void)opxy_installer_write(&m, form, true, out);
+			CHECK(out[0] == OPXY_INSTALL_REFUSED_HELD);
+			CHECK(writes == 0u && sel_nlog == 0u && memcmp(mem, before, sizeof mem) == 0);
+		}
+		(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+		CHECK(out[0] == S02_OK && writes == 0u);
+		/* after a restart, whose first stage settles the selector */
+		held_until_restart = false;
+		mem[S02_SELECTOR_OFF] = 0x00u;
+		mem[S02_SELECTOR_OFF + 1u] = 0x01u;
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+		CHECK(out[0] == S02_OK && !held_until_restart);
 	}
 }
 
@@ -1028,6 +1245,121 @@ static void test_rerun_after_cut(void)
 	CHECK(out[0] == (uint8_t)S02_ERR_START && writes == 0u);
 }
 
+/* A carried image of n bytes: the 52-byte stream, then other bytes after
+ * its FINAL block; stream false spoils its first header's checksum. Its
+ * CRC is its own either way. */
+static void image_of(uint32_t n, bool stream)
+{
+	image_base();
+	for (uint32_t i = sizeof base_image; i < n; i++)
+		img[i] = (uint8_t)(i * 13u + 5u);
+	if (!stream)
+		img[2] ^= 0x01u;
+	img_len = n;
+	img_crc = opxy_crc32_long(0u, img, n);
+}
+
+/* S-02.102 item 4, S-02.104: the image's checks, all in memory, come
+ * before the selector is read, and a mismatch at any of them refuses with
+ * nothing written: a CRC that is not the carried one, a length over
+ * 0x76000, a stream the boot ROM would not start (S-02.091), for a commit
+ * as for a trial. With the selector unreadable, the image's refusal is the
+ * one reported. */
+static void test_image_checks_first(void)
+{
+	static const struct {
+		uint32_t n;
+		bool stream, crc_ok;
+		uint8_t rc;
+	} cases[] = {
+		{ 52u, true, false, (uint8_t)S02_ERR_VERIFY },
+		{ 0x76001u, true, true, (uint8_t)S02_ERR_SIZE },
+		{ 0x77000u, true, true, (uint8_t)S02_ERR_SIZE },
+		{ 0x78000u, true, true, (uint8_t)S02_ERR_SIZE },
+		{ 52u, false, true, (uint8_t)S02_ERR_STREAM },
+		{ 0x1000u, false, true, (uint8_t)S02_ERR_STREAM },
+	};
+	uint8_t out[512];
+
+	for (size_t i = 0; i < ARRAY_LEN(cases); i++) {
+		for (unsigned form = 0; form < 2u; form++) {
+			for (int unreadable = 0; unreadable < 2; unreadable++) {
+				setup(0u, true);
+				if (form == 1u) {
+					/* a trial of the build's image, started and reached */
+					(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+					CHECK(out[0] == S02_OK);
+					mem[S02_SELECTOR_OFF] = 0x00u;
+					mem[S02_SELECTOR_OFF + 1u] = 0x01u;
+					trial_start(1u);
+					memcpy(before, mem, sizeof mem);
+				}
+				image_of(cases[i].n, cases[i].stream);
+				if (!cases[i].crc_ok)
+					img_crc ^= 0x10u;
+				writes = 0;
+				sel_nlog = 0;
+				sel_read_fails = unreadable != 0;
+				(void)opxy_installer_write(&m, form == 0u ? OPXY_INSTALL_TRIAL :
+						   OPXY_INSTALL_COMMIT, true, out);
+				CHECK(out[0] == cases[i].rc);
+				CHECK(writes == 0u && sel_nlog == 0u);
+				CHECK(memcmp(mem, before, sizeof mem) == 0);
+			}
+		}
+	}
+	/* a good image with the selector unreadable: the read's failure */
+	setup(0u, true);
+	sel_read_fails = true;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+	CHECK(out[0] == (uint8_t)S02_ERR_IO && writes == 0u);
+}
+
+/* S-02.103, S-02.104: an image of 0x76000 bytes is taken, and the trial
+ * erases slot k's settings sector with its last sector. */
+static void test_trial_settings_sector(void)
+{
+	const uint32_t set = s02_slot_base(1u) + S02_STORE_SLOT_MAX;
+	uint8_t out[512];
+
+	setup(0u, true);
+	image_of(S02_STORE_SLOT_MAX, true);
+	memset(mem + set, 0x00, S02_SECTOR_SIZE);	/* another image's settings */
+	memcpy(before, mem, sizeof mem);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+	CHECK(out[0] == S02_OK && out[2] == 0xFFu && out[3] == 0xFFu);
+	CHECK(memcmp(mem + s02_slot_base(1), img, img_len) == 0);
+	for (uint32_t i = 0; i < S02_SECTOR_SIZE; i++)
+		CHECK(mem[set + i] == 0xFFu);
+	CHECK(only_allowed_changed(1u));
+	/* slot 0's settings sector, the running slot's, untouched */
+	CHECK(memcmp(mem + s02_slot_base(0u) + S02_STORE_SLOT_MAX,
+		     before + s02_slot_base(0u) + S02_STORE_SLOT_MAX, S02_SECTOR_SIZE) == 0);
+}
+
+/* S-02.102 item 7, S-02.047: the commit reads slot k's n bytes back after
+ * the record's program; bytes that no longer match refuse it there, with
+ * the selector untouched. */
+static void test_commit_read_back(void)
+{
+	uint8_t out[512];
+
+	setup(0u, true);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+	CHECK(out[0] == S02_OK);
+	mem[S02_SELECTOR_OFF] = 0x00u;
+	mem[S02_SELECTOR_OFF + 1u] = 0x01u;
+	trial_start(1u);
+	sel_nlog = 0;
+	spoil_on_record = true;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
+	CHECK(out[0] == (uint8_t)S02_ERR_VERIFY);
+	CHECK(sel_nlog == 0u && mem[S02_SELECTOR_OFF] == 0x00u &&
+	      mem[S02_SELECTOR_OFF + 1u] == 0x01u);
+	/* the record was programmed: the read-back came after it */
+	CHECK(get32(mem + s02_record_off(1)) == opxy_install_crc);
+}
+
 /* No write when the selected slot is not the way back, or the carried image
  * did not pass its check. */
 static void test_refusals(void)
@@ -1084,7 +1416,12 @@ int main(void)
 	RUN(test_trial_rescue_faults);
 	RUN(test_trial_cuts);
 	RUN(test_trial_faults);
+	RUN(test_settle_cuts);
+	RUN(test_settle_held);
 	RUN(test_rerun_after_cut);
 	RUN(test_refusals);
+	RUN(test_image_checks_first);
+	RUN(test_trial_settings_sector);
+	RUN(test_commit_read_back);
 	return check_summary("test_board_installer_engine");
 }

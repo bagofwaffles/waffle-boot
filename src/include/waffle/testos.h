@@ -367,6 +367,9 @@ enum { OPXY_INSTALL_STATUS, OPXY_INSTALL_TRIAL, OPXY_INSTALL_COMMIT };
 #define OPXY_INSTALL_REFUSED_IMAGE 0x43
 /* rc: commit refused, the trial start did not reach the boot menu */
 #define OPXY_INSTALL_REFUSED_UNREACHED 0x44
+/* rc: refused, a failed selector step was left as it was: no slot write
+ * until a restart (S-02.102 item 6) */
+#define OPXY_INSTALL_REFUSED_HELD 0x45
 #define OPXY_INSTALL_LOG 9u
 #define OPXY_INSTALL_REPLY (9u + OPXY_INSTALL_CRUMBS + OPXY_INSTALL_LOG)
 enum { OPXY_INSTALL_LOG_OK, OPXY_INSTALL_LOG_ODD, OPXY_INSTALL_LOG_FULL,

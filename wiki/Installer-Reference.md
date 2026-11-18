@@ -26,14 +26,18 @@ key).
 
 - **Before the trial:** nothing. It reads the selector, both slots and the boot partitions' headers, and
   checks the image it carries: its CRC-32, that it is a stream the unit can start, its descriptor, and its
-  front against the pinned front (`src/front/front.pin`).
-- **The trial:** the slot the selector does not name, that slot's record with the trial mark (the CRC
+  front against the pinned front (`src/front/front.pin`), and that it is at most `0x76000` bytes (S-02.104).
+- **The trial:** the slot the selector does not name, its settings sector erased with its start log (the new
+  image starts on default settings, S-02.103), that slot's record with the trial mark (the CRC
   inverted, so the first stage starts it once), byte 0 of its start log `0xFD` (a trial pending), and the
   selector naming that slot unverified. The way back is the old slot, untouched: a power cut at any point
-  leaves a selected slot that starts.
+  leaves a selected slot that starts. If the selector step fails, the installer puts the selector back on
+  the old slot with programs alone, never an erase. When it cannot do that safely, it leaves the selector as
+  it is and refuses every further write until the unit restarts ("Restart the unit before another write.").
 - **The trial start:** the new slot's front marks the start (`0xFD` to `0xFC`), and its main image marks
   the boot menu reached (`0xFC` to `0xF0`, entry 1 of the log finished, S-02.095). Nothing else.
-- **The commit:** only after both marks: the record with the right CRC, then the selector `{slot, 0x00}`.
+- **The commit:** only after both marks: the record with the right CRC, read back with the slot's bytes,
+  then the selector `{slot, 0x00}`.
   Then the active byte of the two boot partitions' headers, your OS's first.
 - **Never:** the first stage, the metadata, or the slot the selector names.
 

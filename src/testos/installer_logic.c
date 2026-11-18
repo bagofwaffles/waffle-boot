@@ -135,6 +135,8 @@ const char *inst_rc_words(uint8_t rc)
 		return "The image it carries does not pass its check.";
 	case OPXY_INSTALL_REFUSED_UNREACHED:
 		return "The trial did not reach the new boot menu.";
+	case OPXY_INSTALL_REFUSED_HELD:
+		return "Restart the unit before another write.";
 	default:
 		return "The write failed.";
 	}

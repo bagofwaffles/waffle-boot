@@ -38,7 +38,9 @@
 
 #include "waffle/board/opxy_boot.h"
 #include "waffle/drivers/bf70x_spiflash.h"
+#include "waffle/s01_memmap.h"
 #include "waffle/s02_flash.h"
+#include "waffle/s02_store.h"
 #include "waffle/testos.h"
 
 #define TRIAL_CRC_XOR 0xFFFFFFFFu	/* the trial mark: every CRC bit inverted (S-02.016) */
@@ -223,12 +225,23 @@ static int write_record(const struct s02_env *env, unsigned t, uint32_t crc)
 	return S02_OK;
 }
 
-/* The commit: the record, then the selector {t, 0x00}, each read back. */
+/* The commit: the record, then S-02.047's read-back after that program
+ * (the record and slot t's n bytes, by their CRC and byte for byte), then
+ * the selector {t, 0x00}, read back (S-02.102 item 7). */
 static int commit_finish(const struct s02_env *env, struct gate *g, unsigned t)
 {
 	const uint8_t want[2] = { (uint8_t)t, 0x00u };
-	const int rc = write_record(env, t, opxy_install_crc);
+	uint32_t crc;
+	int rc = write_record(env, t, opxy_install_crc);
 
+	if (rc != S02_OK)
+		return rc;
+	rc = s02_flash_crc(env, s02_slot_base(t), opxy_install_len, &crc);
+	if (rc != S02_OK)
+		return rc;
+	if (crc != opxy_install_crc)
+		return S02_ERR_VERIFY;
+	rc = slot_is_image(env, t);
 	if (rc != S02_OK)
 		return rc;
 	g->selector_open = true;
@@ -239,17 +252,57 @@ static int commit_finish(const struct s02_env *env, struct gate *g, unsigned t)
 }
 #endif
 
-/* The selector's index programmed to 0x00, read back, and programmed once
- * more when it does not read 0x00. Results are not reported: the caller's
- * error stands, and the reply reads the selector again. */
-static void index_back_to_0(const struct s02_env *env)
+/* Set once a failed selector step leaves a selector the settling does
+ * not write (settle_on_0()): every later trial or commit is refused until
+ * a restart. */
+static bool held_until_restart;
+
+/* The selector's index programmed to 0x00 and read back, programmed once
+ * more when it does not read 0x00; true when it then reads 0x00. */
+static bool index_to_0(const struct s02_env *env)
 {
 	static const uint8_t index_0 = 0x00u;
 	struct s02_selector sel;
 
+	if (env->flash->program(env->flash->ctx, S02_SELECTOR_OFF, &index_0, 1u) == 0 &&
+	    s02_read_selector(env, &sel) == S02_OK && sel.index == 0x00u)
+		return true;
 	(void)env->flash->program(env->flash->ctx, S02_SELECTOR_OFF, &index_0, 1u);
-	if (s02_read_selector(env, &sel) != S02_OK || sel.index != 0x00u)
-		(void)env->flash->program(env->flash->ctx, S02_SELECTOR_OFF, &index_0, 1u);
+	return s02_read_selector(env, &sel) == S02_OK && sel.index == 0x00u;
+}
+
+/*
+ * S-02.102 item 6: a selector step for slot 1 that failed settles the
+ * selector back on slot 0, the good running slot, ending {0x00, 0x01}, by
+ * programs alone. Nothing is written where it reads so already. Where
+ * `verified` has bit 0 set: the index to 0x00, read back, then `verified`
+ * to 0x01. A program only clears bits, so cut short it leaves the index it
+ * had or fewer of its bits, and `verified` with bit 0 still set: the
+ * settling creates no selector that names slot 1 where the failed step's
+ * did not. Where `verified` has bit 0 clear, or the selector cannot be
+ * read, nothing is written: an erase there could name slot 1, so the
+ * selector stays as it is and no slot write is made until a restart lets
+ * the first stage settle it. False then. Results are not reported
+ * otherwise: the caller's error stands, and the reply reads the selector
+ * again.
+ */
+static bool settle_on_0(const struct s02_env *env)
+{
+	static const uint8_t verified_1 = 0x01u;
+	struct s02_selector sel;
+
+	if (s02_read_selector(env, &sel) != S02_OK || (sel.verified & 0x01u) == 0u) {
+		held_until_restart = true;
+		return false;
+	}
+	if (sel.index == 0x00u && sel.verified == 0x01u)
+		return true;
+	if (sel.index != 0x00u && !index_to_0(env))
+		return true;
+	if (sel.verified != 0x01u)
+		(void)env->flash->program(env->flash->ctx, S02_SELECTOR_OFF + 1u,
+					  &verified_1, 1u);
+	return true;
 }
 
 /* S-02.042-.047 as they stand; the gate stops the upgrade at the selector,
@@ -279,11 +332,13 @@ static int trial_upgrade(const struct s02_env *env, struct gate *g, unsigned *ta
  *          written here closes: this erase of {0x00, 0x01}, and the first
  *          stage's program of {0x00, 0x01}, can each read {nonzero, 0x01}.
  * On a failure (a fault, not a cut) the selector is left as the steps allow:
- *   t = 1  after the erase it can read {odd, 0x01}, trusting slot t, so the
- *          index is programmed to 0x00: a program only clears bits, so it is
- *          possible after any erase result, and index 0x00 names slot 0, the
- *          good running slot; read back, and programmed once more when the
- *          index does not read 0x00. The original error is returned.
+ *   t = 1  after the erase it can read {odd, 0x01}, trusting slot t, so it is
+ *          settled back on slot 0, the good running slot, to {0x00, 0x01}
+ *          by programs alone (settle_on_0()): no first stage then has a
+ *          selector write of its own to make, which cut short could read
+ *          {0x01, 0x01}. A selector whose `verified` has bit 0 clear is left
+ *          as it is, and slot writes are refused until a restart. The
+ *          original error is returned.
  *   t = 0  nothing more is written. A failed erase from {nonzero, 0x01}
  *          keeps a nonzero index, slot 1, the good one; a failed 0xFE
  *          program leaves {0xFF, 0xFE or 0xFF}, slot 1 checked; a failed
@@ -318,7 +373,7 @@ static int trial_finish(const struct s02_env *env, struct gate *g, unsigned t)
 		rc = env->flash->erase(env->flash->ctx, S02_SELECTOR_OFF) != 0 ?
 			     S02_ERR_IO : selector_is(env, 0xFFu, 0xFFu);
 		if (rc != S02_OK)
-			index_back_to_0(env);
+			(void)settle_on_0(env);
 		return rc;
 	}
 	if (env->flash->erase(env->flash->ctx, S02_SELECTOR_OFF) != 0)
@@ -457,13 +512,27 @@ size_t opxy_installer_write(struct opxy_master *m, unsigned form, bool image_ok,
 
 	env.flash = &ops;
 	(void)wb_spiflash_status(&m->hw.flash, &sr);
-	rc = s02_read_selector(&env, &sel);
+	/* S-02.102 item 6: a settling that wrote nothing holds every write
+	 * until a restart */
+	rc = S02_OK;
+	if (held_until_restart && form != OPXY_INSTALL_STATUS)
+		rc = OPXY_INSTALL_REFUSED_HELD;
+	/* S-02.102 item 4: the image's checks, all in memory, before the
+	 * selector is read for the start condition */
 	if (rc == S02_OK && env.crc32(0u, opxy_install_image, opxy_install_len) != opxy_install_crc)
 		rc = S02_ERR_VERIFY;	/* the image as loaded, before the first erase */
-	if (rc == S02_OK && opxy_install_len > S02_SLOT_CAPACITY - S02_SECTOR_SIZE)
-		rc = S02_ERR_SIZE;	/* no start log, so no trial entry (S-02.095) */
+	/* S-02.104: at most 0x76000 bytes, so slot k keeps its start log for
+	 * the trial entry (S-02.095) and its settings sector */
+	if (rc == S02_OK && (opxy_install_len == 0u || opxy_install_len > S02_STORE_SLOT_MAX))
+		rc = S02_ERR_SIZE;
 	if (rc == S02_OK && form != OPXY_INSTALL_STATUS && !image_ok)
 		rc = OPXY_INSTALL_REFUSED_IMAGE;	/* its stream, descriptor or front pin */
+	/* S-02.091 in this run, for a commit as for a trial */
+	if (rc == S02_OK && form != OPXY_INSTALL_STATUS &&
+	    !s01_bootable(S01_BOOTLOADER, opxy_install_image, opxy_install_len))
+		rc = S02_ERR_STREAM;
+	if (rc == S02_OK)
+		rc = s02_read_selector(&env, &sel);
 	if (rc == S02_OK && form != OPXY_INSTALL_STATUS) {
 		/* The selected slot is the way back: verified, and good now. */
 		rc = s02_check_slot(&env, s02_selected_slot(sel.index), &good);
@@ -480,6 +549,10 @@ size_t opxy_installer_write(struct opxy_master *m, unsigned form, bool image_ok,
 		rc = trial_upgrade(&env, &g, &target);
 		if (rc == S02_ERR_IO && g.at_selector && target == t)
 			rc = trial_finish(&env, &g, t);
+		if (held_until_restart)
+			s14_log_str(&m->sv.log, S14_ERROR, S14_TAG("install"),
+				    "selector step failed and left as it is: "
+				    "no slot write until a restart");
 	} else if (rc == S02_OK && form == OPXY_INSTALL_COMMIT) {
 #if defined(OPXY_BOOT_CRUMBS_ON)
 		/* BOOT_CRUMBS=1 defines OPXY_BOOT_CRUMBS_ON for the whole target
