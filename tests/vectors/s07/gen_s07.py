@@ -195,7 +195,8 @@ def cypress_vectors(h):
              ('status-05', {'hook': lambda cc, d: cypress.ERR_CMD if cc == 0x39 else None}, None, 0x39),
              ('silent', {'hook': lambda cc, d: cypress.NO_REPLY if cc == 0x38 else None}, None, 0x38),
              ('app-invalid', {'app_valid': False}, None, 0x31),
-             ('crc-variant', {'kind': 'crc'}, specgen.cyacd_text(ctype=1), 0)]
+             # S-07.081, S-07.083: a bootloader that checks by the CRC variant is not entered
+             ('crc-bootloader', {'kind': 'crc'}, None, 0x38)]
     xrows, rrows = [], []
     for name, kw, text, at in cases:
         text = text or specgen.cyacd_text()
@@ -205,7 +206,6 @@ def cypress_vectors(h):
         if swap:
             inner = bl._packet
             bl._packet = lambda p, inner=inner, swap=swap: (inner(p), swap[1])[1] if p[1] == swap[0] else inner(p)
-        kind = 'crc' if kw.get('kind') == 'crc' else 'sum'
         sent = []
 
         def xfer(p, n):
@@ -231,7 +231,7 @@ def cypress_vectors(h):
         for p, r in sent:
             xrows.append('%s, %d, %s' % (h.arr('xp', p), r is not None, h.arr('xr', r or b'')))
         tb = text.encode()
-        rrows.append('%s, %s, %d, %s, %d, %d, %s' % (h.cstr(name), h.arr('cy', tb), at, '1' if kind == 'crc' else '0',
+        rrows.append('%s, %s, %d, %s, %d, %d, %s' % (h.cstr(name), h.arr('cy', tb), at, '0',
                                                  first, len(xrows) - first, h.arr('ru', unlock)))
     h.table('struct s07v_xchg', 's07v_xchg', xrows,
             'struct s07v_xchg { const uint8_t *p; size_t len; int has_reply; const uint8_t *r; size_t rlen; };')

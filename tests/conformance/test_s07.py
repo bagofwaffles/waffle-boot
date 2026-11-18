@@ -232,7 +232,7 @@ class Cypress(unittest.TestCase):
             ('array 40 outside the range: fails at program row',
              cypress.build_cyacd(0x2E123069, 0, [(0x40, 5, bytes(8))]), gen.SYNTH_UNLOCK,
              {'arrays': {0: (0, 0xFF), 0x40: (0, 0)}}),
-            ('crc variant', gen.cyacd_text(ctype=1), gen.SYNTH_UNLOCK, {'kind': 'crc'}),
+            ('a bootloader checking by the CRC variant: not entered', gen.CYACD, gen.SYNTH_UNLOCK, {'kind': 'crc'}),
             ('two arrays', two, gen.SYNTH_UNLOCK, {'arrays': {0: (0, 255), 1: (0, 255)}}),
             ('one row of 512', gen.cyacd_text(rows=1, row_len=512), gen.SYNTH_UNLOCK, {}),
             ('rows around the split', cypress.build_cyacd(0x2E123069, 0, [(0, n, bytes(range(n)))
