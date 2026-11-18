@@ -75,7 +75,7 @@ static void all_pass(struct tchk_table *t, struct tchk_switch *sw)
 	memset(sw, 0, sizeof(*sw));
 	for (unsigned i = 0; i < TCHK_COUNT; i++)
 		t->r[i].state = TCHK_PASS;
-	t->r[TCHK_OS_PARTITION].state = TCHK_NOT_PASSED;	/* not part of the lock */
+	t->r[TCHK_OS_PARTITION].state = TCHK_FAIL;	/* not part of the lock */
 	sw->result = TCHK_SW_READY;
 }
 
@@ -99,11 +99,16 @@ static void test_lock(void)
 	all_pass(&t, &sw);
 	t.r[TCHK_KEYS].state = TCHK_FAIL;
 	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_GUIDED);
+	/* whatever the other boot partition holds, the install is offered */
 	all_pass(&t, &sw);
-	sw.result = TCHK_SW_NO_OTHER_OS;
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_NO_OS);
-	sw.result = TCHK_SW_OTHER_BAD;
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_NO_OS);
+	for (sw.result = TCHK_SW_NOT_RUN; sw.result <= TCHK_SW_READY; sw.result++)
+		CHECK(sw.result == TCHK_SW_NO_SLAVE ||
+		      inst_lock_of(&t, &sw, true, true) == INST_LOCK_NONE);
+	sw.unverified = true;
+	sw.result = TCHK_SW_READY;
+	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_NONE);
+	sw.unverified = false;
+	/* an eMMC out of reach still locks */
 	sw.result = TCHK_SW_NO_SLAVE;
 	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_EMMC);
 	/* a failed check outranks a missing image */
@@ -538,6 +543,12 @@ static void test_report(void)
 	CHECK(strstr(buf, "target: Slot 2\n") != NULL);
 	CHECK(strstr(buf, "start log: 5 used, 0 unfinished at the end\n") != NULL);
 	CHECK(strstr(buf, "breadcrumbs") == NULL);
+	/* the other boot partition in plain words, never a failure */
+	st.os = INST_OS_NONE;
+	CHECK(inst_report_append(buf, 5u, sizeof buf, &he, &st, &img_r, eng) == strlen(buf));
+	CHECK(strstr(buf, "\nother boot partition: no OS header\n") != NULL);
+	CHECK(strstr(buf, "FAIL") == NULL && strstr(buf, "OS: ") == NULL);
+	st.os = INST_OS_CHECKED;
 	eng[10] = 0x01u;
 	n = inst_report_append(buf, 5u, sizeof buf, &he, &st, &img_r, eng);
 	CHECK(n == strlen(buf));

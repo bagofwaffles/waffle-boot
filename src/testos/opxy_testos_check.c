@@ -291,7 +291,7 @@ static void t_switch_back(struct opxy_master *m)
 		ck.f.sw.result = TCHK_SW_NO_SLAVE;
 		return;
 	}
-	/* a look alone: the OS is made active again when the installer ends */
+	/* a look alone: an OS found there is made active when the installer ends */
 	tchk_switch_look(&ck.env, &ck.f.sw);
 }
 

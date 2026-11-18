@@ -12,7 +12,6 @@ Back up your files before running it: the OS has to be installed again afterward
 ## What it needs on the unit
 
 - A developer menu that writes an OS file to the boot partition the OS is not in.
-- The unit's own OS in the other boot partition, checked, so that it can make it active again.
 
 ## The checks
 
@@ -83,8 +82,7 @@ While it writes, and in some long checks, the installer does not service the por
 - **Flags:** bit 0 the checks done, bit 1 the install offered, bit 2 the carried image passed its check, bit 3
   a breadcrumb build.
 - **Lock:** 0 none, 1 a check failed, 2 a check could not run, 3 the carried image, 4 the selected slot not
-  verified or not good, 5 the unit's OS not found or bad, 6 the key check ended with 8, 7 the eMMC not
-  reachable.
+  verified or not good, 5 not used, 6 the key check ended with 8, 7 the eMMC not reachable.
 - **Slot state:** bit 0 good, 1 this image under the trial mark, 2 this image committed, 3 trial pending, 4
   trial started, 5 trial spent, 6 trial entry odd, 7 the trial reached the boot menu.
 - **OS partition:** 0 not looked at, 1 found and checked, 2 found, stored encrypted, 3 not found, 4 fails its

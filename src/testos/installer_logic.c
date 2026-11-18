@@ -89,15 +89,8 @@ enum inst_lock inst_lock_of(const struct tchk_table *t, const struct tchk_switch
 		return INST_LOCK_IMAGE;
 	if (!selected_ok)
 		return INST_LOCK_SELECTED;
-	/*
-	 * SPEC-Q: S-03.058 lets an OS write erase the other partition's group
-	 * 0 after deactivating it; waffle-boot's does not. Whether the OS
-	 * write of the bootloader the unit came with leaves the old OS's
-	 * image readable is not stated. The install is held to an OS this
-	 * image can make active again; a unit whose OS is gone stays locked.
-	 */
-	if (sw->result != TCHK_SW_READY)
-		return INST_LOCK_NO_OS;
+	/* S-16.027: after the OS write that started this image the other
+	 * partition may hold no OS at all; the install never waits on one */
 	return INST_LOCK_NONE;
 }
 
@@ -109,7 +102,7 @@ const char *inst_lock_words(enum inst_lock l)
 		[INST_LOCK_NOT_TESTED] = "A check could not run.",
 		[INST_LOCK_IMAGE] = "The image it carries does not pass its check.",
 		[INST_LOCK_SELECTED] = "The unit's bootloader slot is not settled.",
-		[INST_LOCK_NO_OS] = "The unit's OS was not found, or fails its check.",
+		[INST_LOCK_RESERVED] = "",
 		[INST_LOCK_GUIDED] = "The key check (com and M4) was ended with 8.",
 		[INST_LOCK_EMMC] = "The eMMC could not be reached.",
 	};
@@ -606,12 +599,12 @@ static void bar(struct lines *o, const struct inst_screen *s)
 	add(o, S15_ST_STEP_RUN, b.s, NULL);
 }
 
+/* Making an OS found in the other partition active is quiet; only a
+ * header write that failed is shown. */
 static void os_line(struct lines *o, uint8_t os)
 {
-	if (os == INST_OS_ACTIVE)
-		add(o, S15_ST_OK, "Your OS is active again.", NULL);
-	else if (os == INST_OS_WRITE_FAILED)
-		add(o, S15_ST_ERROR, "Your OS could not be made active again.", NULL);
+	if (os == INST_OS_WRITE_FAILED)
+		add(o, S15_ST_ERROR, "A write to the eMMC's boot partitions failed.", NULL);
 }
 
 unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15_ROWS])
@@ -643,11 +636,10 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "Results: check.txt on the USB disk, or the page.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		if (os_ok) {
-			item(&o, s, 8u, "Make your OS active again");
+			item(&o, s, 8u, "Leave the installer");
 			hold_line(&o, s);
 		} else {
-			add(&o, S15_ST_TEXT, "Write your OS file from the developer menu", NULL);
-			add(&o, S15_ST_TEXT, "to start it again.", NULL);
+			add(&o, S15_ST_TEXT, "To leave, write an OS from the developer menu.", NULL);
 		}
 		break;
 	case INST_READY:
@@ -658,7 +650,8 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "Your bootloader stays selected until you keep it.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Write the trial");
-		item(&o, s, 8u, "Leave, your OS active again");
+		if (os_ok)
+			item(&o, s, 8u, "Leave without installing");
 		hold_line(&o, s);
 		break;
 	case INST_WRITING_TRIAL:
@@ -678,11 +671,11 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_HEAD, "The trial reached the boot menu", NULL);
 		add(&o, S15_ST_KV, "Keeps\t", slot_name(s->target));
 		add(&o, S15_ST_TEXT, "Keep waffle-boot v", s->version);
-		add(&o, S15_ST_TEXT, "as the unit's bootloader. Your OS is then made", NULL);
-		add(&o, S15_ST_TEXT, "active again.", NULL);
+		add(&o, S15_ST_TEXT, "as the unit's bootloader.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Keep the new bootloader");
-		item(&o, s, 8u, "Leave, keep the old one");
+		if (os_ok)
+			item(&o, s, 8u, "Leave, keep the old one");
 		hold_line(&o, s);
 		break;
 	case INST_COMMITTING:
@@ -695,10 +688,11 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_OK, "waffle-boot is the unit's bootloader.", NULL);
 		os_line(&o, s->os);
 		add(&o, S15_ST_TEXT, "Switch off, then on.", NULL);
+		add(&o, S15_ST_DIM, "Boot menu: hold com while switching on.", NULL);
 		add(&o, S15_ST_DIM, "Recovery menu: hold Power + M4 while switching on.", NULL);
 		if (os_ok) {
 			add(&o, S15_ST_TEXT, "", NULL);
-			item(&o, s, 8u, "Make your OS active again");
+			item(&o, s, 8u, "Leave the installer");
 			hold_line(&o, s);
 		}
 		break;
@@ -711,7 +705,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Try again");
 		if (os_ok)
-			item(&o, s, 8u, "Leave, your OS active again");
+			item(&o, s, 8u, "Leave without installing");
 		hold_line(&o, s);
 		break;
 	case INST_TRIAL_FAILED:
@@ -723,7 +717,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Write the trial again");
 		if (os_ok)
-			item(&o, s, 8u, "Leave, your OS active again");
+			item(&o, s, 8u, "Leave without installing");
 		hold_line(&o, s);
 		break;
 	case INST_LEFT:
@@ -801,9 +795,9 @@ static const char *trial_word(uint8_t t)
 static const char *os_word(uint8_t o)
 {
 	static const char *const w[] = {
-		"not looked at", "found, checked", "found, stored encrypted (not checked)",
-		"not found", "fails its check", "could not be read", "active again",
-		"could not be made active again",
+		"not looked at", "an OS, checked", "an OS stored encrypted, not checked",
+		"no OS header", "an image whose CRC differs", "not read", "made active",
+		"a header write failed",
 	};
 
 	return o < sizeof w / sizeof w[0] ? w[o] : "?";
@@ -876,7 +870,7 @@ size_t inst_report_append(char *out, size_t len, size_t cap, const struct inst_h
 		r_str(&r, "\nlast write: ");
 		r_str(&r, inst_rc_words(st->last_rc));
 	}
-	r_str(&r, "\nOS: ");
+	r_str(&r, "\nother boot partition: ");
 	r_str(&r, os_word(st->os));
 	r_str(&r, "\n");
 	if (eng != NULL) {

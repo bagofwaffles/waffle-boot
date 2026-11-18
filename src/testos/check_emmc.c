@@ -298,7 +298,7 @@ static void look(const struct s03_env *env, struct tchk_switch *out, uint8_t hdr
 		 * plaintext's. Whether an image stored encrypted can be
 		 * told intact without the unit's key is not stated. Read
 		 * conservatively as present and unverified: it is made active,
-		 * and the screen says it was not checked.
+		 * and check.txt says it was not checked.
 		 */
 		out->unverified = true;
 	} else {

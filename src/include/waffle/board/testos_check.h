@@ -62,7 +62,7 @@ enum tchk_state {
 	TCHK_PASS,
 	TCHK_FAIL,
 	TCHK_NOT_TESTED,
-	TCHK_NOT_PASSED		/* os-partition: the OS not in the other partition */
+	TCHK_NOT_PASSED		/* never set; kept for its number */
 };
 
 struct tchk_info {
@@ -383,15 +383,9 @@ void tchk_judge(const struct tchk_facts *f, struct tchk_table *t);
 
 /* --- The summary and the report --- */
 
-/* What to do when the OS cannot be made active, and the first screen's
- * lines while the tests run. */
-extern const char *const tchk_next_lines[2];
-#define TCHK_FIRST_LINES 5u
+/* The first screen's lines while the tests run. */
+#define TCHK_FIRST_LINES 3u
 extern const char *const tchk_first_lines[TCHK_FIRST_LINES];
-
-/* The lines of the OS's outcome, at most TCHK_OS_LINES, each <= 56. */
-#define TCHK_OS_LINES 4u
-unsigned tchk_os_lines(const struct tchk_switch *sw, const char *out[TCHK_OS_LINES]);
 
 /* What a pass does not cover. */
 #define TCHK_COVER_LINES 5u

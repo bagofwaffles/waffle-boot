@@ -16,7 +16,7 @@
 #include "waffle/s17_revisions.h"
 
 const struct tchk_info tchk_tests[TCHK_COUNT] = {
-	[TCHK_OS_PARTITION] = { "os-partition", "Your OS", TCHK_KIND_OS },
+	[TCHK_OS_PARTITION] = { "os-partition", "OS partition", TCHK_KIND_OS },
 	[TCHK_CLOCKS] = { "clocks", "Clocks", TCHK_KIND_AUTO },
 	[TCHK_DDR] = { "ddr", "DDR", TCHK_KIND_AUTO },
 	[TCHK_CORE_STATE] = { "core-state", "Core state", TCHK_KIND_AUTO },
@@ -378,6 +378,11 @@ static const char *look_word(uint8_t look)
 	}
 }
 
+/*
+ * What the other boot partition holds, reported apart from the hardware: an
+ * OS there or none is no fault, and the eMMC's own faults are emmc-boot's.
+ * Only a header write that failed is one.
+ */
 static void judge_os(const struct tchk_facts *f, struct tchk_table *t)
 {
 	const struct tchk_switch *sw = &f->sw;
@@ -386,38 +391,38 @@ static void judge_os(const struct tchk_facts *f, struct tchk_table *t)
 	switch (sw->result) {
 	case TCHK_SW_RESTORED:
 		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_PASS);
-		tchk_put_str(d, sw->unverified ? "OS active again, stored encrypted: not verified" :
-				 "OS active again: a power cycle starts it");
+		tchk_put_str(d, sw->unverified ? "an image stored encrypted, made active" :
+				 "an OS, checked and made active");
 		break;
 	case TCHK_SW_READY:
 		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_PASS);
-		tchk_put_str(d, sw->unverified ? "OS found, stored encrypted: made active at the end" :
-				 "OS found, checked; made active at the end");
+		tchk_put_str(d, sw->unverified ? "an image stored encrypted: made active at the end" :
+				 "an OS, checked: made active at the end");
 		break;
 	case TCHK_SW_NO_OTHER_OS:
-		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_NOT_PASSED);
-		tchk_put_str(d, "OS not in the other partition: write it again");
+		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_PASS);
+		tchk_put_str(d, "no OS header in the other partition");
 		break;
 	case TCHK_SW_OTHER_BAD:
-		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_FAIL);
-		tchk_put_str(d, "the OS in the other partition fails its check");
+		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_PASS);
+		tchk_put_str(d, "the other partition's image: its CRC differs");
 		break;
 	case TCHK_SW_WRITE_FAILED:
 		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_FAIL);
-		tchk_put_str(d, "a header write failed: the suite still starts");
+		tchk_put_str(d, "a header write failed: the installer still starts");
 		break;
 	case TCHK_SW_NOT_ACTIVE:
-		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_FAIL);
-		tchk_put_str(d, "no boot partition is active");
+		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_PASS);
+		tchk_put_str(d, "the installer's own header not found active");
 		break;
 	case TCHK_SW_NO_SLAVE:
-		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_FAIL);
-		tchk_put_str(d, "the eMMC could not be reached");
+		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_NOT_TESTED);
+		tchk_put_str(d, "not read: the eMMC could not be reached");
 		break;
 	case TCHK_SW_IO:
 	default:
-		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_FAIL);
-		tchk_put_str(d, "the eMMC's boot areas could not be read");
+		d = tchk_set(t, TCHK_OS_PARTITION, TCHK_NOT_TESTED);
+		tchk_put_str(d, "not read: a boot partition read failed");
 		break;
 	}
 	d = &t->r[TCHK_OS_PARTITION].more;
@@ -1011,55 +1016,11 @@ void tchk_judge(const struct tchk_facts *f, struct tchk_table *t)
 
 /* --- the summary --- */
 
-const char *const tchk_next_lines[2] = {
-	"Next: write the unit's OS again before you use it;",
-	"waffle-boot needs an OS to start as well.",
-};
-
 const char *const tchk_first_lines[TCHK_FIRST_LINES] = {
 	"Checking the hardware",
-	"Your OS stays on the eMMC; it is made active again",
-	"when the installer ends.",
 	"The tests read the hardware and write one temporary",
 	"file. Testing now.",
 };
-
-unsigned tchk_os_lines(const struct tchk_switch *sw, const char *out[TCHK_OS_LINES])
-{
-	static const char *const why[] = {
-		[TCHK_SW_OTHER_BAD] = "The OS there fails its check.",
-		[TCHK_SW_WRITE_FAILED] = "A header write failed.",
-		[TCHK_SW_IO] = "The eMMC's boot areas could not be read.",
-		[TCHK_SW_NOT_ACTIVE] = "No boot partition is active.",
-		[TCHK_SW_NO_SLAVE] = "The eMMC could not be reached.",
-	};
-	unsigned n = 0;
-
-	if (sw->result == TCHK_SW_RESTORED) {
-		out[n++] = "Your OS is active again. A power cycle starts it.";
-		if (sw->unverified)
-			out[n++] = "It is stored encrypted, so it was not checked.";
-		return n;
-	}
-	if (sw->result == TCHK_SW_READY) {
-		out[n++] = sw->unverified ? "Your OS was found, stored encrypted." :
-			   "Your OS was found and checked.";
-		if (sw->unverified)
-			out[n++] = "Encrypted, it could not be checked.";
-		out[n++] = "It is made active when the tests end.";
-		return n;
-	}
-	if (sw->result == TCHK_SW_NO_OTHER_OS) {
-		out[n++] = "Your OS was not found in the other boot partition.";
-	} else {
-		out[n++] = "The unit's OS is not active.";
-		out[n++] = sw->result < sizeof why / sizeof why[0] && why[sw->result] != NULL ?
-			   why[sw->result] : "The check did not run.";
-	}
-	out[n++] = tchk_next_lines[0];
-	out[n++] = tchk_next_lines[1];
-	return n;
-}
 
 unsigned tchk_cover_lines(const char *out[TCHK_COVER_LINES])
 {
@@ -1071,16 +1032,6 @@ unsigned tchk_cover_lines(const char *out[TCHK_COVER_LINES])
 	out[n++] = "- anything that needs a flash write";
 	out[n++] = "- waffle-boot's own earliest start-up";
 	return n;
-}
-
-/* The OS's state in a word or three, on the first page and in check.txt. */
-static const char *os_state(const struct tchk_switch *sw)
-{
-	if (sw->result == TCHK_SW_RESTORED)
-		return "active again";
-	if (sw->result == TCHK_SW_READY)
-		return "found, made active at the end";
-	return "must be written again";
 }
 
 static void line(struct tchk_line *l, enum s15_style style, const char *a, const char *b,
@@ -1117,6 +1068,7 @@ unsigned tchk_page(const struct tchk_table *t, const struct tchk_switch *sw, uns
 	char num[24];
 	struct tchk_text pg;
 
+	(void)sw;
 	tchk_text_init(&pg, sizeof num - 1u);
 	tchk_put_str(&pg, "Page ");
 	tchk_put_dec(&pg, page + 1u);
@@ -1126,15 +1078,10 @@ unsigned tchk_page(const struct tchk_table *t, const struct tchk_switch *sw, uns
 
 	if (page == 0u) {
 		const enum tchk_verdict v = tchk_verdict(t);
-		const char *os[TCHK_OS_LINES];
-		const unsigned k = tchk_os_lines(sw, os);
 
 		line(&out[n++], v == TCHK_VERDICT_PASS ? S15_ST_OK :
 				v == TCHK_VERDICT_GAPS ? S15_ST_WARN : S15_ST_ERROR,
 		     "Hardware: ", tchk_verdict_word(v), NULL);
-		line(&out[n++], S15_ST_KV, "Your OS\t", os_state(sw), NULL);
-		for (i = 0; i < k; i++)
-			line(&out[n++], S15_ST_TEXT, os[i], NULL, NULL);
 		line(&out[n++], S15_ST_DIM, "The report is check.txt on the USB disk.", NULL, NULL);
 	} else if (page <= TCHK_TEST_PAGES) {
 		for (i = (page - 1u) * TCHK_PER_PAGE; i < page * TCHK_PER_PAGE && i < TCHK_COUNT; i++) {
@@ -1184,25 +1131,17 @@ size_t tchk_report(const struct tchk_table *t, const struct tchk_switch *sw, con
 		   char *buf, size_t cap)
 {
 	struct out o = { buf, 0, cap };
-	const char *l[TCHK_OS_LINES > TCHK_COVER_LINES ? TCHK_OS_LINES : TCHK_COVER_LINES];
+	const char *l[TCHK_COVER_LINES];
 	unsigned i, k;
 
+	(void)sw;
 	if (cap == 0u)
 		return 0;
 	buf[0] = '\0';
 	emit(&o, "waffle-boot installer, checks v");
 	emit(&o, version);
-	emit(&o, "\n\nThe installer's hardware checks. Your OS stays on the eMMC; the\n"
-		 "installer makes it active again when it ends.\n\nHardware: ");
+	emit(&o, "\n\nThe installer's hardware checks.\n\nHardware: ");
 	emit(&o, tchk_verdict_word(tchk_verdict(t)));
-	emit(&o, "\nYour OS: ");
-	emit(&o, os_state(sw));
-	emit(&o, "\n");
-	k = tchk_os_lines(sw, l);
-	for (i = 0; i < k; i++) {
-		emit(&o, i == 0u ? "  " : " ");
-		emit(&o, l[i]);
-	}
 	emit(&o, "\n\n");
 	for (i = 0; i < TCHK_COUNT; i++) {
 		const struct tchk_result *r = &t->r[i];

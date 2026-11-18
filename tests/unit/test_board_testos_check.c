@@ -764,9 +764,9 @@ static void test_verdict(void)
 	for (i = 0; i < TCHK_COUNT; i++)
 		if (i != TCHK_OS_PARTITION && table.r[i].state != TCHK_PASS)
 			printf("    %s: %s\n", tchk_tests[i].id, table.r[i].detail.s);
-	CHECK(table.r[TCHK_OS_PARTITION].state == TCHK_NOT_PASSED);
+	CHECK(table.r[TCHK_OS_PARTITION].state == TCHK_PASS);
 	CHECK(strcmp(table.r[TCHK_OS_PARTITION].detail.s,
-		     "OS not in the other partition: write it again") == 0);
+		     "no OS header in the other partition") == 0);
 	CHECK(strstr(table.r[TCHK_OS_PARTITION].more.s, "all zero") != NULL);
 	CHECK(tchk_verdict(&table) == TCHK_VERDICT_PASS);
 	/* the OS found and checked, made active at the end */
@@ -774,13 +774,28 @@ static void test_verdict(void)
 	judge();
 	CHECK(table.r[TCHK_OS_PARTITION].state == TCHK_PASS);
 	CHECK(strcmp(table.r[TCHK_OS_PARTITION].detail.s,
-		     "OS found, checked; made active at the end") == 0);
+		     "an OS, checked: made active at the end") == 0);
 	facts.sw.unverified = true;
 	judge();
 	CHECK(strcmp(table.r[TCHK_OS_PARTITION].detail.s,
-		     "OS found, stored encrypted: made active at the end") == 0);
+		     "an image stored encrypted: made active at the end") == 0);
 	CHECK(strstr(table.r[TCHK_OS_PARTITION].more.s, "stored encrypted") != NULL);
 	facts.sw.unverified = false;
+	/* what the other partition holds, or a look that could not read it, is
+	 * no failure */
+	{
+		static const uint8_t calm[] = {
+			TCHK_SW_NO_OTHER_OS, TCHK_SW_OTHER_BAD, TCHK_SW_NOT_ACTIVE, TCHK_SW_IO,
+			TCHK_SW_NO_SLAVE, TCHK_SW_RESTORED,
+		};
+
+		for (i = 0; i < ARRAY_LEN(calm); i++) {
+			facts.sw.result = calm[i];
+			judge();
+			CHECK(table.r[TCHK_OS_PARTITION].state != TCHK_FAIL &&
+			      table.r[TCHK_OS_PARTITION].state != TCHK_NOT_PASSED);
+		}
+	}
 	/* nor does a failed restore count */
 	facts.sw.result = TCHK_SW_WRITE_FAILED;
 	judge();
@@ -1141,45 +1156,10 @@ static void test_pages_fit(void)
 		CHECK(!table.r[k].detail.cut);
 		CHECK(strlen(tchk_tests[k].name) <= S15_STEP_LABEL_MAX);
 	}
-	/* the first screen's lines and the next steps fit too */
+	/* the first screen's lines fit too, and say nothing of the OS */
 	for (k = 0; k < TCHK_FIRST_LINES; k++)
-		CHECK(strlen(tchk_first_lines[k]) <= S15_COLS);
-	CHECK(strlen(tchk_next_lines[0]) <= S15_COLS && strlen(tchk_next_lines[1]) <= S15_COLS);
-}
-
-static void test_os_lines(void)
-{
-	struct tchk_switch sw;
-	const char *l[TCHK_OS_LINES];
-	unsigned n;
-
-	memset(&sw, 0, sizeof sw);
-	sw.result = TCHK_SW_RESTORED;
-	n = tchk_os_lines(&sw, l);
-	CHECK(n == 1u && strcmp(l[0], "Your OS is active again. A power cycle starts it.") == 0);
-	sw.result = TCHK_SW_NO_OTHER_OS;
-	n = tchk_os_lines(&sw, l);
-	CHECK(n == 3u && strstr(l[0], "not found") != NULL);
-	CHECK(strstr(l[1], "write the unit's OS again") != NULL && strstr(l[2], "waffle-boot") != NULL);
-	sw.result = TCHK_SW_READY;
-	n = tchk_os_lines(&sw, l);
-	CHECK(n == 2u && strcmp(l[0], "Your OS was found and checked.") == 0);
-	CHECK(strcmp(l[1], "It is made active when the tests end.") == 0);
-	sw.unverified = true;
-	n = tchk_os_lines(&sw, l);
-	CHECK(n == 3u && strstr(l[0], "stored encrypted") != NULL);
-	sw.unverified = false;
-	/* only a restore says the OS starts again */
-	for (sw.result = TCHK_SW_NOT_RUN; sw.result <= TCHK_SW_READY; sw.result++) {
-		unsigned i;
-
-		n = tchk_os_lines(&sw, l);
-		CHECK(n <= TCHK_OS_LINES);
-		for (i = 0; i < n; i++) {
-			CHECK(strlen(l[i]) <= S15_COLS);
-			CHECK(sw.result == TCHK_SW_RESTORED || strstr(l[i], "active again") == NULL);
-		}
-	}
+		CHECK(strlen(tchk_first_lines[k]) <= S15_COLS &&
+		      strstr(tchk_first_lines[k], "OS") == NULL);
 }
 
 static char report[TCHK_REPORT_MAX];
@@ -1237,28 +1217,26 @@ static void test_report_redaction(void)
 	CHECK(has("version unread"));
 	CHECK(has("JEDEC id ef 40 14; status 00, no block protected"));
 	CHECK(has("Hardware: PASS"));
-	CHECK(has("Your OS: must be written again"));
-	CHECK(has("Your OS stays on the eMMC"));
+	CHECK(!has("Your OS") && !has("active again") && !has("written again"));
 	CHECK(!has("cold") && !has("removes"));
 	CHECK(has("other partition's header: all zero"));
-	CHECK(has("os-partition  not passed  OS not in the other partition: write it again"));
+	CHECK(has("os-partition  pass        no OS header in the other partition"));
 	CHECK(has("- waffle-boot's own earliest start-up"));
 	/* the report ends with its last line whole */
 	CHECK(n > 1u && report[n - 1u] == '\n' && report[n] == '\0');
 	CHECK(has("the install is then not offered.\n"));
-	/* no line promises a return to the OS when none was made */
-	CHECK(!has("active again.") && !has("returns"));
+	CHECK(!has("returns"));
 	/* every detail written whole */
 	for (i = 0; i < TCHK_COUNT; i++)
 		CHECK(!table.r[i].detail.cut && !table.r[i].more.cut);
 
-	/* the OS found: the report says it is made active at the end */
+	/* an OS found: only its row says it is made active at the end */
 	facts.sw.result = TCHK_SW_READY;
 	judge();
 	n = tchk_report(&table, &facts.sw, "1.0.11", report, sizeof report);
 	CHECK(n == strlen(report));
-	CHECK(has("Your OS: found, made active at the end\n"));
-	CHECK(has("It is made active when the tests end."));
+	CHECK(has("os-partition  pass        an OS, checked: made active at the end\n"));
+	CHECK(!has("Your OS"));
 }
 
 /* check.txt keeps one length however its text changes, ending in a newline. */
@@ -1390,7 +1368,6 @@ int main(void)
 	RUN(test_regs_groups);
 	RUN(test_verdict);
 	RUN(test_nordic_gate);
-	RUN(test_os_lines);
 	RUN(test_pages_fit);
 	RUN(test_report_redaction);
 	RUN(test_report_pad);

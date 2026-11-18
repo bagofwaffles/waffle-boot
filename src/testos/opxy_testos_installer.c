@@ -3,8 +3,8 @@
  * The installer's runner on the master (wiki/Installer-Reference.md;
  * waffle/board/installer.h), after the check suite: the install's screens,
  * the holds that start each write, the write engine
- * (src/testos/installer_engine.c), the unit's OS made active again, and the
- * USB port's read-only protocol.
+ * (src/testos/installer_engine.c), an OS found in the other boot partition
+ * made active again, and the USB port's read-only protocol.
  *
  * What it may write: through the engine, the slot the selector does not
  * name, its record and the selector; through the suite's guard, the active
@@ -233,7 +233,8 @@ static enum inst_phase settle(const struct opxy_installer_ctx *c)
 	return in.st.trial == INST_TRIAL_NONE ? INST_READY : INST_TRIAL_FAILED;
 }
 
-/* The digits each phase lets a hold start. */
+/* The digits each phase lets a hold start: 8 only while an OS waits to be
+ * made active, since leaving otherwise changes nothing. */
 static uint16_t holds_for(enum inst_phase p, bool os_ok)
 {
 	const uint16_t back = os_ok ? 1u << 8 : 0u;
@@ -289,7 +290,8 @@ static void enter(const struct opxy_installer_ctx *c, enum inst_phase p, uint32_
 	draw(c, now);
 }
 
-/* The unit's OS made active again, through the suite's guard. */
+/* An OS found in the other partition made active, through the suite's
+ * guard; with none found, nothing is written. */
 static void leave(const struct opxy_installer_ctx *c)
 {
 	tchk_switch_write(c->env, c->sw);
@@ -312,7 +314,8 @@ static enum inst_phase write_form(const struct opxy_installer_ctx *c, unsigned f
 		return INST_FAILED;
 	if (form == OPXY_INSTALL_TRIAL)
 		return INST_TRIAL_WRITTEN;
-	/* kept: the unit's OS active again, part of the same step */
+	/* kept: an OS found in the other partition made active, part of the
+	 * same step */
 	leave(c);
 	return INST_DONE;
 }
