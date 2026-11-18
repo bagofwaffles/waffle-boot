@@ -1,14 +1,436 @@
 <!doctype html>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Waffle Boot</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script>location.replace('web/' + location.search + location.hash);</script>
-<meta http-equiv="refresh" content="0; url=web/">
-<link rel="canonical" href="web/">
+<meta name="description" content="Install waffle-boot on an OP-XY, or upgrade and recover one that runs
+  it from its recovery menu, in your browser over USB.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FFF6E6">
+<link rel="icon" type="image/svg+xml" href="web/assets/logo.svg">
+<link rel="stylesheet" href="web/style.css">
 </head>
 <body>
-<p><a href="web/">Open Waffle Boot</a>.</p>
+<div class="wrap">
+
+<header class="hero">
+  <div class="hero-head">
+    <img class="logo" src="web/assets/logo.svg" alt="The Bag of Waffles logo: a brown paper bag overflowing with
+      waffles" width="118" height="118">
+    <div class="hero-title">
+      <h1>Waffle Boot</h1>
+      <p class="tag">Install waffle-boot on your <span style="white-space:nowrap">OP-XY</span>, or upgrade
+        and recover one that runs it, in your browser.</p>
+    </div>
+  </div>
+  <p class="promise">Nothing is sent to a server. The page talks to the unit over USB, and the unit checks
+    every image itself before it writes.</p>
+  <div class="choose" role="tablist" aria-label="What to do">
+    <button id="tab-install" class="choice" role="tab" aria-selected="false" aria-controls="install">
+      <b>Install waffle-boot</b>
+      <span>Put it on a unit with the installer: the hardware is checked first, and every write is held on
+        the unit.</span>
+    </button>
+    <button id="tab-recover" class="choice" role="tab" aria-selected="false" aria-controls="guided">
+      <b>Upgrade / Recover</b>
+      <span>A unit that already runs waffle-boot: upgrade it, or write, try or switch its slots, from the
+        recovery menu (Power + M4 (4 under the display)).</span>
+    </button>
+  </div>
+  <div class="recmodes" id="recmodes" hidden>
+    <div class="seg" role="tablist" aria-label="Recovery mode">
+      <button id="tab-guided" role="tab" aria-selected="false" aria-controls="guided"><b>Guided</b><small>a
+        plain upgrade, step by step</small></button>
+      <button id="tab-advanced" role="tab" aria-selected="false" aria-controls="advanced"><b>Advanced</b><small>every
+        command</small></button>
+    </div>
+  </div>
+</header>
+
+<!-- shown once Install or Recovery is chosen -->
+<main id="main" hidden>
+  <!-- ---------------- connect: both modes ---------------- -->
+  <ol class="steps" id="common">
+    <li class="step active" id="s-check">
+      <div class="num"><span class="tick">ok</span></div>
+      <div class="sbody">
+        <h2>Browser <span class="sn" id="sn-check"></span></h2>
+        <div class="chips" id="support"></div>
+        <p class="hint" id="checkhint">Checking the browser...</p>
+      </div>
+    </li>
+
+    <li class="step pending" id="s-menu" hidden>
+      <div class="num"><span class="ico">1</span><span class="tick">ok</span></div>
+      <div class="sbody">
+        <h2>Open the recovery menu <span class="sn" id="sn-menu"></span></h2>
+        <ol class="howlist">
+          <li>Switch the OP-XY <b>off</b>.</li>
+          <li>Hold <b>M4</b> (4 under the display) and no other key, and switch it on.</li>
+          <li>Let go when the red <b>Recovery</b> screen shows.</li>
+          <li>Connect it to this computer with a USB cable.</li>
+        </ol>
+        <div class="actions">
+          <button id="connect" class="btn primary" disabled>Connect to my OP-XY</button>
+          <button id="disconnect" class="btn small" hidden>Disconnect</button>
+        </div>
+        <p class="hint" id="connhint">The browser asks which port to use: pick <b>OP-XY Recovery</b>.</p>
+      </div>
+    </li>
+
+    <li class="step pending" id="s-unit" hidden>
+      <div class="num"><span class="ico">2</span><span class="tick">ok</span></div>
+      <div class="sbody">
+        <h2>Your unit <span class="sn" id="sn-unit"></span></h2>
+        <p class="hint">The unit keeps two copies of the bootloader, Slot 1 and Slot 2. An upgrade replaces
+          the one it is not running from.</p>
+        <p class="hint" id="unithint">What the unit reports shows here once it is connected.</p>
+        <div class="unit" id="unit" hidden>
+          <div id="slots"></div>
+          <div class="unitrow"><span>Battery</span><b id="u-batt"></b></div>
+          <div class="unitrow"><span>Recovery</span><b id="u-front"></b></div>
+        </div>
+        <ul class="says" id="unitnotes"></ul>
+        <div class="actions"><button id="refresh" class="btn small" hidden>Read again</button></div>
+      </div>
+    </li>
+  </ol>
+
+  <!-- ---------------- guided: install an image ---------------- -->
+  <section id="guided" role="tabpanel" aria-labelledby="tab-guided" hidden>
+    <ol class="steps">
+      <li class="step pending" id="s-image">
+        <div class="num"><span class="ico">3</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Choose the image <span class="sn" id="sn-image"></span></h2>
+          <div class="seg" role="radiogroup" aria-label="Which image to write">
+            <label><input type="radio" name="imgsrc" id="img-latest" checked>
+              <span><b>Latest release</b><small id="relver">checking...</small></span></label>
+            <label><input type="radio" name="imgsrc" id="img-own">
+              <span><b>My own file</b><small>a waffle-boot.ldr you have</small></span></label>
+          </div>
+          <p class="hint" id="relhint">The image is checked here before anything is sent.</p>
+          <label class="drop" id="drop" for="file" hidden>
+            <b>Drop the image here</b> or click to choose
+            <span class="sub" id="dropsub">.ldr, at most 487 KB</span>
+            <input type="file" id="file" accept=".ldr">
+          </label>
+          <div class="chips" id="imgchips"></div>
+          <ul class="says" id="imgnotes"></ul>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-write">
+        <div class="num"><span class="ico">4</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Write it <span class="sn" id="sn-write"></span></h2>
+          <p class="hint" id="writeplan">The image goes into the slot the unit is not running from. The
+            running slot is not touched, so the unit still starts if this is interrupted.</p>
+          <ul class="says" id="writenotes"></ul>
+          <label class="check" id="agreewrap" hidden><input type="checkbox" id="agree"><span
+            id="agreetext"></span></label>
+          <div class="actions">
+            <button id="write" class="btn primary" disabled>Write the image</button>
+            <button id="toadvanced" class="btn small" hidden>Open Advanced</button>
+          </div>
+          <div id="run" hidden>
+            <div class="count" id="count" hidden>
+              <span class="n" id="countn">15</span>
+              <span>The unit is counting down. <b>Switch it off now to stop</b>: nothing has been written
+                yet.</span>
+            </div>
+            <p class="hint" id="stage"></p>
+            <div class="bar"><i id="bar"></i></div>
+          </div>
+          <div class="result" id="writeresult" hidden></div>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-restart">
+        <div class="num"><span class="ico">5</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Restart <span class="sn" id="sn-restart"></span></h2>
+          <p class="hint">The unit starts the new image. If it does not come up, switch it off and on: it
+            starts the slot it ran before.</p>
+          <div class="actions"><button id="restart" class="btn primary" disabled>Restart the
+            unit</button></div>
+          <div class="result" id="restartresult" hidden></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ---------------- advanced: every command ---------------- -->
+  <section id="advanced" role="tabpanel" aria-labelledby="tab-advanced" hidden>
+    <div class="card" style="border-top:1px solid var(--line)">
+      <p class="hint" style="margin-top:0">Every command of <code>tools/wbrecover.py</code>. Once a unit is
+        read, the slots below are named Slot 1 and Slot 2 as its screens name them. Each asks before it sends, and the unit counts down 15 s
+        before it writes.</p>
+      <label class="check"><input type="checkbox" id="force"><span><b>Force.</b> Lifts the refusals that only
+        protect you. A forced command asks for its own phrase.</span></label>
+
+      <p class="mansub">Image</p>
+      <label class="drop" id="adrop" for="afile">
+        <b>Drop an image here</b> or click to choose
+        <span class="sub" id="adropsub">Needed for the write and select commands</span>
+        <input type="file" id="afile" accept=".ldr">
+      </label>
+      <div class="chips" id="aimgchips"></div>
+      <ul class="says" id="aimgnotes"></ul>
+
+      <p class="mansub">Write</p>
+      <div class="seg three" role="radiogroup" aria-label="Where the image is written">
+        <label><input type="radio" name="wopt" value="write" checked>
+          <span><b data-slot="other" data-cap>The other slot</b><small>the usual write</small></span></label>
+        <label><input type="radio" name="wopt" value="write-running">
+          <span><b data-slot="running" data-cap>The running slot</b><small>replaces what runs now</small></span></label>
+        <label><input type="radio" name="wopt" value="write-new-front">
+          <span><b>A trial</b><small>an image with another front</small></span></label>
+      </div>
+      <div class="cmds" id="wcmds">
+        <div class="cmd" data-cmd="write"><h3>Write <span data-slot="other">the other slot</span></h3><p>The image goes into the slot the unit is not
+          running from.</p><p class="why"></p><div class="actions"><button class="btn small">Write
+          <span data-slot="other">the other slot</span></button></div></div>
+        <div class="cmd" data-cmd="write-running"><h3>Write <span data-slot="running">the running slot</span></h3><p><span data-slot="other" data-cap>The other slot</span> is selected first if
+          it is good. With it bad the write is in place, with no fallback.</p><p class="why"></p><div
+          class="actions"><button class="btn small">Write <span data-slot="running">the running slot</span></button></div></div>
+        <div class="cmd" data-cmd="write-new-front"><h3>Try an image with another front</h3><p>Written to <span data-slot="other">the other slot</span>
+          for one trial start. Its old image is lost.</p><p class="why"></p><div class="actions"><button
+          class="btn small">Write for a trial</button></div></div>
+      </div>
+
+      <p class="mansub">Slots</p>
+      <div class="cmds">
+        <div class="cmd" data-cmd="try"><h3>Try <span data-slot="other">the other slot</span> once</h3><p>The next start runs it once, then <span data-slot="running">the running slot</span> again.</p><p
+          class="why"></p><div class="actions"><button class="btn small">Try <span data-slot="other">the other slot</span></button></div></div>
+        <div class="cmd" data-cmd="switch"><h3>Switch to <span data-slot="other">the other slot</span> for good</h3><p>The unit starts it from now
+          on.</p><p class="why"></p><div class="actions"><button class="btn small">Switch</button></div></div>
+        <div class="cmd" data-cmd="keep"><h3>Keep a tried slot</h3><p>For a tried slot that came up: start it
+          from now on.</p><p class="why"></p><div class="actions"><button class="btn
+          small">Keep</button></div></div>
+        <div class="cmd" data-cmd="select"><h3>Keep a tried slot, checked against the image</h3><p>As Keep,
+          after comparing the slot with the chosen image.</p><p class="why"></p><div class="actions"><button
+          class="btn small">Select</button></div></div>
+        <div class="cmd" data-cmd="put-back"><h3>Put a tried slot's record back</h3><p>A tried, unkept slot
+          reads good again. Also cancels a try not yet started.</p><p class="why"></p><div
+          class="actions"><button class="btn small">Put back</button></div></div>
+      </div>
+
+      <p class="mansub">Unit</p>
+      <div class="cmds">
+        <div class="cmd" data-cmd="restart"><h3>Restart</h3><p>Restarts the unit without a key held.</p><p
+          class="why"></p><div class="actions"><button class="btn small">Restart</button></div></div>
+      </div>
+
+      <div id="arun" hidden>
+        <div class="count" id="acount" hidden>
+          <span class="n" id="acountn">15</span>
+          <span>The unit is counting down. <b>Switch it off now to stop</b>: nothing has been written
+            yet.</span>
+        </div>
+        <p class="hint" id="astage"></p>
+        <div class="bar"><i id="abar"></i></div>
+      </div>
+      <div class="result" id="aresult" hidden></div>
+    </div>
+  </section>
+
+  <!-- ---------------- install: the installer image ---------------- -->
+  <section id="install" role="tabpanel" aria-labelledby="tab-install">
+    <ol class="steps">
+      <li class="step active" id="s-iwrite">
+        <div class="num"><span class="ico">1</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Write the installer file from the developer menu <span class="sn" id="sn-iwrite"></span></h2>
+          <p class="hint">We will install waffle-boot using developer mode on your unit, similar to a custom
+            OS install.</p>
+          <p class="notebar" id="i-backup"><b>Back up your files first.</b> The OS has to be installed
+            again afterward.</p>
+          <div class="seg" role="radiogroup" aria-label="How the installer file gets to the unit">
+            <label><input type="radio" name="isrc" id="isrc-send" checked>
+              <span><b>Send it from here</b><small id="i-sendver">over USB</small></span></label>
+            <label><input type="radio" name="isrc" id="isrc-get">
+              <span><b>Download it</b><small>and copy it yourself</small></span></label>
+          </div>
+          <div id="i-sendbox">
+            <div class="seg" role="radiogroup" aria-label="Which installer file to send">
+              <label><input type="radio" name="ifile" id="ifile-latest" checked>
+                <span><b>Latest release</b><small id="i-relver">checking...</small></span></label>
+              <label><input type="radio" name="ifile" id="ifile-own">
+                <span><b>My own file</b><small>a waffle-install.ldr you have</small></span></label>
+            </div>
+            <label class="drop" id="i-drop" for="i-file" hidden>
+              <b>Drop the installer here</b> or click to choose
+              <span class="sub" id="i-dropsub">.ldr</span>
+              <input type="file" id="i-file" accept=".ldr">
+            </label>
+            <ol class="howlist">
+              <li>On the unit, open MTP mode in the developer menu.</li>
+              <li>Connect it to this computer with a USB cable.</li>
+              <li>Press <b>Send</b> and pick the OP-XY.</li>
+            </ol>
+            <div class="actions"><button id="i-send" class="btn primary" disabled>Send the installer</button></div>
+            <p class="hint" id="i-sendhint">The file is checked here, sent, then read back from the unit and
+              compared.</p>
+            <div id="i-sendrun" hidden>
+              <p class="hint" id="i-sendstage"></p>
+              <div class="bar"><i id="i-sendbar"></i></div>
+            </div>
+            <div class="phase" id="i-sendresult" hidden>
+              <p class="ptitle" id="i-sendtitle"></p>
+              <ul class="says" id="i-sendlines"></ul>
+              <div class="todo"><ul class="says" id="i-sendadvice"></ul></div>
+            </div>
+          </div>
+          <div id="i-getbox" hidden>
+            <ol class="howlist">
+              <li>Download <a id="i-getfile" href="https://github.com/bagofwaffles/waffle-boot/releases"
+                ><code>waffle-install.ldr</code></a><span id="i-getver"></span>.</li>
+              <li>On the unit, open MTP mode in the developer menu, and connect it to this computer with a
+                USB cable.</li>
+              <li>Copy the file to the unit, named <code>os.ldr</code>.</li>
+              <li>On the unit, press these keys in order: <b>2</b> leaves MTP mode, <b>5</b> writes
+                <code>os.ldr</code>, <b>2</b> goes back, <b>6</b> restarts. The installer starts.</li>
+            </ol>
+          </div>
+          <p class="notebar" id="i-ferret"></p>
+          <p class="hint">Already on waffle-boot? Use <b>Upgrade / Recover</b> instead.</p>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-iconn">
+        <div class="num"><span class="ico">2</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Connect to the installer <span class="sn" id="sn-iconn"></span></h2>
+          <div class="actions">
+            <button id="i-connect" class="btn primary" disabled>Connect to the installer</button>
+            <button id="i-disconnect" class="btn small" hidden>Disconnect</button>
+          </div>
+          <p class="hint" id="i-connhint">The browser asks which port to use: pick the OP-XY.</p>
+          <p class="notebar" id="i-busy" hidden></p>
+          <div class="actions" id="i-simbox" hidden>
+            <span class="simtag">Simulator</span>
+            <button class="btn small" data-sim="hold" type="button">Hold the key for 5 s</button>
+            <button class="btn small" data-sim="leave" type="button">Hold 8 to leave</button>
+            <button class="btn small" data-sim="release" type="button">Let go</button>
+            <button class="btn small" data-sim="restart" type="button">Switch off and on</button>
+            <button class="btn small" data-sim="reset" type="button">Start over</button>
+          </div>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-ichecks">
+        <div class="num"><span class="ico">3</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>The checks <span class="sn" id="sn-ichecks"></span></h2>
+          <p class="hint" id="i-checkhint">Each check and its result shows here as the installer runs it.</p>
+          <div class="checks" id="i-checks" hidden></div>
+          <div class="actions">
+            <button id="i-report" class="btn small" hidden>Save check.txt</button>
+            <span class="hint" id="i-reporthint"></span>
+          </div>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-iimage">
+        <div class="num"><span class="ico">4</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>What will be written <span class="sn" id="sn-iimage"></span></h2>
+          <p class="hint" id="i-imagehint">The bootloader the installer carries, once it is connected.</p>
+          <div class="unit" id="i-image" hidden>
+            <div class="unitrow"><span>Version</span><b id="i-ver"></b></div>
+            <div class="unitrow"><span>Length</span><b id="i-len"></b></div>
+            <div class="unitrow"><span>CRC-32</span><b class="mono" id="i-crc"></b></div>
+            <div class="unitrow"><span>Front pin</span><b class="mono" id="i-pin"></b></div>
+            <div class="unitrow"><span>Goes into</span><b id="i-target"></b></div>
+            <div class="unitrow"><span>Verified</span><b id="i-verified"></b></div>
+          </div>
+          <ul class="says" id="i-imagenotes"></ul>
+        </div>
+      </li>
+
+      <li class="step pending" id="s-iphase">
+        <div class="num"><span class="ico">5</span><span class="tick">ok</span></div>
+        <div class="sbody">
+          <h2>Install <span class="sn" id="sn-iphase"></span></h2>
+          <p class="hint" id="i-phasehint">The installer offers the install once every check has passed.</p>
+          <div class="phase" id="i-phasebox" hidden>
+            <p class="ptitle" id="i-ptitle"></p>
+            <ul class="says" id="i-lines"></ul>
+            <div class="todo" id="i-advicebox"><ul class="says" id="i-advice"></ul></div>
+            <div id="i-holdbox" hidden>
+              <p class="hint" id="i-holdtext"></p>
+              <div class="bar"><i id="i-hold"></i></div>
+            </div>
+          </div>
+          <div class="unit" id="i-slots" hidden></div>
+          <ol class="trail" id="i-trail" hidden>
+            <li data-p="ready">Every check passed</li>
+            <li data-p="trial written">Trial written</li>
+            <li data-p="commit ready">Trial start reached the boot menu</li>
+            <li data-p="done">Kept</li>
+          </ol>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <details class="card" id="d-help">
+    <summary>If something goes wrong</summary>
+    <ul class="howlist">
+      <li><b>No port named OP-XY Recovery.</b> The unit is not in the recovery menu, or the cable carries
+        power only. Check the screen, then try another cable or port.</li>
+      <li><b>Refused or Stopped.</b> Nothing was written. The message says why.</li>
+      <li><b>The connection dropped during a transfer.</b> Nothing was written. Connect and write again.</li>
+      <li><b>FAILED while writing the other slot.</b> The unit still starts as before. Write again.</li>
+      <li><b>Install: the installer file could not be sent.</b> The message says why. Choose <b>Download
+        it</b> and copy it yourself instead.</li>
+      <li><b>Install: a check did not pass.</b> Nothing was written. The Install step says what the unit
+        starts now; save check.txt, which lists every check.</li>
+      <li><b>Install: the trial failed.</b> Nothing was kept: the unit starts the bootloader it had. Hold the
+        key the unit names to try again, or leave it as it is.</li>
+      <li><b>The unit does not start after a restart.</b> Switch it off and on with no key held. If it still
+        does not start, hold <b>M4</b> (4 under the display) again: recovery is in every image.</li>
+    </ul>
+    <p class="hint">More: <a href="https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Recover">How to
+      Recover</a> and the <a
+      href="https://github.com/bagofwaffles/waffle-boot/wiki/Recovery-Reference">reference</a>.</p>
+  </details>
+
+  <details class="card" id="d-log">
+    <summary>Live log</summary>
+    <div class="actions">
+      <button id="clear" class="btn small">Clear</button>
+      <label class="check" style="margin:0"><input type="checkbox" id="rawlog"><span>Show the
+        bytes</span></label>
+    </div>
+    <pre id="log"></pre>
+  </details>
+</main>
+
+<dialog id="confirm">
+  <h2 id="c-title"></h2>
+  <ul class="says" id="c-lines"></ul>
+  <div id="c-phrasewrap">
+    <label for="c-phrase" id="c-label"></label>
+    <input type="text" id="c-phrase" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="actions">
+    <button id="c-go" class="btn primary" disabled>Send</button>
+    <button id="c-cancel" class="btn">Cancel</button>
+  </div>
+</dialog>
+
+<footer>
+  <p>Not affiliated with Teenage Engineering.</p>
+  <p><a href="https://github.com/bagofwaffles/waffle-boot" target="_blank"
+    rel="noopener">github.com/bagofwaffles/waffle-boot</a></p>
+</footer>
+
+</div>
+<noscript><p style="text-align:center;padding:20px">This page needs JavaScript.</p></noscript>
+<script type="module" src="web/app.js"></script>
 </body>
 </html>

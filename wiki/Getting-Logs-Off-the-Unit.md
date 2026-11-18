@@ -32,7 +32,7 @@ repository's root:
 
     python3 tools/wbrecover.py info
 
-It prints both slots, the selector, what each command would do, and the battery. The page's Recovery tab shows what the
+It prints both slots, the selector, what each command would do, and the battery. The page's Upgrade / Recover tab shows what the
 unit reports once connected.
 
 ## 4. The live bootloader log (developers)

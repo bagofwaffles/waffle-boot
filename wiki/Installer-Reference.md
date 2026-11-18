@@ -6,6 +6,9 @@ How the installer works. To install, follow [How to Install](How-to-Install).
 The installer, `waffle-install.ldr`, runs as the unit's OS. It is built on the [Test OS](Test-OS). It checks the hardware, and only when every check passes does it write the
 waffle-boot image it carries. Every write is started on the unit, by holding the step's key for 5 s.
 
+Back up your files before running it: the OS has to be installed again afterward
+([Updating the OS](Updating-the-OS)).
+
 ## What it needs on the unit
 
 - A developer menu that writes an OS file to the boot partition the OS is not in.

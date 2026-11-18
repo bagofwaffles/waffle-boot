@@ -18,7 +18,8 @@ What it looks for:
   identity   every commit is by the project identity, in UTC
   messages   no "…-by:" trailers, no addresses
   content    no home directory paths, no email addresses, and binary
-             files only where photos, test data and screenshots live
+             files only where photos, test data, screenshots and the
+             page's copy of the installer live
   images     no Exif, XMP or IPTC block in a JPEG or PNG: that is where
              a camera puts the place, the time and its serial number
   private    the patterns in ~/.config/bagofwaffles/leak-patterns, one
@@ -58,7 +59,8 @@ EMAIL_RE = re.compile(
 TRAILER_RE = re.compile(rb'^[A-Za-z-]+-by:', re.I | re.M)
 
 # Binary files belong here and nowhere else.
-BINARY_OK = re.compile(r'^(photos/|docs/ui/|tests/oracle/S-[^/]+/vectors/|tests/fuzz/regressions/)')
+BINARY_OK = re.compile(r'^(photos/|docs/ui/|docs/web/release/|tests/oracle/S-[^/]+/vectors/|'
+                       r'tests/fuzz/regressions/)')
 # The specification is a private repository of its own: nothing under spec/ is tracked here.
 PRIVATE_TREE = re.compile(r'^spec(/|$)')
 # Upstream code keeps its authors' addresses and paths.

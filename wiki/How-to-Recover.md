@@ -104,7 +104,7 @@ starts if the write is interrupted.
 
 You need Chrome or Edge on a computer, a USB cable, and a waffle-boot image, `waffle-boot.ldr`.
 
-1. Open [the page](https://bagofwaffles.github.io/waffle-boot/) and choose **Recovery**, then **Guided**.
+1. Open [the page](https://bagofwaffles.github.io/waffle-boot/) and choose **Upgrade / Recover**.
 2. Open the recovery menu on the unit, and connect it with the USB cable.
 3. Press **Connect to my OP-XY**, and pick **OP-XY Recovery**. The page shows what the unit reports.
 4. Choose the image. The page checks it before anything is sent.
@@ -115,7 +115,7 @@ You need Chrome or Edge on a computer, a USB cable, and a waffle-boot image, `wa
 7. When the write is verified, press **Restart the unit**. If it does not come up, switch off and on: it
    starts the slot it ran before.
 
-The **Advanced** tab has every command of the host tool.
+The **Advanced** tab, chosen under **Upgrade / Recover**, has every command of the host tool.
 
 ### With the host tool
 

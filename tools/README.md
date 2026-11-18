@@ -18,6 +18,7 @@ Run them from the repository root. The Python tools need only the standard libra
 | `testos_layout.py` | Checks the test OS's placement and stream | `make test-os` |
 | `testos_regs.py` | Writes S-13a's OS-entry registers as a C table for the test OS | `make test-os` |
 | `installer_image.py` | Writes the image the installer carries, as C, after checking its front against `src/front/front.pin` | `make installer` |
+| `web_release.py` | Puts a release's installer file, bootloader image and `latest.json` in `docs/web/release/`, where the page loads them | At each release |
 | `toolchain/` | Builds the bfin-elf cross toolchain ([`README.md`](toolchain/README.md)) | `make cross` |
 | **Checks** | | |
 | `ci-local.sh`, `ci/` | Runs the CI jobs in local Linux containers | [Running the checks](#running-the-checks) |

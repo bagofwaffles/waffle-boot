@@ -2,7 +2,7 @@
 /* The recovery page's one stylesheet, in the look of the Bag of Waffles tools.
    assets/waffles.svg and assets/logo.svg sit beside it. */
 :root{
-  --bg:#FFF6E6; --card:#FFFFFF; --ink:#463122; --dim:#967F68; --line:#F1DFC3; --line2:#E7CFA9;
+  --bg:#FFF6E6; --card:#FFFFFF; --ink:#463122; --dim:#75604B; --line:#F1DFC3; --line2:#E7CFA9;
   --gold:#F2A93B; --gold-edge:#C9821B; --gold-ink:#5A3A06; --brown:#3B2A1B;
   --ok:#4E9E58; --ok-bg:#EAF7EA; --err:#E4572E; --err-bg:#FDEDE8; --warn:#D98A1F; --warn-bg:#FFF3DA;
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -24,9 +24,6 @@ body{
 h1,h2,h3,summary,button{font-family:var(--font);letter-spacing:-.01em}
 a{color:#C4702A}
 code{font:600 14.3px var(--mono);background:#FFF3DA;border:1px solid #F1DFC3;border-radius:4px;padding:2px 6px}
-b.key{font:700 14.3px var(--font);background:var(--brown);color:#FFF6E6;border-radius:5px;
-  padding:2px 8px;white-space:nowrap}
-
 /* hero */
 .hero{padding:30px 0 24px;border-bottom:1px solid var(--line)}
 .hero-head{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
@@ -34,10 +31,7 @@ b.key{font:700 14.3px var(--font);background:var(--brown);color:#FFF6E6;border-r
 .hero h1{font:700 clamp(31px,6vw,44px)/1.04 var(--font);margin:0}
 .hero-title{flex:1 1 0;min-width:0}
 .tag{margin:6px 0 0;font-size:17.6px;color:#6F5B47}
-.promise{margin:14px 0 0;font-size:15.4px;color:#8A7259}
-.warnbar{margin:14px 0 0;padding:10px 14px;background:var(--err-bg);border:1px solid #F3C1B3;
-  border-radius:6px;font-size:14.9px;color:#8C3A22}
-.warnbar b{color:#B1401F}
+.promise{margin:14px 0 0;font-size:15.4px;color:var(--dim)}
 .notebar{margin:12px 0 0;padding:10px 14px;background:var(--warn-bg);border:1px solid var(--line2);
   border-radius:6px;font-size:14.9px;color:#7A5A22}
 @media(max-width:640px){.wrap{padding:0 16px 30px;margin:14px auto}.hero{padding:20px 0 18px}
@@ -54,11 +48,24 @@ b.key{font:700 14.3px var(--font);background:var(--brown);color:#FFF6E6;border-r
 .choice[aria-selected="true"] b{color:#8A5A12}
 
 /* mode tabs */
-.modes{display:flex;gap:8px;margin:18px 0 0;padding:5px;background:#FFF3DA;border:1px solid var(--line);
-  border-radius:12px;width:fit-content;max-width:100%}
-.modes button{font:700 16px var(--font);border:0;background:transparent;color:#8A6B3F;border-radius:8px;
-  padding:9px 20px;cursor:pointer}
-.modes button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 2px 0 #EDDCC0}
+.recmodes{margin:12px 0 0}
+.recmodes .seg{margin-top:0;max-width:none}
+/* a choice of a few, as radio buttons or tabs: the chosen one is the raised card */
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:10px 0 0;padding:5px;
+  background:#FFF3DA;border:1px solid var(--line);border-radius:12px;max-width:560px}
+.seg.three{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));max-width:none}
+.seg label{cursor:pointer;border-radius:8px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span,.seg button{display:flex;flex-direction:column;gap:2px;min-height:44px;justify-content:center;
+  padding:8px 14px;border-radius:8px;border:2px solid transparent;color:#75604B;background:transparent;
+  font:inherit;text-align:left;cursor:pointer}
+.seg b{font:700 16px var(--font)}
+.seg small{font-size:13.7px}
+.seg label:hover span,.seg button:hover{background:#FFF9EA}
+.seg input:checked+span,.seg button[aria-selected="true"]{background:var(--card);color:var(--ink);
+  border-color:var(--gold);box-shadow:0 2px 0 var(--gold-edge)}
+.seg input:focus-visible+span{outline:3px solid var(--gold);outline-offset:2px}
+.seg input:disabled+span{opacity:.5;cursor:not-allowed}
 
 /* step cards */
 .steps{list-style:none;margin:0;padding:0}
@@ -70,7 +77,7 @@ b.key{font:700 14.3px var(--font);background:var(--brown);color:#FFF6E6;border-r
 .step .tick{display:none;font:700 16.5px/1 var(--font);color:var(--ok)}
 .step .sbody{flex:1;min-width:0}
 .step h2{margin:0 0 4px;font-size:19.8px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.step.pending{opacity:.55}
+.step.pending{opacity:.7}
 .step.active{background:#FFFCF3}
 .step.active .num{color:#9C6A10}
 .step.done .ico{display:none}
@@ -140,13 +147,6 @@ details.card[open]>summary::after{transform:translateY(-50%) rotate(180deg)}
 .says.bad li::before{background:var(--err)}
 
 /* the unit's screen */
-.screen{display:block;width:100%;max-width:480px;height:auto;margin:12px 0 0;border-radius:8px;
-  border:6px solid var(--brown);background:#000;image-rendering:pixelated;
-  box-shadow:0 6px 14px rgba(70,49,34,.18)}
-.duo{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
-.duo>*{flex:1 1 300px;min-width:0}
-figure{margin:0}
-figcaption{font-size:13.7px;color:#A78F76;margin-top:5px}
 
 /* the connected unit */
 .unit{margin:12px 0 0;border:2px solid var(--line);border-radius:12px;background:#FFFDF8;padding:12px 16px}
@@ -160,7 +160,7 @@ figcaption{font-size:13.7px;color:#A78F76;margin-top:5px}
 
 /* dropzone */
 .drop{display:block;margin:14px 0 2px;border:2.5px dashed var(--line2);border-radius:10px;
-  padding:20px;text-align:center;color:#A78F76;cursor:pointer;background:#FFFDF8;
+  padding:20px;text-align:center;color:var(--dim);cursor:pointer;background:#FFFDF8;
   transition:border-color .15s,background .15s;font:600 16px var(--font)}
 .drop b{color:#8A6B3F}
 .drop .sub{font-size:14.9px;display:block}
@@ -242,10 +242,9 @@ dialog.danger h2{color:#B1401F}
   background:var(--warn-bg);border:1px dashed #EBCF9C;border-radius:5px;padding:4px 9px}
 
 footer p{margin:0}
-footer{text-align:center;color:#8A7259;font-size:14.9px;margin-top:26px;border-top:1px solid var(--line);
+/* nothing chosen yet: the header's line is enough */
+main[hidden]~footer{margin-top:0;border-top:0}
+footer{text-align:center;color:var(--dim);font-size:14.9px;margin-top:26px;border-top:1px solid var(--line);
   padding-top:22px}
 :focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px}
 /* the Install tab's send over the developer link */
-.devput{margin:18px 0 0;padding:14px 0 0;border-top:1px dashed var(--line)}
-.devput h3{margin:0;font-size:17.6px}
-.devput .bar{margin-top:10px}

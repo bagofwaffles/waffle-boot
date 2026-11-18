@@ -1,7 +1,8 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
-# The tests of docs/web/core.js and install.js: node --test over tests/web/, which runs the Python tool's
-# scenarios (gen_cases.py) and the simulated units (unit_bridge.py) itself.
+# The tests of docs/web/core.js, install.js, mtp.js and usb.js: node --test over tests/web/, which runs the
+# Python tools' scenarios (gen_cases.py), the simulated units (unit_bridge.py) and the MTP responders
+# (mtp_bridge.py) itself.
 # Exit status 0 when every test passed, or when node is not installed (said, and skipped).
 set -eu
 cd "$(dirname "$0")/../.."
@@ -22,4 +23,6 @@ node --check docs/web/core.js
 node --check docs/web/words.js
 node --check docs/web/install.js
 node --check docs/web/install_words.js
-exec node --test tests/web/test_core.mjs tests/web/test_install.mjs
+node --check docs/web/mtp.js
+node --check docs/web/usb.js
+exec node --test tests/web/test_core.mjs tests/web/test_install.mjs tests/web/test_mtp.mjs

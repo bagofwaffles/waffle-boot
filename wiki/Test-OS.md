@@ -35,7 +35,7 @@ S-15.092 to S-15.094; S-15.170 says how to reach it).
 2. Run the menu's OS write, then switch off and on. Judge it by what starts: the test OS's first log line
    names its variant.
 3. The OS write removes the unit's OS from the other partition. To go back, write TE's firmware file the
-   same way. The installer is the exception: it makes the unit's OS active again when it ends.
+   same way. The same holds after the installer.
 
 ## What it reports
 

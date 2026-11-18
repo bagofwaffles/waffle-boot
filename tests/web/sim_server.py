@@ -3,7 +3,7 @@
 """Serves the recovery page with a simulated unit behind it, for trying docs/web/ in a browser
 with no OP-XY:
 
-    tests/web/sim_server.py [PORT]        then open http://localhost:PORT/web/?sim=model:plain
+    tests/web/sim_server.py [PORT]        then open http://localhost:PORT/?sim=model:plain
 
 It serves docs/ as files, and at /sim/unit a WebSocket that units.py's Model or the front's own code
 (the shim) answers as a unit answers its recovery port. ?sim=KIND:CASE picks the unit: KIND is model
@@ -14,9 +14,12 @@ check-fail, trial-fail, no-os, write-fail, breadcrumb, keys-ended). It keeps its
 unit does across a restart, and /sim/act?unit=installer:CASE&do=hold|release|restart|reset stands
 for what a person does on the unit.
 
-?sim=devlink:CASE is the boot menu's developer link instead (devlink_model.py; CASE good, mismatch,
-drop or dev-off): the Install tab's send of the installer file. /sim/installer-file gives a file
-it takes. Python 3, standard library only; nothing here reaches a real
+?sim=mtp:CASE is the developer menu's MTP mode instead, for the Install tab's send: the responders
+of tests/tools/test_mtpcp.py through mtp_bridge.py, one bulk transfer per WebSocket message. CASE is
+one of MTP_CASES: good, readonly, mismatch, refused, stale, gone (the unit goes away while the file
+is sent), and busy, which sim.js answers itself as an interface another program holds.
+
+Python 3, standard library only; nothing here reaches a real
 unit.
 """
 import base64
@@ -33,7 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import units  # noqa: E402
 import installer_model  # noqa: E402
-import devlink_model  # noqa: E402
+import mtp_bridge  # noqa: E402
 
 DOCS = os.path.join(HERE, '..', '..', 'docs')
 OLD = {'make': {'seed': 1, 'version': [0, 9, 12, 0]}}
@@ -45,6 +48,15 @@ CASES = {
     'same': {'slots': [RUN, RUN], 'sel': [1, 1], 'running': 1},
     'other-bad': {'slots': [None, RUN], 'sel': [1, 1], 'running': 1},
     'unsettled': {'slots': [OLD, RUN], 'sel': [1, 0], 'running': 1},
+}
+OLD_OS = {'os.ldr': b'an older os.ldr', 'lost+found': None}
+MTP_CASES = {
+    'good': {},
+    'readonly': {'kind': 'readonly'},
+    'mismatch': {'faults': {'corrupt_write': True}},
+    'refused': {'faults': {'send_refused': True}},
+    'stale': {'faults': {'stale_after_list': True}},
+    'gone': {'gone_after': 300000},
 }
 lock = threading.Lock()
 installers = {}                         # name -> InstallerUnit, kept across connections
@@ -104,18 +116,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def end_headers(self):
+        # nothing is cached: a reload shows the tree as it is
+        self.send_header('Cache-Control', 'no-store')
+        super().end_headers()
+
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
         unit = urllib.parse.parse_qs(url.query).get('unit', ['model:plain'])[0]
         if url.path == '/sim/image':
             data = units.image(NEW)
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/octet-stream')
-            self.send_header('Content-Length', str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
-        elif url.path == '/sim/installer-file':
-            data = devlink_model.sample(70000)
             self.send_response(200)
             self.send_header('Content-Type', 'application/octet-stream')
             self.send_header('Content-Length', str(len(data)))
@@ -132,17 +142,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(body)
         elif url.path == '/sim/unit' and unit.startswith('installer:'):
             self.installer(installer(unit))
-        elif url.path == '/sim/unit' and unit.startswith('devlink:'):
-            self.upgrade()
-            ours, theirs = socket.socketpair()
-            u = devlink_model.DevLinkUnit({'case': unit.partition(':')[2]}, theirs.fileno())
-            theirs.close()
-            try:
-                self.bridge(ours)
-            finally:
-                u.close()
         elif url.path == '/sim/unit':
             self.unit(spec_of(unit))
+        elif url.path == '/sim/mtp':
+            self.mtp(MTP_CASES.get(unit.partition(':')[2], {}))
         else:
             super().do_GET()
 
@@ -195,6 +198,38 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             except OSError:
                 pass
 
+    def mtp(self, case):
+        """One MTP responder on this WebSocket: 'W' and bytes is a bulk OUT, answered 'K'; 'R' and a
+        u32 size a bulk IN, answered 'D' and the bytes, or 'T' when nothing is queued."""
+        self.upgrade()
+        dev = mtp_bridge.make(dict(case, files={}))
+        dev.files.update(OLD_OS)
+        for name in OLD_OS:
+            dev.handle(name)
+        sent = 0
+        try:
+            while True:
+                msg = ws_recv(self.rfile)
+                if msg is None:
+                    break
+                if msg[:1] == b'W':
+                    sent += len(msg) - 1
+                    if sent > case.get('gone_after', 1 << 62):
+                        break                   # the unit went away: the socket closes
+                    dev.write(msg[1:])
+                    ws_send(self.connection, b'K')
+                elif msg[:1] == b'R':
+                    try:
+                        ws_send(self.connection, b'D' + dev.read(struct.unpack('<I', msg[1:5])[0]))
+                    except mtp_bridge.mtpcp.Timeout:
+                        ws_send(self.connection, b'T')
+        except (OSError, AssertionError):
+            pass
+        try:
+            self.connection.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+
     def unit(self, spec):
         self.upgrade()
         with lock:                      # the shim holds one flash: one unit at a time
@@ -236,7 +271,7 @@ def main(argv):
     port = int(argv[1]) if len(argv) > 1 else 8767
     threading.excepthook = lambda a: None if issubclass(a.exc_type, OSError) else threading.__excepthook__(a)
     srv = http.server.ThreadingHTTPServer(('127.0.0.1', port), Handler)
-    print('http://localhost:%d/web/?sim=model:plain' % port, flush=True)
+    print('http://localhost:%d/?sim=model:plain' % port, flush=True)
     srv.serve_forever()
 
 
