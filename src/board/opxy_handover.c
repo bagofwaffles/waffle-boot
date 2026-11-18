@@ -9,6 +9,7 @@
  * layout.py checks that nothing in that section refers outside it.
  */
 #include "waffle/board/opxy_boot.h"
+#include "waffle/board/opxy_ho_copy.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -302,9 +303,10 @@ static HO_TEXT uint32_t ho_src(uint32_t a)
  * S-05.009-S-05.012: one call of the load function. Every copy is by the CPU;
  * no memory-DMA channel is touched (S-05.010). Into L1 instruction memory
  * with ENX set: bytes up to a word boundary, aligned words, then bytes, and a
- * CSYNC before the return. Everything else is a byte loop. The caches are off
- * since the kernel call (opxy_kernel_call), so the bytes reach memory and no
- * cache line holds them (S-05.011).
+ * CSYNC before the return. Into DDR or L2, a block wholly inside one of them:
+ * opxy_ho_copy()'s words. Everything else, L1 data among it, is a byte loop.
+ * The caches are off since the kernel call (opxy_kernel_call), so the bytes
+ * reach memory and no cache line holds them (S-05.011).
  */
 HO_TEXT void opxy_load_fn(uint32_t cfg)
 {
@@ -339,6 +341,8 @@ HO_TEXT void opxy_load_fn(uint32_t cfg)
 		wb_mmr_write32(L1DM_DCTL, saved);
 		wb_mmr_sync();
 		wb_core_csync();
+	} else if (opxy_ho_words_ok(dst, n)) {
+		opxy_ho_copy(dst, from, n);
 	} else {
 		for (; i < n; i++)
 			*(volatile uint8_t *)(uintptr_t)(dst + i) =
