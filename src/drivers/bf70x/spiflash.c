@@ -115,8 +115,8 @@ int wb_spiflash_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 	return rc;
 }
 
-int wb_spiflash_read_at(void *ctx, uint32_t clk, uint32_t off, uint8_t *buf,
-			uint32_t len)
+static int read_fast(void *ctx, uint32_t clk, uint32_t off, uint8_t *buf, uint32_t len,
+		     bool dma)
 {
 	struct wb_spiflash *f = ctx;
 	int rc;
@@ -147,7 +147,7 @@ int wb_spiflash_read_at(void *ctx, uint32_t clk, uint32_t off, uint8_t *buf,
 		wb_spi_select(f->spi, true);
 		rc = wb_spi_xfer(f->spi, head, NULL, sizeof(head));
 		if (rc == WB_SPI_OK)
-			rc = wb_spi_recv(f->spi, buf, k);
+			rc = dma ? wb_spi_recv_dma(f->spi, buf, k) : wb_spi_recv(f->spi, buf, k);
 		wb_spi_select(f->spi, false);
 		off += k;
 		buf += k;
@@ -158,6 +158,18 @@ int wb_spiflash_read_at(void *ctx, uint32_t clk, uint32_t off, uint8_t *buf,
 				   len != 0u && rc == WB_SPI_OK);
 	}
 	return rc == WB_SPI_OK ? WB_SPIFLASH_OK : WB_SPIFLASH_ERR_IO;
+}
+
+int wb_spiflash_read_at(void *ctx, uint32_t clk, uint32_t off, uint8_t *buf,
+			uint32_t len)
+{
+	return read_fast(ctx, clk, off, buf, len, false);
+}
+
+int wb_spiflash_read_dma(void *ctx, uint32_t clk, uint32_t off, uint8_t *buf,
+			 uint32_t len)
+{
+	return read_fast(ctx, clk, off, buf, len, true);
 }
 
 /* WREN, the write frame, then wait (S-13b.014, .015); a failed try is

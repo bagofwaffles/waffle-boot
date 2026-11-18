@@ -78,6 +78,10 @@ int wb_spiflash_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len);
 #define WB_SPIFLASH_FAST_FRAME 0x8000u
 int wb_spiflash_read_at(void *ctx, uint32_t clk, uint32_t off, uint8_t *buf,
 			uint32_t len);
+/* wb_spiflash_read_at() with each frame's data moved by the receive DMA
+ * channel (wb_spi_recv_dma()) rather than the core. */
+int wb_spiflash_read_dma(void *ctx, uint32_t clk, uint32_t off, uint8_t *buf,
+			 uint32_t len);
 /* sector_off is the first byte of a 4 KiB sector. */
 int wb_spiflash_erase(void *ctx, uint32_t sector_off);
 /* 1 to 256 bytes within one page. */
