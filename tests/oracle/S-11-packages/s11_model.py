@@ -43,6 +43,7 @@ DONE = 7
 CONFIRM_ORDER = (('bootloader', 2), ('spiboot', 6))
 # Why a step whose component is present reports Skipped (S-11.058); the host's words (S-10c.106)
 SKIP_OPTION_OFF, SKIP_NOT_CONFIRMED, SKIP_SWITCHED_OFF = 'option off', 'not confirmed', 'switched off'
+SKIP_ALREADY_WRITTEN = 'already written'    # S-11.068 item 5
 UPGRADING = 0xAB0D   # the metadata state of an install in progress (S-04.040)
 
 # S-11.034
@@ -469,7 +470,14 @@ def skip_reason(step, c):
             return None
         if not c.get('option'):
             return SKIP_OPTION_OFF
-        return None if c.get('confirmed') else SKIP_NOT_CONFIRMED
+        if not c.get('confirmed'):
+            return SKIP_NOT_CONFIRMED
+        # S-11.068 item 5: after the image check, a start refused only for `verified`, the selector being
+        # the one this power-on's own bootloader step wrote
+        if (step == 2 and _staged_result(c) is None and c.get('start') == 'refused_verified'
+                and c.get('written_here')):
+            return SKIP_ALREADY_WRITTEN
+        return None
     if step in SWITCHABLE:
         carried = c.get('present0') or c.get('present1') if step == 4 else c.get('present')
         return SKIP_SWITCHED_OFF if carried and not switched_on(step, c) else None
@@ -501,6 +509,8 @@ def step_result(step, c):
         # S-11.068: with the option on there is no version test; rel, forced and dev change nothing.
         if staged is not None:
             return staged
+        if step == 2 and c.get('start', 'ok') != 'ok':
+            return FAILURE                          # S-02.090 refused the start (item 5 aside)
         return OK if c.get('write_ok', True) else FAILURE
     if step == 3:
         if not c.get('present'):

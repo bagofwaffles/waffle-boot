@@ -763,6 +763,18 @@ def step_rows():
             # S-11.068: no version test under the option
             exp = 'OK' if ok else 'Failure'
         rows.append(['bootloader', json.dumps(c, sort_keys=True), exp])
+    # S-11.068 items 4 and 5: a start S-02.090 refuses, for `verified` alone or for a bad selected slot, and
+    # whether this power-on's own bootloader step wrote the selector read
+    for (opt, conf), start, here in itertools.product(opt_conf, ['refused_verified', 'refused_bad'], [0, 1]):
+        c = dict(present=1, option=opt, confirmed=conf, rel='newer', forced=0, dev=0, write_ok=1, start=start,
+                 written_here=here)
+        if not opt or not conf:
+            exp = 'Skipped'
+        elif start == 'refused_verified' and here:
+            exp = 'Skipped'
+        else:
+            exp = 'Failure'
+        rows.append(['bootloader', json.dumps(c, sort_keys=True), exp])
     for p, (opt, conf), ok in itertools.product([0, 1], opt_conf, [1, 0]):
         c = dict(present=p, option=opt, confirmed=conf, write_ok=ok)
         exp = 'Not found' if not p else ('Skipped' if not opt or not conf else ('OK' if ok else 'Failure'))

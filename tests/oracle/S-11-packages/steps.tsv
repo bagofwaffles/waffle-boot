@@ -156,6 +156,18 @@ bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""prese
 bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Failure
 bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 1}"	OK
 bootloader	"{""confirmed"": 1, ""dev"": 1, ""forced"": 1, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""write_ok"": 0}"	Failure
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_verified"", ""write_ok"": 1, ""written_here"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_verified"", ""write_ok"": 1, ""written_here"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_bad"", ""write_ok"": 1, ""written_here"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 0, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_bad"", ""write_ok"": 1, ""written_here"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_verified"", ""write_ok"": 1, ""written_here"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_verified"", ""write_ok"": 1, ""written_here"": 1}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_bad"", ""write_ok"": 1, ""written_here"": 0}"	Skipped
+bootloader	"{""confirmed"": 0, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_bad"", ""write_ok"": 1, ""written_here"": 1}"	Skipped
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_verified"", ""write_ok"": 1, ""written_here"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_verified"", ""write_ok"": 1, ""written_here"": 1}"	Skipped
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_bad"", ""write_ok"": 1, ""written_here"": 0}"	Failure
+bootloader	"{""confirmed"": 1, ""dev"": 0, ""forced"": 0, ""option"": 1, ""present"": 1, ""rel"": ""newer"", ""start"": ""refused_bad"", ""write_ok"": 1, ""written_here"": 1}"	Failure
 spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""write_ok"": 1}"	Not found
 spiboot	"{""confirmed"": 0, ""option"": 0, ""present"": 0, ""write_ok"": 0}"	Not found
 spiboot	"{""confirmed"": 0, ""option"": 1, ""present"": 0, ""write_ok"": 1}"	Not found
