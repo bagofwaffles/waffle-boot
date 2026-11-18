@@ -11,6 +11,12 @@ The boot menu is waffle-boot's own set of screens, shown instead of starting the
 - **By itself**, when the OS cannot be started, when the last install did not finish, or when the OS
   restarts the unit into the bootloader for an update.
 
+While `Loading boot menu...` shows, the bootloader mounts the file volume on the eMMC read only from the
+OS's checkpoint, and checks every block against it; on any doubt it scans the volume instead, which takes
+longer. It never writes a checkpoint. Device Info 2's `Files` row says which it did and why. The first write
+of a session to the volume (Install firmware, MTP on, a host's file transfer, a factory reset, a content
+pack's removal) scans first, under `Checking files...`. A format and a settings change need no scan.
+
 ## Keys
 
 Items are chosen by digit. Digits 1 to 4 are M1 to M4, the knob 1 to 4 clicks, or sound keys 1 to 4.
