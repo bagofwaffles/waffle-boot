@@ -215,7 +215,7 @@ static int by_line(const void *a, const void *b)
 static void walk_dir(struct tree *t, const char *dir)
 {
 	yaffs_DIR *d = yaffs_opendir(dir);
-	struct yaffs_dirent *de;
+	const struct yaffs_dirent *de;
 	char path[600];
 	struct yaffs_stat st;
 
