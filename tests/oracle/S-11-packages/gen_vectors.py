@@ -803,6 +803,10 @@ def step_rows():
         else:
             exp = 'OK' if ok else 'Failure'
         rows.append(['ble bootloader', json.dumps(c, sort_keys=True), exp])
+    # S-11.070 item 7: the step's own DFU-mode queries, after the slot and the check
+    for slot, ok in itertools.product([0, 1, 255], [1, 0]):
+        c = dict(switched_on=1, present0=1, present1=1, rel='newer', forced=0, slot=slot, in_dfu=0, write_ok=ok)
+        rows.append(['ble bootloader', json.dumps(c, sort_keys=True), 'Failure'])
     for on, p, rel, forced, ok in itertools.product([1, 0], [0, 1], ['equal', 'newer'], [0, 1], [1, 0]):
         c = dict(switched_on=on, present=p, rel=rel, forced=forced, write_ok=ok)
         exp = ('Not found' if not p else 'Skipped' if not on else
@@ -824,7 +828,10 @@ def step_rows():
                 ('spiboot', dict(present=1, option=0, confirmed=0, write_ok=1), 'Skipped'),
                 ('spiboot', dict(present=1, option=1, confirmed=0, write_ok=1), 'Skipped'),
                 ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1), bad),
-                ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=0, write_ok=1), 'Failure'),
+                # S-11.069: the check before the step's own DFU-mode queries
+                ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=0, write_ok=1), bad),
+                ('ble bootloader', dict(switched_on=1, present0=1, present1=0, rel='newer', forced=0, slot=0,
+                                        in_dfu=0, write_ok=1), bad),
                 ('ble', dict(switched_on=1, present=1, rel='equal', forced=0, in_dfu=1, write_ok=1),
                  'Already installed'),
                 ('ble', dict(switched_on=0, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1), 'Skipped'),

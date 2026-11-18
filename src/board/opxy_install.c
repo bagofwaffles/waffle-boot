@@ -356,9 +356,7 @@ static void step_failed(struct opxy_master *m, unsigned step,
 	struct s14_text t;
 
 	if (cur.cause[0] == '\0') {
-		if (step == S11_STEP_BLE && !cur.env.nordic_in_dfu)
-			cause("BLE not in update mode");	/* S-11.069 3 */
-		else if (r == S11_BAD_FILE)
+		if (r == S11_BAD_FILE)
 			cause("bad image file");
 		else if (r == S11_INTERNAL)
 			cause("internal error");
@@ -682,7 +680,7 @@ static void transfer_cause(const struct s08_failure *f)
 	switch (f->at) {
 	case S08_AT_QUERY:
 		cause(f->reply == S08_REPLY_NONE ? "BLE chip does not answer" :
-						   "BLE chip left update mode");
+						   "BLE not in update mode");
 		break;
 	case S08_AT_CHUNK:
 		cause_of("chunk ", f->chunk, f->chunks, how);

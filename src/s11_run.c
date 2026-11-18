@@ -223,8 +223,9 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 			return S11_SKIPPED;
 		if (!env->forced && same(v, &env->copro->nordic_app))
 			return S11_ALREADY;
-		if (!env->nordic_in_dfu)
-			return S11_FAILURE;
+		/* S-11.069 items 4-6: the image's check, then the step's own
+		 * DFU-mode queries (S-08.042), both inside the send; the
+		 * run-start answer decides nothing here */
 		if (!ops->nordic_send(ops->ctx, S11_C_BLE))
 			return failed(ops, S11_FAILURE);
 		env->copro->nordic_app = *v;

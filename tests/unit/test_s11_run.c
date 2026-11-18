@@ -219,10 +219,12 @@ static void s_sw(void *ctx, const struct s11_version *v)
 	(void)v;
 }
 
+/* S-11.069, S-11.070: the image's check, then the step's own DFU-mode
+ * queries (in_dfu): not in DFU fails with no DFU request sent. */
 static bool s_send(void *ctx, enum s11_component c)
 {
 	(void)ctx;
-	if (S.v->staged != 0)
+	if (S.v->staged != 0 || !S.v->in_dfu)
 		return false;
 	S.sends++;
 	S.sent_slot = c == S11_C_NORDIC_BL1;
@@ -277,7 +279,7 @@ static void test_steps(void)
 		env.staged = &st;
 		env.option = v->option != 0;	/* dev mode has no field: no effect */
 		env.forced = v->forced != 0;
-		env.nordic_in_dfu = v->in_dfu != 0;
+		env.nordic_in_dfu = true;	/* the run-start answer decides nothing */
 		env.copro = &copro;
 		/* S-11.073: only this row's step is switched on or off */
 		env.off = v->switched_on ? 0u : S11_STEP_BIT(v->step);

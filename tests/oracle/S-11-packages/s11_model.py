@@ -517,10 +517,10 @@ def step_result(step, c):
             return NOT_FOUND
         if c.get('rel') == 'equal' and not forced:
             return ALREADY
-        if not c.get('in_dfu', True):
-            return FAILURE
         if staged is not None:
             return staged
+        if not c.get('in_dfu', True):
+            return FAILURE                          # S-11.069 item 5: the step's own queries, after the check
         return OK if c.get('write_ok', True) else FAILURE
     if step == 4:
         if not c.get('present0') and not c.get('present1'):
@@ -534,6 +534,8 @@ def step_result(step, c):
             return NOT_FOUND
         if staged is not None:
             return staged
+        if not c.get('in_dfu', True):
+            return FAILURE                          # S-11.070 item 7: as S-11.069 item 5
         return OK if c.get('write_ok', True) else FAILURE
     if step == 5:
         if not c.get('present'):
