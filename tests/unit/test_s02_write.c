@@ -16,6 +16,7 @@
 #include "s02_check.h"
 #include "s02_fake_flash.h"
 #include "vectors/s02_vectors.h"
+#include "waffle/s02_store.h"
 
 #define N(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -109,9 +110,11 @@ static void check_upgrade_log(unsigned t, uint32_t n)
 {
 	uint32_t base = s02_slot_base(t), rec = s02_record_off(t);
 	uint32_t last = base + S02_SLOT_CAPACITY - S02_SECTOR_SIZE;
+	uint32_t settings = base + S02_SLOT_CAPACITY - 2u * S02_SECTOR_SIZE;
 	unsigned i, rec_erase, rec_prog, sel_erase, sel_prog, last_slot = 0, last_prog = 0;
 	uint32_t sectors = (n + S02_SECTOR_SIZE - 1u) / S02_SECTOR_SIZE;
 	bool log_erase = n <= S02_SLOT_CAPACITY - S02_SECTOR_SIZE;
+	bool set_erase = n <= S02_SLOT_CAPACITY - 2u * S02_SECTOR_SIZE;	/* S-02.103 */
 	static uint8_t programmed[S02_SLOT_CAPACITY];
 
 	rec_erase = find_op(FF_ERASE, rec, 0);
@@ -122,8 +125,9 @@ static void check_upgrade_log(unsigned t, uint32_t n)
 	CHECK(sel_prog != ~0u);
 	CHECK_EQ(g_f.log[rec_prog].len, S02_RECORD_SIZE);
 	CHECK_EQ(g_f.log[sel_prog].len, 2);
-	/* S-02.053: one selector erase; S-02.045: the last sector once more if free. */
-	CHECK_EQ(count_kind(FF_ERASE), sectors + (log_erase ? 1u : 0u) + 2u);
+	/* S-02.053: one selector erase; S-02.045: the last sector once more if
+	 * free; S-02.103: the settings sector once more if free. */
+	CHECK_EQ(count_kind(FF_ERASE), sectors + (log_erase ? 1u : 0u) + (set_erase ? 1u : 0u) + 2u);
 	memset(programmed, 0, sizeof programmed);
 	for (i = 0; i < g_f.nlog; i++) {
 		const struct ff_op *o = &g_f.log[i];
@@ -158,7 +162,19 @@ static void check_upgrade_log(unsigned t, uint32_t n)
 		CHECK(i > last_prog && i < rec_erase);
 		CHECK_EQ(find_op(FF_ERASE, last, i + 1u), ~0u);
 		CHECK_EQ(find_op(FF_PROGRAM, last, 0), ~0u);
+		if (!set_erase)
+			CHECK_EQ(last_slot, i);
+	}
+	/* S-02.103: a free settings sector is erased once, right after the
+	 * last sector, never programmed. */
+	if (set_erase) {
+		i = find_op(FF_ERASE, settings, 0);
+		CHECK(i == find_op(FF_ERASE, last, 0) + 1u && i < rec_erase);
+		CHECK_EQ(find_op(FF_ERASE, settings, i + 1u), ~0u);
+		CHECK_EQ(find_op(FF_PROGRAM, settings, 0), ~0u);
 		CHECK_EQ(last_slot, i);
+	} else {
+		CHECK(n <= settings - base || find_op(FF_ERASE, settings, 0) < rec_erase);
 	}
 	/* S-02.047: the read-back strictly between the record program and the selector erase. */
 	CHECK(reads_cover(rec, S02_RECORD_SIZE, rec_prog, sel_erase));
@@ -195,9 +211,9 @@ static void test_upgrade_ok(void)
 			CHECK_EQ(g_f.mem[s02_slot_base(t) + j], 0xFFu);
 		CHECK(memcmp(g_f.mem + s02_slot_base(t) + 0x3000u,
 			     g_start.mem + s02_slot_base(t) + 0x3000u,
-			     S02_SLOT_CAPACITY - S02_SECTOR_SIZE - 0x3000u) == 0);	/* S-02.045, S-16.029 */
-		for (j = S02_SLOT_CAPACITY - S02_SECTOR_SIZE; j < S02_SLOT_CAPACITY; j++)
-			CHECK_EQ(g_f.mem[s02_slot_base(t) + j], 0xFFu);	/* the last sector, erased */
+			     S02_SLOT_CAPACITY - 2u * S02_SECTOR_SIZE - 0x3000u) == 0);	/* S-02.045, S-16.029 */
+		for (j = S02_SLOT_CAPACITY - 2u * S02_SECTOR_SIZE; j < S02_SLOT_CAPACITY; j++)
+			CHECK_EQ(g_f.mem[s02_slot_base(t) + j], 0xFFu);	/* the settings and last sectors, erased */
 		for (j = S02_RECORD_SIZE; j < S02_SECTOR_SIZE; j++)
 			CHECK_EQ(g_f.mem[s02_record_off(t) + j], 0xFFu);	/* S-02.004 */
 		for (j = 2; j < S02_SECTOR_SIZE; j++)
@@ -295,13 +311,52 @@ static void test_upgrade_size_and_option(void)
 }
 
 /* SC-UPG-FAULT (S-02.047): no selector write after a fault. */
+/* S-02.103: the settings sector is erased with the last sector only when
+ * the image ends at or below it; a longer image's bytes stay there. */
+static void test_upgrade_settings_sector(void)
+{
+	static const uint32_t sizes[] = { 0x2345u, 0x75FFFu, 0x76000u, 0x76001u, 0x77000u,
+					  0x77001u, 0x78000u };
+	struct s02_env env = ff_env(&g_f, &g_ops);
+
+	for (unsigned i = 0; i < N(sizes); i++) {
+		const uint32_t n = sizes[i];
+		const uint32_t set = S02_SLOT1_OFF + S02_STORE_SLOT_MAX;
+		unsigned t;
+
+		ff_init(&g_f);
+		ff_set_slot(&g_f, 0, "good", 0x1345u, 1u);
+		ff_set_slot(&g_f, 1, "good", 0x1345u, 2u);
+		ff_set_selector(&g_f, 0x00, 0x01);
+		/* the target's settings sector in use */
+		ff_fill_image(g_f.mem + set, S02_SECTOR_SIZE, 9u);
+		ff_boot_image(g_image, n, 42u);
+		ff_reset(&g_f);
+		CHECK_EQ(s02_slot_upgrade(&env, true, g_image, n, &t), S02_OK);
+		CHECK_EQ(t, 1u);
+		check_upgrade_log(1u, n);
+		CHECK_EQ(erases_at(set), 1u);	/* its own, or the image's extent */
+		if (n <= S02_STORE_SLOT_MAX) {
+			for (uint32_t j = 0; j < S02_SECTOR_SIZE; j++)
+				CHECK_EQ(g_f.mem[set + j], 0xFFu);
+		} else {
+			/* the image covers it: its own bytes, from its own erase */
+			CHECK(memcmp(g_f.mem + set, g_image + S02_STORE_SLOT_MAX,
+				     n - S02_STORE_SLOT_MAX < S02_SECTOR_SIZE ?
+					     n - S02_STORE_SLOT_MAX : S02_SECTOR_SIZE) == 0);
+		}
+		/* slot 0's settings sector untouched */
+		CHECK_EQ(erases_at(S02_SLOT0_OFF + S02_STORE_SLOT_MAX), 0u);
+	}
+}
+
 static void test_upgrade_fault(void)
 {
 	struct s02_env env = ff_env(&g_f, &g_ops);
 	uint32_t n = 0x2345u;
 	unsigned c, t;
 
-	for (c = 1; c <= 6u; c++) {
+	for (c = 1; c <= 7u; c++) {
 		struct s02_fs_outcome o;
 		int rc;
 
@@ -314,19 +369,21 @@ static void test_upgrade_fault(void)
 		ff_reset(&g_f);
 		/*
 		 * Ops: 1 erase, 2-17 programs, 18 erase, 19-34, 35 erase, 36-39,
-		 * 40 the last sector's erase, 41 record erase, 42 its program.
+		 * 40 the last sector's erase, 41 the settings sector's (S-02.103),
+		 * 42 record erase, 43 its program.
 		 */
 		switch (c) {
 		case 1: g_f.fail = 1; break;			/* the first slot erase */
 		case 2: g_f.fail = 10; break;			/* a mid-slot program */
 		case 3: g_f.corrupt = 10; g_f.corrupt_mask = 0xFE; break;
-		case 4: g_f.fail = 42; break;			/* the record program */
-		case 5: g_f.corrupt = 42; g_f.corrupt_mask = 0xFE; break;
-		default: g_f.fail = 40; break;			/* the last sector's erase */
+		case 4: g_f.fail = 43; break;			/* the record program */
+		case 5: g_f.corrupt = 43; g_f.corrupt_mask = 0xFE; break;
+		case 6: g_f.fail = 40; break;			/* the last sector's erase */
+		default: g_f.fail = 41; break;			/* the settings sector's erase */
 		}
 		rc = s02_slot_upgrade(&env, true, g_image, n, &t);
 		CHECK(rc != S02_OK);
-		if (c == 6u) {
+		if (c >= 6u) {
 			CHECK_EQ(rc, S02_ERR_IO);
 			CHECK_EQ(find_op(FF_ERASE, S02_RECORD0_OFF, 0), ~0u);
 		}
@@ -908,6 +965,7 @@ int main(void)
 	test_upgrade_ok();
 	test_upgrade_same_image();
 	test_upgrade_size_and_option();
+	test_upgrade_settings_sector();
 	test_upgrade_fault();
 	test_selector_read_back();
 	test_start_and_selector_rule();

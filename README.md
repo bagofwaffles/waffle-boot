@@ -55,7 +55,7 @@ leaving a unit that does not start, and the few writes those rules do not cover.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/maps/spi-flash-dark.svg">
-  <img src="docs/maps/spi-flash.svg" alt="The SPI flash's map: the first stage, the metadata and its mirror, the selector, a record for each slot, Slot 1 and its start log, Slot 2, the boot store and Slot 2's start log">
+  <img src="docs/maps/spi-flash.svg" alt="The SPI flash's map: the first stage, the metadata and its mirror, the selector, a record for each slot, Slot 1, its settings and its start log, Slot 2, its settings and its start log">
 </picture>
 
 <picture>

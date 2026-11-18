@@ -431,6 +431,11 @@ const char s15_slave_lost[] = "Not answering";
 const char s15_drive_lost[] = "DSP2 is not answering: the drive can't be used";
 const char s15_reset_lost[] = "User data not removed: DSP2 is not answering";
 const char s15_checking_files[] = "Checking files...";
+const char s15_settings_host[] = "Not saved: changed from the computer";
+const char s15_settings_this_start[] = "Not saved: kept until the next start";
+const char s15_settings_failed[] = "Not saved: the flash can't be written";
+const char s15_settings_unusable[] = "Not saved: this slot can't keep settings";
+const char s15_reset_settings_failed[] = "Settings not cleared: the flash can't be written";
 
 void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects)
 {

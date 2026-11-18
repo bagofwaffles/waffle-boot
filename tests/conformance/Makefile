@@ -53,7 +53,7 @@ H_s02_SRCS := src/s02_flash.c src/s02_write.c src/s01_memmap.c src/s05_handoff.c
 	src/front/fr_startlog.c
 # Recovery's writer and protocol (S-02.084, S-02.093) and the start log (S-02.095) are the front's own.
 H_s02_CPPFLAGS := -Isrc
-# The boot store (S-02.096-.099) and its CRC-32, zlib's (S-02.015).
+# The settings sector (S-02.096-.100, S-02.105) and its CRC-32, zlib's (S-02.015).
 H_s02_SRCS += src/s02_store.c src/wire_crc.c
 H_s02_TP := $(call tp_o,$(TP_crc_SRCS) $(TP_crc_GLUE) $(TP_zlib_SRCS) $(TP_zlib_GLUE))
 H_s03_SRCS := src/s03_emmc.c

@@ -3,8 +3,8 @@
  * S-02.101: the main image's erase of the start log (opxy_front.c): the
  * scan of a slot's log as the front reads it, every branch of the guard,
  * the erase and its read-back, and each state a cut of that erase can
- * leave, with what the next start then does. Also the boot store's save
- * (opxy_store.c), made with the writers' tries (S-13b.017).
+ * leave, with what the next start then does. Also the settings sector's
+ * save and clear (opxy_store.c), made with the writers' tries (S-13b.017).
  */
 #include "support/check.h"
 
@@ -445,19 +445,46 @@ static int tries_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t l
 static void test_store_tries(void)
 {
 	static struct s02_flash_ops ops;
-	const struct s02_store on = { true };
-	struct s02_store now = { false };
+	const struct s02_store on = { true, false, true, true };
+	struct s02_store now = { false, true, true, false };
 
-	flash(0);
-	master(0, false, 0);
-	ops = g_ops;
-	ops.erase = tries_erase;
-	ops.program = tries_program;
-	m.flash.flash = &ops;
-	tries_seen = writes_seen = 0;
-	CHECK(opxy_boot_store_save(&m, &on, &now) == S15_STORE_SAVED && now.start_menu);
-	CHECK(writes_seen >= 2u && tries_seen == 1u << OPXY_FLASH_WRITER_TRIES);
-	CHECK(m.hw.flash.tries == 1u);
+	for (unsigned s = 0; s < 2u; s++) {
+		flash(s);
+		master(s, false, 0);
+		m.store_slot.established = true;
+		m.store_slot.slot = s;
+		m.store_slot.good = true;
+		(void)s02_read_record(&m.flash, s, &m.store_slot.rec);
+		ops = g_ops;
+		ops.erase = tries_erase;
+		ops.program = tries_program;
+		m.flash.flash = &ops;
+		tries_seen = writes_seen = 0;
+		CHECK(opxy_boot_store_save(&m, &on, &now) == S15_STORE_SAVED);
+		CHECK(now.dev_mode && !now.color && now.mtp_macos && now.start_menu);
+		CHECK(writes_seen == 1u && tries_seen == 1u << OPXY_FLASH_WRITER_TRIES);
+		CHECK(m.hw.flash.tries == 1u);
+		/* the running slot's sector alone */
+		CHECK(g_f.mem[s02_store_off(s)] == 0x57u && g_f.mem[s02_store_off(1u - s)] == 0xFFu);
+		tries_seen = writes_seen = 0;
+		CHECK(opxy_boot_store_clear(&m) == S15_STORE_SAVED);
+		CHECK(writes_seen == 1u && tries_seen == 1u << OPXY_FLASH_WRITER_TRIES);
+		CHECK(g_f.mem[s02_store_off(s)] == 0xFFu);
+	}
+	/* a start whose running slot is not established reads the defaults
+	 * and reads nothing of either sector */
+	flash(1);
+	master(1, false, 0);
+	m.flash.flash = &g_ops;
+	ff_reset(&g_f);
+	{
+		const struct s02_store_slot run = { false, 1u, { 0x12345678u, LEN, S02_RECORD_TAG }, true };
+
+		opxy_boot_store_load(&m, &run);
+	}
+	CHECK(!m.store_slot.established && g_f.nall == 0u);
+	CHECK(!m.sv.store.dev_mode && m.sv.store.color && m.sv.store.mtp_macos &&
+	      !m.sv.store.start_menu);
 }
 
 int main(void)

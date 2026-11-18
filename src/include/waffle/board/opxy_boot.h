@@ -17,6 +17,7 @@
 #include "waffle/boot.h"
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/s02_flash.h"
+#include "waffle/s02_store.h"
 #include "waffle/s03_emmc.h"
 #include "waffle/s04_records.h"
 #include "waffle/s06_link.h"
@@ -214,6 +215,9 @@ bool opxy_stream_checked(struct opxy_master *m, unsigned slot, bool running,
 /* Whether the last slot opxy_stream_checked() judged was slot, read under
  * the trial mark (S-02.016): this start runs a tried slot. */
 bool opxy_stream_trial(unsigned slot);
+/* Whether that slot's image passed S-02.016, with the record it was judged
+ * by in *rec; false when the last slot judged was another. */
+bool opxy_stream_good(unsigned slot, struct s02_record *rec);
 
 /*
  * With BOOT_LINK_FC=1 or 2 (S-09.009): how this start's stream went, kept
@@ -315,6 +319,9 @@ struct opxy_master {
 	 * and whether the boot menu's mark was made or tried */
 	bool running_trial;
 	bool trial_marked;
+	/* S-02.097: the running slot, its record and its image's check as the
+	 * slave's start found them: which settings sector is used */
+	struct s02_store_slot store_slot;
 	/* S-02 */
 	struct s02_flash_ops flash_ops;
 	struct s02_env flash;

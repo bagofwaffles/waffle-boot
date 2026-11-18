@@ -77,24 +77,30 @@ static bool e_remove(void *c, const char *path) { (void)c; (void)path; return tr
 static bool e_format(void *c) { (void)c; return true; }
 static void e_osw(void *c, struct s15_osw_end *end);
 static void e_option(void *c, bool on) { (void)c; (void)on; }
-static bool e_settings(void *c, const struct s15_settings *s) { (void)c; (void)s; return true; }
 static bool lost;	/* the slave stopped answering */
 static bool e_lost(void *c) { (void)c; return lost; }
 /* S-15.190: the board's sequence would leave held mode; the starting
  * view stays. */
 static void e_continue(void *c) { (void)c; }
 
-static enum s15_store_save e_store(void *c, bool on, bool *now)
+static enum s15_store_save e_settings(void *c, const struct s15_settings *s,
+				      struct s15_settings *now)
 {
 	(void)c;
-	*now = on;
+	*now = *s;
+	return S15_STORE_SAVED;
+}
+
+static enum s15_store_save e_clear(void *c)
+{
+	(void)c;
 	return S15_STORE_SAVED;
 }
 
 static const struct s15_env_ops env = {
 	e_usb, e_none, e_leds, e_refused, e_dir, e_pack, e_manifest,
 	e_remove, e_none, e_format, e_osw, e_none, e_none, e_none, e_option,
-	e_settings, NULL, e_lost, e_continue, e_store, NULL, NULL,
+	e_settings, NULL, e_lost, e_continue, NULL, NULL, e_clear,
 };
 
 /* S-15.163: the image read lost the slave, as on a unit. */

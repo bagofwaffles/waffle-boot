@@ -24,8 +24,8 @@
 <text x="134" y="271" fill="#ececec" font-size="13" font-weight="700" text-anchor="start">yaffs2 volume</text>
 <text x="380" y="271" fill="#9a9aa0" font-size="12" font-weight="400" text-anchor="end">2.25 GiB</text>
 <text x="408" y="271" fill="#9a9aa0" font-size="12" font-weight="400" text-anchor="start">Shared by the bootloader and the OS: content,</text>
-<text x="408" y="288" fill="#9a9aa0" font-size="12" font-weight="400" text-anchor="start">the staging area of an install, the settings file,</text>
-<text x="408" y="305" fill="#9a9aa0" font-size="12" font-weight="400" text-anchor="start">and os.ldr for a developer OS write.</text>
+<text x="408" y="288" fill="#9a9aa0" font-size="12" font-weight="400" text-anchor="start">the staging area of an install, and os.ldr</text>
+<text x="408" y="305" fill="#9a9aa0" font-size="12" font-weight="400" text-anchor="start">for a developer OS write.</text>
 <text x="20" y="337" fill="#9a9aa0" font-size="12" font-weight="400" text-anchor="start">0x0480000</text>
 <rect x="122" y="320" width="268" height="36" rx="4" fill="#5f5f66" fill-opacity="0.16" stroke="#5f5f66" stroke-width="1.5"/>
 <text x="134" y="337" fill="#ececec" font-size="13" font-weight="700" text-anchor="start">Unused</text>

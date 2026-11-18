@@ -48,7 +48,6 @@ struct fake {
 	const char *pack_names[9];
 	const char *manifests[9];
 	const char *fail_remove;          /* a path whose removal fails */
-	bool save_fails;                  /* the settings file (S-15.172) */
 	enum s15_os_write osw;            /* the result when osw_case is NULL */
 	const struct s15v_osw *osw_case;  /* the write the fake plays (S-15.094) */
 	struct s15_osw_end osw_in;        /* *end as the menu passed it */
@@ -73,11 +72,13 @@ struct fake {
 	unsigned cont;                    /* continue_os calls */
 	bool cont_view;                   /* the restarting view shown at the call */
 	unsigned leds_end_at_cont;        /* the key test's ends by then */
-	/* S-15.175: the boot store */
-	unsigned store_saves;
-	bool store_last;                  /* the value asked for */
-	enum s15_store_save store_rc;     /* what the write gives */
-	bool store_after;                 /* what it reads after a failed write */
+	/* S-15.172: what a save gives, and the start in boot menu a start
+	 * then reads when it was not saved */
+	enum s15_store_save store_rc;
+	bool store_after;
+	/* S-02.105: the factory reset's clears and what they give */
+	unsigned clears;
+	enum s15_store_save clear_rc;
 	/* S-15.082: the start log read again, and what it reads then */
 	unsigned log_reads;
 	bool log_change;
@@ -212,12 +213,16 @@ static void f_sysinfo(void *c) { (void)c; F.sysinfo++; F.sysinfo_at = ++F.order;
 static void f_scan(void *c) { (void)c; F.scan++; }
 static void f_option(void *c, bool on) { (void)c; F.option = on; }
 
-static bool f_settings(void *c, const struct s15_settings *s)
+static enum s15_store_save f_settings(void *c, const struct s15_settings *s,
+				      struct s15_settings *now)
 {
 	(void)c;
 	F.saves++;
 	F.saved = *s;
-	return !F.save_fails;
+	*now = *s;
+	if (F.store_rc != S15_STORE_SAVED)
+		now->start_menu = F.store_after;
+	return F.store_rc;
 }
 
 static void f_continue(void *c)
@@ -263,28 +268,26 @@ static void f_files(void *c)
 	BOOT.files_way = S15_FILES_FOR_WRITE;
 }
 
-static enum s15_store_save f_store(void *c, bool on, bool *now)
+static enum s15_store_save f_clear(void *c)
 {
 	(void)c;
-	F.store_saves++;
-	F.store_last = on;
-	*now = F.store_rc != S15_STORE_SAVED ? F.store_after : on;
-	return F.store_rc;
+	F.clears++;
+	return F.clear_rc;
 }
 
 static const struct s15_env_ops env = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, f_settings, NULL, f_lost, f_continue,
-	f_store, f_logread, f_files,
+	f_logread, f_files, f_clear,
 };
 
 /* A board with no boot store and no continue_os for the host. */
 static const struct s15_env_ops env_bare = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
-	f_sysinfo, f_scan, f_option, f_settings, NULL, f_lost, NULL, NULL,
-	NULL, NULL,
+	f_sysinfo, f_scan, f_option, NULL, NULL, f_lost, NULL,
+	NULL, NULL, NULL,
 };
 
 static void clear_records(void)
@@ -297,7 +300,7 @@ static void clear_records(void)
 	F.dir_checks = F.vol_checks = 0;
 	F.order = F.sysinfo_at = F.disk_at = 0;
 	F.cont = 0;
-	F.store_saves = 0;
+	F.clears = 0;
 }
 
 static void reset_fake(void)
@@ -984,8 +987,8 @@ static void observe(struct toks *t, const struct rstate *st,
 		add(t, "scan_now");
 	if (F.cont)
 		add(t, "continue");
-	if (F.store_saves)
-		add(t, F.store_last ? "start_menu_on" : "start_menu_off");
+	if (F.saves != 0u && F.saved.start_menu != BOOT.settings.start_menu)
+		add(t, F.saved.start_menu ? "start_menu_on" : "start_menu_off");
 }
 
 
@@ -1727,15 +1730,25 @@ static void test_screens(void)
 	ev(0x07, false);
 	reset_fake(); default_boot(); start();
 	press(0x07);
-	F.save_fails = true;
+	F.store_rc = S15_STORE_FAILED;
 	press(0x06);
-	expect_screen("settings_not_saved");
-	CHECK(!M.dev_mode, "S-15.172 changed for this boot all the same");
+	expect_screen("settings_dev_not_saved");
+	CHECK(!M.dev_mode, "S-15.172 changed for this start all the same");
+	/* the settings are not on the drive: a refused volume saves them */
 	reset_fake(); default_boot(); F.refused = true; start();
 	press(0x07);
 	press(0x06);
-	expect_screen("settings_not_saved");
-	CHECK(F.saves == 0u, "S-15.172 nothing written to a refused volume");
+	expect_screen("settings_devmode_off");
+	CHECK(F.saves == 1u && !F.saved.dev_mode, "S-15.172 saved with the volume refused");
+	/* S-15.193: a host's key changes it for this start, saves nothing */
+	reset_fake(); default_boot(); start();
+	press(0x07);
+	s15_menu_host_event(&M, 0x06, true);
+	s15_menu_host_event(&M, 0x06, false);
+	expect_screen("settings_host");
+	CHECK(F.saves == 0u && !M.dev_mode && !M.host_event, "S-15.193 host key: not saved");
+	press(0x06);
+	CHECK(F.saves == 1u && F.saved.dev_mode && M.dev_mode, "S-15.193 the unit's key saves");
 
 	/* S-15.173: digit 3 turns the color off and on, each change saved */
 	reset_fake(); default_boot(); start();
@@ -1748,10 +1761,22 @@ static void test_screens(void)
 	press(0x08);
 	expect_screen("settings");
 	CHECK(M.color && F.saves == 2u && F.saved.color, "S-15.173 on again");
-	F.save_fails = true;
+	F.store_rc = S15_STORE_FAILED;
 	press(0x08);
-	CHECK(!M.color && appended("Not saved: the drive can't be written"),
-	      "S-15.172 changed for this boot, the line");
+	CHECK(!M.color && appended(s15_settings_failed),
+	      "S-15.172 changed for this start, the line");
+	F.store_rc = S15_STORE_UNUSABLE;
+	press(0x08);
+	CHECK(M.color && F.saves == 4u && appended(s15_settings_unusable),
+	      "S-15.172 refused: this start only, the line");
+	/* host keys for color and the MTP target: this start only */
+	F.store_rc = S15_STORE_SAVED;
+	s15_menu_host_event(&M, 0x08, true);
+	s15_menu_host_event(&M, 0x08, false);
+	CHECK(!M.color && F.saves == 4u && appended(s15_settings_host), "S-15.193 color");
+	s15_menu_host_event(&M, 0x12, true);
+	s15_menu_host_event(&M, 0x12, false);
+	CHECK(!M.mtp_macos && F.saves == 4u && appended(s15_settings_host), "S-15.193 MTP");
 	reset_fake(); default_boot(); BOOT.settings.color = false; start();
 	press(0x07);
 	expect_screen("settings_color_off");
@@ -3144,56 +3169,93 @@ static void test_done_restart(void)
 	}
 }
 
-/* S-15.175: Settings' digit 6, kept in the boot store. */
+/* S-15.175: Settings' digit 6, saved with the others in the running
+ * slot's settings sector; the item shows what a start reads after it. */
 static void test_start_menu(void)
 {
 	reset_fake(); default_boot(); start();
 	press(0x07);
 	expect_screen("settings");
 	press(0x13);
-	CHECK(F.store_saves == 1u && F.store_last && M.start_menu && F.saves == 0u,
-	      "S-15.175 on, to the store, not the settings file");
+	CHECK(F.saves == 1u && F.saved.start_menu && M.start_menu && F.saved.dev_mode &&
+	      F.saved.color && F.saved.mtp_macos, "S-15.175 on, saved with the others");
 	expect_screen("settings_start_menu_on");
 	press(0x13);
-	CHECK(F.store_saves == 2u && !F.store_last && !M.start_menu, "S-15.175 off");
+	CHECK(F.saves == 2u && !F.saved.start_menu && !M.start_menu, "S-15.175 off");
 	expect_screen("settings");
-	/* A failed write: the line, and what the store reads after it. */
+	/* A failed save: the line, and what a start reads after it. */
 	F.store_rc = S15_STORE_FAILED;
 	F.store_after = false;
 	press(0x13);
-	CHECK(F.store_saves == 3u && F.store_last && !M.start_menu, "failed: off");
+	CHECK(F.saves == 3u && F.saved.start_menu && !M.start_menu, "failed: off");
 	expect_screen("settings_store_not_saved");
-	/* Slot 2's image over the sector: refused, the item as a start reads */
+	/* A slot that keeps no settings: refused, the item as a start reads */
 	F.store_rc = S15_STORE_UNUSABLE;
 	press(0x13);
-	CHECK(F.store_saves == 4u && F.store_last && !M.start_menu, "unusable: off");
+	CHECK(F.saves == 4u && F.saved.start_menu && !M.start_menu, "unusable: off");
 	expect_screen("settings_store_unusable");
-	/* S-02.098: a key a host sent writes no boot store; the unit's does. */
+	/* S-15.193: a key a host sent leaves it alone; the unit's saves it. */
 	reset_fake(); default_boot(); start();
 	press(0x07);
 	s15_menu_host_event(&M, 0x13, true);
 	s15_menu_host_event(&M, 0x13, false);
-	CHECK(F.store_saves == 0u && !M.start_menu && M.screen == S15_SCR_SETTINGS &&
-	      !M.host_event, "host key: no store write");
+	CHECK(F.saves == 0u && !M.start_menu && M.screen == S15_SCR_SETTINGS &&
+	      !M.host_event, "host key: nothing");
 	s15_menu_host_event(&M, 0x15, true);	/* other host keys act as before */
 	s15_menu_host_event(&M, 0x15, false);
 	CHECK(M.screen == S15_SCR_MAIN, "host key: 8 goes back");
 	press(0x07);
 	press(0x13);
-	CHECK(F.store_saves == 1u && M.start_menu, "unit key: the store written");
+	CHECK(F.saves == 1u && M.start_menu, "unit key: saved");
 	/* As read at the start. */
-	reset_fake(); default_boot(); BOOT.start_menu = true; start();
+	reset_fake(); default_boot(); BOOT.settings.start_menu = true; start();
 	press(0x07);
 	expect_screen("settings_start_menu_on");
-	/* Without a store: no item, and digit 6 does nothing. */
+	/* Without a settings sector (the test OS): no item, digit 6 does
+	 * nothing, and a change lasts for this start. */
 	reset_fake(); default_boot();
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
 	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
 	s15_menu_start(&M);
 	press(0x07);
-	CHECK(!appended("6 Start in boot menu  Off"), "no store: no item");
+	CHECK(!appended("6 Start in boot menu  Off"), "no sector: no item");
 	press(0x13);
-	CHECK(F.store_saves == 0u && M.screen == S15_SCR_SETTINGS, "no store: nothing");
+	CHECK(F.saves == 0u && M.screen == S15_SCR_SETTINGS, "no sector: nothing");
+	press(0x08);
+	CHECK(!M.color && F.saves == 0u && appended(s15_settings_this_start),
+	      "no sector: this start only");
+}
+
+/* S-02.105, S-15.052: a factory reset clears the running slot's settings
+ * sector, also when the drive is refused, and the settings take their
+ * defaults; a failed clear says so; a slot with no settings, nothing. */
+static void test_reset_settings(void)
+{
+	for (int way = 0; way < 4; way++) {
+		reset_fake(); default_boot();
+		BOOT.settings.color = false;
+		BOOT.settings.start_menu = true;
+		F.refused = way == 3;
+		F.clear_rc = way == 1 ? S15_STORE_FAILED :
+			     way == 2 ? S15_STORE_UNUSABLE : S15_STORE_SAVED;
+		start();
+		press(0x12);
+		hold(0x14);
+		CHECK(F.clears == 1u && F.erase_fat == 1u, "S-02.105 cleared (%d)", way);
+		CHECK(F.saves == 0u, "S-02.105 a clear, not a save (%d)", way);
+		CHECK(appended(s15_reset_settings_failed) == (way == 1),
+		      "S-02.105 the line (%d)", way);
+		CHECK((M.color && !M.dev_mode && M.mtp_macos && !M.start_menu) ==
+		      (way == 0 || way == 3), "S-02.105 defaults after a clear (%d)", way);
+	}
+	/* without a settings sector: nothing to clear */
+	reset_fake(); default_boot();
+	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
+	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_start(&M);
+	press(0x12);
+	hold(0x14);
+	CHECK(F.clears == 0u && F.erase_fat == 1u, "no sector: no clear");
 }
 
 /* The indicator on every frame once on, the key test included. */
@@ -3518,6 +3580,7 @@ int main(void)
 	test_fs_held();
 	test_done_restart();
 	test_start_menu();
+	test_reset_settings();
 	test_step_labels_fit();
 	test_indicator();
 	test_keytest_end_draws();

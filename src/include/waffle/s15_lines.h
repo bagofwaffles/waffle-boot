@@ -213,6 +213,13 @@ extern const char s15_slave_lost[];	/* it stopped answering after the start */
 extern const char s15_drive_lost[];	/* S15_ST_WARN: the drive with it */
 extern const char s15_reset_lost[];	/* S15_ST_ERROR: a reset that could not run */
 extern const char s15_checking_files[];	/* S15_ST_DIM: the scan before a write (S-15.191) */
+/* S15_ST_WARN under Settings: why a change lasts for this start only
+ * (S-15.172, S-15.193) */
+extern const char s15_settings_host[];
+extern const char s15_settings_this_start[];
+extern const char s15_settings_failed[];
+extern const char s15_settings_unusable[];
+extern const char s15_reset_settings_failed[];	/* S15_ST_WARN: the clear of S-02.105 */
 /* S-15.192: Device Info 2's Files value for a way of enum s15_files. */
 void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects);
 extern const char s15_os_reinstall[];         /* exact text, S-15.161 */

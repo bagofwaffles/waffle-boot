@@ -4,8 +4,7 @@
  * eMMC (S-03), reached through the bridge's file and eMMC commands
  * (S-09.040, S-09.041). On top of them: the staging area's s11_fs_ops
  * (S-11.080), the file operations S-15's menus need (packs, trees, the
- * factory reset's erase, the format, the OS write) and the settings file
- * (S-15.172).
+ * factory reset's erase, the format, the OS write).
  *
  * Every request goes through s09_master_call(); with the slave absent each
  * one fails with ENODEV (S-09.008) and the functions below report failure.
@@ -243,16 +242,5 @@ enum s15_os_write s09_files_os_write(struct s09_files *f, const struct s03_env *
 void s09_files_emmc_ops(struct s09_files *f, struct s03_emmc_ops *ops);
 /* 0x05: the boot-partition size B (S-03.008), 0 without a reply. */
 uint32_t s09_files_boot_size(struct s09_files *f);
-
-/* ---- the settings file (S-15.172) ---- */
-
-/* The settings S15_SETTINGS_PATH gives; the defaults when it is missing,
- * unusable or cannot be read, or the volume is refused. */
-void s09_files_settings_read(struct s09_files *f, struct s15_settings *s);
-/* The whole file to S15_SETTINGS_NEW_PATH, then renamed over
- * S15_SETTINGS_PATH, so a power cut leaves the old file or the new, then the
- * eMMC's cache flushed (0x04), so the new one is kept. False when a step
- * failed. */
-bool s09_files_settings_save(struct s09_files *f, const struct s15_settings *s);
 
 #endif

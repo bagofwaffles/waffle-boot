@@ -354,18 +354,21 @@ test('checkImage: good, bad CRC, too large, no front, another front, foreign', n
     assert.deepEqual(badCrc.problems,
         ["no waffle-boot front: the front's bytes do not match the descriptor's CRC"]);
 
-    const tooLarge = await imageOf('{"make": {}, "of": 487425}');
-    assert.ok(!tooLarge.ok && !tooLarge.noFrontOnly);
-    assert.match(tooLarge.problems[0], /a waffle-boot image is at most 487424 \(0x77000\) bytes/);
+    // S-02.104: one byte over 0x76000, and recovery's own 0x77000, are refused alike
+    for (const key of ['{"make": {"seed": 9}, "of": 483344}', '{"make": {}, "of": 487425}']) {
+        const tooLarge = await imageOf(key);
+        assert.ok(!tooLarge.ok && !tooLarge.noFrontOnly);
+        assert.match(tooLarge.problems[0], new RegExp('a waffle-boot image is at most 483328 \\(0x76000\\) ' +
+            "bytes, since the slot's last two sectors hold its settings and its start log"));
+    }
     const overSlot = await imageOf('{"make": {}, "of": 491521}');
     assert.match(overSlot.problems[0], /a slot image is 1 to 491520 bytes/);
     const empty = await imageOf('{"hex": ""}');
     assert.match(empty.problems[0], /^the file is 0 bytes/);
 
-    const overStore = await imageOf('{"make": {"seed": 9}, "of": 483344}');
-    assert.ok(overStore.ok);
-    assert.match(overStore.warnings[0], new RegExp('^Warning: this image is 483344 bytes, over 0x76000: when' +
-        ' it lands in Slot 2'));
+    const atLimit = await imageOf('{"make": {"seed": 9}, "of": 483328}');
+    assert.ok(atLimit.ok);
+    assert.deepEqual(atLimit.warnings, []);
 
     const foreign = await imageOf('{"foreign": 1}');
     assert.ok(!foreign.ok && foreign.noFrontOnly && foreign.front === null);

@@ -25,6 +25,7 @@ TOOLS = os.path.join(TOP, 'tools')
 sys.path.insert(0, TOOLS)
 sys.path.insert(0, os.path.join(TOP, 'tests', 'oracle', 'S-01-boot-chain'))
 import elf32  # noqa: E402
+import installer_image  # noqa: E402
 import layout  # noqa: E402
 import mkldr  # noqa: E402
 import png2logo  # noqa: E402
@@ -274,9 +275,10 @@ class FrontMerge(unittest.TestCase):
         self.assertIn('0x77000', str(cm.exception))
         self.assertEqual(mkldr.FR_LOG_IMAGE_MAX, 0x77000)
 
-    def test_image_reaching_the_boot_store_refused(self):
-        # The build's own slot image stops below the boot store's sector
-        # (0xFE000 in slot 1): the limit builds, one word more does not.
+    def test_image_reaching_the_settings_sector_refused(self):
+        # S-02.104: the build's own slot image stops below the slot's settings
+        # sector (0x86000 in Slot 1, 0xFE000 in Slot 2): the limit builds, one
+        # word more does not.
         n = len(self.merged())
         fill = lambda k: ('.fill', elf32.SHT_PROGBITS, WA, 0x8803E000, b'\x69' * k)
         k = mkldr.STORE_IMAGE_MAX - n - 16 - 8
@@ -284,10 +286,30 @@ class FrontMerge(unittest.TestCase):
                          mkldr.STORE_IMAGE_MAX)
         with self.assertRaises(SystemExit) as cm:
             mkldr.merged(elf32.Elf(fimage(extra=[fill(k + 4)])), elf32.Elf(front()))
-        self.assertIn('boot store', str(cm.exception))
+        self.assertIn('settings and its start log (S-02.104)', str(cm.exception))
         self.assertIn('0x76000', str(cm.exception))
         self.assertEqual(mkldr.STORE_IMAGE_MAX, 0x76000)
+        self.assertEqual(0x10000 + mkldr.STORE_IMAGE_MAX, 0x86000)
         self.assertEqual(0x88000 + mkldr.STORE_IMAGE_MAX, 0xFE000)
+
+    def test_installer_image_limit(self):
+        # S-02.104: the installer carries at most 0x76000 bytes; one more is refused before
+        # the pin is compared.
+        self.assertEqual(installer_image.CAPACITY, 0x76000)
+        with tempfile.TemporaryDirectory() as d:
+            img, pin = os.path.join(d, 'a.ldr'), os.path.join(d, 'front.pin')
+            with open(img, 'wb') as f:
+                f.write(bytes(0x76001))
+            with open(pin, 'w', encoding='ascii') as f:
+                f.write('00' * 32 + '\n')
+            with self.assertRaises(SystemExit) as cm:
+                installer_image.main(['installer_image.py', img, pin, os.path.join(d, 'o.c')])
+            self.assertIn('settings and its start log (S-02.104)', str(cm.exception))
+            with open(img, 'wb') as f:
+                f.write(bytes(0x76000))
+            with self.assertRaises(SystemExit) as cm:
+                installer_image.main(['installer_image.py', img, pin, os.path.join(d, 'o.c')])
+            self.assertNotIn('S-02.104', str(cm.exception))
 
     def test_run_where_the_front_does_not_read_refused(self):
         far = ('.far', elf32.SHT_PROGBITS, WA, 0x88400000, b'\x68' * 8)

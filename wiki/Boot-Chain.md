@@ -28,9 +28,9 @@ Power switch on
    - the rest of its image fails its check: recovery;
    - three starts in a row did not finish: recovery;
    - otherwise it marks this start in the slot's **start log** and starts the main image.
-4. **Main image.** Reads the boot store, streams the running slot's image to the slave (by DMA under the SPI
-   controller's flow control; a build option sends it byte by byte, [Test OS](Test-OS)), and takes the
-   boot decision. It enters the **boot menu** when the boot keys are held, when the OS asked for the bootloader,
+4. **Main image.** Streams the running slot's image to the slave (by DMA under the SPI
+   controller's flow control; a build option sends it byte by byte, [Test OS](Test-OS)), reads that slot's
+   settings, and takes the boot decision. It enters the **boot menu** when the boot keys are held, when the OS asked for the bootloader,
    after an interrupted install, when **Start in boot menu** is on, or when the OS cannot be loaded.
    Otherwise it loads the OS.
 5. **OS.** The master reads the OS image from the eMMC's active boot partition through the slave, shows

@@ -44,13 +44,18 @@
   {
    "name": "slot0",
    "start": "0x10000",
-   "end": "0x88000"
+   "end": "0x88000",
+   "settings_sector": {
+    "start": "0x86000",
+    "end": "0x87000",
+    "usable_while_length_at_most": "0x76000"
+   }
   },
   {
    "name": "slot1",
    "start": "0x88000",
    "end": "0x100000",
-   "boot_store_sector": {
+   "settings_sector": {
     "start": "0xfe000",
     "end": "0xff000",
     "usable_while_length_at_most": "0x76000"

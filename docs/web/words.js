@@ -21,8 +21,8 @@ export const HEAD = 6;
 export const FRAME_MAX = HEAD + MAX_PAYLOAD + 4;
 export const NO_SLOT = 0xFF;
 export const SLOT_CAP = 0x78000;        // S-02.002, S-02.044: what the unit takes
-export const IMAGE_MAX = 0x77000;       // S-02.095: the slot's last sector holds the start log
-export const STORE_MAX = 0x76000;       // S-02.096 to S-02.100: Slot 2's boot store follows this
+export const IMAGE_MAX = 0x77000;       // S-02.095: recovery's own limit, the slot's last sector holds the start log
+export const WB_IMAGE_MAX = 0x76000;    // S-02.104: this tool's, the sector below it holds the slot's settings
 export const BEGIN_REPLY_LEN = 3, DATA_REPLY_LEN = 5, END_REPLY_LEN = 2, ACT_REPLY_LEN = 4;
 export const HELLO_LEN = 47, HELLO_O_VERSION = 7, HELLO_O_PIN = 15;
 export const INFO_V5 = 199, INFO_V6 = 219, INFO_V11 = 232;
@@ -81,7 +81,7 @@ export const STATUS = {
     4: ['the selector is not settled: its verified byte is not 01 (S-02.090)', RESET_HINT],
     5: ['the selected slot is bad, and is not the running slot with its front intact (S-02.084)',
         OTHER_HINT],
-    6: ['the image is empty or too large: a waffle-boot image is at most 0x77000 bytes (S-02.084)',
+    6: ['the image is empty or too large: recovery takes at most 0x77000 bytes (S-02.084)',
         'Check the file: wbrecover.py check IMAGE.'],
     7: ['the image is not a bootable stream with a waffle-boot front (S-02.091)',
         "Check the file (wbrecover.py check IMAGE) and build it with this tree's tools."],
@@ -157,8 +157,9 @@ export const READ_ERROR = 'A read of the selector or a slot failed, so what the 
 export const COUNTDOWN_LINE = `The unit counts down ${COUNTDOWN} s before its first erase. ` +
     'Switching the unit off or unplugging USB in that time stops it, with the flash untouched; ' +
     'stopping this tool does not.';
-export const DEFAULTS_LINE = "A write of Slot 2 keeps the unit's stored boot settings unless the " +
-    'image reaches them (S-02.096 to S-02.100).';
+// S-02.097: a recovery write leaves the slot's settings sector as it is; the settings there were
+// saved for the image they name, so another image starts on the defaults.
+export const SETTINGS_LINE = "The slot's settings start at their defaults unless it held this same image.";
 export const RESTART_RISK = 'Forced, the unit restarts all the same: it may not start at all, and ' +
     'then recovery is not reachable either; there may be no way back without a flash programmer. A ' +
     'write first settles the selector (the ways out above).';
@@ -1010,22 +1011,6 @@ export function selectLines(i, k) {
     return [`${m} holds the new front, tried, and the unit recorded the new front's start in its ` +
         `trial. The select makes ${m} the selected slot: its record is made good and the selector ` +
         `names it; its image is not written again, and ${other} is kept as it is.`];
-}
-
-// An image over STORE_MAX bytes reaches the sector of Slot 2's boot store, which is off while it
-// is there: said for the slot written, or for Slot 2 later.
-export function storeLines(n, target = null) {
-    if (n <= STORE_MAX)
-        return [];
-    const head = `Warning: this image is ${n} bytes, over 0x${STORE_MAX.toString(16)}`;
-    if (target === 1)
-        return [`${head}: written to Slot 2, it switches off the unit's stored boot settings while ` +
-            'it is there (S-02.096 to S-02.100).'];
-    if (target === 0)
-        return [`${head}: it would switch off the unit's stored boot settings only if it is later ` +
-            'written to Slot 2 (S-02.096 to S-02.100).'];
-    return [`${head}: when it lands in Slot 2, it switches off the unit's stored boot settings ` +
-        'while it is there (S-02.096 to S-02.100).'];
 }
 
 // What the action does to slot k, before its confirmation.

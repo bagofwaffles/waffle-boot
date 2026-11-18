@@ -118,7 +118,7 @@ static void test_file_operations(void)
 	struct s15_env_ops e;
 	struct s15_osw_end end = { S15_OSW_FAILED, S15_OSW_WHY_NONE,
 				   S15_OSW_EMMC_UNTOUCHED, 0, 0, 0, 0, false };
-	const struct s15_settings st = { false, false, false };
+	struct s15_settings st = { false, false, false, false };
 	uint32_t w;
 
 	setup();
@@ -139,9 +139,10 @@ static void test_file_operations(void)
 	e.os_write(e.ctx, &end);
 	CHECK(end.result != S15_OSW_OK);
 	CHECK(!e.remove_tree(e.ctx, "upgrade"));
-	CHECK(!e.settings_save(e.ctx, &st));
+	/* a settings save is no long call: it holds nothing */
+	CHECK(e.settings_save(e.ctx, &st, &st) == S15_STORE_UNUSABLE);
 	CHECK(s10a_usb_disk()->offered && !opxy_host_held());
-	CHECK(s10a_usb_disk()->withdrawals == w + 3u);
+	CHECK(s10a_usb_disk()->withdrawals == w + 2u);
 	s15_menu_release(&m.sv.menu);
 
 	/* on a set with no disk nothing is withdrawn or offered */

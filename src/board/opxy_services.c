@@ -1152,7 +1152,6 @@ static void boot_info(struct opxy_master *m, const struct boot_held *h)
 	opxy_start_view(h->load_attempted ? h->cause : S05_FAIL_NONE,
 			&h->start, &b->start);	/* S-15.163, S-15.161 */
 	b->interrupted = h->interrupted;			/* S-11.080 */
-	b->start_menu = m->sv.store.start_menu;			/* S-15.175 */
 	b->unit_serial = m->meta.serial;
 	b->chip_serial = m->sv.chip_serial;	/* S-17.030 */
 	b->psoc_serial = m->sv.psoc_serial;
@@ -1406,16 +1405,6 @@ static void env_option(void *ctx, bool on)
 	m->sv.option = on;
 }
 
-/* S-15.172 */
-static bool env_settings_save(void *ctx, const struct s15_settings *s)
-{
-	struct opxy_master *m = ctx;
-	const bool offered = long_begin(m);
-	const bool ok = s09_files_settings_save(&m->sv.files, s);
-
-	long_end(m, offered);
-	return ok;
-}
 
 static void env_volcal(void *ctx)
 {
@@ -1470,16 +1459,28 @@ static void env_continue_os(void *ctx)
 	opxy_reboot(m, slave ? S04_W11 : S04_W2, 0u);
 }
 
-/* S-15.175 */
-static enum s15_store_save env_store_save(void *ctx, bool on, bool *now)
+/* S-15.172, S-02.098: the running slot's settings sector; nothing of the
+ * eMMC is touched */
+static enum s15_store_save env_settings_save(void *ctx, const struct s15_settings *s,
+					     struct s15_settings *now)
 {
 	struct opxy_master *m = ctx;
-	const struct s02_store s = { on };
+	const struct s02_store want = { s->dev_mode, s->color, s->mtp_macos, s->start_menu };
 	struct s02_store after;
-	const enum s15_store_save r = opxy_boot_store_save(m, &s, &after);
+	const enum s15_store_save r = opxy_boot_store_save(m, &want, &after);
 
-	*now = after.start_menu;
+	m->sv.store = after;
+	now->dev_mode = after.dev_mode;
+	now->color = after.color;
+	now->mtp_macos = after.mtp_macos;
+	now->start_menu = after.start_menu;
 	return r;
+}
+
+/* S-02.105 */
+static enum s15_store_save env_settings_clear(void *ctx)
+{
+	return opxy_boot_store_clear(ctx);
 }
 #endif
 
@@ -1491,7 +1492,7 @@ static void env_start_log_read(void *ctx)
 
 /* The PSoC's, the option's and the USB sets are the board's; the file
  * operations are the S-09 client's. The test OS (waffle/testos.h) has no
- * boot store and never hands over. */
+ * settings sector and never hands over. */
 void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 {
 	env->ctx = m;
@@ -1511,9 +1512,9 @@ void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 	env->system_info = env_system_info;
 	env->scan_now = env_scan_now;
 	env->option = env_option;
-	env->settings_save = env_settings_save;
+	env->settings_save = OPXY_TESTOS_OR(NULL, env_settings_save);
+	env->settings_clear = OPXY_TESTOS_OR(NULL, env_settings_clear);
 	env->continue_os = OPXY_TESTOS_OR(NULL, env_continue_os);
-	env->boot_store_save = OPXY_TESTOS_OR(NULL, env_store_save);
 	env->start_log_read = env_start_log_read;
 	env->files_scan = env_files_scan;
 }
@@ -1564,7 +1565,10 @@ __attribute__((weak)) const uint8_t *opxy_display_fb(void)
 
 void opxy_settings_read(struct opxy_master *m, struct s15_settings *s)
 {
-	s09_files_settings_read(&m->sv.files, s);
+	s->dev_mode = m->sv.store.dev_mode;
+	s->color = m->sv.store.color;
+	s->mtp_macos = m->sv.store.mtp_macos;
+	s->start_menu = m->sv.store.start_menu;
 }
 
 /* S-10c.057, S-16.095: the FSN from the ROM's ADI-area read; a failed read

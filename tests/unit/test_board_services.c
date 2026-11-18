@@ -188,6 +188,7 @@ static void setup(void)
 {
 	opxy_usb_stop();		/* a controller another test left up */
 	memset(&m, 0, sizeof(m));
+	s02_store_defaults(&m.sv.store);	/* as the bring-up leaves them */
 	wire_n = 0;
 	inject_n = inject_next = inject_calls = 0;
 	fake_mmr_reset();
@@ -1256,8 +1257,8 @@ static void test_held_screen(void)
 	/* Without S-13c the draw ops are the recorder's. */
 	CHECK(m.sv.draw.ctx == &m.sv.drawn);
 	CHECK(m.sv.boot.slave == S15_SLAVE_OK);
-	/* S-15.172: the settings file unreadable: the defaults, developer
-	 * mode off */
+	/* S-15.172: no settings read at this start: the defaults, developer
+	 * mode off, and nothing asked of the drive for them */
 	CHECK(!m.sv.boot.settings.dev_mode && m.sv.boot.settings.color &&
 	      m.sv.boot.settings.mtp_macos);
 	CHECK(!m.sv.menu.dev_mode && m.sv.menu.color);
@@ -2562,10 +2563,41 @@ static void test_menu_env(void)
 		s15_menu_release(&m.sv.menu);
 	}
 	{
-		struct s15_settings st = { false, false, false };
+		/* S-15.172, S-02.098: the settings go to the running slot's
+		 * settings sector and nowhere else; no request reaches the slave,
+		 * so nothing of the eMMC is read or written */
+		static const uint8_t rec[S02_RECORD_SIZE] = {
+			0x44, 0x33, 0x22, 0x11, 0x00, 0x00, 0x04, 0x00, 0x04, 0xB0, 0x00, 0x00 };
+		struct s15_settings st = { true, false, false, true }, now, back;
 
-		CHECK(!e.settings_save(e.ctx, &st));	/* S-15.172 */
+		flash_setup();
+		memcpy(flash_mem + S02_RECORD1_OFF, rec, sizeof rec);
+		m.store_slot.established = true;
+		m.store_slot.slot = 1u;
+		m.store_slot.good = true;
+		s02_record_decode(rec, &m.store_slot.rec);
+		m.sv.files.err = 0u;
+		CHECK(e.settings_save(e.ctx, &st, &now) == S15_STORE_SAVED);
+		CHECK(now.dev_mode && !now.color && !now.mtp_macos && now.start_menu);
+		CHECK(flash_mem[0xFE000u] == 0x57u && flash_mem[0xFE000u + 8u] == 0x44u &&
+		      flash_mem[0xFE000u + 12u] == 0x09u && flash_mem[0x86000u] == 0xFFu);
+		CHECK(m.sv.files.err == 0u && !m.sv.files.mount_sent);
 		CHECK(!s15_menu_held(&m.sv.menu));
+		opxy_settings_read(&m, &back);
+		CHECK(back.dev_mode && !back.color && !back.mtp_macos && back.start_menu);
+		/* S-02.105: the factory reset's clear */
+		wire_n = 0;
+		CHECK(e.settings_clear(e.ctx) == S15_STORE_SAVED && flash_mem[0xFE000u] == 0xFFu);
+		CHECK(wire_has("cleared") && m.sv.files.err == 0u);
+		/* a running slot not established: refused, logged */
+		m.store_slot.established = false;
+		wire_n = 0;
+		CHECK(e.settings_save(e.ctx, &st, &now) == S15_STORE_UNUSABLE);
+		CHECK(!now.dev_mode && now.color && now.mtp_macos && !now.start_menu);
+		CHECK(wire_has("not saved: this slot keeps no settings") && flash_mem[0xFE000u] == 0xFFu);
+		CHECK(e.settings_clear(e.ctx) == S15_STORE_UNUSABLE);
+		CHECK(wire_has("not cleared: this slot keeps no settings"));
+		CHECK(m.sv.files.err == 0u && !s15_menu_held(&m.sv.menu));
 	}
 	wire_n = 0;
 	CHECK(!e.format(e.ctx));

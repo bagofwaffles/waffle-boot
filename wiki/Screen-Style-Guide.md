@@ -96,7 +96,7 @@ above (text, dim, faint, unlit, rule, the status bar) stay as they are.
 Amber becomes `BDD7` (BDBDBD), red `8430` (848484), green `A534`
 (A5A5A5), dark amber `5AEB` (5A5D5A) and dark red `39E7` (393C39).
 Lines, layout and keys do not change. The setting is kept in
-`/yaffs2/bootloader.settings` with developer mode (S-15.172). The installer
+the running slot's settings sector with the others (S-15.172). The installer
 draws in gray always, all but its display check's strip of colors, which
 tests that the panel shows them.
 

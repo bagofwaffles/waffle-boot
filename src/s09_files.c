@@ -1265,39 +1265,3 @@ uint32_t s09_files_boot_size(struct s09_files *f)
 
 	return f->err == 0 ? (uint32_t)r : 0u;
 }
-
-/* ---- the settings file (S-15.172) ---- */
-
-void s09_files_settings_read(struct s09_files *f, struct s15_settings *s)
-{
-	static uint8_t buf[S15_SETTINGS_MAX];
-	uint32_t n = 0;
-
-	if (s09_files_volume_refused(f) ||
-	    !s09_files_read_whole(f, S15_SETTINGS_PATH, buf, sizeof buf, &n))
-		n = 0;
-	(void)s15_settings_read(buf, n, s);
-}
-
-bool s09_files_settings_save(struct s09_files *f, const struct s15_settings *s)
-{
-	uint8_t buf[S15_SETTINGS_OUT_MAX];
-	size_t n = s15_settings_write(s, buf, sizeof buf);
-	int32_t fd, w, c;
-
-	if (n == 0u)
-		return false;
-	fd = s09_files_open(f, S15_SETTINGS_NEW_PATH,
-			    S09_O_WRONLY | S09_O_CREAT | S09_O_TRUNC);
-	if (fd < 0)
-		return false;
-	w = s09_files_write(f, fd, buf, (uint32_t)n);
-	c = s09_files_close(f, fd);
-	if (w != (int32_t)n || c != 0)
-		return false;
-	if (s09_files_rename(f, S15_SETTINGS_NEW_PATH, S15_SETTINGS_PATH) != 0)
-		return false;
-	/* the eMMC's cache committed, so a power loss keeps the change; a
-	 * failed flush counts as not saved */
-	return flush_emmc(f) == 0;
-}

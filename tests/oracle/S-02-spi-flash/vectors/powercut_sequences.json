@@ -180,22 +180,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -203,25 +203,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -417,22 +424,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -440,25 +447,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -654,22 +668,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -677,25 +691,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -891,22 +912,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -914,25 +935,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -1128,22 +1156,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -1151,25 +1179,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -1365,22 +1400,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -1388,25 +1423,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -1602,22 +1644,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -1625,25 +1667,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -1839,22 +1888,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -1862,25 +1911,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -2076,22 +2132,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -2099,25 +2155,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -2313,22 +2376,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -2336,25 +2399,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -2550,22 +2620,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -2573,25 +2643,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -2787,22 +2864,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -2810,25 +2887,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",
@@ -3024,22 +3108,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -3047,25 +3131,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_readback",
      "op": "read",
      "offset": "0x0d000",

@@ -33,9 +33,11 @@ The full map, with every writer, is in [Flash Layout and Write Safety](Flash-Lay
 | `0x00000` | The first stage, which picks a slot on every start. It reads no keys; the front never writes it |
 | `0xD000` | The selector: the slot to start, and `verified` (`0x01`: start it without a check) |
 | `0xE000`, `0xF000` | One record per slot: the image's CRC-32, length and a tag |
-| `0x10000` | Slot 1: an image of at most `0x77000` bytes; the last sector is its start log |
-| `0x88000` | Slot 2: the same |
-| `0xFE000` | The boot store (Start in boot menu), inside Slot 2. A Slot 2 image over `0x76000` bytes switches it off (S-02.096 to S-02.100) |
+| `0x10000` | Slot 1: an image of at most `0x76000` bytes from waffle-boot's writers (`0x77000` from recovery); then its settings sector and, last, its start log |
+| `0x88000` | Slot 2: the same; its settings sector is `0xFE000` |
+
+A slot whose image is over `0x76000` bytes has no settings (S-02.096 to S-02.099): its settings sector holds
+image bytes, every setting reads at its default and a save is refused. Over `0x77000` it has no start log either.
 
 ## The failsafes
 

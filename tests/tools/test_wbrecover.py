@@ -76,14 +76,6 @@ def image_of(n, **kw):
     return img
 
 
-STORE_WARN = ("Warning: this image is %d bytes, over 0x76000: when it lands in Slot 2, it switches "
-              "off the unit's stored boot settings while it is there (S-02.096 to S-02.100).")
-STORE_SLOT2 = ("Warning: this image is %d bytes, over 0x76000: written to Slot 2, it switches off the "
-               "unit's stored boot settings while it is there (S-02.096 to S-02.100).")
-STORE_SLOT1 = ("Warning: this image is %d bytes, over 0x76000: it would switch off the unit's stored "
-               "boot settings only if it is later written to Slot 2 (S-02.096 to S-02.100).")
-
-
 def with_block(img, header, payload=b''):
     """img with one more block, before its INIT block; FIRST's argument follows."""
     blocks = w.blocks_of(img)
@@ -108,10 +100,10 @@ class ImageChecks(unittest.TestCase):
     def test_size(self):
         self.assertIn('S-02.044', w.check_image(b'')[0][0])
         self.assertIn('S-02.044', w.check_image(bytes(w.SLOT_CAP + 1))[0][0])
-        # S-02.095: the unit takes up to 0x78000, a waffle-boot image is at most 0x77000
-        self.assertIn('S-02.095', w.check_image(make_image(size=w.IMAGE_MAX))[0][0])
-        img = make_image(size=w.IMAGE_MAX - (len(make_image(size=1)) - 1))
-        self.assertEqual(len(img), w.IMAGE_MAX)
+        # S-02.104: the unit takes up to 0x78000, a waffle-boot image is at most 0x76000
+        self.assertIn('S-02.104', w.check_image(make_image(size=w.WB_IMAGE_MAX))[0][0])
+        img = make_image(size=w.WB_IMAGE_MAX - (len(make_image(size=1)) - 1))
+        self.assertEqual(len(img), w.WB_IMAGE_MAX)
         self.assertEqual(w.check_image(img)[0], [])
 
     def test_not_a_stream(self):
@@ -160,21 +152,18 @@ class ImageChecks(unittest.TestCase):
             self.assertEqual(r.returncode, 1)
             self.assertIn('nothing was sent', r.stdout)
 
-    def test_store_limit(self):
-        """S-02.096 to S-02.100: over 0x76000 bytes a warning, and the file still passes; over
-        0x77000 refused as before."""
-        for n, rc, warned in ((w.STORE_MAX, 0, False), (w.STORE_MAX + 1, 0, True),
-                              (w.IMAGE_MAX, 0, True)):
-            out = Lines()
-            self.assertEqual(w.cmd_check(image_of(n), out), rc, out.text)
-            self.assertIn('OK: %d bytes' % n, out.text)
-            self.assertEqual(STORE_WARN % n in out.text, warned, out.text)
-            self.assertEqual('stored boot settings' in out.text, warned)
+    def test_image_limit(self):
+        """S-02.104: up to 0x76000 bytes the file passes; one byte more, and anything up to
+        recovery's own 0x77000, is refused."""
         out = Lines()
-        self.assertEqual(w.cmd_check(image_of(w.IMAGE_MAX + 1), out), 1)
-        self.assertIn('the file is %d bytes; a waffle-boot image is at most 487424 (0x77000) bytes'
-                      % (w.IMAGE_MAX + 1), out.text)
-        self.assertNotIn('stored boot settings', out.text)
+        self.assertEqual(w.cmd_check(image_of(w.WB_IMAGE_MAX), out), 0, out.text)
+        self.assertIn('OK: %d bytes' % w.WB_IMAGE_MAX, out.text)
+        for n in (w.WB_IMAGE_MAX + 1, w.IMAGE_MAX, w.IMAGE_MAX + 1):
+            out = Lines()
+            self.assertEqual(w.cmd_check(image_of(n), out), 1)
+            self.assertIn('the file is %d bytes; a waffle-boot image is at most 483328 (0x76000) '
+                          "bytes, since the slot's last two sectors hold its settings and its start "
+                          'log (S-02.104, S-02.095)' % n, out.text)
 
     def test_check_without_termios(self):
         """check needs no serial port, so it runs where termios does not exist."""
@@ -1432,8 +1421,7 @@ class OverPty(PtyCase):
         self.assertEqual(m.flags, w.BEGIN_F_TRIAL)
         self.assertEqual(ask.prompts, ['Type "try the new front" to go on: '])
         self.assertIn('Writing %d bytes to Slot 2, for one trial start.\n'
-                      "A write of Slot 2 keeps the unit's stored boot settings unless the image reaches them "
-                      '(S-02.096 to S-02.100).\n'
+                      "The slot's settings start at their defaults unless it held this same image.\n"
                       "The file's front is not the one this unit runs.\n"
                       '  running: front 7, pin %s...   file: pin %s..., a pin this checkout has '
                       'signed: a commit set it in src/front/front.pin (front v7)\n'
@@ -2512,17 +2500,17 @@ class Front11(PtyCase):
         self.models.remove(m)
 
 
-class BootStore(PtyCase):
-    """S-02.096 to S-02.100: Slot 2's boot store. A write of Slot 2 says once that the stored
-    boot settings are kept unless the image reaches them; an image over 0x76000 bytes gets a warning, worded by
-    the slot the unit announced; for every front version."""
+class Settings(PtyCase):
+    """S-02.097, S-02.104: a write says once that the slot's settings start at their defaults
+    unless it held the same image, for either slot and every front version; an image over 0x76000
+    bytes is refused before anything is sent."""
 
     def write(self, img, ask, **kw):
         out = Lines()
         rc = w.cmd_write(self.link, img, out, poll=0.001, ask=ask, **kw)
         return rc, out.text
 
-    def test_slot2_defaults(self):
+    def test_settings_line(self):
         for front in (5, 6, 8, 11):
             with self.subTest(front=front):
                 m = self.model(front=front)
@@ -2530,77 +2518,31 @@ class BootStore(PtyCase):
                 rc, text = self.write(img, Ask('yes') if front > 5 else no_prompt)
                 self.assertEqual(rc, 0, text)
                 self.assertEqual(m.slots[1], img)
-                self.assertEqual(text.count(w.DEFAULTS_LINE), 1)
-                self.assertIn('Writing %d bytes to Slot 2.\n%s\n' % (len(img), w.DEFAULTS_LINE),
+                self.assertEqual(text.count(w.SETTINGS_LINE), 1)
+                self.assertIn('Writing %d bytes to Slot 2.\n%s\n' % (len(img), w.SETTINGS_LINE),
                               text)
-                self.assertNotIn('Warning: this image', text)
                 m.close()
                 self.models.remove(m)
-
-    def test_slot1_no_defaults(self):
         m = self.model(front=11, slots=(None, make_image(seed=1)), sel=(1, 1), running=1)
         img = make_image(seed=7)
         rc, text = self.write(img, Ask('yes'))
         self.assertEqual(rc, 0, text)
         self.assertEqual(m.slots[0], img)
-        self.assertNotIn('stored boot settings', text)
+        self.assertIn('Writing %d bytes to Slot 1.\n%s\n' % (len(img), w.SETTINGS_LINE), text)
 
-    def test_large_image_by_target(self):
-        """The warning inside the existing confirmation, with no phrase of its own."""
-        img = image_of(w.STORE_MAX + 1, seed=7)
-        n = len(img)
+    def test_large_image_refused(self):
+        img = image_of(w.WB_IMAGE_MAX + 1, seed=7)
         for front in (5, 11):
-            with self.subTest(front=front, slot=2):
+            with self.subTest(front=front):
                 m = self.model(front=front)
                 ask = Ask('yes')
                 rc, text = self.write(img, ask if front > 5 else no_prompt)
-                self.assertEqual(rc, 0, text)
-                self.assertIn(STORE_SLOT2 % n + '\n' + w.DEFAULTS_LINE + '\n', text)
-                self.assertEqual(text.count(w.DEFAULTS_LINE), 1)
-                self.assertNotIn(STORE_SLOT1 % n, text)
-                if front > 5:
-                    self.assertEqual(ask.prompts, ['Type yes to go on: '])
-                self.assertEqual(m.slots[1], img)
+                self.assertEqual(rc, 1, text)
+                self.assertIn('nothing was sent', text)
+                self.assertEqual(ask.prompts, [])
+                self.assertNotEqual(m.slots[1], img)
                 m.close()
                 self.models.remove(m)
-        m = self.model(front=11, slots=(None, make_image(seed=1)), sel=(1, 1), running=1)
-        ask = Ask('yes')
-        rc, text = self.write(img, ask)
-        self.assertEqual(rc, 0, text)
-        self.assertIn(STORE_SLOT1 % n, text)
-        self.assertNotIn(STORE_SLOT2 % n, text)
-        self.assertNotIn(w.DEFAULTS_LINE, text)
-        self.assertEqual(ask.prompts, ['Type yes to go on: '])
-        self.assertEqual(m.slots[0], img)
-
-    def test_running_and_trial(self):
-        """--running to Slot 2 and a trial of Slot 2 say it; --running to Slot 1 does not; the
-        image-less actions never do."""
-        m = self.model(front=11, slots=(make_image(seed=2), make_image(seed=1)), sel=(1, 1),
-                       running=1)
-        rc, text = self.write(make_image(seed=7), Ask('yes'), running=True)
-        self.assertEqual(rc, 0, text)
-        self.assertEqual(text.count(w.DEFAULTS_LINE), 1)
-        m.close()
-        self.models.remove(m)
-        m = self.model(front=11, slots=(make_image(seed=1), make_image(seed=2)))
-        rc, text = self.write(make_image(seed=7), Ask('yes'), running=True)
-        self.assertEqual(rc, 0, text)
-        self.assertNotIn(w.DEFAULTS_LINE, text)
-        m.close()
-        self.models.remove(m)
-        m = self.model(front=11)
-        rc, text = self.write(OverPty.NEW, Ask(w.TRIAL_PHRASE), new_front=True,
-                              pins=lambda: {'git': True, 'pins': {}, 'now': None})
-        self.assertEqual(rc, 0, text)
-        self.assertEqual(text.count(w.DEFAULTS_LINE), 1)
-        m.close()
-        self.models.remove(m)
-        m = self.model(front=11, slots=(make_image(seed=1), make_image(seed=2)))
-        out = Lines()
-        self.assertEqual(w.cmd_act(self.link, w.ACT_TRY, out, poll=0.001, ask=Ask('yes')), 0,
-                         out.text)
-        self.assertNotIn('stored boot settings', out.text)
 
 
 def put(d, name, text):

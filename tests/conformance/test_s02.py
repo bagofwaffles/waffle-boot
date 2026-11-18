@@ -294,6 +294,16 @@ def cut_sequences():
         return json.load(f)
 
 
+def settings_erase(o):
+    """The package step's erase of a slot's settings sector (S-02.103), which recovery does not make."""
+    return o['op'] == 'erase' and int(o['offset'], 16) in (0x86000, 0xFE000)
+
+
+def recovery_ops(ops):
+    """A package step's reference sequence as recovery makes it: without the settings sector's erase."""
+    return [o for o in ops if not settings_erase(o)]
+
+
 def ref_writes(ops):
     """A reference sequence's erases and programs in h_s02's notation."""
     out = []
@@ -388,11 +398,15 @@ class Upgrade(unittest.TestCase):
                 self.assertEqual(res, ['0', '0'], n)
                 sector_erases = [o for o in ops if o.startswith('e:') and
                                  spiflash.SLOT_OFF[0] <= int(o[2:], 16) < spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX]
-                # S-02.045: the image's sectors, and the last sector when the image leaves it free
+                # S-02.045: the image's sectors, and the last sector when the image leaves it free; S-02.103:
+                # then the settings sector when the image leaves that free too
                 last = n <= spiflash.SLOT_MAX - 0x1000
-                self.assertEqual(len(sector_erases), -(-n // 0x1000) + last, n)
-                if last:
-                    self.assertEqual(sector_erases[-1], 'e:%x' % (spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX - 0x1000), n)
+                settings = n <= spiflash.SLOT_MAX - 0x2000
+                self.assertEqual(len(sector_erases), -(-n // 0x1000) + last + settings, n)
+                tail = ['e:%x' % (spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX - 0x1000)] if last else []
+                tail += ['e:%x' % (spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX - 0x2000)] if settings else []
+                if tail:
+                    self.assertEqual(sector_erases[-len(tail):], tail, n)
                 self.assertEqual(split(out[2])[0][0], '0', n)
 
     @scenario('S-02/SC-UPG-STREAM')
@@ -742,7 +756,7 @@ class Recovery(unittest.TestCase):
             self.assertEqual(after['readback'], hashlib.sha256(img).digest(), i)
             self.assertEqual((after['sel'], after['target']), ('%02x00' % t, 0xFF), i)
             # S-02.049, S-02.042: the same erases and programs as the reference upgrade, nothing else
-            self.assertEqual(writes(ops), ref_writes(seq['ops']), i)
+            self.assertEqual(writes(ops), ref_writes(recovery_ops(seq['ops'])), i)
             rec = spiflash.SLOT_RECORD_OFF[t]
             p = ops.index('p:%x:c' % rec)
             e = ops.index('e:d000')
@@ -814,7 +828,8 @@ class Recovery(unittest.TestCase):
         cmds, keys = [], []
         for r in rows:
             seq = self.seqs[r['sequence']]
-            w = sum(1 for o in seq['ops'][:int(r['op_n'])] if o['op'] != 'read')
+            # recovery makes no settings erase (S-02.103): a cut after it is recovery's cut after the op before
+            w = sum(1 for o in seq['ops'][:int(r['op_n'])] if o['op'] != 'read' and not settings_erase(o))
             sel = 1 - seq['target']
             if r['kind'] == 'none':
                 cmds += ['load ' + starts[r['sequence']], 'fault none', 'fault none']
@@ -886,7 +901,7 @@ class Recovery(unittest.TestCase):
         self.assertEqual((before['slot_flags'][0] & 5, before['target'], before['refusal'], before['run_way']),
                          (4, 1, 0, WAY_SELECT_FIRST))
         self.assertEqual((phase, after['written'], after['result']), (PH_DONE, 1, 0))
-        self.assertEqual(writes(ops), ref_writes(c01['ops']))
+        self.assertEqual(writes(ops), ref_writes(recovery_ops(c01['ops'])))
         self.assertEqual((out[2], split(out[3])[0][0]), ('0100', '1'))
         host = wr(INFO, 1) + begin(img)
         frames, phase, ops, _ = self.recover(changed(front_at), 0, host)
@@ -2426,238 +2441,325 @@ class StartLog(unittest.TestCase):
         self.assertEqual(out[2], 'ff' * 0x1000)
 
 
-def store_vectors():
-    with open(vectors('boot_store.json'), encoding='utf-8') as f:
+def set_vectors():
+    with open(vectors('settings_sector.json'), encoding='utf-8') as f:
         return json.load(f)
 
 
-STORE, STORE_END = 0xFE000, 0xFF000
+SET_SECTOR = (0x86000, 0xFE000)
+SET_RECORD = (0xE000, 0xF000)
 # enum s02_store_rc
 STORE_OK, STORE_UNUSABLE, STORE_IO, STORE_VERIFY = 0, 1, 2, 3
 
 
-class BootStore(unittest.TestCase):
-    """SC-BOOTSTORE on the logic: src/s02_store.c (s02_store_read(), s02_store_write()) through h_s02's flash,
-    against vectors/boot_store.json. What a start does with the setting is S-05's (test_s05.py StartInMenu);
-    the Settings screen and its item are S-15's and are not driven here (runs 4 and 7's screens)."""
+class SettingsSector(unittest.TestCase):
+    """SC-SETTINGS on the logic: src/s02_store.c (s02_store_read(), s02_store_write(), s02_store_clear())
+    through h_s02's flash, against vectors/settings_sector.json, for both slots. The running slot's
+    establishment and its image's check are the start's (S-01.002, S-02.016) and are given to each command; what
+    a start does with Start in boot menu is S-05's (test_s05.py StartInMenu); the Settings screen and the factory
+    reset's screen are S-15's and are not driven here."""
 
-    def flash(self, sel=(0, 1), sector=b''):
-        """SC-BOOTSTORE's start state: slot 1 good with an image of 0x2345 bytes, the sector holding `sector`
-        and erased after it."""
-        fl = bytearray(spiflash.build_flash(selector=sel, slots=('good', 'good'),
-                                            images=(None, spiflash.slot_image(1, size=0x2345))))
-        fl[STORE:STORE_END] = sector + b'\xff' * (0x1000 - len(sector))
+    @staticmethod
+    def rec(stamp, length=0x2345, tag=0x0000B004):
+        return struct.pack('<III', stamp, length, tag)
+
+    def flash(self, slot, stamp, sector=None, pattern=None, rec=None):
+        """A flash with slot `slot`'s record holding `stamp`, its settings sector holding `sector` (a {page:
+        hex} map, erased elsewhere) or the vectors' pattern bytes, and something in every other byte of both
+        slots' last two sectors to see them untouched."""
+        fl = bytearray(b'\xff' * 0x100000)
+        fl[SET_RECORD[slot]:SET_RECORD[slot] + 12] = self.rec(stamp) if rec is None else rec
+        for k in (0, 1):
+            fl[SET_SECTOR[k]:SET_SECTOR[k] + 0x2000] = random.Random(k).randbytes(0x2000)
+        sec = bytearray(b'\xff' * 0x1000)
+        if pattern is not None:
+            sec[:] = bytes(((i * 7 + pattern) ^ (i >> 8)) & 0xFF for i in range(0x1000))
+        for pg, hexb in (sector or {}).items():
+            d = b(hexb)
+            sec[int(pg) * 0x100:int(pg) * 0x100 + len(d)] = d
+        fl[SET_SECTOR[slot]:SET_SECTOR[slot] + 0x1000] = sec
         return bytes(fl)
 
     @staticmethod
-    def record(name):
-        return b(next(r['bytes'] for r in store_vectors()['records'] if r['name'] == name))
-
-    @staticmethod
-    def in_store(op):
+    def in_sector(op, slot):
         f = op.split(':')
         lo = int(f[1], 16)
         hi = lo + (int(f[2], 16) if len(f) > 2 else 0x1000)
-        return lo < STORE_END and STORE < hi
+        return SET_SECTOR[slot] <= lo and hi <= SET_SECTOR[slot] + 0x1000
 
-    def reads_of_start(self, ops, what):
-        """S-02.097: slot 1's record read, then one read of at most the sector from its start; nothing written."""
-        self.assertEqual(writes(ops), [], what)
-        reads = [o for o in ops if o.startswith('r:')]
-        self.assertEqual(reads[0], 'r:f000:c', what)
-        self.assertEqual(len(reads), 2, (what, ops))
-        _, off, n = reads[1].split(':')
-        self.assertEqual(int(off, 16), STORE, what)
-        self.assertLessEqual(int(n, 16), 0x1000, what)
+    @staticmethod
+    def want_ops(ops):
+        out = []
+        for o in ops:
+            if o[0] == 'read':
+                out.append('r:%x:%x' % (int(o[1], 16), o[2]))
+            elif o[0] == 'erase':
+                out.append('e:%x' % int(o[1], 16))
+            else:
+                out.append('p:%x:%x' % (int(o[1], 16), len(b(o[2]))))
+        return out
 
-    @scenario('S-02/SC-BOOTSTORE')
+    @scenario('S-02/SC-SETTINGS')
     @requirement('S-02.096', 'S-02.097')
-    def test_SC_BOOTSTORE_reads(self):
-        """Runs 1 and 2: every row of `reads` in the sector (the records of `records` among them), and a read
-        from 0xFE000 that fails: the setting the row gives, valid exactly for the valid rows; the reads are slot
-        1's record and one read of the sector, and nothing is erased or programmed."""
-        rows = store_vectors()['reads']
-        cmds = []
-        for r in rows:
-            if r['bytes'] is None:
-                cmds += ['load ' + save('store_r.bin', self.flash()), 'readfail 0xfe000 0x1000', 'storeread',
-                         'readfail -']
-            else:
-                cmds += ['load ' + save('store_r_%s.bin' % r['name'], self.flash(sector=b(r['bytes']))),
-                         'fault none', 'storeread', 'readfail -']
-        out = run('s02', cmds)
-        names = {r['name'] for r in rows}
-        self.assertTrue({'erased', 'off', 'on', 'longest', 'wrong_crc', 'failed_read'} <= names)
-        for k, r in enumerate(rows):
-            res, ops = split(out[4 * k + 2])
-            self.assertEqual(res, ['1' if r['why'] == 'valid' else '0', '1' if r['setting'] == 'on' else '0'],
-                             r['name'])
-            self.reads_of_start(ops, r['name'])
-
-    @scenario('S-02/SC-BOOTSTORE')
-    @requirement('S-02.097', 'S-02.098', 'S-02.099')
-    def test_SC_BOOTSTORE_usable(self):
-        """Run 8: every row of `usable` as slot 1's record (`unreadable`: its read fails), the sector holding
-        the `on` record. A read gives on exactly for the usable rows, and for the others reads no byte of the
-        sector; a save of off writes exactly for them, and for the others is refused with no erase or program
-        and the sector unchanged."""
-        on = self.record('on')
-        rows = store_vectors()['usable']
-        cmds = []
-        for r in rows:
-            fl = bytearray(self.flash(sector=on))
-            if r['record'] is not None:
-                fl[0xF000:0xF00C] = b(r['record'])
-            cmds += ['load ' + save('store_u_%s.bin' % r['name'], bytes(fl)),
-                     'readfail 0xf000 12' if r['record'] is None else 'readfail -',
-                     'storeread', 'storewrite 0', 'peek 0xfe000 0x1000']
-        out = run('s02', cmds)
-        self.assertGreaterEqual(len(rows), 13)
-        for k, r in enumerate(rows):
-            what = r['name']
-            res, ops = split(out[5 * k + 2])
-            if r['usable']:
-                self.assertEqual(res, ['1', '1'], what)
-                self.reads_of_start(ops, what)
-            else:
-                self.assertEqual(res, ['0', '0'], what)
-                self.assertEqual([o for o in ops if self.in_store(o)], [], what)
-            res, ops = split(out[5 * k + 3])
-            if r['usable']:
-                self.assertEqual(res, [str(STORE_OK)], what)
-                self.assertEqual(writes(ops), ['e:fe000', 'p:fe000:%x' % len(on)], what)
-                self.assertEqual(bytes.fromhex(out[5 * k + 4])[:len(on)], self.record('off'), what)
-            else:
-                self.assertEqual(res, [str(STORE_UNUSABLE)], what)
-                self.assertEqual(writes(ops), [], what)
-                self.assertEqual(bytes.fromhex(out[5 * k + 4]), on + b'\xff' * (0x1000 - len(on)), what)
-
-    @scenario('S-02/SC-BOOTSTORE')
-    @requirement('S-02.098')
-    def test_SC_BOOTSTORE_writes(self):
-        """Run 4: from the erased sector a save of on, then one of off: each makes `writes`' operations in order
-        (slot 1's record read, the erase of 0xFE000, the program of the record, its read-back), leaves the
-        record followed by erased bytes, and the next start reads the new value."""
-        v = store_vectors()
-
-        def want(w):
-            out = []
-            for o in w['ops']:
-                if o[0] == 'read':
-                    out.append('r:%x:%x' % (int(o[1], 16), o[2]))
-                elif o[0] == 'erase':
-                    out.append('e:%x' % int(o[1], 16))
+    def test_SC_SETTINGS_reads(self):
+        """Every row of `reads` in each slot's sector with the row's stamp in that slot's record: the flags
+        and validity the row gives; the reads are the slot's record and one read of the sector; nothing is
+        erased or programmed. `failed_read`: the sector's read fails and the defaults are read."""
+        v = set_vectors()
+        cmds, rows = [], []
+        for slot in (0, 1):
+            for r in v['reads']:
+                st = int(r['stamp'], 16)
+                if r['pages'] is None:
+                    cmds += ['load ' + save('set_r_%d.bin' % slot, self.flash(slot, st)),
+                             'readfail 0x%x 0x1000' % SET_SECTOR[slot], 'storeread %d 1 1' % slot, 'readfail -']
                 else:
-                    out.append('p:%x:%x' % (int(o[1], 16), len(b(o[2]))))
-            return out
+                    pat = 9 if r['name'] == 'image_bytes' else None
+                    zero = r['name'] == 'zeros'
+                    fl = bytearray(self.flash(slot, st, sector=r['pages'], pattern=pat))
+                    if zero:
+                        fl[SET_SECTOR[slot]:SET_SECTOR[slot] + 0x1000] = bytes(0x1000)
+                    cmds += ['load ' + save('set_r_%d_%s.bin' % (slot, r['name']), bytes(fl)), 'fault none',
+                             'storeread %d 1 1' % slot, 'readfail -']
+                rows.append((slot, r))
+        out = run('s02', cmds)
+        for k, (slot, r) in enumerate(rows):
+            res, ops = split(out[4 * k + 2])
+            what = (slot, r['name'])
+            self.assertEqual(res, ['1' if r['page'] is not None else '0', hex(r['flags'])], what)
+            self.assertEqual(writes(ops), [], what)
+            self.assertEqual(ops[0], 'r:%x:c' % SET_RECORD[slot], what)
+            self.assertEqual(ops[1:], ['r:%x:1000' % SET_SECTOR[slot]], what)
 
-        out = run('s02', ['load ' + save('store_w.bin', self.flash()),
-                          'storewrite 1', 'peek 0xfe000 0x1000', 'storeread',
-                          'storewrite 0', 'peek 0xfe000 0x1000', 'storeread'])
-        for k, (w, setting) in enumerate(((v['writes'][0], '1'), (v['writes'][1], '0'))):
-            res, ops = split(out[1 + 3 * k])
-            self.assertEqual(res, [str(STORE_OK)], w['name'])
-            self.assertEqual(ops, want(w), w['name'])
-            rec = b(w['ops'][2][2])
-            self.assertEqual(bytes.fromhex(out[2 + 3 * k]), rec + b'\xff' * (0x1000 - len(rec)), w['name'])
-            self.assertEqual(split(out[3 + 3 * k])[0], ['1', setting], w['name'])
-
-    @scenario('S-02/SC-BOOTSTORE')
-    @requirement('S-02.098', 'S-02.099', 'S-02.100')
-    def test_SC_BOOTSTORE_footprint(self):
-        """Run 5: with selector 00 01 and with 01 01 (slot 1 selected), the two saves' erases and programs lie
-        in 0xFE000-0xFF000 and no other byte of the flash changes, the start log's sector included. S-02.100:
-        the first stage's decision and checks read the same before and after (no check covers the sector)."""
-        for sel in ((0, 1), (1, 1)):
-            start = self.flash(sel=sel)
-            after = os.path.join(WORK, 'store_f1.bin')
-            out = run('s02', ['load ' + save('store_f.bin', start), 'fs 1', 'storewrite 1', 'storewrite 0',
-                              'storewrite 1', 'save ' + after, 'fs 1'])
-            for line in out[2:5]:
-                res, ops = split(line)
-                self.assertEqual(res, [str(STORE_OK)], sel)
-                self.assertTrue(writes(ops) and all(self.in_store(o) for o in writes(ops)), (sel, ops))
-            fs0, fs1 = split(out[1]), split(out[6])
-            self.assertEqual(fs0, fs1, sel)
-            self.assertFalse([o for o in fs0[1] if self.in_store(o)], sel)
-            with open(after, 'rb') as f:
-                a = f.read()
-            self.assertEqual(a[:STORE], start[:STORE], sel)
-            self.assertEqual(a[STORE_END:], start[STORE_END:], sel)
-            self.assertEqual(a[STORE:STORE + 13], self.record('on'), sel)
-
-    @scenario('S-02/SC-BOOTSTORE')
-    @requirement('S-02.098')
-    def test_SC_BOOTSTORE_cuts(self):
-        """Run 6: each `cuts` row: a save from the old value to the new one cut before the erase, inside it
-        (masks 00, FF and three seeds over the sector), after it, inside the program (mask 00 and three seeds:
-        a mask that lands every bit is the program completed) and after it; the next start reads the row's
-        value."""
-        v = store_vectors()
-        rows = v['cuts']
-        self.assertEqual(len(rows), 10)
-        cmds, what = [], []
-        for r in rows:
-            old, new = self.record(r['old']), self.record(r['new'])
-            n = len(new)
-            if r['at'] == 'torn_erase':
-                masks = [bytes(0x1000), b'\xff' * 0x1000] + [random.Random(s).randbytes(0x1000) for s in (1, 2, 3)]
-                faults = ['fault tear 1 ' + m.hex() for m in masks]
-            elif r['at'] == 'torn_program':
-                masks = [bytes(n)] + [random.Random(s).randbytes(n) for s in (1, 2, 3)]
-                self.assertTrue(all(m != b'\xff' * n for m in masks))
-                faults = ['fault tear 2 ' + m.hex() for m in masks]
+    @scenario('S-02/SC-SETTINGS')
+    @requirement('S-02.097', 'S-02.098', 'S-02.099', 'S-02.105')
+    def test_SC_SETTINGS_guards(self):
+        """Every row of `guards`, for both slots, a valid record with the stamp in the sector: a read gives the
+        record only for the usable rows and reads no byte of the sector otherwise; a save and a clear write
+        only for them, and are refused with nothing written otherwise, the flash unchanged."""
+        v = set_vectors()
+        cmds, rows = [], []
+        for slot in (0, 1):
+            for g in v['guards']:
+                rec = b(g['record'])
+                st = struct.unpack('<I', rec[:4])[0]
+                page = {'0': next(x for x in v['reads'] if x['name'] == 'one_record')['pages']['0']}
+                # the vectors' records are stamped 0x1d0c2b3a; the guard rows keep that stamp unless trial
+                now = rec if g['record_now'] in (None, 'unreadable') else b(g['record_now'])
+                fl = self.flash(slot, st, sector=page, rec=now)
+                est, good = int(g['established']), int(g['good'])
+                fail = 'readfail 0x%x 12' % SET_RECORD[slot] if g['record_now'] == 'unreadable' else 'readfail -'
+                path = save('set_g_%d_%s.bin' % (slot, g['name']), fl)
+                cmds += ['load ' + path, fail, 'storeread %d %d %d %s' % (slot, est, good, rec.hex()),
+                         'storewrite %d %d %d 0x7 %s' % (slot, est, good, rec.hex()), 'peek 0x%x 0x2000' % SET_SECTOR[slot],
+                         'load ' + path, fail, 'storeclear %d %d %d %s' % (slot, est, good, rec.hex()),
+                         'peek 0x%x 0x2000' % SET_SECTOR[slot]]
+                rows.append((slot, g, fl))
+        out = run('s02', cmds)
+        names = {g['name'] for g in v['guards']}
+        self.assertTrue({'length_0x76000', 'length_0x76001', 'not_established', 'not_good', 'trial_mark',
+                         'record_changed', 'record_unreadable', 'bad_tag'} <= names)
+        for k, (slot, g, fl) in enumerate(rows):
+            o = out[9 * k:9 * k + 9]
+            what = (slot, g['name'])
+            before = fl[SET_SECTOR[slot]:SET_SECTOR[slot] + 0x2000]
+            rres, rops = split(o[2])
+            wres, wops = split(o[3])
+            cres, cops = split(o[7])
+            if g['usable']:
+                self.assertEqual(rres[0], '1', what)
+                self.assertEqual(wres, [str(STORE_OK)], what)
+                self.assertTrue(all(self.in_sector(x, slot) for x in writes(wops)), what)
+                self.assertEqual(cres, [str(STORE_OK)], what)
+                self.assertEqual(bytes.fromhex(o[8])[:0x1000], b'\xff' * 0x1000, what)
+                self.assertEqual(bytes.fromhex(o[8])[0x1000:], before[0x1000:], what)    # the start log's sector
             else:
-                faults = ['fault after %d' % {'before_erase': 0, 'after_erase': 1, 'after_program': 2}[r['at']]]
-            for f in faults:
-                cmds += ['load ' + save('store_c_%s.bin' % r['old'], self.flash(sector=old)), f,
-                         'storewrite %d' % (r['new'] == 'on'), 'storeread']
-                what.append((r, f[:14]))
-        out = run('s02', cmds)
-        for k, (r, f) in enumerate(what):
-            res, _ = split(out[4 * k + 3])
-            got = 'on' if res[1] == '1' else 'off'
-            self.assertIn(got, r['reads'].split(' or '), (r, f))
-            cut = split(out[4 * k + 2])[0]
-            self.assertEqual(cut == ['cut'], r['at'] != 'after_program', (r, f))
+                self.assertEqual(rres, ['0', hex(v['defaults'])], what)
+                self.assertFalse([x for x in rops if self.in_sector(x, slot)], what)
+                self.assertEqual((wres, writes(wops)), ([str(STORE_UNUSABLE)], []), what)
+                self.assertEqual((cres, writes(cops)), ([str(STORE_UNUSABLE)], []), what)
+                self.assertEqual(bytes.fromhex(o[4]), before, what)
+                self.assertEqual(bytes.fromhex(o[8]), before, what)
 
-    @scenario('S-02/SC-BOOTSTORE')
-    @requirement('S-02.098')
-    def test_SC_BOOTSTORE_failures(self):
-        """Run 7, the flash's part: an erase that fails, a program that fails, and a program that changes no
-        byte and reports success: the save reports a failure, makes no second erase or program, and the next
-        start reads what the sector then holds (the old value, or the default after the erase)."""
-        on = self.record('on')
-        cases = [('fault fail 1', STORE_IO, 'on'), ('fault fail 2', STORE_IO, 'off'),
-                 ('fault stuck 2', STORE_VERIFY, 'off'), ('fault late 2', STORE_IO, 'off')]
+    @scenario('S-02/SC-SETTINGS')
+    @requirement('S-02.098', 'S-02.099')
+    def test_SC_SETTINGS_saves(self):
+        """Every row of `saves`: from the row's sector a save of its flags makes the row's operations in
+        order (the record read, the sector's read, the erase and its read-back where the sector is full or not
+        valid, one program at the first free page and its read-back, or nothing for the value it already
+        gives), leaves the row's sector, writes nothing outside it, and the next read gives the flags."""
+        v = set_vectors()
         cmds = []
-        for f, _, _ in cases:
-            cmds += ['load ' + save('store_e.bin', self.flash(sector=on)), f, 'storewrite 0', 'storeread']
+        for r in v['saves']:
+            slot, st = r['slot'], int(r['stamp'], 16)
+            fl = self.flash(slot, st, sector=r['before'], pattern=r['before_pattern'])
+            cmds += ['load ' + save('set_s_%d_%s.bin' % (slot, r['name']), fl),
+                     'storewrite %d 1 1 %d' % (slot, r['flags']), 'peek 0 0x100000', 'storeread %d 1 1' % slot]
+            r['_before'] = fl
         out = run('s02', cmds)
-        for k, (f, rc, reads) in enumerate(cases):
+        names = {r['name'] for r in v['saves']}
+        self.assertTrue({'from_erased', 'append', 'same_value', 'full_wraps', 'not_valid_gap', 'image_bytes',
+                         'append_after_torn'} <= names)
+        for k, r in enumerate(v['saves']):
+            slot, what = r['slot'], (r['slot'], r['name'])
+            res, ops = split(out[4 * k + 1])
+            self.assertEqual(res, [str(STORE_OK)], what)
+            self.assertEqual(ops, self.want_ops(r['ops']), what)
+            after = bytes.fromhex(out[4 * k + 2])
+            want = bytearray(b'\xff' * 0x1000)
+            for pg, hexb in r['after'].items():
+                d = b(hexb)
+                want[int(pg) * 0x100:int(pg) * 0x100 + len(d)] = d
+            self.assertEqual(after[SET_SECTOR[slot]:SET_SECTOR[slot] + 0x1000], bytes(want), what)
+            lo, hi = SET_SECTOR[slot], SET_SECTOR[slot] + 0x1000
+            self.assertEqual(after[:lo] + after[hi:], r['_before'][:lo] + r['_before'][hi:], what)
+            self.assertEqual(split(out[4 * k + 3])[0], ['1', hex(r['flags'])], what)
+
+    @scenario('S-02/SC-SETTINGS')
+    @requirement('S-02.105')
+    def test_SC_SETTINGS_clears(self):
+        """Every row of `clears`: an erased sector is read and left alone; a used one is erased and read back
+        erased; nothing outside the sector changes."""
+        v = set_vectors()
+        cmds = []
+        for r in v['clears']:
+            fl = self.flash(r['slot'], 0x1D0C2B3A, sector=r['before'])
+            cmds += ['load ' + save('set_c_%d_%s.bin' % (r['slot'], r['name']), fl),
+                     'storeclear %d 1 1' % r['slot'], 'peek 0 0x100000']
+            r['_before'] = fl
+        out = run('s02', cmds)
+        for k, r in enumerate(v['clears']):
+            slot, what = r['slot'], (r['slot'], r['name'])
+            res, ops = split(out[3 * k + 1])
+            self.assertEqual(res, [str(STORE_OK)], what)
+            self.assertEqual(ops, self.want_ops(r['ops']), what)
+            after = bytes.fromhex(out[3 * k + 2])
+            lo, hi = SET_SECTOR[slot], SET_SECTOR[slot] + 0x1000
+            self.assertEqual(after[lo:hi], b'\xff' * 0x1000, what)
+            self.assertEqual(after[:lo] + after[hi:], r['_before'][:lo] + r['_before'][hi:], what)
+
+    @scenario('S-02/SC-SETTINGS')
+    @requirement('S-02.098', 'S-02.105')
+    def test_SC_SETTINGS_cuts(self):
+        """`cuts`, for both slots: a save that appends (page 1 after the defaults on page 0) cut before, inside
+        (mask 00 and three seeds) and after its program; a save into a full sector cut before, inside (masks 00,
+        FF and three seeds over the sector) and after its erase; a clear torn and cut after its erase. The next
+        read gives the row's value: the old flags, the new, an earlier saved value or the defaults."""
+        v = set_vectors()
+        full = next(r for r in v['saves'] if r['name'] == 'full_wraps' and r['slot'] == 0)['before']
+        app = next(r for r in v['saves'] if r['name'] == 'append' and r['slot'] == 0)['before']
+        earlier = {int(b(x)[12]) & 0xF for x in full.values()} | {v['defaults']}
+        cases = []
+        for slot in (0, 1):
+            for c in v['cuts']:
+                if c['op'] == 'program':
+                    start, cmd, old = app, 'storewrite %d 1 1 0x7' % slot, {v['defaults']}
+                    n = 17
+                    faults = {'before': ['fault after 0'], 'after': ['fault after 1'],
+                              'torn': ['fault tear 1 ' + m.hex() for m in
+                                       [bytes(n)] + [random.Random(sd).randbytes(n) for sd in (1, 2, 3)]]}[c['at']]
+                    allowed = {'old': old, 'new': {0x7}}[c['reads']] if c['at'] != 'torn' else old | {0x7}
+                elif c['op'] == 'erase':
+                    start, cmd = full, 'storewrite %d 1 1 0x7' % slot
+                    masks = [bytes(0x1000), b'\xff' * 0x1000] + [random.Random(sd).randbytes(0x1000) for sd in (1, 2, 3)]
+                    faults = {'before': ['fault after 0'], 'after': ['fault after 1'],
+                              'torn': ['fault tear 1 ' + m.hex() for m in masks]}[c['at']]
+                    allowed = {'before': {0xF}, 'after': {v['defaults']}, 'torn': earlier}[c['at']]
+                else:
+                    start, cmd = full, 'storeclear %d 1 1' % slot
+                    masks = [bytes(0x1000)] + [random.Random(sd).randbytes(0x1000) for sd in (1, 2)]
+                    faults = {'after': ['fault after 1'],
+                              'torn': ['fault tear 1 ' + m.hex() for m in masks]}[c['at']]
+                    allowed = {'after': {v['defaults']}, 'torn': earlier}[c['at']]
+                for f in faults:
+                    cases.append((slot, c, f, start, cmd, allowed))
+        cmds = []
+        for k, (slot, c, f, start, cmd, _) in enumerate(cases):
+            cmds += ['load ' + save('set_cut_%d.bin' % k, self.flash(slot, 0x1D0C2B3A, sector=start)), f, cmd,
+                     'storeread %d 1 1' % slot]
+        out = run('s02', cmds)
+        for k, (slot, c, f, _, _, allowed) in enumerate(cases):
+            res, _ = split(out[4 * k + 3])
+            self.assertIn(int(res[1], 16), allowed, (slot, c, f[:14]))
+
+    @scenario('S-02/SC-SETTINGS')
+    @requirement('S-02.098')
+    def test_SC_SETTINGS_failures(self):
+        """A program that fails, one that changes nothing and reports success, and an erase that fails: the
+        save reports the failure, makes no second erase or program, and the next read gives the old value."""
+        v = set_vectors()
+        app = next(r for r in v['saves'] if r['name'] == 'append' and r['slot'] == 1)['before']
+        full = next(r for r in v['saves'] if r['name'] == 'full_wraps' and r['slot'] == 1)['before']
+        cases = [(app, 'fault fail 1', STORE_IO, v['defaults']), (app, 'fault stuck 1', STORE_VERIFY, v['defaults']),
+                 (app, 'fault late 1', STORE_IO, 0x7), (full, 'fault fail 1', STORE_IO, 0xF)]
+        cmds = []
+        for k, (sec, f, _, _) in enumerate(cases):
+            cmds += ['load ' + save('set_e_%d.bin' % k, self.flash(1, 0x1D0C2B3A, sector=sec)), f,
+                     'storewrite 1 1 1 0x7', 'storeread 1 1 1']
+        out = run('s02', cmds)
+        for k, (_, f, rc, reads) in enumerate(cases):
             res, ops = split(out[4 * k + 2])
             self.assertEqual(res, [str(rc)], f)
-            w = writes(ops)
-            self.assertEqual(w[0], 'e:fe000', f)
-            self.assertLessEqual(len(w), 2, f)
-            self.assertEqual(len([o for o in w if o.startswith('e:')]), 1, f)
-            self.assertEqual(split(out[4 * k + 3])[0][1], '1' if reads == 'on' else '0', f)
+            self.assertEqual(len(writes(ops)), 1, (f, ops))
+            self.assertEqual(split(out[4 * k + 3])[0][1], hex(reads), f)
 
-    @scenario('S-02/SC-BOOTSTORE')
-    @requirement('S-02.097')
-    def test_SC_BOOTSTORE_front(self):
-        """Run 3, the front's part: with the `on` record in the sector, the front's start-log step (both
-        selectors) and recovery's start-up survey read no byte of 0xFE000-0xFF000. Recovery's entry by Power + M4
-        is the unit tests' (test_front_start)."""
-        on = self.record('on')
-        empty = save('store_host.bin', b'')
+    @scenario('S-02/SC-SETTINGS')
+    @requirement('S-02.099', 'S-02.100', 'S-02.103')
+    def test_SC_SETTINGS_footprint(self):
+        """With selector 00 01 and 01 01, saves and a clear of the running slot's sector (the slot each selector
+        names, its record's CRC the stamp) lie in that sector, change no other byte, the start log's sector
+        included, and the first stage's decision and checks read the same before and after (S-02.100). The
+        front's start-log step and recovery's survey read no byte of either settings sector."""
+        empty = save('set_host.bin', b'')
         for sel in ((0, 1), (1, 1)):
-            path = save('store_front.bin', self.flash(sel=sel, sector=on))
-            out = run('s02', ['load ' + path, 'startlog', 'load ' + path, 'recover %d %s' % (sel[0], empty)])
-            for line in (out[1], out[3]):
+            slot = sel[0]
+            start = spiflash.build_flash(selector=sel, slots=('good', 'good'),
+                                         images=(spiflash.slot_image(0, size=0x2345),
+                                                 spiflash.slot_image(1, size=0x2345)))
+            after = os.path.join(WORK, 'set_f1.bin')
+            path = save('set_f.bin', start)
+            out = run('s02', ['load ' + path, 'fs 1', 'storewrite %d 1 1 0xf' % slot,
+                              'storewrite %d 1 1 0x6' % slot, 'storeread %d 1 1' % slot,
+                              'storeclear %d 1 1' % slot, 'storewrite %d 1 1 0x8' % slot, 'save ' + after, 'fs 1',
+                              'load ' + path, 'startlog', 'load ' + path, 'recover %d %s' % (slot, empty)])
+            for line in (out[2], out[3], out[5], out[6]):
+                res, ops = split(line)
+                self.assertEqual(res, [str(STORE_OK)], sel)
+                self.assertTrue(writes(ops) and all(self.in_sector(o, slot) for o in writes(ops)), (sel, ops))
+            self.assertEqual(split(out[4])[0], ['1', '0x6'], sel)
+            fs0, fs1 = split(out[1]), split(out[8])
+            self.assertEqual(fs0, fs1, sel)
+            with open(after, 'rb') as f:
+                a = f.read()
+            lo = SET_SECTOR[slot]
+            self.assertEqual(a[:lo] + a[lo + 0x1000:], start[:lo] + start[lo + 0x1000:], sel)
+            for line in (out[1], out[10], out[12]):
                 _, ops = split(line)
-                self.assertTrue(ops, sel)
-                self.assertEqual([o for o in ops if self.in_store(o)], [], (sel, ops))
+                self.assertFalse([o for o in ops if self.in_sector(o, 0) or self.in_sector(o, 1)], (sel, ops))
+
+    @scenario('S-02/SC-SETTINGS')
+    @requirement('S-02.103')
+    def test_SC_SETTINGS_upgrade(self):
+        """`upgrade`: the package's bootloader step (s02_slot_upgrade) erases the target's settings sector,
+        right after its start-log sector, exactly for an image of at most 0x76000 bytes; a longer one leaves
+        it to the image's own bytes. The settings recorded there before are gone: a read with the new record
+        gives the defaults."""
+        v = set_vectors()
+        for row in v['upgrade']:
+            n = int(row['length'], 16)
+            img = padded('good', n)
+            fl = bytearray(spiflash.build_flash(selector=(0, 1), slots=('good', 'good'),
+                                                images=(spiflash.slot_image(0, size=0x2345), None)))
+            t = 1
+            fl[SET_SECTOR[t]:SET_SECTOR[t] + 0x100] = b(next(r for r in v['records'] if r['name'] == 'all_on')['bytes']).ljust(0x100, b'\xff')
+            out = run('s02', ['load ' + save('set_u.bin', bytes(fl)), 'upgrade 1 ' + save('set_u.ldr', img)])
+            res, ops = split(out[1])
+            self.assertEqual(res, ['0', str(t)], row)
+            last = max(i for i, o in enumerate(ops) if o.startswith('p:') and int(o.split(':')[1], 16) >= 0x88000)
+            tail = [o for o in ops[last + 1:ops.index('e:f000')] if o.startswith('e:')]   # after the image
+            log, sec = 'e:%x' % (0x88000 + 0x77000), 'e:%x' % SET_SECTOR[t]
+            want = ([log] if row['erases_start_log'] else []) + ([sec] if row['erases_settings'] else [])
+            self.assertEqual(tail, want, row)
 
 
 if __name__ == '__main__':

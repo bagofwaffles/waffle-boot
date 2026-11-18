@@ -244,6 +244,8 @@ def upgrade_ops(rule, sel, n=IMAGE_LEN, package=False):
             a += ln
     if rule == "conforming" and n <= LOG_SECTOR:                 # S-02.045
         ops.append(dict(cls="slot_erase", op="erase", offset=base + LOG_SECTOR, length=SECTOR))
+    if rule == "conforming" and package and n <= SLOT_MAX - 2 * SECTOR:   # S-02.103: the settings sector
+        ops.append(dict(cls="slot_erase", op="erase", offset=base + SLOT_MAX - 2 * SECTOR, length=SECTOR))
     ops.append(dict(cls="record_erase", op="erase", offset=RECORD[t], length=SECTOR))
     ops.append(dict(cls="record_program", op="program", offset=RECORD[t], length=12))
     if rule == "conforming":                                     # S-02.047
@@ -557,9 +559,10 @@ def layout():
             {"name": "selector", "start": "0x0d000", "end": "0x0e000", "content": "0x0d000+2"},
             {"name": "record0", "start": "0x0e000", "end": "0x0f000", "content": "0x0e000+12"},
             {"name": "record1", "start": "0x0f000", "end": "0x10000", "content": "0x0f000+12"},
-            {"name": "slot0", "start": "0x10000", "end": "0x88000"},
+            {"name": "slot0", "start": "0x10000", "end": "0x88000",
+             "settings_sector": {"start": "0x86000", "end": "0x87000", "usable_while_length_at_most": "0x76000"}},
             {"name": "slot1", "start": "0x88000", "end": "0x100000",
-             "boot_store_sector": {"start": "0xfe000", "end": "0xff000", "usable_while_length_at_most": "0x76000"}},
+             "settings_sector": {"start": "0xfe000", "end": "0xff000", "usable_while_length_at_most": "0x76000"}},
         ],
     }
 
@@ -2068,113 +2071,259 @@ def bootable_cases():
     }
 
 
-# ---------------------------------------------------------------- the boot store (S-02.096-.099)
+# ---------------------------------------------------------------- the settings sector (S-02.096-.100, .103-.105)
 
-STORE_MAGIC = b"WBST"           # 57 42 53 54
-STORE_MAX_PAYLOAD = 4080
-STORE_SECTOR = 0xFE000          # S-02.099: slot 1's second-to-last sector
-STORE_MAX_SLOT1 = STORE_SECTOR - SLOT[1]    # 0x76000
-
-
-def store_usable(rec):
-    """S-02.099: True when slot 1's record (12 bytes, None: unreadable) leaves the store usable."""
-    if rec is None:
-        return False
-    ln, tag = int.from_bytes(rec[4:8], "little"), int.from_bytes(rec[8:12], "little")
-    return tag == TAG and 1 <= ln <= STORE_MAX_SLOT1
+SET_MAGIC = b"WBSS"             # 57 42 53 53; the old boot store's was WBST
+SET_OLD_MAGIC = b"WBST"
+SET_HEADER = 12
+SET_MAX_PAYLOAD = PAGE - SET_HEADER - 4      # 240
+SET_PAGES = SECTOR // PAGE                   # 16
+SET_SLOT_MAX = SLOT_MAX - 2 * SECTOR         # 0x76000: S-02.099, S-02.104
+SET_SECTOR = tuple(SLOT[k] + SET_SLOT_MAX for k in (0, 1))   # 0x86000, 0xfe000
+SET_FLAGS = ("developer_mode", "color", "mtp_macos", "start_in_boot_menu")
+SET_DEFAULTS = 0x06                          # developer mode off, color on, MTP macOS, start in boot menu off
 
 
-def store_record(payload, version=1, length=None, magic=STORE_MAGIC, crc=None):
-    """S-02.096: a boot store record (magic, version u16, length u16, payload, CRC-32)."""
-    n = len(payload) if length is None else length
-    head = magic + version.to_bytes(2, "little") + n.to_bytes(2, "little") + payload
+def set_record(flags, stamp, payload=None, version=1, length=None, magic=SET_MAGIC, crc=None):
+    """S-02.096: magic, version u16, length u16, stamp u32, payload, CRC-32 over all before it."""
+    pl = bytes([flags]) if payload is None else payload
+    n = len(pl) if length is None else length
+    head = magic + version.to_bytes(2, "little") + n.to_bytes(2, "little") + stamp.to_bytes(4, "little") + pl
     c = zlib.crc32(head) if crc is None else crc
     return head + c.to_bytes(4, "little")
 
 
-def store_read(data):
-    """S-02.097: (setting, why) for the bytes a read gives (None: a failed read); False is the default."""
-    if data is None or len(data) < 8:
-        return False, "failed read" if data is None else "short"
-    if data[:4] != STORE_MAGIC:
-        return False, "magic"
-    if int.from_bytes(data[4:6], "little") != 1:
-        return False, "version"
-    n = int.from_bytes(data[6:8], "little")
-    if not 1 <= n <= STORE_MAX_PAYLOAD:
-        return False, "length"
-    if zlib.crc32(data[:8 + n]) != int.from_bytes(data[8 + n:12 + n], "little"):
-        return False, "crc"
-    return bool(data[8] & 1), "valid"
+def set_decode(page, stamp):
+    """S-02.096, S-02.097: (flags, why) for one page; flags None when it gives no settings."""
+    if page[:4] != SET_MAGIC:
+        return None, "erased" if page == b"\xff" * len(page) else "magic"
+    if int.from_bytes(page[4:6], "little") != 1:
+        return None, "version"
+    n = int.from_bytes(page[6:8], "little")
+    if not 1 <= n <= SET_MAX_PAYLOAD:
+        return None, "length"
+    if zlib.crc32(page[:SET_HEADER + n]) != int.from_bytes(page[SET_HEADER + n:SET_HEADER + n + 4], "little"):
+        return None, "crc"
+    if int.from_bytes(page[8:12], "little") != stamp:
+        return None, "stamp"
+    return page[SET_HEADER] & 0x0F, "valid"
 
 
-def store_sector(record):
-    return record + b"\xff" * (SECTOR - len(record))
+def set_pages(sector):
+    return [sector[i * PAGE:(i + 1) * PAGE] for i in range(SET_PAGES)]
 
 
-def store_torn_check():
-    """S-02.098: every flag byte f with bit 0 set whose record's CRC covers the 'off' record's CRC bit for
-    bit."""
-    off = int.from_bytes(store_record(b"\x00")[-4:], "little")
-    hits = [f for f in range(256) if f & 1 and
-            int.from_bytes(store_record(bytes([f]))[-4:], "little") & off == off]
-    return {"collisions": hits}
+def set_pick(sector, stamp):
+    """S-02.097: (flags, page) of the highest page with a valid record holding the stamp; (defaults, None)."""
+    if sector is None:
+        return SET_DEFAULTS, None
+    for i in reversed(range(SET_PAGES)):
+        f, _ = set_decode(set_pages(sector)[i], stamp)
+        if f is not None:
+            return f, i
+    return SET_DEFAULTS, None
 
 
-def boot_store():
-    on, off = store_record(b"\x01"), store_record(b"\x00")
-    longer = store_record(b"\x01\x5a\xa5\x00\xff")
-    longest = store_record(b"\x00" + bytes((i * 7) & 0xFF for i in range(STORE_MAX_PAYLOAD - 1)))
-    records = [("off", off), ("on", on), ("longer_unknown_bytes", longer), ("longest", longest)]
-    reads = [("erased", b"\xff" * SECTOR), ("off", store_sector(off)), ("on", store_sector(on)),
-             ("on_flag_bits_set", store_sector(store_record(b"\xff"))),
-             ("longer_unknown_bytes", store_sector(longer)), ("longest", store_sector(longest)),
-             ("wrong_magic", store_sector(store_record(b"\x01", magic=b"WBSU"))),
-             ("version_0", store_sector(store_record(b"\x01", version=0))),
-             ("version_2", store_sector(store_record(b"\x01", version=2))),
-             ("length_0", store_sector(store_record(b"", length=0))),
-             ("length_4081", store_sector(store_record(b"\x01" * 4081))[:SECTOR]),
-             ("wrong_crc", store_sector(store_record(b"\x01", crc=zlib.crc32(on[:9]) ^ 1)))]
-    for k in range(len(on)):                         # a torn program: the first k bytes, the rest erased
-        reads.append(("on_torn_%d" % k, store_sector(on[:k])))
-    out_reads = [{"name": n, "bytes": d.rstrip(b"\xff").hex(), "fill": "ff to 4096 bytes",
-                  "setting": "on" if store_read(d)[0] else "off", "why": store_read(d)[1]} for n, d in reads]
-    out_reads.append({"name": "failed_read", "bytes": None, "setting": "off", "why": "failed read"})
-    writes = []
-    for name, rec in (("to_on", on), ("to_off", off)):
-        writes.append({"name": name, "ops": [["read", "0x0f000", 12], ["erase", "0xfe000"],
-                                            ["program", "0xfe000", rec.hex()], ["read", "0xfe000", len(rec)]],
-                       "footprint": ["0xfe000", "0xff000"]})
-    usable = []
-    for name, ln, tag, crc in (("length_1", 1, TAG, 0x12345678), ("typical", 0x2345, TAG, 0x1D0C2B3A),
-                               ("length_0x75fff", 0x75FFF, TAG, 0), ("length_0x76000", 0x76000, TAG, 0),
-                               ("length_0x76001", 0x76001, TAG, 0), ("length_0x77000", 0x77000, TAG, 0),
-                               ("length_0x78000", 0x78000, TAG, 0), ("length_0", 0, TAG, 0),
-                               ("bad_tag", 0x2345, 0x0000B005, 0), ("erased", 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF),
-                               ("trial_mark_short", 0x2345, TAG, zlib.crc32(pattern(0x2345, 5)) ^ 0xFFFFFFFF),
-                               ("trial_mark_long", 0x76001, TAG, 0x5A5A5A5A)):
-        rec = crc.to_bytes(4, "little") + ln.to_bytes(4, "little") + tag.to_bytes(4, "little")
-        usable.append({"name": name, "record": rec.hex(" "), "usable": store_usable(rec),
-                       "read_gives": "the record" if store_usable(rec) else "default",
-                       "save": "written" if store_usable(rec) else "refused, nothing erased"})
-    usable.append({"name": "unreadable", "record": None, "usable": False, "read_gives": "default",
-                   "save": "refused, nothing erased"})
-    checks = [{"check": "slot 1 CRC and trial mark", "range": ["0x88000", "0x88000 + length"]},
-              {"check": "slot 0 CRC and trial mark", "range": ["0x10000", "0x10000 + length (at most 0x78000)"]},
-              {"check": "start log", "range": ["0xff000", "0x100000"]},
-              {"check": "first-stage read-back", "range": ["0x0", "0xb000"]},
-              {"check": "mirror and metadata", "range": ["0xb000", "0xd000"]},
-              {"check": "selector and records", "range": ["0xd000", "0x10000"]}]
-    cuts = [{"old": old, "new": new, "at": at, "reads": r}
-            for old, new in (("off", "on"), ("on", "off"))
-            for at, r in (("before_erase", old), ("torn_erase", old + " or off"), ("after_erase", "off"),
-                          ("torn_program", "off"), ("after_program", new))]
+def set_layout(sector):
+    """(used, valid): the pages up to the last used one, and whether no erased page comes before a used one."""
+    used, gap, ok = 0, False, True
+    for i, pg in enumerate(set_pages(sector)):
+        if pg == b"\xff" * PAGE:
+            gap = True
+        else:
+            ok = ok and not gap
+            used = i + 1
+    return used, ok
+
+
+def set_usable(run, now=None):
+    """S-02.099: the running slot keeps settings. run: dict(established, good, rec) with rec 12 bytes (None:
+    unreadable); now: the record read again (default: the same)."""
+    rec = run["rec"]
+    if not run["established"] or not run["good"] or rec is None:
+        return False
+    ln, tag = int.from_bytes(rec[4:8], "little"), int.from_bytes(rec[8:12], "little")
+    now = rec if now is None else now
+    return tag == TAG and 1 <= ln <= SET_SLOT_MAX and now == rec
+
+
+def set_save_ops(slot, sector, flags, stamp):
+    """S-02.098: the operations of a save from this sector and the sector after it, the guard passed."""
+    base = SET_SECTOR[slot]
+    ops = [["read", "0x%05x" % RECORD[slot], 12], ["read", "0x%05x" % base, SECTOR]]
+    have, _ = set_pick(sector, stamp)
+    if set_pick(sector, stamp)[1] is not None and have == flags:
+        return ops, sector, None
+    used, ok = set_layout(sector)
+    out = bytearray(sector)
+    if not ok or used == SET_PAGES:
+        ops += [["erase", "0x%05x" % base], ["read", "0x%05x" % base, SECTOR]]
+        out[:] = b"\xff" * SECTOR
+        used = 0
+    rec = set_record(flags, stamp)
+    at = base + used * PAGE
+    ops += [["program", "0x%05x" % at, rec.hex()], ["read", "0x%05x" % at, len(rec)]]
+    out[used * PAGE:used * PAGE + len(rec)] = rec
+    return ops, bytes(out), used
+
+
+def set_sector_of(pages):
+    """A sector from {page index: bytes}; the rest erased."""
+    sec = bytearray(b"\xff" * SECTOR)
+    for i, pg in pages.items():
+        sec[i * PAGE:i * PAGE + len(pg)] = pg
+    return bytes(sec)
+
+
+def set_hex_pages(sector):
+    """The sector as {page index: its bytes up to the last byte that is not ff}, erased pages left out."""
+    return {str(i): pg.rstrip(b"\xff").hex() for i, pg in enumerate(set_pages(sector)) if pg != b"\xff" * PAGE}
+
+
+def set_torn_check(stamps):
+    """S-02.098: for each stamp, every pair of written records new and other (flag values 0 to 15) where a
+    torn program of new on an erased page (bits of new cleared, others not yet) could read as other: other's
+    bytes a bitwise superset of new's (1s) and other valid. Stamp and length bytes are the same, so only the
+    flag byte and the CRC differ."""
+    hits = []
+    for st in stamps:
+        for f in range(16):
+            new = set_record(f, st)
+            for g in range(16):
+                if g == f:
+                    continue
+                other = set_record(g, st)
+                if all((o & n) == n for o, n in zip(other, new)):
+                    hits.append({"stamp": "0x%08x" % st, "new": f, "reads_as": g})
+    return hits
+
+
+def settings_sector():
+    st = 0x1D0C2B3A                       # the running image's record CRC in the read cases
+    other = 0x5A5AA5A5
+    dflt, allon, menu = set_record(SET_DEFAULTS, st), set_record(0x0F, st), set_record(0x0E, st)
+    dev = set_record(0x07, st)
+    longer = set_record(0, st, payload=b"\x0e\x5a\xa5\x00\xff")
+    longest = set_record(0, st, payload=bytes([0x0B]) + bytes((i * 7) & 0xFF for i in range(SET_MAX_PAYLOAD - 1)))
+    records = [("defaults", dflt), ("all_on", allon), ("start_in_boot_menu", menu), ("developer_mode", dev),
+               ("longer_unknown_bytes", longer), ("longest", longest)]
+    # reads: (name, the sector, its stamp) -> flags and the page that gave them
+    full = {i: set_record(i & 0x0F, st) for i in range(SET_PAGES)}
+    reads = [
+        ("erased", set_sector_of({})),
+        ("one_record", set_sector_of({0: menu})),
+        ("stamp_mismatch", set_sector_of({0: set_record(0x0E, other)})),
+        ("newest_of_three", set_sector_of({0: dflt, 1: dev, 2: menu})),
+        ("newest_wrong_stamp", set_sector_of({0: dflt, 1: dev, 2: set_record(0x0E, other)})),
+        ("full_sector", set_sector_of(full)),
+        ("gap_takes_highest", set_sector_of({0: dflt, 2: menu})),
+        ("old_boot_store_record", set_sector_of({0: b"WBST\x01\x00\x01\x00\x01" +
+                                                 zlib.crc32(b"WBST\x01\x00\x01\x00\x01").to_bytes(4, "little")})),
+        ("old_record_then_new", set_sector_of({0: b"WBST\x01\x00\x01\x00\x01" +
+                                               zlib.crc32(b"WBST\x01\x00\x01\x00\x01").to_bytes(4, "little"),
+                                               1: menu})),
+        ("flag_bits_4_to_7", set_sector_of({0: set_record(0xF8, st)})),
+        ("longer_unknown_bytes", set_sector_of({0: longer})),
+        ("longest", set_sector_of({0: longest})),
+        ("wrong_magic", set_sector_of({0: set_record(0x0E, st, magic=b"WBSU")})),
+        ("version_0", set_sector_of({0: set_record(0x0E, st, version=0)})),
+        ("version_2", set_sector_of({0: set_record(0x0E, st, version=2)})),
+        ("length_0", set_sector_of({0: set_record(0, st, payload=b"", length=0)})),
+        ("length_241", set_sector_of({0: set_record(0, st, payload=b"\x0e" * 241)[:PAGE]})),
+        ("wrong_crc", set_sector_of({0: set_record(0x0E, st, crc=zlib.crc32(menu[:13]) ^ 1)})),
+        ("image_bytes", pattern(SECTOR, 9)),
+        ("zeros", bytes(SECTOR)),
+    ]
+    for k in range(len(menu)):                      # a torn program: the first k bytes on page 1, page 0 older
+        reads.append(("torn_%d" % k, set_sector_of({0: dflt, 1: menu[:k]})))
+    out_reads = []
+    for n, sec in reads:
+        f, pg = set_pick(sec, st)
+        out_reads.append({"name": n, "stamp": "0x%08x" % st, "pages": set_hex_pages(sec), "fill": "ff",
+                          "flags": f, "page": pg, "gives": "a record" if pg is not None else "defaults"})
+    out_reads.append({"name": "failed_read", "stamp": "0x%08x" % st, "pages": None, "flags": SET_DEFAULTS,
+                      "page": None, "gives": "defaults"})
+    # the guard: the running slot as this start found it
+    def rec_of(ln, tag=TAG, crc=st):
+        return crc.to_bytes(4, "little") + ln.to_bytes(4, "little") + tag.to_bytes(4, "little")
+    guards = []
+    for name, est, good, rec, now in (
+            ("usable", True, True, rec_of(0x2345), None),
+            ("length_1", True, True, rec_of(1), None),
+            ("length_0x76000", True, True, rec_of(0x76000), None),
+            ("length_0x76001", True, True, rec_of(0x76001), None),
+            ("length_0x77000", True, True, rec_of(0x77000), None),
+            ("length_0x78000", True, True, rec_of(0x78000), None),
+            ("length_0", True, True, rec_of(0), None),
+            ("bad_tag", True, True, rec_of(0x2345, tag=0x0000B005), None),
+            ("not_established", False, True, rec_of(0x2345), None),
+            ("not_good", True, False, rec_of(0x2345), None),
+            ("trial_mark", True, False, rec_of(0x2345, crc=st ^ 0xFFFFFFFF), None),
+            ("record_changed", True, True, rec_of(0x2345), rec_of(0x2345, crc=other)),
+            ("record_unreadable", True, True, rec_of(0x2345), "unreadable")):
+        u = set_usable(dict(established=est, good=good, rec=rec),
+                       None if now in (None, "unreadable") else now) and now != "unreadable"
+        guards.append({"name": name, "established": est, "good": good, "record": rec.hex(" "),
+                       "record_now": None if now is None else ("unreadable" if now == "unreadable" else now.hex(" ")),
+                       "usable": u, "read_gives": "the sector" if u else "defaults, sector not read",
+                       "save": "written" if u else "refused, nothing written",
+                       "clear": "made" if u else "refused, nothing written"})
+    # saves, for both slots
+    saves = []
+    starts = [("from_erased", set_sector_of({})), ("append", set_sector_of({0: dflt})),
+              ("append_after_old_stamp", set_sector_of({0: set_record(0x0E, other)})),
+              ("append_after_torn", set_sector_of({0: dflt, 1: menu[:7]})),
+              ("after_old_boot_store", set_sector_of({0: b"WBST\x01\x00\x01\x00\x01" +
+                                                      zlib.crc32(b"WBST\x01\x00\x01\x00\x01").to_bytes(4, "little")})),
+              ("same_value", set_sector_of({0: dflt, 1: dev})),
+              ("full_wraps", set_sector_of(full)),
+              ("not_valid_gap", set_sector_of({0: dflt, 2: menu})),
+              ("image_bytes", pattern(SECTOR, 9))]
+    for slot in (0, 1):
+        for name, sec in starts:
+            ops, after, used = set_save_ops(slot, sec, 0x07, st)
+            saves.append({"name": name, "slot": slot, "stamp": "0x%08x" % st, "flags": 0x07,
+                          "before": set_hex_pages(sec) if name != "image_bytes" else None,
+                          "before_pattern": 9 if name == "image_bytes" else None,
+                          "ops": ops, "page": used, "after": set_hex_pages(after),
+                          "footprint": ["0x%05x" % SET_SECTOR[slot], "0x%05x" % (SET_SECTOR[slot] + SECTOR)]})
+    clears = []
+    for slot in (0, 1):
+        for name, sec in (("erased", set_sector_of({})), ("used", set_sector_of({0: dflt, 1: dev}))):
+            base = SET_SECTOR[slot]
+            ops = [["read", "0x%05x" % RECORD[slot], 12], ["read", "0x%05x" % base, SECTOR]]
+            if name == "used":
+                ops += [["erase", "0x%05x" % base], ["read", "0x%05x" % base, SECTOR]]
+            clears.append({"name": name, "slot": slot, "before": set_hex_pages(sec), "ops": ops,
+                           "after": "erased"})
+    cuts = [{"op": "program", "at": "before", "reads": "old"},
+            {"op": "program", "at": "torn", "reads": "old"},
+            {"op": "program", "at": "after", "reads": "new"},
+            {"op": "erase", "at": "before", "reads": "old"},
+            {"op": "erase", "at": "torn", "reads": "an earlier value or defaults"},
+            {"op": "erase", "at": "after", "reads": "defaults"},
+            {"op": "clear_erase", "at": "torn", "reads": "an earlier value or defaults"},
+            {"op": "clear_erase", "at": "after", "reads": "defaults"}]
+    upgrade = []
+    for n in (0x1345, SET_SLOT_MAX - 1, SET_SLOT_MAX, SET_SLOT_MAX + 1, LOG_SECTOR, LOG_SECTOR + 1, SLOT_MAX):
+        upgrade.append({"length": "0x%x" % n, "erases_start_log": n <= LOG_SECTOR,
+                        "erases_settings": n <= SET_SLOT_MAX,
+                        "slot_keeps_settings": n <= SET_SLOT_MAX})
+    checks = [{"slot": k, "check": c, "range": r} for k in (0, 1) for c, r in (
+        ("the slot's CRC and trial mark", ["0x%05x" % SLOT[k], "0x%05x + length" % SLOT[k]]),
+        ("the start log", ["0x%05x" % (SLOT[k] + LOG_SECTOR), "0x%05x" % (SLOT[k] + SLOT_MAX)]),
+        ("first-stage read-back", ["0x0", "0xb000"]),
+        ("mirror and metadata", ["0xb000", "0xd000"]),
+        ("selector and records", ["0xd000", "0x10000"]))]
     return {
-            "magic": STORE_MAGIC.hex(" "), "max_payload": STORE_MAX_PAYLOAD,
-            "records": [{"name": n, "length": len(r), "bytes": r.hex()} for n, r in records],
-            "sector": ["0xfe000", "0xff000"], "slot1_max_length": "0x%x" % STORE_MAX_SLOT1,
-            "reads": out_reads, "usable": usable, "writes": writes, "cuts": cuts, "checks": checks,
-            "torn_check": store_torn_check()}
+        "magic": SET_MAGIC.hex(" "), "old_magic": SET_OLD_MAGIC.hex(" "), "page": PAGE, "pages": SET_PAGES,
+        "max_payload": SET_MAX_PAYLOAD, "flag_bits": list(SET_FLAGS), "defaults": SET_DEFAULTS,
+        "sectors": [{"slot": k, "start": "0x%05x" % SET_SECTOR[k], "end": "0x%05x" % (SET_SECTOR[k] + SECTOR)}
+                    for k in (0, 1)],
+        "slot_max_length": "0x%x" % SET_SLOT_MAX,
+        "records": [{"name": n, "length": len(r), "bytes": r.hex()} for n, r in records],
+        "reads": out_reads, "guards": guards, "saves": saves, "clears": clears, "cuts": cuts,
+        "upgrade": upgrade, "checks": checks, "torn_check": set_torn_check([st, other, 0, 0xFFFFFFFF])}
 
 
 def _csv(fields, rows):
@@ -2461,7 +2610,7 @@ def render():
     out["metadata_cuts.csv"] = _csv(META_CUT_FIELDS, mrows)
     out["bootable_images.json"] = json.dumps(bootable_cases(), indent=1) + "\n"
     out["recovery_actions.json"] = json.dumps(act_data(), indent=1) + "\n"
-    out["boot_store.json"] = json.dumps(boot_store(), indent=1) + "\n"
+    out["settings_sector.json"] = json.dumps(settings_sector(), indent=1) + "\n"
     return out
 
 

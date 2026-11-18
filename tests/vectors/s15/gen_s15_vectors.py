@@ -448,33 +448,6 @@ def tokens(o):
     o.w()
 
 
-def settings_file(o):
-    v = load('settings_file.json')
-    o.w('#ifdef S15V_SETTINGS_FILE')
-    o.w('/* settings_file.json (S-15.172): a file\'s bytes (NULL: no file) and the settings they give; the bytes')
-    o.w('   written for each pair of settings. */')
-    o.w('struct s15v_settings_read { const char *name; const char *bytes; size_t len; bool usable, dev_mode,'
-        ' color, mtp_macos; };')
-    o.w('static const struct s15v_settings_read s15v_settings_read[] = {')
-    for c in v['read']:
-        b = c['bytes']
-        o.w('\t{ %s, %s, %du, %s, %s, %s, %s },' % (
-            cstr(c['name']), cstr(b), 0 if b is None else len(b.encode('latin-1')), cbool(c['usable']),
-            cbool(c['developer_mode'] == 'on'), cbool(c['color'] == 'on'), cbool(c['mtp_target'] == 'macos')))
-    o.w('};')
-    o.w('struct s15v_settings_write { bool dev_mode, color, mtp_macos; const char *bytes; };')
-    o.w('static const struct s15v_settings_write s15v_settings_write[] = {')
-    for c in v['write']:
-        o.w('\t{ %s, %s, %s, %s },' % (cbool(c['developer_mode'] == 'on'), cbool(c['color'] == 'on'), cbool(c['mtp_target'] == 'macos'),
-                                   cstr(c['bytes'])))
-    o.w('};')
-    o.w('#define S15V_SETTINGS_PATH %s' % cstr(v['path']))
-    o.w('#define S15V_SETTINGS_NEW_PATH %s' % cstr(v['new_path']))
-    o.w('#define S15V_SETTINGS_MAX %du' % v['max'])
-    o.w('#endif')
-    o.w()
-
-
 def gray(o):
     v = load('gray.json')
     o.w('#ifdef S15V_GRAY')
@@ -504,7 +477,6 @@ def gen():
     screens(o)
     upgrade(o)
     tokens(o)
-    settings_file(o)
     gray(o)
     os_write(o)
     installer(o)

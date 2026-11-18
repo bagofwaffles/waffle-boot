@@ -51,9 +51,14 @@
  *   startlog                       -> STEP STATE SLOT NEXT UNFINISHED  (S-02.095:
  *                                                  fr_log_start(); STEP go, marked or
  *                                                  recovery; STATE ok, none, odd, full or io)
- *   storeread                      -> VALID ON         (S-02.097: s02_store_read(); ON the
- *                                                  setting read, VALID whether the record was)
- *   storewrite ON                  -> RC               (S-02.098: s02_store_write(), enum s02_store_rc)
+ *   storeread SLOT EST GOOD [REC]  -> VALID FLAGS      (S-02.097: s02_store_read() for running
+ *                                                  slot SLOT, established EST, its image good
+ *                                                  GOOD, with the record REC (12 bytes, hex) as
+ *                                                  the start read it, or the one the flash holds
+ *                                                  now; FLAGS the settings read as the payload's
+ *                                                  flag bits, VALID whether a record gave them)
+ *   storewrite SLOT EST GOOD FLAGS [REC] -> RC         (S-02.098: s02_store_write(), enum s02_store_rc)
+ *   storeclear SLOT EST GOOD [REC] -> RC               (S-02.105: s02_store_clear())
  *
  * Write ops are erases and programs, counted from 1 in each command; a cut
  * prints "cut" in place of the result.  STATUS is the enum s02_status value.
@@ -434,6 +439,32 @@ static void cmd_recover(const struct h_cmd *c)
 }
 
 /* S-02.095: the front's step for the start log on the loaded flash. */
+/* The running slot of a store command: SLOT EST GOOD in fields 1 to 3, and
+ * the record the start read in field `rec`, or the flash's record now (read
+ * from the array, so no operation is logged). */
+static void store_run(const struct h_cmd *c, struct s02_store_slot *run, int rec)
+{
+	uint8_t raw[S02_RECORD_SIZE];
+
+	run->slot = (unsigned)h_num(c, 1);
+	run->established = h_num(c, 2) != 0;
+	run->good = h_num(c, 3) != 0;
+	if (h_str(c, rec) != NULL) {
+		if (h_hex(c, rec, raw, sizeof raw) != sizeof raw)
+			h_error(c, "bad record");
+	} else {
+		memcpy(raw, flash + (run->slot == 0u ? S02_RECORD0_OFF : S02_RECORD1_OFF), sizeof raw);
+	}
+	s02_record_decode(raw, &run->rec);
+}
+
+static unsigned long store_flags(const struct s02_store *s)
+{
+	return (s->dev_mode ? S02_STORE_FLAG_DEV : 0u) | (s->color ? S02_STORE_FLAG_COLOR : 0u) |
+	       (s->mtp_macos ? S02_STORE_FLAG_MTP_MACOS : 0u) |
+	       (s->start_menu ? S02_STORE_FLAG_START_MENU : 0u);
+}
+
 static void cmd_startlog(void)
 {
 	static const struct fr_flash ff = { f_read, f_erase, f_program, NULL };
@@ -576,16 +607,30 @@ static void flash_command(const struct h_cmd *c)
 	} else if (strcmp(k, "startlog") == 0) {
 		cmd_startlog();
 	} else if (strcmp(k, "storeread") == 0) {
+		struct s02_store_slot run;
 		struct s02_store s;
-		bool valid = s02_store_read(&env, &s);
+		bool valid;
 
+		store_run(c, &run, 4);
+		valid = s02_store_read(&env, &run, &s);
 		h_putu(valid);
-		h_putu(s.start_menu);
+		h_putx(store_flags(&s));
 	} else if (strcmp(k, "storewrite") == 0) {
+		struct s02_store_slot run;
 		struct s02_store s;
+		const unsigned long f = h_num(c, 4);
 
-		s.start_menu = h_num(c, 1) != 0;
-		h_putu((unsigned long)s02_store_write(&env, &s));
+		store_run(c, &run, 5);
+		s.dev_mode = (f & S02_STORE_FLAG_DEV) != 0u;
+		s.color = (f & S02_STORE_FLAG_COLOR) != 0u;
+		s.mtp_macos = (f & S02_STORE_FLAG_MTP_MACOS) != 0u;
+		s.start_menu = (f & S02_STORE_FLAG_START_MENU) != 0u;
+		h_putu((unsigned long)s02_store_write(&env, &run, &s));
+	} else if (strcmp(k, "storeclear") == 0) {
+		struct s02_store_slot run;
+
+		store_run(c, &run, 4);
+		h_putu((unsigned long)s02_store_clear(&env, &run));
 	} else {
 		h_error(c, "unknown command");
 	}

@@ -322,43 +322,41 @@ static void draw_settings(struct s15_menu *m)
 					  "3 Color\tOff");
 	sline(m, S15_ST_ITEM, m->mtp_macos ? "5 MTP target\tmacOS" : /* S-15.174 */
 					      "5 MTP target\tWindows");
-	if (m->env->boot_store_save != NULL)               /* S-15.175 */
+	if (m->env->settings_save != NULL)                 /* S-15.175 */
 		sline(m, S15_ST_ITEM, m->start_menu ? "6 Start in boot menu\tOn" :
 						       "6 Start in boot menu\tOff");
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Main Menu");
 }
 
-/* S-15.172 - S-15.173: a setting changed, for this boot even when the
- * drive cannot keep it; one line then says so. */
+/* S-15.172, S-15.193: the settings saved in the running slot's settings
+ * sector, by a key on the unit alone. A setting changed by a host's key,
+ * or one that cannot be saved, lasts for this start; one line says so.
+ * Start in boot menu is read only at a start, so its item shows what a
+ * start reads after the save. */
 static void settings_changed(struct s15_menu *m)
 {
-	struct s15_settings s;
-	bool saved;
+	struct s15_settings s, now;
+	enum s15_store_save r = S15_STORE_SAVED;
 
 	s.dev_mode = m->dev_mode;
 	s.color = m->color;
 	s.mtp_macos = m->mtp_macos;
-	saved = !refused(m) && m->env->settings_save(m->env->ctx, &s);
+	s.start_menu = m->start_menu;
+	if (m->env->settings_save != NULL && !m->host_event) {
+		now = s;
+		r = m->env->settings_save(m->env->ctx, &s, &now);
+		m->start_menu = now.start_menu;
+	}
 	draw_settings(m);
-	if (!saved)
-		sline(m, S15_ST_WARN, "Not saved: the drive can't be written");
-}
-
-/* S-15.175: kept in the boot store, not the settings file, and read only
- * at a start; the item shows what a start would read after the write. */
-static void start_menu_key(struct s15_menu *m)
-{
-	bool now = m->start_menu;
-	const enum s15_store_save r = m->env->boot_store_save(m->env->ctx,
-							       !m->start_menu, &now);
-
-	m->start_menu = now;
-	draw_settings(m);
-	if (r == S15_STORE_FAILED)
-		sline(m, S15_ST_WARN, "Not saved: the flash can't be written");
+	if (m->host_event)
+		sline(m, S15_ST_WARN, s15_settings_host);
+	else if (m->env->settings_save == NULL)
+		sline(m, S15_ST_WARN, s15_settings_this_start);
+	else if (r == S15_STORE_FAILED)
+		sline(m, S15_ST_WARN, s15_settings_failed);
 	else if (r == S15_STORE_UNUSABLE)
-		sline(m, S15_ST_WARN, "Not saved: Slot 2's image uses the setting's flash");
+		sline(m, S15_ST_WARN, s15_settings_unusable);
 }
 
 static void settings_key(struct s15_menu *m, unsigned key)
@@ -381,9 +379,11 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 6:
-		/* S-02.098: only a key on the unit writes the boot store */
-		if (m->env->boot_store_save != NULL && !m->host_event)
-			start_menu_key(m);
+		/* S-15.193: a host's key leaves Start in boot menu as it is */
+		if (m->env->settings_save != NULL && !m->host_event) {
+			m->start_menu = !m->start_menu;
+			settings_changed(m);
+		}
 		break;
 	case 8:
 		open_main(m);
@@ -395,6 +395,33 @@ static void settings_key(struct s15_menu *m, unsigned key)
 
 /* ---- the factory reset: S-15.050 - S-15.052 ------------------------- */
 
+/* S-02.105: the running slot's settings sector cleared, and the settings
+ * at their defaults from here on; a clear that failed says so. */
+static void clear_settings(struct s15_menu *m)
+{
+	struct s15_settings d;
+
+	if (m->env->settings_clear == NULL)
+		return;
+	switch (m->env->settings_clear(m->env->ctx)) {
+	case S15_STORE_SAVED:
+		s15_settings_defaults(&d);
+		if (m->color != d.color)
+			m->changes++;	/* every pixel changes, not only the lines */
+		m->dev_mode = d.dev_mode;
+		m->color = d.color;
+		m->mtp_macos = d.mtp_macos;
+		m->start_menu = d.start_menu;
+		break;
+	case S15_STORE_FAILED:
+		sline(m, S15_ST_WARN, s15_reset_settings_failed);
+		break;
+	case S15_STORE_UNUSABLE:
+	default:
+		break;
+	}
+}
+
 static void factory_reset(struct s15_menu *m)
 {
 	static const char *const dirs[] = { "/yaffs2/user", "/yaffs2/logs", DLC };
@@ -405,8 +432,10 @@ static void factory_reset(struct s15_menu *m)
 	line(m, "Removing user data...");
 	if (refused(m) || slave_lost(m)) {
 		/* S-12.052: nothing removed or erased on the yaffs2 volume;
-		 * S-15.052: the OS FAT volume's erase is made all the same. */
+		 * S-15.052: the OS FAT volume's erase and the settings' clear
+		 * are made all the same. */
 		m->env->erase_os_fat(m->env->ctx);
+		clear_settings(m);
 		sline(m, S15_ST_ERROR, slave_lost(m) ? s15_reset_lost :
 						       s15_reset_unreadable);
 		result_back(m);
@@ -415,6 +444,7 @@ static void factory_reset(struct s15_menu *m)
 	for (size_t i = 0; i < 3u; i++)
 		ok = m->env->remove_tree(m->env->ctx, dirs[i]) && ok;
 	m->env->erase_os_fat(m->env->ctx);                /* S-16.014 */
+	clear_settings(m);
 	/* S-15.052: a failed removal does not stop the reset; one line of
 	 * required information replaces the OK line. */
 	if (ok)
@@ -1711,12 +1741,12 @@ void s15_menu_keys_down(struct s15_menu *m, const uint8_t bitmap[(S15_NKEYS + 7u
 /* S-15.020 */
 void s15_menu_start(struct s15_menu *m)
 {
-	/* S-15.172: the settings as read when held mode starts; the board
+	/* S-15.172: the settings as this start read them; the board
 	 * fills the boot's values after s15_menu_init(). */
 	m->dev_mode = m->boot->settings.dev_mode;
 	m->color = m->boot->settings.color;          /* S-15.173 */
 	m->mtp_macos = m->boot->settings.mtp_macos;  /* S-15.174 */
-	m->start_menu = m->boot->start_menu;         /* S-15.175 */
+	m->start_menu = m->boot->settings.start_menu; /* S-15.175 */
 	for (unsigned i = 0; i < sizeof m->down; i++)
 		m->stale[i] = m->down[i];         /* S-15.013 */
 	m->hold = false;	/* here: s15_menu_init() runs before the key read */

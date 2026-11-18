@@ -19,21 +19,21 @@ The master's SPI flash holds everything the unit needs to start: 1 MiB in 256 se
 | `0x0C000` | 1 sector | The metadata record (`0x34` bytes): serial, versions and install state | Metadata writes; the restore at a start | An OS install (three times), a failed OS load (once), a set-metadata request in factory mode; a start that finds the mirror and the record different |
 | `0x0D000` | 1 sector | The selector: the slot to start, and `verified` (`0x01` means "start it without a check") | The first stage; a slot write; recovery's try, switch and keep | After a slot has been read back; once by the first stage at the start after it |
 | `0x0E000`, `0x0F000` | 1 sector each | Record 0 and record 1, one per slot: the image's CRC-32, its length and a tag | A write of that slot; recovery's try, keep and put back | After the slot's last program |
-| `0x10000` | `0x77000` | Slot 1's image | The package's bootloader step; recovery; the installer | On request only |
+| `0x10000` | `0x76000` | Slot 1's image | The package's bootloader step; recovery; the installer | On request only |
+| `0x86000` | 1 sector | Slot 1's settings: Developer mode, Color, MTP target, Start in boot menu | The Settings screen; the factory reset; a slot write erases it | One page when a setting is changed on the unit, an erase once in 16 changes; the factory reset erases it |
 | `0x87000` | 1 sector | Slot 1's start log | The front and the main image; a slot write erases it | One bit at each start, a second when the main image is up; in a trial start, the front's mark and the boot menu's. The main image erases it once 256 or more entries are used, and when it reads full or not valid |
 | `0x88000` | `0x76000` | Slot 2's image | As Slot 1 | On request only |
-| `0xFE000` | 1 sector | The boot store: Start in boot menu | The Settings screen | When the setting is changed |
+| `0xFE000` | 1 sector | Slot 2's settings | As Slot 1's | As Slot 1's |
 | `0xFF000` | 1 sector | Slot 2's start log | As Slot 1's | As Slot 1's |
 
 The code numbers the slots 0 and 1; screens show them as Slot 1 and Slot 2.
 
 Which writer takes which size: the package's bootloader step takes an image of up to `0x78000` bytes, the
-whole slot (S-02.044); recovery and the installer take at most `0x77000` bytes, which leaves the slot's last
-sector to the start log (S-02.084, S-02.095). `wbrecover.py` checks the image against recovery's limit. In a
-slot, an image over `0x77000` bytes covers its slot's start log, which is then not used; one over `0x76000`
-bytes in Slot 2 covers the boot store, and Start in boot menu reads as off. waffle-boot's own build
-(`make cross`) is at most `0x76000` bytes. A write of Slot 2 with such an image leaves the boot store as it
-is.
+whole slot (S-02.044). waffle-boot's own writers take at most `0x76000` bytes, which leaves the slot's last two
+sectors to its settings and its start log (S-02.104): the installer, `wbrecover.py` and waffle-boot's own build
+(`make cross`) refuse a longer image. Recovery in the front takes up to `0x77000` bytes. A slot whose image is
+longer than `0x76000` bytes has its settings sector filled with image bytes: it has no settings, every one reads
+at its default, and a save is refused. Over `0x77000` bytes it has no start log either.
 
 A normal start programs two bits, in the last sector of the slot the selector names, and erases nothing but
 that sector, when the main image finds its log due (below). A trial start programs two bits too, in the tried slot's last sector: the front's mark, and the main image's
@@ -64,7 +64,9 @@ flash. Every erase and program is preceded by a write enable and followed by a w
 longer busy, bounded at 2 s. A part that stays busy fails the operation.
 
 **A footprint for each writer.** Recovery can reach only the slot it writes, that slot's record and the
-selector. The boot store's save can reach only its own sector. A metadata write reaches only the mirror and
+selector. A settings save or the factory reset's clear can reach only the running slot's settings sector. A
+package step or the installer reaches the slot it writes (its settings sector and start log included), that
+slot's record and the selector. A metadata write reaches only the mirror and
 the record. Nothing writes below `0xB000`: the package's first-stage step, the only writer of that area,
 is switched off in every build, whatever Protected writes says.
 
@@ -72,7 +74,8 @@ is switched off in every build, whatever Protected writes says.
 starts only when the selector reads `verified` = `0x01` and, for a package step, the selected slot reads
 good.
 
-**One order.** The image, the slot's last sector, the record's erase, the record, a read-back of the whole
+**One order.** The image, the slot's last sector and, for an image of at most `0x76000` bytes, its settings
+sector (S-02.103), the record's erase, the record, a read-back of the whole
 slot, and only then the selector. A failure anywhere before the selector leaves the selector as it was. A
 power cut before the selector's erase leaves the unit starting as before; from that erase on both slots are
 good, so any selector value starts a good one.
@@ -97,9 +100,17 @@ before anything is erased. The mirror is written and read back before the record
 the record reads back, so no stale mirror can roll back a record another writer changes later. The mirror
 counts only when every byte matches its complement, so a cut leaves the old record or the new one.
 
-**The boot store is either whole or the default.** A save is refused while Slot 2's record shows an image
-that could reach the sector. Only a key pressed on the unit saves it, never a key a host sends. A cut leaves
-the old value or the default.
+**Settings belong to one slot's image.** Each slot keeps its settings in the sector below its start log, one
+record per 256-byte page, appended at each change. A record holds the CRC-32 of the image it was saved for, as
+the slot's record has it; a start reads the newest record whose CRC is the running image's, and with none, an
+erased sector included, every setting takes its default. Nothing carries over between the slots, and a new
+image in a slot starts on the defaults: a package step or the installer erases the sector with the start log,
+and after a recovery write the CRC no longer matches, unless the same image was written again. Only a key
+pressed on the unit saves, never a key a host sends, and only while the running slot is established, its image
+passed its check at this start and its record's length is at most `0x76000` bytes; a trial start saves
+nothing. A save programs one page and erases the sector only when its 16 pages are used or it does not read
+valid. A cut during a program leaves the old value or the new one; a cut during an erase leaves an earlier
+value or the defaults. The factory reset erases the running slot's sector under the same rule.
 
 **Destructive requests are confirmed.** The host tool asks for a typed phrase; the unit then counts down
 15 s, and switching it off in that time leaves the flash untouched. On the unit, an action needs key 1 held
@@ -132,14 +143,14 @@ main image's erase of the start log keeps that at 512 one-bit programs.
 | Action | Sector erases | Where |
 | --- | --- | --- |
 | A normal start | 0 | Two one-bit programs in the selected slot's last sector |
-| Start in boot menu changed | 1 | `0xFE000` |
-| Any other setting changed | 0 | Kept in a file on the eMMC |
+| A setting changed | 0, and 1 once in 16 changes | One page program in the running slot's settings sector |
+| A factory reset | 1 | The running slot's settings sector, when it holds anything |
 | Protected writes turned on | 0 | Kept in memory only |
 | Install, content only | 0 | None |
 | A normal start, once in 256 or more | 1 | The selected slot's last sector: its start log |
 | Install with an OS | 9 | `0xB000` six times and `0xC000` three times: each of three metadata writes erases the mirror twice |
 | An install that was interrupted, at the next start | 3 | `0xB000` twice, `0xC000` once |
-| A bootloader image written (package or recovery) | One for each 4 KiB of the image, plus the slot's last sector, its record and the selector; one more of the selector by the first stage at the next start | The slot written, its record, `0xD000` |
+| A bootloader image written (package or recovery) | One for each 4 KiB of the image, plus the slot's last sector, its settings sector (not by recovery), its record and the selector; one more of the selector by the first stage at the next start | The slot written, its record, `0xD000` |
 | Try a slot once | Up to 3, and 1 by the first stage | The slot's last sector, its record, `0xD000` |
 | Switch slots | 1, and 1 by the first stage | `0xD000` |
 | Keep a tried slot | 2, and 1 by the first stage | Its record, `0xD000` |
@@ -164,9 +175,8 @@ Reading does not wear the flash.
 </picture>
 
 A normal start writes nothing to the eMMC and mounts no volume. Opening the boot menu and leaving it writes
-nothing. A changed setting writes a small file to a new name, renames it over the old one and flushes the
-eMMC's cache, so the file is the old one or the new one, and the new one is kept once the save reports
-success. An OS install writes the boot partition that is not in use: it makes that partition's header read
+nothing. A changed setting writes nothing to the eMMC: the settings are in the SPI flash, and no settings
+file on the volume (`bootloader.settings`) is read or written; one that is there is left as it is. An OS install writes the boot partition that is not in use: it makes that partition's header read
 inactive first, never erases the erase group that holds the header, and switches to the new image last, so a
 cut at any point leaves the OS that was there, or the new one. It flushes the eMMC's cache before and after
 the switch. Every load and write sets the eMMC back to its user area at the end, failed ones included, and the
@@ -178,4 +188,4 @@ With MTP on in the developer menu, the bootloader writes to the volume what the 
 folders, deletes, moves, renames and file dates. It flushes the eMMC's cache after each change, before it
 answers the computer. A copy that is canceled or cut off (a cable pulled) leaves no file, but a power cut in
 the middle of a copy can leave a short one. MTP reaches only the volume, never the boot partitions, and it
-does not protect the bootloader's own files there (`bootloader.settings`, `os.ldr`, `upgrade/`).
+does not protect the bootloader's own files there (`os.ldr`, `upgrade/`).

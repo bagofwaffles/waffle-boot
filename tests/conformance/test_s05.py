@@ -378,11 +378,11 @@ class StartInMenu(unittest.TestCase):
     @requirement('S-05.001', 'S-15.175', 'S-05.025')
     def test_H_DEC_start_in_menu(self):
         """H-DEC's variant start_in_menu, the master's part: every row of start_in_menu.tsv that is a start,
-        through boot_master with the setting as the boot store gave it (an erased store gives off), the
+        through boot_master with the setting as the running slot's settings sector gave it (an erased one gives off), the
         prompt rows with the prompt's op (digit 1). `boot`: the hand-off runs; `prompt`: the prompt, then the
         hand-off; `held_no_load`: held mode as a boot that attempted no load, with no prompt and no hand-off
         op; `held`: as with the setting off. The recovery rows are the front's, which never reads the store
-        (test_s02.py SC-BOOTSTORE run 3)."""
+        (test_s02.py SC-SETTINGS footprint)."""
         starts = [r for r in self.rows if r['case'] == 'start']
         self.assertEqual(len(starts) + 7, len(self.rows))
         cmds = []

@@ -122,14 +122,13 @@ enum s15_log {
 struct s15_boot {
 	const char *version;       /* S-17.032 version text */
 	unsigned reason;           /* S-04.006 reason taken */
-	struct s15_settings settings; /* S-15.172: the settings file's */
+	struct s15_settings settings; /* S-15.172: the running slot's settings as read at this start */
 	enum s15_slave slave;
 	bool running_known;        /* S-01.002: the running slot is established */
 	unsigned running_slot;     /* its index then */
 	struct s15_start start;    /* S-15.163: a failed plain start; S-15.161
 				    * when its image is marked encrypted */
 	bool interrupted;          /* S-11.080: the last install did not finish */
-	bool start_menu;           /* S-15.175: the boot store's setting as read at this start */
 	uint8_t start_log;         /* enum s15_log */
 	uint8_t start_log_slot;    /* the selected slot's index, but with S15_LOG_UNREAD */
 	uint16_t start_log_used;   /* with S15_LOG_OK */
@@ -145,11 +144,11 @@ struct s15_boot {
 	bool provisioned;
 };
 
-/* S-15.175: how a write of the boot store ended. */
+/* S-15.172: how a save or a clear of the settings sector ended. */
 enum s15_store_save {
 	S15_STORE_SAVED,
-	S15_STORE_FAILED,	/* an erase, program or the read-back failed */
-	S15_STORE_UNUSABLE	/* Slot 2's image reaches the store's sector */
+	S15_STORE_FAILED,	/* an erase, program or a read-back failed */
+	S15_STORE_UNUSABLE	/* the running slot keeps no settings (S-02.099) */
 };
 
 #define S15_PACKS_MAX 7u
@@ -198,9 +197,13 @@ struct s15_env_ops {
 	void (*scan_now)(void *ctx);
 	/* The session upgrade option turned on or off (S-02.055). */
 	void (*option)(void *ctx, bool on);
-	/* S-15.172: write the settings file for these settings. False when
-	 * the drive could not be written. */
-	bool (*settings_save)(void *ctx, const struct s15_settings *s);
+	/* S-15.172, S-02.098: save these settings in the running slot's
+	 * settings sector; *now is what a start reads afterwards, also after a
+	 * failed or refused save. NULL: there is no settings sector (the test
+	 * OS), the settings last for this start, and Start in boot menu is no
+	 * item. */
+	enum s15_store_save (*settings_save)(void *ctx, const struct s15_settings *s,
+					     struct s15_settings *now);
 	void *ctx;
 	/* The slave stopped answering (S-09.008) for the rest of the boot: no
 	 * request reaches the drive, refused or not. NULL: it never does. */
@@ -209,10 +212,6 @@ struct s15_env_ops {
 	 * the restarting view drawn. Does not return on the device. NULL:
 	 * there is no such action. */
 	void (*continue_os)(void *ctx);
-	/* S-15.175: write the boot store's setting; *now is what the store
-	 * reads afterwards, also after a failed or refused write. NULL: there
-	 * is no store, and no item. */
-	enum s15_store_save (*boot_store_save)(void *ctx, bool start_menu, bool *now);
 	/* S-15.082: read the selected slot's start log again into the boot's
 	 * start_log fields. NULL: they stay as held mode began with them. */
 	void (*start_log_read)(void *ctx);
@@ -220,6 +219,9 @@ struct s15_env_ops {
 	 * boot->files_way is S15_FILES_RESTORED, the line on the panel first;
 	 * the board updates files_way. NULL: there is no such scan. */
 	void (*files_scan)(void *ctx);
+	/* S-02.105: the factory reset's clear of the running slot's settings
+	 * sector. NULL: none. */
+	enum s15_store_save (*settings_clear)(void *ctx);
 };
 
 /* What the upgrade screen is doing (S-15.103). */
@@ -263,7 +265,7 @@ struct s15_menu {
 	uint8_t down[(S15_NKEYS + 7u) / 8u];
 	uint8_t stale[(S15_NKEYS + 7u) / 8u];
 	bool shift;
-	bool host_event;          /* the event in hand came from a host (S-02.098) */
+	bool host_event;          /* the event in hand came from a host (S-15.193) */
 
 	/* the option: S-15.140 */
 	bool option_on;
@@ -275,7 +277,7 @@ struct s15_menu {
 	bool dev_mode;             /* S-15.172: the menu, the serial port */
 	bool color;
 	bool mtp_macos;            /* S-15.174 */
-	bool start_menu;           /* S-15.175, the boot store's */
+	bool start_menu;           /* S-15.175 */
 
 	/* system menu */
 	bool packs_item;
@@ -358,7 +360,7 @@ void s15_menu_release(struct s15_menu *m);
 /* s15_menu_key() with that hold: held mode's key events come here. */
 void s15_menu_event(struct s15_menu *m, unsigned key, bool down);
 /* The same for a key a host sent (a developer request): it acts as the
- * unit's key would, but writes no boot store (S-02.098). */
+ * unit's key would, but saves no setting (S-15.193). */
 void s15_menu_host_event(struct s15_menu *m, unsigned key, bool down);
 /*
  * The time passes (ms since any fixed point; only differences matter): a

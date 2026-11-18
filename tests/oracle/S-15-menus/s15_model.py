@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-15 model: the digit keys, the boot chord, the settings file and its gray formula, the pack names, the
+"""S-15 model: the digit keys, the boot chord, the settings and the gray formula, the pack names, the
 key-test rule, the format and its remount, the hand-over frame, and the required-information match.
 Python 3, standard library only.
 
@@ -95,52 +95,21 @@ def confirm_choice(events, down_at_open=(), readable=True, end_ms=None):
     return due(end) or (None, None)
 
 
-# ---------- S-15.172 the settings file ----------
-SETTINGS_PATH = '/yaffs2/bootloader.settings'
-SETTINGS_NEW_PATH = '/yaffs2/bootloader.settings.new'
-SETTINGS_HEADER = b'waffle-boot settings 1'
-SETTINGS_MAX = 512
-# (key, values, default), in the order the file is written; the first value maps to True
-SETTINGS_KEYS = (('developer_mode', (b'on', b'off'), False),
-                 ('color', (b'on', b'off'), True),
-                 ('mtp_target', (b'macos', b'windows'), True))
-SETTINGS_DEFAULTS = {k: d for k, _, d in SETTINGS_KEYS}
-# The legacy developer-mode key: read only when no developer_mode line gives it, never written
-SETTINGS_OLD_DEV = ('developer_menu', (b'shown', b'hidden'))
+# ---------- S-15.172 the settings ----------
+# Kept in the running slot's settings sector (S-02.096); no file on the eMMC is read or written for them.
+# (key, default), in the order of the record's flag bits 0 to 3
+SETTINGS_KEYS = (('developer_mode', False), ('color', True), ('mtp_target', True), ('start_in_boot_menu', False))
+SETTINGS_DEFAULTS = {k: d for k, d in SETTINGS_KEYS}
 
 
-def settings_read(data):
-    """S-15.172: the settings a file's bytes give (None: no file, or it cannot be read), and whether it was
-    usable."""
-    out = dict(SETTINGS_DEFAULTS)
-    if data is None or len(data) > SETTINGS_MAX or any(c not in (0x0A, 0x0D) and not 0x20 <= c <= 0x7E
-                                                        for c in data):
-        return out, False
-    lines = data.split(b'\n')
-    # a CR just before an LF belongs to the line's end; the last piece has no LF after it
-    lines = [l[:-1] if l.endswith(b'\r') else l for l in lines[:-1]] + lines[-1:]
-    if lines[0] != SETTINGS_HEADER:
-        return out, False
-    seen, old = False, None
-    for line in lines[1:]:
-        key, eq, value = line.partition(b'=')
-        for k, values, _ in SETTINGS_KEYS:
-            if eq and key == k.encode() and value in values:
-                out[k] = value == values[0]
-                seen = seen or k == 'developer_mode'
-        if eq and key == SETTINGS_OLD_DEV[0].encode() and value in SETTINGS_OLD_DEV[1]:
-            old = value == SETTINGS_OLD_DEV[1][0]
-    if not seen and old is not None:
-        out['developer_mode'] = old
-    return out, True
+def settings_flags(settings):
+    """S-15.172, S-02.096: the record's flag byte for these settings (mtp_target True: macOS)."""
+    return sum(1 << i for i, (k, _) in enumerate(SETTINGS_KEYS) if settings[k])
 
 
-def settings_write(settings):
-    """S-15.172: the bytes written for these settings."""
-    out = SETTINGS_HEADER + b'\n'
-    for k, values, _ in SETTINGS_KEYS:
-        out += k.encode() + b'=' + values[0 if settings[k] else 1] + b'\n'
-    return out
+def settings_of_flags(f):
+    """The settings a record's flag byte gives; bits 4 to 7 ignored."""
+    return {k: bool(f >> i & 1) for i, (k, _) in enumerate(SETTINGS_KEYS)}
 
 
 # ---------- S-15.173 the color setting ----------

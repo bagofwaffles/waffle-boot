@@ -103,9 +103,10 @@ before sending.
 
 ### Limits
 
-- An image is at most `0x77000` bytes (the last sector is the start log). Over `0x76000` the tool warns: in
-  Slot 2 it switches off the stored boot settings (S-02.096 to S-02.100). A smaller image leaves them as
-  they are.
+- The tool sends an image of at most `0x76000` bytes, which leaves the slot its settings sector and its
+  start log (S-02.104); the unit itself takes up to `0x77000`. A recovery write leaves the slot's settings
+  sector as it is, and the new image reads its settings at their defaults, since the settings saved there
+  belong to the image they were saved for (S-02.097); the same image written again keeps them.
 - The file must be a stream the boot ROM can start (S-02.091), with a waffle-boot front whose pin is its
   own and matches the unit's (else `--new-front`). The tool compares the read-back with the file afterwards.
 
@@ -200,6 +201,6 @@ INFO to follow a write to its end.
 | --- | --- |
 | The running slot is not selected, or the selector is not settled | Restart once without a key, then Power + M4 (4 under the display); or `--force`, except after a write of Slot 1 in the same recovery |
 | The selected slot is bad and its front not intact | Key 1, choose the slot to start; or `try` / `switch` |
-| Not a slot image with a front, or over `0x77000` bytes | Use the image from `make cross` |
+| Not a slot image with a front, or over `0x76000` bytes | Use the image from `make cross` |
 | `--running` in place before a plain `write` failed | Run a plain `write` first |
 | A read failed, the unit's state changed, or the file arrived damaged | `info`, then try again |

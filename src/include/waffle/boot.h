@@ -105,7 +105,7 @@ struct boot_master_ops {
 	int (*boot_prompt)(void *ctx);
 #endif
 	/*
-	 * S-15.175, S-05.001: the boot store's "start in boot menu", asked
+	 * S-15.175, S-05.001: the running slot's "start in boot menu" setting, asked
 	 * once the decision is to boot and the slave is present, before the
 	 * boot prompt; true is held mode as a boot that attempted no load.
 	 * NULL: never set.

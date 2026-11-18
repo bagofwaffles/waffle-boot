@@ -49,7 +49,8 @@ with the slave's check of its L1 code (S-09.019) has its mark filled first
 (mark_l1()). The stream
 must leave the slot's last sector free, FR_LOG_IMAGE_MAX bytes at most: that
 sector holds the start log (S-02.095). This build's own stream is held to
-STORE_IMAGE_MAX, so that in slot 1 it never reaches the boot store's sector. --front-only streams the front alone,
+STORE_IMAGE_MAX, so that in either slot it leaves the sector below the log,
+the slot's settings sector, free (S-02.099, S-02.104). --front-only streams the front alone,
 a recovery image with no descriptor.
 
 Every target and count is a multiple of 4: each run is widened to whole
@@ -156,7 +157,7 @@ FR_LOG_IMAGE_MAX = 0x77000     # a slot less its last sector, the start log (S-0
 # S-09.019: the slave's L1 check's mark (waffle/board/opxy_boot.h), as compiled and as filled
 L1_MARK = '_opxy_l1_mark'
 L1_MARK_EMPTY, L1_MARK_FULL = 0x4C314D30, 0x4C314D31
-STORE_IMAGE_MAX = 0x76000      # and less the sector below it, the boot store's in slot 1 (S-02)
+STORE_IMAGE_MAX = 0x76000      # and less the sector below it, the slot's settings (S-02.099, S-02.104)
 
 
 def in_front(addr):
@@ -284,9 +285,9 @@ def merged(main, front):
                          'the slot\'s last sector holds the start log (S-02.095)'
                          % (len(data), FR_LOG_IMAGE_MAX, FR_LOG_IMAGE_MAX))
     if len(data) > STORE_IMAGE_MAX:
-        raise SystemExit('mkldr: the stream is %d bytes; this build\'s slot image may be at most %d '
-                         '(0x%X): a longer one in slot 1 reaches the boot store\'s sector at 0xFE000 '
-                         'and switches the store off'
+        raise SystemExit('mkldr: the stream is %d bytes; a waffle-boot image may be at most %d '
+                         '(0x%X): the slot\'s last two sectors hold its settings and its start log '
+                         '(S-02.104)'
                          % (len(data), STORE_IMAGE_MAX, STORE_IMAGE_MAX))
     return data
 

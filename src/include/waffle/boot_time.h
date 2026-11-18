@@ -85,7 +85,7 @@ enum boot_time_id {
 					 * not drawable (BOOT_TIME_LINE_DRAWN) */
 	BOOT_TIME_MOUNT_SENT,		/* the mount request next (S-09.018) */
 	BOOT_TIME_MOUNT_REPLY,		/* its reply in, or given up */
-	BOOT_TIME_SETTINGS,		/* the settings file read */
+	BOOT_TIME_SETTINGS,		/* the settings taken for held mode */
 	BOOT_TIME_USB,			/* USB started */
 	BOOT_TIME_NORDIC_GREETING,	/* the Nordic's greeting answered or given up */
 	BOOT_TIME_PSOC_INFO,		/* the PSoC's info reply in, or given up */

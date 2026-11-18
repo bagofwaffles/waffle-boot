@@ -10,7 +10,7 @@ every request is refused and changes nothing. `ping`, `rd` and `wr` work as with
 ## Turning it on
 
 1. Put waffle-boot on the unit ([How to Install](How-to-Install)).
-2. Boot menu → **2 Settings → 1 Developer mode: On** (`developer_mode=on`, S-15.172).
+2. Boot menu → **2 Settings → 1 Developer mode: On** (S-15.172).
 
 The serial port is in every USB set while developer mode is on, MTP included (S-10a.010). Turning MTP on or
 off re-enumerates the device: reopen the port.
@@ -22,8 +22,7 @@ computer's file manager, or `tools/mtpcp.py` (`ls`, `put`, `verify`, `rm`, `mkdi
 delete, move and rename files and folders and set their dates. Each change is flushed to the eMMC before the
 computer is answered. `lost+found` cannot be deleted, moved or renamed; a name that exists is never
 replaced, so a copy over an existing file is refused (delete it first, as `mtpcp.py put` does). Nothing
-outside the drive can be reached, and the bootloader's own files on it (`bootloader.settings`, `os.ldr`,
-`upgrade/`) are not protected.
+outside the drive can be reached, and the bootloader's own files on it (`os.ldr`, `upgrade/`) are not protected.
 
 ## Requests
 

@@ -4,7 +4,7 @@ The parts of the OP-XY the bootloader drives.
 | --- | --- | --- |
 | Two ADSP-BF703 (Blackfin+) processors | The **master** and the **slave**. A strap pin (PA2) tells them apart. Both run the same bootloader image | S-01, S-17 |
 | Boot ROM | On each chip. Starts the master from the SPI flash, and the slave from the master over SPI. Cannot be changed | S-01 |
-| SPI flash, 1 MiB | On the master. Holds the factory first stage, the metadata, the slot selector, two bootloader slots and the boot store | S-02 |
+| SPI flash, 1 MiB | On the master. Holds the factory first stage, the metadata, the slot selector, two bootloader slots, each with its settings and start log | S-02 |
 | DDR2 memory | 2 Gbit, 16-bit, 200 MHz. Set up by the bootloader's first steps; the core runs at 400 MHz | S-13a |
 | The eMMC | Soldered on the board, on the slave. Two boot partitions hold the OS, one active; the user area holds the internal drive (yaffs2) and the OS's FAT volume | S-03, S-12 |
 | SPI bridge | Links the two processors: the master streams the slave its boot image, then sends it requests (eMMC, files) | S-09, S-13b |

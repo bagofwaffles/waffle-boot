@@ -65,7 +65,7 @@
 //       bytes, length, sha256, crc32, problems: string[], noFrontOnly, ok,
 //       front: { entry, front_crc, version: [4], pin, pin_calc, pin_ok } | null,
 //       version: '1.2.3' | null, pin: hex | null, frontVersion: number | null,
-//       warnings: string[],       the boot store warning over 0x76000 bytes
+//       warnings: string[],       none: kept for the page's notes
 //       lines: string[] }         what the Python tool's check prints
 //       ok: no problems and the descriptor's pin is the front's own. noFrontOnly: every problem
 //       is a missing or damaged front, which a forced write alone takes. frontVersion comes only
@@ -147,7 +147,7 @@ import * as W from './words.js';
 export * from './words.js';
 
 const { HELLO, INFO, BEGIN, DATA, END, RESTART, ACT, REPLY, MAX_DATA, MAX_PAYLOAD, HEAD,
-    FRAME_MAX, NO_SLOT, SLOT_CAP, IMAGE_MAX, WAY_NONE, WAY_PLAIN, WAY_SELECT_FIRST, WAY_IN_PLACE,
+    FRAME_MAX, NO_SLOT, SLOT_CAP, WB_IMAGE_MAX, WAY_NONE, WAY_PLAIN, WAY_SELECT_FIRST, WAY_IN_PLACE,
     WAY_TRIAL, WAY_SELECT, ACT_TRY, ACT_SWITCH, ACT_KEEP, ACT_PUT_BACK, TRIAL_FRONT, KEEPS_WRITE,
     ACTS_FRONT, SAME_FRONT, COUNTDOWN, IDLE, WRITING, DONE, FAILED, COUNTING, STATUS,
     slotName, slotOf, sameBytes, statusText, refusalText, damaged, hex, hex2, selected } = W;
@@ -705,9 +705,10 @@ async function sha256(bytes) {
 async function imageProblems(data) {
     if (!(data.length >= 1 && data.length <= SLOT_CAP))
         return [[`the file is ${data.length} bytes; a slot image is 1 to ${SLOT_CAP} bytes (S-02.044)`], null];
-    if (data.length > IMAGE_MAX)
-        return [[`the file is ${data.length} bytes; a waffle-boot image is at most ${IMAGE_MAX} ` +
-            `(0x${x(IMAGE_MAX)}) bytes, since the slot's last sector holds the start log (S-02.095)`], null];
+    if (data.length > WB_IMAGE_MAX)
+        return [[`the file is ${data.length} bytes; a waffle-boot image is at most ${WB_IMAGE_MAX} ` +
+            `(0x${x(WB_IMAGE_MAX)}) bytes, since the slot's last two sectors hold its settings and ` +
+            'its start log (S-02.104, S-02.095)'], null];
     const { rules, blocks } = checkStream(data);
     const probs = rules.filter((r) => !r[1])
         .map((r) => `stream rule ${r[0]} failed${r[2] ? ': ' + r[2] : ''}`);
@@ -764,8 +765,6 @@ export async function checkImage(bytes, { knownPins = null } = {}) {
             .replace(' Nothing was sent.', ''));
         lines.push('The file is not a slot image recovery writes.');
     } else {
-        image.warnings = W.storeLines(data.length);
-        lines.push(...image.warnings);
         lines.push(`OK: ${data.length} bytes, a bootable stream with a waffle-boot front; version ` +
             `${W.version(front.version)}, front pin ${hex(front.pin)}.`);
     }
@@ -890,10 +889,7 @@ function writeConfirmation(i, way, target, image, signed) {
         [WAY_SELECT_FIRST]: `, the running slot, after the selector names ${slotName(1 - target)}`,
         [WAY_IN_PLACE]: ', the running slot, in place',
         [WAY_TRIAL]: ', for one trial start' }[way] || '') + '.'];
-    // the boot store in Slot 2's slot (S-02.096 to S-02.100), for every front
-    lines.push(...W.storeLines(image.length, target));
-    if (target === 1)
-        lines.push(W.DEFAULTS_LINE);
+    lines.push(W.SETTINGS_LINE);
     if (way === WAY_TRIAL) {
         lines.push(...W.trialLines(i, image.front, target, signed), ...W.countdownNote(i));
         return { phrase: W.TRIAL_PHRASE, lines, danger: 'caution', way, target };

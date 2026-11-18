@@ -42,7 +42,8 @@ BAD_PIN = {'make': {'pin_ok': False}}
 NO_ENTRY = {'make': {'entry': 0x08031000}}
 TOO_LARGE = {'of': 0x77001, 'make': {}}
 OVER_SLOT = {'of': 0x78001, 'make': {}}
-OVER_STORE = {'of': 0x76010, 'make': {'seed': 9}}
+OVER_LIMIT = {'of': 0x76010, 'make': {'seed': 9}}
+AT_LIMIT = {'of': 0x76000, 'make': {'seed': 9}}
 STRADDLE = {'hex': T.STRADDLE.hex()}
 FILLED = {'hex': T.FILLED.hex()}
 NOT_A_STREAM = {'hex': (b'not a stream at all ' * 4).hex()}
@@ -125,8 +126,8 @@ def model_cases(f):
         ('image-too-large', model(f), [write(TOO_LARGE), write(TOO_LARGE, force=True)]),
         ('image-not-a-stream', model(f), [write(NOT_A_STREAM), select(NOT_A_STREAM)]),
         ('image-foreign', model(f), [write(FOREIGN), write(FOREIGN, force=True)]),
-        ('image-over-store', model(f, (A, None)), [write(OVER_STORE)]),
-        ('image-over-store-slot1', model(f, (None, A), running=1, sel=[1, 1]), [write(OVER_STORE)]),
+        ('image-over-limit', model(f, (A, None)), [write(OVER_LIMIT)]),
+        ('image-over-limit-slot1', model(f, (None, A), running=1, sel=[1, 1]), [write(OVER_LIMIT)]),
         ('force-not-needed', model(f), [write(NEW, force=True)]),
         ('end-16', model(f, set=dict(end_says=16)), [write(NEW)]),
         ('begin-15', model(f, set=dict(begin_st=15)), [write(NEW, 'running')]),
@@ -206,7 +207,7 @@ def shim_cases():
         ('write-bad-good', shim(good=(False, True)), [write(SAMEV)]),
         ('write-bad-bad', shim(good=(False, False)), [write(SAMEV)]),
         ('write-from-slot2', shim(running=1), [write(NEW)]),
-        ('write-over-store', shim((A, None)), [write(OVER_STORE)]),
+        ('write-over-limit', shim((A, None)), [write(OVER_LIMIT)]),
         ('running-good-good', shim(), [write(NEW, 'running')]),
         ('running-bad-good', shim(good=(False, True)), [write(SAMEV, 'running')]),
         ('running-other-foreign', shim((A, FOREIGN)), [write(NEW, 'running')]),
@@ -390,10 +391,10 @@ def tables():
         'refusal_text': {str(st): w.refusal_text(st) for st in w.STATUS},
         'constants': {k: getattr(w, k) for k in (
             'VID', 'PID', 'PRODUCT', 'PROTO', 'OLD_PROTO', 'MAX_DATA', 'MAX_PAYLOAD', 'HEAD',
-            'FRAME_MAX', 'NO_SLOT', 'SLOT_CAP', 'IMAGE_MAX', 'STORE_MAX', 'HELLO_LEN', 'INFO_V5',
+            'FRAME_MAX', 'NO_SLOT', 'SLOT_CAP', 'IMAGE_MAX', 'WB_IMAGE_MAX', 'HELLO_LEN', 'INFO_V5',
             'INFO_V6', 'INFO_V11', 'BATT_MAX', 'TRIAL_FRONT', 'KEEPS_WRITE', 'ACTS_FRONT',
             'SAME_FRONT', 'COUNTDOWN', 'PHRASE', 'TRIAL_PHRASE', 'SWITCH_PHRASE', 'PHASES',
-            'RESTART_TIPS', 'READ_ERROR', 'COUNTDOWN_LINE', 'DEFAULTS_LINE', 'RESTART_RISK',
+            'RESTART_TIPS', 'READ_ERROR', 'COUNTDOWN_LINE', 'SETTINGS_LINE', 'RESTART_RISK',
             'RESET_HINT', 'SAFE_HINT', 'FRONT_HINT', 'OTHER_HINT', 'NOT_STARTED_HINT',
             'SLOT_MENU')},
         'WRITE_RISK': {str(k): v for k, v in w.WRITE_RISK.items()},
@@ -425,7 +426,7 @@ def main(argv):
         return 0
     images, cases = {}, []
     for spec in (A, B, NEW, OTHER, FOREIGN, BAD_CRC, BAD_PIN, NO_ENTRY, TOO_LARGE, OVER_SLOT,
-                 OVER_STORE, STRADDLE, FILLED, NOT_A_STREAM, EMPTY):
+                 OVER_LIMIT, AT_LIMIT, STRADDLE, FILLED, NOT_A_STREAM, EMPTY):
         image_key(spec, images)
     for name, spec, steps in all_cases():
         try:

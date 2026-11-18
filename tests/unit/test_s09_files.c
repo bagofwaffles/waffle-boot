@@ -4135,78 +4135,6 @@ static void test_os_write(void)
 	free(os);
 }
 
-/* S-15.172: the settings file */
-static void test_settings_file(void)
-{
-	static const char on_off[] =
-		"waffle-boot settings 1\ndeveloper_mode=on\ncolor=off\n"
-		"mtp_target=macos\n";
-	struct s15_settings s;
-	struct s09_stat st;
-	uint8_t buf[80];
-
-	t_case = "settings file";
-	fresh();
-	s.dev_mode = true;
-	s.color = false;
-	s09_files_settings_read(&F, &s);
-	CHECK(!s.dev_mode && s.color);			/* missing: defaults */
-	s.dev_mode = true;
-	s.color = false;
-	emmc.flushes = 0;
-	CHECK(s09_files_settings_save(&F, &s));
-	CHECK_EQ(emmc.flushes, 1u);			/* the eMMC's cache, after the rename */
-	CHECK_EQ(s09_files_read_file(&F, S15_SETTINGS_PATH, buf, sizeof buf),
-		 sizeof on_off - 1u);
-	CHECK(!memcmp(buf, on_off, sizeof on_off - 1u));
-	CHECK(s09_files_stat(&F, S15_SETTINGS_NEW_PATH, &st) != 0);	/* renamed */
-	s.dev_mode = false;
-	s.color = true;
-	s09_files_settings_read(&F, &s);
-	CHECK(s.dev_mode && !s.color);
-	/* written again over the old file */
-	s.color = true;
-	CHECK(s09_files_settings_save(&F, &s));
-	s09_files_settings_read(&F, &s);
-	CHECK(s.dev_mode && s.color);
-	/* a stale .new from a power cut is overwritten */
-	CHECK(put(S15_SETTINGS_NEW_PATH, big, 0x300));
-	s.dev_mode = false;
-	CHECK(s09_files_settings_save(&F, &s));
-	CHECK_EQ(s09_files_stat(&F, S15_SETTINGS_PATH, &st), 0);
-	CHECK_EQ(st.size, 68u);
-	/* a failed flush: renamed, and reported as not saved */
-	emmc.fail_flush_from = emmc.flushes + 1u;
-	s.dev_mode = true;
-	CHECK(!s09_files_settings_save(&F, &s));
-	emmc.fail_flush_from = 0;
-	s.dev_mode = false;
-	s09_files_settings_read(&F, &s);
-	CHECK(s.dev_mode);
-	/* corrupt: too long, then not text: the defaults */
-	CHECK(put(S15_SETTINGS_PATH, big, 513));
-	s.dev_mode = true;
-	s.color = false;
-	s09_files_settings_read(&F, &s);
-	CHECK(!s.dev_mode && s.color);
-	memcpy(buf, on_off, sizeof on_off - 1u);
-	buf[30] = 0x00;
-	CHECK(put(S15_SETTINGS_PATH, buf, sizeof on_off - 1u));
-	s.dev_mode = true;
-	s.color = false;
-	s09_files_settings_read(&F, &s);
-	CHECK(!s.dev_mode && s.color);
-	/* a refused volume: defaults, nothing written */
-	CHECK(put(S15_SETTINGS_PATH, (const uint8_t *)on_off,
-		  sizeof on_off - 1u));
-	CHECK(s09_files_unmount(&F));
-	s.dev_mode = true;
-	s.color = false;
-	s09_files_settings_read(&F, &s);
-	CHECK(!s.dev_mode && s.color);
-	CHECK(!s09_files_settings_save(&F, &s));
-}
-
 /* S-09.008, S-09.060: the slave stops answering mid-transfer */
 static void test_absent(void)
 {
@@ -4353,7 +4281,6 @@ int main(void)
 		test_menus();
 		test_format();
 		test_os_write();
-		test_settings_file();
 		test_absent();
 	}
 	wire_s09_release(&S);

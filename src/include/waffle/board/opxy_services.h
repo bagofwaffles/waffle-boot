@@ -154,7 +154,8 @@ struct opxy_services {
 	bool extracted;
 	bool scan_due;				/* S-15 started a scan (S-11.045) */
 	bool working;				/* a scan or an install is running */
-	/* S-02.097: the boot store as this start read it (opxy_store.c) */
+	/* S-02.097: the running slot's settings as this start read them, and
+	 * as the last save left them (opxy_store.c) */
 	struct s02_store store;
 };
 
@@ -345,18 +346,19 @@ void opxy_mtp_start(struct opxy_master *m);
 /* S-04.043: the metadata record written from m->meta (M1-M4, M7). */
 bool opxy_meta_write(struct opxy_master *m);
 /*
- * S-02.096 - S-02.099, S-15.175 (src/board/opxy_store.c): the boot store on
- * the master's flash. _load() reads it into sv.store, once per start, before
- * the boot decision; _save() writes it and gives in *now what a start would
- * read afterwards.
+ * S-02.096 - S-02.099, S-02.105 (src/board/opxy_store.c): the running
+ * slot's settings sector. _load() keeps the running slot as the slave's
+ * start found it and reads the settings into sv.store, once per start,
+ * before the boot decision; _save() writes them and gives in *now what a start would
+ * read afterwards; _clear() is the factory reset's.
  */
-void opxy_boot_store_load(struct opxy_master *m);
+void opxy_boot_store_load(struct opxy_master *m, const struct s02_store_slot *run);
 enum s15_store_save opxy_boot_store_save(struct opxy_master *m,
 					 const struct s02_store *s,
 					 struct s02_store *now);
-/* S-15.172: the settings file, read once as held mode starts; a missing
- * or unusable file, an access error and a refused volume give the
- * defaults. */
+enum s15_store_save opxy_boot_store_clear(struct opxy_master *m);
+/* S-15.172: the settings as this start read them from the running slot's
+ * settings sector (sv.store). */
 void opxy_settings_read(struct opxy_master *m, struct s15_settings *s);
 /* S-10a's serial flag (S-04.007): reason 10, developer mode (S-15.172),
  * an unprovisioned unit or the debug key held at start. */

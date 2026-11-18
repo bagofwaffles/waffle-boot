@@ -133,6 +133,9 @@ static void bringup(void *ctx)
 	m->flash.crc32_fast = opxy_crc32_check;	/* S-02.016's slot check */
 	m->flash.scratch = flash_scratch;
 	m->flash.scratch_len = sizeof(flash_scratch); OPXY_CRUMB(2u);
+	/* S-02.097: the defaults until the slave's start reads the running
+	 * slot's settings */
+	s02_store_defaults(&m->sv.store);
 
 	/* S-13b.070: the PSoC link. UART1 waits for held mode (S-08.001). */
 	(void)opxy_psoc_uart_open(m); OPXY_CRUMB(3u); OPXY_TIME(BOOT_TIME_BRINGUP);
@@ -198,9 +201,6 @@ static void metadata(void *ctx, uint32_t *state, bool *nonzero)
 	}
 	s04_meta_read(m->meta_raw, &m->meta);
 	opxy_startup_read(m, opxy_otp_get);	/* S-04.047, S-17.015 */
-	/* S-02.097: the boot store, once per start, before the decision; the
-	 * test OS (waffle/testos.h) is held mode whatever it says */
-	OPXY_TESTOS_OR((void)0, opxy_boot_store_load(m));
 	*state = m->meta.state;
 	*nonzero = s04_m6_needed(m->meta.sw_version); OPXY_CRUMB(5u); OPXY_TIME(BOOT_TIME_METADATA);
 }
@@ -315,6 +315,14 @@ bool opxy_stream_trial(unsigned slot)
 {
 	return stream_image.slot == slot && stream_image.trial;
 }
+
+bool opxy_stream_good(unsigned slot, struct s02_record *rec)
+{
+	if (stream_image.slot != slot)
+		return false;
+	*rec = stream_image.rec;
+	return stream_image.good;
+}
 #endif
 
 /* The bridge controller's last fault words and its second four, for the
@@ -328,6 +336,18 @@ static void bridge_fault_more(void *ctx, uint32_t out[4])
 {
 	opxy_bus_fault_more(ctx, out);
 }
+
+#if !defined(OPXY_TEST_OS)
+/* The running slot, its record and its image's check as this start's
+ * stream found them (S-02.097). */
+static void store_load(struct opxy_master *m, bool established, unsigned slot)
+{
+	struct s02_store_slot run = { established, slot, { 0u, 0u, 0u }, false };
+
+	run.good = established && opxy_stream_good(slot, &run.rec);
+	opxy_boot_store_load(m, &run);
+}
+#endif
 
 /* S-09.001-S-09.008, then S-09.015. */
 static bool slave_start(void *ctx)
@@ -349,6 +369,9 @@ static bool slave_start(void *ctx)
 	good = OPXY_TESTOS_OR(((void)slot, false), opxy_stream_checked(m, slot, established, &stream, &len));
 	/* S-02.095: a trial start's boot menu marks the tried slot's log */
 	m->running_trial = OPXY_TESTOS_OR(false, established && opxy_stream_trial(slot));
+	/* S-02.097: the running slot's settings, once per start, before the
+	 * decision; the test OS (waffle/testos.h) keeps none */
+	OPXY_TESTOS_OR(s02_store_defaults(&m->sv.store), store_load(m, established, slot));
 	/* S-13b.020, .021: the boot link on SPI0, SEL3. */
 	(void)wb_spi_init(&m->hw.link_spi, OPXY_SPI_LINK, &opxy_spi_boot_link,
 			  &m->hw.time, OPXY_BOOT_LINK_WORD_US);
@@ -643,7 +666,7 @@ static void load_failed(void *ctx, enum s05_fail cause)
 }
 
 #if !defined(OPXY_TEST_OS)
-/* S-15.175: the boot store's setting, as metadata() read it. S-02.095: a
+/* S-15.175: the setting as the slave's start read it. S-02.095: a
  * trial start opens the boot menu as the setting does, so that its mark is
  * made with the slave started too. */
 static bool start_in_menu(void *ctx)

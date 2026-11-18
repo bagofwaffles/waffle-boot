@@ -41,14 +41,15 @@ FLASH = [
     ('Selector', 0x0D000, SECTOR, AMBER, 26, ['Which slot starts, and whether it is trusted.']),
     ('Slot 1 record', 0x0E000, SECTOR, AMBER, 26, ["Slot 1's length and CRC-32."]),
     ('Slot 2 record', 0x0F000, SECTOR, AMBER, 26, ["Slot 2's length and CRC-32."]),
-    ('Slot 1', 0x10000, 0x77000, RED, 66,
+    ('Slot 1', 0x10000, 0x76000, RED, 66,
      ['A bootloader image. Its first part is the front,', 'which holds recovery, so recovery is in every image.',
       'Written only on request, never the slot that runs.']),
+    ('Slot 1 settings', 0x86000, SECTOR, BLUE, 26, ["Slot 1's image's settings, a page per change."]),
     ('Slot 1 start log', 0x87000, SECTOR, GREEN, 26, ['One bit cleared at each start. Erased every 256 or more.']),
     ('Slot 2', 0x88000, 0x76000, RED, 66,
      ['The second image. A new image goes into the slot', 'that is not running and is read back before the',
       'selector names it.']),
-    ('Boot store', 0xFE000, SECTOR, BLUE, 26, ['The Start in boot menu setting.']),
+    ('Slot 2 settings', 0xFE000, SECTOR, BLUE, 26, ["As Slot 1's."]),
     ('Slot 2 start log', 0xFF000, SECTOR, GREEN, 26, ['As Slot 1\'s.']),
 ]
 FLASH_END = 0x100000
@@ -58,8 +59,8 @@ SEC = 512
 # name, first sector, sectors, color, row height, what it is
 USER = [
     ('yaffs2 volume', 0x000000, 0x480000, AMBER, 66,
-     ['Shared by the bootloader and the OS: content,', 'the staging area of an install, the settings file,',
-      'and os.ldr for a developer OS write.']),
+     ['Shared by the bootloader and the OS: content,', 'the staging area of an install, and os.ldr',
+      'for a developer OS write.']),
     ('Unused', 0x480000, 0x878000, GRAY, 40, ['Never read or written.']),
     ('FAT volume', 0xCF8000, 0x1000000, BLUE, 66,
      ["The OS's own. The bootloader never mounts it. Its", 'one write there is a factory reset erasing the',

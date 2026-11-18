@@ -45,32 +45,26 @@ the items, the screen says when the OS could not be started, and why.
 | 2 Protected writes | Lets installs write the bootloader slots, and lets a computer change the unit's serial and identity. Hold 2 for 5 s to turn it on; its warning shows while you hold. One press turns it off. Lasts until the next restart. No install writes the first stage, with or without it |
 | 3 Color | Off draws every screen in gray |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
-| 6 Start in boot menu | Every start opens this menu. Kept in the SPI flash, not on the drive |
+| 6 Start in boot menu | Every start opens this menu |
 
-Developer mode, Color and the MTP target are kept on the internal drive; a format returns them to their
-defaults.
+### Where they are kept
 
-### The settings file
+All four are kept in the SPI flash, in the settings sector of the slot the unit is running
+([Flash Layout](Flash-Layout-and-Write-Safety#the-areas)), and belong to that slot's image: the other slot
+has its own, and a new image starts on the defaults (Developer mode off, Color on, MTP target macOS, Start in
+boot menu off). A change is saved at once, and only by a key pressed on the unit. A key a computer sends
+(a developer request) changes Developer mode, Color or the MTP target until the next start and saves
+nothing, and leaves Start in boot menu as it is. Nothing is written to the internal drive: a format leaves
+the settings, and a settings file on the drive (`bootloader.settings`) is not read or written.
 
-They are kept in `/yaffs2/bootloader.settings`, a text file of at most 512 bytes. Its first line is
-`waffle-boot settings 1`; each other line is `key=value`:
+When a change cannot be saved, Settings says why. Developer mode, Color and the MTP target keep their new state
+until the next start; Start in boot menu shows what the next start will read.
 
-```
-waffle-boot settings 1
-developer_mode=off
-color=on
-mtp_target=macos
-```
-
-| Key | Values | Default |
-| --- | --- | --- |
-| `developer_mode` | `on`, `off` | `off` |
-| `color` | `on`, `off` | `on` |
-| `mtp_target` | `macos`, `windows` | `macos` |
-
-Lines end in LF or CR LF. An unknown key or value is ignored. A missing file, one over 512 bytes, one with
-a byte that is not printable ASCII, or one without the first line gives every setting its default. The
-boot menu writes the whole file to `bootloader.settings.new`, then renames it over the old one.
+| Message | Meaning |
+| --- | --- |
+| `Not saved: the flash can't be written` | The write failed |
+| `Not saved: this slot can't keep settings` | The running slot's image is over `0x76000` bytes and fills the settings sector, or this start is a trial start, or the running slot is not known |
+| `Not saved: changed from the computer` | The key came from a computer |
 
 ## System
 
@@ -81,7 +75,7 @@ boot menu writes the whole file to `bootloader.settings.new`, then renames it ov
 | 1 Key test | Press every key and knob. **Shift + 8** leaves it |
 | 2 Reset volume calibration | Resets the volume knob's calibration, then returns to the main menu |
 | 3 Remove content packs | Shown when packs are installed. Hold a pack's digit for 5 s to remove it |
-| 5 Format drive | Erases the whole internal drive, settings included. Hold M1 or sound key 1 for 5 s. After the format the unit opens **Install Firmware** |
+| 5 Format drive | Erases the whole internal drive. Hold M1 or sound key 1 for 5 s. After the format the unit opens **Install Firmware** |
 | 7 Factory reset | Removes user data ([below](#factory-reset)) |
 
 ### Factory reset
@@ -93,9 +87,10 @@ Removes your user data. A factory reset always asks for confirmation: its key he
 It removes:
 
 - the folders `user`, `logs` and `content/dlc` (installed content packs) on the internal drive;
-- the start of the OS's own FAT volume on the eMMC.
+- the start of the OS's own FAT volume on the eMMC;
+- the running slot's settings, which return to their defaults.
 
-It keeps the bootloader, the OS, waffle-boot's settings and **Start in boot menu**. It does not restart the
+It keeps the bootloader and the OS. It does not restart the
 unit. To erase everything instead, use **5 Format drive**.
 
 1. Charge the unit, or keep it on USB.
@@ -113,6 +108,7 @@ unit. To erase everything instead, use **5 Format drive**.
 | `User data not removed: the drive can't be read` | The drive cannot be read. Nothing was removed. A format erases it |
 | `User data not removed: DSP2 is not answering` | The second processor stopped. Switch off and on, then try again |
 | `Some user data could not be removed` | Part of it stayed. Switch off and on, then try again |
+| `Settings not cleared: the flash can't be written` | The settings stayed as they were. Try the reset again |
 
 ## Developer menu
 

@@ -8,7 +8,7 @@ The number before the dot names a document by topic:
 | Label | Topic |
 | --- | --- |
 | S-01 | Boot chain and memory map |
-| S-02 | SPI flash: slots, selector, writers, recovery, the start log, the boot store |
+| S-02 | SPI flash: slots, selector, writers, recovery, the start log, each slot's settings |
 | S-03 | The eMMC: boot partitions, OS header, user area |
 | S-04 | Reboot and metadata records |
 | S-05 | The OS hand-off |

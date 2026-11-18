@@ -178,6 +178,12 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
 	    env->flash->erase(env->flash->ctx,
 			      base + S02_SLOT_CAPACITY - S02_SECTOR_SIZE) != 0)
 		return S02_ERR_IO;
+	/* S-02.103: an image that leaves the settings sector free gets it
+	 * erased with the start log, so the new image starts on defaults. */
+	if (n <= S02_SLOT_CAPACITY - 2u * S02_SECTOR_SIZE &&
+	    env->flash->erase(env->flash->ctx,
+			      base + S02_SLOT_CAPACITY - 2u * S02_SECTOR_SIZE) != 0)
+		return S02_ERR_IO;
 
 	/* Classes 2 and 3: the record (S-02.046). */
 	rec.crc32 = env->crc32(0u, image, n);

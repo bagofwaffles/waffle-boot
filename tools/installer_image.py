@@ -12,7 +12,7 @@ import struct
 import sys
 import zlib
 
-CAPACITY = 0x77000      # S-02.044, less the slot's last sector: the start log (S-02.095)
+CAPACITY = 0x76000      # S-02.104: a slot less its last two sectors, its settings and its start log
 DESC_MAGIC = 0x4D494257
 DESC_ADDR = 0x08030000
 DESC_O_PIN = 0x20
@@ -42,7 +42,8 @@ def main(argv):
     with open(argv[2], encoding='ascii') as f:
         pin = bytes.fromhex(f.read().split()[0])
     if not 0 < len(data) <= CAPACITY:
-        sys.exit('%s: %d bytes does not fit a slot before its start log' % (argv[1], len(data)))
+        sys.exit('%s: %d bytes does not fit a slot before its settings and its start log (S-02.104)'
+                 % (argv[1], len(data)))
     if len(pin) != 32:
         sys.exit('%s: not a front pin' % argv[2])
     got = descriptor_pin(data)

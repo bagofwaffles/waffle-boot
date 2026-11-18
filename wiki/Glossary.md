@@ -20,12 +20,12 @@
 | **Switch** | Select the other slot for good, with no trial |
 | **Put back** | Make a tried slot's record good again, undoing a try |
 | **Start log** | The last sector of a slot. Counts starts that did not finish; three in a row open recovery |
-| **Boot store** | A sector in Slot 2's area (`0xFE000`) holding **Start in boot menu** |
+| **Settings sector** | The SPI flash sector below each slot's start log (`0x86000`, `0xFE000`) that holds the settings of that slot's image |
 | **Countdown** | The 15 s before recovery writes for a computer. Switching off in it stops the write |
 | **In-place write** | A write of the running slot while the other slot is bad. The one write with nothing to fall back on |
 | **Protected writes** | A boot menu setting, until the next restart, that lets installs write the slots. No install writes the first stage |
 | **The eMMC** | The flash memory chip soldered on the board. Holds the OS and the internal drive |
-| **Internal drive** | The yaffs2 volume on the eMMC: user data, content packs, logs, settings |
+| **Internal drive** | The yaffs2 volume on the eMMC: user data, content packs, logs |
 | **Boot partitions** | Two eMMC areas holding the OS image; one is active |
 | **Hand-over** | The bootloader passing control to the OS |
 | **Test OS** | The boot menu built as an OS image, for testing on a unit |

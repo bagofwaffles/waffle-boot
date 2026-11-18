@@ -82,8 +82,8 @@ HEAD = 6
 FRAME_MAX = HEAD + MAX_PAYLOAD + 4
 NO_SLOT = 0xFF
 SLOT_CAP = 0x78000             # S-02.002, S-02.044: what the unit takes
-IMAGE_MAX = 0x77000            # S-02.095: the slot's last sector holds the start log
-STORE_MAX = 0x76000            # S-02.096 to S-02.100: Slot 2's boot store follows this in its slot
+IMAGE_MAX = 0x77000            # S-02.095: recovery's own limit, the slot's last sector holds the start log
+WB_IMAGE_MAX = 0x76000         # S-02.104: this tool's, the sector below it holds the slot's settings
 BEGIN_REPLY_LEN, DATA_REPLY_LEN, END_REPLY_LEN, ACT_REPLY_LEN = 3, 5, 2, 4
 HELLO_LEN, HELLO_O_VERSION, HELLO_O_PIN = 47, 7, 15
 INFO_V5, INFO_V6, INFO_V11 = 199, 219, 232      # INFO's length from a version 5, 6 and 11 front
@@ -160,7 +160,7 @@ STATUS = {
     4: ("the selector is not settled: its verified byte is not 01 (S-02.090)", RESET_HINT),
     5: ('the selected slot is bad, and is not the running slot with its front intact (S-02.084)',
         OTHER_HINT),
-    6: ('the image is empty or too large: a waffle-boot image is at most 0x77000 bytes (S-02.084)',
+    6: ('the image is empty or too large: recovery takes at most 0x77000 bytes (S-02.084)',
         'Check the file: wbrecover.py check IMAGE.'),
     7: ('the image is not a bootable stream with a waffle-boot front (S-02.091)',
         'Check the file (wbrecover.py check IMAGE) and build it with this tree\'s tools.'),
@@ -1181,9 +1181,10 @@ def check_image(data):
     probs = []
     if not 1 <= len(data) <= SLOT_CAP:
         return ['the file is %d bytes; a slot image is 1 to %d bytes (S-02.044)' % (len(data), SLOT_CAP)], None
-    if len(data) > IMAGE_MAX:
+    if len(data) > WB_IMAGE_MAX:
         return ['the file is %d bytes; a waffle-boot image is at most %d (0x%x) bytes, since the '
-                "slot's last sector holds the start log (S-02.095)" % (len(data), IMAGE_MAX, IMAGE_MAX)], None
+                "slot's last two sectors hold its settings and its start log (S-02.104, S-02.095)"
+                % (len(data), WB_IMAGE_MAX, WB_IMAGE_MAX)], None
     res = check_stream.check('bootloader', data, first_stage_stack=(0x11807000, 0x11808000))
     probs += ['stream rule %s failed%s' % (r, ': ' + d if d else '') for r, ok, d in res if not ok]
     if any(r == 'parse' for r, ok, _ in res if not ok):
@@ -1950,9 +1951,7 @@ def cmd_write(link, data, out=print, poll=0.2, deadline=900.0, running=False, as
         WAY_SELECT_FIRST: ', the running slot, after the selector names %s' % slot_name(1 - target),
         WAY_IN_PLACE: ', the running slot, in place',
         WAY_TRIAL: ', for one trial start'}.get(way, '')))
-    # the boot store in Slot 2's slot (S-02.096 to S-02.100), for every front
-    for line in store_lines(len(data), target) + ([DEFAULTS_LINE] if target == 1 else []):
-        out(line)
+    out(SETTINGS_LINE)
     if way == WAY_TRIAL:
         for line in trial_lines(h, i, front, target, signed) + countdown_note(i):
             out(line)
@@ -2376,24 +2375,9 @@ def cmd_act(link, act, out=print, poll=0.2, deadline=900.0, ask=ask_tty, force=F
     return act_done(out, act, i, after, k)
 
 
-def store_lines(n, target=None):
-    """An image over STORE_MAX bytes reaches the sector of Slot 2's boot store, which is off
-    while it is there (S-02.096 to S-02.100): said for the slot written, or for Slot 2 later."""
-    if n <= STORE_MAX:
-        return []
-    head = 'Warning: this image is %d bytes, over 0x%x' % (n, STORE_MAX)
-    if target == 1:
-        return ['%s: written to Slot 2, it switches off the unit\'s stored boot settings while it is '
-                'there (S-02.096 to S-02.100).' % head]
-    if target == 0:
-        return ['%s: it would switch off the unit\'s stored boot settings only if it is later '
-                'written to Slot 2 (S-02.096 to S-02.100).' % head]
-    return ['%s: when it lands in Slot 2, it switches off the unit\'s stored boot settings while it '
-            'is there (S-02.096 to S-02.100).' % head]
-
-
-DEFAULTS_LINE = ("A write of Slot 2 keeps the unit's stored boot settings unless the image reaches them "
-                 '(S-02.096 to S-02.100).')
+# S-02.097: a recovery write leaves the slot's settings sector as it is; the settings there
+# were saved for the image they name, so another image starts on the defaults.
+SETTINGS_LINE = "The slot's settings start at their defaults unless it held this same image."
 
 
 def cmd_check(data, out=print):
@@ -2408,8 +2392,6 @@ def cmd_check(data, out=print):
                                      .replace(' Nothing was sent.', '')), front)
         out('The file is not a slot image recovery writes.')
         return 1
-    for line in store_lines(len(data)):
-        out(line)
     out('OK: %d bytes, a bootable stream with a waffle-boot front; version %s, front pin %s.'
         % (len(data), version(front['version']), front['pin'].hex()))
     return 0

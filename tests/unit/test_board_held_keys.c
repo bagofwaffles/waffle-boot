@@ -259,11 +259,12 @@ static void e_reset(void *c) { (void)c; resets++; }
 static void e_continue(void *c) { (void)c; continues++; }
 static void e_option(void *c, bool on) { (void)c; (void)on; }
 
-static bool e_settings(void *c, const struct s15_settings *s)
+static enum s15_store_save e_settings(void *c, const struct s15_settings *s,
+				      struct s15_settings *now)
 {
 	(void)c;
-	(void)s;
-	return true;
+	*now = *s;
+	return S15_STORE_SAVED;
 }
 
 static const struct s15_env_ops env = {
