@@ -870,6 +870,59 @@ class Stream(unittest.TestCase):
         self.assertIn('fed by DMA', out.getvalue())
 
 
+class QuadData(unittest.TestCase):
+    """dev-quad-data: OPXY_DEV_QUAD_DATA's report of this start's quad data replies (S-09.081), as
+    opxy_bridge_qdata_report() lays it out (waffle/devhost.h)."""
+
+    def report(self, state=2, why=0, rung=2, sent=8, whole=8, first=0, test_len=0, test_us=41250,
+               replies=37, nbytes=2359296, failed=0, fault=(0, 0, 0, 0, 0)):
+        r = struct.pack(m.QDATA_LAYOUT, state, why, rung, sent, whole, first, test_len, test_us, replies,
+                        nbytes, failed, *fault)
+        self.assertEqual(len(r) + 1, m.QDATA_REPLY)
+        return r
+
+    def test_taken_up(self):
+        lines = m.quad_data_lines(self.report(state=4))
+        self.assertEqual(lines[0], "this start's quad data replies: taken up, ended with the link")
+        self.assertIn('  test:     8 of 8 test replies whole with their flag, 41.250 ms', lines)
+        self.assertIn('  data:     37 sessions in quad I/O at 50 MHz, 2359296 bytes; 0 failed', lines)
+
+    def test_not_taken_up(self):
+        lines = m.quad_data_lines(self.report(state=1, why=2, whole=1, first=3, test_len=1024,
+                                              replies=0, nbytes=0))
+        self.assertEqual(lines[0], "this start's quad data replies: not taken up: the quad reply test failed")
+        self.assertIn('first failure a word was wrong at 1024 bytes', lines[1])
+        lines = m.quad_data_lines(self.report(state=1, why=2, first=0x84, test_len=1024))
+        self.assertIn('refused, value 4', lines[1])
+        self.assertEqual(m.quad_data_lines(self.report(state=0)), ["this start's quad data replies: not tried"])
+
+    def test_dropped(self):
+        lines = m.quad_data_lines(self.report(state=3, why=7, replies=3, nbytes=196608, failed=1,
+                                              fault=(6, 0, 0, 0, 0)))
+        self.assertEqual(lines[0], "this start's quad data replies: taken up, then dropped: a data session's "
+                         "check word was wrong")
+        self.assertTrue(lines[-1].startswith("  broke:    the reply's check word was wrong"))
+
+    def test_show(self):
+        class Old:
+            def checked(self, payload, timeout=5.0):
+                raise SystemExit('monitor: bad request')
+
+        class New:
+            def checked(self, payload, timeout=5.0):
+                self.asked = payload
+                return struct.pack(m.QDATA_LAYOUT, 2, 0, 2, 8, 8, 0, 0, 1000, 1, 65536, 0, 0, 0, 0, 0, 0)
+        out = io.StringIO()
+        new = New()
+        with contextlib.redirect_stdout(out):
+            m.show_quad_data(Old())
+            m.show_quad_data(new)
+        self.assertEqual(new.asked, bytes([m.DEV_QUAD_DATA]))
+        self.assertIn('not in this bootloader', out.getvalue().splitlines()[0])
+        self.assertIn('taken up', out.getvalue())
+        self.assertIn('no report', m.quad_data_lines(b'')[0])
+
+
 class CalStart(unittest.TestCase):
     """dev-cal-start: one request, OPXY_DEV_CAL_START, answered before the restart."""
 

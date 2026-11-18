@@ -90,6 +90,8 @@ void opxy_timing_slot_check(const struct s02_image *im);
  * link it went on and its CRC's end. */
 void opxy_timing_copy(struct opxy_master *m, bool on);
 void opxy_timing_read(uint32_t bytes);
+/* The copy read again in single I/O (S-09.081). */
+void opxy_timing_reread(void);
 /* The record an OS finds after the hand-over. */
 void opxy_timing_leave(void);
 /* A developer hand-over's line window that no wait on PA6 came before:
@@ -108,6 +110,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_SLOT_CHECK(im) opxy_timing_slot_check(im)
 #define OPXY_TIMING_COPY(m, on) opxy_timing_copy(m, on)
 #define OPXY_TIMING_READ(n) opxy_timing_read(n)
+#define OPXY_TIMING_REREAD() opxy_timing_reread()
 #define OPXY_TIMING_LEAVE() opxy_timing_leave()
 #define OPXY_TIMING_HELD(m) opxy_timing_held(m)
 #else
@@ -123,6 +126,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_SLOT_CHECK(im) ((void)0)
 #define OPXY_TIMING_COPY(m, on) ((void)0)
 #define OPXY_TIMING_READ(n) ((void)0)
+#define OPXY_TIMING_REREAD() ((void)0)
 #define OPXY_TIMING_LEAVE() ((void)0)
 #define OPXY_TIMING_HELD(m) ((void)0)
 #endif

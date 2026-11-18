@@ -96,4 +96,29 @@ void opxy_bridge_plain(struct opxy_master *m);
  */
 size_t opxy_bridge_record(const struct s09_master *b, unsigned part, uint8_t *out);
 
+/*
+ * S-09.081: before the OS image's copy (on), the quad reply test, the link
+ * raised to link_ceiling and the quad data replies taken up when the test
+ * passed; after it (off), a line on how its sector data went, then the
+ * link lowered as opxy_bridge_plain() lowers it. Nothing with the slave
+ * absent.
+ */
+void opxy_bridge_copy_link(struct opxy_master *m, bool on);
+/* S-09.081: the quad data replies dropped for a read again of the copy in
+ * single I/O, the link left on its rung. */
+void opxy_bridge_copy_single(struct opxy_master *m);
+/*
+ * S-05.005, S-09.081: the OS image's copy (s03_load_os() on m->emmc); one
+ * whose CRC fails after any of its sector data came in quad I/O is read
+ * once more with the quad data dropped, every reply in single I/O. True
+ * when it was read again; out is the last load's.
+ */
+bool opxy_bridge_load_os(struct opxy_master *m, uint8_t *staging, uint32_t cap,
+			 struct s03_load *out);
+/* S-09.081: why the quad data replies were not taken up or were dropped
+ * (S09_QW_...), in words. */
+const char *opxy_bridge_qdata_why(unsigned why);
+/* OPXY_DEV_QUAD_DATA's answer after its status byte (waffle/devhost.h). */
+size_t opxy_bridge_qdata_report(const struct s09_master *b, uint8_t *out);
+
 #endif /* WAFFLE_BOARD_OPXY_BRIDGE_H */

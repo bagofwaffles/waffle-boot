@@ -1035,6 +1035,9 @@ class Link(unittest.TestCase):
             return [q(bm.request(bm.LINK_MODE, 1, 1, 0)), 'sraw ' + bm.header(0x21, 1, 2).hex()]
         if state == 'plain_recovering':
             return self.to_state('plain_fell') + [q(bm.request(0x0A, 1, bm.ECHO_RECOVER))]
+        if state == 'qdata_kept':                 # S-09.081: kept from mode 1 kept
+            return self.to_state('checked_kept') + [q(bm.request_in_mode(bm.CHECKED, bm.LINK_MODE, 1,
+                                                                         bm.QDATA, 1))]
         mode = 1 if state.startswith('checked') else 2
         cmds = [q(bm.request(bm.LINK_MODE, 1, mode, 0))]
         if state.endswith('kept'):

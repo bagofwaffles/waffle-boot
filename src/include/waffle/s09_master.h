@@ -302,6 +302,42 @@ struct s09_lost {
 	uint32_t fault[4];
 };
 
+/*
+ * S-09.081: the quad data replies of this start: where they stand, why
+ * they were not taken up or were dropped, the quad reply test that came
+ * first, and the data sessions taken whole.
+ */
+#define S09_QD_OFF 0u		/* not tried */
+#define S09_QD_NOT 1u		/* tried, not taken up: why says why */
+#define S09_QD_ON 2u		/* taken up: the slave in mode 3 */
+#define S09_QD_DROPPED 3u	/* taken up, then dropped for the start: why */
+#define S09_QD_ENDED 4u		/* taken up, then ended with the link's lowering */
+#define S09_QW_NONE 0u
+#define S09_QW_NO_RECV 1u	/* the bus has no quad receive */
+#define S09_QW_TEST 2u		/* the quad reply test failed */
+#define S09_QW_NO_RUNG 3u	/* the link is on no checked rung */
+#define S09_QW_REFUSED 4u	/* 0x19 answered another mode: a slave without it */
+#define S09_QW_LOST 5u		/* 0x19's exchange did not get through */
+#define S09_QW_DATA 6u		/* a data session broke, or was short */
+#define S09_QW_DATA_CHECK 7u	/* a data session's check word was wrong */
+#define S09_QW_FELL 8u		/* another fall-back while it was on */
+#define S09_QW_ASKED 9u		/* dropped by the caller (s09_master_qdata_off()) */
+#define S09_QW_STRUCK 10u	/* dropped earlier in this start */
+#define S09_QW_COUNT 11u
+/* S-09.081: the quad reply test's cells before a take-up */
+#define S09_QD_CELLS 2u
+struct s09_qdata_rec {
+	uint8_t state, why;		/* S09_QD_..., S09_QW_... */
+	/* the test: trials sent and whole, the first failure (S09_QX_...)
+	 * and its cell's length, and its time */
+	uint16_t test_sent, test_whole;
+	uint8_t test_first;
+	uint32_t test_len, test_us;
+	/* data sessions taken whole, their bytes, and those that failed */
+	uint32_t replies, bytes, failed;
+	struct s09_fault fault;		/* how the one that dropped it broke */
+};
+
 struct s09_master {
 	const struct s09_bus_ops *bus;
 	const struct s06_clock *clock;
@@ -380,6 +416,15 @@ struct s09_master {
 	/* S-09.080: the bus's quad reply test receive, NULL for none */
 	s09_quad_recv_fn quad_recv;
 	void *quad_ctx;
+	/* S-09.081: quad data replies taken up (the slave in mode 3), not to
+	 * be taken up again in this start, a data session's failure for the
+	 * fall-back to come (S09_QW_...), the data session the reply being
+	 * taken announced (its bytes and check word), and the record */
+	bool qdata, qdata_struck;
+	uint8_t qd_fault;
+	bool qd_on;
+	uint32_t qd_len, qd_want;
+	struct s09_qdata_rec qd;
 	/* S-09.072: the check's engine, NULL for the table; given up */
 	s09_check_fn check;
 	void *check_ctx;
@@ -608,6 +653,26 @@ struct s09_qt_cell {
 bool s09_master_quad_test(struct s09_master *m, struct s09_qt_cell *c);
 /* The bus's receive for it; without one every cell is refused. */
 void s09_master_quad_recv(struct s09_master *m, s09_quad_recv_fn fn, void *ctx);
+
+/*
+ * S-09.081: quad data replies for the requests to come. In the plain mode,
+ * the quad reply test (S-09.080) of each length a sector read's data takes
+ * at the clock the data sessions use (S09_QD_CLOCK), candidate TF fed by
+ * DMA, REN clear; only when every trial came whole with the candidate's
+ * flag, the link raised as s09_master_link_fast() raises it, and on a
+ * checked rung (mode 1, kept) 0x19 asks to keep mode 3. Taken up when its
+ * value is 3. Nothing when it was dropped earlier in this start. False:
+ * the slave is absent.
+ */
+#define S09_QD_CLOCK (S09_QT_FAST | S09_QT_FMODE)
+bool s09_master_link_qdata(struct s09_master *m, unsigned ceiling);
+/* S-09.081: quad data replies dropped for the rest of the start, the link
+ * left on its rung in mode 1 (0x19 keep mode 1); when that does not get
+ * through, by the fall-back and a raise to ceiling. False: the slave is
+ * absent. */
+bool s09_master_qdata_off(struct s09_master *m, unsigned ceiling);
+/* S-09.081: the record of this start's quad data replies. */
+const struct s09_qdata_rec *s09_master_qdata(const struct s09_master *m);
 
 /* The rung, the fall-backs so far, and a file write's most bytes on this
  * rung (S-09.023). */

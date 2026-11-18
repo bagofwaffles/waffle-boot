@@ -113,7 +113,7 @@ enum {
 	OPXY_DEV_BENCH = 32, OPXY_DEV_CHECK = 33, OPXY_DEV_EXTRACT = 34,
 	OPXY_DEV_LINK_RECORD = 35, OPXY_DEV_LINK_TEST = 36,
 	OPXY_DEV_BOOT_START = 37, OPXY_DEV_CAL_START = 38,
-	OPXY_DEV_QUAD_REPLY = 39, OPXY_DEV_STREAM = 40,
+	OPXY_DEV_QUAD_REPLY = 39, OPXY_DEV_STREAM = 40, OPXY_DEV_QUAD_DATA = 41,
 };
 /* OPXY_DEV_PUT sub-ops: open (then the name), write (then the bytes), close. */
 enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
@@ -142,6 +142,21 @@ enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
  * with BOOT_LINK_FC=1 or 2 (2 is the default) has it; a BOOT_LINK_FC=0 build
  * answers OPXY_DEV_BAD.
  */
+
+/*
+ * OPXY_DEV_QUAD_DATA answers how this start's quad data replies went
+ * (S-09.081, struct s09_qdata_rec), at any time, read only. After the
+ * status byte, little-endian:
+ *   state:1 (S09_QD_...) why:1 (S09_QW_...) rung:1 (the link's now)
+ *   test_sent:2 test_whole:2 test_first:1 (S09_QX_..., 0x80 | the arm's
+ *   value when refused) test_len:4 test_us:4, the quad reply test before
+ *   the take-up
+ *   replies:4 bytes:4 failed:4, the data sessions taken whole, their bytes,
+ *   and those that failed
+ *   fault: at:1 rc:4 status:4 left:4 stage:4, how the session that dropped
+ *   them broke (S09_AT_...)
+ */
+#define OPXY_QDATA_REPLY 46u
 
 /*
  * OPXY_DEV_CAL_START answers 0, then restarts as S-04's W10 (reason 70): the

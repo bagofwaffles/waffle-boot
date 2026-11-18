@@ -296,6 +296,41 @@
    "ok": true
   },
   {
+   "clk": 1,
+   "ctl": 2368915,
+   "kind": "bridge_master_qdata",
+   "name": "bridge_master_qdata",
+   "ok": true
+  },
+  {
+   "clk": 1,
+   "ctl": 2106771,
+   "kind": "bridge_master_qdata",
+   "name": "bridge_master_qdata_no_fast_mode",
+   "ok": false
+  },
+  {
+   "clk": 1,
+   "ctl": 271763,
+   "kind": "bridge_master_qdata",
+   "name": "bridge_master_qdata_single",
+   "ok": false
+  },
+  {
+   "clk": 0,
+   "ctl": 2123025,
+   "kind": "bridge_slave_reply_qdata",
+   "name": "bridge_slave_reply_qdata",
+   "ok": true
+  },
+  {
+   "clk": 0,
+   "ctl": 25873,
+   "kind": "bridge_slave_reply_qdata",
+   "name": "bridge_slave_reply_qdata_single",
+   "ok": false
+  },
+  {
    "clk": 3,
    "ctl": 9619,
    "kind": "bridge_master_rung1",

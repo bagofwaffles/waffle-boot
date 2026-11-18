@@ -738,6 +738,21 @@ static bool qt_send(struct opxy_slave *s, const uint8_t *d, size_t n)
 	r[S09_QR_STAGE] = (uint32_t)q.rc << 8 | (q.stage & 0xFFu);
 	return rc == WB_SPI_OK;
 }
+
+/*
+ * S-09.081, S-13b.085: a sector read's data session in mode 3, after its
+ * head went out whole: n bytes in quad I/O, ended by TF with the transmit
+ * DMA, REN clear, the quad reply test's set-up and bounds. A session given
+ * up changes nothing here: the master's check word judges it, and its
+ * fall-back reaches the slave as a request that does not arrive whole.
+ */
+static void qd_send(struct opxy_slave *s, const uint8_t *d, size_t n)
+{
+	struct wb_spi_qt q;
+
+	(void)wb_spi_slave_qtest(&s->hw.link_slave, d, n, WB_SPI_QT_TF_DMA, false,
+				 S09_T_REPLY_US, QT_FLAG_US, QT_QUIET_US, &q);
+}
 #endif
 
 /* The reply is clocked out completely, or given up (S-13b.045, S-09.013),
@@ -907,6 +922,11 @@ static uint8_t serve_until_release(void *ctx)
 									 session_tx(s, d, n));
 
 			REACHED(sent ? OPXY_TESTOS_BEACON_SENT : OPXY_TESTOS_BEACON_SEND_FAIL);
+#if !defined(OPXY_TEST_OS)
+			/* S-09.081: the data session at once, after a whole head */
+			if (s09_slave_qdata(&s->server, &d, &n) && sent)
+				qd_send(s, d, n);
+#endif
 			OPXY_TESTOS(testos_rows[OPXY_TESTOS_STEP_SEND] = OPXY_TESTOS_ROW(OPXY_TESTOS_STEP_SEND, sent ? 0u : 1u, n);)
 			/* The bridge stays in single I/O after the link, where
 			 * S-09.015 step 3 would switch (S-13b Q-11). */
@@ -1203,6 +1223,7 @@ void opxy_slave_storage(struct opxy_slave *s)
 	/* S-09.079: a failed receive's own account, for 0x1B */
 	s09_slave_fault_source(&s->server, receive_fault, &s->hw.link_slave);
 	OPXY_TESTOS_OR((void)0, s09_slave_qtest_source(&s->server, qtest, s));	/* S-09.080 */
+	OPXY_TESTOS_OR((void)0, s09_slave_qdata_able(&s->server, true));	/* S-09.081 */
 	OPXY_TESTOS((void)testos_note(s, OPXY_TESTOS_STEP_SERVER, 0);)
 }
 

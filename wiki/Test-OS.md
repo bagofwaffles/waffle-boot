@@ -101,7 +101,9 @@ developer menu. The bootloader stamps the cycle counter at each milestone
   `kernel call`. `os load split` and `os start split` give its spans: the pre-load's PMIC step, logo and report and drain,
   the copy's reads, its CRC, the return to the user area, the image check, the log's tidy, the release
   (the slave's own staging, CRC and check), the slave's server stop and OS start on PA6, the teardown,
-  and the kernel's load to the test OS's entry. `os copy` adds the link's rung, ceiling and fall-backs;
+  and the kernel's load to the test OS's entry. `os copy` adds the link's rung, ceiling and fall-backs, and how its sector data went: in quad I/O (sessions
+  and bytes, and a drop to single I/O with its reason) or in single I/O, and a read again after a CRC failure;
+  milestone 44, `copy link up`, ends the quad reply test and the link's raise before the copy;
   `power at start` the PSoC's power state and battery report, which tell a USB start from a battery one.
 - In the boot menu, `testos_mon.py log` prints the same report. A trial start has no serial port.
 - To time the start with the real OS, from the boot menu with developer mode on:

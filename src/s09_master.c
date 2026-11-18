@@ -297,6 +297,7 @@ struct xreq {
 	uint32_t bound;		/* the reply session's start */
 	bool started;		/* its last request session began (PA6 low) */
 	bool link;		/* the link's own 0x19 or 0x1A (link_req()) */
+	bool qdata;		/* sent with the slave in mode 3 (S-09.081) */
 };
 
 static void xreq_init(struct xreq *x, const struct s09_req *r,
@@ -348,6 +349,7 @@ static const uint8_t *request_bytes(struct s09_master *m, struct xreq *x,
 		memcpy(d + S09_HDR, x->payload, x->plen);
 	s06_fill(d + S09_HDR + x->plen, 0, wire - x->plen);
 	x->rung = m->rung;
+	x->qdata = m->qdata && !plain;
 	x->engine = false;
 	if (!plain) {
 		x->engine = m->check != NULL && !m->soft_check;
@@ -489,8 +491,55 @@ static bool deferred_body(struct s09_master *m, const struct s09_slot_state *st,
 		return r == 0 || rx(m, m->rep + 8, 4);
 	}
 	dlen = s09_deferred_data_len(st->cmd, st->arg1);
+	if (m->qd_on && st->cmd == S09_READ_SECTORS && dlen > 0) {
+		/* S-09.081: the head, its data's check word last; the data
+		 * follow in a session of their own */
+		if (!rx(m, m->rep + 4, S09_QDATA_HEAD - 4u))
+			return false;
+		m->qd_len = (uint32_t)dlen;
+		m->qd_want = s06_rd_le32(m->rep + S09_HDR);
+		*got = S09_QDATA_HEAD;
+		return true;
+	}
 	*got = 12u + (uint32_t)dlen;
 	return dlen >= 0 && rx(m, m->rep + 4, 8u + (uint32_t)dlen);
+}
+
+/*
+ * S-09.081, S-13b.085: a sector read's data, announced by the head just
+ * taken, in their own reply session in quad I/O, whole in m->rep after its
+ * 12 bytes, then their check word against the head's. A failure is a
+ * reply that did not come (S-09.074), and the fall-back to come drops the
+ * quad data for the start without striking the rung. A session that never
+ * began is let go, so that the next one waits out a late offer
+ * (S-09.013).
+ */
+static bool qdata_session(struct s09_master *m)
+{
+	const uint32_t n = m->qd_len;
+	uint32_t mw[4];
+
+	m->qd_len = 0;
+	m->qd_fault = S09_QW_DATA;
+	if (!session_begin(m, S09_T_REPLY_US)) {
+		broke(m, S09_AT_REPLY_START);
+		let_go(m);
+	} else if (!m->quad_recv(m->quad_ctx, m->rep + S09_HDR, n, S09_QD_CLOCK, mw)) {
+		broke(m, S09_AT_REPLY_BROKE);
+		let_go(m);
+	} else if (!session_end(m)) {
+		broke(m, S09_AT_READY);
+	} else if (s09_check_word(m->rep + S09_HDR, n) != m->qd_want) {
+		broke(m, S09_AT_CHECK);
+		m->qd_fault = S09_QW_DATA_CHECK;
+	} else {
+		m->qd_fault = S09_QW_NONE;
+		m->qd.replies++;
+		m->qd.bytes += n;
+		return true;
+	}
+	m->qd.failed++;
+	return false;
 }
 
 /*
@@ -541,6 +590,8 @@ static bool reply(struct s09_master *m, const struct xreq *x)
 		return false;
 	}
 	m->why.at = S09_AT_NONE;
+	m->qd_on = x->qdata && x->reply == X_POLL;
+	m->qd_len = 0;
 	if (x->reply == X_IMM || x->reply == X_STATUS || x->reply == X_QREC) {
 		/* S-09.030; S-09.079's 36 bytes, S-09.080's record */
 		got = x->reply == X_IMM ? 8u :
@@ -566,6 +617,7 @@ static bool reply(struct s09_master *m, const struct xreq *x)
 			ok = false;
 		}
 	}
+	m->qd_on = false;
 	if (!ok) {
 		let_go(m);
 		return false;
@@ -574,7 +626,7 @@ static bool reply(struct s09_master *m, const struct xreq *x)
 		broke(m, S09_AT_READY);
 		return false;
 	}
-	return true;
+	return m->qd_len == 0u || qdata_session(m);
 }
 
 /* ---- exchanges and the way back (S-09.074, S-09.076) ---- */
@@ -720,10 +772,24 @@ static bool echo_until(struct s09_master *m, uint32_t arg, uint32_t step)
 	return false;
 }
 
+/* S-09.081: quad data replies dropped for the rest of the start. */
+static void qdata_drop(struct s09_master *m, unsigned why)
+{
+	if (!m->qdata)
+		return;
+	m->qdata = false;
+	m->qdata_struck = true;
+	m->qd.state = S09_QD_DROPPED;
+	m->qd.why = (uint8_t)why;
+	m->qd.fault = m->why;
+}
+
 static bool fall(struct s09_master *m)
 {
 	const uint32_t t0 = now(m->clock);
 
+	qdata_drop(m, m->qd_fault != S09_QW_NONE ? m->qd_fault : S09_QW_FELL);
+	m->qd_fault = S09_QW_NONE;
 	m->bus->select(m->bus->ctx, false);
 	m->fell++;
 	m->rung = S09_RUNG_PLAIN;
@@ -807,17 +873,21 @@ static bool engine_wrong(struct s09_master *m, const struct xreq *x)
 
 static bool recover(struct s09_master *m, struct xreq *x)
 {
+	/* S-09.081: a data session's failure is the quad data's, not the
+	 * rung's: the rung is entered again, its verdict kept */
+	const bool qd = m->qd_fault != S09_QW_NONE;
 	unsigned top = x->rung;
 	bool ok = false;
 
 	note_fall(m, x);
-	m->gate_ok &= (uint8_t)~(1u << x->rung);	/* its verdict ends with a fault */
+	if (!qd)
+		m->gate_ok &= (uint8_t)~(1u << x->rung);	/* its verdict ends with a fault */
 	if (++x->tries > REPEATS) {
 		absent(m);
 		fell_to(m, S09_REC_ABSENT);
 		return false;
 	}
-	if (engine_wrong(m, x)) {
+	if (engine_wrong(m, x) || qd) {
 		/* the same rung again */
 	} else if (top > S09_RUNG_CHECKED) {
 		top--;
@@ -1701,6 +1771,10 @@ static void lower(struct s09_master *m)
 	if (link_req(m, &r, NULL, 0, NULL, &v) && v == S09_MODE_PLAIN) {
 		m->rung = S09_RUNG_PLAIN;
 		m->bus->configure(m->bus->ctx, 0);
+		if (m->qdata) {		/* S-09.081: ended with the link */
+			m->qdata = false;
+			m->qd.state = S09_QD_ENDED;
+		}
 	} else if (!m->absent) {
 		if (m->rung != S09_RUNG_PLAIN)
 			(void)fall(m);
@@ -2367,6 +2441,130 @@ bool s09_master_quad_test(struct s09_master *m, struct s09_qt_cell *c)
 	m->gate_ok = gate_ok;
 	m->check_bad = check_bad;
 	return !m->absent;
+}
+
+/* ---- quad data replies (S-09.081) ---- */
+
+/* The quad reply test's cells before a take-up: the least and the most of
+ * a sector read's data, each pattern at the most; each cell's bound. */
+static const struct {
+	uint32_t len;
+	uint16_t n;
+} qd_cells[S09_QD_CELLS] = {
+	{ 2u * S09_SECTOR, 2u },
+	{ S09_MAX_SECTORS * S09_SECTOR, S09_QT_PATS },
+};
+#define QD_CELL_LIMIT_US S06_MS(3000)
+
+static void qd_not(struct s09_master *m, unsigned why)
+{
+	m->qd.state = S09_QD_NOT;
+	m->qd.why = (uint8_t)why;
+}
+
+/* The test, every trial whole with the candidate's flag. False: the slave
+ * is absent; *passed says how the test went. */
+static bool qd_test(struct s09_master *m, bool *passed)
+{
+	const uint32_t t0 = now(m->clock);
+
+	*passed = true;
+	for (unsigned k = 0; k < S09_QD_CELLS && *passed; k++) {
+		struct s09_qt_cell c;
+
+		s06_fill((uint8_t *)&c, 0, sizeof c);
+		c.cand = S09_QT_TF_DMA;
+		c.clock = S09_QD_CLOCK;
+		c.len = qd_cells[k].len;
+		c.n = qd_cells[k].n;
+		c.limit_us = QD_CELL_LIMIT_US;
+		if (!s09_master_quad_test(m, &c))
+			return false;
+		m->qd.test_sent = (uint16_t)(m->qd.test_sent + c.sent);
+		m->qd.test_whole = (uint16_t)(m->qd.test_whole + c.whole);
+		if (c.refused || c.cut || !c.settled || c.whole != c.n ||
+		    c.flag != c.n || c.first != S09_QX_OK) {
+			*passed = false;
+			m->qd.test_first = c.refused ? (uint8_t)(0x80u | c.why) :
+				c.first != S09_QX_OK ? c.first : S09_QX_NO_FLAG;
+			m->qd.test_len = c.len;
+		}
+	}
+	m->qd.test_us = now(m->clock) - t0;
+	return true;
+}
+
+bool s09_master_link_qdata(struct s09_master *m, unsigned ceiling)
+{
+	struct s09_req r = { S09_LINK_MODE, 0, 0, S09_MODE_QDATA, S09_LINK_KEEP };
+	uint32_t v;
+	bool passed;
+
+	if (m->absent || m->released || !m->linked || m->busy)
+		return !m->absent;
+	if (m->qdata)
+		return true;
+	if (m->qdata_struck || m->quad_recv == NULL) {
+		if (!m->qdata_struck)
+			qd_not(m, S09_QW_NO_RECV);
+		return s09_master_link_fast(m, ceiling);
+	}
+	s06_fill((uint8_t *)&m->qd, 0, sizeof m->qd);
+	if (!qd_test(m, &passed) || !s09_master_link_fast(m, ceiling))
+		return false;
+	if (!passed) {
+		qd_not(m, S09_QW_TEST);
+		return true;
+	}
+	if (m->rung == S09_RUNG_PLAIN) {
+		qd_not(m, S09_QW_NO_RUNG);
+		return true;
+	}
+	/* S-09.081: 0x19 keep mode 3, from mode 1 kept; a reply that does
+	 * not come has brought both ends back to the plain mode (S-09.074) */
+	serving(m, S09_LINK_MODE, S09_MODE_QDATA);
+	if (!link_req(m, &r, NULL, 0, NULL, &v)) {
+		qd_not(m, S09_QW_LOST);
+		m->qd.fault = m->why;
+		m->qdata_struck = true;
+		return m->absent ? false : s09_master_link_fast(m, ceiling);
+	}
+	if (v != S09_MODE_QDATA) {
+		qd_not(m, S09_QW_REFUSED);
+		if (v == S09_MODE_CHECKED)
+			return true;
+		/* another mode than the rung's: both ends brought back */
+		m->qdata_struck = true;
+		return fall(m) && s09_master_link_fast(m, ceiling);
+	}
+	m->qdata = true;
+	m->qd.state = S09_QD_ON;
+	return true;
+}
+
+bool s09_master_qdata_off(struct s09_master *m, unsigned ceiling)
+{
+	struct s09_req r = { S09_LINK_MODE, 0, 0, S09_MODE_CHECKED, S09_LINK_KEEP };
+	uint32_t v;
+
+	if (m->absent || !m->qdata || m->released || m->busy)
+		return !m->absent;
+	serving(m, S09_LINK_MODE, S09_MODE_CHECKED);
+	if (link_req(m, &r, NULL, 0, NULL, &v) && v == S09_MODE_CHECKED) {
+		qdata_drop(m, S09_QW_ASKED);
+		return true;
+	}
+	/* not through, or another mode: both ends back to the plain mode,
+	 * then the rung again with single I/O replies */
+	if (!m->absent && m->rung != S09_RUNG_PLAIN && !fall(m))
+		return false;
+	m->qd.why = S09_QW_ASKED;
+	return !m->absent && s09_master_link_fast(m, ceiling);
+}
+
+const struct s09_qdata_rec *s09_master_qdata(const struct s09_master *m)
+{
+	return &m->qd;
 }
 
 int32_t s09_master_read(struct s09_master *m, uint32_t fd, uint8_t *buf,

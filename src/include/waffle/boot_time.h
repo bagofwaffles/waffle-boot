@@ -71,6 +71,8 @@ enum boot_time_id {
 	BOOT_TIME_SLAVE_OS,		/* PA6 high: the slave's OS started */
 	BOOT_TIME_TEARDOWN,		/* the master's teardown begun (S-05.016) */
 	BOOT_TIME_KERNEL_CALL,		/* the teardown done: the kernel call next */
+	BOOT_TIME_LINK_UP,		/* the link raised for the copy, its quad reply
+					 * test before it (S-09.081) */
 	BOOT_TIME_COUNT
 };
 
@@ -86,6 +88,8 @@ enum boot_time_id {
 #define BOOT_TIME_COPY_LINK     0x100u	/* copy_link holds the copy's link */
 #define BOOT_TIME_PA6_POLLED    0x200u	/* a developer hand-over's line window took
 					 * the slave's server stop and OS start */
+#define BOOT_TIME_COPY_REREAD   0x400u	/* the copy's CRC failed with quad data: read
+					 * again in single I/O (S-09.081) */
 
 #define BOOT_TIME_RAISE_STEPS 8u
 #define BOOT_TIME_FIRST 16u
@@ -173,6 +177,10 @@ struct boot_time {
 	/* The OS image's copy over the bridge (S-09.075): the rung at its start,
 	 * at its end << 8 and the link's ceiling << 16; fall-backs during it. */
 	uint32_t copy_link, copy_fell;
+	/* Its quad data replies (S-09.081): the data sessions taken whole,
+	 * their bytes, and the state | why << 8 | the test's first failure
+	 * << 16 (struct s09_qdata_rec). */
+	uint32_t copy_quad, copy_qbytes, copy_qstate;
 	struct boot_time_split split;
 };
 
@@ -275,8 +283,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 10u
-#define BOOT_TIME_WORDS   (60u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+#define BOOT_TIME_VERSION 11u
+#define BOOT_TIME_WORDS   (63u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,

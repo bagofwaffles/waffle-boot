@@ -42,6 +42,21 @@ void s09_slave_qtest_source(struct s09_slave *s, s09_qtest_fn fn, void *ctx)
 	s->qtest_ctx = ctx;
 }
 
+void s09_slave_qdata_able(struct s09_slave *s, bool on)
+{
+	s->qdata_able = on;
+}
+
+bool s09_slave_qdata(struct s09_slave *s, const uint8_t **d, size_t *n)
+{
+	if (s->qd_len == 0u)
+		return false;
+	*d = s->qd;
+	*n = s->qd_len;
+	s->qd_len = 0;
+	return true;
+}
+
 /* S-09.079: what the last fall-back met; the words from the hook for a
  * failed receive, zeros else. A cause 9 not yet reported stays (false). */
 static bool note_why(struct s09_slave *s, unsigned why, const uint8_t *hdr,
@@ -208,6 +223,38 @@ static void set_reply(struct s09_slave *s, const uint8_t *d, size_t n)
 	s->reply = d;
 	s->reply_len = n;
 	s->release_queued = false;
+	s->qd_len = 0;
+	s->last_big = false;
+}
+
+/* S-09.072's check word, by the engine when the board gave one. */
+static uint32_t check_of(const struct s09_slave *s, const uint8_t *d, uint32_t n)
+{
+	return s->check != NULL ? s->check(s->check_ctx, d, n) : s09_check_word(d, n);
+}
+
+/*
+ * S-09.031, S-09.081: a sector read's finished reply, len bytes in big, as
+ * the mode the slave is in now gives it: in mode 3 a 0x12's head in out,
+ * its data's check word last, and the data a session of its own after it;
+ * else the whole reply from big.
+ */
+static void sector_handout(struct s09_slave *s, size_t len)
+{
+	const uint8_t *b = s09_slave_big(s);
+
+	if (s->mode == S09_MODE_QDATA && b[0] == S09_READ_SECTORS && len > S09_HDR) {
+		wb_copy(s->out, b, S09_HDR);
+		wb_put_le32(s->out + S09_HDR,
+			    check_of(s, b + S09_HDR, (uint32_t)(len - S09_HDR)));
+		set_reply(s, s->out, S09_QDATA_HEAD);
+		s->qd = b + S09_HDR;
+		s->qd_len = len - S09_HDR;
+	} else {
+		set_reply(s, b, len);
+	}
+	s->last_big = true;
+	s->last_big_len = len;
 }
 
 bool s09_slave_reply(struct s09_slave *s, const uint8_t **d, size_t *n)
@@ -522,6 +569,16 @@ static void clock_second(struct s09_slave *s, const uint8_t *d)
  * is in after it. */
 static uint32_t link_mode(struct s09_slave *s, const struct s09_req *r)
 {
+	const bool keep = r->arg1 == S09_LINK_KEEP;
+
+	/* S-09.081: mode 3 kept from mode 1 kept, and mode 1 kept from mode
+	 * 3, by a slave whose board sends quad data; mode 3 has no trial */
+	if (keep && !s->trial && s->qdata_able && s09_check_ready() &&
+	    ((r->arg0 == S09_MODE_QDATA && s->mode == S09_MODE_CHECKED) ||
+	     (r->arg0 == S09_MODE_CHECKED && s->mode == S09_MODE_QDATA))) {
+		s->mode = (uint8_t)r->arg0;
+		return s->mode;
+	}
 	if (r->arg0 >= S09_MODE_COUNT)
 		return s->mode;			/* no such mode: as it was */
 	/* S-09.072: an end that cannot verify its own check stays in the
@@ -532,7 +589,7 @@ static uint32_t link_mode(struct s09_slave *s, const struct s09_req *r)
 			s->why_cmd = S09_LINK_MODE;
 		s->mode = S09_MODE_PLAIN;
 		s->trial = false;
-	} else if (r->arg1 == S09_LINK_KEEP) {
+	} else if (keep) {
 		if (s->mode == r->arg0)		/* kept only from its trial */
 			s->trial = false;
 	} else {
@@ -628,7 +685,7 @@ static void poll(struct s09_slave *s)
 		/* S-09.076: a repeated request's finished reply, again */
 		s->replay = false;
 		if (s->np_big) {
-			set_reply(s, s09_slave_big(s), s->np_len);
+			sector_handout(s, s->np_len);
 		} else {
 			wb_copy(s->out, s->np_buf, s->np_len);
 			set_reply(s, s->out, s->np_len);
@@ -647,7 +704,7 @@ static void poll(struct s09_slave *s)
 	x = &s->slot[slot];
 	/* the reply goes out now; copy it so the slot can move on */
 	if (x->big) {
-		set_reply(s, s09_slave_big(s), x->len);	/* freed below, sent next */
+		sector_handout(s, x->len);	/* freed below, sent next */
 	} else {
 		wb_copy(s->out, x->small, x->len);
 		set_reply(s, s->out, x->len);
@@ -684,7 +741,7 @@ static void poll(struct s09_slave *s)
 /* big is free again once no kept reply is in it. */
 static void release_big(struct s09_slave *s)
 {
-	if (s->big_held && !s->np_big && !(s->p_len != 0u && s->p_reply == s09_slave_big(s))) {
+	if (s->big_held && !s->np_big && !(s->p_len != 0u && s->p_big)) {
 		s->big_held = false;
 		s->big_busy = false;
 	}
@@ -697,6 +754,7 @@ static void forget_poll(struct s09_slave *s)
 	s->p_seq = 0;
 	s->p_reply = NULL;
 	s->p_len = 0;
+	s->p_big = false;
 	release_big(s);
 }
 
@@ -807,6 +865,7 @@ static void start_again(struct s09_slave *s)
 	void *words_ctx = s->fault_ctx;
 	const s09_qtest_fn qtest = s->qtest;
 	void *qtest_ctx = s->qtest_ctx;
+	const bool qdata_able = s->qdata_able;
 	const uint32_t fell = s->fell, len = s->why_len, got = s->why_got;
 	const uint8_t why = s->why, cmd = s->why_cmd, mode = s->why_mode;
 	const bool held = s->why_held;
@@ -820,6 +879,7 @@ static void start_again(struct s09_slave *s)
 	s->fault_ctx = words_ctx;
 	s->qtest = qtest;
 	s->qtest_ctx = qtest_ctx;
+	s->qdata_able = qdata_able;
 	s->fell = fell;
 	s->why = why;
 	s->why_cmd = cmd;
@@ -837,8 +897,7 @@ static void reply_check(struct s09_slave *s)
 	uint8_t *w = (uint8_t *)(uintptr_t)s->reply;
 	const uint32_t n = (uint32_t)s->reply_len;
 
-	wb_put_le32(w + n, s->check != NULL ? s->check(s->check_ctx, w, n) :
-					      s09_check_word(w, n));
+	wb_put_le32(w + n, check_of(s, w, n));
 	s->reply_len += 4u;
 }
 
@@ -901,7 +960,14 @@ void s09_slave_request(struct s09_slave *s, const uint8_t *d, size_t n)
 			return;
 		}
 		if (seq != S09_SEQ_NONE && seq == s->p_seq) {
-			set_reply(s, s->p_reply, s->p_len);	/* the same reply */
+			/* the same reply; a sector read's as the mode now
+			 * gives it (S-09.081) */
+			if (s->p_big) {
+				sector_handout(s, s->p_big_len);
+				reply_check(s);
+			} else {
+				set_reply(s, s->p_reply, s->p_len);
+			}
 			return;
 		}
 		if (seq != S09_SEQ_NONE) {
@@ -941,6 +1007,8 @@ void s09_slave_request(struct s09_slave *s, const uint8_t *d, size_t n)
 	if (numbered && is_poll) {
 		s->p_reply = s->reply;		/* S-09.076: kept for a repeat */
 		s->p_len = s->reply_len;
+		s->p_big = s->last_big;
+		s->p_big_len = s->last_big_len;
 	} else if (numbered && !s->np_deferred && s->reply_len != 0u) {
 		wb_copy(s->np_buf, s->reply, s->reply_len);
 		s->np_len = s->reply_len;

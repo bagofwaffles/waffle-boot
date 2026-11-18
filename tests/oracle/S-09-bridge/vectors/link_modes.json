@@ -1366,14 +1366,14 @@
   "mode": 1,
   "next": {
    "fell": false,
-   "mode": 1,
+   "mode": 3,
    "recovering": false,
    "trial": false
   },
   "recovering": false,
   "state": "checked_kept",
   "trial": false,
-  "value": 1
+  "value": 3
  },
  {
   "event": "link_test",
@@ -2188,6 +2188,326 @@
   },
   "recovering": false,
   "state": "quad_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "mode_0_try",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 0,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 0
+ },
+ {
+  "event": "mode_0_keep",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 0,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 0
+ },
+ {
+  "event": "mode_1_try",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 1,
+   "recovering": false,
+   "trial": true
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 1
+ },
+ {
+  "event": "mode_1_keep",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 1,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 1
+ },
+ {
+  "event": "mode_2_try",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 2,
+   "recovering": false,
+   "trial": true
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 2
+ },
+ {
+  "event": "mode_2_keep",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 3
+ },
+ {
+  "event": "mode_2_arg1_2",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 2,
+   "recovering": false,
+   "trial": true
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 2
+ },
+ {
+  "event": "mode_3_try",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 3
+ },
+ {
+  "event": "mode_3_keep",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": 3
+ },
+ {
+  "event": "link_test",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "echo",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "recovery_echo",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "access",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "init",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "status",
+  "executed": true,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "bad_check",
+  "executed": false,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": true,
+   "mode": 0,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "short",
+  "executed": false,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": true,
+   "mode": 0,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "ignored",
+  "executed": false,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": true,
+   "mode": 0,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "rx_fail",
+  "executed": false,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": true,
+   "mode": 0,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
+  "trial": false,
+  "value": null
+ },
+ {
+  "event": "trial_timeout",
+  "executed": false,
+  "fell": false,
+  "mode": 3,
+  "next": {
+   "fell": false,
+   "mode": 3,
+   "recovering": false,
+   "trial": false
+  },
+  "recovering": false,
+  "state": "qdata_kept",
   "trial": false,
   "value": null
  }

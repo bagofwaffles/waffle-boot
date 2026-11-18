@@ -393,6 +393,19 @@ void opxy_timing_copy(struct opxy_master *m, bool on)
 	opxy_boot_time.copy_link = (opxy_boot_time.copy_link & ~0xFF00u) |
 				   (uint32_t)m->bridge.rung << 8;
 	opxy_boot_time.copy_fell = m->bridge.fell - fell;
+	{
+		const struct s09_qdata_rec *q = s09_master_qdata(&m->bridge);
+
+		opxy_boot_time.copy_quad = q->replies;
+		opxy_boot_time.copy_qbytes = q->bytes;
+		opxy_boot_time.copy_qstate = q->state | (uint32_t)q->why << 8 |
+					     (uint32_t)q->test_first << 16;
+	}
+}
+
+void opxy_timing_reread(void)
+{
+	opxy_boot_time.flags |= BOOT_TIME_COPY_REREAD;
 }
 
 void opxy_timing_pa6(bool start, bool high)

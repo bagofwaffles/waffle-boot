@@ -15,12 +15,47 @@ static const char *const names[BOOT_TIME_COUNT] = {
 	"test os entry", "stream ready wait", "stream ready", "stream opened",
 	"stream first header", "stream last byte", "hand-over begun", "pmic step done",
 	"boot report queued", "os crc done", "release sent", "slave server stopped",
-	"slave os started", "teardown begun", "kernel call",
+	"slave os started", "teardown begun", "kernel call", "copy link up",
 };
 
 static bool reached(const struct boot_time *t, unsigned id)
 {
 	return id < BOOT_TIME_COUNT && (t->set >> id & 1u) != 0u;
+}
+
+/*
+ * The copy's quad data replies (S-09.081), from copy_qstate: its state
+ * (0 not tried, 1 not taken up, 2 on, 3 dropped, 4 ended with the link),
+ * why (struct s09_qdata_rec's codes) and the test's first failure.
+ */
+static void copy_quad(struct s14_text *out, const struct boot_time *t)
+{
+	const uint32_t state = t->copy_qstate & 0xFFu, why = t->copy_qstate >> 8 & 0xFFu;
+
+	if (state == 0u) {
+		s14_text_str(out, ", replies single I/O");
+	} else if (state == 1u) {
+		s14_text_str(out, ", replies single I/O, quad data not taken up (why ");
+		s14_text_dec(out, why);
+		if (why == 2u) {
+			s14_text_str(out, ", test 0x");
+			s14_text_hex(out, t->copy_qstate >> 16 & 0xFFu, 2);
+		}
+		s14_text_str(out, ")");
+	} else {
+		s14_text_str(out, ", sector data in quad I/O: ");
+		s14_text_dec(out, t->copy_quad);
+		s14_text_str(out, " sessions, ");
+		s14_text_dec(out, t->copy_qbytes);
+		s14_text_str(out, " bytes");
+		if (state == 3u) {
+			s14_text_str(out, ", then single I/O (why ");
+			s14_text_dec(out, why);
+			s14_text_str(out, ")");
+		}
+	}
+	if (t->flags & BOOT_TIME_COPY_REREAD)
+		s14_text_str(out, ", its CRC failed: read again in single I/O");
 }
 
 /* Microseconds as milliseconds with three decimals. */
@@ -593,6 +628,7 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 			s14_text_str(out, ", ");
 			s14_text_dec(out, t->copy_fell);
 			s14_text_str(out, " fall-backs");
+			copy_quad(out, t);
 		}
 		return true;
 	}
@@ -731,6 +767,7 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->dma_fell_session, &t->dma_fell_at, &t->dma_slow_bytes, &t->dma_held,
 		&t->dma_fcs_samples, &t->dma_fcs_held, &t->dma_fcs_parts, &t->dma_fcs_first,
 		&t->power_state, &t->battery, &t->battery_ma, &t->copy_link, &t->copy_fell,
+		&t->copy_quad, &t->copy_qbytes, &t->copy_qstate,
 		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
 		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};

@@ -462,6 +462,79 @@ void opxy_bridge_plain(struct opxy_master *m)
 			    "restart the unit");
 }
 
+/* --- S-09.081: the OS image's copy with quad data replies --- */
+
+static const char *const qd_why_text[S09_QW_COUNT] = {
+	[S09_QW_NONE] = "",
+	[S09_QW_NO_RECV] = "the bus has no quad receive",
+	[S09_QW_TEST] = "the quad reply test failed",
+	[S09_QW_NO_RUNG] = "the link is on no checked rung",
+	[S09_QW_REFUSED] = "the slave did not take mode 3",
+	[S09_QW_LOST] = "the mode's exchange did not get through",
+	[S09_QW_DATA] = "a data session broke",
+	[S09_QW_DATA_CHECK] = "a data session's check word was wrong",
+	[S09_QW_FELL] = "another request fell back",
+	[S09_QW_ASKED] = "the copy is read again",
+	[S09_QW_STRUCK] = "dropped earlier",
+};
+
+const char *opxy_bridge_qdata_why(unsigned why)
+{
+	return why < S09_QW_COUNT ? qd_why_text[why] : "?";
+}
+
+void opxy_bridge_copy_link(struct opxy_master *m, bool on)
+{
+	const struct s09_qdata_rec *q = s09_master_qdata(&m->bridge);
+	struct s14_text t;
+
+	if (!m->slave_present)
+		return;
+	if (on) {
+		(void)s09_master_link_qdata(&m->bridge, m->link_ceiling);
+		return;
+	}
+	log_record(m);
+	s14_text_init(&t);
+	s14_text_str(&t, "bridge: the os copy's sector data ");
+	if (q->state == S09_QD_OFF) {
+		s14_text_str(&t, "went in single I/O");
+	} else if (q->state == S09_QD_NOT) {
+		s14_text_str(&t, "went in single I/O: ");
+		s14_text_str(&t, opxy_bridge_qdata_why(q->why));
+	} else {
+		s14_text_str(&t, "went in quad I/O at 50 MHz, ");
+		s14_text_dec(&t, q->replies);
+		s14_text_str(&t, " sessions, ");
+		s14_text_dec(&t, q->bytes);
+		s14_text_str(&t, " bytes");
+		if (q->state == S09_QD_DROPPED) {
+			s14_text_str(&t, "; then single I/O: ");
+			s14_text_str(&t, opxy_bridge_qdata_why(q->why));
+		}
+	}
+	s14_log_text(&m->sv.log, q->state == S09_QD_DROPPED && q->why != S09_QW_ASKED ?
+				 S14_WARNING : S14_INFO, S14_NO_TAG, &t);
+	opxy_bridge_plain(m);
+}
+
+void opxy_bridge_copy_single(struct opxy_master *m)
+{
+	if (m->slave_present)
+		(void)s09_master_qdata_off(&m->bridge, m->link_ceiling);
+}
+
+bool opxy_bridge_load_os(struct opxy_master *m, uint8_t *staging, uint32_t cap,
+			 struct s03_load *out)
+{
+	s03_load_os(&m->emmc, staging, cap, out);
+	if (out->result != S03_LOAD_CRC || s09_master_qdata(&m->bridge)->replies == 0u)
+		return false;
+	opxy_bridge_copy_single(m);
+	s03_load_os(&m->emmc, staging, cap, out);
+	return true;
+}
+
 /* --- the record for a developer host (waffle/devhost.h) --- */
 
 static size_t put_u32(uint8_t *p, uint32_t v)
@@ -608,5 +681,27 @@ size_t opxy_bridge_record(const struct s09_master *b, unsigned part, uint8_t *ou
 			o += put_status(out + o, &f->st);
 		}
 	}
+	return o;
+}
+
+size_t opxy_bridge_qdata_report(const struct s09_master *b, uint8_t *out)
+{
+	const struct s09_qdata_rec *q = s09_master_qdata(b);
+	size_t o = 0;
+
+	out[o++] = q->state;
+	out[o++] = q->why;
+	out[o++] = (uint8_t)s09_master_rung(b);
+	out[o++] = (uint8_t)q->test_sent;
+	out[o++] = (uint8_t)(q->test_sent >> 8);
+	out[o++] = (uint8_t)q->test_whole;
+	out[o++] = (uint8_t)(q->test_whole >> 8);
+	out[o++] = q->test_first;
+	o += put_u32(out + o, q->test_len);
+	o += put_u32(out + o, q->test_us);
+	o += put_u32(out + o, q->replies);
+	o += put_u32(out + o, q->bytes);
+	o += put_u32(out + o, q->failed);
+	o += put_fault(out + o, &q->fault);
 	return o;
 }

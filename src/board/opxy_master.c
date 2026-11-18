@@ -553,8 +553,16 @@ static enum s05_fail stage(void *ctx, uint32_t *length)
 	struct opxy_master *m = ctx;
 	const struct s03_load *ld = &stage_load;
 
-	OPXY_TIMING_COPY(m, true); s03_load_os(&m->emmc, (uint8_t *)(uintptr_t)OPXY_STAGING, S03_OS_MAX,
-		    &stage_load); OPXY_TIMING_COPY(m, false);
+	/* S-09.081: the link raised, with quad data replies when the quad
+	 * reply test passes; the test OS copies on the plain link */
+	OPXY_TESTOS_OR((void)0, opxy_bridge_copy_link(m, true)); OPXY_TIME(BOOT_TIME_LINK_UP);
+	/* S-09.081: a copy with quad data whose CRC fails is read once more,
+	 * every reply in single I/O, before the start gives up */
+	OPXY_TIMING_COPY(m, true);
+	if (opxy_bridge_load_os(m, (uint8_t *)(uintptr_t)OPXY_STAGING, S03_OS_MAX, &stage_load))
+		OPXY_TIMING_REREAD();
+	OPXY_TIMING_COPY(m, false);
+	OPXY_TESTOS_OR((void)0, opxy_bridge_copy_link(m, false));
 	*length = ld->length;
 	return opxy_stage_fail(ld);
 }

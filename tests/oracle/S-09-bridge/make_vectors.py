@@ -229,7 +229,8 @@ def link_modes():
     states = {'plain': (0, False, False, False), 'plain_fell': (0, False, True, False),
               'plain_recovering': (0, False, False, True),
               'checked_trial': (1, True, False, False), 'checked_kept': (1, False, False, False),
-              'quad_trial': (2, True, False, False), 'quad_kept': (2, False, False, False)}
+              'quad_trial': (2, True, False, False), 'quad_kept': (2, False, False, False),
+              'qdata_kept': (3, False, False, False)}
     events = ['mode_0_try', 'mode_0_keep', 'mode_1_try', 'mode_1_keep', 'mode_2_try', 'mode_2_keep',
               'mode_2_arg1_2', 'mode_3_try', 'mode_3_keep', 'link_test', 'echo', 'recovery_echo', 'access',
               'init', 'status', 'bad_check', 'short', 'ignored', 'rx_fail', 'trial_timeout']
@@ -263,6 +264,8 @@ def link_modes():
                     keep = how == 'keep'
                     if m == 0:
                         nxt = (0, False, False, False)
+                    elif keep and not trial and (m, mode) in ((3, 1), (1, 3)):
+                        nxt = (m, False, False, False)          # S-09.081
                     elif m <= 2 and keep:
                         nxt = (mode, False if mode == m else trial, False, False)
                     elif m <= 2:
@@ -820,6 +823,33 @@ def stream_sources():
             'rows': [{'name': n, 'record_crc': r, 'trial_start': t, 'send': x} for n, r, t, x in rows]}
 
 
+# ---- qdata.json (S-09.081) ----
+
+def qdata():
+    """S-09.081: a 0x12's finished reply in mode 3: the head session in single I/O, [hdr][result][errno]
+    [the data's check word] and its check word, then the data session's bytes in quad I/O; and the same
+    reply in mode 1, whole in one session. The data: byte i of sector s is (s * 7 + i * 13) mod 256; a
+    failed read's are zeros, its errno 0 (S-09.040)."""
+    items = []
+    for name, slot, first, n, result in (('read_2', 1, 7, 2, 0), ('read_128', 2, 100, 128, 0),
+                                         ('read_failed', 3, 9, 2, -1)):
+        if result == 0:
+            data = bytes((((first + i // 512) * 7 + (i % 512) * 13) & 0xFF) for i in range(n * 512))
+        else:
+            data = bytes(n * 512)                         # S-09.032: a failure's data are zeros
+        hw = struct.pack('<III', 0x12 | slot << 8, result & 0xFFFFFFFF, 0)
+        dchk = crc32_bzip2(wire_order(data))
+        head = hw + struct.pack('<I', dchk)
+        head += struct.pack('<I', crc32_bzip2(wire_order(head)))
+        whole = hw + data
+        whole += struct.pack('<I', crc32_bzip2(wire_order(whole)))
+        items.append({'name': name, 'slot': slot, 'sector': first, 'count': n, 'result': result,
+                      'head_hex': head.hex(), 'head_len': len(head), 'data_len': len(data),
+                      'data_sha256': sha(data), 'data_check': dchk, 'mode1_len': len(whole),
+                      'mode1_sha256': sha(whole)})
+    return items
+
+
 def main():
     os.makedirs(V, exist_ok=True)
     dump('slave_stream_source.json', stream_sources())
@@ -840,6 +870,7 @@ def main():
     dump('link_rungs.json', link_rungs())
     dump('link_seq.json', link_seq())
     dump('quad_test.json', quad_tests())
+    dump('qdata.json', qdata())
     streams()
 
 

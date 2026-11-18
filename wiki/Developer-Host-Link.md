@@ -48,6 +48,7 @@ outside the drive can be reached, and the bootloader's own files on it (`bootloa
 | `continue-os` | Restart the unit so that its next start boots the OS (S-10c.076), even with Start in boot menu on. If the slave does not answer, the restart is a plain one and Start in boot menu applies. Needs no developer mode; `continue-os --sysex` prints it as a MIDI SysEx message for a unit without a serial port |
 | `dev-bench`, `dev-check`, `dev-extract` | Time the firmware package check and extraction ([below](#timing-the-package-check)) |
 | `dev-link-record`, `dev-link-test [N]` | The bridge link's record and its bench ([below](#the-bridge-link)) |
+| `dev-quad-data` | How this start's OS copy used quad data replies ([below](#quad-data-replies)) |
 | `dev-quad-reply [N] [options]` | What ends a reply sent in quad I/O, tried on the unit ([below](#the-quad-reply-test)) |
 
 - A file request while the slave is not answering fails with status 3 (`the slave is not answering`), not
@@ -170,8 +171,8 @@ plain at the end, restart. Reply formats: `src/include/waffle/devhost.h`.
 
 ## The quad reply test
 
-Replies over the bridge travel in single I/O, because nothing yet shows the slave when a reply
-sent in quad I/O has ended. `dev-quad-reply` tries the candidate ends on the unit itself (S-09.080,
+Replies over the bridge travel in single I/O, but for the sector data of a start's OS copy
+([below](#quad-data-replies)). `dev-quad-reply` tries the candidate ends on the unit itself (S-09.080,
 S-13b.084): for each, the slave sends test replies in quad I/O, ends each one on that
 candidate's flag, and keeps a record of what its SPI controller showed; the master checks every
 word of each reply and then fetches the record in single I/O.
@@ -213,6 +214,28 @@ breaks is followed by the bridge's usual way back (echoes and polls). Both proce
 I/O after each reply, and the run ends with the link plain and the slave answering. If the
 tool says the slave stopped answering, or did not answer after a cell, restart the unit. It is
 refused as `dev-link-test` is. Reply format: `OPXY_DEV_QUAD_REPLY` in `src/include/waffle/devhost.h`.
+
+## Quad data replies
+
+A start copies the OS image with its sector data in quad I/O at 50 MHz when the quad reply test passes
+first in that start (S-09.081): eight test replies of 1 KiB and 64 KiB under the transmit-finished flag
+fed by DMA, the master at 50 MHz with fast mode, each checked word by word. Then the link is raised to
+its usual rung and both processors agree on the mode with a `0x19` exchange; each sector read's reply
+is a short head in single I/O followed by its data in quad I/O, checked against the head. Any failure
+drops the rest of the start to single I/O replies and reads that sector range again; a copy whose CRC
+fails after quad data is read once more in single I/O. After the copy the link is lowered: the
+installer, MTP, the disk and the file commands never see quad data.
+
+`dev-quad-data` (request 41) prints how this start's copy went, at any time; it reads only:
+
+```
+this start's quad data replies: taken up, ended with the link
+  test:     8 of 8 test replies whole with their flag, 41.250 ms
+  data:     37 sessions in quad I/O at 50 MHz, 2359296 bytes; 0 failed
+  link:     rung 0 now
+```
+
+Reply format: `OPXY_DEV_QUAD_DATA` in `src/include/waffle/devhost.h`.
 
 ## Wire format
 

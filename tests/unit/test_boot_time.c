@@ -640,7 +640,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 124u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 127u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -668,6 +668,9 @@ static void test_record(void)
 	t.battery_ma = 812u;
 	t.copy_link = 0x00040101u;
 	t.copy_fell = 2u;
+	t.copy_quad = 37u;
+	t.copy_qbytes = 2359296u;
+	t.copy_qstate = 0x00000302u;
 	/* milestones past bit 31 of set */
 	boot_time_mark(&t, BOOT_TIME_STREAM_LAST, 0x1122334455667788ull);
 	boot_time_mark(&t, BOOT_TIME_KERNEL_CALL, 0x2122334455667788ull);
@@ -708,6 +711,8 @@ static void test_record(void)
 	      back.slot_reread_good == 8u && back.slot_trial == 9u);
 	CHECK(back.power_state == 0x10u && back.battery == 0x0FA05502u && back.battery_ma == 812u &&
 	      back.copy_link == 0x00040101u && back.copy_fell == 2u);
+	CHECK(back.copy_quad == 37u && back.copy_qbytes == 2359296u &&
+	      back.copy_qstate == 0x00000302u);
 	CHECK(memcmp(back.at, t.at, sizeof t.at) == 0);
 	/* the split's fields, not its tail padding */
 	CHECK(back.split.xfer == t.split.xfer && back.split.window == t.split.window &&
@@ -879,12 +884,40 @@ static void test_os_start(void)
 	t.copy_link = 0x00040101u;
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 2u,
 		      "os copy 1000000 bytes in 500.000 ms, 2000 kB/s, link rung 1 (checked), "
-		      "ceiling 4, 0 fall-backs"));
+		      "ceiling 4, 0 fall-backs, replies single I/O"));
 	t.copy_link = 0x00040003u;
 	t.copy_fell = 1u;
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 2u,
 		      "os copy 1000000 bytes in 500.000 ms, 2000 kB/s, link rung 3 (quad) to rung "
-		      "0 (plain), ceiling 4, 1 fall-backs"));
+		      "0 (plain), ceiling 4, 1 fall-backs, replies single I/O"));
+	/* S-09.081: the copy's quad data replies: taken up, then dropped, not
+	 * taken up, the CRC's read again */
+	t.copy_link = 0x00020202u;
+	t.copy_fell = 0u;
+	t.copy_quad = 36u;
+	t.copy_qbytes = 2359296u;
+	t.copy_qstate = 4u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 2u,
+		      "os copy 1000000 bytes in 500.000 ms, 2000 kB/s, link rung 2 (checked at 50 MHz), "
+		      "ceiling 2, 0 fall-backs, sector data in quad I/O: 36 sessions, 2359296 bytes"));
+	t.copy_quad = 3u;
+	t.copy_qbytes = 196608u;
+	t.copy_qstate = 0x0603u;
+	t.copy_fell = 1u;
+	t.flags |= BOOT_TIME_COPY_REREAD;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 2u,
+		      "os copy 1000000 bytes in 500.000 ms, 2000 kB/s, link rung 2 (checked at 50 MHz), "
+		      "ceiling 2, 1 fall-backs, sector data in quad I/O: 3 sessions, 196608 bytes, "
+		      "then single I/O (why 6), its CRC failed: read again in single I/O"));
+	t.flags &= ~BOOT_TIME_COPY_REREAD;
+	t.copy_qstate = 0x00030201u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 2u,
+		      "os copy 1000000 bytes in 500.000 ms, 2000 kB/s, link rung 2 (checked at 50 MHz), "
+		      "ceiling 2, 1 fall-backs, replies single I/O, quad data not taken up (why 2, "
+		      "test 0x03)"));
+	/* the link's raise before the copy has its milestone */
+	boot_time_mark(&t, BOOT_TIME_LINK_UP, 123456789u);
+	CHECK(line_of(&t, "44 copy link up") < BOOT_TIME_COUNT);
 }
 
 int main(void)

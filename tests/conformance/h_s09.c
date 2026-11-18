@@ -1170,6 +1170,8 @@ int main(void)
 		if (strcmp(k, "rig") == 0) {
 			memset(answer, 0, sizeof answer);
 			s09_slave_init(&slave, &store);
+			/* S-09.081: a slave whose board sends quad data */
+			s09_slave_qdata_able(&slave, true);
 			s09_master_init(&master, &bus, &clk);
 			fail_piece = -1;
 			cpu_auto = false;

@@ -69,6 +69,9 @@
     dev-stream           how this start sent the slave its boot stream (a BOOT_LINK_FC build): the
                          way, the outcome, whether the bridge linked, the sessions, parts and
                          bytes, the time, the guards and waits, and a fall-back's cause and place
+    dev-quad-data        how this start's OS copy used quad data replies (S-09.081): taken up or not
+                         and why, the quad reply test before it, the data sessions taken whole in
+                         quad I/O and their bytes, and a drop to single I/O with where it broke
     dev-cal-start        restart into one plain start of the OS with the calibration screen in the
                          memory the OS draws its first screen over (S-04.012, S-05.016): photograph
                          the OS's first screen. The boot after it is black there again
@@ -143,6 +146,15 @@ DEV_BOOT_START, START_REPORT = 37, 61   # OPXY_DEV_BOOT_START and OPXY_START_REP
 DEV_CAL_START = 38      # OPXY_DEV_CAL_START
 DEV_QUAD_REPLY = 39     # OPXY_DEV_QUAD_REPLY (S-09.080)
 DEV_STREAM, STREAM_REPORT = 40, 88     # OPXY_DEV_STREAM and OPXY_STREAM_REPORT's bytes (S-09.009)
+DEV_QUAD_DATA, QDATA_REPLY = 41, 46    # OPXY_DEV_QUAD_DATA and OPXY_QDATA_REPLY, its status byte included
+QDATA_LAYOUT = '<BBBHHBIIIIIB4I'      # the reply after its status byte (S-09.081)
+QDATA_STATES = ['not tried', 'not taken up', 'taken up', 'taken up, then dropped', 'taken up, ended with the link']
+QDATA_WHY = ['', 'the bus has no quad receive', 'the quad reply test failed', 'the link is on no checked rung',
+             'the slave did not take mode 3', "the mode's exchange did not get through",
+             'a data session broke', "a data session's check word was wrong", 'another request fell back',
+             'dropped for the read again of the copy', 'dropped earlier']
+QDATA_FIRST = ['none', 'a session did not complete', 'only the last word was wrong', 'a word was wrong',
+               "the candidate's flag missing", "the slave's record did not come"]
 STREAM_REPORT_V1 = 72                  # version 1's, without the FCS counts
 STREAM_WAYS = ['byte by byte', 'by the controller under flow control, fed by the core',
                'by the controller under flow control, fed by DMA']
@@ -1387,6 +1399,8 @@ def run(mon, argv):
         cal_start(mon)
     elif c == 'dev-stream':
         show_stream(mon)
+    elif c == 'dev-quad-data':
+        show_quad_data(mon)
     elif c == 'dev-link-test':
         n = num(a[0]) if a else LINK_TEST_N
         if not 1 <= n <= 255:
@@ -1831,6 +1845,40 @@ def show_stream(mon):
         print("this start's stream: not in this bootloader (a byte-by-byte build, BOOT_LINK_FC=0, or older)")
         return
     for line in stream_lines(r):
+        print(line)
+
+
+def quad_data_lines(r):
+    """OPXY_DEV_QUAD_DATA's reply (after the status byte) in plain words."""
+    if len(r) < QDATA_REPLY - 1:
+        return ["this start's quad data replies: no report (an older bootloader)"]
+    (state, why, rung, sent, whole, first, test_len, test_us, replies, nbytes, failed, at,
+     rc, stat, left, stage) = struct.unpack_from(QDATA_LAYOUT, r)
+    word = lambda t, k: t[k] if k < len(t) else '%d' % k
+    out = ["this start's quad data replies: %s%s" % (
+        word(QDATA_STATES, state), ': ' + word(QDATA_WHY, why) if why else '')]
+    if state == 0:
+        return out
+    line = '  test:     %d of %d test replies whole with their flag, %.3f ms' % (whole, sent, test_us / 1000.0)
+    if why == 2:
+        line += '; first failure %s at %d bytes' % (
+            'refused, value %d' % (first & 0x7F) if first & 0x80 else word(QDATA_FIRST, first), test_len)
+    out.append(line)
+    out.append('  data:     %d sessions in quad I/O at 50 MHz, %d bytes; %d failed' % (replies, nbytes, failed))
+    out.append('  link:     rung %d now' % rung)
+    if state == 3 and why in (6, 7):
+        out.append('  broke:    %s %s' % (word(AT_TEXT, at), driver_text([rc, stat, left, stage])))
+    return out
+
+
+def show_quad_data(mon):
+    """OPXY_DEV_QUAD_DATA, in plain words."""
+    try:
+        r = mon.checked(bytes([DEV_QUAD_DATA]))
+    except SystemExit:
+        print("this start's quad data replies: not in this bootloader (an older one)")
+        return
+    for line in quad_data_lines(r):
         print(line)
 
 

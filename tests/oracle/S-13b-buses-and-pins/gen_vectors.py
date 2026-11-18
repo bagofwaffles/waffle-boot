@@ -548,6 +548,12 @@ def spi_configs():
         ('bridge_slave_quad_opt_single', 'bridge_slave_quad_opt', 0x2511, 0, False),
         ('bridge_slave_reply_quad_opt', 'bridge_slave_reply_quad_opt', 0x206511, 0, True),
         ('bridge_slave_request_quad_opt', 'bridge_slave_request_quad_opt', 0x222511, 0, True),
+        # S-13b.085, S-09.081: a quad data session, both ends
+        ('bridge_master_qdata', 'bridge_master_qdata', 0x242593, 1, True),
+        ('bridge_master_qdata_no_fast_mode', 'bridge_master_qdata', 0x202593, 1, False),
+        ('bridge_master_qdata_single', 'bridge_master_qdata', 0x42593, 1, False),
+        ('bridge_slave_reply_qdata', 'bridge_slave_reply_qdata', 0x206511, 0, True),
+        ('bridge_slave_reply_qdata_single', 'bridge_slave_reply_qdata', 0x6511, 0, False),
         # S-13b.041, S-09.075: the master's request sessions on the link's rungs
         ('bridge_master_rung1', 'bridge_master_rung1', 0x2593, 3, True),
         ('bridge_master_rung1_50mhz', 'bridge_master_rung1', 0x2593, 1, False),

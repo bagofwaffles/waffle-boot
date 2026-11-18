@@ -155,6 +155,8 @@ def slave_session_len(hdr12, mode=0):
 # ---- S-09.070 - S-09.075: link modes, the check, the link test, the trial, the fall-back, the rungs ----
 
 PLAIN, CHECKED, QUAD = 0, 1, 2           # S-09.070
+QDATA = 3                                # S-09.081: mode 1's requests, a 0x12's data in quad I/O
+QDATA_HEAD = 16                          # S-09.081: [hdr][result][errno][the data's check word]
 TRY, KEEP = 0, 1                         # 0x19's arg1
 CHECK_LEN = 8                            # S-09.072: the trailer, the number then the check
 CHECK_POLY = 0x04C11DB7                  # S-09.072: CRC-32/BZIP2's
@@ -205,6 +207,18 @@ def trailer(body, seq):
     """S-09.072, S-09.076: the 8-byte trailer: the number, then the check word over body and number."""
     num = struct.pack('<I', seq & M32)
     return num + struct.pack('<I', check_word(bytes(body) + num))
+
+
+def qdata_handout(mode, slot, result, data):
+    """S-09.031, S-09.081: a 0x12's finished reply as a poll hands it out: in mode 3 its head session
+    ([hdr][result][errno 0][the data's check word] and its check word) and then the data session, the
+    sector data alone in quad I/O; in any other mode one session, as reply_in_mode() gives it, and no
+    data session (None)."""
+    hw = struct.pack('<III', 0x12 | slot << 8, result & M32, 0)
+    if mode == QDATA:
+        head = hw + struct.pack('<I', check_word(data))
+        return head + struct.pack('<I', check_word(head)), bytes(data)
+    return reply_in_mode(mode, hw + bytes(data)), None
 
 
 def reply_in_mode(mode, reply):
@@ -311,7 +325,11 @@ class LinkSlave:
         self.__init__()
 
     def link_mode(self, m, how):
-        """S-09.073: 0x19; returns the reply's value."""
+        """S-09.073, S-09.081: 0x19; returns the reply's value. Mode 3 is kept from mode 1 kept, and mode 1
+        from it, with no trial, by a slave whose board sends quad data (every slave this model stands for)."""
+        if how == KEEP and not self.trial and (m, self.mode) in ((QDATA, CHECKED), (CHECKED, QDATA)):
+            self.mode = m
+            return self.mode
         if m > QUAD:
             return self.mode
         if m == PLAIN:

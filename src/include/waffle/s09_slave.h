@@ -144,6 +144,14 @@ struct s09_slave {
 	const uint8_t *p_reply;
 	size_t p_len;
 	bool big_held;		/* big holds a reply kept for a repeat */
+	/* S-09.081: the board sends quad data (s09_slave_qdata_able()); the
+	 * data session due after the next reply; the reply just set came from
+	 * big (its length), and the kept poll's did */
+	bool qdata_able;
+	const uint8_t *qd;
+	size_t qd_len;
+	bool last_big, p_big;
+	size_t last_big_len, p_big_len;
 	/* the reply to an unnumbered request, 0x1B's the longest */
 	uint8_t uout[S09_STATUS_LEN + 4u];
 	/* S-09.072: the check's engine, NULL for the table */
@@ -263,6 +271,19 @@ void s09_slave_fault_source(struct s09_slave *s,
 			    void (*fn)(void *ctx, uint32_t out[4]), void *ctx);
 /* S-09.080: the board's quad reply test (s09_qtest_fn); NULL, none. */
 void s09_slave_qtest_source(struct s09_slave *s, s09_qtest_fn fn, void *ctx);
+/*
+ * S-09.081: the board can send a data session in quad I/O (S-13b.085), so
+ * the slave takes mode 3 when the master keeps it. Without it a 0x19 that
+ * asks for mode 3 leaves the mode as it is.
+ */
+void s09_slave_qdata_able(struct s09_slave *s, bool on);
+/*
+ * S-09.081: in mode 3, the data session that follows the reply session just
+ * taken by s09_slave_reply(): n bytes of sector data the board sends in
+ * quad I/O, at once, when that reply went out whole (consumed by the
+ * call). False: none.
+ */
+bool s09_slave_qdata(struct s09_slave *s, const uint8_t **d, size_t *n);
 
 /* The slave's CPU link port (channel 0 of the tunnel). */
 extern const struct s06_port_ops s09_slave_tunnel_port;

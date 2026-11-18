@@ -82,12 +82,19 @@
 
 /*
  * S-09.070: a link mode, how request sessions travel. The link comes up
- * plain. Reply sessions are single I/O in every mode.
+ * plain. Reply sessions are single I/O in every mode, but for the sector
+ * data of mode 3 (S-09.081).
  */
 #define S09_MODE_PLAIN 0u	/* single I/O, no check */
 #define S09_MODE_CHECKED 1u	/* single I/O, each request ends with its check */
 #define S09_MODE_QUAD 2u	/* quad I/O, each request ends with its check */
-#define S09_MODE_COUNT 3u
+#define S09_MODE_COUNT 3u	/* the modes a trial asks for */
+/* S-09.081: requests as mode 1; a 0x12's sector data in a session of its
+ * own in quad I/O. Kept from mode 1 by 0x19 keep, never on trial. */
+#define S09_MODE_QDATA 3u
+/* S-09.081: a 0x12's finished reply in mode 3, its session in single I/O:
+ * [hdr][result][errno][the data's check word], before its check */
+#define S09_QDATA_HEAD 16u
 #define S09_LINK_TRY 0u		/* 0x19's arg1: on trial, or kept */
 #define S09_LINK_KEEP 1u
 #define S09_CHECK_LEN 8u	/* S-09.072: the trailer, number then check */

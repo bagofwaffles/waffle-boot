@@ -70,6 +70,10 @@ _REQUEST = {'enabled': {1}, 'flow_on_tx': {0}, 'flow_watermark': {2}, 'rdy_activ
 for _link in ('pre', 'post', 'quad_opt'):
     SPI_RULES['bridge_slave_reply_' + _link] = dict(SPI_RULES['bridge_slave_' + _link], **_REPLY)
     SPI_RULES['bridge_slave_request_' + _link] = dict(SPI_RULES['bridge_slave_' + _link], **_REQUEST)
+# S-13b.085: a quad data session (S-09.081): the master's receive in quad I/O at 50 MHz with fast mode, the
+# slave's transmit as a quad reply
+SPI_RULES['bridge_master_qdata'] = dict(SPI_RULES['bridge_master_quad_opt'])
+SPI_RULES['bridge_slave_reply_qdata'] = dict(SPI_RULES['bridge_slave_reply_quad_opt'])
 
 
 def check_spi(kind, ctl, clk, sclk0=SCLK0):

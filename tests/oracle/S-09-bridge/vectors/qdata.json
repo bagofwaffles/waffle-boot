@@ -1,0 +1,44 @@
+[
+ {
+  "count": 2,
+  "data_check": 3794120870,
+  "data_len": 1024,
+  "data_sha256": "d1782731706d9080da79193c869ffbfd1e641a3af7d68ed91342fa3b85c9efa0",
+  "head_hex": "120100000000000000000000a6b025e21b4119cb",
+  "head_len": 20,
+  "mode1_len": 1040,
+  "mode1_sha256": "7d036e0bc8a0191c39e549a0ecea03b880279b7bc379254be9c7383165f2ba22",
+  "name": "read_2",
+  "result": 0,
+  "sector": 7,
+  "slot": 1
+ },
+ {
+  "count": 128,
+  "data_check": 1613092754,
+  "data_len": 65536,
+  "data_sha256": "3e77a49626694cf90ec9bc9e36207d3250b6e1d6097db43472a60242a4b03507",
+  "head_hex": "12020000000000000000000092d72560c038e188",
+  "head_len": 20,
+  "mode1_len": 65552,
+  "mode1_sha256": "22ebe4ff7f47ccecc14fac223250c4589dc7cf66f6017cd0c89dc8c5e4981712",
+  "name": "read_128",
+  "result": 0,
+  "sector": 100,
+  "slot": 2
+ },
+ {
+  "count": 2,
+  "data_check": 1962257911,
+  "data_len": 1024,
+  "data_sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+  "head_hex": "12030000ffffffff00000000f7adf5746ed8f22a",
+  "head_len": 20,
+  "mode1_len": 1040,
+  "mode1_sha256": "cb767594d02119d72196e06a37f6d718f44e3be88cb9f6063e8bc3a7f72a5077",
+  "name": "read_failed",
+  "result": -1,
+  "sector": 9,
+  "slot": 3
+ }
+]
