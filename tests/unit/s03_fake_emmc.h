@@ -450,6 +450,7 @@ static inline struct s03_env fe_env(struct fake_emmc *e, struct s03_emmc_ops *op
 	env.scratch = g_fe_scratch;
 	env.scratch_len = sizeof g_fe_scratch;
 	env.max_xfer = 0;
+	env.crc32_fast = NULL;
 	return env;
 }
 

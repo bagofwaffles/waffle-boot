@@ -253,6 +253,12 @@ static void test_summary(void)
 		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
 		      "3 failed the CRC and read again, 1 of those then good; "
 		      "1 kept by a trial mark's CRC"));
+	t.flags |= BOOT_TIME_SLOT_CRC_HW;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 15u,
+		      "slot read at the faster rate: 1 whole, 2 failed and read again, "
+		      "3 failed the CRC and read again, 1 of those then good; "
+		      "1 kept by a trial mark's CRC; its CRC by the peripheral"));
+	t.flags &= ~BOOT_TIME_SLOT_CRC_HW;
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 16u));	/* no power reported */
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 17u));	/* no hand-over begun */
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 18u));
@@ -857,6 +863,18 @@ static void test_os_start(void)
 		      "reads 500.000 ms, crc 10.000 ms, user area 0.100 ms, check 0.010 ms"));
 	CHECK(line_is(&t, BOOT_TIME_COUNT + 18u,
 		      "os start split: log 1.000 ms, release 100.000 ms"));
+	/* the CRC by the peripheral, and computed again after a miss */
+	t.flags |= BOOT_TIME_COPY_CRC_HW;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 17u,
+		      "os load split: pmic 0.200 ms, logo and report 0.300 ms, drain 0.100 ms, "
+		      "reads 500.000 ms, crc 10.000 ms (peripheral), user area 0.100 ms, "
+		      "check 0.010 ms"));
+	t.flags |= BOOT_TIME_COPY_CRC_AGAIN;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 17u,
+		      "os load split: pmic 0.200 ms, logo and report 0.300 ms, drain 0.100 ms, "
+		      "reads 500.000 ms, crc 10.000 ms (peripheral, then software), "
+		      "user area 0.100 ms, check 0.010 ms"));
+	t.flags &= ~(BOOT_TIME_COPY_CRC_HW | BOOT_TIME_COPY_CRC_AGAIN);
 	boot_time_mark(&t, BOOT_TIME_SERVER_STOP, US(612850));
 	boot_time_mark(&t, BOOT_TIME_SLAVE_OS, US(812850));
 	t.flags |= BOOT_TIME_PA6_POLLED;

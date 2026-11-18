@@ -63,6 +63,11 @@ extern const struct s06_port_ops opxy_port_ops;
 struct s06_clock opxy_clock(struct opxy_hw *hw);
 /* wire_crc32() over a long buffer, with USB serviced as it goes. */
 uint32_t opxy_crc32_long(uint32_t crc, const uint8_t *buf, uint32_t len);
+/* S-02.016's slot check and S-03.044's OS check on the CRC peripheral
+ * (opxy_crc32_fast()): crc32_fast of the master's flash and eMMC, with USB
+ * serviced as it goes, and of the slave's eMMC, quiet. */
+uint32_t opxy_crc32_check(uint32_t crc, const uint8_t *buf, uint32_t len);
+uint32_t opxy_crc32_check_quiet(uint32_t crc, const uint8_t *buf, uint32_t len);
 struct s14_clock_ops opxy_log_clock(struct opxy_hw *hw);
 /* S-09.002 boot link (SPI0 SEL3, PA6 ready) and S-09 bridge (SPI0, PC11
  * select, PA6 ready, PC5 attention) on the master. opxy_bus_ops() also

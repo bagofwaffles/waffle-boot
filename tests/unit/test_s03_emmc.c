@@ -167,6 +167,27 @@ static int result_reason(enum s03_load_result r)
 	}
 }
 
+/* The usual CRC counted, and a faster one, right or always wrong. */
+static unsigned g_crc_calls, g_fast_calls;
+
+static uint32_t counted_crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
+{
+	g_crc_calls++;
+	return ref_crc32(crc, buf, len);
+}
+
+static uint32_t right_crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
+{
+	g_fast_calls++;
+	return ref_crc32(crc, buf, len);
+}
+
+static uint32_t wrong_crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
+{
+	g_fast_calls++;
+	return ref_crc32(crc, buf, len) ^ 0x00810000u;
+}
+
 static void test_load_table(void)
 {
 	unsigned i, k;
@@ -199,6 +220,28 @@ static void test_load_table(void)
 		CHECK(ld.result != S03_LOAD_CRC ||
 		      (ld.crc != ld.header.crc && ld.part != 0u &&
 		       ld.header.length != 0u));
+		/* S-03.044 with a faster CRC (the CRC peripheral on the board),
+		 * right and wrong: the same load, the usual CRC run only when
+		 * the faster one did not match */
+		for (k = 0; k < 2u; k++) {
+			const bool crc_run = ld.result == S03_LOAD_OK || ld.result == S03_LOAD_CRC;
+			struct s03_load ld2;
+
+			fe_reset(&g_e);
+			env = env_now();
+			env.crc32 = counted_crc32;
+			env.crc32_fast = k == 0u ? right_crc32 : wrong_crc32;
+			g_crc_calls = g_fast_calls = 0;
+			s03_load_os(&env, g_staging, sizeof g_staging, &ld2);
+			CHECK_EQ(ld2.result, ld.result);
+			CHECK_EQ(ld2.length, ld.length);
+			CHECK_EQ(ld2.crc, ld.crc);
+			CHECK_EQ(g_fast_calls, crc_run ? 1u : 0u);
+			CHECK_EQ(g_crc_calls, crc_run && (k == 1u || ld.result == S03_LOAD_CRC) ? 1u : 0u);
+		}
+		fe_reset(&g_e);
+		env = env_now();
+		s03_load_os(&env, g_staging, sizeof g_staging, &ld);
 		/* S-03.041: the selects, the header reads; no write, no erase. */
 		part = 0;
 		for (k = 0; k < g_e.nlog; k++) {

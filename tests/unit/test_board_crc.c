@@ -929,6 +929,124 @@ static void test_end(void)
 	CHECK(opxy_crc_off == 0u && hw.ops == 0u);
 }
 
+/* A check's CRC-32 (opxy_crc32_fast()), outside any use. */
+static unsigned idles;
+
+static void idle_count(void)
+{
+	idles++;
+}
+
+static void bare(struct convention c, bool present)
+{
+	fake_mmr_reset();
+	fake_core_reset();
+	fake_core_set_cycle_step(1000000u);
+	fake_mmr_set_hook(hook, NULL);
+	memset(&hw, 0, sizeof(hw));
+	hw.c = c;
+	hw.present = present;
+	m.hw.time.cycles_per_us = 400u;
+	opxy_crc_off = 0;
+	idles = 0;
+}
+
+static uint32_t fast(uint32_t v, const uint8_t *p, uint32_t n)
+{
+	return opxy_crc32_fast(v, p, n, &m.hw.time, idle_count);
+}
+
+/* Registers as reset leaves them, after the call. */
+static bool left_reset(void)
+{
+	return fake_mmr_get(CRC0_CTL) == 0u && fake_mmr_get(CRC0_POLY) == 0u &&
+	       fake_mmr_get(CRC0_RESULT_FIN) == 0u && !wb_dma_enabled(WB_CRC_DMA) &&
+	       !hw.dma_on && !hw.crc_on;
+}
+
+/*
+ * S-02.016's and S-03.044's CRC-32 on the peripheral, each result against
+ * the software's: every convention, lengths and alignments, an image's
+ * length in pieces with the idle hook between them, the registers reset
+ * after each call, the conventions found last tried first. The software's
+ * alone in another use, below LEAST, with the peripheral absent or DMA18
+ * taken; a failed operation leaves a right result and the peripheral off.
+ * A wrong answer with a good status comes back wrong: the caller's miss,
+ * computed again in software (s02_image_check(), s03_load_os()).
+ */
+static void test_fast(void)
+{
+	static const size_t lens[] = { LEAST, LEAST + 1u, 0x1003, 0x10000, 0x10003, 100000, BIG };
+	unsigned ops;
+
+	for (size_t c = 0; c < ARRAY_LEN(conventions); c++) {
+		bare(conventions[c], true);
+		for (size_t i = 0; i < ARRAY_LEN(lens); i++) {
+			for (size_t off = 0; off < 4u; off++) {
+				const uint32_t v = (uint32_t)(i * 0x9E3779B9u + off);
+
+				ops = hw.ops;
+				CHECK(fast(v, data + off, (uint32_t)lens[i]) ==
+				      ref(OPXY_CRC32, v, data + off, lens[i]));
+				CHECK(opxy_crc_fast_used && hw.ops > ops);
+				CHECK(left_reset() && hw.bad == 0u && hw.foreign == 0u);
+			}
+		}
+		CHECK(opxy_crc_off == 0u);
+	}
+	/* the last call's conventions answered at once: three runs, then the
+	 * pieces; the idle hook after each piece */
+	bare(plain, true);
+	(void)fast(0, data, LEAST);
+	ops = hw.ops;
+	idles = 0;
+	CHECK(fast(1u, data, 0x30000u) == ref(OPXY_CRC32, 1u, data, 0x30000u));
+	CHECK(hw.ops == ops + 3u + 3u && idles == 3u);
+
+	/* the software's: short, in another use, DMA18 taken, absent */
+	bare(plain, true);
+	CHECK(fast(2u, data, LEAST - 1u) == ref(OPXY_CRC32, 2u, data, LEAST - 1u));
+	CHECK(hw.ops == 0u && !opxy_crc_fast_used);
+	start(plain, true);
+	ops = hw.ops;
+	CHECK(fast(2u, data, 0x8000) == ref(OPXY_CRC32, 2u, data, 0x8000));
+	CHECK(hw.ops == ops && !opxy_crc_fast_used && opxy_crc_engine(OPXY_CRC32));
+	opxy_crc_end();
+	bare(plain, true);
+	fake_mmr_set(DMA_CFG(WB_CRC_DMA), DMA_CFG_EN);
+	CHECK(fast(2u, data, 0x8000) == ref(OPXY_CRC32, 2u, data, 0x8000));
+	CHECK(hw.ops == 0u && !opxy_crc_fast_used && opxy_crc_off == 0u);
+	bare(plain, false);
+	CHECK(fast(2u, data, 0x8000) == ref(OPXY_CRC32, 2u, data, 0x8000));
+	CHECK(!opxy_crc_fast_used && opxy_crc_off == 1u << OPXY_CRC32 && left_reset());
+	ops = hw.ops;
+	CHECK(fast(2u, data, 0x8000) == ref(OPXY_CRC32, 2u, data, 0x8000));
+	CHECK(hw.ops == ops);		/* off for the boot */
+
+	/* an operation that fails: the rest in software, right, and off */
+	for (unsigned k = 0; k < 2u; k++) {
+		bare(plain, true);
+		(void)fast(0, data, LEAST);
+		*(k == 0u ? &hw.silent_at : &hw.error_at) = hw.ops + 3u + 2u;
+		CHECK(fast(3u, data + 1, BIG) == ref(OPXY_CRC32, 3u, data + 1, BIG));
+		CHECK(!opxy_crc_fast_used && opxy_crc_off == 1u << OPXY_CRC32 && left_reset());
+	}
+
+	/* a wrong answer on a piece: a wrong result, for the caller to miss */
+	bare(plain, true);
+	(void)fast(0, data, LEAST);
+	hw.wrong_at = hw.ops + 3u + 2u;
+	CHECK(fast(4u, data, BIG) != ref(OPXY_CRC32, 4u, data, BIG));
+	CHECK(opxy_crc_fast_used && left_reset());
+
+	/* conventions that changed since the last call are searched again */
+	bare(conventions[1], true);
+	(void)fast(0, data, LEAST);
+	bare(conventions[2], true);
+	CHECK(fast(5u, data, 0x8000) == ref(OPXY_CRC32, 5u, data, 0x8000));
+	CHECK(opxy_crc_fast_used && hw.ops > 3u + 1u);
+}
+
 /* The driver: its stream is MDMA1's source, not the display's MDMA2, and
  * it refuses what it cannot run without a register written. */
 static void test_driver(void)
@@ -991,6 +1109,7 @@ int main(void)
 	RUN(test_member);
 	RUN(test_check6);
 	RUN(test_end);
+	RUN(test_fast);
 	RUN(test_driver);
 	return check_summary("test_board_crc");
 }

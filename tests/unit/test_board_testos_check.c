@@ -110,6 +110,7 @@ static struct s03_env env_guarded(void)
 	env.scratch = scratch;
 	env.scratch_len = sizeof scratch;
 	env.max_xfer = 8u;
+	env.crc32_fast = NULL;
 	return env;
 }
 

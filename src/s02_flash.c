@@ -391,6 +391,19 @@ int s02_image_read(const struct s02_env *env, unsigned slot, struct s02_image *i
 	return S02_OK;
 }
 
+/* The image's CRC: crc32_fast's when it matches the record or its
+ * complement, else crc32's. */
+static uint32_t image_crc(const struct s02_env *env, const struct s02_image *im)
+{
+	if (env->crc32_fast != NULL) {
+		const uint32_t crc = env->crc32_fast(0, im->buf, im->len);
+
+		if (crc == im->rec.crc32 || crc == ~im->rec.crc32)
+			return crc;
+	}
+	return env->crc32(0, im->buf, im->len);
+}
+
 int s02_image_check(const struct s02_env *env, struct s02_image *im)
 {
 	uint32_t crc;
@@ -399,7 +412,7 @@ int s02_image_check(const struct s02_env *env, struct s02_image *im)
 	im->trial = false;
 	if (im->slot > 1u || im->len == 0u)
 		return S02_OK;
-	crc = env->crc32(0, im->buf, im->len);
+	crc = image_crc(env, im);
 	if (crc != im->rec.crc32 && crc != ~im->rec.crc32 && im->by_fast) {
 		/* judged by a read at the usual rate, as the first stage's */
 		im->by_fast = false;
@@ -408,7 +421,7 @@ int s02_image_check(const struct s02_env *env, struct s02_image *im)
 			im->len = 0;
 			return S02_ERR_IO;
 		}
-		crc = env->crc32(0, im->buf, im->len);
+		crc = image_crc(env, im);
 	}
 	im->good = crc == im->rec.crc32;
 	/* S-02.016's trial mark: the complement, which no chance read gives */

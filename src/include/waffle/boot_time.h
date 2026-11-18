@@ -90,6 +90,9 @@ enum boot_time_id {
 					 * the slave's server stop and OS start */
 #define BOOT_TIME_COPY_REREAD   0x400u	/* the copy's CRC failed with quad data: read
 					 * again in single I/O (S-09.081) */
+#define BOOT_TIME_SLOT_CRC_HW   0x800u	/* the slot check's CRC by the CRC peripheral */
+#define BOOT_TIME_COPY_CRC_HW   0x1000u	/* the OS image's CRC by the CRC peripheral */
+#define BOOT_TIME_COPY_CRC_AGAIN 0x2000u	/* and computed again in software */
 
 #define BOOT_TIME_RAISE_STEPS 8u
 #define BOOT_TIME_FIRST 16u

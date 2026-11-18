@@ -262,7 +262,9 @@ static enum s03_load_result load_body(const struct s03_env *env, uint8_t *stagin
 		done += cnt;
 	}
 	/* S-03.044 */
-	out->crc = env->crc32(0u, staging, h->length);
+	out->crc = env->crc32_fast != NULL ? env->crc32_fast(0u, staging, h->length) : ~h->crc;
+	if (out->crc != h->crc)
+		out->crc = env->crc32(0u, staging, h->length);
 	if (out->crc != h->crc)
 		return S03_LOAD_CRC;
 	out->length = h->length;

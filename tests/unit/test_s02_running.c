@@ -100,6 +100,23 @@ static void load(const uint8_t *s, uint32_t len)
 	memset(g_mem + 0x2000u, 0xEE, 40);	/* the program wrote its data */
 }
 
+/* The usual CRC counted, and a faster one that is right, or wrong while
+ * g_lie is set. */
+static unsigned g_crc_calls, g_fast_crc_calls;
+static bool g_lie;
+
+static uint32_t counted_crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
+{
+	g_crc_calls++;
+	return ref_crc32(crc, buf, len);
+}
+
+static uint32_t lying_crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
+{
+	g_fast_crc_calls++;
+	return ref_crc32(crc, buf, len) ^ (g_lie ? 0x00810000u : 0u);
+}
+
 static void put_slot(unsigned slot, const uint8_t *s, uint32_t len, bool good_crc)
 {
 	struct s02_record r = { ref_crc32(0, s, len) ^ (good_crc ? 0u : 1u), len,
@@ -827,6 +844,34 @@ int main(void)
 		CHECK(!b.good && !g_im.trial && !g_im.by_fast);
 		CHECK_EQ(payload_reads_of(from, S02_SLOT1_OFF + 16u + 2048u, g_blen), 1u);
 	}
+
+	/* S-02.016 with a faster CRC (s02_env.crc32_fast, the CRC peripheral on
+	 * the board): its match with the record, or the complement, is the
+	 * verdict and the usual CRC is not run; any other answer, right or
+	 * wrong, is computed again by the usual CRC, whose verdict stands */
+	for (unsigned v = 0; v < 6u; v++) {
+		/* good, bad, the trial mark; each with a faster CRC right and wrong */
+		const unsigned kind = v / 2u;
+		const bool liar = (v & 1u) != 0u;
+
+		fresh();
+		put_slot(1, g_b, g_blen, kind != 1u);
+		if (kind == 2u)
+			ff_put32(g_f.mem + s02_record_off(1), ~ref_crc32(0, g_b, g_blen));
+		env = ff_env(&g_f, &g_ops);
+		env.crc32 = counted_crc32;
+		env.crc32_fast = lying_crc32;
+		g_lie = liar;
+		g_crc_calls = g_fast_crc_calls = 0;
+		s02_image_init(&g_im, g_buf, sizeof g_buf, NULL, NULL);
+		CHECK_EQ(s02_image_read(&env, 1, &g_im), S02_OK);
+		CHECK_EQ(s02_image_check(&env, &g_im), S02_OK);
+		CHECK_EQ(g_fast_crc_calls, 1u);
+		CHECK_EQ(g_crc_calls, liar || kind == 1u ? 1u : 0u);
+		CHECK(g_im.good == (kind == 0u));
+		CHECK(g_im.trial == (kind == 2u));
+	}
+	g_lie = false;
 
 	/* the inference by the image writes nothing either */
 	for (unsigned i = 0; i < g_f.nlog && i < FF_LOG_MAX; i++)

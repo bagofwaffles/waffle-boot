@@ -3981,6 +3981,7 @@ static void test_os_write(void)
 	env.scratch = scratch;
 	env.scratch_len = sizeof scratch;
 	env.max_xfer = 0;		/* the client splits into 128 sectors */
+	env.crc32_fast = NULL;
 	CHECK_EQ(env.boot_size, B_SIZE);
 
 	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_UNREADABLE);
@@ -4211,7 +4212,7 @@ static void test_absent(void)
 	fresh();
 	{
 		struct s03_emmc_ops cops;
-		struct s03_env env = { &cops, ref_crc32, B_SIZE, back, sizeof back, 0 };
+		struct s03_env env = { &cops, ref_crc32, B_SIZE, back, sizeof back, 0, NULL };
 		struct s15_osw_end e;
 
 		s09_files_emmc_ops(&F, &cops);

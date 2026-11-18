@@ -148,31 +148,46 @@ static void turn_off(unsigned which)
 	opxy_crc_off |= (uint8_t)(1u << which);
 }
 
+/* The runs' starting values and the software's answers. */
+static void wanted(unsigned which, uint32_t from[RUNS], uint32_t want[RUNS])
+{
+	for (unsigned k = 0; k < RUNS; k++) {
+		from[k] = k == 0u ? 0u : k == 1u ? seed[which] : want[0];
+		want[k] = soft(which, from[k], test + runs[k].off, runs[k].len);
+	}
+}
+
+/* 1 when an option set and conversion answer all the runs as the software
+ * does, 0 when one does not, -1 when an operation fails. */
+static int answers(unsigned which, uint32_t opts, unsigned conv,
+		   const uint32_t from[RUNS], const uint32_t want[RUNS])
+{
+	for (unsigned k = 0; k < RUNS; k++) {
+		uint32_t r;
+
+		if (engine(which, opts, conv, from[k], test + runs[k].off,
+			   runs[k].len, &r) != WB_CRC_OK)
+			return -1;
+		if (r != want[k])
+			return 0;
+	}
+	return 1;
+}
+
 /* The first option set and conversion that answer all the runs as the
  * software does; false when none does or an operation fails. */
 static bool search(unsigned which)
 {
 	uint32_t want[RUNS], from[RUNS];
 
-	for (unsigned k = 0; k < RUNS; k++) {
-		from[k] = k == 0u ? 0u : k == 1u ? seed[which] : want[0];
-		want[k] = soft(which, from[k], test + runs[k].off, runs[k].len);
-	}
+	wanted(which, from, want);
 	for (unsigned set = 0; set < OPTION_SETS; set++) {
 		for (unsigned conv = 0; conv < CONVS; conv++) {
-			unsigned k;
+			const int a = answers(which, options(set), conv, from, want);
 
-			for (k = 0; k < RUNS; k++) {
-				uint32_t r;
-
-				if (engine(which, options(set), conv, from[k],
-					   test + runs[k].off, runs[k].len,
-					   &r) != WB_CRC_OK)
-					return false;
-				if (r != want[k])
-					break;
-			}
-			if (k == RUNS) {
+			if (a < 0)
+				return false;
+			if (a > 0) {
 				use[which].opts = options(set);
 				use[which].conv = conv;
 				return true;
@@ -297,6 +312,117 @@ void opxy_crc_begin(struct opxy_master *m)
 		if (!use[w].on)
 			turn_off(w);
 	}
+}
+
+/*
+ * A CRC-32 checked against a known value (S-02.016's slot check, S-03.044's
+ * OS image): s02_env's and s03_env's crc32_fast, on either processor. The
+ * caller takes a result equal to the known value as the verdict and computes
+ * any other again in software (s02_image_check(), s03_load_os()), so a wrong
+ * answer of the peripheral costs time, never a verdict, and no piece is
+ * compared here. A use of its own, begun and ended in the call: the
+ * conventions found as opxy_crc_begin() finds them, the ones the last call
+ * found tried first; CRC0 and DMA18 left as reset does at the return. The
+ * software's alone during another use (an install's), for fewer than LEAST
+ * bytes, with DMA18 in someone else's use, and once the CRC-32 is off for
+ * the boot; a failed operation turns it off and the rest is the software's.
+ * idle, when not NULL, runs between pieces of FAST_PIECE bytes.
+ */
+#define FAST_PIECE 0x10000u
+
+static struct {
+	bool known;
+	uint32_t opts;
+	unsigned conv;
+} fast_found;
+/* Whether the last call's result was the peripheral's, for the timing. */
+bool opxy_crc_fast_used;
+
+static uint32_t soft_pieces(uint32_t v, const uint8_t *p, size_t n, void (*idle)(void))
+{
+	while (n != 0u) {
+		const size_t k = n < FAST_PIECE ? n : FAST_PIECE;
+
+		v = soft(OPXY_CRC32, v, p, k);
+		p += k;
+		n -= k;
+		if (idle != NULL)
+			idle();
+	}
+	return v;
+}
+
+/* The CRC-32's conventions for this call: the last call's when they still
+ * answer the runs, else the search's. */
+static bool fast_ready(void)
+{
+	for (unsigned i = 0; i < TEST_LEN; i++)
+		test[i] = (uint8_t)(i * 151u + (i >> 3) * 7u + 0x3Cu);
+	if (fast_found.known) {
+		uint32_t want[RUNS], from[RUNS];
+
+		wanted(OPXY_CRC32, from, want);
+		switch (answers(OPXY_CRC32, fast_found.opts, fast_found.conv, from, want)) {
+		case 1:
+			use[OPXY_CRC32].opts = fast_found.opts;
+			use[OPXY_CRC32].conv = fast_found.conv;
+			return true;
+		case 0:
+			break;
+		default:
+			return false;
+		}
+	}
+	return search(OPXY_CRC32);
+}
+
+uint32_t opxy_crc32_fast(uint32_t crc, const uint8_t *p, uint32_t n,
+			 const struct wb_time *t, void (*idle)(void))
+{
+	uint32_t v = crc;
+	size_t left = n;
+
+	opxy_crc_fast_used = false;
+	if (n < LEAST || owner != NULL || touched ||
+	    (opxy_crc_off & (1u << OPXY_CRC32)) != 0u || wb_dma_enabled(WB_CRC_DMA))
+		return soft_pieces(crc, p, n, idle);
+	wb_crc_init(&opxy_crc_dev, t);
+	touched = true;
+	fast_found.known = fast_ready();
+	if (fast_found.known) {
+		fast_found.opts = use[OPXY_CRC32].opts;
+		fast_found.conv = use[OPXY_CRC32].conv;
+		opxy_crc_fast_used = true;
+	} else {
+		turn_off(OPXY_CRC32);
+	}
+	while (fast_found.known && left >= LEAST) {
+		const size_t head = (4u - ((uintptr_t)p & 3u)) & 3u;
+		uint32_t len, r;
+
+		if (head != 0u) {
+			v = soft(OPXY_CRC32, v, p, head);
+			p += head;
+			left -= head;
+			continue;
+		}
+		len = left > FAST_PIECE ? FAST_PIECE : (uint32_t)left & ~3u;
+		if (engine(OPXY_CRC32, use[OPXY_CRC32].opts, use[OPXY_CRC32].conv, v, p, len,
+			   &r) != WB_CRC_OK) {
+			fast_found.known = false;
+			opxy_crc_fast_used = false;
+			turn_off(OPXY_CRC32);
+			break;		/* this piece in software, below */
+		}
+		v = r;
+		p += len;
+		left -= len;
+		if (idle != NULL)
+			idle();
+	}
+	wb_crc_end(&opxy_crc_dev);
+	touched = false;
+	return soft_pieces(v, p, left, idle);
 }
 
 bool opxy_crc_engine(unsigned which)

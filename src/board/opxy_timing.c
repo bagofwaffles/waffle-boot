@@ -347,6 +347,8 @@ void opxy_timing_slot_read(const struct s02_image *im)
 
 void opxy_timing_slot_check(const struct s02_image *im)
 {
+	if (opxy_crc_fast_used)
+		opxy_boot_time.flags |= BOOT_TIME_SLOT_CRC_HW;
 	if (slot_was_fast && im->by_fast && im->trial)
 		opxy_boot_time.slot_trial++;
 	if (!slot_was_fast || im->by_fast)
@@ -362,13 +364,28 @@ void opxy_timing_battery(bool on)
 	opxy_boot_time.flags |= BOOT_TIME_BATTERY_RAN;
 }
 
-/* The copy's CRC (S-03.044), its end stamped. */
-static s03_crc32_fn copy_crc_of;
+/* The copy's CRC (S-03.044), its end stamped: the peripheral's first, then
+ * the software's when that one missed. */
+static s03_crc32_fn copy_crc_of, copy_fast_of;
+static bool copy_fast_ran;
 
 static uint32_t copy_crc(uint32_t crc, const uint8_t *buf, uint32_t len)
 {
 	const uint32_t c = copy_crc_of(crc, buf, len);
 
+	if (copy_fast_ran)
+		opxy_boot_time.flags |= BOOT_TIME_COPY_CRC_AGAIN;
+	OPXY_TIME(BOOT_TIME_COPY_CRC);
+	return c;
+}
+
+static uint32_t copy_fast(uint32_t crc, const uint8_t *buf, uint32_t len)
+{
+	const uint32_t c = copy_fast_of(crc, buf, len);
+
+	copy_fast_ran = true;
+	if (opxy_crc_fast_used)
+		opxy_boot_time.flags |= BOOT_TIME_COPY_CRC_HW;
 	OPXY_TIME(BOOT_TIME_COPY_CRC);
 	return c;
 }
@@ -385,11 +402,16 @@ void opxy_timing_copy(struct opxy_master *m, bool on)
 		fell = m->bridge.fell;
 		copy_crc_of = m->emmc.crc32;
 		m->emmc.crc32 = copy_crc;
+		copy_fast_ran = false;
+		copy_fast_of = m->emmc.crc32_fast;
+		if (copy_fast_of != NULL)
+			m->emmc.crc32_fast = copy_fast;
 		OPXY_TIME(BOOT_TIME_COPY_START);
 		return;
 	}
 	OPXY_TIME(BOOT_TIME_STAGED);
 	m->emmc.crc32 = copy_crc_of;
+	m->emmc.crc32_fast = copy_fast_of;
 	opxy_boot_time.copy_link = (opxy_boot_time.copy_link & ~0xFF00u) |
 				   (uint32_t)m->bridge.rung << 8;
 	opxy_boot_time.copy_fell = m->bridge.fell - fell;

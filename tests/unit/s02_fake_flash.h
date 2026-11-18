@@ -257,6 +257,7 @@ static inline struct s02_env ff_env(struct fake_flash *f, struct s02_flash_ops *
 	env.crc32 = ref_crc32;
 	env.scratch = g_ff_scratch;
 	env.scratch_len = S02_SECTOR_SIZE;
+	env.crc32_fast = NULL;
 	return env;
 }
 

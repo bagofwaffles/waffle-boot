@@ -64,6 +64,10 @@ struct s03_env {
 	uint8_t *scratch;
 	uint32_t scratch_len;
 	uint32_t max_xfer;
+	/* S-03.044's check of a loaded image tries this first when it is not
+	 * NULL: a result equal to the header's CRC is the verdict, any other is
+	 * computed again by crc32. */
+	s03_crc32_fn crc32_fast;
 };
 
 /* --- The eMMC (S-03.001, S-03.002, S-03.009, S-03.011) --- */

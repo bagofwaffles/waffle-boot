@@ -397,6 +397,12 @@ uint32_t opxy_crc32(void *ctx, uint32_t crc, const uint8_t *p, size_t n);
 void opxy_crc_begin(struct opxy_master *m);
 bool opxy_crc_engine(unsigned which);
 void opxy_crc_end(void);
+/* A CRC-32 for a check against a known value (src/board/opxy_crc.c): a
+ * result equal to that value is the verdict, any other is computed again
+ * in software by the caller. */
+uint32_t opxy_crc32_fast(uint32_t crc, const uint8_t *p, uint32_t n,
+			 const struct wb_time *t, void (*idle)(void));
+extern bool opxy_crc_fast_used;
 /* The CRCs the peripheral serves no more this boot, bit (1 << which), and
  * its driver's record (tests model the peripheral on them). */
 extern uint8_t opxy_crc_off;

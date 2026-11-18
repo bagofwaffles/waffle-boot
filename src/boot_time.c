@@ -540,6 +540,9 @@ static bool load_line(const struct boot_time *t, uint32_t cpu, struct s14_text *
 	start_span(t, out, "drain", BOOT_TIME_BOOT_REPORT, BOOT_TIME_PRE_LOAD, cpu, &first);
 	start_span(t, out, "reads", BOOT_TIME_COPY_START, BOOT_TIME_COPY_LAST, cpu, &first);
 	start_span(t, out, "crc", BOOT_TIME_COPY_LAST, BOOT_TIME_COPY_CRC, cpu, &first);
+	if (reached(t, BOOT_TIME_COPY_CRC) && (t->flags & BOOT_TIME_COPY_CRC_HW))
+		s14_text_str(out, (t->flags & BOOT_TIME_COPY_CRC_AGAIN) ?
+			     " (peripheral, then software)" : " (peripheral)");
 	start_span(t, out, "user area", BOOT_TIME_COPY_CRC, BOOT_TIME_STAGED, cpu, &first);
 	start_span(t, out, "check", BOOT_TIME_STAGED, BOOT_TIME_CHECKED, cpu, &first);
 	return true;
@@ -718,6 +721,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 		s14_text_str(out, " of those then good; ");
 		s14_text_dec(out, t->slot_trial);
 		s14_text_str(out, " kept by a trial mark's CRC");
+		if (t->flags & BOOT_TIME_SLOT_CRC_HW)
+			s14_text_str(out, "; its CRC by the peripheral");
 		return true;
 	case 16:
 		return power_line(t, out);

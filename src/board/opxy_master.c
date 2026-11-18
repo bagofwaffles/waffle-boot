@@ -130,6 +130,7 @@ static void bringup(void *ctx)
 	m->flash_ops = opxy_flash_ops(&m->hw);
 	m->flash.flash = &m->flash_ops;
 	m->flash.crc32 = opxy_crc32_long;
+	m->flash.crc32_fast = opxy_crc32_check;	/* S-02.016's slot check */
 	m->flash.scratch = flash_scratch;
 	m->flash.scratch_len = sizeof(flash_scratch); OPXY_CRUMB(2u);
 
@@ -384,6 +385,7 @@ static bool slave_start(void *ctx)
 	m->emmc_ops = opxy_bridge_emmc(&m->bridge);
 	m->emmc.ops = &m->emmc_ops;
 	m->emmc.crc32 = opxy_crc32_long;
+	m->emmc.crc32_fast = opxy_crc32_check;	/* S-03.044 */
 	m->emmc.boot_size = m->slave_present ?
 				    opxy_bridge_boot_size(&m->bridge) : 0u;
 	m->emmc.scratch = emmc_scratch;

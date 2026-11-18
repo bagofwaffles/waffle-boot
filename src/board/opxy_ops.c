@@ -156,6 +156,16 @@ uint32_t opxy_crc32_long(uint32_t crc, const uint8_t *buf, uint32_t len)
 	return crc;
 }
 
+uint32_t opxy_crc32_check(uint32_t crc, const uint8_t *buf, uint32_t len)
+{
+	return opxy_crc32_fast(crc, buf, len, &opxy_time, opxy_usb_breathe);
+}
+
+uint32_t opxy_crc32_check_quiet(uint32_t crc, const uint8_t *buf, uint32_t len)
+{
+	return opxy_crc32_fast(crc, buf, len, &opxy_time, NULL);
+}
+
 struct s14_clock_ops opxy_log_clock(struct opxy_hw *hw)
 {
 	const struct s14_clock_ops c = { wb_time_now_us, &hw->time };

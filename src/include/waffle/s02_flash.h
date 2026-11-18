@@ -82,6 +82,10 @@ struct s02_env {
 	s02_crc32_fn crc32;
 	uint8_t *scratch;
 	uint32_t scratch_len;
+	/* S-02.016's check of a read image (s02_image_check()) tries this
+	 * first when it is not NULL: a result equal to the record's CRC or its
+	 * complement is the verdict, any other is computed again by crc32. */
+	s02_crc32_fn crc32_fast;
 };
 
 /* --- Formats (S-02.010 to S-02.016) --- */

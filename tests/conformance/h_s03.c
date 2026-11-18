@@ -276,7 +276,7 @@ static int c_switch(void *ctx, uint8_t index, uint8_t value)
 
 static const struct s03_emmc_ops emmc_ops = { NULL, c_select, c_read, c_write, c_erase, c_switch };
 
-static struct s03_env env = { &emmc_ops, h_crc32, 0, scratch, sizeof scratch, 0 };
+static struct s03_env env = { &emmc_ops, h_crc32, 0, scratch, sizeof scratch, 0, NULL };
 
 static int unmount_fails;
 

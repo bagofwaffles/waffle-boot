@@ -1199,6 +1199,7 @@ void opxy_slave_storage(struct opxy_slave *s)
 	s->emmc_notified = false;
 	s->emmc.ops = &s->emmc_ops;
 	s->emmc.crc32 = wire_crc32;
+	s->emmc.crc32_fast = opxy_crc32_check_quiet;	/* S-03.044, at the release */
 	s->emmc.scratch = emmc_scratch;
 	s->emmc.scratch_len = sizeof(emmc_scratch);
 	s->emmc.max_xfer = 128u;
