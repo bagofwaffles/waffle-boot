@@ -117,6 +117,7 @@ enum {
 	OPXY_DEV_LINK_RECORD = 35, OPXY_DEV_LINK_TEST = 36,
 	OPXY_DEV_BOOT_START = 37, OPXY_DEV_CAL_START = 38,
 	OPXY_DEV_QUAD_REPLY = 39, OPXY_DEV_STREAM = 40, OPXY_DEV_QUAD_DATA = 41,
+	OPXY_DEV_CKPT = 42,
 };
 /* OPXY_DEV_PUT sub-ops: open (then the name), write (then the bytes), close. */
 enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
@@ -160,6 +161,25 @@ enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
  *   them broke (S09_AT_...)
  */
 #define OPXY_QDATA_REPLY 46u
+
+/*
+ * OPXY_DEV_CKPT (part:1) is the read-only checkpoint test (waffle/wire_ckpt.h)
+ * of the slave's volume, run on the master over the bridge's sector reads:
+ * a second yaffs2 device in the master's memory restores the checkpoint read
+ * only, under a block device that refuses every write, so neither the slave's
+ * mount nor the eMMC changes. Part 0 runs it, and answers, little-endian:
+ *   outcome:1 (enum wire_ckpt_outcome) accepted:1 unmounted:1 cut:1 (bit 0
+ *   the scanned tree, bit 1 the restored) alloc_used:1, then the words
+ *   ckpt_blocks mount_reads mount_sectors mount_us writes_refused objs_scan
+ *   objs_ckpt diffs ckpt_seq alloc_block alloc_page newer disagree test_us,
+ *   then texts:1, the parts after it
+ * Part 1 + i answers the last run's text i, ending in NUL: the reason a
+ * checkpoint was not taken, then the differences kept, then the
+ * disagreements kept. Refused while the volume is not mounted, refused, or
+ * in use for a staging file or MTP (a cached write would differ from the
+ * eMMC), and OPXY_DEV_NO_SLAVE without a slave.
+ */
+#define OPXY_CKPT_SUMMARY (5u + 14u * 4u + 1u)
 
 /*
  * OPXY_DEV_CAL_START answers 0, then restarts as S-04's W10 (reason 70): the
@@ -478,6 +498,8 @@ size_t opxy_dev_link_test(struct opxy_master *m, const uint8_t *req, size_t n,
 			  uint8_t *out);
 size_t opxy_dev_quad_reply(struct opxy_master *m, const uint8_t *req, size_t n,
 			   uint8_t *out);
+/* OPXY_DEV_CKPT (src/board/opxy_dev_ckpt.c). */
+size_t opxy_dev_ckpt(struct opxy_master *m, const uint8_t *req, size_t n, uint8_t *out);
 
 /* From held mode's loop, once a pass: one queued key event to the menus;
  * with developer mode off, the hand-over options dropped. */

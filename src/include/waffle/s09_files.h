@@ -110,6 +110,14 @@ int32_t s09_files_rename(struct s09_files *f, const char *from, const char *to);
  */
 bool s09_files_entry(struct s09_files *f, const char *dir, size_t index,
 		     char *name, size_t cap, uint8_t *type);
+/*
+ * Every entry of a directory, "." and ".." left out, in one opening of it:
+ * each(ctx, name) for each until it returns false. False on a failure
+ * (f->err); the directory stays open while each() runs, so each() may make
+ * other requests but must not list.
+ */
+bool s09_files_list(struct s09_files *f, const char *dir,
+		    bool (*each)(void *ctx, const char *name), void *ctx);
 
 /* ---- built on them ---- */
 

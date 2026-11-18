@@ -271,6 +271,39 @@ bool s09_files_entry(struct s09_files *f, const char *dir, size_t index,
 	return nth_entry(f, dir, index, false, name, cap, type);
 }
 
+bool s09_files_list(struct s09_files *f, const char *dir,
+		    bool (*each)(void *ctx, const char *name), void *ctx)
+{
+	struct s09_dirent d;
+	uint32_t got, err;
+	int32_t h;
+	bool ok = true;
+
+	h = path_call(f, S09_OPENDIR, 0, dir, NULL, 0, NULL);
+	if (h == 0 || f->err != 0)		/* 0: failed; -1, ENODEV: absent */
+		return false;
+	while (ok) {
+		int32_t r = call(f, S09_READDIR, (uint32_t)h, 0, NULL, 0, f->rec,
+				 S09_DIRENT_LEN, &got);
+		if (r == 0 || f->err != 0)	/* the end (errno 0), or a failure */
+			break;
+		if (got != S09_DIRENT_LEN) {
+			f->err = S09_EINVAL;
+			break;
+		}
+		s09_dirent_unpack(f->rec, &d);
+		d.name[S09_DIRENT_NAME - 1u] = '\0';
+		if ((d.name[0] == '.' && d.name[1] == '\0') ||
+		    (d.name[0] == '.' && d.name[1] == '.' && d.name[2] == '\0'))
+			continue;
+		ok = each(ctx, d.name);
+	}
+	err = f->err;
+	(void)call(f, S09_CLOSEDIR, (uint32_t)h, 0, NULL, 0, NULL, 0, NULL);
+	f->err = err;
+	return err == 0u;
+}
+
 /* ---- built on them ---- */
 
 static bool is_dir(const struct s09_stat *st)

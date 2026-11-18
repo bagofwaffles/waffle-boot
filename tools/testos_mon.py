@@ -72,6 +72,12 @@
     dev-quad-data        how this start's OS copy used quad data replies (S-09.081): taken up or not
                          and why, the quad reply test before it, the data sessions taken whole in
                          quad I/O and their bytes, and a drop to single I/O with where it broke
+    dev-ckpt             the read-only checkpoint test of the slave's volume: a second yaffs2 mount
+                         in the master's memory restores the checkpoint read only, over the bridge's
+                         sector reads, under a device that refuses every write; whether yaffs2 took
+                         it and why not, its reads and time, its tree against the scanned mount's,
+                         every block's chunk-0 tags against the checkpoint's block states and
+                         sequence number, and the writes refused (0). Writes nothing
     dev-cal-start        restart into one plain start of the OS with the calibration screen in the
                          memory the OS draws its first screen over (S-04.012, S-05.016): photograph
                          the OS's first screen. The boot after it is black there again
@@ -147,6 +153,8 @@ DEV_CAL_START = 38      # OPXY_DEV_CAL_START
 DEV_QUAD_REPLY = 39     # OPXY_DEV_QUAD_REPLY (S-09.080)
 DEV_STREAM, STREAM_REPORT = 40, 88     # OPXY_DEV_STREAM and OPXY_STREAM_REPORT's bytes (S-09.009)
 DEV_QUAD_DATA, QDATA_REPLY = 41, 46    # OPXY_DEV_QUAD_DATA and OPXY_QDATA_REPLY, its status byte included
+DEV_CKPT, CKPT_SUMMARY = 42, 62        # OPXY_DEV_CKPT and OPXY_CKPT_SUMMARY, after the status byte
+CKPT_TIMEOUT = 600.0                   # the test: a mount, a tree walk and every block's tags
 QDATA_LAYOUT = '<BBBHHBIIIIIB4I'      # the reply after its status byte (S-09.081)
 QDATA_STATES = ['not tried', 'not taken up', 'taken up', 'taken up, then dropped', 'taken up, ended with the link']
 QDATA_WHY = ['', 'the bus has no quad receive', 'the quad reply test failed', 'the link is on no checked rung',
@@ -1401,6 +1409,8 @@ def run(mon, argv):
         show_stream(mon)
     elif c == 'dev-quad-data':
         show_quad_data(mon)
+    elif c == 'dev-ckpt':
+        show_ckpt(mon)
     elif c == 'dev-link-test':
         n = num(a[0]) if a else LINK_TEST_N
         if not 1 <= n <= 255:
@@ -1869,6 +1879,59 @@ def quad_data_lines(r):
     if state == 3 and why in (6, 7):
         out.append('  broke:    %s %s' % (word(AT_TEXT, at), driver_text([rc, stat, left, stage])))
     return out
+
+
+CKPT_OUTCOME = {0: 'done', 1: "refused: the master's heap has no room for a second device",
+                2: 'the test mount failed', 3: 'the volume is not on the device'}
+
+
+def ckpt_lines(r, texts):
+    """OPXY_DEV_CKPT's summary (after the status byte) and its texts, in plain words."""
+    outcome, accepted, unmounted, cut, alloc_used = r[0], r[1], r[2], r[3], r[4]
+    w = struct.unpack_from('<14I', r, 5)
+    (blocks, reads, sectors, mount_us, refused, objs_scan, objs_ckpt, diffs, seq, alloc_block,
+     alloc_page, newer, disagree, test_us) = w
+    if alloc_block >= 1 << 31:
+        alloc_block -= 1 << 32
+    out = ['checkpoint test: %s, %.3f s in all' % (CKPT_OUTCOME.get(outcome, outcome), test_us / 1e6)]
+    if outcome not in (0, 2):
+        return out
+    out.append('checkpoint: %s; %s by yaffs2%s' % (
+        '%d blocks on the volume' % blocks if blocks else 'none on the volume',
+        'taken' if accepted else 'not taken', '' if accepted else ' (%s)' % texts[0]))
+    out.append('the test mount: %d reads (%d sectors) in %.3f ms' % (reads, sectors, mount_us / 1e3))
+    if outcome == 2:
+        out.append('writes refused: %d' % refused)
+        return out
+    out.append('trees: %d objects scanned, %d restored%s; %d differences' % (
+        objs_scan, objs_ckpt, ' (cut short)' if cut else '', diffs))
+    d = min(diffs, 4)
+    out += ['  ' + t for t in texts[1:1 + d]]
+    if accepted:
+        out.append('stale guard: checkpoint sequence %#x, allocating block %d page %d (%s); %d blocks '
+                   'newer than it, %d blocks disagree with its states%s' % (
+                       seq, alloc_block, alloc_page, 'in use: written since' if alloc_used else 'unused',
+                       newer, disagree, '' if (newer or disagree or alloc_used) else ': not stale'))
+        out += ['  ' + t for t in texts[1 + d:]]
+    out.append('writes refused: %d; test device %s' % (refused, 'unmounted' if unmounted else
+                                                          'NOT unmounted'))
+    return out
+
+
+def show_ckpt(mon):
+    """OPXY_DEV_CKPT: the test, then its texts, in plain words."""
+    r = mon.checked(bytes([DEV_CKPT, 0]), CKPT_TIMEOUT)
+    if len(r) < 1:
+        raise SystemExit('dev-ckpt: a short reply')
+    if len(r) < CKPT_SUMMARY:
+        print('checkpoint test: %s' % CKPT_OUTCOME.get(r[0], r[0]))
+        return
+    texts = []
+    for i in range(r[CKPT_SUMMARY - 1]):
+        t = mon.checked(bytes([DEV_CKPT, 1 + i]))
+        texts.append(t.split(b'\0', 1)[0].decode('utf-8', 'replace'))
+    for line in ckpt_lines(r, texts or ['']):
+        print(line)
 
 
 def show_quad_data(mon):

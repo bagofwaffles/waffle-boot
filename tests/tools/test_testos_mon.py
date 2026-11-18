@@ -938,5 +938,45 @@ class CalStart(unittest.TestCase):
         self.assertEqual(m.DEV_CAL_START, 38)
 
 
+
+class Checkpoint(unittest.TestCase):
+    """dev-ckpt: OPXY_DEV_CKPT's summary and texts as src/board/opxy_dev_ckpt.c lays them out
+    (waffle/devhost.h)."""
+
+    def summary(self, outcome=0, accepted=1, unmounted=1, cut=0, alloc_used=0, blocks=3, reads=410,
+                sectors=3000, mount_us=812000, refused=0, scan=1200, ckpt=1200, diffs=0, seq=0x1234,
+                alloc_block=17, alloc_page=40, newer=0, disagree=0, test_us=9500000, texts=1):
+        r = struct.pack('<5B14IB', outcome, accepted, unmounted, cut, alloc_used, blocks, reads, sectors,
+                        mount_us, refused, scan, ckpt, diffs, seq, alloc_block & 0xFFFFFFFF, alloc_page,
+                        newer, disagree, test_us, texts)
+        self.assertEqual(len(r), m.CKPT_SUMMARY)
+        return r
+
+    def test_taken(self):
+        lines = m.ckpt_lines(self.summary(), [''])
+        self.assertEqual(lines[0], 'checkpoint test: done, 9.500 s in all')
+        self.assertEqual(lines[1], 'checkpoint: 3 blocks on the volume; taken by yaffs2')
+        self.assertIn('trees: 1200 objects scanned, 1200 restored; 0 differences', lines)
+        self.assertTrue(any(l.endswith(': not stale') for l in lines))
+        self.assertEqual(lines[-1], 'writes refused: 0; test device unmounted')
+
+    def test_stale(self):
+        lines = m.ckpt_lines(self.summary(diffs=1, newer=2, disagree=1, alloc_used=1, texts=3),
+                             ['', 'later: only in the scanned mount', 'block 9: restored empty'])
+        self.assertIn('  later: only in the scanned mount', lines)
+        self.assertIn('  block 9: restored empty', lines)
+        self.assertTrue(any('2 blocks newer than it, 1 blocks disagree' in l for l in lines))
+
+    def test_not_taken(self):
+        lines = m.ckpt_lines(self.summary(accepted=0, blocks=0, alloc_block=-1),
+                             ['no checkpoint on the volume'])
+        self.assertEqual(lines[1], 'checkpoint: none on the volume; not taken by yaffs2 '
+                                   '(no checkpoint on the volume)')
+        self.assertFalse(any(l.startswith('stale guard') for l in lines))
+
+    def test_opcode(self):
+        self.assertEqual(m.DEV_CKPT, 42)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)
