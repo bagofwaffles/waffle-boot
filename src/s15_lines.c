@@ -871,6 +871,12 @@ void s15_osw_reason(struct s15_buf *out, enum s15_osw_why why, unsigned part,
 	case S15_OSW_WHY_FLUSH:
 		s15_buf_str(out, "the eMMC did not commit its cache");
 		break;
+	case S15_OSW_WHY_READS_DIFFER:
+		s15_buf_str(out, "the file read differently twice");
+		break;
+	case S15_OSW_WHY_NOT_OS:
+		s15_buf_str(out, "not an OS the bootloader would start");
+		break;
 	case S15_OSW_WHY_NONE:
 	default:
 		break;

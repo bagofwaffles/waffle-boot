@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#include "waffle/s05_handoff.h"
 #include "waffle/s11_run.h"
 
 #define DLC "/yaffs2/content/dlc"
@@ -1009,6 +1010,42 @@ static bool osw_read(struct s09_files *f, uint8_t *image, uint32_t size,
 	return f->err == 0u;
 }
 
+/* S-15.094 step 1: /yaffs2/os.ldr read a second time, a piece at a time,
+ * against the first read's size bytes in image. 1 when every byte matched
+ * and the file ended there, 0 when they differ, -1 when a request failed
+ * (f->err set). */
+#define OSW_CMP 0x1000u
+static int osw_same(struct s09_files *f, const uint8_t *image, uint32_t size)
+{
+	static uint8_t piece[OSW_CMP];
+	uint32_t got = 0, err;
+	int same = 1;
+	int32_t fd = s09_files_open(f, OS_LDR, S09_O_RDONLY);
+
+	if (fd < 0)
+		return -1;
+	while (same > 0 && got < size) {
+		uint32_t k = size - got < OSW_CMP ? size - got : OSW_CMP;
+		int32_t r = s09_files_read(f, fd, piece, k);
+
+		if (r < 0 || f->err != 0)
+			same = -1;
+		else if ((uint32_t)r != k || memcmp(piece, image + got, k) != 0)
+			same = 0;	/* shorter, or other bytes */
+		else
+			got += k;
+	}
+	if (same > 0) {
+		int32_t r = s09_files_read(f, fd, piece, 1u);
+
+		same = r < 0 || f->err != 0 ? -1 : r != 0 ? 0 : 1;	/* longer */
+	}
+	err = f->err;
+	(void)s09_files_close(f, fd);
+	f->err = err;
+	return same;
+}
+
 /* S-03.051's refusal, by the rule it failed. */
 static void osw_refused(uint32_t len, uint32_t boot_size, struct s15_osw_end *end)
 {
@@ -1099,6 +1136,23 @@ enum s15_os_write s09_files_os_write(struct s09_files *f, const struct s03_env *
 	}
 	if (!osw_read(f, image, st.size, rep))
 		return osw_unread(f, end);
+	/* Step 1's checks, before any eMMC operation: a second read the same
+	 * as the first, whose bytes are those written, and S-05.024's check
+	 * of them, so a file damaged on the bridge or one the hand-over would
+	 * refuse never becomes the active OS */
+	switch (osw_same(f, image, st.size)) {
+	case -1:
+		return osw_unread(f, end);
+	case 0:
+		end->why = S15_OSW_WHY_READS_DIFFER;
+		return end->result;
+	default:
+		break;
+	}
+	if (s05_check_image(image, st.size) != S05_ACCEPT) {
+		end->why = S15_OSW_WHY_NOT_OS;
+		return end->result;
+	}
 	osw_done(rep, st.size, 0);
 
 	o.needed = s03_sectors(st.size) + 1u;

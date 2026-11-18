@@ -266,7 +266,9 @@ enum s15_osw_why {
 	S15_OSW_WHY_ERASE,	/* part, value the erase group */
 	S15_OSW_WHY_MISMATCH,	/* part, value the sector read back wrong */
 	S15_OSW_WHY_DISABLED,	/* the test OS (waffle/testos.h) writes nothing */
-	S15_OSW_WHY_FLUSH	/* S-03.068 */
+	S15_OSW_WHY_FLUSH,	/* S-03.068 */
+	S15_OSW_WHY_READS_DIFFER,	/* the file read differently twice */
+	S15_OSW_WHY_NOT_OS	/* S-05.024 would refuse the image */
 };
 
 /* The boot partitions after a failed write (S-03.056 - S-03.062, S-03.068). */

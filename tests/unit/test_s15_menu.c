@@ -457,7 +457,7 @@ static int named(const char *const *names, size_t n, const char *s)
 static const char *const osw_steps[] = { "read", "check", "target", "erase", "write", "verify", "activate" };
 static const char *const osw_whys[] = {
 	"", "refused", "missing", "directory", "read", "memory", "too_small", "too_large", "no_room",
-	"select", "emmc_read", "emmc_write", "erase", "mismatch", "", "flush",
+	"select", "emmc_read", "emmc_write", "erase", "mismatch", "", "flush", "reads_differ", "not_os",
 };
 static const char *const osw_emmc_states[] = { "untouched", "unchanged", "bad_header",
 					       "both_active", "unconfirmed" };

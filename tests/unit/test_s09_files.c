@@ -3925,9 +3925,21 @@ static void rp_step(void *c, enum s15_osw_step s)
 	rp.done = rp.total = 0;
 }
 
+/* When set, the file is written over with these bytes once its first read
+ * has reached its end, while that read is still open: a second read then
+ * sees other bytes (S-15.094 step 1). */
+static const uint8_t *osw_change;
+static uint32_t osw_change_n;
+
 static void rp_progress(void *c, uint32_t done, uint32_t total)
 {
 	(void)c;
+	if (osw_change != NULL && done == total) {
+		const uint8_t *d = osw_change;
+
+		osw_change = NULL;
+		CHECK(put("/yaffs2/os.ldr", d, osw_change_n));
+	}
 	rp.progress++;
 	if (done < rp.done || done > total)
 		rp.backwards = true;
@@ -3951,6 +3963,15 @@ static enum s15_os_write os_write(const struct s03_env *env, uint32_t cap,
 	memset(&rp, 0, sizeof rp);
 	memset(end, 0xA5, sizeof *end);		/* every field is the write's */
 	return s09_files_os_write(&F, env, image, cap, &rp_ops, end);
+}
+
+/* n bytes an OS hand-over would take (S-05.024): one IGNORE block that
+ * carries the pattern, then a FINAL block with no destination. */
+static void os_stream(uint8_t *d, size_t n, uint32_t seed)
+{
+	pattern(d, n, seed);
+	ldr_header(d, 0x5000u, 0x11A00000u, (uint32_t)n - 32u, 0);
+	ldr_header(d + n - 16u, 0x8000u, 0x11A00000u, 0, 0);
 }
 
 /* S-15.094 through S-03's OS write and the eMMC commands */
@@ -3995,7 +4016,7 @@ static void test_os_write(void)
 	CHECK_EQ(s09_files_rmdir(&F, "/yaffs2/os.ldr"), 0);
 
 	/* S-12.052: a refused volume is not read */
-	pattern(os, n, 3);
+	os_stream(os, n, 3);
 	CHECK(put("/yaffs2/os.ldr", os, (uint32_t)n));
 	F.mount_sent = F.mount_failed = true;
 	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_UNREADABLE);
@@ -4018,7 +4039,7 @@ static void test_os_write(void)
 	CHECK(!memcmp(emmc.bp[0] + S03_SECTOR, os, n));
 	CHECK_EQ(emmc.part, 0u);			/* select 0 at the end */
 	/* the next write goes to the other partition */
-	pattern(os, n, 4);
+	os_stream(os, n, 4);
 	CHECK(put("/yaffs2/os.ldr", os, (uint32_t)n));
 	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_OK);
 	CHECK(e.target == 2u && strstr(rp.s, "s2 d2,0 ") != NULL && strstr(rp.s, "s6 d2,0 ") != NULL);
@@ -4028,15 +4049,46 @@ static void test_os_write(void)
 	s03_header_decode(emmc.bp[0], &h);
 	CHECK(!s03_header_active(&h));
 
+	/* S-15.094 step 1: a second read that differs, and an image S-05.024
+	 * refuses, are refused before any eMMC operation */
+	emmc.erases = 0;
+	emmc.flushes = 0;
+	CHECK(put("/yaffs2/os.ldr", os, (uint32_t)n));
+	{
+		static uint8_t changed[100000u];
+
+		memcpy(changed, os, n);
+		changed[n / 2u] ^= 0x01u;	/* a byte the bridge got wrong */
+		osw_change = changed;
+		osw_change_n = (uint32_t)n;
+		CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_FAILED);
+	}
+	CHECK(osw_change == NULL);
+	CHECK(e.why == S15_OSW_WHY_READS_DIFFER && e.emmc == S15_OSW_EMMC_UNTOUCHED &&
+	      e.target == 0u && strcmp(rp.s, "s0 ") == 0);
+	CHECK(emmc.erases == 0u && emmc.flushes == 0u);
+	os[0] ^= 0x01u;					/* no longer a block header */
+	CHECK(put("/yaffs2/os.ldr", os, (uint32_t)n));
+	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_FAILED);
+	CHECK(e.why == S15_OSW_WHY_NOT_OS && e.emmc == S15_OSW_EMMC_UNTOUCHED &&
+	      strcmp(rp.s, "s0 ") == 0);
+	CHECK(emmc.erases == 0u && emmc.flushes == 0u);
+	os_stream(os, n, 4);
+	ldr_header(os + n - 16u, 0x8000u | 0x0800u, 0x11A00000u, 0, 0);	/* INIT: refused */
+	CHECK(put("/yaffs2/os.ldr", os, (uint32_t)n));
+	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_FAILED);
+	CHECK(e.why == S15_OSW_WHY_NOT_OS && emmc.erases == 0u);
+
 	/* S-03.051 refuses a short image: no size check of the write's own */
 	emmc.erases = 0;
+	os_stream(os, 100, 5);
 	CHECK(put("/yaffs2/os.ldr", os, 100));
 	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_FAILED);
 	CHECK(e.why == S15_OSW_WHY_TOO_SMALL && e.value == 100u && e.limit == S03_MIN_IMAGE &&
 	      e.emmc == S15_OSW_EMMC_UNTOUCHED && strcmp(rp.s, "s0 d100,0 s1 ") == 0);
 	CHECK_EQ(emmc.erases, 0u);
 	/* one that does not fit B */
-	pattern(os, 300000u, 6);
+	os_stream(os, 300000u, 6);
 	CHECK(put("/yaffs2/os.ldr", os, 300000u));
 	CHECK_EQ(os_write(&env, sizeof image, &e), S15_OSW_FAILED);
 	CHECK(e.why == S15_OSW_WHY_NO_ROOM && e.value == 587u && e.limit == 512u);
@@ -4048,6 +4100,7 @@ static void test_os_write(void)
 	      strcmp(rp.s, "s0 ") == 0);
 	/* an eMMC failure: the first write of the target's image, which
 	 * erases nothing in group 0 (S-03.054, S-03.056) */
+	os_stream(os, n, 7);
 	CHECK(put("/yaffs2/os.ldr", os, (uint32_t)n));
 	emmc.erases = 0;
 	emmc.fail_bp_write = true;

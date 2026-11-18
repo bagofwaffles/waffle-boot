@@ -194,6 +194,50 @@
    ]
   },
   {
+   "name": "reads_differ",
+   "result": "failed",
+   "length": 0,
+   "boot_size": 0,
+   "target": 0,
+   "stop": "read",
+   "why": "reads_differ",
+   "part": 0,
+   "value": 0,
+   "limit": 0,
+   "emmc": "untouched",
+   "select0_failed": false,
+   "lines": [
+    "Looking for /os.ldr...",
+    "step-fail:Read /os.ldr\tFailed",
+    "error:Writing the OS failed",
+    "dim:   Reason: the file read differently twice",
+    "   Nothing was written.",
+    "back:8 Back to Developer"
+   ]
+  },
+  {
+   "name": "not_an_os",
+   "result": "failed",
+   "length": 0,
+   "boot_size": 0,
+   "target": 0,
+   "stop": "read",
+   "why": "not_os",
+   "part": 0,
+   "value": 0,
+   "limit": 0,
+   "emmc": "untouched",
+   "select0_failed": false,
+   "lines": [
+    "Looking for /os.ldr...",
+    "step-fail:Read /os.ldr\tFailed",
+    "error:Writing the OS failed",
+    "dim:   Reason: not an OS the bootloader would start",
+    "   Nothing was written.",
+    "back:8 Back to Developer"
+   ]
+  },
+  {
    "name": "no_memory",
    "result": "failed",
    "length": 0,
