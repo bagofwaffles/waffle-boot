@@ -393,6 +393,16 @@ def transcripts():
                                           {'kind': 'reply', 'id': '0x0e', 'payload': '54', 'delay_ms': 2000}]},
                                 DFU_T]},
                 args=img1, reqs=['S-08.015', 'S-08.041']))
+    T.append(tr('perform_busy_0d', 'The perform is answered busy, then T 2 s later as a message with id 0x0D: '
+                'success (S-08.041, open question 4).',
+                'transfer', [{'dut': INFO_Q}, {'dut': PREP}, {'dut': HDR}, {'dut': chunk(2)}, {'dut': PERF}], True,
+                [2000, 2100], state=AB0D,
+                peer={'rules': [info_rule(BOOT),
+                                {'on': {'id': '0x0d', 'first': '0x05'},
+                                 'send': [{'kind': 'reply', 'id': '0x0e', 'payload': '92', 'delay_ms': 2},
+                                          {'kind': 'message', 'id': '0x0d', 'payload': '54', 'delay_ms': 2000}]},
+                                DFU_T]},
+                args=img1, reqs=['S-08.040', 'S-08.041']))
     for name, delay, ok in (('prepare_late_ok', 1450, True), ('prepare_too_late', 1550, False)):
         exp = [{'dut': INFO_Q}, {'dut': PREP}]
         if ok:

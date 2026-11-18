@@ -314,9 +314,10 @@ bool s08_exit_dfu(struct s08_nordic *n)
 
 /* ---- DFU requests and the transfer (S-08.040-S-08.047) ---- */
 
-/* S-08.041: after a busy reply, the next frame with id 0x0E within 5 s,
- * and not past end; other frames meanwhile may be discarded (S-08.015). */
-static int busy_wait(struct s08_nordic *n, struct s06_frame *r, uint32_t end)
+/* S-08.041: after a busy reply, the next frame with id 0x0E, or after a busy
+ * perform 0x0E or 0x0D, within 5 s and not past end; other frames meanwhile
+ * may be discarded (S-08.015). */
+static int busy_wait(struct s08_nordic *n, struct s06_frame *r, uint32_t end, bool take_0d)
 {
 	uint32_t deadline = now(n) + BUSY_US;
 
@@ -325,7 +326,7 @@ static int busy_wait(struct s08_nordic *n, struct s06_frame *r, uint32_t end)
 	for (;;) {
 		s06_node_poll(n->node);
 		while (s06_link_take(n->node->link[n->link], r)) {
-			if (r->id == ID_DFU_REPLY)
+			if (r->id == ID_DFU_REPLY || (take_0d && r->id == ID_DFU))
 				return 1;
 			log_ev(n, S08_LOG_DROPPED, r->payload, r->len, r->id);
 		}
@@ -340,22 +341,27 @@ int s08_dfu_request(struct s08_nordic *n, const uint8_t *p, size_t len)
 	struct s06_frame r;
 	uint8_t cmd = p[0];
 	uint32_t t = cmd == S08_DFU_PREPARE ? PREPARE_US : CHUNK_US;
+	const bool perform = cmd == S08_DFU_PERFORM;
+	uint8_t id;
 	uint32_t end;
 	int c;
 
 	n->failure.reply = S08_REPLY_NONE;
 	if (s06_transact(n->node, n->link, ID_DFU, p, len, t, &r) != 1)
 		return S08_DFU_FAIL;		/* no reply within the timeout */
-	c = s08_classify_dfu(cmd, r.id, r.payload, r.len);
+	id = r.id;
+	c = s08_classify_dfu(cmd, id, r.payload, r.len);
 	end = now(n) + BUSY_TOTAL_US;		/* S-08.041 */
 	while (c == S08_DFU_BUSY) {
 		n->failure.reply = S08_REPLY_BUSY;
-		if (s06_time_reached(now(n), end) || !busy_wait(n, &r, end))
+		if (s06_time_reached(now(n), end) || !busy_wait(n, &r, end, perform))
 			return S08_DFU_FAIL;
-		c = s08_classify_dfu(cmd, r.id, r.payload, r.len);
+		/* a 0x0D that ends a busy perform's wait reads as its reply */
+		id = perform && r.id == ID_DFU ? ID_DFU_REPLY : r.id;
+		c = s08_classify_dfu(cmd, id, r.payload, r.len);
 	}
 	n->failure.reply = S08_REPLY_REFUSED;	/* for a failure below */
-	if (c == S08_DFU_FAIL && r.id == ID_DFU_REPLY && r.len > 1)
+	if (c == S08_DFU_FAIL && id == ID_DFU_REPLY && r.len > 1)
 		/* S-16.099: the error text is data, logged verbatim */
 		log_ev(n, S08_LOG_DFU_ERROR, r.payload + 1, (size_t)r.len - 1u, cmd);
 	return c;
