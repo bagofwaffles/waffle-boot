@@ -294,7 +294,8 @@ static void test_summary(void)
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 22u));
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 23u));
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 24u));
-	CHECK(line_is(&t, BOOT_TIME_COUNT + 25u, "end of report"));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 25u));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 26u, "end of report"));
 	CHECK(line_empty(&t, BOOT_TIME_LINES));
 	CHECK(line_of(&t, "end of report") == BOOT_TIME_LINES - 1u);
 }
@@ -678,7 +679,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 174u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 182u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	CHECK(BOOT_TIME_COUNT == 59u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
@@ -742,6 +743,14 @@ static void test_record(void)
 	t.mount.static_cplb = 0x0005D01Fu;
 	t.mount.code_at = 0x88050000u;
 	t.mount.code_cplb = 0x80001003u;
+	t.mount.way = 1u;
+	t.mount.objects = 1007u;
+	t.mount.restore_us = 171531u;
+	t.mount.restore_reads = 72u;
+	t.mount.check_us = 320000u;
+	t.mount.check_reads = 4736u;
+	t.mount.scan_us = 7u;
+	t.mount.scan_reads = 8u;
 	for (i = 0; i < BOOT_TIME_PHASES; i++) {
 		t.mount.phase_us[i] = 10000u * (i + 1u);
 		t.mount.phase_min[i] = 100u + i;
@@ -1165,11 +1174,27 @@ static void test_boot_menu(void)
 	t.mount.heap_cplb = 0x0005001Eu;
 	CHECK(line_of(&t, "slave mount, caches: L1DM_DCTL 00000000 (off), L1IM_ICTL 00000006 (on); "
 			  "heap 88400000-89f00000 0005001e (invalid)") == BOOT_TIME_COUNT + 24u);
+	/* how it went (S-12.061): the restore, the stale check, a scan after */
+	t.mount.way = 1u;
+	t.mount.objects = 1007u;
+	t.mount.restore_us = 171531u;
+	t.mount.restore_reads = 72u;
+	t.mount.check_us = 320000u;
+	t.mount.check_reads = 4736u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 25u,
+		      "slave mount, how: restored, 1007 objects; restore 171.531 ms (72 reads), "
+		      "stale check 320.000 ms (4736 reads), scan 0.000 ms (0 reads)"));
+	t.mount.way = 4u;
+	t.mount.scan_us = 4600000u;
+	t.mount.scan_reads = 25943u;
+	CHECK(line_of(&t, "slave mount, how: scanned, the checkpoint stale, 1007 objects; restore "
+			  "171.531 ms (72 reads), stale check 320.000 ms (4736 reads), scan "
+			  "4600.000 ms (25943 reads)") == BOOT_TIME_COUNT + 25u);
 	/* within a log line */
 	{
 		struct s14_text out;
 
-		for (i = BOOT_TIME_COUNT + 19u; i <= BOOT_TIME_COUNT + 24u; i++) {
+		for (i = BOOT_TIME_COUNT + 19u; i <= BOOT_TIME_COUNT + 25u; i++) {
 			CHECK(boot_time_line(&t, i, MHZ, &out) || i == BOOT_TIME_COUNT + 20u);
 			CHECK(!out.overflow && out.len < S14_LINE_MAX - 16u);
 		}

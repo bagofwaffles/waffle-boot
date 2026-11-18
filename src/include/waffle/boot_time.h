@@ -131,7 +131,7 @@ enum boot_time_id {
  */
 #define BOOT_TIME_MOUNT_MAGIC 0x544E4D42u	/* "BMNT" */
 #define BOOT_TIME_PHASES 5u
-#define BOOT_TIME_MOUNT_WORDS (27u + 3u * BOOT_TIME_PHASES)
+#define BOOT_TIME_MOUNT_WORDS (35u + 3u * BOOT_TIME_PHASES)
 enum boot_time_phase {
 	BOOT_TIME_PH_CACHE,
 	BOOT_TIME_PH_SETUP,
@@ -157,6 +157,12 @@ struct boot_time_mount {
 	uint32_t dctl, ictl, dcplb_dflt, icplb_dflt;
 	uint32_t heap_lo, heap_hi, heap_cplb, static_at, static_cplb, code_at, code_cplb;
 #define BOOT_TIME_CPLB_DFLT 0x80000000u	/* in a *_cplb word: the default's */
+	/* How it went (S-12.061): the way (S-09.041's 0x08 ways) and the
+	 * tree's objects; the mount that read the checkpoint (with yaffs2's
+	 * own scan when it took none), the stale check, and the scan after a
+	 * doubt, each its time and reads */
+	uint32_t way, objects;
+	uint32_t restore_us, restore_reads, check_us, check_reads, scan_us, scan_reads;
 	uint32_t phase_us[BOOT_TIME_PHASES];
 	uint32_t phase_min[BOOT_TIME_PHASES], phase_max[BOOT_TIME_PHASES];
 };
@@ -371,7 +377,7 @@ void boot_time_gap(struct boot_time *t, uint64_t cycles, uint32_t at);
  * leaves *out empty and returns false. cycles_per_us converts counts after
  * INIT's clock set-up; counts taken before it are shown as they are.
  */
-#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 26u)
+#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 27u)
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out);
 
@@ -381,7 +387,7 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 16u
+#define BOOT_TIME_VERSION 17u
 #define BOOT_TIME_WORDS   (68u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS + BOOT_TIME_MOUNT_WORDS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)

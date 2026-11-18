@@ -26,6 +26,7 @@
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/s01_memmap.h"
 #include "wb_yaffs.h"
+#include "waffle/wire_yaffs.h"
 
 /* The record lies below the display record, clear of it. */
 _Static_assert(OPXY_BOOT_TIME_RECORD + BOOT_TIME_RECORD <= S01_DISPLAY_RECORD_START,
@@ -696,6 +697,70 @@ void opxy_timing_mount_slave(bool start)
 			t->phase_min[i] = 0;
 	}
 	t->valid = BOOT_TIME_MOUNT_MAGIC;
+}
+
+void opxy_timing_mount_files(const struct wire_yaffs_report *r)
+{
+	struct boot_time_mount *t = &opxy_mount_time;
+
+	t->way = (uint32_t)r->way;
+	t->objects = r->objects;
+	t->restore_us = r->restore_us;
+	t->restore_reads = r->restore_reads;
+	t->check_us = r->check_us;
+	t->check_reads = r->check_reads;
+	t->scan_us = r->scan_us;
+	t->scan_reads = r->scan_reads;
+}
+
+/* The scan before a write (S-12.062), the slave's figures, read by the
+ * master once its request is answered: magic, time, reads, way. */
+#define WSCAN_MAGIC 0x4E435357u	/* "WSCN" */
+static volatile uint32_t write_scan_time[4];
+
+void opxy_timing_write_scan_slave(const struct wire_yaffs_report *r)
+{
+	write_scan_time[1] = r->write_scan_us;
+	write_scan_time[2] = r->write_scan_reads;
+	write_scan_time[3] = (uint32_t)r->way;
+	write_scan_time[0] = WSCAN_MAGIC;
+}
+
+void opxy_timing_write_scan(struct opxy_master *m, bool start)
+{
+	static uint64_t from;
+	const uint32_t at = (uint32_t)(uintptr_t)write_scan_time;
+	uint32_t w[4] = { 0, 0, 0, 0 };
+	struct s14_text t;
+	unsigned i;
+
+	if (start) {
+		from = wb_time_us(&m->hw.time);
+		return;
+	}
+	s14_text_init(&t);
+	s14_text_str(&t, "scan before a write: ");
+	s14_text_dec(&t, (uint32_t)((wb_time_us(&m->hw.time) - from) / 1000u));
+	s14_text_str(&t, " ms for the request");
+	for (i = 0; i < 4u && m->slave_present && !m->bridge.absent; i++) {
+		struct s09_req r = { OPXY_DEV_PEEK_REQ, 0, 0, at + 4u * i, 0 };
+		uint32_t err = 0;
+
+		w[i] = (uint32_t)s09_master_call(&m->bridge, &r, NULL, 0, NULL, 0, NULL, &err);
+		if (err != 0u)
+			break;
+	}
+	if (w[0] == WSCAN_MAGIC) {
+		s14_text_str(&t, "; the slave's scan ");
+		s14_text_dec(&t, w[1] / 1000u);
+		s14_text_str(&t, " ms, ");
+		s14_text_dec(&t, w[2]);
+		s14_text_str(&t, " reads, way ");
+		s14_text_dec(&t, w[3]);
+	} else {
+		s14_text_str(&t, "; no figures from the slave");
+	}
+	s14_log_text(&m->sv.log, S14_INFO, S14_TAG("time"), &t);
 }
 
 void opxy_timing_chunk(bool start, bool ok, uint32_t sectors)

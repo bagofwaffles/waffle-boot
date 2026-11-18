@@ -119,6 +119,15 @@ int opxy_timing_display_update(struct wb_display *d);
  * outcome and its sectors: fewer than a chunk's are its tags alone); the eMMC driver's phases go to wb_msi_phase(). */
 void opxy_timing_mount_slave(bool start);
 void opxy_timing_chunk(bool start, bool ok, uint32_t sectors);
+/* The slave's mount, how it went (S-12.061): the restore, the stale check
+ * and a scan after a doubt; the scan before a write (S-12.062), kept apart
+ * for the master's read; the master's side of that scan (start true, then
+ * false), logged with the slave's figures. */
+struct wire_yaffs_report;
+void opxy_timing_mount_files(const struct wire_yaffs_report *r);
+void opxy_timing_write_scan_slave(const struct wire_yaffs_report *r);
+void opxy_timing_write_scan(struct opxy_master *m, bool start);
+#define OPXY_TIMING_WRITE_SCAN(m, start) opxy_timing_write_scan(m, start)
 #define OPXY_STARTUP opxy_timing_startup
 #define OPXY_TIMING_START() opxy_timing_start()
 #define OPXY_TIMING_BATTERY(on) opxy_timing_battery(on)
@@ -165,6 +174,7 @@ void opxy_timing_chunk(bool start, bool ok, uint32_t sectors);
 #define OPXY_DISPLAY_UPDATE(d) wb_display_update(d)
 #define OPXY_TIMING_MOUNT_SLAVE(start) ((void)0)
 #define OPXY_TIMING_CHUNK(start, ok, sectors) ((void)0)
+#define OPXY_TIMING_WRITE_SCAN(m, start) ((void)(m))
 #endif
 #if defined(OPXY_BOOT_TIMING_ON) && defined(OPXY_TEST_OS)
 /* The test OS: the loading bootloader's record, taken at entry, then logged. */

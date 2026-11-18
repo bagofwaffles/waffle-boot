@@ -112,6 +112,18 @@ void yaffsfs_OSInitialisation(void)
 {
 }
 
+#if defined(OPXY_BOOT_TIMING_ON) && !defined(OPXY_TEST_OS)
+/* A timing build's glue is also linked into the test OS, which counts
+ * nothing: there this does nothing, and the board's own replaces it in
+ * the bootloader. */
+__attribute__((weak)) void wb_yaffs_timing(unsigned what, bool enter, uintptr_t at)
+{
+	(void)what;
+	(void)enter;
+	(void)at;
+}
+#endif
+
 void yaffs_bug_fn(const char *file_name, int line_no)
 {
 	wb_yaffs_bug_count++;

@@ -115,6 +115,11 @@ TP_TARGET_ARCH := -mcpu=bf703-none -Os -fno-common -ffunction-sections \
 TP_TARGET_CFLAGS := -std=gnu11 $(TP_TARGET_ARCH) $(TP_COMMON) $(LIBC_INCLUDES)
 TP_TARGET_GLUE_CFLAGS := $(COMMON) $(TP_TARGET_ARCH) $(TP_CPPFLAGS) \
 	$(LIBC_INCLUDES)
+# A timing build's glue points (WB_YAFFS_TIME in src/glue/yaffs2/wb_yaffs.h):
+# the glue is built apart from TARGET_CFLAGS, so it takes the switch here.
+ifneq ($(BOOT_TIMING),)
+TP_TARGET_GLUE_CFLAGS += -DOPXY_BOOT_TIMING_ON=1
+endif
 
 # picolibc on the host: only its own headers, no builtins, symbols renamed.
 TP_HOST_LIBC_CFLAGS := -std=gnu11 -O2 $(TP_COMMON) -nostdinc $(LIBC_INCLUDES) \

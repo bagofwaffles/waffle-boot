@@ -1301,9 +1301,11 @@ static void env_files_scan(void *ctx)
 
 	s15_menu_hold(&m->sv.menu);
 	opxy_menu_show_now(m);
+	OPXY_TIMING_WRITE_SCAN(m, true);
 	if (!s09_files_for_write(&m->sv.files) && s09_files_restored(&m->sv.files))
 		s14_log_str(&m->sv.log, S14_WARNING, S14_TAG("files"),
 			    "scan before a write not made: files open");
+	OPXY_TIMING_WRITE_SCAN(m, false);
 	files_note(m);
 	long_end(m, offered);
 }

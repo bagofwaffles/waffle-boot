@@ -781,6 +781,39 @@ static void text_cplb(struct s14_text *out, uint32_t w, bool code)
 	s14_text_str(out, ")");
 }
 
+/* The slave's mount, how it went (S-12.061): its way, the restore, the
+ * stale check and a scan after a doubt. */
+static bool mount_how(const struct boot_time *t, struct s14_text *out)
+{
+	static const char *const ways[] = {
+		"scanned, no checkpoint read", "restored", "scanned, no checkpoint",
+		"scanned, the checkpoint not valid", "scanned, the checkpoint stale",
+		"scanned, the checkpoint unreadable", "scanned for a write",
+	};
+	const struct boot_time_mount *mt = &t->mount;
+
+	if (!(t->flags & BOOT_TIME_MOUNT_READ))
+		return false;
+	s14_text_str(out, "slave mount, how: ");
+	s14_text_str(out, mt->way < sizeof ways / sizeof ways[0] ? ways[mt->way] : "way ?");
+	s14_text_str(out, ", ");
+	s14_text_dec(out, mt->objects);
+	s14_text_str(out, " objects; restore ");
+	text_ms(out, mt->restore_us);
+	s14_text_str(out, " (");
+	s14_text_dec(out, mt->restore_reads);
+	s14_text_str(out, " reads), stale check ");
+	text_ms(out, mt->check_us);
+	s14_text_str(out, " (");
+	s14_text_dec(out, mt->check_reads);
+	s14_text_str(out, " reads), scan ");
+	text_ms(out, mt->scan_us);
+	s14_text_str(out, " (");
+	s14_text_dec(out, mt->scan_reads);
+	s14_text_str(out, " reads)");
+	return true;
+}
+
 /* The slave's mount outside its reads, and its caches at the mount's start. */
 static bool mount_more(const struct boot_time *t, bool caches, struct s14_text *out)
 {
@@ -1031,6 +1064,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 	case 24:
 		return mount_more(t, k - BOOT_TIME_COUNT == 24u, out);
 	case 25:
+		return mount_how(t, out);
+	case 26:
 		s14_text_str(out, "end of report");
 		return true;
 	default:
@@ -1080,7 +1115,9 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->mount.alloc_us, &t->mount.glue_us, &t->mount.dctl, &t->mount.ictl,
 		&t->mount.dcplb_dflt, &t->mount.icplb_dflt, &t->mount.heap_lo, &t->mount.heap_hi,
 		&t->mount.heap_cplb, &t->mount.static_at, &t->mount.static_cplb, &t->mount.code_at,
-		&t->mount.code_cplb,
+		&t->mount.code_cplb, &t->mount.way, &t->mount.objects, &t->mount.restore_us,
+		&t->mount.restore_reads, &t->mount.check_us, &t->mount.check_reads,
+		&t->mount.scan_us, &t->mount.scan_reads,
 		&sp->bytes, &sp->blocks, &sp->fills, &sp->sessions, &sp->xfers, &sp->xfer_min,
 		&sp->xfer_max, &sp->send_max, &sp->wire_byte, &sp->read, &sp->reads,
 	};

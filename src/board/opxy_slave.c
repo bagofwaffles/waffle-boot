@@ -552,12 +552,17 @@ static int32_t file_timed(void *ctx, const struct s09_req *r, const char *path,
 			  const char *path2, const uint8_t *data, uint32_t n,
 			  uint8_t *out, uint32_t *err)
 {
-	const bool mount = r->cmd == S09_MOUNT;
+	/* the boot's mount; the scan before a write (S-12.062) apart */
+	const bool mount = r->cmd == S09_MOUNT && r->arg0 != S09_MOUNT_FOR_WRITE;
 	int32_t v;
 
 	if (mount)
 		OPXY_TIMING_MOUNT_SLAVE(true);
 	v = file(ctx, r, path, path2, data, n, out, err);
+	if (mount)
+		opxy_timing_mount_files(&yaffs.rep);
+	else if (r->cmd == S09_MOUNT)
+		opxy_timing_write_scan_slave(&yaffs.rep);
 	if (mount)
 		OPXY_TIMING_MOUNT_SLAVE(false);
 	return v;
