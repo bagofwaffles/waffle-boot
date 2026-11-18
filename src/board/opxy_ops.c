@@ -6,9 +6,7 @@
 #include "waffle/wire_crc.h"
 
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_port.h"
-#include "waffle/drivers/mmr.h"
 
 /* The test OS (waffle/testos.h) reads the flash and refuses every erase
  * and program, so no S-02 write path reaches it. */
@@ -22,18 +20,11 @@ static int flash_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 	return rc;
 }
 
-/* S-13b.011: a slot's stream, read at 50 MHz for the slave's boot, its data
- * moved by DMA9 (S-13b.080). A read that fails, or whose CRC fails, is read
- * again at the usual rate by the core (s02_image_read(), s02_image_check()).
- * DMA9_XMOD, which carries S-01.006's handshake, is put back as it was. */
+/* S-13b.011: a slot's stream, read at 50 MHz for the slave's boot. */
 int opxy_flash_read_stream(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 {
-	const wb_mmr_addr xmod = DMA_XMOD(WB_DMA_SPI0_RX + 2u * OPXY_SPI_FLASH);
-	const uint32_t was = wb_mmr_read32(xmod);
-	const int rc = wb_spiflash_read_dma(ctx, OPXY_SPI_FLASH_STREAM_CLK, off, buf, len);
+	const int rc = wb_spiflash_read_at(ctx, OPXY_SPI_FLASH_STREAM_CLK, off, buf, len);
 
-	wb_mmr_write32(xmod, was);
-	wb_mmr_sync();
 	opxy_usb_breathe();
 	return rc;
 }

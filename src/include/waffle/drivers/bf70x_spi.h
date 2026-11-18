@@ -265,10 +265,6 @@ int wb_spi_xfer(const struct wb_spi *s, const uint8_t *tx, uint8_t *rx,
 		size_t n);
 int wb_spi_send(const struct wb_spi *s, const uint8_t *tx, size_t n);
 int wb_spi_recv(const struct wb_spi *s, uint8_t *rx, size_t n);
-/* recv() with the words moved by the receive DMA channel (SPIn RX =
- * DMA5 + 2n): single I/O and bytes only; the buffer's cache lines are
- * invalidated before and after. The same failures and record as recv(). */
-int wb_spi_recv_dma(const struct wb_spi *s, uint8_t *rx, size_t n);
 
 /*
  * A run of single words on a master in single I/O, each started by the
