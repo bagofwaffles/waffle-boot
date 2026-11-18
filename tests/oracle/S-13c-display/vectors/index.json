@@ -218,6 +218,13 @@
   "fails_rule": "prefill",
   "requirement": "S-13c.010"
  },
+ "bad_logo_kept_cmd": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "handover",
+  "requirement": "S-13c.020"
+ },
  "bad_missing_e8": {
   "expect": [
    "boot"
@@ -402,6 +409,20 @@
   "fails_rule": null,
   "requirement": "S-13c.004-021"
  },
+ "good_boot_logo_kept": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-05.004, S-13c.020"
+ },
+ "good_boot_logo_kept_gamma": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-05.004, S-13c.012, S-13c.020"
+ },
  "good_boot_no_reads": {
   "expect": [
    "boot"
@@ -494,6 +515,13 @@
   ],
   "fails_rule": null,
   "requirement": "S-13c.022"
+ },
+ "good_logo_first_kept_gamma": {
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-05.004, S-13c.012, S-13c.020"
  },
  "good_logo_first_off_after_frame": {
   "expect": [

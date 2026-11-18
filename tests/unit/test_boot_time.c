@@ -876,6 +876,13 @@ static void test_os_start(void)
 		      "reads 500.000 ms, crc 10.000 ms (peripheral, then software), "
 		      "user area 0.100 ms, check 0.010 ms"));
 	t.flags &= ~(BOOT_TIME_COPY_CRC_HW | BOOT_TIME_COPY_CRC_AGAIN);
+	/* the hand-over frame not sent: the early logo kept */
+	t.flags |= BOOT_TIME_LOGO_KEPT;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 17u,
+		      "os load split: pmic 0.200 ms, logo and report 0.300 ms (the early logo kept), "
+		      "drain 0.100 ms, reads 500.000 ms, crc 10.000 ms, user area 0.100 ms, "
+		      "check 0.010 ms"));
+	t.flags &= ~BOOT_TIME_LOGO_KEPT;
 	boot_time_mark(&t, BOOT_TIME_SERVER_STOP, US(612850));
 	boot_time_mark(&t, BOOT_TIME_SLAVE_OS, US(812850));
 	t.flags |= BOOT_TIME_PA6_POLLED;

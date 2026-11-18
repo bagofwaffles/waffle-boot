@@ -98,7 +98,8 @@ developer menu. The bootloader stamps the cycle counter at each milestone
   bytes sent before it and its block; `stream measuring` gives the counter reads the split adds and their
   cost.
 - The start into the OS has its own milestones, numbered 35 to 43, from `hand-over begun` to
-  `kernel call`. `os load split` and `os start split` give its spans: the pre-load's PMIC step, logo and report and drain,
+  `kernel call`. `os load split` and `os start split` give its spans: the pre-load's PMIC step, logo and report (marked when
+  the early logo was kept and no hand-over frame sent) and drain,
   the copy's reads, its CRC, the return to the user area, the image check, the log's tidy, the release
   (the slave's own staging, CRC and check), the slave's server stop and OS start on PA6, the teardown,
   and the kernel's load to the test OS's entry. `os copy` adds the link's rung, ceiling and fall-backs, and how its sector data went: in quad I/O (sessions

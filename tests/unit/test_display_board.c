@@ -297,14 +297,49 @@ static void test_early_logo(void)
 	CHECK(opxy_display_early_logo());
 	CHECK(has(S13C_SLPOUT) && has(S13C_DGR) && has(S13C_DISPON));
 	CHECK(last() == S13C_RAMWR && starts == 0);	/* the logo, by the CPU */
-	/* the hand-over frame: the logo again, no second initialization */
+	/* the hand-over: the early logo is the hand-over frame already, so
+	 * nothing goes to the panel; the OS's frame memory is written */
 	clear();
-	opxy_display_boot_logo();
-	CHECK(ncmds == 1 && cmds[0] == S13C_RAMWR && starts == 0);
+	memset((void *)(uintptr_t)opxy_display_os_frame(), 0xA5, OPXY_OS_FRAME_ROW);
+	CHECK(opxy_display_boot_logo());
+	CHECK(ncmds == 0 && starts == 0);
+	CHECK(opxy_display_os_frame()[0] == 0u);
 	/* held mode instead: the panel is on already */
 	clear();
 	opxy_display_held_start(m);
 	CHECK(ncmds == 0);
+	/* a frame of held mode's, then the hand-over: the logo again, no
+	 * second initialization */
+	{
+		struct s15_draw_ops ops;
+
+		opxy_display_draw_ops(m, &ops);
+		ops.fill(ops.ctx, 0, 0, 8, 8, 0xFFFFu);
+		opxy_display_show();
+	}
+	clear();
+	CHECK(!opxy_display_boot_logo());
+	CHECK(ncmds == 1 && cmds[0] == S13C_RAMWR && starts == 0);
+}
+
+/* S-01.023, S-05.004: the panel taken on from the front, which sent the
+ * logo: this run's gamma load, then no hand-over frame of its own. */
+static void test_adopted_logo(void)
+{
+	reset();
+	fake_core_set_cycles(400u * 50000u);
+	opxy_display_adopt(2u);
+	CHECK(has(S13C_DGR) && !has(S13C_SLPOUT) && !has(S13C_RAMWR));
+	clear();
+	CHECK(opxy_display_boot_logo());
+	CHECK(ncmds == 0 && starts == 0);
+	/* a panel started by this run instead: the frame is sent */
+	reset();
+	fake_core_set_cycles(400u * 50000u);
+	opxy_display_handshake(S13C_HANDSHAKE_MAGIC, 2);
+	clear();
+	CHECK(!opxy_display_boot_logo());
+	CHECK(last() == S13C_RAMWR);
 }
 
 /* The restart's last frame: sent and waited for, and given up after the
@@ -461,6 +496,7 @@ int main(void)
 	RUN(test_boot);
 	RUN(test_calibration);
 	RUN(test_early_logo);
+	RUN(test_adopted_logo);
 	RUN(test_settle);
 	RUN(test_render_whole);
 	return check_summary("test_display_board");

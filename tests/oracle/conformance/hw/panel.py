@@ -395,7 +395,7 @@ class Checker:
             last_b9 = [x for x in self.tr.txns if x.cmd == 0xB9]
             if not last_b9 or bytes(last_b9[-1].params) != b'\x42\xe0':
                 self.err('gamma', 'S-13c.012', 'digital gamma not on at the hand-over')
-            elif self.frames and loaded_at.t > self.frames[-1][0].t:
+            elif self.frames and loaded_at.t > self.frames[-1][0].t and not self.logo_kept():
                 self.err('gamma', 'S-13c.012', 'gamma load after the hand-over frame started')
 
     def rule_once(self):
@@ -598,6 +598,14 @@ class Checker:
         self.err('held_start', 'S-13c.019', 'the frame at %d ns comes between the early logo frame and held '
                  'mode\'s start' % extra[0].t)
 
+    GAMMA_CMDS = (CSCON, 0xE2, 0xE3, 0xB9)
+
+    def logo_kept(self):
+        """S-05.004: the boot path's last frame is the early logo frame, kept as the hand-over frame; only
+        S-13c.010's DISPON after it and the digital gamma's load (S-13c.012) may follow it."""
+        early = self.early_logo()
+        return bool(self.frames) and early is not None and self.frames[-1][0] is early
+
     def rule_handover(self):
         if 'boot' not in self.expect:
             return
@@ -613,8 +621,12 @@ class Checker:
             self.err('handover', 'S-13c.020', 'no frame before the hand-over')
             return
         last = self.frames[-1][0]
-        if before and before[-1] is not last:
-            self.err('handover', 'S-13c.020', 'transaction %02X after the hand-over frame' % before[-1].cmd)
+        after = [x for x in before if x.t > last.t]
+        if self.logo_kept():
+            after = [x for x in after if x.cmd not in self.GAMMA_CMDS and
+                     (x.cmd != DISPON or self.logo_before is not last)]
+        if after:
+            self.err('handover', 'S-13c.020', 'transaction %02X after the hand-over frame' % after[0].cmd)
         if last.t_end > t:
             self.err('handover', 'S-13c.020', 'hand-over frame still in progress at the kernel call')
         # S-15.132: --frame-sha256 checks the frame's content (rule frames)

@@ -93,6 +93,8 @@ enum boot_time_id {
 #define BOOT_TIME_SLOT_CRC_HW   0x800u	/* the slot check's CRC by the CRC peripheral */
 #define BOOT_TIME_COPY_CRC_HW   0x1000u	/* the OS image's CRC by the CRC peripheral */
 #define BOOT_TIME_COPY_CRC_AGAIN 0x2000u	/* and computed again in software */
+#define BOOT_TIME_LOGO_KEPT     0x4000u	/* the panel showed the hand-over frame
+					 * already: none sent (S-05.004) */
 
 #define BOOT_TIME_RAISE_STEPS 8u
 #define BOOT_TIME_FIRST 16u

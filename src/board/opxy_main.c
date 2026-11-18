@@ -95,8 +95,9 @@ void opxy_fatal(enum s04_fatal_cause cause)
 /* --- Hooks (see waffle/board/opxy_boot.h) --- */
 
 /* Defaults for a build without the display driver (S-13c). */
-__attribute__((weak)) void opxy_display_boot_logo(void)
+__attribute__((weak)) bool opxy_display_boot_logo(void)
 {
+	return false;
 }
 
 __attribute__((weak)) void opxy_display_dma_take(void)

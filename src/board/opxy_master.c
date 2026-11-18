@@ -530,9 +530,10 @@ int opxy_psoc_drain(struct opxy_master *m)
 }
 
 /*
- * S-05.003, S-05.004: the PMIC, the display, then 0x51 {3C FF 32}, sent
- * before the load: a log line queued ahead of it would otherwise keep it in
- * the ring until the teardown (S-05.016).
+ * S-05.003, S-05.004: the PMIC, the display (the hand-over frame, unless
+ * the panel shows it already), then 0x51 {3C FF 32}, sent before the load:
+ * a log line queued ahead of it would otherwise keep it in the ring until
+ * the teardown (S-05.016).
  */
 static void pre_load(void *ctx)
 {
@@ -540,7 +541,7 @@ static void pre_load(void *ctx)
 
 	OPXY_TIME(BOOT_TIME_HANDOFF);
 	(void)s07_pmic(&m->psoc); OPXY_TIME(BOOT_TIME_PMIC);
-	opxy_display_boot_logo();
+	OPXY_TIMING_LOGO_KEPT(opxy_display_boot_logo());
 	s07_report(&m->psoc, S07_REPORT_BOOT); OPXY_TIME(BOOT_TIME_BOOT_REPORT);
 	(void)opxy_psoc_drain(m); OPXY_TIME(BOOT_TIME_PRE_LOAD);
 }

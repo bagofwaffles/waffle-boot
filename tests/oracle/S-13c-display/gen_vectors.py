@@ -348,9 +348,26 @@ def build(path='boot', handshake=True, reads=True, **o):
         rec = o.get('record', record(reset_ms))
         b.ev('HANDOVER', 'now_ms=%d' % (b.t // MS), 'record=%s' % rec.hex().upper())
         return b.text(), expect
-    if path in ('boot', 'fail'):
+    kept = o.get('kept')
+    if path in ('boot', 'fail') and kept:
+        # S-05.004: the early logo frame kept as the hand-over frame; 'gamma' a run that took the panel on from
+        # the front loads the gamma after it (S-13c.012), 'cmd' another transaction after it
+        if kept == 'gamma':
+            b.wait(1 * MS)
+            b.cmd(0xF0, b'\xc3')
+            b.cmd(0xF0, b'\x96')
+            b.cmd(0xE2, GAMMA)
+            b.cmd(0xE3, GAMMA)
+            b.cmd(0xB9, b'\x42\xe0')
+            b.cmd(0xF0, b'\x3c')
+            b.cmd(0xF0, b'\x69')
+        if kept == 'cmd':
+            b.wait(1 * MS)
+            b.cmd(0x2A, hx('00 31 01 10'))
+    elif path in ('boot', 'fail'):
         runs = None if o.get('pixels') or o.get('short') else logo_runs()
         frame(b, o.get('pixels'), short=o.get('short', 0), runs=runs)
+    if path in ('boot', 'fail'):
         if o.get('cmd_after_frame'):
             b.wait(10 * US)
             b.cmd(0x2A, hx('00 31 01 10'))
@@ -488,6 +505,12 @@ VECTORS = {
     'bad_frame_overruns_te': (dict(path='held', frame_byte_ns=80), 'te', 'S-13c.018'),
     'bad_msg51_early':       (dict(path='boot', msg51_early=True), 'msg51', 'S-13c.019'),
     'bad_cmd_after_frame':   (dict(path='boot', cmd_after_frame=True), 'handover', 'S-13c.020'),
+    # S-05.004: the early logo frame kept as the hand-over frame, with the gamma's load after it or not
+    'good_boot_logo_kept':   (dict(path='boot', kept=True), None, 'S-05.004, S-13c.020'),
+    'good_boot_logo_kept_gamma': (dict(path='boot', kept='gamma'), None, 'S-05.004, S-13c.012, S-13c.020'),
+    'good_logo_first_kept_gamma': (dict(path='boot', logo_first=True, kept='gamma'), None,
+                                   'S-05.004, S-13c.012, S-13c.020'),
+    'bad_logo_kept_cmd':     (dict(path='boot', kept='cmd'), 'handover', 'S-13c.020'),
     'bad_record':            (dict(path='boot', record=record(0)), 'record', 'S-13c.021'),
     'bad_record_stale':      (dict(path='boot', handshake=False, record=record(1)), 'record', 'S-13c.021'),
     'bad_record_future':     (dict(path='boot', record=record(0x7FFFFFF0)), 'record', 'S-13c.021'),

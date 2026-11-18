@@ -538,6 +538,8 @@ static bool load_line(const struct boot_time *t, uint32_t cpu, struct s14_text *
 	s14_text_str(out, "os load split:");
 	start_span(t, out, "pmic", BOOT_TIME_HANDOFF, BOOT_TIME_PMIC, cpu, &first);
 	start_span(t, out, "logo and report", BOOT_TIME_PMIC, BOOT_TIME_BOOT_REPORT, cpu, &first);
+	if (reached(t, BOOT_TIME_BOOT_REPORT) && (t->flags & BOOT_TIME_LOGO_KEPT))
+		s14_text_str(out, " (the early logo kept)");
 	start_span(t, out, "drain", BOOT_TIME_BOOT_REPORT, BOOT_TIME_PRE_LOAD, cpu, &first);
 	start_span(t, out, "link up", BOOT_TIME_PRE_LOAD, BOOT_TIME_LINK_UP, cpu, &first);
 	if (reached(t, BOOT_TIME_LINK_UP) && t->copy_qtest_us != 0u) {

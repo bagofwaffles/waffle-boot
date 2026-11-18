@@ -113,6 +113,8 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_REREAD() opxy_timing_reread()
 #define OPXY_TIMING_LEAVE() opxy_timing_leave()
 #define OPXY_TIMING_HELD(m) opxy_timing_held(m)
+#define OPXY_TIMING_LOGO_KEPT(kept) \
+	((kept) ? (void)(opxy_boot_time.flags |= BOOT_TIME_LOGO_KEPT) : (void)0)
 #else
 #define OPXY_BOOT_TIMING 0
 #define OPXY_TIME(id) ((void)0)
@@ -129,6 +131,7 @@ void opxy_timing_held(struct opxy_master *m);
 #define OPXY_TIMING_REREAD() ((void)0)
 #define OPXY_TIMING_LEAVE() ((void)0)
 #define OPXY_TIMING_HELD(m) ((void)0)
+#define OPXY_TIMING_LOGO_KEPT(kept) ((void)(kept))
 #endif
 #if defined(OPXY_BOOT_TIMING_ON) && defined(OPXY_TEST_OS)
 /* The test OS: the loading bootloader's record, taken at entry, then logged. */
@@ -544,8 +547,10 @@ void opxy_load_fn(uint32_t cfg);
  * Hooks into the drivers. Each has a weak default (opxy_main.c) that does
  * nothing; the driver, when linked, overrides it.
  */
-/* S-05.004, S-13c: the display's gamma load, re-init and the boot logo. */
-void opxy_display_boot_logo(void);
+/* S-05.004, S-13c: the hand-over frame and the OS's frame memory. True
+ * when the panel's last frame was the hand-over frame already, so none was
+ * sent. */
+bool opxy_display_boot_logo(void);
 /* S-05.004: the early logo frame, with the run's one
  * initialization and the gamma load, before the slave's stream; false
  * without a display. */

@@ -49,6 +49,7 @@ _Static_assert(OPXY_OS_FRAME_START >= S01_STAGING_END ||
 static struct wb_display_bf70x bus;
 static struct wb_display disp;
 static bool up;				/* the panel bus came up */
+static bool adopted;			/* the front's logo frame is the last one */
 
 const struct wb_display *opxy_display(void)
 {
@@ -75,6 +76,7 @@ void opxy_display_handshake(uint32_t xmod, uint32_t ymod)
 	wb_display_init(&disp, FB);
 	wb_display_begin(&disp, b, xmod, ymod,
 			 (m->strap & OPXY_STRAP_REV1) != 0u ? 1u : 0u);
+	adopted = false;
 	up = true;
 }
 
@@ -89,6 +91,7 @@ void opxy_display_adopt(uint32_t reset_ms)
 	wb_display_adopt(&disp, b, reset_ms);
 	/* S-13c.012: this run's own gamma load, whatever the front's left. */
 	(void)s13c_gamma(&disp.panel, true);
+	adopted = true;
 	up = true;
 }
 
@@ -165,7 +168,10 @@ __attribute__((weak)) const struct wb_display_image wb_display_boot_image = {
 /* S-15.132: the boot logo's frame, sent at once and ended. */
 static bool logo_frame(void)
 {
-	return up && wb_display_boot_logo(&disp, &wb_display_boot_image) == S13C_OK;
+	if (!up || wb_display_boot_logo(&disp, &wb_display_boot_image) != S13C_OK)
+		return false;
+	adopted = false;	/* this build's image on the panel now */
+	return true;
 }
 
 /*
@@ -352,14 +358,31 @@ static void os_frame_calibration(void)
 	os_frame_tail(w);
 }
 
-void opxy_display_boot_logo(void)
+/*
+ * S-05.004, S-13c.020: the panel shows the hand-over frame already when its
+ * last frame is the early logo frame, nothing sent since but the gamma load,
+ * and that frame has this build's image: the front's is the logo, so a
+ * build-time image (S-15.132) is sent all the same.
+ */
+static bool logo_kept(void)
 {
-	if (logo_frame())
+	const struct s13c_panel *p = &disp.panel;
+
+	return up && p->state == S13C_ON && p->boot_frame && p->gamma_on &&
+	       !p->frame && (!adopted || wb_display_boot_image.data == NULL);
+}
+
+bool opxy_display_boot_logo(void)
+{
+	const bool kept = logo_kept();
+
+	if (kept || logo_frame())
 		(void)wb_display_record(&disp, RECORD);
 	if (opxy_master.boot_reason == S04_REASON_OS_FRAME_CAL)
 		os_frame_calibration();
 	else
 		os_frame_logo();
+	return kept;
 }
 
 const uint8_t *opxy_display_os_frame(void)
