@@ -4,9 +4,9 @@ The boot menu is waffle-boot's own set of screens, shown instead of starting the
 ## Opening it
 
 - **Hold com, or press and hold the white knob (knob 4), while you switch the unit on.** Keep holding until
-  `Loading boot menu...` appears under the logo, then let go: the menu follows a few seconds later. A key
-  still held when the menu opens does nothing until pressed again, but a key pressed while the line shows
-  acts once the menu opens.
+  `Loading boot menu...` appears under the logo, then let go: the menu follows a few seconds later. Keys
+  pressed while the line shows do nothing, and a key still held when the menu opens does nothing until let
+  go and pressed again.
 - **Settings → 6 Start in boot menu: On.** Every start then opens the menu instead of the OS.
 - **By itself**, when the OS cannot be started, when the last install did not finish, or when the OS
   restarts the unit into the bootloader for an update.

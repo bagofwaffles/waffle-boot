@@ -1862,6 +1862,25 @@ static void test_keys(void)
 	ev(0x06, true);
 	CHECK(M.screen == S15_SCR_UPGRADE, "S-15.013 up then down acts");
 
+	/* S-15.013: a key the events never told of, down as S-07 knows it
+	 * (held from power-on): a down of it is no press; once seen released,
+	 * its press acts. */
+	reset_fake(); default_boot();
+	s15_menu_init(&M, &BOOT, &env, &LOG);
+	{
+		uint8_t known[(S15_NKEYS + 7u) / 8u] = { 0 };
+
+		known[0x0d >> 3] = (uint8_t)(1u << (0x0d & 7u));
+		s15_menu_keys_down(&M, known);
+	}
+	s15_menu_start(&M);
+	ev(0x0d, true);
+	CHECK(M.screen == S15_SCR_MAIN, "S-15.013 a known held key is no press");
+	ev(0x0d, false);
+	CHECK(M.screen == S15_SCR_MAIN, "S-15.013 its release does nothing");
+	ev(0x0d, true);
+	CHECK(M.screen == S15_SCR_INFO, "S-15.013 released, then pressed: it acts");
+
 	/* S-15.012, S-15.031: shift held opens nothing from the main
 	 * screen. */
 	reset_fake(); default_boot(); start();

@@ -505,6 +505,10 @@ void opxy_held_service(void *ctx, const struct boot_held *h);
  * menu's keys act again (s15_menu_held()). */
 void opxy_held_psoc(struct opxy_master *m);
 int opxy_held_settle(struct opxy_master *m);
+/* S-15.013 before the first screen: every PSoC message that arrived is
+ * handled, then the keys S-07 knows down go to the menu as down
+ * (s15_menu_keys_down()); S07_POWEROFF when a power-off came. */
+int opxy_held_keys_before(struct opxy_master *m);
 /* S-11.080 (src/board/opxy_install.c): this boot found the state 0xAB0D.
  * Sets it to 0 and runs nothing; before the Nordic link's first use. */
 void opxy_install_interrupted(struct opxy_master *m);

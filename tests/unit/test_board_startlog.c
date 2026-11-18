@@ -253,8 +253,8 @@ static void board(bool front)
 
 /*
  * Held mode marks at the start of its first pass: its set-up returned (the
- * first screen chosen) and nothing of the pass done, the PSoC's waiting
- * frame not yet read.
+ * first screen chosen) and nothing of the pass done. The PSoC's waiting
+ * frame was read before the first screen (S-15.013), once.
  */
 static void test_held(void)
 {
@@ -282,7 +282,8 @@ static void test_held(void)
 	jump = false;
 	CHECK(r == 1 && programs == 1u);
 	CHECK(prog_off == FR_LOG_OFF(0) + 2u && prog_byte == 0xF7u);
-	CHECK(at.reads == 0u && psoc_in_n != 0u);
+	CHECK(at.reads != 0u && psoc_in_n == 0u);
+	CHECK(at.writes != 0u);		/* the ping answered then */
 	CHECK(m.sv.menu.screen == S15_SCR_MAIN);
 	opxy_usb_stop();
 }

@@ -36,6 +36,49 @@ static void test_bitmaps(void)
 	}
 }
 
+/* S-07.031, S-07.032: the key-status reply is the known state the bitmaps
+ * are told against (keys.json after_status), with no event of its own. */
+static void test_after_status(void)
+{
+	for (size_t i = 0; i < s07v_after_status_count; i++) {
+		const struct s07v_after *v = &s07v_after_status[i];
+		const struct s07v_key_ev *e = &s07v_after_events[v->first_event];
+		struct s07_key_status ks;
+		size_t k = 0;
+
+		t_case = "keys.json after_status";
+		t_rig_init(S06_MS(10000));
+		s07_key_status_given(&rig.psoc, v->none ? NULL : v->status, v->status_len, &ks);
+		CHECK_EQ(rig.nkev, 0);
+		for (size_t b = 0; b < v->n; b++) {
+			size_t before = rig.nkev;
+
+			t_rig_from_psoc(rig.sim.now, 0x41, 0x42, v->maps + 9u * b, 9u);
+			CHECK_EQ(s07_poll(&rig.psoc), S07_OK);
+			CHECK_EQ(rig.nkev - before, v->counts[b]);
+			for (size_t j = before; j < rig.nkev && k < 1000; j++, k++) {
+				CHECK_EQ(rig.kev[j][0], e[k].key);
+				CHECK_EQ(rig.kev[j][1], e[k].down);
+			}
+		}
+	}
+	/* a reply replaces the state whole, a short one padded with 00 */
+	t_case = "status-known";
+	t_rig_init(S06_MS(10000));
+	{
+		static const uint8_t held[2] = { 0, 0x20 };
+		struct s07_key_status ks;
+
+		memset(rig.psoc.keys, 0xFF, sizeof rig.psoc.keys);
+		s07_key_status_given(&rig.psoc, held, sizeof held, &ks);
+		CHECK(ks.replied && ks.hold);	/* the white knob */
+		CHECK_EQ(rig.psoc.keys[0], 0);
+		CHECK_EQ(rig.psoc.keys[1], 0x20);
+		CHECK_EQ(rig.psoc.keys[8], 0);
+		CHECK_EQ(rig.nkev, 0);
+	}
+}
+
 /* S-07.032, S-16.008 */
 static void test_status(void)
 {
@@ -204,6 +247,7 @@ int main(void)
 {
 	test_bitmaps();
 	test_status();
+	test_after_status();
 	test_leds();
 	test_charge_led();
 	test_power();

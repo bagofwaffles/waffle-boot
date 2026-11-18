@@ -675,11 +675,21 @@ int s07_battery_rest(struct s07_psoc *p)
 	return battery_loop(p);
 }
 
+/* S-07.031, S-07.032: the reply is the whole key state, keys held at
+ * power-on included, and the state bitmaps are told against from then on;
+ * a byte it does not carry reads 00 (S-07.079). No event is made. */
+static void keys_known(struct s07_psoc *p, const uint8_t *pl, size_t n)
+{
+	wb_fill(p->keys, 0, sizeof p->keys);
+	wb_copy(p->keys, pl, n < sizeof p->keys ? n : sizeof p->keys);
+}
+
 void s07_key_status_given(struct s07_psoc *p, const uint8_t *pl, size_t n,
 			  struct s07_key_status *ks)
 {
 	if (pl != NULL) {
 		s07_key_status_decode(pl, n, ks);
+		keys_known(p, pl, n);
 		log_ev(p, S07_LOG_KEY_STATUS,
 		       (uint32_t)ks->hold | (uint32_t)ks->debug << 1 |
 			       (uint32_t)ks->precomp << 2, 0);
@@ -697,6 +707,7 @@ int s07_key_status(struct s07_psoc *p, struct s07_key_status *ks)
 	if (request(p, ID_KEY_STATUS, 0, 0, &r)) {
 		OPXY_TESTOS(opxy_testos_key_raw(r.payload, r.len);)
 		s07_key_status_decode(r.payload, r.len, ks);
+		keys_known(p, r.payload, r.len);
 		log_ev(p, S07_LOG_KEY_STATUS,
 		       (uint32_t)ks->hold | (uint32_t)ks->debug << 1 |
 			       (uint32_t)ks->precomp << 2, 0);

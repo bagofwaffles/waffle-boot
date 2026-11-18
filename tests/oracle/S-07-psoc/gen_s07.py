@@ -81,7 +81,20 @@ def keys_vectors():
               '00000001000000000000', '40000000000000000000', '00000000000000000100', None]:   # 10 bytes: S-07.032
         st = m.key_status(None if p is None else bytes.fromhex(p))
         status.append({'payload': p if p is not None else 'none', **{k: int(v) for k, v in st.items()}})
-    return {'bitmaps': bitmaps, 'status': status}
+    # S-07.031, S-07.032: the key-status reply is the known state the bitmaps are told against, keys held at
+    # power-on included: the white knob held, then com pressed and released, then the knob let go
+    after = []
+    for st, seq in [(bm(0x0D, 0x18) + b'\x00', [bm(0x0D), bm(0x0D, 0x06), bm(0x0D), bm()]),
+                    (bm(0x40)[:4], [bm(0x40), bm()]),
+                    (None, [bm(0x0D)])]:
+        known = m.known_from_status(st)
+        evs = []
+        for b in seq:
+            known, ev = m.bitmap_events(known, b)
+            evs.append([[k, int(d)] for k, d in ev])
+        after.append({'status': st.hex() if st is not None else 'none', 'bitmaps': [b.hex() for b in seq],
+                      'events': evs})
+    return {'bitmaps': bitmaps, 'status': status, 'after_status': after}
 
 
 def leds_vectors():

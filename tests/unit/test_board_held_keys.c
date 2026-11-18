@@ -278,8 +278,9 @@ static const struct s15_env_ops env = {
 static struct s15_boot boot;
 
 
-/* Held mode with the developer menu on, as the board starts it. */
-static void setup(enum during d)
+/* Held mode with the developer menu on, as the board has it before the
+ * first screen. */
+static void setup_before(enum during d)
 {
 	memset(&m, 0, sizeof m);
 	memset(&hw, 0, sizeof hw);
@@ -307,8 +308,21 @@ static void setup(enum during d)
 	boot.settings.dev_mode = true;
 	boot.settings.color = true;
 	s15_menu_init(&m.sv.menu, &boot, &env, NULL);
+}
+
+/* The first screen, as held mode's loop opens it: what arrived before it
+ * taken first (S-15.013). */
+static void menu_start(void)
+{
+	CHECK(opxy_held_keys_before(&m) == S07_OK);
 	s15_menu_start(&m.sv.menu);
 	pass();
+}
+
+static void setup(enum during d)
+{
+	setup_before(d);
+	menu_start();
 }
 
 /* --- a developer host on the CDC link (waffle/devhost.h) --- */
@@ -628,6 +642,89 @@ static void test_back_after_format(void)
 	CHECK(m.sv.menu.screen == S15_SCR_MAIN);
 }
 
+/* --- S-15.013: the keys before the first screen --- */
+
+/* A press made while the line under the logo shows (S-13c.025) chooses
+ * nothing: digit 4 pressed and released, digit 5 pressed and released. */
+static void test_press_while_loading(void)
+{
+	setup_before(D_RELEASE);
+	bitmap(0x0D, -1);		/* the white knob, digit 4 */
+	bitmap(-1, -1);
+	bitmap(0x12, -1);		/* digit 5 */
+	bitmap(-1, -1);
+	menu_start();
+	pass();
+	CHECK(m.sv.menu.screen == S15_SCR_MAIN);
+	/* the first press with the menu up acts */
+	press(0x0D);
+	CHECK(m.sv.menu.screen == S15_SCR_INFO);
+}
+
+/* A key pressed while loading and held through the start does nothing,
+ * not even at its release; pressed again it acts. */
+static void test_held_through_start(void)
+{
+	setup_before(D_RELEASE);
+	bitmap(0x09, -1);		/* M4, digit 4 */
+	menu_start();
+	CHECK(m.sv.menu.screen == S15_SCR_MAIN);
+	bitmap(0x09, 0x18);		/* another key changes: M4 still down */
+	pass();
+	bitmap(-1, -1);
+	pass();
+	CHECK(m.sv.menu.screen == S15_SCR_MAIN);
+	press(0x09);
+	CHECK(m.sv.menu.screen == S15_SCR_INFO);
+}
+
+/* The white knob held from power-on, which the key-status reply names and
+ * no bitmap does (S-07.032): a bitmap for another key while it is still
+ * down does not make it a press, nor does its release. */
+static void test_knob_from_power_on(void)
+{
+	uint8_t status[10] = { 0 };
+	struct s07_key_status ks;
+
+	setup_before(D_RELEASE);
+	status[0x0D >> 3] = (uint8_t)(1u << (0x0D & 7u));
+	s07_key_status_given(&m.psoc, status, sizeof status, &ks);
+	CHECK(ks.replied && ks.hold);
+	menu_start();
+	bitmap(0x0D, 0x18);		/* com pressed, the knob still down */
+	pass();
+	CHECK(m.sv.menu.screen == S15_SCR_MAIN);
+	bitmap(0x0D, -1);
+	pass();
+	bitmap(-1, -1);			/* the knob let go */
+	pass();
+	CHECK(m.sv.menu.screen == S15_SCR_MAIN);
+	press(0x0D);
+	CHECK(m.sv.menu.screen == S15_SCR_INFO);
+}
+
+/* A key held through the start arms no hold: digit 7 down from the
+ * loading on does not start the factory reset on System; let go and held
+ * again, it does (S-15.015). */
+static void test_held_key_arms_nothing(void)
+{
+	setup_before(D_RELEASE);
+	bitmap(0x14, -1);		/* digit 7 */
+	menu_start();
+	bitmap(0x14, 0x12);		/* digit 5: System */
+	pass();
+	bitmap(0x14, -1);
+	pass();
+	CHECK(m.sv.menu.screen == S15_SCR_SYSTEM);
+	later(S15_CONFIRM_HOLD_MS);
+	pass();
+	CHECK(removes == 0u && m.sv.menu.armed == S15_ARM_NONE);
+	bitmap(-1, -1);
+	pass();
+	hold_long(0x14);
+	CHECK(removes == 3u);
+}
+
 static void test_back_after_factory_reset(void)
 {
 	setup(D_RELEASE);
@@ -647,6 +744,10 @@ int main(void)
 	RUN(test_backlog_after_os_write);
 	RUN(test_back_after_format);
 	RUN(test_back_after_factory_reset);
+	RUN(test_press_while_loading);
+	RUN(test_held_through_start);
+	RUN(test_knob_from_power_on);
+	RUN(test_held_key_arms_nothing);
 	RUN(test_host_keys_reset);
 	RUN(test_host_keys_after_long);
 	RUN(test_host_keys_refused);

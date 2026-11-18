@@ -172,6 +172,9 @@ These rules are fixed: only the maintainer changes them.
   the same way, on key 1 with no other key down (S-15.116). A knob click
   never starts a hold, and the white knob confirms nothing. A factory reset
   is always confirmed, from every menu that offers it.
+- Keys pressed before the boot menu's first screen, while `Loading boot menu...` shows among them, do
+  nothing, and a key still down when it opens acts only after it has been let go and pressed again
+  (S-15.013).
 - The result of a removal or a reset is a view of its own, left with 8 alone.
 - A setting shows its state as the item's hint (`Protected writes` `Off`,
   or `On` in red; `Developer mode` `On` or `Off`). Settings live on

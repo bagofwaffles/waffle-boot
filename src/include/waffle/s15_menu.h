@@ -313,6 +313,10 @@ void s15_menu_init(struct s15_menu *m, const struct s15_boot *boot,
 		   const struct s15_env_ops *env, struct s14_log *log);
 /* Held mode starts: open the first screen (S-15.020). */
 void s15_menu_start(struct s15_menu *m);
+/* S-15.013: before s15_menu_start(), the keys down as S-07 knows them (an
+ * S-07.031 bitmap), with those the events told of: each acts only after it
+ * has been seen released. */
+void s15_menu_keys_down(struct s15_menu *m, const uint8_t bitmap[(S15_NKEYS + 7u) / 8u]);
 /* A key event (S-07.031), before or after the start. */
 void s15_menu_key(struct s15_menu *m, unsigned key, bool down);
 /*

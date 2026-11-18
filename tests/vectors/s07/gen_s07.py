@@ -58,6 +58,23 @@ def rules(h):
     h.table('struct s07v_bitmaps', 's07v_bitmaps', bm_rows,
             'struct s07v_bitmaps { const uint8_t *maps; size_t maps_len; const uint8_t *counts; '
             'size_t n; const uint8_t *lens; size_t nlens; size_t first_event; };')
+    # after_status: the key-status reply first (S-07.032), then the bitmaps
+    as_rows, as_ev = [], []
+    for case in k['after_status']:
+        first_ev = len(as_ev)
+        counts = []
+        for evs in case['events']:
+            counts.append(len(evs))
+            for key, down in evs:
+                as_ev.append('%d, %d' % (key, down))
+        none = case['status'] == 'none'
+        maps = b''.join(bytes.fromhex(b) for b in case['bitmaps'])
+        as_rows.append('%d, %s, %s, %s, %d' % (none, h.arr('ass', b'' if none else bytes.fromhex(case['status'])),
+                                               h.arr('asm', maps), h.arr('asc', bytes(counts)), first_ev))
+    h.table('struct s07v_key_ev', 's07v_after_events', as_ev)
+    h.table('struct s07v_after', 's07v_after_status', as_rows,
+            'struct s07v_after { int none; const uint8_t *status; size_t status_len; const uint8_t *maps; '
+            'size_t maps_len; const uint8_t *counts; size_t n; size_t first_event; };')
     rows = []
     for s in k['status']:
         none = s['payload'] == 'none'

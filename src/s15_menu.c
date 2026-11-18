@@ -1648,6 +1648,12 @@ void s15_menu_init(struct s15_menu *m, const struct s15_boot *boot,
 	m->transfer_total = 0;
 }
 
+void s15_menu_keys_down(struct s15_menu *m, const uint8_t bitmap[(S15_NKEYS + 7u) / 8u])
+{
+	for (unsigned i = 0; i < sizeof m->down; i++)
+		m->down[i] = (uint8_t)(m->down[i] | bitmap[i]);
+}
+
 /* S-15.020 */
 void s15_menu_start(struct s15_menu *m)
 {

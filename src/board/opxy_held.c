@@ -102,15 +102,13 @@ void opxy_held_psoc(struct opxy_master *m)
 	wb_uart_use_irq(u, true);
 }
 
-int opxy_held_settle(struct opxy_master *m)
+/* Every PSoC message that has arrived is handled: the ring and the link's
+ * inbox are empty, or a power-off came (S07_POWEROFF). */
+static int psoc_drain(struct opxy_master *m)
 {
 	struct wb_uart *u = &m->hw.uart[OPXY_UART_PSOC];
 	const struct s06_link *l = &m->link[S06_LINK_PSOC];
-	struct s14_text t;
 
-	opxy_psoc_rx_report(m);
-	if (!s15_menu_held(&m->sv.menu))
-		return S07_OK;
 	for (unsigned i = 0; i < SETTLE_PASSES; i++) {
 		int rc = s07_poll(&m->psoc);
 
@@ -119,6 +117,34 @@ int opxy_held_settle(struct opxy_master *m)
 		if (wb_uart_rx_ready(u) == 0u && l->in_count == 0u)
 			break;
 	}
+	return S07_OK;
+}
+
+int opxy_held_keys_before(struct opxy_master *m)
+{
+	/* S-15.013: nothing acts before the first screen, so the presses
+	 * made while the line under the logo showed (S-13c.025) choose
+	 * nothing; the keys down then act once seen released. */
+	int rc = psoc_drain(m);
+
+	if (rc != S07_OK)
+		return rc;
+	s15_menu_keys_down(&m->sv.menu, m->psoc.keys);
+	return S07_OK;
+}
+
+int opxy_held_settle(struct opxy_master *m)
+{
+	const struct wb_uart *u = &m->hw.uart[OPXY_UART_PSOC];
+	struct s14_text t;
+	int rc;
+
+	opxy_psoc_rx_report(m);
+	if (!s15_menu_held(&m->sv.menu))
+		return S07_OK;
+	rc = psoc_drain(m);
+	if (rc != S07_OK)
+		return rc;
 	s15_menu_release(&m->sv.menu);
 	s14_text_init(&t);
 	s14_text_str(&t, "long operation over: interrupts ");
@@ -162,6 +188,8 @@ void opxy_held_service(void *ctx, const struct boot_held *h)
 {
 	struct opxy_master *m = ctx;
 
+	if (opxy_held_keys_before(m) == S07_POWEROFF)
+		opxy_powered_off(m);	/* S-07.051: the PSoC removes the power */
 	opxy_held_screen(m, h); OPXY_TESTOS(opxy_testos_frame_timing(m);)	/* the test OS: HW-FRAME's timing, once */
 	for (;;) {
 		/* S-02.095: alive at the start of the first pass; once per boot. */

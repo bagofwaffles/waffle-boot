@@ -81,6 +81,13 @@ def bitmap_events(known, bitmap):
     return new, ev
 
 
+def known_from_status(payload):
+    """The known key state from a 0x41 reply payload (S-07.031, S-07.032): keys in bytes 0 to 8, a byte the
+    reply does not carry 00 (S-07.079); all up for no reply."""
+    p = (bytes(payload) if payload is not None else b'') + bytes(9)
+    return [bool(p[k >> 3] >> (k & 7) & 1) for k in range(72)]
+
+
 def key_status(payload):
     """{'hold', 'debug', 'precomp'} from a 0x41 reply payload, None for no reply (S-07.032)."""
     if payload is None:

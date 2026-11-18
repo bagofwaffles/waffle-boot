@@ -92,7 +92,7 @@ struct s07_psoc {
 	uint32_t target_ma;		/* S-07.057 */
 	bool usb_configured;
 	uint32_t last_usb_us;
-	uint8_t keys[S07_BITMAP];	/* S-07.031: known state */
+	uint8_t keys[S07_BITMAP];	/* S-07.031: known state, from S-07.032's reply on */
 
 	/* S-07.041: last values sent */
 	uint8_t led_key[S07_KEYS][2];
@@ -139,7 +139,8 @@ int s07_battery_wait(struct s07_psoc *p);
 /* S-07.025: the first key subscription; the link is started. */
 void s07_subscribe(struct s07_psoc *p);
 
-/* S-07.032: the key-status request. */
+/* S-07.032: the key-status request. Its reply is the known key state from
+ * then on (S-07.031), keys held at power-on included, set without events. */
 int s07_key_status(struct s07_psoc *p, struct s07_key_status *ks);
 
 /*
