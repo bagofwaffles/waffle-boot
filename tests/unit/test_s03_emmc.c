@@ -682,7 +682,7 @@ static void test_write_table(void)
 		}
 		if (c->target != 0u && w.target != 0u)
 			CHECK_EQ(w.target, c->target);
-		if (!c->rewrite_erase && !CHECK(ops_match(c))) {
+		if (!CHECK(ops_match(c))) {
 			printf("    ops %s:", c->name);
 			for (j = 0; j < g_e.nlog; j++)
 				printf(" %c%u.%u.%u%s", g_e.log[j].kind, g_e.log[j].part, g_e.log[j].a,
@@ -717,7 +717,7 @@ static void test_write_table(void)
 		}
 		CHECK_EQ(boots(c->length), c->final_boots);
 		/* S-03.058: after a completed write the other header differs in byte 0x0C alone. */
-		if (c->result == 0 && c->target != 0u && !c->rewrite_erase) {
+		if (c->result == 0 && c->target != 0u) {
 			other_hdr[S03_ACTIVE_OFF] = 0;
 			CHECK(memcmp(fe_part(&g_e, other), other_hdr, S03_SECTOR) == 0);
 		}
@@ -847,7 +847,7 @@ static void test_cache(void)
 		unsigned k, mask, muts = 0, j;
 
 		if (c->result != 0 || c->fail != 0 || c->corrupt_sector >= 1 || c->corrupt_header != 0 ||
-		    c->rewrite_erase || (c->length != L_A && c->length != L_B))
+		    (c->length != L_A && c->length != L_B))
 			continue;
 		checked++;
 		setup_case(c);

@@ -249,9 +249,9 @@ def os_image_acceptable(image, boot_size=BOOT_PARTITION_SIZE):
 
 WRITE_FAILS = ('select1', 'read_header1', 'select2', 'erase', 'write_image', 'read_image',
                'write_header', 'read_header', 'write_header_active', 'read_header_active',
-               'select_other', 'read_other', 'deactivate', 'erase_other', 'select0',
+               'select_other', 'read_other', 'deactivate', 'select0',
                'flush_image', 'flush_header', 'flush_final')
-DEACTIVATIONS = ('rewrite', 'rewrite_erase')    # S-03.058
+DEACTIVATIONS = ('rewrite',)    # S-03.058: the rewrite, and no erase on the other partition
 PROFILES = ('two_step', 'factory')
 
 
@@ -263,7 +263,7 @@ def write_os(emmc, image, corrupt_sector=None, corrupt_header=None, deactivate='
     profile 'two_step' (S-03.055): zero the target header if it reads active, and read it back; erase the
     target's groups from 1 on (group 0, the header's, is written over and never erased); write and read
     back the image; write and verify the header inactive, then active; rewrite the other partition's header
-    inactive, then erase its group 0 if deactivate='rewrite_erase'. A header that does not verify is
+    inactive, and erase nothing there (S-03.058). A header that does not verify is
     rewritten inactive. Flushes follow the inactive header, the active header and the deactivation; a
     failed write that changed anything flushes before its select 0.
     profile 'factory': a single active header write, a failed header and the other partition undone by
@@ -422,8 +422,6 @@ def write_os(emmc, image, corrupt_sector=None, corrupt_header=None, deactivate='
         h[0x0C] = 0
         if mutate(('write', other, 0, 1), lambda: emmc.write(other, 0, bytes(h)), 'deactivate'):
             return end('failed')
-        if deactivate == 'rewrite_erase':               # S-03.058; a failure here is ignored
-            mutate(('erase', other, 0), lambda: emmc.erase_group(other, 0), 'erase_other')
         if op(('flush',), 'flush_final'):
             return end('failed')
         return end('ok')

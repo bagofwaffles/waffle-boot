@@ -121,17 +121,17 @@ def main():
             items.append('{%d, %d}' % (BOOTS.index(cut['boots']), tm))
         w('static const struct v_cut v_wcuts_%d[] = {%s};' % (i, ', '.join(items) or '{0, 0}'))
     w('struct v_wcase { const char *name; int start; uint32_t length; int corrupt_sector; int corrupt_header;')
-    w('\tint rewrite_erase; int fail; int result; unsigned target; uint32_t last_writable; uint8_t header[16];')
+    w('\tint fail; int result; unsigned target; uint32_t last_writable; uint8_t header[16];')
     w('\tint final_p1, final_p2, final_boots, boots_before; const struct v_eop *ops; unsigned nops;')
     w('\tconst struct v_cut *cuts; unsigned ncuts; int has_torn; };')
     w('static const struct v_wcase v_wcases[] = {')
     for i, c in enumerate(ws['cases']):
         fin = c.get('final', {})
         ch = {None: 0, 'inactive': 1, 'active': 2}[c['corrupt_header']]
-        w('\t{"%s", %d, %d, %d, %d, %d, %d, %d, %d, %d, %s, %d, %d, %d, %d, v_wops_%d, %d, v_wcuts_%d, %d, %d},' % (
+        w('\t{"%s", %d, %d, %d, %d, %d, %d, %d, %d, %s, %d, %d, %d, %d, v_wops_%d, %d, v_wcuts_%d, %d, %d},' % (
             c['name'], STARTS.index(c['start']), c['length'],
             -1 if c['corrupt_sector'] is None else c['corrupt_sector'], ch,
-            int(c['deactivate'] == 'rewrite_erase'), FAILS.index(c['fail']),
+            FAILS.index(c['fail']),
             ['ok', 'refused', 'failed'].index(c['result']), c['target'] or 0,
             c.get('last_writable_sector', 0), carr(bytes.fromhex(c.get('header', '00' * 16))),
             int(fin.get('p1_active', False)), int(fin.get('p2_active', False)),

@@ -112,7 +112,7 @@ def load(device, fallback=False, fail=()):
 acceptable = emmc.acceptable
 last_writable_sector = emmc.last_writable_sector
 WRITE_FAILS = emmc.WRITE_FAILS
-DEACTIVATIONS = emmc.DEACTIVATIONS    # S-03.058: the rewrite, optionally followed by the erase
+DEACTIVATIONS = emmc.DEACTIVATIONS    # S-03.058: the rewrite alone
 ORDERS = {'two_step': 'two_step', 'previous': 'factory'}
 
 

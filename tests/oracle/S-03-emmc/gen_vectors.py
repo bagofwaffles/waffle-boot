@@ -228,9 +228,6 @@ def write_sequences():
     for start in ('p1_active', 'p1_inactive_p2_active', 'both_active', 'neither', 'p1_bad'):
         for length in (L_A, L_B):
             cases.append(write_case('%s_%d' % (start, length), start, length))
-    cases.append(write_case('p1_inactive_p2_active_rewrite_erase', 'p1_inactive_p2_active', L_B,
-                            deactivate='rewrite_erase'))
-    cases.append(write_case('p1_active_rewrite_erase', 'p1_active', L_B, deactivate='rewrite_erase'))
     cases.append(write_case('large_two_groups', 'p1_active', L_TWO))
     cases.append(write_case('corrupt_sector5', 'p1_active', L_A, corrupt_sector=5))
     cases.append(write_case('corrupt_last_sector_512_multiple', 'p1_active', L_A, corrupt_sector=L_A // 512))
@@ -252,13 +249,10 @@ def write_sequences():
             if f == 'select2' and start != 'p1_active':
                 continue                    # no select 2 when the target is BP1
             # an erase only from group 1 on: the erase's failure needs an image past group 0
-            cases.append(write_case('fail_%s__%s' % (f, start), start, L_TWO if f == 'erase' else L_B, fail=f,
-                                    deactivate='rewrite_erase' if f == 'erase_other' else 'rewrite'))
+            cases.append(write_case('fail_%s__%s' % (f, start), start, L_TWO if f == 'erase' else L_B, fail=f))
     for f in ('select_other', 'read_other', 'deactivate'):   # step 8 from the other starting states (S-03.062)
         for start in ('both_active', 'neither', 'p1_bad'):
             cases.append(write_case('fail_%s__%s' % (f, start), start, L_B, fail=f))
-    cases.append(write_case('fail_deactivate__p1_inactive_p2_active_rewrite_erase', 'p1_inactive_p2_active', L_B,
-                            deactivate='rewrite_erase', fail='deactivate'))
     return {
             'B': B, 'cases': cases, 'erased_ff': erased_ff()}
 
