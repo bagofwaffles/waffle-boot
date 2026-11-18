@@ -16,8 +16,7 @@ int s07_program(struct s07_psoc *p, const char *image, size_t len,
 		return S07_POWEROFF;	/* S-07.051: nothing more */
 	if (!unlock)
 		why = S07_CY_WHY_UNLOCK;	/* S-07.081 */
-	else if (!s07_cyacd_open(&f, image, len) || !s07_cyacd_check(&f) ||
-		 (f.checksum_type == S07_CY_CRC && !p->ops->crc16))
+	else if (!s07_cyacd_open(&f, image, len) || !s07_cyacd_check(&f))
 		why = S07_CY_WHY_FILE;		/* S-07.083 */
 	if (why) {
 		if (p->ops->log)

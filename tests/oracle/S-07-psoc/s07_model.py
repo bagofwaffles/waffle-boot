@@ -233,7 +233,7 @@ class Host:
 
     def run(self, cyacd_text):
         f = parse_cyacd(cyacd_text)
-        kind = 'crc' if f['checksum_type'] == 1 else 'sum'
+        kind = 'sum'                                 # S-07.082: every packet, the file being of type 00
         d = self._cmd(0x38, self.unlock, kind)
         if int.from_bytes(d[:4], 'little') != f['silicon_id'] or d[4] != f['silicon_rev']:
             raise RunFailed(0x38, 'device')
@@ -280,8 +280,8 @@ def image_problem(text, max_arrays=None):
     h = lines[0]
     if len(h) != 12 or not set(h) <= HEX:
         return 'header'
-    if int(h[10:12], 16) not in (0, 1):
-        return 'checksum type'
+    if int(h[10:12], 16) != 0:
+        return 'checksum type'                       # type 01 too: only a sum-checking bootloader is entered
     if len(lines) < 2:
         return 'no row line'
     arrays = set()

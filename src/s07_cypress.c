@@ -136,7 +136,9 @@ bool s07_cyacd_open(struct s07_cyacd *f, const char *text, size_t len)
 	f->silicon_rev = h[4];
 	f->checksum_type = h[5];
 	f->rows_at = pos;
-	return f->checksum_type == S07_CY_SUM || f->checksum_type == S07_CY_CRC;
+	/* S-07.083: type 01 too is bad; the enter packet's fixed sum check can
+	 * enter only a sum-checking PSoC bootloader */
+	return f->checksum_type == S07_CY_SUM;
 }
 
 /* A row line :AARRRRLLLL<data>CC, integers big-endian (S-07.083). */
@@ -266,7 +268,7 @@ void s07_cy_run(const struct s07_cy_io *io, const struct s07_cyacd *f,
 		struct s07_cy_result *res)
 {
 	static struct s07_cyacd_row row;
-	struct run r = { io, f->checksum_type, crc, res, { 0 } };
+	struct run r = { io, S07_CY_SUM, crc, res, { 0 } };	/* S-07.082 */
 	uint8_t arrays[MAX_ARRAYS];
 	uint16_t lo[MAX_ARRAYS], hi[MAX_ARRAYS];
 	unsigned narrays = 0;

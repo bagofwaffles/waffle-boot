@@ -286,6 +286,11 @@
    "why": "checksum type 02"
   },
   {
+   "cyacd": "2E1230690001\r\n:000000000805101B26313C47529C\r\n",
+   "bad": 1,
+   "why": "checksum type 01: the enter packet can enter only a sum-checking PSoC bootloader"
+  },
+  {
    "cyacd": "2E1230690000\r\n",
    "bad": 1,
    "why": "no row line"

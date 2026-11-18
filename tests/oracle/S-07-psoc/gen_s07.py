@@ -246,6 +246,8 @@ def cypress_vectors():
          'why': 'a wrong line check is not a bad file: the run fails at verify row'},
         {'cyacd': h[:10] + '\r\n' + row + '\r\n', 'bad': 1, 'why': 'header of 10 hex digits'},
         {'cyacd': h[:10] + '02\r\n' + row + '\r\n', 'bad': 1, 'why': 'checksum type 02'},
+        {'cyacd': h[:10] + '01\r\n' + row + '\r\n', 'bad': 1,
+         'why': 'checksum type 01: the enter packet can enter only a sum-checking PSoC bootloader'},
         {'cyacd': h + '\r\n', 'bad': 1, 'why': 'no row line'},
         {'cyacd': h + '\r\n' + row[1:] + '\r\n', 'bad': 1, 'why': 'row line without the colon'},
         {'cyacd': h + '\r\n' + row[:-1] + '\r\n', 'bad': 1, 'why': 'odd number of hex digits'},
