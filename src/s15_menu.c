@@ -911,6 +911,8 @@ static void os_write(struct s15_menu *m)
  * comes back do not look like a key that did nothing. */
 static void restart(struct s15_menu *m)
 {
+	if (m->fs_held)
+		return;		/* fs held says why: no reset while it shows */
 	sline(m, S15_ST_WARN, s15_restarting);
 	m->env->reset_w7(m->env->ctx);
 }
@@ -1089,6 +1091,16 @@ void s15_up_released(struct s15_menu *m, uint32_t now_ms)
 		due = 5000u;
 	m->scan_due_ms = due;
 	m->scan_due_set = true;
+}
+
+void s15_up_fs_held(struct s15_menu *m, bool held, bool kept)
+{
+	kept = held && kept;
+	if (m->fs_held == held && m->fs_kept == kept)
+		return;
+	m->fs_held = held;
+	m->fs_kept = kept;
+	m->changes++;
 }
 
 void s15_up_tick(struct s15_menu *m, uint32_t now_ms)
@@ -1363,7 +1375,7 @@ bool s15_up_disk_offerable(const struct s15_menu *m)
 
 enum s15_continue s15_menu_continue_check(const struct s15_menu *m)
 {
-	if (m->busy || m->hold || m->activity != S15_ACT_IDLE ||
+	if (m->busy || m->hold || m->activity != S15_ACT_IDLE || m->fs_held ||
 	    m->env->continue_os == NULL ||
 	    m->screen == S15_SCR_STARTING || m->screen == S15_SCR_NONE)
 		return S15_CONT_BUSY;
@@ -1609,6 +1621,7 @@ void s15_menu_init(struct s15_menu *m, const struct s15_boot *boot,
 	}
 	m->shift = false;
 	m->option_on = false;            /* Off after any reset */
+	m->fs_held = m->fs_kept = false;
 	m->dev_mode = false;
 	m->color = true;
 	m->mtp_macos = true;
@@ -1679,6 +1692,12 @@ void s15_menu_start(struct s15_menu *m)
 	}
 }
 
+static const char *const fs_held_rows[3] = {
+	"First stage not written. The unit stays on",
+	"until it is: install the same package again.",
+	"The switch-off waits for that write.",
+};
+
 void s15_menu_frame(const struct s15_menu *m, struct s15_frame *f)
 {
 	const struct s15_boot *b = m->boot;
@@ -1691,6 +1710,9 @@ void s15_menu_frame(const struct s15_menu *m, struct s15_frame *f)
 	    m->usb == S15_USB_MTP_VENDOR)
 		f->status |= S15_STATUS_USB;
 	f->option_on = m->option_on;
+	/* S-15's fs held */
+	f->under = m->fs_held ? fs_held_rows : NULL;
+	f->under_n = (uint8_t)(!m->fs_held ? 0u : m->fs_kept ? 3u : 2u);
 	f->fatal = false;
 	f->gray = !m->color;                   /* S-15.173 */
 }

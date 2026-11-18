@@ -15,7 +15,7 @@
  * S-07.031, S-07.032, S-07.040-S-07.045, S-07.051-S-07.058, S-07.061,
  * S-05.025 and S-15.180 (step 6b, the boot prompt's transcripts),
  * S-07.062, S-07.065-S-07.067, S-07.070-S-07.072, S-07.075-S-07.078,
- * S-07.080-S-07.086.
+ * S-07.080-S-07.086; S-07.051's first-stage window (fs_hold_*).
  */
 #include "waffle/s07_program.h"
 #include "waffle/s15_prompt.h"
@@ -98,6 +98,12 @@ static int actions_due(int only_usb)
 			s07_sleep(&rig.psoc, S06_MS(750));
 			s07_shutdown_reports(&rig.psoc);
 			halted = 1;
+		} else if (!strcmp(a->what, "fs_window_open")) {
+			/* S-07.051: the first erase of the first-stage area */
+			s07_fs_window_open(&rig.psoc);
+		} else if (!strcmp(a->what, "fs_window_close")) {
+			/* its read-back matched: a kept power-off runs */
+			rc = s07_fs_window_close(&rig.psoc);
 		} else if (!strcmp(a->what, "backplane")) {
 			bool ok;
 

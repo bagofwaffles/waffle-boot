@@ -680,6 +680,8 @@ static void first_stage_announce(void *ctx, bool on)
 
 	if (!on)
 		return;
+	/* S-07.051: the first-stage window, from before the first erase */
+	s07_fs_window_open(&m->psoc);
 	s15_up_step_start(&m->sv.menu, S15_STEP_SPIBOOT, true);
 	cur.announced = true;
 	show(m);
@@ -698,13 +700,31 @@ static bool step_spiboot(void *ctx)
 	if (image == NULL)
 		return false;
 	opxy_flash_writer(&m->hw, true);	/* S-13b.017 */
+	m->fs_writing = true;
 	r = s02_first_stage_upgrade(&m->flash, cur.env.option, image, len,
 				    first_stage_announce, m);
+	m->fs_writing = false;
 	opxy_flash_writer(&m->hw, false);
 	free(image);
 	cur.write_status = r;
 	cur.refusal = r == S02_ERR_STREAM ? S11_BAD_FILE : S11_OK; /* S-02.091 */
 	flash_cause(r);
+	/*
+	 * S-07.051: the window ends when the read-back matched, or the area
+	 * already held the image; a failed write leaves it open (S-15's fs
+	 * held). A power-off kept in it runs now, inside the step, which then
+	 * has no result (S-11.058).
+	 */
+	if (r == S02_OK && s07_fs_window(&m->psoc)) {
+		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
+			    "install: first stage written, the window ends");
+		if (s07_fs_window_close(&m->psoc) == S07_POWEROFF)
+			opxy_powered_off(m);
+	} else if (r != S02_OK && s07_fs_window(&m->psoc)) {
+		s14_log_str(&m->sv.log, S14_ERROR, S14_NO_TAG,
+			    "install: first stage not written; no reset or "
+			    "power-off until it is");
+	}
 	return r == S02_OK;
 }
 

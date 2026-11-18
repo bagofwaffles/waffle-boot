@@ -664,19 +664,34 @@ void s15_render_console(const struct s15_console *con,
 			const struct s15_frame *f)
 {
 	struct s15_gray_draw gd;
-	unsigned i;
 
 	if (f->gray)                    /* S-15.173 */
 		d = s15_gray_ops(&gd, d);
 	d->fill(d->ctx, 0, 0, g->width, g->height, S15_BLACK);
 	frame(f, g, d);
-	for (i = 0; i < con->count; i++) {
-		size_t n;
-		const char *s = s15_console_row(con, i, &n);
+	/* the rows under the body: the console's newest rows above them */
+	{
+		const unsigned held = f->under == NULL ? 0u :
+				      f->under_n < S15_ROWS ? f->under_n : S15_ROWS;
+		const unsigned room = S15_ROWS - held;
+		const unsigned skip = con->count > room ? con->count - room : 0u;
 
-		if (n != 0u)
-			s15_render_row(g, d, i, s15_console_row_style(con, i),
-				       s, n);
+		for (unsigned i = skip; i < con->count; i++) {
+			size_t n;
+			const char *s = s15_console_row(con, i, &n);
+
+			if (n != 0u)
+				s15_render_row(g, d, i - skip,
+					       s15_console_row_style(con, i), s, n);
+		}
+		for (unsigned i = 0; i < held; i++) {
+			const char *s = f->under[i];
+			size_t n = 0;
+
+			while (s[n] != '\0')
+				n++;
+			s15_render_row(g, d, room + i, S15_ST_ERROR, s, n);
+		}
 	}
 }
 

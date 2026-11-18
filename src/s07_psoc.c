@@ -255,6 +255,17 @@ void s07_shutdown_reports(struct s07_psoc *p)
 	s07_led_all_off(p);
 }
 
+/* S-07.051 steps 1-3 */
+static int power_off(struct s07_psoc *p, uint8_t s)
+{
+	if (p->ops->shutdown)
+		p->ops->shutdown(p->ops->ctx);
+	s07_shutdown_reports(p);
+	send(p, ID_POWER_32, &s, 1);
+	p->off = true;			/* step 3: nothing more, no reset */
+	return S07_POWEROFF;
+}
+
 /* S-07.050, S-07.051 */
 static int power_state(struct s07_psoc *p, uint8_t s)
 {
@@ -262,14 +273,40 @@ static int power_state(struct s07_psoc *p, uint8_t s)
 
 	p->state = s;
 	log_ev(p, S07_LOG_POWER, s, 0);
+	if (p->kept && s == 0x10u)
+		p->kept = false;	/* the switch is on again: dropped */
 	if (OPXY_TESTOS_OR(opxy_testos_power_state(prev, s), !s07_power_off_trigger(prev, s)))	/* the test OS: the states recorded, a power-off logged first */
 		return S07_OK;
-	if (p->ops->shutdown)
-		p->ops->shutdown(p->ops->ctx);
-	s07_shutdown_reports(p);
-	send(p, ID_POWER_32, &s, 1);
-	p->off = true;			/* step 3: nothing more, no reset */
-	return S07_POWEROFF;
+	if (p->fs_window) {		/* recorded and kept, nothing sent */
+		p->kept = true;
+		p->kept_s = s;
+		return S07_OK;
+	}
+	return power_off(p, s);
+}
+
+void s07_fs_window_open(struct s07_psoc *p)
+{
+	p->fs_window = true;
+}
+
+int s07_fs_window_close(struct s07_psoc *p)
+{
+	p->fs_window = false;
+	if (!p->kept || p->off)
+		return p->off ? S07_POWEROFF : S07_OK;
+	p->kept = false;
+	return power_off(p, p->kept_s);
+}
+
+bool s07_fs_window(const struct s07_psoc *p)
+{
+	return p->fs_window;
+}
+
+bool s07_fs_kept(const struct s07_psoc *p)
+{
+	return p->fs_window && p->kept;
 }
 
 /* S-07.031 */

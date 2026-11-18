@@ -506,7 +506,7 @@ static bool title_bar_is(uint16_t bg, uint16_t dark, uint16_t status)
 static void test_render_frame(void)
 {
 	struct s15_frame f = { "Main Menu", "1.0.0", 0, S15_SLOT_UNKNOWN, false,
-			       false, false };
+			       false, false, NULL, 0 };
 	uint16_t ty = geom.title_y;
 	uint16_t sy = s15_status_text_y(&geom);
 	/* "waffle-boot v1.0.0" ends at width - edge */
@@ -871,7 +871,7 @@ static void test_frames(void)
 {
 	struct s15_console con;
 	struct s15_frame f = { "Main Menu", "1.0.0", S15_STATUS_USB,
-			       S15_SLOT_UNKNOWN, false, false, false };
+			       S15_SLOT_UNKNOWN, false, false, false, NULL, 0 };
 	unsigned i;
 	char name[8];
 
@@ -1008,7 +1008,8 @@ static void test_boxes(void)
 {
 	struct s15_rect r[S15_NKEYS];
 	struct s15_keytest kt;
-	struct s15_frame f = { "Key Test", "1.0.0", 0, 0, true, false, false };
+	struct s15_frame f = { "Key Test", "1.0.0", 0, 0, true, false, false, NULL,
+			       0 };
 	unsigned i, j;
 	uint32_t lines_end = s15_row_y(&geom, S15_KEYTEST_LINES - 1u) +
 			     geom.glyph_h;

@@ -15,6 +15,7 @@
  * bytes that were checked with no further read. The OS and first-stage steps
  * (S-11.067, S-11.072) take the same check.
  */
+#include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -1971,6 +1972,89 @@ static void test_whole_rerun_after_first_stage(void)
 	whole_end();
 }
 
+/* The power-off's wait for the PSoC (opxy_powered_off()) left by a jump. */
+static jmp_buf off_jmp;
+
+static void off_idle(void *ctx)
+{
+	(void)ctx;
+	if (m.psoc.off)
+		longjmp(off_jmp, 1);
+}
+
+/*
+ * S-07.051, S-02.071 and the refusals while the first-stage window is open
+ * (PS-FS-HOLD). A first-stage write that fails leaves the window open: S-15's
+ * fs held in the frame, and every reset and hand-over refused, whichever way
+ * it is asked: S-04's writers W1 to W4, W7, W10 and W11 (a host's reboot
+ * requests, a disk's cdc-please file, the developer menu's restart, the
+ * developer request's restart, Continue to the OS), Continue to the OS from
+ * the menu and from a host. A PSoC power-off in the window is kept, nothing
+ * sent; it runs when a re-run's read-back matches, inside that step.
+ */
+static void test_whole_fs_window(void)
+{
+	static const enum s04_writer writers[] = {
+		S04_W1, S04_W2, S04_W3, S04_W4, S04_W7, S04_W10, S04_W11,
+	};
+	struct s11_install_result res;
+	struct s06_frame off;
+
+	t_case = "whole: the first-stage window";
+	whole_setup();
+	ks.ev[0] = hold_5s;
+	ks.ev[1] = rehold_5s;
+	flash_fs_fails = true;
+	whole_install(true, false, &res);
+	flash_fs_fails = false;
+	CHECK(res.run.end == S11_RUN_FAILED && res.run.step == S11_STEP_SPIBOOT);
+	CHECK(s07_fs_window(&m.psoc) && !s07_fs_kept(&m.psoc));
+	CHECK(cdc_has("install: first stage not written; no reset or power-off"));
+	opxy_menu_show(&m);
+	CHECK(m.sv.menu.fs_held && !m.sv.menu.fs_kept);
+
+	/* every reset refused, the caller going on */
+	for (size_t i = 0; i < sizeof writers / sizeof writers[0]; i++) {
+		cdc_n = 0;
+		opxy_reboot(&m, writers[i], 0u);
+		CHECK(cdc_has("restart refused: the first stage is not written"));
+	}
+	CHECK(s15_menu_continue_check(&m.sv.menu) == S15_CONT_BUSY);
+	CHECK(s15_menu_continue(&m.sv.menu) == S15_CONT_BUSY);
+	if (m.sv.host_ops.continue_check != NULL)
+		CHECK(m.sv.host_ops.continue_check(&m) == S10C_CONT_BUSY);
+
+	/* the switch off: recorded and kept, nothing sent */
+	memset(&off, 0, sizeof off);
+	off.id = 0x31u;
+	off.route = s06_route(S06_ADDR_PSOC, S06_ADDR_MASTER);
+	off.payload[0] = 0x14u;
+	off.len = 1u;
+	wire_n = 0;
+	CHECK(s07_power_message(&m.psoc, &off) == S07_OK);
+	CHECK(s07_fs_kept(&m.psoc) && !m.psoc.off && !frame_on(wire, wire_n, 0x32u, -1));
+	opxy_menu_show(&m);
+	CHECK(m.sv.menu.fs_held && m.sv.menu.fs_kept);
+
+	/* the same package again: its read-back matches, the window ends and
+	 * the kept power-off runs inside the step */
+	cdc_n = 0;
+	wire_n = 0;
+	ks.ev[0] = rehold_5s;
+	ks.ev[1] = rehold_5s;
+	fake_core_set_idle_hook(off_idle, NULL);
+	if (setjmp(off_jmp) == 0) {
+		whole_install(true, false, &res);
+		CHECK(false);			/* the power-off does not return */
+	}
+	fake_core_set_idle_hook(NULL, NULL);
+	CHECK(m.psoc.off && !s07_fs_window(&m.psoc));
+	CHECK(first_stage_is(v_boot_fs_good, sizeof v_boot_fs_good));
+	CHECK(cdc_has("[skipped] bootloader: already written"));
+	CHECK(frame_on(wire, wire_n, 0x32u, 0x14));
+	whole_end();
+}
+
 /*
  * An install submitted over a host link (the firmware command's form,
  * forced) asks the same: nothing the host sends during it is read, a key
@@ -2041,6 +2125,7 @@ int main(void)
 	test_whole_first_stage_off();
 	test_whole_rerun_after_first_stage();
 	test_whole_host_and_again();
+	test_whole_fs_window();		/* last: it leaves by the power-off */
 	wire_s09_release(&S);
 	wire_yaffs_detach(&Y);
 	free(vol);

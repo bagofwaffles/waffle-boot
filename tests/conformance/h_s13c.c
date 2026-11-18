@@ -471,6 +471,8 @@ static void frame_of(const struct opts *o, bool fatal, struct s15_frame *f)
 	f->option_on = o->option != 0;
 	f->fatal = fatal;
 	f->gray = false;
+	f->under = NULL;
+	f->under_n = 0;
 }
 
 static void show(struct wb_display *d, const struct opts *o, bool fatal)

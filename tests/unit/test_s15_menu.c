@@ -2314,6 +2314,41 @@ static void test_factory(void)
 	press(0x13);
 	expect_screen("factory_restarting");
 	CHECK(F.reset_w7 == 1u && F.restart_line, "S-15.095 Restarting, then the reset");
+	/* S-02.071, S-07.051: fs held refuses the restart, with no line */
+	reset_fake(); default_boot(); start();
+	s15_up_fs_held(&M, true, false);
+	press(0x08);
+	press(0x13);
+	CHECK(F.reset_w7 == 0u && !F.restart_line, "fs held: no restart");
+}
+
+/* S-15's fs held: in every frame under the console's newest rows, two of
+ * them, three while a power-off is kept; Continue to the OS refused, by
+ * key and by the host, until it ends. */
+static void test_fs_held(void)
+{
+	struct s15_frame f;
+
+	reset_fake(); default_boot(); start();
+	s15_menu_frame(&M, &f);
+	CHECK(f.under == NULL && f.under_n == 0u, "no fs held");
+	s15_up_fs_held(&M, true, false);
+	s15_menu_frame(&M, &f);
+	CHECK(f.under != NULL && f.under_n == 2u &&
+	      strstr(f.under[0], "First stage not written") != NULL &&
+	      strstr(f.under[1], "install the same package again") != NULL,
+	      "fs held: two rows");
+	CHECK(s15_menu_continue_check(&M) == S15_CONT_BUSY &&
+	      s15_menu_continue(&M) == S15_CONT_BUSY && F.cont == 0u,
+	      "fs held: Continue to the OS refused");
+	s15_up_fs_held(&M, true, true);
+	s15_menu_frame(&M, &f);
+	CHECK(f.under_n == 3u && strstr(f.under[2], "switch-off") != NULL,
+	      "a kept power-off: its row");
+	s15_up_fs_held(&M, false, true);
+	s15_menu_frame(&M, &f);
+	CHECK(f.under == NULL && !M.fs_kept, "the window ended");
+	CHECK(s15_menu_continue_check(&M) == S15_CONT_STARTED, "then it is allowed");
 }
 
 /* S-15.105: the host releases the disk and the delay passes. */
@@ -3320,6 +3355,7 @@ int main(void)
 	test_confirm_screen();
 	test_run_end_skipped();
 	test_continue();
+	test_fs_held();
 	test_done_restart();
 	test_start_menu();
 	test_step_labels_fit();

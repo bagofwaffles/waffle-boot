@@ -220,6 +220,9 @@ void opxy_copro_common(struct opxy_master *m, enum s10c_link link,
 		       const struct s06_frame *f);
 /* S-04.020: a reboot request from writer w with its argument. */
 void opxy_reboot(struct opxy_master *m, enum s04_writer w, uint16_t arg);
+/* S-07.051's first-stage window is open: what (a restart, a hand-over) is
+ * refused and logged; true then. opxy_reboot() asks it first. */
+bool opxy_fs_refuses(struct opxy_master *m, const char *what);
 /* S-04.063's shutdown, its reports on the PSoC line when it returns
  * (S-04.028), waiting at most OPXY_PSOC_DRAIN_US for them. */
 void opxy_shutdown(struct opxy_master *m);

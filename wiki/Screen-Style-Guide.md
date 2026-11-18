@@ -201,6 +201,13 @@ These rules are fixed: only the maintainer changes them.
   even with Start in boot menu on (S-15.190). Those two keys and a host's
   request (`continue-os`, S-10c.076) start it. Its screen says that the
   unit is restarting to start the OS.
+- After a failed first-stage write (a build with the first-stage step
+  switched on), until the first stage is written: no key and no host
+  request restarts the unit or starts the OS. Continue to the OS, the
+  restart, a host's reboot request and the developer menu's restart do
+  nothing, and the last rows of every screen say why (`fs held`, red):
+  the first stage is not written, the unit stays on, and installing the
+  same package again writes it (S-02.071).
 - System holds the key test, the volume calibration reset, the content
   packs, the format and the factory reset. The format is shown on every
   unit, whatever developer mode is; the developer menu offers no reset.

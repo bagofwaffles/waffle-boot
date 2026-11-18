@@ -283,7 +283,7 @@ static void front_shot(const struct fr_screen *s)
 static int installer_shots(const char *dir)
 {
 	const struct s15_frame fr = { "Installer", ver, 0, S15_SLOT_UNKNOWN,
-				      false, false, true };
+				      false, false, true, NULL, 0 };
 	static const struct {
 		const char *name;
 		uint8_t phase, lock, trial;
