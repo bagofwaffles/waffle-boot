@@ -574,7 +574,11 @@ int wb_msi_emmc_erase(void *ctx, uint32_t first_sector)
 	return wb_msi_emmc_erase_arg(ctx, first_sector, WB_MMC_ERASE);
 }
 
-/* S-13b.051 step 3: CMD1 until power-up is done, at least 1 s. */
+/* S-13b.051 step 3: CMD1 until power-up is done, at least 1 s. A CMD1 and
+ * its R3 are about 100 clocks, some 250 us at 396.8 kHz; the pause between
+ * tries is shorter still, so that the end of power-up is seen soon. */
+#define CMD1_PAUSE_US 100u
+
 static int op_cond(const struct wb_msi *m)
 {
 	uint64_t end = wb_time_deadline(m->t, m->c->cmd1_timeout_us);
@@ -590,7 +594,7 @@ static int op_cond(const struct wb_msi *m)
 			return WB_MSI_OK;
 		if (rc != WB_MSI_OK && rc != WB_MSI_ERR_CMD)
 			return rc;
-		wb_delay_us(m->t, 1000);
+		wb_delay_us(m->t, CMD1_PAUSE_US);
 	} while (!late);
 	return WB_MSI_TIMEOUT;
 }
@@ -622,6 +626,12 @@ static int bring_up(struct wb_msi *m, uint8_t *ext_csd)
 		rc = r1(m, 7, (uint32_t)m->rca << 16, 0);
 	if (rc == WB_MSI_OK)
 		rc = wait_dat0(m, m->c->busy_timeout_us);
+	/* S-13b.052: from CMD7 until HS_TIMING at most 26 MHz; 25 MHz
+	 * (MSI_CLKDIV 1) for the bus width's switch and the CMD8s, and to the
+	 * end for an eMMC with no high-speed type. Its DAT0 wait follows the
+	 * one above with no command between, so it ends at its first read. */
+	if (rc == WB_MSI_OK)
+		rc = wb_msi_set_clock(m, 1u, false);
 	if (rc == WB_MSI_OK)
 		rc = wb_msi_emmc_switch(m, WB_EXT_CSD_BUS_WIDTH, 2);
 	if (rc == WB_MSI_OK)

@@ -360,7 +360,10 @@ static void test_bring_up_hs200(void)
 	CHECK(emmc.log[0].width == 1);
 	CHECK(emmc.log[6].arg == 0x5A7E0000u);	/* CMD9 at RCA << 16 */
 	CHECK(emmc.log[6].hz == 396825u);
+	CHECK(emmc.log[7].hz == 396825u);	/* CMD7 at the identification clock */
 	CHECK(emmc.log[8].arg == 0x03B70200u);	/* Switch(183, 2) */
+	CHECK(emmc.log[8].hz == 25000000u);	/* then 25 MHz until HS_TIMING */
+	CHECK(emmc.log[10].hz == 25000000u && emmc.log[11].hz == 25000000u);
 	CHECK(emmc.log[10].width == 8);		/* CMD8 on 8 bits */
 	CHECK(emmc.log[11].arg == 0x03B93200u);	/* Switch(185, 0x32) */
 	CHECK(emmc.log[13].hz == 50000000u);
@@ -437,9 +440,10 @@ static void test_bring_up_timing_rows(void)
 	init_emmc(&m, 0x10u, 0x01u);
 	CHECK(m.hs_timing == 0x01u && m.clkdiv == 0);
 
-	/* No high-speed type: no switch, identification clock kept. */
+	/* No high-speed type: no switch, 25 MHz from CMD7 on (S-13b.052). */
 	init_emmc(&m, 0x00u, 0x0Fu);
-	CHECK(m.hs_timing == 0 && m.clkdiv == 63u);
+	CHECK(m.hs_timing == 0 && m.clkdiv == 1u);
+	CHECK(emmc.log[emmc.n - 1u].hz == 25000000u);
 	CHECK(count_idx(0, 6) == 1);
 }
 

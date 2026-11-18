@@ -201,7 +201,9 @@ const struct wb_msi_config opxy_msi = {
  * within 5 s of the stream. One try waits at most CMD1's 1.05 s, seven
  * DAT0 or CMD13 waits (the identification clock, CMD7, then Switch(183)
  * and Switch(185) with their CMD13s, the clock raise) and two CMD8
- * transfers: 1.05 + 7 * 0.25 + 2 * 0.1 = 3.0 s. The controller ends every
+ * transfers: 1.05 + 7 * 0.25 + 2 * 0.1 = 3.0 s. The clock's raise to 25 MHz
+ * after CMD7 waits on DAT0 straight after CMD7's own wait, with no command
+ * between, so it ends at its first read and adds nothing. The controller ends every
  * command within its response timeout, so the command waits add nothing
  * that counts. A repeat starts only within OPXY_EMMC_REPEAT_US of the
  * first try, so the whole is at most 1.5 + 3.0 = 4.5 s.
