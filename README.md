@@ -13,6 +13,8 @@ Teenage Engineering.
 > on real hardware, but not widely. A broken bootloader can leave a unit that only an external flash
 > programmer brings back.
 
+Install with the guided page: https://bagofwaffles.github.io/waffle-boot/?mode=install
+
 **Status:** it boots on one unit. Shown there so far: a start from a committed slot through to the OP-XY's
 own OS, writing a slot over USB from recovery, and the trial and commit that the installer reuses.
 [Status and roadmap](https://github.com/bagofwaffles/waffle-boot/wiki/Status-and-Roadmap) covers open work and what is out of scope.
