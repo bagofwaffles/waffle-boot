@@ -52,6 +52,18 @@
 #endif
 
 /*
+ * Place a buffer in DDR that start-up does not clear (the linker script's
+ * .noinit): for a buffer whose every byte is written before it is read, so
+ * that its clearing is not paid for at each start. Its contents at entry
+ * are whatever memory held. Host builds ignore it (cleared there).
+ */
+#if defined(__bfin__)
+#define WB_NOINIT __attribute__((section(".noinit")))
+#else
+#define WB_NOINIT
+#endif
+
+/*
  * L1 code (0x11A00000) and DDR (0x80000000) are further apart than a
  * PC-relative CALL or JUMP.L reaches (24 bits, +-16 MB). A function called
  * from the other region carries WB_FAR_CALL (GCC's longcall: the call loads

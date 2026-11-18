@@ -20,8 +20,10 @@ static uint8_t emmc_scratch[S03_SECTOR];
 static uint8_t psoc_tx[OPXY_UART_BUF];
 /* S-13b.070: DMA11's ring, on cache lines of its own (wb_uart_init_dma()). */
 static uint8_t psoc_rx[OPXY_PSOC_RING] __attribute__((aligned(WB_DCACHE_LINE)));
-/* S-09.002: the running slot's stream, read once, checked, compared, then sent. */
-static OPXY_TESTOS_UNUSED uint8_t slot_stream[S02_SLOT_CAPACITY];	/* the test OS streams nothing */
+/* S-09.002: the running slot's stream, read once, checked, compared, then sent.
+ * Not cleared at start-up: every use reads the first s02_image.len bytes, which
+ * s02_image_read() has just written, and len is 0 until a read has succeeded. */
+static OPXY_TESTOS_UNUSED WB_NOINIT _Alignas(32) uint8_t slot_stream[S02_SLOT_CAPACITY];	/* the test OS streams nothing */
 
 /* S-07's events: their lines' wording is free (S-14.009) and their level
  * is 3 or less (S-14.060); each is logged at level 3 as

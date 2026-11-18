@@ -31,7 +31,8 @@
  * _wb_reset by the front's jump, with the hand-off record written.
  *
  * The loader stream places each section at its run address, so nothing is
- * copied at start-up; .bss and .l1.bss are cleared by wb_start_c().
+ * copied at start-up; .bss and .l1.bss are cleared by wb_start_c(), .noinit
+ * is not.
  */
 
 OUTPUT_FORMAT("elf32-bfin")
@@ -135,6 +136,15 @@ SECTIONS
 		*(COMMON)
 		. = ALIGN(4);
 		_wb_bss_end = .;
+	} > ddr
+
+	/* Buffers whose every byte is written before it is read (WB_NOINIT):
+	 * not cleared at start-up. */
+	.noinit (NOLOAD) :
+	{
+		. = ALIGN(32);
+		*(.noinit .noinit.*)
+		. = ALIGN(4);
 	} > ddr
 
 	.stack (NOLOAD) :

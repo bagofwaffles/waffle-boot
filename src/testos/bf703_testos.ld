@@ -108,6 +108,7 @@ SECTIONS
 		*(.bss .bss.*)
 		*(COMMON)
 		*(.handover.stack .handover.stack.*)
+		*(.noinit .noinit.*)
 		. = ALIGN(4);
 		_wb_bss_end = .;
 	} > ddr
