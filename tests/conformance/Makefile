@@ -83,12 +83,12 @@ H_s13c_SRCS := src/s13c_panel.c src/display_draw.c src/display_font.c src/s15_co
 	src/s15_prompt.c src/s14_log.c src/s14_line.c src/s17_revisions.c src/s11_common.c src/s11_version.c
 H_s14_SRCS := src/s14_line.c src/s14_log.c src/s14_export.c
 H_s11_SRCS := $(sort $(wildcard src/s11_*.c)) src/s17_revisions.c src/wire_crc.c src/s01_memmap.c src/s05_handoff.c \
-	src/wire_package.c src/wire_zip.c src/wire_yaffs.c src/wire_fat.c \
+	src/wire_package.c src/wire_zip.c src/wire_yaffs.c src/wire_ckpt.c src/wire_fat.c \
 	src/s09_files.c src/s09_master.c src/s09_slave.c src/s09_bridge.c src/wire_s09.c src/s15_settings.c \
 	src/s06_frame.c src/s06_rx.c src/s06_link.c src/s03_emmc.c src/s04_records.c \
 	src/s10c_text.c
 H_s12_SRCS := src/s04_records.c src/s10c_text.c src/s11_common.c src/s11_version.c \
-	src/s11_content.c src/s14_export.c src/wire_fat.c src/wire_package.c src/wire_yaffs.c \
+	src/s11_content.c src/s14_export.c src/wire_fat.c src/wire_package.c src/wire_yaffs.c src/wire_ckpt.c \
 	src/wire_crc.c src/wire_zip.c
 # Programs that link the vendored libraries.
 H_s11_TP := $(TP_OBJS)

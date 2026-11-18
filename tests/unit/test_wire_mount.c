@@ -203,20 +203,20 @@ static void stale(bool big)
 /* ---- trees ---- */
 
 struct tree {
-	char *line[MAXPATHS];
+	char line[MAXPATHS][700];
 	unsigned n;
 };
 
 static int by_line(const void *a, const void *b)
 {
-	return strcmp(*(char *const *)a, *(char *const *)b);
+	return strcmp(a, b);
 }
 
 static void walk_dir(struct tree *t, const char *dir)
 {
 	yaffs_DIR *d = yaffs_opendir(dir);
 	struct yaffs_dirent *de;
-	char path[600], line[700];
+	char path[600];
 	struct yaffs_stat st;
 
 	if (d == NULL)
@@ -225,9 +225,8 @@ static void walk_dir(struct tree *t, const char *dir)
 		snprintf(path, sizeof path, "%s/%s", dir, de->d_name);
 		if (yaffs_lstat(path, &st) != 0 || t->n >= MAXPATHS)
 			continue;
-		snprintf(line, sizeof line, "%s %u %o %lld", path, (unsigned)st.st_ino,
-			 (unsigned)st.st_mode, (long long)st.st_size);
-		t->line[t->n++] = strdup(line);
+		snprintf(t->line[t->n++], sizeof t->line[0], "%s %u %o %lld", path,
+			 (unsigned)st.st_ino, (unsigned)st.st_mode, (long long)st.st_size);
 		if ((st.st_mode & S_IFMT) == S_IFDIR)
 			walk_dir(t, path);
 	}
@@ -238,7 +237,7 @@ static void walk_dir(struct tree *t, const char *dir)
 static void tree_of(struct tree *t)
 {
 	t->n = 0;
-	t->line[t->n++] = strdup("/yaffs2");
+	snprintf(t->line[t->n++], sizeof t->line[0], "/yaffs2");
 	walk_dir(t, "/yaffs2");
 	qsort(t->line, t->n, sizeof t->line[0], by_line);
 }
@@ -255,8 +254,6 @@ static bool same(const struct tree *a, const struct tree *b)
 
 static void tree_free(struct tree *t)
 {
-	for (unsigned i = 0; i < t->n; i++)
-		free(t->line[i]);
 	t->n = 0;
 }
 
@@ -283,7 +280,7 @@ static void boot_mount(void)
 static void mount_unchanged(enum wire_yaffs_way want, const char *name)
 {
 	uint8_t *before = tl_xmalloc(IMAGE_BYTES);
-	struct tree scan, got;
+	static struct tree scan, got;	/* large: not on the stack */
 
 	memcpy(before, image, IMAGE_BYTES);
 	scanned_tree(&scan);
