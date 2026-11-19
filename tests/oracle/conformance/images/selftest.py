@@ -371,7 +371,7 @@ def _():
     assert all(n.startswith('firmware/') for n in zipfile.ZipFile(__import__('io').BytesIO(z)).namelist())
     assert fwzip.extract_path('firmware/blackfin/bin/os.ldr') == 'upgrade/blackfin/bin/os.ldr'
     assert fwzip.version_from_text('1000.0.20+0@deadbeef\n')['version'] == (1000, 0, 20)
-    p = fwzip.parse(fwzip.build({'spiboot': b'x' * 0xC001}, extra={'firmware/partial_upgrade': b''}))
+    p = fwzip.parse(fwzip.build({'spiboot': b'x' * 0xB001}, extra={'firmware/partial_upgrade': b''}))
     assert p['partial'] and not p['components']['spiboot']['size_ok']
 
 
