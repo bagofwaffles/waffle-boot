@@ -137,7 +137,7 @@ static bool eq(const struct s02_store *a, const struct s02_store *b)
 
 static bool is_default(const struct s02_store *a)
 {
-	const struct s02_store d = st(false, true, true, false);
+	const struct s02_store d = st(false, false, true, false);
 
 	return eq(a, &d);
 }

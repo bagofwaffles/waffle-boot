@@ -17,7 +17,7 @@ struct s15_settings {
 	bool start_menu; /* S-15.175: start in the boot menu */
 };
 
-/* The defaults: developer mode off, in color, MTP for macOS, start in boot
+/* The defaults: developer mode off, in gray, MTP for macOS, start in boot
  * menu off. */
 void s15_settings_defaults(struct s15_settings *s);
 

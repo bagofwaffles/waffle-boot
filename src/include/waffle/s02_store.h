@@ -82,7 +82,7 @@ enum s02_store_rc {
 
 /* The settings sector of slot `slot` (0 or 1). */
 uint32_t s02_store_off(unsigned slot);
-/* The defaults: developer mode off, color on, MTP for macOS, start in boot
+/* The defaults: developer mode off, color off, MTP for macOS, start in boot
  * menu off. */
 void s02_store_defaults(struct s02_store *s);
 /* The record at p, n bytes from a page's start, with the stamp it must

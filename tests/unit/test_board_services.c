@@ -1259,9 +1259,9 @@ static void test_held_screen(void)
 	CHECK(m.sv.boot.slave == S15_SLAVE_OK);
 	/* S-15.172: no settings read at this start: the defaults, developer
 	 * mode off, and nothing asked of the drive for them */
-	CHECK(!m.sv.boot.settings.dev_mode && m.sv.boot.settings.color &&
+	CHECK(!m.sv.boot.settings.dev_mode && !m.sv.boot.settings.color &&
 	      m.sv.boot.settings.mtp_macos);
-	CHECK(!m.sv.menu.dev_mode && m.sv.menu.color);
+	CHECK(!m.sv.menu.dev_mode && !m.sv.menu.color);
 	CHECK(!m.sv.files.mount_sent);
 	opxy_usb_stop();
 
@@ -2458,7 +2458,7 @@ static void test_boot_prompt(void)
 	CHECK(!(f.status & S15_STATUS_USB));
 	CHECK(f.version != NULL &&
 	      strncmp(f.version, bl_text(), strlen(bl_text())) == 0);
-	CHECK(!f.gray && !f.option_on);
+	CHECK(f.gray && !f.option_on);	/* S-15.180: in gray, the default */
 
 	/* Digit 2 held when shown: a ping is answered meanwhile (S-07.076),
 	 * and the up and down choose. */
@@ -2593,7 +2593,7 @@ static void test_menu_env(void)
 		m.store_slot.established = false;
 		wire_n = 0;
 		CHECK(e.settings_save(e.ctx, &st, &now) == S15_STORE_UNUSABLE);
-		CHECK(!now.dev_mode && now.color && now.mtp_macos && !now.start_menu);
+		CHECK(!now.dev_mode && !now.color && now.mtp_macos && !now.start_menu);
 		CHECK(wire_has("not saved: this slot keeps no settings") && flash_mem[0xFE000u] == 0xFFu);
 		CHECK(e.settings_clear(e.ctx) == S15_STORE_UNUSABLE);
 		CHECK(wire_has("not cleared: this slot keeps no settings"));

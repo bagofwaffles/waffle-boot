@@ -1694,7 +1694,7 @@ void s15_menu_init(struct s15_menu *m, const struct s15_boot *boot,
 	m->option_on = false;            /* Off after any reset */
 	m->fs_held = m->fs_kept = false;
 	m->dev_mode = false;
-	m->color = true;
+	m->color = false;
 	m->mtp_macos = true;
 	m->start_menu = false;
 	m->packs_item = false;

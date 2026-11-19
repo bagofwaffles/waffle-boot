@@ -483,7 +483,7 @@ static void test_store_tries(void)
 		opxy_boot_store_load(&m, &run);
 	}
 	CHECK(!m.store_slot.established && g_f.nall == 0u);
-	CHECK(!m.sv.store.dev_mode && m.sv.store.color && m.sv.store.mtp_macos &&
+	CHECK(!m.sv.store.dev_mode && !m.sv.store.color && m.sv.store.mtp_macos &&
 	      !m.sv.store.start_menu);
 }
 

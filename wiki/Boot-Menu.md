@@ -49,7 +49,7 @@ the items, the screen says when the OS could not be started, and why.
 | --- | --- |
 | 1 Developer mode | Off by default. On: shows the developer menu and adds a USB serial port |
 | 2 Protected writes | Lets installs write the bootloader slots, and lets a computer change the unit's serial and identity. Hold 2 for 5 s to turn it on; its warning shows while you hold. One press turns it off. Lasts until the next restart. No install writes the first stage, with or without it |
-| 3 Color | Off draws every screen in gray |
+| 3 Color | Off, the default, draws every screen in gray |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
 | 6 Start in boot menu | Every start opens this menu |
 
@@ -57,7 +57,7 @@ the items, the screen says when the OS could not be started, and why.
 
 All four are kept in the SPI flash, in the settings sector of the slot the unit is running
 ([Flash Layout](Flash-Layout-and-Write-Safety#the-areas)), and belong to that slot's image: the other slot
-has its own, and a new image starts on the defaults (Developer mode off, Color on, MTP target macOS, Start in
+has its own, and a new image starts on the defaults (Developer mode off, Color off, MTP target macOS, Start in
 boot menu off). A change is saved at once, and only by a key pressed on the unit. A key a computer sends
 (a developer request) changes Developer mode, Color or the MTP target until the next start and saves
 nothing, and leaves Start in boot menu as it is. Nothing is written to the internal drive: a format leaves

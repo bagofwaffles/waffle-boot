@@ -57,8 +57,8 @@ static void values(struct opxy_master *m, struct s15_prompt_values *v)
 
 /*
  * S-15.180: the status bar shows the running slot and the version text as
- * on every screen; USB stays dark gray and the frame is in color, since
- * the settings are read only when held mode starts
+ * on every screen; USB stays dark gray and the frame is in gray, the
+ * default, since the settings are read only when held mode starts
  * (opxy_held_screen() fills the rest of sv->boot then).
  */
 static void frame_info(struct opxy_master *m)

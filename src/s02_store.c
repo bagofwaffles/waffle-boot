@@ -13,7 +13,7 @@ uint32_t s02_store_off(unsigned slot)
 void s02_store_defaults(struct s02_store *s)
 {
 	s->dev_mode = false;
-	s->color = true;
+	s->color = false;
 	s->mtp_macos = true;
 	s->start_menu = false;
 }

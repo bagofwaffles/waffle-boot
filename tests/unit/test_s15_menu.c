@@ -1698,7 +1698,7 @@ static void test_screens(void)
 	CHECK(F.option == 1 && M.option_on, "S-15.015 the release after it does nothing");
 	press(0x06);
 	expect_screen("settings_devmode_off_option_on");
-	CHECK(F.saves == 1u && !F.saved.dev_mode && F.saved.color,
+	CHECK(F.saves == 1u && !F.saved.dev_mode && !F.saved.color,
 	      "S-15.172 off, saved with the color as it is");
 	/* A key that cancels the prompt only cancels: digit 1 does not
 	 * also turn developer mode off. */
@@ -1750,36 +1750,36 @@ static void test_screens(void)
 	press(0x06);
 	CHECK(F.saves == 1u && F.saved.dev_mode && M.dev_mode, "S-15.193 the unit's key saves");
 
-	/* S-15.173: digit 3 turns the color off and on, each change saved */
+	/* S-15.173: digit 3 turns the color on and off, each change saved */
 	reset_fake(); default_boot(); start();
 	press(0x07);
-	CHECK(M.color, "S-15.173 in color by default");
+	CHECK(!M.color, "S-15.173 in gray by default");
 	press(0x08);
-	expect_screen("settings_color_off");
-	CHECK(!M.color && F.saves == 1u && !F.saved.color &&
-	      F.saved.dev_mode, "S-15.173 off, saved");
+	expect_screen("settings_color_on");
+	CHECK(M.color && F.saves == 1u && F.saved.color &&
+	      F.saved.dev_mode, "S-15.173 on, saved");
 	press(0x08);
 	expect_screen("settings");
-	CHECK(M.color && F.saves == 2u && F.saved.color, "S-15.173 on again");
+	CHECK(!M.color && F.saves == 2u && !F.saved.color, "S-15.173 off again");
 	F.store_rc = S15_STORE_FAILED;
 	press(0x08);
-	CHECK(!M.color && appended(s15_settings_failed),
+	CHECK(M.color && appended(s15_settings_failed),
 	      "S-15.172 changed for this start, the line");
 	F.store_rc = S15_STORE_UNUSABLE;
 	press(0x08);
-	CHECK(M.color && F.saves == 4u && appended(s15_settings_unusable),
+	CHECK(!M.color && F.saves == 4u && appended(s15_settings_unusable),
 	      "S-15.172 refused: this start only, the line");
 	/* host keys for color and the MTP target: this start only */
 	F.store_rc = S15_STORE_SAVED;
 	s15_menu_host_event(&M, 0x08, true);
 	s15_menu_host_event(&M, 0x08, false);
-	CHECK(!M.color && F.saves == 4u && appended(s15_settings_host), "S-15.193 color");
+	CHECK(M.color && F.saves == 4u && appended(s15_settings_host), "S-15.193 color");
 	s15_menu_host_event(&M, 0x12, true);
 	s15_menu_host_event(&M, 0x12, false);
 	CHECK(!M.mtp_macos && F.saves == 4u && appended(s15_settings_host), "S-15.193 MTP");
-	reset_fake(); default_boot(); BOOT.settings.color = false; start();
+	reset_fake(); default_boot(); BOOT.settings.color = true; start();
 	press(0x07);
-	expect_screen("settings_color_off");
+	expect_screen("settings_color_on");
 
 	/* S-15.060, S-15.050 */
 	reset_fake(); default_boot(); start();
@@ -3178,7 +3178,7 @@ static void test_start_menu(void)
 	expect_screen("settings");
 	press(0x13);
 	CHECK(F.saves == 1u && F.saved.start_menu && M.start_menu && F.saved.dev_mode &&
-	      F.saved.color && F.saved.mtp_macos, "S-15.175 on, saved with the others");
+	      !F.saved.color && F.saved.mtp_macos, "S-15.175 on, saved with the others");
 	expect_screen("settings_start_menu_on");
 	press(0x13);
 	CHECK(F.saves == 2u && !F.saved.start_menu && !M.start_menu, "S-15.175 off");
@@ -3222,7 +3222,7 @@ static void test_start_menu(void)
 	press(0x13);
 	CHECK(F.saves == 0u && M.screen == S15_SCR_SETTINGS, "no sector: nothing");
 	press(0x08);
-	CHECK(!M.color && F.saves == 0u && appended(s15_settings_this_start),
+	CHECK(M.color && F.saves == 0u && appended(s15_settings_this_start),
 	      "no sector: this start only");
 }
 
@@ -3233,7 +3233,7 @@ static void test_reset_settings(void)
 {
 	for (int way = 0; way < 4; way++) {
 		reset_fake(); default_boot();
-		BOOT.settings.color = false;
+		BOOT.settings.color = true;
 		BOOT.settings.start_menu = true;
 		F.refused = way == 3;
 		F.clear_rc = way == 1 ? S15_STORE_FAILED :
@@ -3245,7 +3245,7 @@ static void test_reset_settings(void)
 		CHECK(F.saves == 0u, "S-02.105 a clear, not a save (%d)", way);
 		CHECK(appended(s15_reset_settings_failed) == (way == 1),
 		      "S-02.105 the line (%d)", way);
-		CHECK((M.color && !M.dev_mode && M.mtp_macos && !M.start_menu) ==
+		CHECK((!M.color && !M.dev_mode && M.mtp_macos && !M.start_menu) ==
 		      (way == 0 || way == 3), "S-02.105 defaults after a clear (%d)", way);
 	}
 	/* without a settings sector: nothing to clear */
@@ -3421,11 +3421,15 @@ static void test_gray(void)
 	static const struct s15_draw_ops d = { g_fill, g_text, NULL, g_ink, g_ink };
 	struct s15_frame f;
 
-	/* in color: the amber bar and digits are not gray */
+	/* gray by default; in color: the amber bar and digits are not gray */
 	reset_fake(); default_boot(); start();
 	color_px = gray_px = 0;
 	s15_menu_render(&M, &g, &d);
-	CHECK(color_px != 0u, "S-15.173 color by default");
+	CHECK(color_px == 0u && gray_px != 0u, "S-15.173 gray by default");
+	reset_fake(); default_boot(); BOOT.settings.color = true; start();
+	color_px = gray_px = 0;
+	s15_menu_render(&M, &g, &d);
+	CHECK(color_px != 0u, "S-15.173 in color when on");
 
 	/* off: Settings, the main screen, the option's red bar, the key test */
 	press(0x07);

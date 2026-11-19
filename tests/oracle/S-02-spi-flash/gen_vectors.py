@@ -2081,7 +2081,7 @@ SET_PAGES = SECTOR // PAGE                   # 16
 SET_SLOT_MAX = SLOT_MAX - 2 * SECTOR         # 0x76000: S-02.099, S-02.104
 SET_SECTOR = tuple(SLOT[k] + SET_SLOT_MAX for k in (0, 1))   # 0x86000, 0xfe000
 SET_FLAGS = ("developer_mode", "color", "mtp_macos", "start_in_boot_menu")
-SET_DEFAULTS = 0x06                          # developer mode off, color on, MTP macOS, start in boot menu off
+SET_DEFAULTS = 0x04                          # developer mode off, color off, MTP macOS, start in boot menu off
 
 
 def set_record(flags, stamp, payload=None, version=1, length=None, magic=SET_MAGIC, crc=None):

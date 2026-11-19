@@ -98,7 +98,7 @@ def confirm_choice(events, down_at_open=(), readable=True, end_ms=None):
 # ---------- S-15.172 the settings ----------
 # Kept in the running slot's settings sector (S-02.096); no file on the eMMC is read or written for them.
 # (key, default), in the order of the record's flag bits 0 to 3
-SETTINGS_KEYS = (('developer_mode', False), ('color', True), ('mtp_target', True), ('start_in_boot_menu', False))
+SETTINGS_KEYS = (('developer_mode', False), ('color', False), ('mtp_target', True), ('start_in_boot_menu', False))
 SETTINGS_DEFAULTS = {k: d for k, d in SETTINGS_KEYS}
 
 

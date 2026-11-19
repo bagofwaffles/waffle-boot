@@ -5,7 +5,7 @@
 void s15_settings_defaults(struct s15_settings *s)
 {
 	s->dev_mode = false;
-	s->color = true;
+	s->color = false;
 	s->mtp_macos = true;
 	s->start_menu = false;
 }
