@@ -43,7 +43,7 @@ Slot 1 in the same recovery the tool refuses --force and asks for a restart firs
 the unit counts down 15 s after a write or an action is confirmed, before its first erase:
 switching it off or unplugging USB in that time stops it with nothing written. These commands also
 let a unit whose keys do not work be recovered from the host alone; on the unit the same actions are
-in the recovery menu (key 1, "Choose the slot to start").
+in the recovery menu (key 1, "Change the boot slot").
 
 The port is found by its USB product string, "OP-XY Recovery" (vendor 0x2367, product 0x0021),
 through ioreg on macOS and sysfs on Linux; elsewhere give --port. Exit status 0 only when the
@@ -150,8 +150,8 @@ FRONT_HINT = ('Another front goes in only as a trial: write --new-front IMAGE, o
               'version 7 or later; from an older front, the test OS installer (wiki/Test-OS.md).')
 OTHER_HINT = ('Start the other slot if it is checked and holds a stream the boot ROM can start '
               '(S-02.091): wbrecover.py try starts it once, wbrecover.py switch makes it the boot slot; or '
-              'key 1, "Choose the slot to start", in the recovery menu.')
-SLOT_MENU = 'or key 1, "Choose the slot to start", in the recovery menu'
+              'key 1, "Change the boot slot", in the recovery menu.')
+SLOT_MENU = 'or key 1, "Change the boot slot", in the recovery menu'
 NOT_STARTED_HINT = ('Write it again with --new-front and restart with no key held, so that it starts '
                     'once; then switch off and on and select. Or select from its own recovery in the '
                     'trial start (try holding key 4 through the restart). A front older than version '
@@ -168,7 +168,7 @@ STATUS = {
     4: ("the selector is not settled: its verified byte is not 01 (S-02.090)", RESET_HINT),
     5: ('the boot slot failed its check, and is not the running slot with its front intact (S-02.084)',
         OTHER_HINT),
-    6: ('the image is empty or too large: recovery takes at most 0x77000 bytes (S-02.084)',
+    6: ('the image is empty or too large: recovery takes at most 0x76000 bytes, 0x77000 before front 17 (S-02.084)',
         'Check the file: wbrecover.py check IMAGE.'),
     7: ('the image is not a bootable stream with a waffle-boot front (S-02.091)',
         'Check the file (wbrecover.py check IMAGE) and build it with this tree\'s tools.'),

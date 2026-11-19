@@ -2316,7 +2316,7 @@ class Front11(PtyCase):
         self.assertNotIn('Power + 1', out.text)
         self.assertNotIn('Power + 2', out.text)
         self.assertIn('wbrecover.py try starts it once, wbrecover.py switch makes it the boot slot; or key 1, '
-                      '"Choose the slot to start", in the recovery menu.', out.text)
+                      '"Change the boot slot", in the recovery menu.', out.text)
         for front in (8, 10, 11):
             self.assertNotIn('Power + 1', w.status_text(5, i={'front': front, 'spoiled': False}))
 
@@ -3510,12 +3510,12 @@ class AgainstC(unittest.TestCase):
         self.assertNotIn(w.BEGIN, self.seen)
 
     def test_status_6(self):
-        """The unit itself refuses an image over 0x77000 bytes."""
+        """The unit itself refuses an image over 0x76000 bytes."""
         w.hello(self.link)
-        r = self.link.request(w.BEGIN, struct.pack('<I', w.IMAGE_MAX + 1) + bytes(32))[0]
+        r = self.link.request(w.BEGIN, struct.pack('<I', w.WB_IMAGE_MAX + 1) + bytes(32))[0]
         self.assertEqual(r[0], 6)
-        self.assertIn('at most 0x77000 bytes', w.status_text(r[0]))
-        self.assertEqual(self.link.request(w.BEGIN, struct.pack('<I', w.IMAGE_MAX) + bytes(32))[0][0], 0)
+        self.assertIn('at most 0x76000 bytes', w.status_text(r[0]))
+        self.assertEqual(self.link.request(w.BEGIN, struct.pack('<I', w.WB_IMAGE_MAX) + bytes(32))[0][0], 0)
 
     def test_same_image(self):
         """Two slots may hold the same image: the unit takes B's image for --running and A's
