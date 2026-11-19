@@ -1663,6 +1663,1735 @@
    "slot_keeps_settings": false
   }
  ],
+ "recovery": {
+  "image_max": "0x76000",
+  "writes": [
+   {
+    "way": "plain",
+    "running": 0,
+    "target": 1,
+    "length": "0x1345",
+    "settings_sector": "0xfe000",
+    "settings_erase": {
+     "after": "the log sector's erase",
+     "before": "the record erase"
+    },
+    "ops": [
+     {
+      "op": "erase",
+      "offset": "0x88000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x88000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88300",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88400",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88500",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88600",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88700",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88800",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88900",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88a00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88b00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88c00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88d00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88e00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88f00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x89000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x89000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89300",
+      "length": 69,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0xff000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0xfe000",
+      "length": 4096,
+      "cls": "settings_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0f000",
+      "length": 4096,
+      "cls": "record_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0f000",
+      "length": 12,
+      "cls": "record_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0f000",
+      "length": 12,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x88000",
+      "length": 4933,
+      "cls": "readback"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0d000",
+      "length": 4096,
+      "cls": "selector_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "selector_program"
+     }
+    ]
+   },
+   {
+    "way": "select_first",
+    "running": 0,
+    "target": 0,
+    "length": "0x1345",
+    "settings_sector": "0x86000",
+    "settings_erase": {
+     "after": "the log sector's erase",
+     "before": "the record erase"
+    },
+    "ops": [
+     {
+      "op": "erase",
+      "offset": "0x0d000",
+      "length": 4096,
+      "cls": "select_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "select_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "select_read"
+     },
+     {
+      "op": "erase",
+      "offset": "0x10000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x10000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10300",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10400",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10500",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10600",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10700",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10800",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10900",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10a00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10b00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10c00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10d00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10e00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10f00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x11000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x11000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11300",
+      "length": 69,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x86000",
+      "length": 4096,
+      "cls": "settings_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0e000",
+      "length": 4096,
+      "cls": "record_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0e000",
+      "length": 12,
+      "cls": "record_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0e000",
+      "length": 12,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x10000",
+      "length": 4933,
+      "cls": "readback"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0d000",
+      "length": 4096,
+      "cls": "selector_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "selector_program"
+     }
+    ]
+   },
+   {
+    "way": "trial",
+    "running": 0,
+    "target": 1,
+    "length": "0x1345",
+    "settings_sector": "0xfe000",
+    "settings_erase": {
+     "after": "the log sector's erase",
+     "before": "the trial mark"
+    },
+    "ops": [
+     {
+      "op": "erase",
+      "offset": "0x88000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x88000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88300",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88400",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88500",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88600",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88700",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88800",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88900",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88a00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88b00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88c00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88d00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88e00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88f00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x89000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x89000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89300",
+      "length": 69,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0xff000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0xfe000",
+      "length": 4096,
+      "cls": "settings_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0xff000",
+      "length": 1,
+      "cls": "trial_log"
+     },
+     {
+      "op": "read",
+      "offset": "0xff000",
+      "length": 1,
+      "cls": "trial_log_read"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0f000",
+      "length": 4096,
+      "cls": "record_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0f000",
+      "length": 12,
+      "cls": "record_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0f000",
+      "length": 12,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x88000",
+      "length": 4933,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0xff000",
+      "length": 1,
+      "cls": "readback"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0d000",
+      "length": 4096,
+      "cls": "trial_erase"
+     },
+     {
+      "op": "read",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "trial_read"
+     }
+    ]
+   },
+   {
+    "way": "in_place",
+    "running": 0,
+    "target": 0,
+    "length": "0x1345",
+    "settings_sector": "0x86000",
+    "settings_erase": {
+     "after": "the log sector's erase",
+     "before": "the record erase"
+    },
+    "ops": [
+     {
+      "op": "erase",
+      "offset": "0x10000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x10000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10300",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10400",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10500",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10600",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10700",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10800",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10900",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10a00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10b00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10c00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10d00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10e00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10f00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x11000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x11000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11300",
+      "length": 69,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x86000",
+      "length": 4096,
+      "cls": "settings_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0e000",
+      "length": 4096,
+      "cls": "record_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0e000",
+      "length": 12,
+      "cls": "record_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0e000",
+      "length": 12,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x10000",
+      "length": 4933,
+      "cls": "readback"
+     }
+    ]
+   },
+   {
+    "way": "plain",
+    "running": 1,
+    "target": 0,
+    "length": "0x1345",
+    "settings_sector": "0x86000",
+    "settings_erase": {
+     "after": "the log sector's erase",
+     "before": "the record erase"
+    },
+    "ops": [
+     {
+      "op": "erase",
+      "offset": "0x10000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x10000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10300",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10400",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10500",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10600",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10700",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10800",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10900",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10a00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10b00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10c00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10d00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10e00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10f00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x11000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x11000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11300",
+      "length": 69,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x86000",
+      "length": 4096,
+      "cls": "settings_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0e000",
+      "length": 4096,
+      "cls": "record_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0e000",
+      "length": 12,
+      "cls": "record_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0e000",
+      "length": 12,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x10000",
+      "length": 4933,
+      "cls": "readback"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0d000",
+      "length": 4096,
+      "cls": "selector_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "selector_program"
+     }
+    ]
+   },
+   {
+    "way": "select_first",
+    "running": 1,
+    "target": 1,
+    "length": "0x1345",
+    "settings_sector": "0xfe000",
+    "settings_erase": {
+     "after": "the log sector's erase",
+     "before": "the record erase"
+    },
+    "ops": [
+     {
+      "op": "erase",
+      "offset": "0x0d000",
+      "length": 4096,
+      "cls": "select_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "select_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "select_read"
+     },
+     {
+      "op": "erase",
+      "offset": "0x88000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x88000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88300",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88400",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88500",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88600",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88700",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88800",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88900",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88a00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88b00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88c00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88d00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88e00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88f00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x89000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x89000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89300",
+      "length": 69,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0xff000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0xfe000",
+      "length": 4096,
+      "cls": "settings_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0f000",
+      "length": 4096,
+      "cls": "record_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0f000",
+      "length": 12,
+      "cls": "record_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0f000",
+      "length": 12,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x88000",
+      "length": 4933,
+      "cls": "readback"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0d000",
+      "length": 4096,
+      "cls": "selector_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "selector_program"
+     }
+    ]
+   },
+   {
+    "way": "trial",
+    "running": 1,
+    "target": 0,
+    "length": "0x1345",
+    "settings_sector": "0x86000",
+    "settings_erase": {
+     "after": "the log sector's erase",
+     "before": "the trial mark"
+    },
+    "ops": [
+     {
+      "op": "erase",
+      "offset": "0x10000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x10000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10300",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10400",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10500",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10600",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10700",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10800",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10900",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10a00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10b00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10c00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10d00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10e00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x10f00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x11000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x11000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x11300",
+      "length": 69,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x86000",
+      "length": 4096,
+      "cls": "settings_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x87000",
+      "length": 1,
+      "cls": "trial_log"
+     },
+     {
+      "op": "read",
+      "offset": "0x87000",
+      "length": 1,
+      "cls": "trial_log_read"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0e000",
+      "length": 4096,
+      "cls": "record_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0e000",
+      "length": 12,
+      "cls": "record_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0e000",
+      "length": 12,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x10000",
+      "length": 4933,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x87000",
+      "length": 1,
+      "cls": "readback"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0d000",
+      "length": 4096,
+      "cls": "trial_erase"
+     },
+     {
+      "op": "read",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "trial_read"
+     },
+     {
+      "op": "program",
+      "offset": "0x0d001",
+      "length": 1,
+      "cls": "trial_verified"
+     },
+     {
+      "op": "read",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "trial_read"
+     },
+     {
+      "op": "program",
+      "offset": "0x0d000",
+      "length": 1,
+      "cls": "trial_index"
+     },
+     {
+      "op": "read",
+      "offset": "0x0d000",
+      "length": 2,
+      "cls": "trial_read"
+     }
+    ]
+   },
+   {
+    "way": "in_place",
+    "running": 1,
+    "target": 1,
+    "length": "0x1345",
+    "settings_sector": "0xfe000",
+    "settings_erase": {
+     "after": "the log sector's erase",
+     "before": "the record erase"
+    },
+    "ops": [
+     {
+      "op": "erase",
+      "offset": "0x88000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x88000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88300",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88400",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88500",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88600",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88700",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88800",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88900",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88a00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88b00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88c00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88d00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88e00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x88f00",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0x89000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x89000",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89100",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89200",
+      "length": 256,
+      "cls": "slot_program"
+     },
+     {
+      "op": "program",
+      "offset": "0x89300",
+      "length": 69,
+      "cls": "slot_program"
+     },
+     {
+      "op": "erase",
+      "offset": "0xff000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0xfe000",
+      "length": 4096,
+      "cls": "settings_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x0f000",
+      "length": 4096,
+      "cls": "record_erase"
+     },
+     {
+      "op": "program",
+      "offset": "0x0f000",
+      "length": 12,
+      "cls": "record_program"
+     },
+     {
+      "op": "read",
+      "offset": "0x0f000",
+      "length": 12,
+      "cls": "readback"
+     },
+     {
+      "op": "read",
+      "offset": "0x88000",
+      "length": 4933,
+      "cls": "readback"
+     }
+    ]
+   }
+  ],
+  "actions": [
+   {
+    "action": "try",
+    "cases": 18,
+    "erases_settings": false,
+    "source": "recovery_actions.json"
+   },
+   {
+    "action": "switch",
+    "cases": 18,
+    "erases_settings": false,
+    "source": "recovery_actions.json"
+   },
+   {
+    "action": "keep",
+    "cases": 20,
+    "erases_settings": false,
+    "source": "recovery_actions.json"
+   },
+   {
+    "action": "put_back",
+    "cases": 20,
+    "erases_settings": false,
+    "source": "recovery_actions.json"
+   },
+   {
+    "action": "select",
+    "erases_settings": false,
+    "source": "the selector write alone (S-02.084)"
+   },
+   {
+    "action": "settle",
+    "erases_settings": false,
+    "source": "the slot's own image settles the selector and erases nothing of the slot"
+   }
+  ],
+  "lengths": [
+   {
+    "length": "0x0",
+    "begin": "refused",
+    "status": 6,
+    "erases_settings": false,
+    "written": "nothing"
+   },
+   {
+    "length": "0x1",
+    "begin": "accepted",
+    "status": 0,
+    "erases_settings": true,
+    "written": "the image"
+   },
+   {
+    "length": "0x1345",
+    "begin": "accepted",
+    "status": 0,
+    "erases_settings": true,
+    "written": "the image"
+   },
+   {
+    "length": "0x75fff",
+    "begin": "accepted",
+    "status": 0,
+    "erases_settings": true,
+    "written": "the image"
+   },
+   {
+    "length": "0x76000",
+    "begin": "accepted",
+    "status": 0,
+    "erases_settings": true,
+    "written": "the image"
+   },
+   {
+    "length": "0x76001",
+    "begin": "refused",
+    "status": 6,
+    "erases_settings": false,
+    "written": "nothing"
+   },
+   {
+    "length": "0x77000",
+    "begin": "refused",
+    "status": 6,
+    "erases_settings": false,
+    "written": "nothing"
+   },
+   {
+    "length": "0x77001",
+    "begin": "refused",
+    "status": 6,
+    "erases_settings": false,
+    "written": "nothing"
+   },
+   {
+    "length": "0x78000",
+    "begin": "refused",
+    "status": 6,
+    "erases_settings": false,
+    "written": "nothing"
+   },
+   {
+    "length": "0x78001",
+    "begin": "refused",
+    "status": 6,
+    "erases_settings": false,
+    "written": "nothing"
+   }
+  ]
+ },
  "checks": [
   {
    "slot": 0,

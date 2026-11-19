@@ -2200,6 +2200,63 @@ def set_torn_check(stamps):
     return hits
 
 
+def set_recovery_ops(ops, t):
+    """S-02.103: a recovery image write's ops with the erase of target t's settings sector right after the
+    erase of its last sector (the start log), before the trial mark or the record erase."""
+    log = SLOT[t] + LOG_SECTOR
+    out = []
+    for o in ops:
+        o = dict(o)
+        o.pop("n", None)
+        out.append(o)
+        if o["cls"] == "slot_erase" and o["offset"] == log:
+            out.append(dict(cls="settings_erase", op="erase", offset=SET_SECTOR[t], length=SECTOR))
+    k = [i for i, o in enumerate(out) if o["cls"] == "settings_erase"]
+    nxt = [i for i, o in enumerate(out) if o["cls"] in ("trial_log", "record_erase")]
+    assert len(k) == 1 and out[k[0] - 1]["offset"] == log and nxt and k[0] < nxt[0]
+    return out
+
+
+def set_recovery():
+    """S-02.084, S-02.103: recovery's image writes, each erasing the target's settings sector after its log
+    sector and before the trial mark or the record erase; its actions and the selector's settling, which erase
+    nothing of it; the image lengths BEGIN takes."""
+    writes = []
+    for a in (0, 1):
+        b = 1 - a
+        for way, t, ops in (("plain", b, plain_ops(a)), ("select_first", a, running_ops(a, "select_first")),
+                            ("trial", b, trial_ops(b)), ("in_place", a, running_ops(a, "in_place"))):
+            out = set_recovery_ops(ops, t)
+            nxt = next(o["cls"] for o in out if o["cls"] in ("trial_log", "record_erase"))
+            writes.append({"way": way, "running": a, "target": t, "length": "0x%x" % IMAGE_LEN,
+                           "settings_sector": "0x%05x" % SET_SECTOR[t],
+                           "settings_erase": {"after": "the log sector's erase",
+                                              "before": "the trial mark" if nxt == "trial_log"
+                                              else "the record erase"},
+                           "ops": [{"op": o["op"], "offset": "0x%05x" % o["offset"], "length": o["length"],
+                                    "cls": o["cls"]} for o in out]})
+    sets = (SET_SECTOR[0], SET_SECTOR[1])
+    acts = {}
+    for c in act_data()["cases"]:
+        hit = any(o["op"] == "erase" and int(o["offset"], 16) in sets for o in c["ops"])
+        assert not hit, c
+        acts.setdefault(c["act"], 0)
+        acts[c["act"]] += 1
+    actions = [{"action": n, "cases": acts[n], "erases_settings": False, "source": "recovery_actions.json"}
+               for n in ("try", "switch", "keep", "put_back")]
+    actions.append({"action": "select", "erases_settings": False,
+                    "source": "the selector write alone (S-02.084)"})
+    actions.append({"action": "settle", "erases_settings": False,
+                    "source": "the slot's own image settles the selector and erases nothing of the slot"})
+    lengths = []
+    for n in (0, 1, IMAGE_LEN, SET_SLOT_MAX - 1, SET_SLOT_MAX, SET_SLOT_MAX + 1, LOG_SECTOR, LOG_SECTOR + 1,
+              SLOT_MAX, SLOT_MAX + 1):
+        ok = 1 <= n <= SET_SLOT_MAX
+        lengths.append({"length": "0x%x" % n, "begin": "accepted" if ok else "refused", "status": 0 if ok else 6,
+                        "erases_settings": ok, "written": "the image" if ok else "nothing"})
+    return {"image_max": "0x%x" % SET_SLOT_MAX, "writes": writes, "actions": actions, "lengths": lengths}
+
+
 def settings_sector():
     st = 0x1D0C2B3A                       # the running image's record CRC in the read cases
     other = 0x5A5AA5A5
@@ -2325,7 +2382,8 @@ def settings_sector():
         "slot_max_length": "0x%x" % SET_SLOT_MAX,
         "records": [{"name": n, "length": len(r), "bytes": r.hex()} for n, r in records],
         "reads": out_reads, "guards": guards, "saves": saves, "clears": clears, "cuts": cuts,
-        "upgrade": upgrade, "checks": checks, "torn_check": set_torn_check([st, other, 0, 0xFFFFFFFF])}
+        "upgrade": upgrade, "recovery": set_recovery(), "checks": checks,
+        "torn_check": set_torn_check([st, other, 0, 0xFFFFFFFF])}
 
 
 def _csv(fields, rows):
