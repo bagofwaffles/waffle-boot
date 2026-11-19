@@ -68,6 +68,8 @@ void s08_init(struct s08_nordic *n, struct s06_node *node, unsigned link,
 	n->greeted = false;
 	n->greet_tries = 0;
 	n->connected = false;
+	n->answered = false;
+	n->answered_at = 0;
 	n->replied = false;
 	n->power_status = 0;
 	n->sku_read = false;
@@ -103,9 +105,18 @@ static void handle(struct s08_nordic *n, const struct s06_frame *f)
 	if (f->id == ID_GREET) {
 		if (!s08_answer_greeting(n->state, f->payload, f->len, &id, &byte))
 			return;			/* S-08.012: ignored as a whole */
+		/* S-08.014: one answer per greeting run; a dropped greeting
+		 * is not handled */
+		if (!s08_greeting_due(n->answered, n->answered_at, f->at)) {
+			log_ev(n, S08_LOG_GREETING_DROPPED, f->payload, f->len,
+			       f->len ? f->payload[0] : 0u);
+			return;
+		}
 		if (f->len >= 2 && n->ops->revision)
 			n->ops->revision(n->ops->ctx, f->payload[1]);
-		message(n, id, byte);		/* one answer per greeting */
+		message(n, id, byte);
+		n->answered = true;
+		n->answered_at = now(n);
 		n->connected = true;
 		return;
 	}
@@ -123,6 +134,20 @@ static void handle(struct s08_nordic *n, const struct s06_frame *f)
 	}
 }
 
+/*
+ * An answer more than 20 ms before the arrival of every frame still to be
+ * handled drops no greeting: forget it, so that its time is never compared
+ * across the clock's wrap.
+ */
+static void forget_answer(struct s08_nordic *n)
+{
+	const struct s06_link *l = n->node->link[n->link];
+	uint32_t at = l->in_count ? l->inbox[l->in_head].at : l->read_at;
+
+	if (n->answered && s08_greeting_due(true, n->answered_at, at))
+		n->answered = false;
+}
+
 int s08_poll(struct s08_nordic *n)
 {
 	struct s06_frame f;
@@ -130,6 +155,7 @@ int s08_poll(struct s08_nordic *n)
 	s06_node_poll(n->node);
 	while (s06_link_take(n->node->link[n->link], &f))
 		handle(n, &f);
+	forget_answer(n);
 	return n->power_status;
 }
 
@@ -148,6 +174,7 @@ void s08_answer_greetings(struct s08_nordic *n)
 		else
 			s06_link_put(l, &f);
 	}
+	forget_answer(n);
 }
 
 /* S-08.015: the frames delivered so far, discarded unhandled. */
@@ -257,6 +284,7 @@ bool s08_enter_dfu(struct s08_nordic *n)
 	uint32_t t_dfu, deadline;
 	int q;
 
+	(void)s08_poll(n);	/* a pending greeting is answered first */
 	n->connected = false;
 	message(n, ID_DFU, DFU_ENTER);			/* step 1 */
 	wait(n, ENTER_WAIT_US);				/* step 2 */
@@ -291,6 +319,7 @@ bool s08_exit_dfu(struct s08_nordic *n)
 {
 	int silent = 0;
 
+	(void)s08_poll(n);	/* a pending greeting is answered first */
 	message(n, ID_DFU, DFU_EXIT);			/* step 1 */
 	n->connected = false;
 	for (int q = 0; q < EXIT_PHASE1; q++) {		/* phase 1 */

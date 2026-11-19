@@ -73,6 +73,10 @@ struct s06_link {
 	uint8_t in_head;
 	uint8_t in_count;
 	uint32_t inbox_lost;	/* messages dropped because the inbox was full */
+	/* Every byte that arrived before this time has been read: the start
+	 * of the last poll that read the port empty. Stamped on each frame
+	 * the next reads deliver (s06_frame's at). */
+	uint32_t read_at;
 };
 
 /* A forwarding table row (S-06.050): arriving on in with dst, write on out. */

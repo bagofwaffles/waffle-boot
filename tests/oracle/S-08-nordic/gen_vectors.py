@@ -272,6 +272,30 @@ def transcripts():
                          {'dut': dict(EXIT_ANS, kind='message'), 't_ms': [50, 100]}], True,
                 peer={'greet': [{'at_ms': 10, 'payload': 'aa02'}, {'at_ms': 50, 'payload': 'bb02'}]},
                 args={'ms': 120}, reqs=['S-08.011', 'S-08.014']))
+    T.append(tr('greeting_two_queued', 'Held mode, state 0xAB0D: two greetings {0xBB,2} arrive together at 10 ms, '
+                'both delivered before the bootloader handles either: one answer, the second greeting is dropped.',
+                'idle', [{'dut': dict(ENTER_ANS, kind='message'), 'count': 1, 't_ms': [10, 60]}], True, state=AB0D,
+                peer={'greet': [{'at_ms': 10, 'payload': 'bb02'}, {'at_ms': 10, 'payload': 'bb02'}]},
+                args={'ms': 100}, reqs=['S-08.014']))
+    T.append(tr('greeting_after_answer', 'Held mode, state 0: a greeting {0xBB,2} at 10 ms is answered; one at '
+                '20 ms, 10 ms after that answer, is dropped; one at 130 ms, 120 ms after it, is answered.',
+                'idle', [{'dut': dict(EXIT_ANS, kind='message'), 'count': 1, 't_ms': [10, 60]},
+                         {'dut': dict(EXIT_ANS, kind='message'), 'count': 1, 't_ms': [130, 180]}], True,
+                peer={'greet': [{'at_ms': 10, 'payload': 'bb02'}, {'at_ms': 20, 'payload': 'bb02'},
+                                {'at_ms': 130, 'payload': 'bb02'}]},
+                args={'ms': 200}, reqs=['S-08.014']))
+    T.append(tr('greeting_enter_burst', 'State 0xAB0D. The Nordic greets {0xBB,2} every 100 ms from 100 ms, and '
+                'is silent until 450 ms, then reports mode:bootloader. The greetings within 250 ms are discarded; '
+                'those at 300 and 400 ms queue during the queries: the first is answered after DFU is reported, '
+                'the second, which arrived before that answer, is dropped.',
+                'enter_dfu',
+                [{'dut': CMD_ENTER, 't_ms': [0, 0]},
+                 {'dut': INFO_Q, 'count': 3, 't_ms': [250, 300]},
+                 {'dut': dict(ENTER_ANS, kind='message'), 'count': 1, 't_ms': [450, 470]}], True, [450, 480],
+                state=AB0D,
+                peer={'rules': [silent_rule({'id': '0x09'}, until_ms=450), info_rule(BOOT)],
+                      'greet': [{'at_ms': 100 * k, 'payload': 'bb02'} for k in range(1, 7)]},
+                reqs=['S-08.014', 'S-08.031']))
     T.append(tr('enter_dfu_ok', 'State 0xAB0D. The Nordic is silent until 450 ms, then reports mode:bootloader; '
                 'it greets {0xBB,2} at 300 ms. DFU on the third query; the queued greeting is answered.',
                 'enter_dfu',
@@ -352,6 +376,18 @@ def transcripts():
                 state=AB0D, peer={'rules': [info_rule(BOOT), DFU_T]},
                 args={'image_len': 500, 'version': [1, 1, 0, 0], 'type': '0xb0', 'product_word': '0x00084000'},
                 reqs=['S-08.042', 'S-08.043', 'S-08.044', 'S-08.046', 'S-08.047']))
+    log = {'kind': 'message', 'id': '0x03', 'route': '0x32', 'text': 'dfu: request', 'delay_ms': 0.5}
+    T.append(tr('transfer_log_messages', 'transfer_ok with a Nordic that sends a log message (id 0x03, to '
+                'destination 2) before each reply: the same requests in the same order, and success.',
+                'transfer', [{'dut': INFO_Q}, {'dut': PREP, 'after_ms': [0, 1002]}, {'dut': HDR, 'after_ms': [2, 1002]},
+                             {'dut': chunk(249), 'count': 2, 'after_ms': [2, 1002], 'gap_ms': [2, 1002]},
+                             {'dut': chunk(5), 'after_ms': [2, 1002]}, {'dut': PERF, 'after_ms': [2, 1002]}], True,
+                state=AB0D,
+                peer={'rules': [dict(info_rule(BOOT), send=[log, {'kind': 'reply', 'id': '0x0a', 'text': BOOT,
+                                                                 'delay_ms': 1.0}]),
+                                dict(DFU_T, send=[log] + DFU_T['send'])]},
+                args={'image_len': 500, 'version': [1, 1, 0, 0], 'type': '0xb0', 'product_word': '0x00084000'},
+                reqs=['S-08.004', 'S-08.047']))
     T.append(tr('transfer_not_in_dfu', 'The Nordic answers mode:application: one query, failure, no DFU request.',
                 'transfer', [{'dut': INFO_Q}], False, state=AB0D, peer={'rules': [info_rule(APP), DFU_T]},
                 args=img1, reqs=['S-08.042']))

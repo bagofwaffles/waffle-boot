@@ -34,6 +34,7 @@ void s06_link_init(struct s06_link *l, const struct s06_port_ops *ops,
 	l->in_head = 0;
 	l->in_count = 0;
 	l->inbox_lost = 0;
+	l->read_at = 0;
 }
 
 void s06_node_init(struct s06_node *n, s06_crc8_fn crc,
@@ -217,6 +218,7 @@ static void deliver(struct s06_node *n, unsigned link, const uint8_t *raw)
 	f->id = raw[2];
 	f->len = raw[3];
 	wb_copy(f->payload, raw + S06_HEADER, raw[3]);
+	f->at = l->read_at;
 }
 
 /* S-06.046, S-06.050, S-06.051, S-06.064 */
@@ -265,10 +267,12 @@ void s06_node_poll_link(struct s06_node *n, unsigned link)
 {
 	struct s06_link *l = n->link[link];
 	uint8_t buf[64];
-	size_t got, max;
+	size_t got = 1, max;
+	uint32_t start;
 
 	if (!l || l->raw || l->held)
 		return;		/* S-06.061: raw bytes are not decoded */
+	start = s06_now(n->clock);
 	while ((max = read_max(l, sizeof buf)) != 0 &&
 	       (got = l->ops->read(l->ctx, buf, max)) != 0) {
 		for (size_t i = 0; i < got; i++) {
@@ -285,6 +289,9 @@ void s06_node_poll_link(struct s06_node *n, unsigned link)
 				drop(n, link, ev, l->rx.buf, l->rx.n);
 		}
 	}
+	/* read empty: what arrived before the start has all been read */
+	if (got == 0)
+		l->read_at = start;
 	/* after the bytes: a reply that arrived by the deadline is in time */
 	s06_link_expire(l, s06_now(n->clock));
 }

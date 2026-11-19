@@ -2269,6 +2269,17 @@ static void nordic_greets(uint8_t flag)
 	}
 }
 
+/* 30 ms with the link read at its end: the next greeting is not within
+ * 20 ms of the last answer (S-08.014). Two polls keep nport_read()'s
+ * alternation in step. */
+static void nordic_quiet(void)
+{
+	fake_core_set_cycles(fake_core_peek_cycles() +
+			     (uint64_t)m.hw.time.cycles_per_us * 30000u);
+	s06_node_poll(&m.node);
+	s06_node_poll(&m.node);
+}
+
 /* Whether the master sent this one-byte message as its frame number seq. */
 static bool nordic_sent(uint8_t id, uint8_t byte, uint8_t seq)
 {
@@ -2309,10 +2320,12 @@ static void test_install_nordic_state(void)
 
 	CHECK(run.meta_state(run.ctx, S11_STATE_UPGRADING));	/* M1 */
 	CHECK(m.nordic.state == S08_STATE_UPGRADING);
+	nordic_quiet();
 	nordic_greets(0xBBu);
 	seq = l->seq;
 	(void)s08_poll(&m.nordic);
 	CHECK(nordic_sent(0x0Du, 0xEEu, seq));
+	nordic_quiet();
 	nordic_greets(0xAAu);
 	seq = l->seq;
 	(void)s08_poll(&m.nordic);
@@ -2320,6 +2333,7 @@ static void test_install_nordic_state(void)
 
 	/* between steps: with no slave the content step finds nothing, and
 	 * the greeting that waited is answered before it */
+	nordic_quiet();
 	nordic_greets(0xBBu);
 	seq = l->seq;
 	CHECK(run.step(run.ctx, S11_STEP_CONTENT) == S11_NOT_FOUND);
@@ -2328,6 +2342,7 @@ static void test_install_nordic_state(void)
 
 	CHECK(run.meta_complete(run.ctx, &v));			/* M3 */
 	CHECK(m.nordic.state == S08_STATE_IDLE);
+	nordic_quiet();
 	nordic_greets(0xBBu);
 	seq = l->seq;
 	(void)s08_poll(&m.nordic);
@@ -2336,6 +2351,7 @@ static void test_install_nordic_state(void)
 	CHECK(run.meta_state(run.ctx, S11_STATE_UPGRADING));
 	CHECK(run.meta_state(run.ctx, 0u));			/* M4 */
 	CHECK(m.nordic.state == S08_STATE_IDLE);
+	nordic_quiet();
 	nordic_greets(0xAAu);
 	seq = l->seq;
 	(void)s08_poll(&m.nordic);

@@ -52,6 +52,10 @@ typedef uint16_t (*s08_crc16_fn)(const uint8_t *data, size_t len);
 #define S08_LOG_TRANSFER_FAILED 5	/* a: the DFU command that failed */
 #define S08_LOG_GREETING_UNANSWERED 6
 #define S08_LOG_SLOT_UNREAD 7		/* data: the reply without a slot; a: 1 with a reply */
+#define S08_LOG_GREETING_DROPPED 8	/* S-08.014's one-answer rule; data: payload; a: flag byte */
+
+/* S-08.014: a greeting arriving this soon after an answer is dropped. */
+#define S08_ANSWER_GAP_US S06_MS(20)
 
 /* Where a transfer stopped (S-08.042, S-08.047), for the step's report. */
 enum s08_stage {
@@ -101,6 +105,8 @@ struct s08_nordic {
 	bool greeted;		/* S-08.002 made */
 	unsigned greet_tries;	/* S-08.002's greetings sent */
 	bool connected;		/* a greeting handled (S-08.031 step 4) */
+	bool answered;		/* a greeting answer sent, at answered_at */
+	uint32_t answered_at;
 	bool replied;		/* the last info exchange had a reply */
 	int power_status;	/* the first nonzero power() return */
 	bool sku_read;		/* S-08.045: the power-on's sku is latched */
@@ -131,6 +137,13 @@ int s08_mode_answer(const uint8_t *p, size_t n);
 
 /* S-08.022 on a reply payload (NULL: no reply): the slot, or -1. */
 long s08_boot_slot(const uint8_t *p, size_t n);
+
+/*
+ * S-08.014: whether a greeting that arrived after the time at may be
+ * answered, given the last greeting answer (answered false: none yet). It
+ * may not when that answer was sent after at or at most 20 ms before it.
+ */
+bool s08_greeting_due(bool answered, uint32_t answered_at, uint32_t at);
 
 /* S-08.031 step 4: an ordinary message that counts as the greeting. */
 bool s08_counts_as_greeting(const struct s06_frame *f);
@@ -198,6 +211,8 @@ long s08_info(struct s08_nordic *n, uint8_t *buf, size_t max);
 int s08_mode_query(struct s08_nordic *n);		/* S-08.021 */
 long s08_boot_slot_query(struct s08_nordic *n);	/* S-08.022 */
 
+/* S-08.031, S-08.033: the frames delivered so far are handled first, so a
+ * pending greeting is answered before the command. */
 bool s08_enter_dfu(struct s08_nordic *n);		/* S-08.031 */
 bool s08_exit_dfu(struct s08_nordic *n);		/* S-08.033 */
 

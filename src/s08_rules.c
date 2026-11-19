@@ -101,6 +101,13 @@ long s08_boot_slot(const uint8_t *p, size_t n)
 	return (long)slot;
 }
 
+/* S-08.014: answered only when the last answer was sent more than 20 ms
+ * before the arrival; time wraps, so the difference is signed. */
+bool s08_greeting_due(bool answered, uint32_t answered_at, uint32_t at)
+{
+	return !answered || (int32_t)(at - answered_at) > (int32_t)S08_ANSWER_GAP_US;
+}
+
 /* S-08.031 step 4: id 0x06, byte 0 is 0x40; an empty payload never counts
  * (S-16.185). */
 bool s08_counts_as_greeting(const struct s06_frame *f)

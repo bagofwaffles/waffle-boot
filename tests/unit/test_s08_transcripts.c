@@ -14,6 +14,7 @@
 static const struct s08t *cur;
 static int matched[64];
 static uint8_t peer_seq;
+static unsigned to_host;	/* the peer's frames to destination 2 */
 
 struct sent {
 	uint32_t t;
@@ -67,6 +68,8 @@ static void peer(void *ctx, struct t_port *port, const uint8_t *d, size_t n)
 		for (int s = 0; s < r->sn; s++) {
 			const struct s08t_send *x = &s08t_sends[r->s0 + s];
 
+			if (!x->reply && s06_dst(x->route) == S06_ADDR_HOST)
+				to_host++;
 			t_port_inject_frame(port, t + (uint32_t)x->delay_us,
 					    x->reply ? s06_swap_route(raw[0]) : x->route,
 					    peer_seq++, x->id, x->p, x->len);
@@ -242,7 +245,11 @@ int main(int argc, char **argv)
 		memset(matched, 0, sizeof matched);
 		nsent = 0;
 		peer_seq = 0;
+		to_host = 0;
 		nrig.port.on_tx = peer;
+		/* S-08.004: forwarding is in force after the link greeting */
+		if (cur->proc != 0)
+			nrig.node.routes_off = 0;
 		for (int g = 0; g < cur->gn; g++) {
 			const struct s08t_greet *x = &s08t_greets[cur->g0 + g];
 
@@ -257,6 +264,16 @@ int main(int argc, char **argv)
 				       nrig.nordic.greet_tries == 1000u);
 		check(result, nrig.sim.now);
 		check_stop(result);
+		/* the Nordic's frames to the host went to CDC, none to the
+		 * inbox (S-06.050) */
+		{
+			uint8_t raw[256];
+			unsigned k = 0;
+
+			while (t_nth_raw(nrig.cdc.tx, nrig.cdc.ntx, k, raw) >= 5)
+				k++;
+			CHECK_EQ(k, to_host);
+		}
 	}
 	return t_finish("test_s08_transcripts");
 }

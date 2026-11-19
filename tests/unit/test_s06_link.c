@@ -429,6 +429,58 @@ static void test_paced(void)
 	}
 }
 
+/* A delivered frame carries the start of its link's last poll that read the
+ * port empty: its delimiter arrived after that. A paced poll that stops
+ * for a full inbox has not read the port empty and moves nothing. */
+static void test_arrival(void)
+{
+	uint8_t wire[S06_MAX_WIRE];
+	struct s06_frame f;
+	const size_t w = s06_frame_encode(0x31, 0, 0x05, 0, 0, t_crc8, wire);
+
+	t_case = "arrival time";
+	setup(0);
+	sim.now = 1000;
+	s06_node_poll(&node);			/* empty at 1 ms */
+	CHECK_EQ(links[S06_LINK_NORDIC].read_at, 1000);
+	t_port_inject(&port[S06_LINK_NORDIC], 5000, wire, w);
+	sim.now = 9000;
+	s06_node_poll(&node);
+	CHECK(s06_link_take(&links[S06_LINK_NORDIC], &f));
+	CHECK_EQ(f.at, 1000);
+	CHECK_EQ(links[S06_LINK_NORDIC].read_at, 9000);
+	t_port_inject(&port[S06_LINK_NORDIC], 9500, wire, w);
+	sim.now = 9500;
+	s06_node_poll(&node);
+	CHECK(s06_link_take(&links[S06_LINK_NORDIC], &f));
+	CHECK_EQ(f.at, 9000);
+	/* a reply carries it too */
+	CHECK_EQ(s06_request(&node, S06_LINK_NORDIC, 0x09, 0, 0, S06_MS(100)), 0);
+	t_port_inject_frame(&port[S06_LINK_NORDIC], 9700, 0x38, 0, 0x0A, 0, 0);
+	sim.now = 9800;
+	s06_node_poll(&node);
+	CHECK_EQ(links[S06_LINK_NORDIC].slot[0].state, S06_SLOT_DONE);
+	CHECK_EQ(links[S06_LINK_NORDIC].slot[0].reply.at, 9500);
+
+	t_case = "arrival time, paced";
+	setup(0);
+	links[S06_LINK_CDC].paced = true;
+	for (unsigned i = 0; i < 9u; i++)
+		t_port_inject_frame(&port[S06_LINK_CDC], 0, 0x21, (uint8_t)i, 0x01, 0, 0);
+	sim.now = 2000;
+	s06_node_poll(&node);			/* stops with the inbox full */
+	CHECK_EQ(links[S06_LINK_CDC].in_count, 8);
+	CHECK_EQ(links[S06_LINK_CDC].read_at, 0);
+	while (s06_link_take(&links[S06_LINK_CDC], &f))
+		;
+	sim.now = 3000;
+	s06_node_poll(&node);
+	CHECK(s06_link_take(&links[S06_LINK_CDC], &f));
+	CHECK_EQ(f.seq, 8);
+	CHECK_EQ(f.at, 0);
+	CHECK_EQ(links[S06_LINK_CDC].read_at, 3000);
+}
+
 /* request_reply.json: request from slot source, reply, plain, inject, plain */
 static void test_transcript_request_reply(void)
 {
@@ -555,6 +607,7 @@ int main(void)
 	test_host_paths();
 	test_hold();
 	test_paced();
+	test_arrival();
 	test_transcript_request_reply();
 	test_raw();
 	return t_finish("test_s06_link");

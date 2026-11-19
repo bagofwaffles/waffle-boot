@@ -1,0 +1,140 @@
+{
+ "name": "transfer_log_messages",
+ "requirements": [
+  "S-08.004",
+  "S-08.047"
+ ],
+ "procedure": "transfer",
+ "state": "0xAB0D",
+ "peer": {
+  "rules": [
+   {
+    "on": {
+     "id": "0x09",
+     "kind": "request"
+    },
+    "send": [
+     {
+      "kind": "message",
+      "id": "0x03",
+      "route": "0x32",
+      "text": "dfu: request",
+      "delay_ms": 0.5
+     },
+     {
+      "kind": "reply",
+      "id": "0x0a",
+      "text": "mode:bootloader;sw_version:1.0.1;bl_version:1000.0.10;boot_slot:0",
+      "delay_ms": 1.0
+     }
+    ]
+   },
+   {
+    "on": {
+     "id": "0x0d",
+     "kind": "request"
+    },
+    "send": [
+     {
+      "kind": "message",
+      "id": "0x03",
+      "route": "0x32",
+      "text": "dfu: request",
+      "delay_ms": 0.5
+     },
+     {
+      "kind": "reply",
+      "id": "0x0e",
+      "payload": "54",
+      "delay_ms": 2
+     }
+    ]
+   }
+  ]
+ },
+ "expect": [
+  {
+   "dut": {
+    "id": "0x09",
+    "kind": "request",
+    "payload": ""
+   }
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "prefix": "02",
+    "len": 14,
+    "kind": "request"
+   },
+   "after_ms": [
+    0,
+    1002
+   ]
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "prefix": "03beefcafe03",
+    "len": 65,
+    "kind": "request"
+   },
+   "after_ms": [
+    2,
+    1002
+   ]
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "prefix": "03",
+    "len": 249,
+    "kind": "request"
+   },
+   "count": 2,
+   "after_ms": [
+    2,
+    1002
+   ],
+   "gap_ms": [
+    2,
+    1002
+   ]
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "prefix": "03",
+    "len": 5,
+    "kind": "request"
+   },
+   "after_ms": [
+    2,
+    1002
+   ]
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "payload": "05",
+    "kind": "request"
+   },
+   "after_ms": [
+    2,
+    1002
+   ]
+  }
+ ],
+ "result": true,
+ "args": {
+  "image_len": 500,
+  "version": [
+   1,
+   1,
+   0,
+   0
+  ],
+  "type": "0xb0",
+  "product_word": "0x00084000"
+ }
+}

@@ -1,0 +1,38 @@
+{
+ "name": "greeting_two_queued",
+ "requirements": [
+  "S-08.014"
+ ],
+ "procedure": "idle",
+ "state": "0xAB0D",
+ "peer": {
+  "greet": [
+   {
+    "at_ms": 10,
+    "payload": "bb02"
+   },
+   {
+    "at_ms": 10,
+    "payload": "bb02"
+   }
+  ]
+ },
+ "expect": [
+  {
+   "dut": {
+    "id": "0x0d",
+    "payload": "ee",
+    "kind": "message"
+   },
+   "count": 1,
+   "t_ms": [
+    10,
+    60
+   ]
+  }
+ ],
+ "result": true,
+ "args": {
+  "ms": 100
+ }
+}

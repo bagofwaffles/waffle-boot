@@ -1,0 +1,54 @@
+{
+ "name": "greeting_after_answer",
+ "requirements": [
+  "S-08.014"
+ ],
+ "procedure": "idle",
+ "state": 0,
+ "peer": {
+  "greet": [
+   {
+    "at_ms": 10,
+    "payload": "bb02"
+   },
+   {
+    "at_ms": 20,
+    "payload": "bb02"
+   },
+   {
+    "at_ms": 130,
+    "payload": "bb02"
+   }
+  ]
+ },
+ "expect": [
+  {
+   "dut": {
+    "id": "0x0d",
+    "payload": "18",
+    "kind": "message"
+   },
+   "count": 1,
+   "t_ms": [
+    10,
+    60
+   ]
+  },
+  {
+   "dut": {
+    "id": "0x0d",
+    "payload": "18",
+    "kind": "message"
+   },
+   "count": 1,
+   "t_ms": [
+    130,
+    180
+   ]
+  }
+ ],
+ "result": true,
+ "args": {
+  "ms": 200
+ }
+}

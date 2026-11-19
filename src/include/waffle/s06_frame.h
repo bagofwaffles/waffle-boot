@@ -36,6 +36,9 @@ struct s06_frame {
 	uint8_t id;
 	uint8_t len;
 	uint8_t payload[S06_MAX_PAYLOAD];
+	/* A frame a link delivered arrived after this time: its link's last
+	 * read before the bytes that completed it (s06_link's read_at). */
+	uint32_t at;
 };
 
 static inline uint8_t s06_route(uint8_t src, uint8_t dst)

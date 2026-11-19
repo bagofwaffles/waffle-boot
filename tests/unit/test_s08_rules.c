@@ -48,8 +48,11 @@ static void test_greeting(void)
 		const uint8_t want[3] = { 0x18, 0xEE, 0x18 };
 
 		for (int k = 0; k < 3; k++) {
+			/* held mode between them, so each starts a new run of
+			 * greetings (S-08.014) */
+			s08_idle(&nrig.nordic, S06_MS(100));
 			s08_set_state(&nrig.nordic, states[k]);
-			t_port_inject_frame(&nrig.port, 0, 0x31, 0, 0x05, bb, 2);
+			t_port_inject_frame(&nrig.port, nrig.sim.now, 0x31, 0, 0x05, bb, 2);
 			s08_poll(&nrig.nordic);
 			CHECK(t_nth_raw(nrig.port.tx, nrig.port.ntx, (size_t)k, raw) == 6);
 			CHECK_EQ(raw[4], want[k]);
@@ -95,6 +98,154 @@ static void test_step_greetings(void)
 	/* nothing waiting: nothing sent */
 	s08_answer_greetings(&nrig.nordic);
 	CHECK_EQ(t_nth_raw(nrig.port.tx, nrig.port.ntx, 1, raw), 0);
+}
+
+/* S-08.014: one answer per greeting run */
+static int drops_logged;
+
+static void count_drops(void *ctx, int ev, const uint8_t *d, size_t n, uint32_t a)
+{
+	(void)ctx;
+	(void)d;
+	(void)n;
+	(void)a;
+	if (ev == S08_LOG_GREETING_DROPPED)
+		drops_logged++;
+}
+
+/* The ids and first payload bytes of what the module sent the Nordic. */
+static size_t sent_list(uint8_t ids[], uint8_t first[], size_t max)
+{
+	uint8_t raw[256];
+	size_t k = 0;
+
+	while (k < max && t_nth_raw(nrig.port.tx, nrig.port.ntx, k, raw) >= 5) {
+		ids[k] = raw[2];
+		first[k] = raw[3] ? raw[4] : 0;
+		k++;
+	}
+	return k;
+}
+
+/* Answers 0x09 with mode:bootloader until mode_until_us, then
+ * mode:application, 1 ms after each query. */
+static uint32_t mode_until_us;
+
+static void mode_peer(void *ctx, struct t_port *p, const uint8_t *d, size_t n)
+{
+	static const char boot[] = "mode:bootloader", app[] = "mode:application";
+	uint8_t raw[256];
+	const uint32_t t = p->sim->now;
+	const bool in_dfu = !s06_time_reached(t, mode_until_us);
+
+	(void)ctx;
+	if (t_nth_raw(d, n, 0, raw) < 5 || raw[2] != 0x09)
+		return;
+	t_port_inject_frame(p, t + 1000u, s06_swap_route(raw[0]), 0, 0x0A,
+			    (const uint8_t *)(in_dfu ? boot : app),
+			    in_dfu ? sizeof boot - 1u : sizeof app - 1u);
+}
+
+static void test_one_answer(void)
+{
+	static const uint8_t bb[2] = { 0xBB, 0x02 }, aa[2] = { 0xAA, 0x02 },
+			     zero[2] = { 0x00, 0x02 };
+	uint8_t ids[64] = { 0 }, first[64] = { 0 };
+	size_t k;
+
+	t_case = "greeting_due";
+	CHECK(s08_greeting_due(false, 0, 0));
+	CHECK(!s08_greeting_due(true, 1000, 1000));
+	CHECK(!s08_greeting_due(true, 1000, 500));		/* before the answer */
+	CHECK(!s08_greeting_due(true, 1000, 1000 + S06_MS(20)));
+	CHECK(s08_greeting_due(true, 1000, 1001 + S06_MS(20)));
+	CHECK(s08_greeting_due(true, 0xFFFFF000u, 0x00010000u));	/* wrap */
+	CHECK(!s08_greeting_due(true, 0x00001000u, 0xFFFFF000u));
+
+	/* two greetings delivered before either is handled: one answer */
+	t_case = "two queued greetings";
+	t_nrig_init(S08_STATE_UPGRADING, S06_MS(1000));
+	nrig.ops.log = count_drops;
+	drops_logged = 0;
+	t_port_inject_frame(&nrig.port, 0, 0x31, 0, 0x05, bb, 2);
+	t_port_inject_frame(&nrig.port, 0, 0x31, 1, 0x05, bb, 2);
+	(void)s08_poll(&nrig.nordic);
+	k = sent_list(ids, first, 64);
+	CHECK_EQ(k, 1);
+	CHECK_EQ(first[0], 0xEE);
+	CHECK_EQ(drops_logged, 1);
+	/* the same between an install run's steps */
+	t_case = "two queued greetings between steps";
+	s08_idle(&nrig.nordic, S06_MS(100));
+	t_port_inject_frame(&nrig.port, nrig.sim.now, 0x31, 2, 0x05, bb, 2);
+	t_port_inject_frame(&nrig.port, nrig.sim.now, 0x31, 3, 0x05, bb, 2);
+	s08_answer_greetings(&nrig.nordic);
+	CHECK_EQ(sent_list(ids, first, 64), 2);
+	CHECK_EQ(drops_logged, 2);
+
+	/* in held mode: 10 ms after an answer dropped, and a dropped one
+	 * is no answer: 30 ms after the answer it is answered again */
+	t_case = "greetings 10 and 30 ms after an answer";
+	t_nrig_init(S08_STATE_IDLE, S06_MS(1000));
+	nrig.ops.log = count_drops;
+	drops_logged = 0;
+	t_port_inject_frame(&nrig.port, S06_MS(10), 0x31, 0, 0x05, bb, 2);
+	t_port_inject_frame(&nrig.port, S06_MS(20), 0x31, 1, 0x05, bb, 2);
+	t_port_inject_frame(&nrig.port, S06_MS(40), 0x31, 2, 0x05, bb, 2);
+	t_port_inject_frame(&nrig.port, S06_MS(45), 0x31, 3, 0x05, bb, 2);
+	s08_idle(&nrig.nordic, S06_MS(100));
+	CHECK_EQ(sent_list(ids, first, 64), 2);
+	CHECK_EQ(drops_logged, 2);
+	CHECK_EQ(nrig.nordic.answered_at, S06_MS(40));
+
+	/* an answer long past is forgotten, so the clock's wrap never makes it
+	 * recent again */
+	t_case = "answer forgotten";
+	CHECK(!nrig.nordic.answered);
+	nrig.sim.now = S06_MS(40) + 0x90000000u;
+	t_port_inject_frame(&nrig.port, nrig.sim.now, 0x31, 4, 0x05, bb, 2);
+	(void)s08_poll(&nrig.nordic);
+	CHECK_EQ(sent_list(ids, first, 64), 3);
+
+	/* the frames already delivered are handled before the command */
+	t_case = "greeting handled before enter";
+	t_nrig_init(S08_STATE_UPGRADING, S06_MS(50000));
+	t_port_inject_frame(&nrig.port, 0, 0x31, 0, 0x05, zero, 2);
+	(void)s08_enter_dfu(&nrig.nordic);
+	CHECK(sent_list(ids, first, 64) >= 2);
+	CHECK(ids[0] == 0x06 && first[0] == 0x40);
+	CHECK(ids[1] == 0x0D && first[1] == 0xEE);
+	CHECK_EQ(nrig.revision, 2);
+
+	t_case = "greeting handled before exit";
+	t_nrig_init(S08_STATE_IDLE, S06_MS(50000));
+	t_port_inject_frame(&nrig.port, 0, 0x31, 0, 0x05, zero, 2);
+	(void)s08_exit_dfu(&nrig.nordic);
+	CHECK(sent_list(ids, first, 64) >= 2);
+	CHECK(ids[0] == 0x06 && first[0] == 0x40);
+	CHECK(ids[1] == 0x0D && first[1] == 0x18);
+
+	/* S-08.033: a greeting 5 ms after the answer sent before the command is
+	 * dropped and does not end phase 1; the exit succeeds there */
+	t_case = "dropped greeting in the exit exchange";
+	t_nrig_init(S08_STATE_IDLE, S06_MS(50000));
+	nrig.ops.log = count_drops;
+	drops_logged = 0;
+	nrig.port.on_tx = mode_peer;
+	mode_until_us = S06_MS(50);
+	t_port_inject_frame(&nrig.port, 0, 0x31, 0, 0x05, aa, 2);
+	t_port_inject_frame(&nrig.port, S06_MS(5), 0x31, 1, 0x05, aa, 2);
+	CHECK(s08_exit_dfu(&nrig.nordic));
+	k = sent_list(ids, first, 64);
+	CHECK(k >= 3);
+	CHECK(ids[0] == 0x06 && first[0] == 0x40);
+	CHECK(ids[1] == 0x0D && first[1] == 0x18);
+	for (size_t i = 2; i < k; i++)
+		CHECK_EQ(ids[i], 0x09);
+	CHECK_EQ(drops_logged, 1);
+	CHECK(!nrig.nordic.connected);
+	/* phase 1's queries ran to the first "not in DFU", 1-2 ms apart */
+	CHECK(k - 2 > 15);
 }
 
 /* S-08.022 through the module: a query with no slot leaves a log event
@@ -416,6 +567,7 @@ int main(void)
 	test_power_messages();
 	test_greeting();
 	test_step_greetings();
+	test_one_answer();
 	test_slot_unread();
 	test_accept();
 	test_queries();
