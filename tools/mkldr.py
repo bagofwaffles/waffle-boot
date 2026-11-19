@@ -51,7 +51,8 @@ must leave the slot's last sector free, FR_LOG_IMAGE_MAX bytes at most: that
 sector holds the start log (S-02.095). This build's own stream is held to
 STORE_IMAGE_MAX, so that in either slot it leaves the sector below the log,
 the slot's settings sector, free (S-02.099, S-02.104). --front-only streams the front alone,
-a recovery image with no descriptor.
+a recovery image with no descriptor. With --front or --front-only, no block may meet
+the front's frame (FR_FRAME, S-01.023): the front paints it before the image is checked.
 
 Every target and count is a multiple of 4: each run is widened to whole
 words with zero bytes. Runs closer than GAP bytes are joined with zeros.
@@ -153,6 +154,8 @@ FR_DESC_MAGIC = 0x4D494257
 FR_DESC_VERSION = 1
 FR_DESC_HEAD = 0x40
 FR_DESC_REGIONS = 24
+# S-01.023 "The front's frame": the frame the front paints in DDR, one frame in bus order.
+FR_FRAME = (0x8FE00000, 0x8FE34800)
 FR_LOG_IMAGE_MAX = 0x77000     # a slot less its last sector, the start log (S-02.095)
 # S-09.019: the slave's L1 check's mark (waffle/board/opxy_boot.h), as compiled and as filled
 L1_MARK = '_opxy_l1_mark'
@@ -179,11 +182,19 @@ def ordered(rs):
     return [r for r in rs if in_l1(r[0])] + [r for r in rs if not in_l1(r[0])]
 
 
+def spare_frame(rs):
+    """S-01.023: refuse a run that meets the front's frame."""
+    bad = ['%08x+%x' % (a, len(b)) for a, b in rs if meets(a, len(b), *FR_FRAME)]
+    if bad:
+        raise SystemExit('mkldr: blocks in the front\'s frame (S-01.023): ' + ', '.join(bad))
+
+
 def front_runs(front):
     rs = runs(front)
     bad = ['%08x+%x' % (a, len(b)) for a, b in rs if not in_front(a) or not in_front(a + len(b) - 1)]
     if bad:
         raise SystemExit('mkldr: front bytes outside its windows: ' + ', '.join(bad))
+    spare_frame(rs)
     return ordered(rs)
 
 
@@ -259,6 +270,7 @@ def merged(main, front):
     if init is None:
         raise SystemExit('mkldr: the front has no _fr_init')
     mr, fr = runs(main), front_runs(front)
+    spare_frame(mr)
     # S-01.023: no loaded byte and no NOLOAD section of the image in the
     # front's windows or the shared block (descriptor and hand-off record).
     spans = [(a, len(b)) for a, b in mr] + \
@@ -315,7 +327,10 @@ def main(argv):
     if front is not None:
         data = merged(elf32.read(args[0]), front)
     else:
-        data = stream(elf32.read(args[0]), init_symbol)
+        elf = elf32.read(args[0])
+        if init_symbol is not None:
+            spare_frame(runs(elf))
+        data = stream(elf, init_symbol)
     with open(args[1], 'wb') as f:
         f.write(data)
     return 0

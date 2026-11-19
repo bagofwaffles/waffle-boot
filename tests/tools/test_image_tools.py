@@ -262,6 +262,25 @@ class FrontMerge(unittest.TestCase):
         bss = ('.l2.bss', elf32.SHT_NOBITS, WA, 0x08031000, 0x100)
         mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()))
 
+    def test_block_in_the_front_frame_refused(self):
+        # S-01.023: no stream block meets the front's frame, 0x8FE00000-0x8FE34800;
+        # a block just below it or just past it is taken.
+        self.assertEqual(mkldr.FR_FRAME, (0x8FE00000, 0x8FE34800))
+        blk = lambda a, n=0x10: ('.ddr.data', elf32.SHT_PROGBITS, WA, a, b'\x6a' * n)
+        for a in (0x8FE00000, 0x8FDFFFF0 + 4, 0x8FE347FC, 0x8FE10000):
+            with self.assertRaises(SystemExit, msg='%08x' % a) as cm:
+                mkldr.merged(elf32.Elf(fimage(extra=[blk(a)])), elf32.Elf(front()))
+            self.assertIn("front's frame (S-01.023)", str(cm.exception))
+        mkldr.spare_frame([(0x8FDFFFF0, bytes(0x10)), (0x8FE34800, bytes(0x10))])
+        # A NOLOAD section there, the main image's own frame buffer, is taken.
+        bss = ('.frame', elf32.SHT_NOBITS, WA, 0x8FE00000, 0x34800)
+        mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()))
+        with Tmp() as t:
+            e = t.write('a.elf', image(extra=[blk(0x8FE00000)]))
+            with self.assertRaises(SystemExit):
+                mkldr.main(['mkldr.py', e, t.path('a.ldr'), '--front-only'])
+            self.assertEqual(mkldr.main(['mkldr.py', e, t.path('b.ldr'), '--no-init']), 0)
+
     def test_image_over_the_start_log_refused(self):
         # S-02.095: the slot's last sector is the start log. A stream one
         # word over that limit is refused for it; the run costs its block
@@ -571,10 +590,29 @@ class Layout(unittest.TestCase):
             rc, out = run_layout(e, '--stream', s)
         self.assertEqual(rc, 1)
         self.assertIn('a slot holds 487424 before its start log', out)
+        # S-02.104: the build's stream also stops below the settings sector.
         with Tmp() as t:
             e = t.write('a.elf', image())
-            rc, out = run_layout(e, '--stream', t.write('a.ldr', bytes(0x77000)))
+            rc, out = run_layout(e, '--stream', t.write('a.ldr', bytes(0x76001)))
+        self.assertEqual(rc, 1)
+        self.assertIn('a slot holds 483328 before its settings sector (S-02.104)', out)
+        with Tmp() as t:
+            e = t.write('a.elf', image())
+            rc, out = run_layout(e, '--stream', t.write('a.ldr', bytes(0x76000)))
         self.assertNotIn('a slot holds', out)
+
+    def test_section_in_the_front_frame(self):
+        # S-01.023: a loaded section in the front's frame fails; a NOLOAD one does not.
+        with Tmp() as t:
+            e = t.write('a.elf', image(extra=[
+                ('.ddr.data', elf32.SHT_PROGBITS, WA, 0x8FE347F0, b'\x6b' * 0x10)]))
+            rc, out = run_layout(e)
+        self.assertEqual(rc, 1)
+        self.assertIn("meets the front's frame (S-01.023)", out)
+        with Tmp() as t:
+            e = t.write('a.elf', image(extra=[('.frame', elf32.SHT_NOBITS, WA, 0x8FE00000, 0x34800)]))
+            rc, out = run_layout(e)
+        self.assertNotIn("front's frame", out)
 
     def test_rom_boot_reserve(self):
         with Tmp() as t:

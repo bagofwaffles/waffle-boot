@@ -11,6 +11,10 @@ Prints the use of each MEMORY region of LDSCRIPT and fails (exit 1) when:
     the frame buffers) meets the image or the heap;
   - the stream does not leave a flash slot's last sector free
     (S02_SLOT_CAPACITY less S02_SECTOR_SIZE): it holds the start log (S-02.095);
+    or it reaches the sector below it, the slot's settings (less two sectors,
+    0x76000, S-02.104);
+  - a loaded section meets the front's frame (S-01.023, FR_FRAME in
+    tools/mkldr.py), which the front paints before the image is checked;
   - the handover path (.handover.*) refers to anything outside the handover
     reserve (S-01.013, S01_RESERVE_* in S01_H), apart from the boot ROM
     and MMRs; L1, which the OS may load over, fails;
@@ -33,6 +37,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import elf32  # noqa: E402
+from mkldr import FR_FRAME  # noqa: E402
 
 # S-01.012: the L1 spaces; the boot ROM; core and system MMRs.
 L1 = ((0x11800000, 0x11808000), (0x11900000, 0x11908000),
@@ -148,17 +153,26 @@ def main(argv):
                 fails.append('%s meets %s' % (name, what))
 
     for s in secs:
+        if s.type != elf32.SHT_NOBITS and meets(s.addr, s.end, FR_FRAME):
+            fails.append('%s at 0x%08x-0x%08x meets the front\'s frame (S-01.023)' %
+                         (s.name, s.addr, s.end))
+
+    for s in secs:
         if meets(s.addr, s.end, boot_reserve):
             fails.append('%s at 0x%08x-0x%08x meets the ROM boot reserve' %
                          (s.name, s.addr, s.end))
 
     if '--stream' in opts:
         n = os.path.getsize(opts['--stream'])
-        cap = flash['S02_SLOT_CAPACITY'] - flash['S02_SECTOR_SIZE']
+        log = flash['S02_SLOT_CAPACITY'] - flash['S02_SECTOR_SIZE']
+        cap = log - flash['S02_SECTOR_SIZE']
         print('%-10s %32s %10d %10d' % ('stream', '', n, cap))
-        if n > cap:
+        if n > log:
             fails.append('the stream is %d bytes, a slot holds %d before its start log (S-02.095)'
-                         % (n, cap))
+                         % (n, log))
+        elif n > cap:
+            fails.append('the stream is %d bytes, a slot holds %d before its settings sector '
+                         '(S-02.104)' % (n, cap))
 
     reserve = [(lo, hi) for name, lo, hi in regions if name == 'handover']
     reserve.append((s01['S01_RESERVE_DDR_START'], s01['S01_RESERVE_DDR_END']))
