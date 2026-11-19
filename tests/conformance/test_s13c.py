@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-13c display panel: src/s13c_panel.c (through h_s13c, over a model of the panel bus) against
+"""S-13c display panel: src/s13c_panel.c (through h_s13c, over a model of the panel bus) and the front's
+panel on its way into recovery (src/front/, through h_s13cf) against
 tests/oracle/S-13c-display/check_trace.py (part 'logic')."""
 
 import hashlib
@@ -270,6 +271,152 @@ class Held(Base):
             self.assertIn('00 00 02 before DISPON', fails[0][2])
             self.assertEqual(self.off_state(c), [])
             self.assertEqual(c.frames, [])
+
+
+def front_trace(name, way, **keys):
+    """Runs h_s13cf; returns (the trace's lines, DMA sends from MARK recovery, sends stopped, TE misses)."""
+    os.makedirs(WORK, exist_ok=True)
+    out = os.path.join(WORK, 's13cf_%s.tsv' % name)
+    args = ' '.join('%s=%s' % kv for kv in sorted(keys.items()))
+    res = run('s13cf', ['run %s %s %s' % (way, out, args)])[0].split()
+    with open(out, encoding='utf-8') as f:
+        return f.readlines(), int(res[1]), int(res[2]), int(res[3])
+
+
+def t_of(line):
+    return -1 if line.startswith('#') else int(line.split('\t', 1)[0])
+
+
+def line_block(lines):
+    """The indexes [i, j) of the line under the logo: its CASET to the frame window's CASET after it."""
+    i = next(k for k, x in enumerate(lines) if '\tCMD\t2A' in x and '\tDATA\t00BD00CC' in lines[k + 1])
+    j = next(k for k in range(i + 2, len(lines)) if '\tCMD\t2A' in lines[k])
+    return i, j + 2
+
+
+class Front(Base):
+    """The front's panel (src/front/fr_panel.c) from its entry into recovery: fr_start_run() and
+    fr_recovery_run() whole, over h_s13cf's bus, PSoC, flash and image models; check_trace --expect
+    recovery."""
+
+    LINE_WINDOW = (189, 204, 0, 479)
+
+    def front(self, name, way='chord', expect=('recovery',), **keys):
+        lines, sends, stops, misses = front_trace(name, way, **keys)
+        return self.check(lines, list(expect)), lines, sends, stops, misses
+
+    @requirement('S-13c.025', 'S-15.151', 'S-02.084')
+    def test_line_each_way(self):
+        """On each way in (Power + M4, a failed image check, three unfinished starts): the early logo frame
+        with the display off, DISPON, one line under the logo in its band, then recovery's frames from MARK
+        recovery, each by one DMA send."""
+        for way in ('chord', 'check', 'count'):
+            with self.subTest(way=way):
+                c, _, sends, stops, misses = self.front('way_' + way, way)
+                self.assertIn('recovery_' + way, c.tr.marks)
+                self.assertEqual(len(c.lines), 1)
+                x, window = c.lines[0]
+                self.assertEqual(window, self.LINE_WINDOW)
+                don = c.first(C.DISPON, c.boot_t())
+                shown = c.mode_frames()
+                self.assertLess(don.t, x.t)
+                self.assertLess(x.t_end, shown[0].t)
+                self.assertLess(c.tr.marks['recovery_' + way], x.t)
+                self.assertEqual((len(shown), sends, stops, misses), (4, 4, 0, 0))
+                self.assertTrue(all(len(f.params) == 215040 for f in shown))
+
+    @scenario('S-13c/D-TE')
+    @requirement('S-13c.017')
+    def test_te(self):
+        """Recovery's frames start on a TE rising edge, one frame time apart at most, none crossing the next
+        edge."""
+        c, _, sends, _, misses = self.front('te', frames=6)
+        self.assertEqual((sends, misses), (6, 0))
+        for f in c.mode_frames():
+            edge = max(t for t in c.tr.te if t <= f.t)
+            self.assertLess(f.t - edge, 100000)
+
+    @scenario('S-13c/D-TEMISS')
+    @requirement('S-13c.017')
+    def test_te_stops(self):
+        """TE stops 150 ms after MARK recovery and comes back at 450 ms: the frames meanwhile go T_TE_MISS after
+        the wait began, counted, and are paced by TE again after it."""
+        c, _, sends, _, misses = self.front('te_stops', frames=6, te_stop=150, te_back=450, end=700)
+        self.assertEqual(sends, 6)
+        self.assertGreater(misses, 0)
+        rec = c.tr.marks['recovery']
+        self.assertTrue(any(rec + 450 * MS < f.t for f in c.mode_frames()))
+
+    @requirement('S-13c.017')
+    def test_no_te(self):
+        _, _, sends, _, misses = self.front('no_te', te_us=0)
+        self.assertEqual(misses, sends + 1)          # the line's wait too
+
+    @requirement('S-13c.017')
+    def test_dma_stopped(self):
+        """Recovery's second send stops taking bytes and never ends: it is stopped no earlier than 40 ms after
+        its first byte (here at the next change of screen), that frame is sent again whole by the CPU, and so
+        is every later one."""
+        c, _, sends, stops, _ = self.front('dma_stopped', stall=2, frames=5)
+        self.assertEqual((sends, stops), (2, 1))
+        shown = c.mode_frames()
+        cut = shown[1]
+        self.assertLess(len(cut.params), 215040)
+        self.assertGreaterEqual(shown[2].t, cut.t_data + 40 * MS)
+        self.assertEqual(len(shown), 6)
+        self.assertTrue(all(len(f.params) == 215040 for f in shown[2:]))
+        self.assertEqual(c.cpu_sent, {id(f) for f in shown[2:]})
+
+    @scenario('S-13c/D-OFF')
+    @requirement('S-13c.022')
+    def test_poweroff_frame(self):
+        """A power-off 10 ms into recovery's second frame: the frame ends whole, nothing follows it on the
+        bus, then 0x51 00 00 02."""
+        c, _, _, stops, _ = self.front('off', expect=('recovery', 'poweroff'), off=2)
+        mark = c.tr.marks['poweroff']
+        last = c.frames[-1][0]
+        self.assertEqual(stops, 0)
+        self.assertIs(c.tr.txns[-1], last)
+        self.assertLess(last.t, mark)
+        self.assertGreater(last.t_end, mark)
+        self.assertEqual(len(last.params), 215040)
+
+    @requirement('S-13c.017', 'S-13c.022')
+    def test_poweroff_cut(self):
+        """A slow second send (400 ns a byte) with the power-off 10 ms into it: stopped within 60 ms of the
+        power-off, nothing after it."""
+        c, _, _, stops, _ = self.front('off_cut', expect=('recovery', 'poweroff'), slow=2, off=2)
+        self.assertEqual(stops, 1)
+        self.assertLessEqual(c.frames[-1][0].t_end, c.tr.marks['poweroff'] + 60 * MS)
+
+    @requirement('S-13c.017')
+    def test_dma_stopped_last(self):
+        """Recovery's second and last send never ends: stopped at 40 ms and sent again whole by the CPU."""
+        c, _, sends, stops, _ = self.front('dma_stopped_last', stall=2, frames=2)
+        self.assertEqual((sends, stops), (2, 1))
+        self.assertEqual(len(c.mode_frames()), 3)
+
+    @requirement('S-13c.025')
+    def test_line_after_menu_fails(self):
+        """The checker sees the front's line moved to after recovery's first frame (rule lines)."""
+        c, lines, _, _, _ = self.front('line_moved')
+        i, j = line_block(lines)
+        block, rest = lines[i:j], lines[:i] + lines[j:]
+        at = c.mode_frames()[0].t_end + 1 * MS - t_of(block[0])
+        moved = ['%d\t%s' % (t_of(x) + at, x.split('\t', 1)[1]) for x in block]
+        mutated = sorted(rest + moved, key=t_of)
+        fails, _ = C.check(mutated, ['recovery'])
+        self.assertIn('lines', [f[0] for f in fails], fails)
+        fails, _ = C.check(rest, ['recovery'])
+        self.assertIn('lines', [f[0] for f in fails], fails)
+
+    @requirement('S-13c.017')
+    def test_stopped_not_sent_fails(self):
+        """The checker sees a stopped send that is not sent again (the trace cut at the stop)."""
+        c, lines, _, _, _ = self.front('stop_cut', stall=2, frames=5)
+        cut = c.mode_frames()[1]
+        fails, _ = C.check([x for x in lines if t_of(x) <= cut.t_end], ['recovery'])
+        self.assertIn('frames', [f[0] for f in fails], fails)
 
 
 def declared_font():

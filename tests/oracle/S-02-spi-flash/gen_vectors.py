@@ -229,8 +229,9 @@ def writer_target(rule, index):
     return 0 if index == 1 else 1      # stock_rule: the negative control
 
 
-def upgrade_ops(rule, sel, n=IMAGE_LEN, package=False):
-    """The writes of a slot upgrade; package: the package's bootloader step, which reads the selector back."""
+def upgrade_ops(rule, sel, n=IMAGE_LEN, package=False, recovery=False):
+    """The writes of a slot upgrade; package: the package's bootloader step, which reads the selector back;
+    recovery: recovery's image write, which erases the settings sector too."""
     t = writer_target(rule, sel[0])
     base = SLOT[t]
     ops = []
@@ -246,7 +247,8 @@ def upgrade_ops(rule, sel, n=IMAGE_LEN, package=False):
             a += ln
     if rule == "conforming" and n <= LOG_SECTOR:                 # S-02.045
         ops.append(dict(cls="slot_erase", op="erase", offset=base + LOG_SECTOR, length=SECTOR))
-    if rule == "conforming" and package and n <= SLOT_MAX - 2 * SECTOR:   # S-02.103: the settings sector
+    assert not recovery or n <= SLOT_MAX - 2 * SECTOR            # S-02.084
+    if rule == "conforming" and (package or recovery) and n <= SLOT_MAX - 2 * SECTOR:   # S-02.103
         ops.append(dict(cls="slot_erase", op="erase", offset=base + SLOT_MAX - 2 * SECTOR, length=SECTOR))
     ops.append(dict(cls="record_erase", op="erase", offset=RECORD[t], length=SECTOR))
     ops.append(dict(cls="record_program", op="program", offset=RECORD[t], length=12))
@@ -823,14 +825,14 @@ def sel_of_hx(s):
 def running_ops(a, way, n=IMAGE_LEN, close=False):
     """The ops of recovery's write of the running slot A (S-02.084, S-02.045-.050), by way: select_first
     or in_place (close: in_place with the final selector write kept)."""
-    assert n <= LOG_SECTOR             # S-02.084
+    assert n <= SLOT_MAX - 2 * SECTOR  # S-02.084
     b = 1 - a
     ops = []
     if way == "select_first":
         ops.append(dict(cls="select_erase", op="erase", offset=SELECTOR, length=SECTOR))
         ops.append(dict(cls="select_program", op="program", offset=SELECTOR, length=2, value=hx((b, 1))))
         ops.append(dict(cls="select_read", op="read", offset=SELECTOR, length=2))
-    _, up_ops = upgrade_ops("conforming", (b, 1), n)        # a selector naming B targets A
+    _, up_ops = upgrade_ops("conforming", (b, 1), n, recovery=True)   # a selector naming B targets A
     for o in up_ops:
         if way == "in_place" and not close and o["cls"] in ("selector_erase", "selector_program"):
             continue
@@ -888,7 +890,7 @@ def running_outcome(profile, sel, slots, a, stream):
 
 def plain_ops(a, n=IMAGE_LEN):
     """The default write of the other slot B while the selector names A (S-02.043-.049), {B, 0x00} last."""
-    t, ops = upgrade_ops("conforming", (a, 1), n)
+    t, ops = upgrade_ops("conforming", (a, 1), n, recovery=True)
     ops = [dict(o) for o in ops]
     for o in ops:
         if o["cls"] == "selector_program":
@@ -1038,8 +1040,9 @@ def factory_unsafe(cuts):
 
 
 def class14(t, n=IMAGE_LEN):
-    """S-02.045-.047 for target t: its sectors, the last sector's erase, the record, the read-back."""
-    _, ops = upgrade_ops("conforming", (1 - t, 1), n)
+    """S-02.045-.047, S-02.103 for target t: its sectors, the last sector's erase, the settings sector's
+    erase, the record, the read-back."""
+    _, ops = upgrade_ops("conforming", (1 - t, 1), n, recovery=True)
     return [dict(o) for o in ops if o["cls"] not in ("selector_erase", "selector_program")]
 
 
@@ -1256,7 +1259,7 @@ def trial_ops(b, n=IMAGE_LEN):
     ops = []
     for o in _trial_class14(b, n):
         ops.append(o)
-        if o["cls"] == "slot_erase" and o["offset"] == log:      # S-02.095
+        if o["cls"] == "slot_erase" and o["offset"] == log - SECTOR:   # S-02.095, after S-02.103's erase
             ops += [dict(cls="trial_log", op="program", offset=log, length=1, value="fd"),
                     dict(cls="trial_log_read", op="read", offset=log, length=1)]
     ops.append(dict(cls="readback", op="read", offset=log, length=1))
@@ -2201,19 +2204,21 @@ def set_torn_check(stamps):
 
 
 def set_recovery_ops(ops, t):
-    """S-02.103: a recovery image write's ops with the erase of target t's settings sector right after the
-    erase of its last sector (the start log), before the trial mark or the record erase."""
+    """S-02.103: a recovery image write's ops, the erase of target t's settings sector named settings_erase,
+    checked to come right after the erase of its last sector (the start log), before the trial mark or the
+    record erase."""
     log = SLOT[t] + LOG_SECTOR
     out = []
     for o in ops:
         o = dict(o)
         o.pop("n", None)
+        if o["op"] == "erase" and o["offset"] == SET_SECTOR[t]:
+            o["cls"] = "settings_erase"
         out.append(o)
-        if o["cls"] == "slot_erase" and o["offset"] == log:
-            out.append(dict(cls="settings_erase", op="erase", offset=SET_SECTOR[t], length=SECTOR))
     k = [i for i, o in enumerate(out) if o["cls"] == "settings_erase"]
     nxt = [i for i, o in enumerate(out) if o["cls"] in ("trial_log", "record_erase")]
-    assert len(k) == 1 and out[k[0] - 1]["offset"] == log and nxt and k[0] < nxt[0]
+    assert len(k) == 1 and out[k[0]]["offset"] == SET_SECTOR[t] and out[k[0] - 1]["offset"] == log
+    assert nxt and k[0] < nxt[0]
     return out
 
 

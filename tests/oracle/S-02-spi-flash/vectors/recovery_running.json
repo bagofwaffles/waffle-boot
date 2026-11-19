@@ -200,22 +200,22 @@
     },
     {
      "n": 27,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 28,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 29,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -223,18 +223,25 @@
      "n": 30,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 31,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
@@ -1045,6 +1052,36 @@
     {
      "op_n": 27,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 27,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 28,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 01",
      "slot0": "badtag",
@@ -1058,7 +1095,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 01",
@@ -1073,7 +1110,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 01",
@@ -1088,7 +1125,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 01",
@@ -1103,36 +1140,6 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 29,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1"
-    },
-    {
-     "op_n": 29,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1"
-    },
-    {
      "op_n": 30,
      "kind": "torn",
      "op_class": "readback",
@@ -1164,6 +1171,36 @@
     },
     {
      "op_n": 31,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "01 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 31,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "01 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 01 01",
@@ -1178,7 +1215,7 @@
      "conforming_boots": "varies(16384 values)"
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -1193,7 +1230,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program",
      "selector": "superset_of 00 00",
@@ -1208,7 +1245,7 @@
      "conforming_boots": "varies(65536 values)"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program",
      "selector": "00 00",
@@ -1423,22 +1460,22 @@
     },
     {
      "n": 27,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 28,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 29,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -1446,18 +1483,25 @@
      "n": 30,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 31,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
@@ -2268,6 +2312,36 @@
     {
      "op_n": 27,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 27,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 28,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 01",
      "slot0": "badtag",
@@ -2281,7 +2355,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 01",
@@ -2296,7 +2370,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 01",
@@ -2311,7 +2385,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 01",
@@ -2326,36 +2400,6 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 29,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1"
-    },
-    {
-     "op_n": 29,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1"
-    },
-    {
      "op_n": 30,
      "kind": "torn",
      "op_class": "readback",
@@ -2387,6 +2431,36 @@
     },
     {
      "op_n": 31,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "01 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 31,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "01 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 01 01",
@@ -2401,7 +2475,7 @@
      "conforming_boots": "varies(16384 values)"
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -2416,7 +2490,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program",
      "selector": "superset_of 00 00",
@@ -2431,7 +2505,7 @@
      "conforming_boots": "varies(65536 values)"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program",
      "selector": "00 00",
@@ -2641,27 +2715,34 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
      "offset": "0x0e000",
      "length": 12
     },
     {
-     "n": 26,
+     "n": 27,
      "class": "readback",
      "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
     {
-     "n": 27,
+     "n": 28,
      "class": "readback",
      "op": "read",
      "offset": "0x10000",
@@ -3381,6 +3462,36 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 01",
      "slot0": "badtag",
@@ -3394,7 +3505,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -3409,7 +3520,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 01",
@@ -3424,7 +3535,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 01",
@@ -3439,7 +3550,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
      "selector": "00 01",
@@ -3454,7 +3565,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "after",
      "op_class": "readback",
      "selector": "00 01",
@@ -3469,7 +3580,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "torn",
      "op_class": "readback",
      "selector": "00 01",
@@ -3484,7 +3595,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "readback",
      "selector": "00 01",
@@ -3694,27 +3805,34 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
      "offset": "0x0e000",
      "length": 12
     },
     {
-     "n": 26,
+     "n": 27,
      "class": "readback",
      "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
     {
-     "n": 27,
+     "n": 28,
      "class": "readback",
      "op": "read",
      "offset": "0x10000",
@@ -4434,6 +4552,36 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 01",
      "slot0": "badtag",
@@ -4447,7 +4595,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -4462,7 +4610,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 01",
@@ -4477,7 +4625,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 01",
@@ -4492,7 +4640,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
      "selector": "00 01",
@@ -4507,7 +4655,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "after",
      "op_class": "readback",
      "selector": "00 01",
@@ -4522,7 +4670,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "torn",
      "op_class": "readback",
      "selector": "00 01",
@@ -4537,7 +4685,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "readback",
      "selector": "00 01",
@@ -4752,22 +4900,22 @@
     },
     {
      "n": 27,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 28,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 29,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -4775,18 +4923,25 @@
      "n": 30,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 31,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
@@ -5597,6 +5752,36 @@
     {
      "op_n": 27,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 27,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 28,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 01",
      "slot0": "good",
@@ -5610,7 +5795,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -5625,7 +5810,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 01",
@@ -5640,7 +5825,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 01",
@@ -5655,36 +5840,6 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 29,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0"
-    },
-    {
-     "op_n": 29,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0"
-    },
-    {
      "op_n": 30,
      "kind": "torn",
      "op_class": "readback",
@@ -5716,6 +5871,36 @@
     },
     {
      "op_n": 31,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 31,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 00 01",
@@ -5730,7 +5915,7 @@
      "conforming_boots": "varies(32768 values)"
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -5745,7 +5930,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program",
      "selector": "superset_of 01 00",
@@ -5760,7 +5945,7 @@
      "conforming_boots": "varies(32768 values)"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program",
      "selector": "01 00",
@@ -5975,22 +6160,22 @@
     },
     {
      "n": 27,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 28,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 29,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -5998,18 +6183,25 @@
      "n": 30,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 31,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program",
      "op": "program",
      "offset": "0x0d000",
@@ -6820,6 +7012,36 @@
     {
      "op_n": 27,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 27,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 28,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 01",
      "slot0": "good",
@@ -6833,7 +7055,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -6848,7 +7070,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 01",
@@ -6863,7 +7085,7 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 01",
@@ -6878,36 +7100,6 @@
      "conforming_boots": "0 0 0"
     },
     {
-     "op_n": 29,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0"
-    },
-    {
-     "op_n": 29,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0"
-    },
-    {
      "op_n": 30,
      "kind": "torn",
      "op_class": "readback",
@@ -6939,6 +7131,36 @@
     },
     {
      "op_n": 31,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 31,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0"
+    },
+    {
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 00 01",
@@ -6953,7 +7175,7 @@
      "conforming_boots": "varies(32768 values)"
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -6968,7 +7190,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program",
      "selector": "superset_of 01 00",
@@ -6983,7 +7205,7 @@
      "conforming_boots": "varies(32768 values)"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program",
      "selector": "01 00",
@@ -7193,27 +7415,34 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
      "offset": "0x0f000",
      "length": 12
     },
     {
-     "n": 26,
+     "n": 27,
      "class": "readback",
      "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
     {
-     "n": 27,
+     "n": 28,
      "class": "readback",
      "op": "read",
      "offset": "0x88000",
@@ -7933,6 +8162,36 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 01",
      "slot0": "badcrc",
@@ -7946,7 +8205,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 01",
@@ -7961,7 +8220,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 01",
@@ -7976,7 +8235,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 01",
@@ -7991,7 +8250,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
      "selector": "01 01",
@@ -8006,7 +8265,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "after",
      "op_class": "readback",
      "selector": "01 01",
@@ -8021,7 +8280,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "torn",
      "op_class": "readback",
      "selector": "01 01",
@@ -8036,7 +8295,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "readback",
      "selector": "01 01",
@@ -8246,27 +8505,34 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
      "offset": "0x0f000",
      "length": 12
     },
     {
-     "n": 26,
+     "n": 27,
      "class": "readback",
      "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
     {
-     "n": 27,
+     "n": 28,
      "class": "readback",
      "op": "read",
      "offset": "0x88000",
@@ -8986,6 +9252,36 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 01",
      "slot0": "badcrc",
@@ -8999,7 +9295,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 01",
@@ -9014,7 +9310,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 01",
@@ -9029,7 +9325,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 01",
@@ -9044,7 +9340,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
      "selector": "01 01",
@@ -9059,7 +9355,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "after",
      "op_class": "readback",
      "selector": "01 01",
@@ -9074,7 +9370,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "torn",
      "op_class": "readback",
      "selector": "01 01",
@@ -9089,7 +9385,7 @@
      "conforming_boots": "1 1 1"
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "readback",
      "selector": "01 01",
@@ -9315,22 +9611,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -9338,25 +9634,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_program_index",
      "op": "program",
      "offset": "0x0d000",
@@ -9364,14 +9667,14 @@
      "value": "01"
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_program_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program_verified",
      "op": "program",
      "offset": "0x0d001",
@@ -9379,7 +9682,7 @@
      "value": "01"
     },
     {
-     "n": 33,
+     "n": 34,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -9392,34 +9695,34 @@
    },
    "factory_never": [
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "torn",
      "op_class": "selector_settle_read"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "selector_settle_read"
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase"
     }
    ],
    "control_factory_never": [
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "torn",
      "op_class": "selector_settle_read"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "selector_settle_read"
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase"
     }
@@ -9663,32 +9966,32 @@
     {
      "op_n": 24,
      "kind": "torn",
-     "op_class": "record_erase"
+     "op_class": "slot_erase"
     },
     {
      "op_n": 24,
      "kind": "after",
+     "op_class": "slot_erase"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase"
     },
     {
      "op_n": 25,
-     "kind": "torn",
-     "op_class": "record_program"
-    },
-    {
-     "op_n": 25,
      "kind": "after",
-     "op_class": "record_program"
+     "op_class": "record_erase"
     },
     {
      "op_n": 26,
      "kind": "torn",
-     "op_class": "readback"
+     "op_class": "record_program"
     },
     {
      "op_n": 26,
      "kind": "after",
-     "op_class": "readback"
+     "op_class": "record_program"
     },
     {
      "op_n": 27,
@@ -9703,15 +10006,25 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read"
+     "op_class": "readback"
     },
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback"
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read"
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read"
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase"
     }
@@ -9955,32 +10268,32 @@
     {
      "op_n": 24,
      "kind": "torn",
-     "op_class": "record_erase"
+     "op_class": "slot_erase"
     },
     {
      "op_n": 24,
      "kind": "after",
+     "op_class": "slot_erase"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase"
     },
     {
      "op_n": 25,
-     "kind": "torn",
-     "op_class": "record_program"
-    },
-    {
-     "op_n": 25,
      "kind": "after",
-     "op_class": "record_program"
+     "op_class": "record_erase"
     },
     {
      "op_n": 26,
      "kind": "torn",
-     "op_class": "readback"
+     "op_class": "record_program"
     },
     {
      "op_n": 26,
      "kind": "after",
-     "op_class": "readback"
+     "op_class": "record_program"
     },
     {
      "op_n": 27,
@@ -9995,15 +10308,25 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read"
+     "op_class": "readback"
     },
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback"
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read"
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read"
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase"
     }
@@ -10772,6 +11095,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "partial",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "0 0 0",
+     "conforming_late": "never",
+     "conforming_safe": false,
+     "conforming_boots": "0 0 0",
+     "factory_cut": false
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "partial",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "0 0 0",
+     "conforming_late": "never",
+     "conforming_safe": false,
+     "conforming_boots": "0 0 0",
+     "factory_cut": false
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 01",
      "slot0": "badcrc",
@@ -10786,7 +11141,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -10802,7 +11157,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 01",
@@ -10818,7 +11173,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 01",
@@ -10834,38 +11189,6 @@
      "factory_cut": false
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "badcrc",
-     "slot1": "good",
-     "a_stream": "partial",
-     "factory_late": "never",
-     "factory_safe": false,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": false
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "badcrc",
-     "slot1": "good",
-     "a_stream": "partial",
-     "factory_late": "never",
-     "factory_safe": false,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": false
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -10900,7 +11223,7 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "00 01",
      "slot0": "badcrc",
      "slot1": "good",
@@ -10916,6 +11239,22 @@
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "partial",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": false
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "00 01",
      "slot0": "badcrc",
@@ -10931,6 +11270,22 @@
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "00 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "partial",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": false
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 00 01",
@@ -10946,7 +11301,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -10962,7 +11317,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "torn",
      "op_class": "selector_program_index",
      "selector": "superset_index 01 ff",
@@ -10978,7 +11333,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "selector_program_index",
      "selector": "01 ff",
@@ -10994,7 +11349,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -11010,7 +11365,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -11026,7 +11381,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program_verified",
      "selector": "superset_verified 01 01",
@@ -11042,7 +11397,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program_verified",
      "selector": "01 01",
@@ -11058,7 +11413,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -11074,7 +11429,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -11301,22 +11656,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -11324,18 +11679,25 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_zero_index",
      "op": "program",
      "offset": "0x0d000",
@@ -11343,14 +11705,14 @@
      "value": "00"
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_zero_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -11363,34 +11725,34 @@
    },
    "factory_never": [
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "torn",
      "op_class": "selector_settle_read"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "selector_settle_read"
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_zero_index"
     }
    ],
    "control_factory_never": [
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "torn",
      "op_class": "selector_settle_read"
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "selector_settle_read"
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_zero_index"
     }
@@ -11634,32 +11996,32 @@
     {
      "op_n": 24,
      "kind": "torn",
-     "op_class": "record_erase"
+     "op_class": "slot_erase"
     },
     {
      "op_n": 24,
      "kind": "after",
+     "op_class": "slot_erase"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase"
     },
     {
      "op_n": 25,
-     "kind": "torn",
-     "op_class": "record_program"
-    },
-    {
-     "op_n": 25,
      "kind": "after",
-     "op_class": "record_program"
+     "op_class": "record_erase"
     },
     {
      "op_n": 26,
      "kind": "torn",
-     "op_class": "readback"
+     "op_class": "record_program"
     },
     {
      "op_n": 26,
      "kind": "after",
-     "op_class": "readback"
+     "op_class": "record_program"
     },
     {
      "op_n": 27,
@@ -11674,15 +12036,25 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read"
+     "op_class": "readback"
     },
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback"
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read"
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read"
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_zero_index"
     }
@@ -11926,32 +12298,32 @@
     {
      "op_n": 24,
      "kind": "torn",
-     "op_class": "record_erase"
+     "op_class": "slot_erase"
     },
     {
      "op_n": 24,
      "kind": "after",
+     "op_class": "slot_erase"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase"
     },
     {
      "op_n": 25,
-     "kind": "torn",
-     "op_class": "record_program"
-    },
-    {
-     "op_n": 25,
      "kind": "after",
-     "op_class": "record_program"
+     "op_class": "record_erase"
     },
     {
      "op_n": 26,
      "kind": "torn",
-     "op_class": "readback"
+     "op_class": "record_program"
     },
     {
      "op_n": 26,
      "kind": "after",
-     "op_class": "readback"
+     "op_class": "record_program"
     },
     {
      "op_n": 27,
@@ -11966,15 +12338,25 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read"
+     "op_class": "readback"
     },
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback"
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read"
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read"
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_zero_index"
     }
@@ -12743,6 +13125,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "partial",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "1 1 1",
+     "conforming_late": "never",
+     "conforming_safe": false,
+     "conforming_boots": "1 1 1",
+     "factory_cut": false
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "partial",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "1 1 1",
+     "conforming_late": "never",
+     "conforming_safe": false,
+     "conforming_boots": "1 1 1",
+     "factory_cut": false
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 01",
      "slot0": "badtag",
@@ -12757,7 +13171,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 01",
@@ -12773,7 +13187,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 01",
@@ -12789,7 +13203,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 01",
@@ -12805,38 +13219,6 @@
      "factory_cut": false
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "good",
-     "slot1": "badcrc",
-     "a_stream": "partial",
-     "factory_late": "never",
-     "factory_safe": false,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": false
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "good",
-     "slot1": "badcrc",
-     "a_stream": "partial",
-     "factory_late": "never",
-     "factory_safe": false,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": false
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -12871,7 +13253,7 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "01 01",
      "slot0": "good",
      "slot1": "badcrc",
@@ -12887,6 +13269,22 @@
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "01 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "partial",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": false
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "01 01",
      "slot0": "good",
@@ -12902,6 +13300,22 @@
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "01 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "partial",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": false
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_zero_index",
      "selector": "subset_index 01 01",
@@ -12917,7 +13331,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "after",
      "op_class": "selector_zero_index",
      "selector": "00 01",
@@ -12933,7 +13347,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "torn",
      "op_class": "selector_zero_index_read",
      "selector": "00 01",
@@ -12949,7 +13363,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "selector_zero_index_read",
      "selector": "00 01",
@@ -12965,7 +13379,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "00 01",
@@ -12981,7 +13395,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "00 01",
@@ -13208,22 +13622,22 @@
       },
       {
        "n": 24,
+       "class": "slot_erase",
+       "op": "erase",
+       "offset": "0x86000",
+       "length": 4096
+      },
+      {
+       "n": 25,
        "class": "record_erase",
        "op": "erase",
        "offset": "0x0e000",
        "length": 4096
       },
       {
-       "n": 25,
+       "n": 26,
        "class": "record_program",
        "op": "program",
-       "offset": "0x0e000",
-       "length": 12
-      },
-      {
-       "n": 26,
-       "class": "readback",
-       "op": "read",
        "offset": "0x0e000",
        "length": 12
       },
@@ -13231,18 +13645,25 @@
        "n": 27,
        "class": "readback",
        "op": "read",
+       "offset": "0x0e000",
+       "length": 12
+      },
+      {
+       "n": 28,
+       "class": "readback",
+       "op": "read",
        "offset": "0x10000",
        "length": 4933
       },
       {
-       "n": 28,
+       "n": 29,
        "class": "selector_settle_read",
        "op": "read",
        "offset": "0x0d000",
        "length": 2
       },
       {
-       "n": 29,
+       "n": 30,
        "class": "selector_zero_index",
        "op": "program",
        "offset": "0x0d000",
@@ -13250,14 +13671,14 @@
        "value": "00"
       },
       {
-       "n": 30,
+       "n": 31,
        "class": "selector_zero_index_read",
        "op": "read",
        "offset": "0x0d000",
        "length": 1
       },
       {
-       "n": 31,
+       "n": 32,
        "class": "selector_read",
        "op": "read",
        "offset": "0x0d000",
@@ -13914,22 +14335,22 @@
       },
       {
        "n": 24,
+       "class": "slot_erase",
+       "op": "erase",
+       "offset": "0x86000",
+       "length": 4096
+      },
+      {
+       "n": 25,
        "class": "record_erase",
        "op": "erase",
        "offset": "0x0e000",
        "length": 4096
       },
       {
-       "n": 25,
+       "n": 26,
        "class": "record_program",
        "op": "program",
-       "offset": "0x0e000",
-       "length": 12
-      },
-      {
-       "n": 26,
-       "class": "readback",
-       "op": "read",
        "offset": "0x0e000",
        "length": 12
       },
@@ -13937,18 +14358,25 @@
        "n": 27,
        "class": "readback",
        "op": "read",
+       "offset": "0x0e000",
+       "length": 12
+      },
+      {
+       "n": 28,
+       "class": "readback",
+       "op": "read",
        "offset": "0x10000",
        "length": 4933
       },
       {
-       "n": 28,
+       "n": 29,
        "class": "selector_settle_read",
        "op": "read",
        "offset": "0x0d000",
        "length": 2
       },
       {
-       "n": 29,
+       "n": 30,
        "class": "selector_zero_index",
        "op": "program",
        "offset": "0x0d000",
@@ -13956,14 +14384,14 @@
        "value": "00"
       },
       {
-       "n": 30,
+       "n": 31,
        "class": "selector_zero_index_read",
        "op": "read",
        "offset": "0x0d000",
        "length": 1
       },
       {
-       "n": 31,
+       "n": 32,
        "class": "selector_read",
        "op": "read",
        "offset": "0x0d000",
@@ -14177,22 +14605,22 @@
     },
     {
      "n": 29,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 30,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 31,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -14200,25 +14628,32 @@
      "n": 32,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 33,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 33,
+     "n": 34,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 34,
+     "n": 35,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 35,
+     "n": 36,
      "class": "selector_program_index",
      "op": "program",
      "offset": "0x0d000",
@@ -14226,14 +14661,14 @@
      "value": "01"
     },
     {
-     "n": 36,
+     "n": 37,
      "class": "selector_program_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 37,
+     "n": 38,
      "class": "selector_program_verified",
      "op": "program",
      "offset": "0x0d001",
@@ -14241,7 +14676,7 @@
      "value": "01"
     },
     {
-     "n": 38,
+     "n": 39,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -15262,6 +15697,38 @@
     {
      "op_n": 29,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 30,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 01",
      "slot0": "good",
@@ -15280,7 +15747,7 @@
      }
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -15296,7 +15763,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 01",
@@ -15316,7 +15783,7 @@
      }
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 01",
@@ -15332,38 +15799,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
-     "op_n": 31,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
      "op_n": 32,
      "kind": "torn",
      "op_class": "readback",
@@ -15398,7 +15833,7 @@
     {
      "op_n": 33,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "00 01",
      "slot0": "good",
      "slot1": "good",
@@ -15414,6 +15849,22 @@
     {
      "op_n": 33,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 34,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "00 01",
      "slot0": "good",
@@ -15429,6 +15880,22 @@
     },
     {
      "op_n": 34,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 35,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 00 01",
@@ -15444,7 +15911,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 34,
+     "op_n": 35,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -15460,7 +15927,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 35,
+     "op_n": 36,
      "kind": "torn",
      "op_class": "selector_program_index",
      "selector": "superset_index 01 ff",
@@ -15476,7 +15943,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 35,
+     "op_n": 36,
      "kind": "after",
      "op_class": "selector_program_index",
      "selector": "01 ff",
@@ -15492,7 +15959,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 36,
+     "op_n": 37,
      "kind": "torn",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -15508,7 +15975,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 36,
+     "op_n": 37,
      "kind": "after",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -15524,7 +15991,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 37,
+     "op_n": 38,
      "kind": "torn",
      "op_class": "selector_program_verified",
      "selector": "superset_verified 01 01",
@@ -15540,7 +16007,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 37,
+     "op_n": 38,
      "kind": "after",
      "op_class": "selector_program_verified",
      "selector": "01 01",
@@ -15556,7 +16023,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 38,
+     "op_n": 39,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -15572,7 +16039,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 38,
+     "op_n": 39,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -15799,22 +16266,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -15822,11 +16289,18 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
@@ -16078,15 +16552,25 @@
     {
      "op_n": 24,
      "kind": "torn",
-     "op_class": "record_erase"
+     "op_class": "slot_erase"
     },
     {
      "op_n": 24,
      "kind": "after",
+     "op_class": "slot_erase"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase"
     },
     {
      "op_n": 25,
+     "kind": "after",
+     "op_class": "record_erase"
+    },
+    {
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program"
     }
@@ -16330,15 +16814,25 @@
     {
      "op_n": 24,
      "kind": "torn",
-     "op_class": "record_erase"
+     "op_class": "slot_erase"
     },
     {
      "op_n": 24,
      "kind": "after",
+     "op_class": "slot_erase"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase"
     },
     {
      "op_n": 25,
+     "kind": "after",
+     "op_class": "record_erase"
+    },
+    {
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program"
     }
@@ -17107,6 +17601,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "ff ff",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "1 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": false
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "ff ff",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "1 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": false
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "ff ff",
      "slot0": "badcrc",
@@ -17125,7 +17651,7 @@
      }
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "ff ff",
@@ -17141,7 +17667,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "ff ff",
@@ -17161,7 +17687,7 @@
      }
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "ff ff",
@@ -17177,38 +17703,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "ff ff",
-     "slot0": "badcrc",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "ff ff",
-     "slot0": "badcrc",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -17242,6 +17736,38 @@
     },
     {
      "op_n": 28,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "ff ff",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 28,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "ff ff",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
      "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "ff ff",
@@ -17257,7 +17783,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "selector_settle_read",
      "selector": "ff ff",
@@ -17484,22 +18010,22 @@
       },
       {
        "n": 24,
+       "class": "slot_erase",
+       "op": "erase",
+       "offset": "0x86000",
+       "length": 4096
+      },
+      {
+       "n": 25,
        "class": "record_erase",
        "op": "erase",
        "offset": "0x0e000",
        "length": 4096
       },
       {
-       "n": 25,
+       "n": 26,
        "class": "record_program",
        "op": "program",
-       "offset": "0x0e000",
-       "length": 12
-      },
-      {
-       "n": 26,
-       "class": "readback",
-       "op": "read",
        "offset": "0x0e000",
        "length": 12
       },
@@ -17507,18 +18033,25 @@
        "n": 27,
        "class": "readback",
        "op": "read",
+       "offset": "0x0e000",
+       "length": 12
+      },
+      {
+       "n": 28,
+       "class": "readback",
+       "op": "read",
        "offset": "0x10000",
        "length": 4933
       },
       {
-       "n": 28,
+       "n": 29,
        "class": "selector_settle_read",
        "op": "read",
        "offset": "0x0d000",
        "length": 2
       },
       {
-       "n": 29,
+       "n": 30,
        "class": "selector_zero_index",
        "op": "program",
        "offset": "0x0d000",
@@ -17526,14 +18059,14 @@
        "value": "00"
       },
       {
-       "n": 30,
+       "n": 31,
        "class": "selector_zero_index_read",
        "op": "read",
        "offset": "0x0d000",
        "length": 1
       },
       {
-       "n": 31,
+       "n": 32,
        "class": "selector_read",
        "op": "read",
        "offset": "0x0d000",
@@ -18190,22 +18723,22 @@
       },
       {
        "n": 24,
+       "class": "slot_erase",
+       "op": "erase",
+       "offset": "0x86000",
+       "length": 4096
+      },
+      {
+       "n": 25,
        "class": "record_erase",
        "op": "erase",
        "offset": "0x0e000",
        "length": 4096
       },
       {
-       "n": 25,
+       "n": 26,
        "class": "record_program",
        "op": "program",
-       "offset": "0x0e000",
-       "length": 12
-      },
-      {
-       "n": 26,
-       "class": "readback",
-       "op": "read",
        "offset": "0x0e000",
        "length": 12
       },
@@ -18213,18 +18746,25 @@
        "n": 27,
        "class": "readback",
        "op": "read",
+       "offset": "0x0e000",
+       "length": 12
+      },
+      {
+       "n": 28,
+       "class": "readback",
+       "op": "read",
        "offset": "0x10000",
        "length": 4933
       },
       {
-       "n": 28,
+       "n": 29,
        "class": "selector_settle_read",
        "op": "read",
        "offset": "0x0d000",
        "length": 2
       },
       {
-       "n": 29,
+       "n": 30,
        "class": "selector_zero_index",
        "op": "program",
        "offset": "0x0d000",
@@ -18232,14 +18772,14 @@
        "value": "00"
       },
       {
-       "n": 30,
+       "n": 31,
        "class": "selector_zero_index_read",
        "op": "read",
        "offset": "0x0d000",
        "length": 1
       },
       {
-       "n": 31,
+       "n": 32,
        "class": "selector_read",
        "op": "read",
        "offset": "0x0d000",
@@ -18453,22 +18993,22 @@
     },
     {
      "n": 29,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 30,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 31,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -18476,25 +19016,32 @@
      "n": 32,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 33,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 33,
+     "n": 34,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 34,
+     "n": 35,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 35,
+     "n": 36,
      "class": "selector_program_index",
      "op": "program",
      "offset": "0x0d000",
@@ -18502,14 +19049,14 @@
      "value": "01"
     },
     {
-     "n": 36,
+     "n": 37,
      "class": "selector_program_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 37,
+     "n": 38,
      "class": "selector_program_verified",
      "op": "program",
      "offset": "0x0d001",
@@ -18517,7 +19064,7 @@
      "value": "01"
     },
     {
-     "n": 38,
+     "n": 39,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -19538,6 +20085,38 @@
     {
      "op_n": 29,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 30,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 01",
      "slot0": "good",
@@ -19556,7 +20135,7 @@
      }
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -19572,7 +20151,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 01",
@@ -19592,7 +20171,7 @@
      }
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 01",
@@ -19608,38 +20187,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
-     "op_n": 31,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
      "op_n": 32,
      "kind": "torn",
      "op_class": "readback",
@@ -19674,7 +20221,7 @@
     {
      "op_n": 33,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "00 01",
      "slot0": "good",
      "slot1": "good",
@@ -19690,6 +20237,22 @@
     {
      "op_n": 33,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 34,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "00 01",
      "slot0": "good",
@@ -19705,6 +20268,22 @@
     },
     {
      "op_n": 34,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 35,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 00 01",
@@ -19720,7 +20299,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 34,
+     "op_n": 35,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -19736,7 +20315,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 35,
+     "op_n": 36,
      "kind": "torn",
      "op_class": "selector_program_index",
      "selector": "superset_index 01 ff",
@@ -19752,7 +20331,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 35,
+     "op_n": 36,
      "kind": "after",
      "op_class": "selector_program_index",
      "selector": "01 ff",
@@ -19768,7 +20347,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 36,
+     "op_n": 37,
      "kind": "torn",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -19784,7 +20363,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 36,
+     "op_n": 37,
      "kind": "after",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -19800,7 +20379,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 37,
+     "op_n": 38,
      "kind": "torn",
      "op_class": "selector_program_verified",
      "selector": "superset_verified 01 01",
@@ -19816,7 +20395,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 37,
+     "op_n": 38,
      "kind": "after",
      "op_class": "selector_program_verified",
      "selector": "01 01",
@@ -19832,7 +20411,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 38,
+     "op_n": 39,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -19848,7 +20427,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 38,
+     "op_n": 39,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -20075,22 +20654,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -20098,11 +20677,18 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
@@ -20354,15 +20940,25 @@
     {
      "op_n": 24,
      "kind": "torn",
-     "op_class": "record_erase"
+     "op_class": "slot_erase"
     },
     {
      "op_n": 24,
      "kind": "after",
+     "op_class": "slot_erase"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase"
     },
     {
      "op_n": 25,
+     "kind": "after",
+     "op_class": "record_erase"
+    },
+    {
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program"
     }
@@ -20606,15 +21202,25 @@
     {
      "op_n": 24,
      "kind": "torn",
-     "op_class": "record_erase"
+     "op_class": "slot_erase"
     },
     {
      "op_n": 24,
      "kind": "after",
+     "op_class": "slot_erase"
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase"
     },
     {
      "op_n": 25,
+     "kind": "after",
+     "op_class": "record_erase"
+    },
+    {
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program"
     }
@@ -21383,6 +21989,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 3f",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "1 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": false
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 3f",
+     "slot0": "badcrc",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": "never",
+     "factory_safe": false,
+     "factory_boots": "1 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": false
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 3f",
      "slot0": "badcrc",
@@ -21401,7 +22039,7 @@
      }
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 3f",
@@ -21417,7 +22055,7 @@
      "factory_cut": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 3f",
@@ -21437,7 +22075,7 @@
      }
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 3f",
@@ -21453,38 +22091,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "01 3f",
-     "slot0": "badcrc",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "01 3f",
-     "slot0": "badcrc",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -21518,6 +22124,38 @@
     },
     {
      "op_n": 28,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "01 3f",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 28,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "01 3f",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
      "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "01 3f",
@@ -21533,7 +22171,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "selector_settle_read",
      "selector": "01 3f",
@@ -21744,22 +22382,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -21767,25 +22405,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_program_index",
      "op": "program",
      "offset": "0x0d000",
@@ -21793,14 +22438,14 @@
      "value": "01"
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_program_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program_verified",
      "op": "program",
      "offset": "0x0d001",
@@ -21808,7 +22453,7 @@
      "value": "01"
     },
     {
-     "n": 33,
+     "n": 34,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -23029,6 +23674,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 00",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 00",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 00",
      "slot0": "good",
@@ -23047,7 +23724,7 @@
      }
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 00",
@@ -23063,7 +23740,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 00",
@@ -23083,7 +23760,7 @@
      }
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 00",
@@ -23099,38 +23776,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 00",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 00",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -23165,7 +23810,7 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "00 00",
      "slot0": "good",
      "slot1": "good",
@@ -23181,6 +23826,22 @@
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "00 00",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "00 00",
      "slot0": "good",
@@ -23196,6 +23857,22 @@
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "00 00",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 00 00",
@@ -23211,7 +23888,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -23227,7 +23904,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "torn",
      "op_class": "selector_program_index",
      "selector": "superset_index 01 ff",
@@ -23243,7 +23920,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "selector_program_index",
      "selector": "01 ff",
@@ -23259,7 +23936,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -23275,7 +23952,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -23291,7 +23968,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program_verified",
      "selector": "superset_verified 01 01",
@@ -23307,7 +23984,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program_verified",
      "selector": "01 01",
@@ -23323,7 +24000,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -23339,7 +24016,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -23550,22 +24227,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -23573,25 +24250,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_program_index",
      "op": "program",
      "offset": "0x0d000",
@@ -23599,14 +24283,14 @@
      "value": "00"
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_program_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program_verified",
      "op": "program",
      "offset": "0x0d001",
@@ -23614,7 +24298,7 @@
      "value": "01"
     },
     {
-     "n": 33,
+     "n": 34,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -24393,6 +25077,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 00",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 00",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 00",
      "slot0": "badtag",
@@ -24411,7 +25127,7 @@
      }
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 00",
@@ -24427,7 +25143,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 00",
@@ -24447,7 +25163,7 @@
      }
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 00",
@@ -24463,38 +25179,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "01 00",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "01 00",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -24529,7 +25213,7 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "01 00",
      "slot0": "good",
      "slot1": "good",
@@ -24545,6 +25229,22 @@
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "01 00",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "01 00",
      "slot0": "good",
@@ -24560,6 +25260,22 @@
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "01 00",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 01 00",
@@ -24575,7 +25291,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -24591,7 +25307,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "torn",
      "op_class": "selector_program_index",
      "selector": "superset_index 00 ff",
@@ -24607,7 +25323,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "selector_program_index",
      "selector": "00 ff",
@@ -24623,7 +25339,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_program_index_read",
      "selector": "00 ff",
@@ -24639,7 +25355,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_program_index_read",
      "selector": "00 ff",
@@ -24655,7 +25371,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program_verified",
      "selector": "superset_verified 00 01",
@@ -24671,7 +25387,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program_verified",
      "selector": "00 01",
@@ -24687,7 +25403,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "00 01",
@@ -24703,7 +25419,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "00 01",
@@ -24914,22 +25630,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -24937,11 +25653,18 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
@@ -26162,6 +26885,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 00",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 00",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 00",
      "slot0": "good",
@@ -26180,7 +26935,7 @@
      }
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 00",
@@ -26196,7 +26951,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 00",
@@ -26216,7 +26971,7 @@
      }
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 00",
@@ -26232,38 +26987,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "01 00",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "01 00",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -26297,6 +27020,38 @@
     },
     {
      "op_n": 28,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "01 00",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 28,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "01 00",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
      "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "01 00",
@@ -26312,7 +27067,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 28,
+     "op_n": 29,
      "kind": "after",
      "op_class": "selector_settle_read",
      "selector": "01 00",
@@ -26537,22 +27292,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -26560,25 +27315,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_program_index",
      "op": "program",
      "offset": "0x0d000",
@@ -26586,14 +27348,14 @@
      "value": "00"
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_program_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program_verified",
      "op": "program",
      "offset": "0x0d001",
@@ -26601,7 +27363,7 @@
      "value": "01"
     },
     {
-     "n": 33,
+     "n": 34,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -27822,6 +28584,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 00",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 00",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 00",
      "slot0": "badtag",
@@ -27840,7 +28634,7 @@
      }
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 00",
@@ -27856,7 +28650,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 00",
@@ -27876,7 +28670,7 @@
      }
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 00",
@@ -27892,38 +28686,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 00",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 00",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -27958,7 +28720,7 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "00 00",
      "slot0": "good",
      "slot1": "good",
@@ -27974,6 +28736,22 @@
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "00 00",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "00 00",
      "slot0": "good",
@@ -27989,6 +28767,22 @@
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "00 00",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 00 00",
@@ -28004,7 +28798,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -28020,7 +28814,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "torn",
      "op_class": "selector_program_index",
      "selector": "superset_index 00 ff",
@@ -28036,7 +28830,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "selector_program_index",
      "selector": "00 ff",
@@ -28052,7 +28846,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_program_index_read",
      "selector": "00 ff",
@@ -28068,7 +28862,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_program_index_read",
      "selector": "00 ff",
@@ -28084,7 +28878,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program_verified",
      "selector": "superset_verified 00 01",
@@ -28100,7 +28894,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program_verified",
      "selector": "00 01",
@@ -28116,7 +28910,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "00 01",
@@ -28132,7 +28926,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "00 01",
@@ -30457,22 +31251,22 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0f000",
-     "length": 12
-    },
-    {
-     "n": 26,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
@@ -30480,25 +31274,32 @@
      "n": 27,
      "class": "readback",
      "op": "read",
+     "offset": "0x0f000",
+     "length": 12
+    },
+    {
+     "n": 28,
+     "class": "readback",
+     "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "selector_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "selector_program_index",
      "op": "program",
      "offset": "0x0d000",
@@ -30506,14 +31307,14 @@
      "value": "01"
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "selector_program_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "selector_program_verified",
      "op": "program",
      "offset": "0x0d001",
@@ -30521,7 +31322,7 @@
      "value": "01"
     },
     {
-     "n": 33,
+     "n": 34,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -31742,6 +32543,38 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 03",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 03",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 03",
      "slot0": "good",
@@ -31760,7 +32593,7 @@
      }
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 03",
@@ -31776,7 +32609,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 03",
@@ -31796,7 +32629,7 @@
      }
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 03",
@@ -31812,38 +32645,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 26,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 03",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
-     "op_n": 26,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 03",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "0 0 0",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "0 0 0",
-     "factory_cut": true
-    },
-    {
      "op_n": 27,
      "kind": "torn",
      "op_class": "readback",
@@ -31878,7 +32679,7 @@
     {
      "op_n": 28,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "00 03",
      "slot0": "good",
      "slot1": "good",
@@ -31894,6 +32695,22 @@
     {
      "op_n": 28,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "00 03",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 29,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "00 03",
      "slot0": "good",
@@ -31909,6 +32726,22 @@
     },
     {
      "op_n": 29,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "00 03",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "0 0 0",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "0 0 0",
+     "factory_cut": true
+    },
+    {
+     "op_n": 30,
      "kind": "torn",
      "op_class": "selector_erase",
      "selector": "superset_of 00 03",
@@ -31924,7 +32757,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 29,
+     "op_n": 30,
      "kind": "after",
      "op_class": "selector_erase",
      "selector": "ff ff",
@@ -31940,7 +32773,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "torn",
      "op_class": "selector_program_index",
      "selector": "superset_index 01 ff",
@@ -31956,7 +32789,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "selector_program_index",
      "selector": "01 ff",
@@ -31972,7 +32805,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -31988,7 +32821,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "selector_program_index_read",
      "selector": "01 ff",
@@ -32004,7 +32837,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "selector_program_verified",
      "selector": "superset_verified 01 01",
@@ -32020,7 +32853,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "selector_program_verified",
      "selector": "01 01",
@@ -32036,7 +32869,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -32052,7 +32885,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "01 01",
@@ -32307,22 +33140,22 @@
     },
     {
      "n": 30,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 31,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "record_program",
      "op": "program",
-     "offset": "0x0e000",
-     "length": 12
-    },
-    {
-     "n": 32,
-     "class": "readback",
-     "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
@@ -32330,18 +33163,25 @@
      "n": 33,
      "class": "readback",
      "op": "read",
+     "offset": "0x0e000",
+     "length": 12
+    },
+    {
+     "n": 34,
+     "class": "readback",
+     "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 34,
+     "n": 35,
      "class": "selector_settle_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 35,
+     "n": 36,
      "class": "selector_zero_index",
      "op": "program",
      "offset": "0x0d000",
@@ -32349,14 +33189,14 @@
      "value": "00"
     },
     {
-     "n": 36,
+     "n": 37,
      "class": "selector_zero_index_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 1
     },
     {
-     "n": 37,
+     "n": 38,
      "class": "selector_read",
      "op": "read",
      "offset": "0x0d000",
@@ -33327,6 +34167,38 @@
     {
      "op_n": 30,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 30,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 31,
+     "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 01",
      "slot0": "badtag",
@@ -33345,7 +34217,7 @@
      }
     },
     {
-     "op_n": 30,
+     "op_n": 31,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 01",
@@ -33361,7 +34233,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 01",
@@ -33381,7 +34253,7 @@
      }
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 01",
@@ -33397,38 +34269,6 @@
      "factory_cut": true
     },
     {
-     "op_n": 32,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
-     "op_n": 32,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "good",
-     "slot1": "good",
-     "a_stream": "whole",
-     "factory_late": 0,
-     "factory_safe": true,
-     "factory_boots": "1 1 1",
-     "conforming_late": 0,
-     "conforming_safe": true,
-     "conforming_boots": "1 1 1",
-     "factory_cut": true
-    },
-    {
      "op_n": 33,
      "kind": "torn",
      "op_class": "readback",
@@ -33463,7 +34303,7 @@
     {
      "op_n": 34,
      "kind": "torn",
-     "op_class": "selector_settle_read",
+     "op_class": "readback",
      "selector": "01 01",
      "slot0": "good",
      "slot1": "good",
@@ -33479,6 +34319,22 @@
     {
      "op_n": 34,
      "kind": "after",
+     "op_class": "readback",
+     "selector": "01 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 35,
+     "kind": "torn",
      "op_class": "selector_settle_read",
      "selector": "01 01",
      "slot0": "good",
@@ -33494,6 +34350,22 @@
     },
     {
      "op_n": 35,
+     "kind": "after",
+     "op_class": "selector_settle_read",
+     "selector": "01 01",
+     "slot0": "good",
+     "slot1": "good",
+     "a_stream": "whole",
+     "factory_late": 0,
+     "factory_safe": true,
+     "factory_boots": "1 1 1",
+     "conforming_late": 0,
+     "conforming_safe": true,
+     "conforming_boots": "1 1 1",
+     "factory_cut": true
+    },
+    {
+     "op_n": 36,
      "kind": "torn",
      "op_class": "selector_zero_index",
      "selector": "subset_index 01 01",
@@ -33509,7 +34381,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 35,
+     "op_n": 36,
      "kind": "after",
      "op_class": "selector_zero_index",
      "selector": "00 01",
@@ -33525,7 +34397,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 36,
+     "op_n": 37,
      "kind": "torn",
      "op_class": "selector_zero_index_read",
      "selector": "00 01",
@@ -33541,7 +34413,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 36,
+     "op_n": 37,
      "kind": "after",
      "op_class": "selector_zero_index_read",
      "selector": "00 01",
@@ -33557,7 +34429,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 37,
+     "op_n": 38,
      "kind": "torn",
      "op_class": "selector_read",
      "selector": "00 01",
@@ -33573,7 +34445,7 @@
      "factory_cut": true
     },
     {
-     "op_n": 37,
+     "op_n": 38,
      "kind": "after",
      "op_class": "selector_read",
      "selector": "00 01",
@@ -34151,6 +35023,13 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0x86000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "trial_log",
      "op": "program",
      "offset": "0x87000",
@@ -34158,21 +35037,21 @@
      "value": "fd"
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "trial_log_read",
      "op": "read",
      "offset": "0x87000",
      "length": 1
     },
     {
-     "n": 26,
+     "n": 27,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0e000",
      "length": 4096
     },
     {
-     "n": 27,
+     "n": 28,
      "class": "record_program",
      "op": "program",
      "offset": "0x0e000",
@@ -34180,42 +35059,42 @@
      "value": "trial_mark"
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "readback",
      "op": "read",
      "offset": "0x0e000",
      "length": 12
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "readback",
      "op": "read",
      "offset": "0x10000",
      "length": 4933
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "readback",
      "op": "read",
      "offset": "0x87000",
      "length": 1
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "trial_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "trial_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 33,
+     "n": 34,
      "class": "trial_verified",
      "op": "program",
      "offset": "0x0d001",
@@ -34223,14 +35102,14 @@
      "value": "fe"
     },
     {
-     "n": 34,
+     "n": 35,
      "class": "trial_read",
      "op": "read",
      "offset": "0x0d000",
      "length": 2
     },
     {
-     "n": 35,
+     "n": 36,
      "class": "trial_index",
      "op": "program",
      "offset": "0x0d000",
@@ -34238,7 +35117,7 @@
      "value": "00"
     },
     {
-     "n": 36,
+     "n": 37,
      "class": "trial_read",
      "op": "read",
      "offset": "0x0d000",
@@ -35101,6 +35980,42 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "b_stream": "whole",
+     "b_log": "ff",
+     "b_started": false,
+     "select_from_old_front": false,
+     "factory_boots": "1 1 1",
+     "factory_boots_ok": true,
+     "factory_trusts_tried": false,
+     "conforming_boots": "1 1 1",
+     "conforming_boots_ok": true,
+     "factory_cut_trusts_tried": false
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "01 01",
+     "slot0": "badcrc",
+     "slot1": "good",
+     "b_stream": "whole",
+     "b_log": "ff",
+     "b_started": false,
+     "select_from_old_front": false,
+     "factory_boots": "1 1 1",
+     "factory_boots_ok": true,
+     "factory_trusts_tried": false,
+     "conforming_boots": "1 1 1",
+     "conforming_boots_ok": true,
+     "factory_cut_trusts_tried": false
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "trial_log",
      "selector": "01 01",
      "slot0": "badcrc",
@@ -35117,7 +36032,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "trial_log",
      "selector": "01 01",
@@ -35135,7 +36050,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "trial_log_read",
      "selector": "01 01",
@@ -35153,7 +36068,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "trial_log_read",
      "selector": "01 01",
@@ -35171,7 +36086,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "torn",
      "op_class": "record_erase",
      "selector": "01 01",
@@ -35189,7 +36104,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "01 01",
@@ -35207,7 +36122,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "01 01",
@@ -35225,7 +36140,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "record_program",
      "selector": "01 01",
@@ -35243,42 +36158,6 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 28,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "tried",
-     "slot1": "good",
-     "b_stream": "whole",
-     "b_log": "fd",
-     "b_started": false,
-     "select_from_old_front": false,
-     "factory_boots": "1 1 1",
-     "factory_boots_ok": true,
-     "factory_trusts_tried": false,
-     "conforming_boots": "1 1 1",
-     "conforming_boots_ok": true,
-     "factory_cut_trusts_tried": false
-    },
-    {
-     "op_n": 28,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "01 01",
-     "slot0": "tried",
-     "slot1": "good",
-     "b_stream": "whole",
-     "b_log": "fd",
-     "b_started": false,
-     "select_from_old_front": false,
-     "factory_boots": "1 1 1",
-     "factory_boots_ok": true,
-     "factory_trusts_tried": false,
-     "conforming_boots": "1 1 1",
-     "conforming_boots_ok": true,
-     "factory_cut_trusts_tried": false
-    },
-    {
      "op_n": 29,
      "kind": "torn",
      "op_class": "readback",
@@ -35352,6 +36231,42 @@
     },
     {
      "op_n": 31,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "01 01",
+     "slot0": "tried",
+     "slot1": "good",
+     "b_stream": "whole",
+     "b_log": "fd",
+     "b_started": false,
+     "select_from_old_front": false,
+     "factory_boots": "1 1 1",
+     "factory_boots_ok": true,
+     "factory_trusts_tried": false,
+     "conforming_boots": "1 1 1",
+     "conforming_boots_ok": true,
+     "factory_cut_trusts_tried": false
+    },
+    {
+     "op_n": 31,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "01 01",
+     "slot0": "tried",
+     "slot1": "good",
+     "b_stream": "whole",
+     "b_log": "fd",
+     "b_started": false,
+     "select_from_old_front": false,
+     "factory_boots": "1 1 1",
+     "factory_boots_ok": true,
+     "factory_trusts_tried": false,
+     "conforming_boots": "1 1 1",
+     "conforming_boots_ok": true,
+     "factory_cut_trusts_tried": false
+    },
+    {
+     "op_n": 32,
      "kind": "torn",
      "op_class": "trial_erase",
      "selector": "superset_of 01 01",
@@ -35369,7 +36284,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "trial_erase",
      "selector": "ff ff",
@@ -35387,7 +36302,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "trial_read",
      "selector": "ff ff",
@@ -35405,7 +36320,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "trial_read",
      "selector": "ff ff",
@@ -35423,7 +36338,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "torn",
      "op_class": "trial_verified",
      "selector": "superset_verified ff fe",
@@ -35441,7 +36356,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 33,
+     "op_n": 34,
      "kind": "after",
      "op_class": "trial_verified",
      "selector": "ff fe",
@@ -35459,7 +36374,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 34,
+     "op_n": 35,
      "kind": "torn",
      "op_class": "trial_read",
      "selector": "ff fe",
@@ -35477,7 +36392,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 34,
+     "op_n": 35,
      "kind": "after",
      "op_class": "trial_read",
      "selector": "ff fe",
@@ -35495,7 +36410,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 35,
+     "op_n": 36,
      "kind": "torn",
      "op_class": "trial_index",
      "selector": "superset_index 00 fe",
@@ -35513,7 +36428,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 35,
+     "op_n": 36,
      "kind": "after",
      "op_class": "trial_index",
      "selector": "00 fe",
@@ -35531,7 +36446,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 36,
+     "op_n": 37,
      "kind": "torn",
      "op_class": "trial_read",
      "selector": "00 fe",
@@ -35549,7 +36464,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 36,
+     "op_n": 37,
      "kind": "after",
      "op_class": "trial_read",
      "selector": "00 fe",
@@ -35746,6 +36661,13 @@
     },
     {
      "n": 24,
+     "class": "slot_erase",
+     "op": "erase",
+     "offset": "0xfe000",
+     "length": 4096
+    },
+    {
+     "n": 25,
      "class": "trial_log",
      "op": "program",
      "offset": "0xff000",
@@ -35753,21 +36675,21 @@
      "value": "fd"
     },
     {
-     "n": 25,
+     "n": 26,
      "class": "trial_log_read",
      "op": "read",
      "offset": "0xff000",
      "length": 1
     },
     {
-     "n": 26,
+     "n": 27,
      "class": "record_erase",
      "op": "erase",
      "offset": "0x0f000",
      "length": 4096
     },
     {
-     "n": 27,
+     "n": 28,
      "class": "record_program",
      "op": "program",
      "offset": "0x0f000",
@@ -35775,35 +36697,35 @@
      "value": "trial_mark"
     },
     {
-     "n": 28,
+     "n": 29,
      "class": "readback",
      "op": "read",
      "offset": "0x0f000",
      "length": 12
     },
     {
-     "n": 29,
+     "n": 30,
      "class": "readback",
      "op": "read",
      "offset": "0x88000",
      "length": 4933
     },
     {
-     "n": 30,
+     "n": 31,
      "class": "readback",
      "op": "read",
      "offset": "0xff000",
      "length": 1
     },
     {
-     "n": 31,
+     "n": 32,
      "class": "trial_erase",
      "op": "erase",
      "offset": "0x0d000",
      "length": 4096
     },
     {
-     "n": 32,
+     "n": 33,
      "class": "trial_read",
      "op": "read",
      "offset": "0x0d000",
@@ -35816,29 +36738,29 @@
    },
    "factory_trusts_tried": [
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "trial_erase"
     }
    ],
    "factory_cut_trusts_tried": [
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "torn",
      "op_class": "trial_erase"
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "trial_erase"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "trial_read"
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "trial_read"
     }
@@ -36693,6 +37615,42 @@
     {
      "op_n": 24,
      "kind": "torn",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "b_stream": "whole",
+     "b_log": "ff",
+     "b_started": false,
+     "select_from_old_front": false,
+     "factory_boots": "0 0 0",
+     "factory_boots_ok": true,
+     "factory_trusts_tried": false,
+     "conforming_boots": "0 0 0",
+     "conforming_boots_ok": true,
+     "factory_cut_trusts_tried": false
+    },
+    {
+     "op_n": 24,
+     "kind": "after",
+     "op_class": "slot_erase",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "badcrc",
+     "b_stream": "whole",
+     "b_log": "ff",
+     "b_started": false,
+     "select_from_old_front": false,
+     "factory_boots": "0 0 0",
+     "factory_boots_ok": true,
+     "factory_trusts_tried": false,
+     "conforming_boots": "0 0 0",
+     "conforming_boots_ok": true,
+     "factory_cut_trusts_tried": false
+    },
+    {
+     "op_n": 25,
+     "kind": "torn",
      "op_class": "trial_log",
      "selector": "00 01",
      "slot0": "good",
@@ -36709,7 +37667,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 24,
+     "op_n": 25,
      "kind": "after",
      "op_class": "trial_log",
      "selector": "00 01",
@@ -36727,7 +37685,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "torn",
      "op_class": "trial_log_read",
      "selector": "00 01",
@@ -36745,7 +37703,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 25,
+     "op_n": 26,
      "kind": "after",
      "op_class": "trial_log_read",
      "selector": "00 01",
@@ -36763,7 +37721,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "torn",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -36781,7 +37739,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 26,
+     "op_n": 27,
      "kind": "after",
      "op_class": "record_erase",
      "selector": "00 01",
@@ -36799,7 +37757,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "torn",
      "op_class": "record_program",
      "selector": "00 01",
@@ -36817,7 +37775,7 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 27,
+     "op_n": 28,
      "kind": "after",
      "op_class": "record_program",
      "selector": "00 01",
@@ -36835,42 +37793,6 @@
      "factory_cut_trusts_tried": false
     },
     {
-     "op_n": 28,
-     "kind": "torn",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "tried",
-     "b_stream": "whole",
-     "b_log": "fd",
-     "b_started": false,
-     "select_from_old_front": false,
-     "factory_boots": "0 0 0",
-     "factory_boots_ok": true,
-     "factory_trusts_tried": false,
-     "conforming_boots": "0 0 0",
-     "conforming_boots_ok": true,
-     "factory_cut_trusts_tried": false
-    },
-    {
-     "op_n": 28,
-     "kind": "after",
-     "op_class": "readback",
-     "selector": "00 01",
-     "slot0": "good",
-     "slot1": "tried",
-     "b_stream": "whole",
-     "b_log": "fd",
-     "b_started": false,
-     "select_from_old_front": false,
-     "factory_boots": "0 0 0",
-     "factory_boots_ok": true,
-     "factory_trusts_tried": false,
-     "conforming_boots": "0 0 0",
-     "conforming_boots_ok": true,
-     "factory_cut_trusts_tried": false
-    },
-    {
      "op_n": 29,
      "kind": "torn",
      "op_class": "readback",
@@ -36944,6 +37866,42 @@
     },
     {
      "op_n": 31,
+     "kind": "torn",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "tried",
+     "b_stream": "whole",
+     "b_log": "fd",
+     "b_started": false,
+     "select_from_old_front": false,
+     "factory_boots": "0 0 0",
+     "factory_boots_ok": true,
+     "factory_trusts_tried": false,
+     "conforming_boots": "0 0 0",
+     "conforming_boots_ok": true,
+     "factory_cut_trusts_tried": false
+    },
+    {
+     "op_n": 31,
+     "kind": "after",
+     "op_class": "readback",
+     "selector": "00 01",
+     "slot0": "good",
+     "slot1": "tried",
+     "b_stream": "whole",
+     "b_log": "fd",
+     "b_started": false,
+     "select_from_old_front": false,
+     "factory_boots": "0 0 0",
+     "factory_boots_ok": true,
+     "factory_trusts_tried": false,
+     "conforming_boots": "0 0 0",
+     "conforming_boots_ok": true,
+     "factory_cut_trusts_tried": false
+    },
+    {
+     "op_n": 32,
      "kind": "torn",
      "op_class": "trial_erase",
      "selector": "superset_of 00 01",
@@ -36961,7 +37919,7 @@
      "factory_cut_trusts_tried": true
     },
     {
-     "op_n": 31,
+     "op_n": 32,
      "kind": "after",
      "op_class": "trial_erase",
      "selector": "ff ff",
@@ -36979,7 +37937,7 @@
      "factory_cut_trusts_tried": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "torn",
      "op_class": "trial_read",
      "selector": "ff ff",
@@ -36997,7 +37955,7 @@
      "factory_cut_trusts_tried": true
     },
     {
-     "op_n": 32,
+     "op_n": 33,
      "kind": "after",
      "op_class": "trial_read",
      "selector": "ff ff",

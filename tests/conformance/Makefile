@@ -81,6 +81,13 @@ H_s10b_SRCS := src/s10b_mtp.c src/s10b_text.c src/s04_records.c src/s10c_text.c 
 	src/s11_version.c
 H_s13c_SRCS := src/s13c_panel.c src/display_draw.c src/display_font.c src/s15_console.c src/s15_lines.c \
 	src/s15_prompt.c src/s14_log.c src/s14_line.c src/s17_revisions.c src/s11_common.c src/s11_version.c
+# The front's start and recovery (src/front/'s portable code) and the model
+# PSoC's S-06 framing.
+H_s13cf_SRCS := src/front/fr_start.c src/front/fr_recovery.c src/front/fr_recscreen.c \
+	src/front/fr_recui.c src/front/fr_panel.c src/front/fr_draw.c src/front/fr_font.c \
+	src/front/fr_psoc.c src/front/fr_proto.c src/front/fr_slots.c src/front/fr_image.c \
+	src/front/fr_startlog.c src/front/fr_util.c src/s06_frame.c src/s06_rx.c
+H_s13cf_CPPFLAGS := -Isrc
 H_s14_SRCS := src/s14_line.c src/s14_log.c src/s14_export.c
 H_s11_SRCS := $(sort $(wildcard src/s11_*.c)) src/s17_revisions.c src/wire_crc.c src/s01_memmap.c src/s05_handoff.c \
 	src/wire_package.c src/wire_zip.c src/wire_yaffs.c src/wire_ckpt.c src/wire_fat.c \
@@ -96,7 +103,7 @@ H_s12_TP := $(TP_OBJS)
 # Programs that need only a vendored library's header.
 H_s10a_CPPFLAGS := -Isrc/glue/blockdev
 
-PROGS := s02 s03 s04 s05 s06 s07 s07p s08 s09 s10a s10b s10c s11 s12 s13c s14
+PROGS := s02 s03 s04 s05 s06 s07 s07p s08 s09 s10a s10b s10c s11 s12 s13c s13cf s14
 
 .PHONY: all clean
 all: $(PROGS:%=$(OUT)/h_%)

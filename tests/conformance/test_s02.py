@@ -294,16 +294,6 @@ def cut_sequences():
         return json.load(f)
 
 
-def settings_erase(o):
-    """The package step's erase of a slot's settings sector (S-02.103), which recovery does not make."""
-    return o['op'] == 'erase' and int(o['offset'], 16) in (0x86000, 0xFE000)
-
-
-def recovery_ops(ops):
-    """A package step's reference sequence as recovery makes it: without the settings sector's erase."""
-    return [o for o in ops if not settings_erase(o)]
-
-
 def ref_writes(ops):
     """A reference sequence's erases and programs in h_s02's notation."""
     out = []
@@ -755,8 +745,9 @@ class Recovery(unittest.TestCase):
                              (PH_DONE, PH_DONE, t, 1000, 0), i)
             self.assertEqual(after['readback'], hashlib.sha256(img).digest(), i)
             self.assertEqual((after['sel'], after['target']), ('%02x00' % t, 0xFF), i)
-            # S-02.049, S-02.042: the same erases and programs as the reference upgrade, nothing else
-            self.assertEqual(writes(ops), ref_writes(recovery_ops(seq['ops'])), i)
+            # S-02.049, S-02.042, S-02.103: the same erases and programs as the reference upgrade, the
+            # settings sector's erase included, nothing else
+            self.assertEqual(writes(ops), ref_writes(seq['ops']), i)
             rec = spiflash.SLOT_RECORD_OFF[t]
             p = ops.index('p:%x:c' % rec)
             e = ops.index('e:d000')
@@ -786,15 +777,30 @@ class Recovery(unittest.TestCase):
     @scenario('S-02/SC-RECOVERY')
     @requirement('S-02.091')
     def test_SC_RECOVERY_refused_image(self):
-        """Run 3: sizes refused at BEGIN, every refused slot case of bootable_images.json, a bootable stream with
-        no front, an image that is not the one announced and one with another front: refused at END, nothing
-        erased or programmed. Image A itself is written to slot 1 as any other."""
+        """Run 3: the lengths settings_sector.json's `recovery` refuses at BEGIN with status 6, every refused
+        slot case of bootable_images.json, a bootable stream with no front, an image that is not the one
+        announced and one with another front: refused at END, nothing erased or programmed. An image of
+        0x76000 bytes, the most BEGIN takes, is written. Image A itself is written to slot 1 as any other."""
         start = save('rec_start.bin', spiflash.build_flash(selector=(0, 1), slots=('good', 'good'),
                                                            images=(IMAGE_A, None)))
-        for length in (0, spiflash.SLOT_MAX - 0x1000 + 1, spiflash.SLOT_MAX + 1):     # S-02.084: 1 to 0x77000
+        lengths = set_vectors()['recovery']['lengths']
+        self.assertEqual(set_vectors()['recovery']['image_max'], '0x76000')
+        refused = [int(r['length'], 16) for r in lengths if r['begin'] == 'refused']
+        self.assertTrue({0, 0x76001, 0x77000, 0x77001, spiflash.SLOT_MAX + 1} <= set(refused))
+        for length in refused:                                                      # S-02.084: 1 to 0x76000
+            self.assertEqual(next(r['status'] for r in lengths if int(r['length'], 16) == length), 6)
             frames, phase, ops, _ = self.recover(start, 0, wr(BEGIN, 2, struct.pack('<I', length) + bytes(32)))
             self.assertEqual((frames[0][2], phase, writes(ops)), (bytes([6, WAY_REFUSED, 0xFF]), PH_FAILED, []),
                              length)
+        img = front_image(0x76000, seed=31)
+        frames, phase, ops, out = self.recover(start, 0, transfer(img), ['peek 0xd000 2', 'fs 0'])
+        end = [p for t, _, p in frames if t == END | 0x80][0]
+        self.assertEqual((frames[0][2], end[0], phase), (bytes([0, WAY_PLAIN, 1]), 0, PH_DONE))
+        sec = spiflash.SLOT_OFF[1] + spiflash.SLOT_MAX - 0x2000
+        self.assertIn('p:%x:100' % (sec - 0x100), writes(ops))                     # the image's last page
+        self.assertEqual([o for o in writes(ops) if o.startswith('e:') and
+                          int(o[2:], 16) >= sec], ['e:%x' % (sec + 0x1000), 'e:%x' % sec])
+        self.assertEqual((out[2], split(out[3])[0][0]), ('0100', '1'))
         cases = [(c['name'], b(c['image']), 7) for c in bootables() if c['kind'] == 'slot' and not c['accepted']]
         cases.append(('good, no front', b(next(c['image'] for c in bootables() if c['name'] == 'good')), 7))
         img = front_image(cut_sequences()['image_length'])
@@ -828,8 +834,7 @@ class Recovery(unittest.TestCase):
         cmds, keys = [], []
         for r in rows:
             seq = self.seqs[r['sequence']]
-            # recovery makes no settings erase (S-02.103): a cut after it is recovery's cut after the op before
-            w = sum(1 for o in seq['ops'][:int(r['op_n'])] if o['op'] != 'read' and not settings_erase(o))
+            w = sum(1 for o in seq['ops'][:int(r['op_n'])] if o['op'] != 'read')
             sel = 1 - seq['target']
             if r['kind'] == 'none':
                 cmds += ['load ' + starts[r['sequence']], 'fault none', 'fault none']
@@ -901,7 +906,7 @@ class Recovery(unittest.TestCase):
         self.assertEqual((before['slot_flags'][0] & 5, before['target'], before['refusal'], before['run_way']),
                          (4, 1, 0, WAY_SELECT_FIRST))
         self.assertEqual((phase, after['written'], after['result']), (PH_DONE, 1, 0))
-        self.assertEqual(writes(ops), ref_writes(recovery_ops(c01['ops'])))
+        self.assertEqual(writes(ops), ref_writes(c01['ops']))
         self.assertEqual((out[2], split(out[3])[0][0]), ('0100', '1'))
         host = wr(INFO, 1) + begin(img)
         frames, phase, ops, _ = self.recover(changed(front_at), 0, host)
@@ -2259,7 +2264,7 @@ class RecoveryActions(unittest.TestCase):
     @scenario('S-02/SC-RECOVERY')
     @requirement('S-02.093')
     def test_SC_RECOVERY_info_and_hello(self):
-        """Runs 38 and 39: HELLO says protocol 2 and front 16; INFO is 232 bytes, its fields from 219 the status
+        """Runs 38 and 39: HELLO says protocol 2 and front 17; INFO is 232 bytes, its fields from 219 the status
         each action would get without and with force (as recovery_actions.json's rows), the tier of B, the
         slot a keep would select, and the last refusal since a write."""
         rows = {(c['act'], c['a'], c['b_kind'], c['start']): c for c in self.V['cases']}
@@ -2269,7 +2274,7 @@ class RecoveryActions(unittest.TestCase):
             a, kind, start = c['a'], c['b_kind'], c['start']
             by, *_ = self.recover(self.flash(a, kind, start), a, wr(HELLO, 0) + wr(INFO, 1), 'info')
             hello = by[(HELLO, 0)][0]
-            self.assertEqual((hello[0], struct.unpack_from('<H', hello, 1)[0], len(hello)), (2, 16, 47))
+            self.assertEqual((hello[0], struct.unpack_from('<H', hello, 1)[0], len(hello)), (2, 17, 47))
             p = by[(INFO, 1)][0]
             self.assertEqual(len(p), 232)
             more = info_more(p)
@@ -2760,6 +2765,69 @@ class SettingsSector(unittest.TestCase):
             log, sec = 'e:%x' % (0x88000 + 0x77000), 'e:%x' % SET_SECTOR[t]
             want = ([log] if row['erases_start_log'] else []) + ([sec] if row['erases_settings'] else [])
             self.assertEqual(tail, want, row)
+
+    @scenario('S-02/SC-SETTINGS')
+    @requirement('S-02.084', 'S-02.103')
+    def test_SC_SETTINGS_recovery(self):
+        """`recovery`: each of recovery's image writes, plain, select-first, trial and in place, from either
+        running slot, makes the vector's erases and programs, the target's settings sector erased right after
+        its log sector and before the trial mark or the record erase; the target's sector reads erased after,
+        the other slot's is untouched. An in-place write follows a failed write of the other slot. Recovery's
+        actions erase neither sector."""
+        v = set_vectors()
+        rv = v['recovery']
+        allon = b(next(r for r in v['records'] if r['name'] == 'all_on')['bytes']).ljust(0x100, b'\xff')
+        n = cut_sequences()['image_length']
+        img, other = front_image(n), front_image(n, seed=21, front_seed=6)
+        seen = set()
+        for w in rv['writes']:
+            a, t, way = w['running'], w['target'], w['way']
+            self.assertEqual(int(w['length'], 16), n, w['way'])
+            self.assertEqual(int(w['settings_sector'], 16), SET_SECTOR[t], way)
+            seen.add((way, a))
+            slots = ['good', 'good']
+            if way == 'in_place':
+                slots[1 - a] = 'badcrc'
+            images = tuple(IMAGE_A if k == a else None for k in (0, 1))
+            fl = bytearray(spiflash.build_flash(selector=(a, 1), slots=tuple(slots), images=images))
+            for k in (0, 1):
+                fl[SET_SECTOR[k]:SET_SECTOR[k] + 0x100] = allon
+            host, faults, prior = b'', [], []
+            if way == 'in_place':                       # S-02.084: the failed write of B first
+                host = transfer(img, seq=0x30)
+                faults, prior = ['fault late 1'], ['e:%x' % spiflash.SLOT_OFF[1 - a]]
+            flags = {'plain': None, 'select_first': 1, 'in_place': 1, 'trial': 0x02}[way]
+            host += transfer(other if way == 'trial' else img, flags=flags)
+            after = os.path.join(WORK, 'set_rec_after.bin')
+            out = run('s02', ['load ' + save('set_rec.bin', bytes(fl))] + faults +
+                      ['recover %d %s' % (a, save('set_rec_host.bin', host)), 'save ' + after])
+            res, ops = split(out[1 + len(faults)])
+            self.assertEqual(int(res[1]), PH_DONE, (way, a))
+            want = []
+            for o in w['ops']:
+                if o['op'] == 'erase':
+                    want.append('e:%x' % int(o['offset'], 16))
+                elif o['op'] == 'program':
+                    want.append('p:%x:%x' % (int(o['offset'], 16), o['length']))
+            self.assertEqual(writes(ops), prior + want, (way, a))
+            wr_ = writes(ops)[len(prior):]
+            k = wr_.index('e:%x' % SET_SECTOR[t])
+            self.assertEqual(wr_[k - 1], 'e:%x' % (spiflash.SLOT_OFF[t] + spiflash.SLOT_MAX - 0x1000), (way, a))
+            nxt = 'p:%x:1' % (spiflash.SLOT_OFF[t] + spiflash.SLOT_MAX - 0x1000) if way == 'trial' \
+                else 'e:%x' % spiflash.SLOT_RECORD_OFF[t]
+            self.assertEqual(wr_[k + 1], nxt, (way, a))
+            self.assertEqual(w['settings_erase']['before'], 'the trial mark' if way == 'trial' else 'the record erase')
+            with open(after, 'rb') as f:
+                got = f.read()
+            self.assertEqual(got[SET_SECTOR[t]:SET_SECTOR[t] + 0x1000], b'\xff' * 0x1000, (way, a))
+            self.assertEqual(got[SET_SECTOR[1 - t]:SET_SECTOR[1 - t] + 0x100], allon, (way, a))
+        self.assertEqual(seen, {(x, a) for x in ('plain', 'select_first', 'trial', 'in_place') for a in (0, 1)})
+        sets = {'e:%x' % x for x in SET_SECTOR}
+        with open(vectors('recovery_actions.json'), encoding='utf-8') as f:
+            acts = json.load(f)['cases']
+        for c in acts:
+            self.assertFalse(sets & set(ref_writes(c['ops'])), c['act'])
+        self.assertFalse([x for x in rv['actions'] if x['erases_settings']])
 
 
 if __name__ == '__main__':
