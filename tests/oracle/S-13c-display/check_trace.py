@@ -13,6 +13,8 @@ Each rule names its requirement.
     boot      the boot path up to the kernel call (HANDOVER event required)
     held      held mode entered without a boot attempt
     fail      the boot path's preparation, the load failing, then held mode (no HANDOVER)
+    recovery  the front's recovery (S-02.084): its line under the logo, then recovery's frames from MARK
+              recovery, paced as held mode's, each sent by one memory DMA until a send is stopped (S-13c.017)
     poweroff  held mode ends with the power-off: a shutdown, a power-off the PSoC reports or a restart
               (MARK poweroff; nothing reaches the panel after it, S-13c.022); given alone, the start ends with
               it, before held mode or the boot

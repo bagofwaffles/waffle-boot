@@ -9,7 +9,8 @@ Events:
     RUN N XX..         N repeats of the bytes XX..        READ XX    a read strobe and the byte returned
     TE 1               a tearing-effect rising edge       MSG51 XX XX XX  PSoC message 0x51 and its payload
     GREETING           a PSoC greeting after the hello    MARK name  a named instant (bootloader, strap,
-                                                                     held, fatal, prompt, poweroff)
+                                                                     held, recovery, fatal, prompt, poweroff;
+                                                                     others are kept and not judged)
     CHANGE             a change of what held mode shows (a menu change, a key's effect)
     HANDOVER now_ms=N record=HEX                          the kernel call, with the persistent record
 An event name ending in `!` was latched with CS high or RESET low. `end=T` as the last argument gives the
@@ -169,6 +170,10 @@ class Trace:
                 self.bus_errors.append('line %d: unknown event %s' % (n, ev))
 
 
+DMA_STOP_NS = 40000000       # S-13c.017: a DMA send not ended 40 ms after its first byte is stopped
+OFF_STOP_NS = 60000000       # S-13c.017, S-13c.022: at a power-off the frame going out is stopped by 60 ms
+
+
 class Checker:
     def __init__(self, trace, expect, registers, timing, frame_sha=None, no_te=False):
         """registers: {cmd: row of the init-register table}; timing: {name: minimum ns} (load_tables)."""
@@ -182,6 +187,8 @@ class Checker:
         self.frames = []          # (txn, window): the early logo frame if before DISPON, then each RAMWR after
         self.lines = []           # (txn, window): each line under the logo after DISPON (S-13c.025)
         self.logo_before = None   # the early logo frame sent before DISPON, or None
+        self.cut_ok = set()       # id() of recovery's frames cut short as S-13c.017 allows
+        self.cpu_sent = set()     # id() of recovery's frames sent by the CPU after a stopped send
         self.notes = []
 
     def err(self, rule, req, msg):
@@ -257,7 +264,7 @@ class Checker:
         slp = self.first(SLPOUT, self.boot_t())
         don = self.first(DISPON, self.boot_t())
         if slp is None or don is None:
-            if 'boot' in self.expect or 'held' in self.expect or 'fail' in self.expect:
+            if self.expect & {'boot', 'held', 'fail', 'recovery'}:
                 self.err('registers', 'S-13c.008', 'SLPOUT or DISPON missing')
             return
         seen = {}
@@ -342,6 +349,11 @@ class Checker:
         frame, or a frame that 0x51 3C FF 32 followed before the line. Its bytes are whole (S-13c.016's rule
         for its band); S-13c.014's window is set again before the next frame (rule frames)."""
         early = self.early_logo()
+        if 'recovery' in self.expect:
+            shown = self.mode_frames()
+            if not [x for x, _ in self.lines if not shown or x.t < shown[0].t]:
+                self.err('lines', 'S-13c.025', 'no line under the logo before recovery\'s first frame (the '
+                         'front\'s line)')
         for x, (xs, xe, ys, ye) in self.lines:
             if 'boot' in self.expect:
                 self.err('lines', 'S-13c.025', 'a line under the logo at %d ns on the boot path' % x.t)
@@ -385,7 +397,7 @@ class Checker:
             if not (xs <= VIS_X0 and xe >= VIS_X1 and ys == 0 and ye == ROWS - 1):
                 self.err('frames', 'S-13c.014', 'frame window %d-%d x %d-%d' % (xs, xe, ys, ye))
             need = 2 * (xe - xs + 1) * (ye - ys + 1)
-            if len(x.params) != need or x.reads:
+            if (len(x.params) != need and id(x) not in self.cut_ok) or x.reads:
                 self.err('frames', 'S-13c.016', 'frame of %d bytes, expected %d' % (len(x.params), need))
         if self.frame_sha and self.frames:
             got = hashlib.sha256(bytes(self.frames[-1][0].params)).hexdigest()
@@ -459,6 +471,61 @@ class Checker:
             return lit[1]
         return lit[0] if lit else None
 
+    def mode_t(self):
+        """The start of the mode whose frames are paced (S-13c.017): MARK recovery with --expect recovery,
+        else held mode's start (held_t())."""
+        if 'recovery' in self.expect:
+            return self.tr.marks.get('recovery')
+        return self.held_t()
+
+    def mode_frames(self):
+        t = self.mode_t()
+        return [x for x, _ in self.frames if t is not None and x.t >= t]
+
+    def rule_sends(self):
+        """S-13c.017's sends in recovery (--expect recovery), whose frames go by one memory DMA each: a send
+        not ended 40 ms after its first byte is stopped there (the next transaction no earlier), and that frame
+        and every later one go by the CPU, each whole; at a power-off the frame going out ends or is stopped
+        within 60 ms of it. A frame cut short so is not judged by S-13c.016 (rule frames), and a frame cut short
+        or sent by the CPU not by S-13c.018 (rule te)."""
+        if 'recovery' not in self.expect:
+            return
+        off = self.tr.marks.get('poweroff')
+        frames = self.mode_frames()
+        cpu = False
+        for k, x in enumerate(frames):
+            w = next(w for f, w in self.frames if f is x)
+            need = 2 * (w[1] - w[0] + 1) * (w[3] - w[2] + 1)
+            short = len(x.params) < need
+            first = x.t_data if x.t_data is not None else x.t
+            later = [y for y in self.tr.txns if y.index > x.index]
+            at_off = off is not None and x.t < off and (short or x.t_end > off) and \
+                not [f for f in frames[k + 1:] if f.t < off]
+            if cpu:
+                self.cpu_sent.add(id(x))
+            if at_off:
+                if x.t_end > off + OFF_STOP_NS:
+                    self.err('te', 'S-13c.017', 'frame at %d ns still sending %d ns after the power-off (at most '
+                             '%d ns)' % (x.t, x.t_end - off, OFF_STOP_NS))
+                if short:
+                    self.cut_ok.add(id(x))
+                continue
+            if cpu:
+                continue
+            if x.t_end - first > DMA_STOP_NS:
+                self.err('te', 'S-13c.017', 'frame at %d ns sends for %d ns: a send not ended %d ns after its '
+                         'first byte is stopped' % (x.t, x.t_end - first, DMA_STOP_NS))
+            if not short:
+                continue
+            if later and later[0].t < first + DMA_STOP_NS:
+                self.err('frames', 'S-13c.016', 'frame at %d ns cut short %d ns after its first byte, before '
+                         'the %d ns stop' % (x.t, later[0].t - first, DMA_STOP_NS))
+                continue
+            if not frames[k + 1:]:
+                self.err('frames', 'S-13c.017', 'frame at %d ns stopped and not sent again' % x.t)
+            self.cut_ok.add(id(x))
+            cpu = True
+
     def early_logo(self):
         """The early logo frame: the one sent before DISPON, or else the first frame after the bootloader's
         DISPON; None without one."""
@@ -471,12 +538,12 @@ class Checker:
         return after[0] if after else None
 
     def rule_te(self):
-        """S-13c.017, S-13c.018: held-mode frame pacing against TE edges and CHANGE events. --no-te reports
-        a trace without TE edges as not evaluated; the frame after MARK fatal is skipped."""
-        if not ('held' in self.expect or 'fail' in self.expect):
+        """S-13c.017, S-13c.018: held-mode and recovery frame pacing against TE edges and CHANGE events.
+        --no-te reports a trace without TE edges as not evaluated; the frame after MARK fatal is skipped."""
+        if not self.expect & {'held', 'fail', 'recovery'}:
             return
-        held = self.held_t()
-        frames = [x for x, _ in self.frames if held is not None and x.t >= held]
+        held = self.mode_t()
+        frames = self.mode_frames()
         te = self.tr.te
         if held is None or not frames or (not te and self.no_te):
             what = 'no held-mode start' if held is None else 'no held-mode frames' if not frames else 'no TE edges'
@@ -499,7 +566,7 @@ class Checker:
             edges = [t for t in te if prev_end <= t <= x.t]
             if edges:
                 later = [t for t in te if t > x.t]
-                if later and x.t_end >= later[0]:
+                if later and x.t_end >= later[0] and id(x) not in self.cut_ok | self.cpu_sent:
                     self.err('te', 'S-13c.018', 'frame at %d ns ends after the next TE edge' % x.t)
             else:
                 ref = max([prev_end] + [t for t in te if t < x.t][-1:])
@@ -524,7 +591,7 @@ class Checker:
         m = [(t, p) for t, p in self.tr.msg51 if t >= b]
         cmds = self.bl_txns()
         don = self.first(DISPON, b)
-        if cmds and ('boot' in self.expect or 'held' in self.expect or 'fail' in self.expect):
+        if cmds and self.expect & {'boot', 'held', 'fail', 'recovery'}:
             first = [t for t, p in m if p == b'\0\0\0']
             if not first:
                 self.err('msg51', 'S-13c.019', 'no 0x51 00 00 00 at start-up')
@@ -583,7 +650,7 @@ class Checker:
 
     def check_early_logo(self, m, don):
         """S-05.004, S-13c.019: the early logo frame (early_logo()) and the 0x51 messages around it."""
-        if not ('boot' in self.expect or 'held' in self.expect or 'fail' in self.expect):
+        if not self.expect & {'boot', 'held', 'fail', 'recovery'}:
             return
         early = self.early_logo()
         if early is None:
@@ -734,6 +801,7 @@ class Checker:
         self.rule_registers()
         self.rule_cscon()
         self.gram_walk()
+        self.rule_sends()
         self.rule_frames()
         self.rule_byte_rate()
         self.rule_reads()

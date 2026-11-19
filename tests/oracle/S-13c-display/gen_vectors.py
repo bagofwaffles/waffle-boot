@@ -228,7 +228,8 @@ def record(reset_ms):
 
 
 def build(path='boot', handshake=True, reads=True, **o):
-    """path: boot | held | fail | off (a power-off during the start). Returns (trace text, expect list)."""
+    """path: boot | held | fail | off (a power-off during the start) | recovery (the front's, S-02.084: way
+    is chord, check or count, MARK recovery_<way> when the front decides). Returns (trace text, expect list)."""
     b = Builder()
     # first stage (S-01.006): its pulse at 2 ms, handshake left for the bootloader
     b.at(2 * MS)
@@ -332,7 +333,9 @@ def build(path='boot', handshake=True, reads=True, **o):
             # a line under the logo on the boot path (S-13c.025)
             b.wait(1 * MS)
             logo_line(b)
-        b.wait(500 * MS)
+        b.wait((RECOVERY_DECIDE[o['way']] if path == 'recovery' else 500) * MS)
+    if path == 'recovery':
+        return recovery(b, o, expect)
     if o.get('prompt'):
         # S-05.025, S-13c.019: a boot prompt, lit by the early logo's 3C FF 02, before
         # the hand-over frame or held mode; waits for a key
@@ -473,6 +476,79 @@ def build(path='boot', handshake=True, reads=True, **o):
             b.wait(10 * MS)
             b.ev('HANDOVER', 'now_ms=%d' % (b.t // MS), 'record=%s' % record(reset_ms).hex().upper())
     return b.text(), expect
+
+
+# S-02.084: when the front decides on recovery after the early logo frame is lit, in ms: at the key read
+# (Power + M4), after the start log's read (three unfinished starts), after the image check (it failed).
+RECOVERY_DECIDE = {'chord': 1, 'count': 30, 'check': 400}
+
+
+def recovery(b, o, expect):
+    """S-13c.025's front's line under the logo, then recovery's frames from MARK recovery (S-13c.017), by
+    plan (as held_plan, with the sends of play()) or four frames at TE's 60 Hz. line: True, or 'after_menu' (the
+    line after recovery's first frame)."""
+    b.ev('MARK', 'recovery_' + o['way'])
+    line = o.get('line', True)
+    if line is True:
+        b.wait(100 * US)
+        logo_line(b)
+    b.wait(300 * MS)                           # the front's start-up and its slot reads
+    b.ev('MARK', 'recovery')
+    t0 = b.t
+    plan = o.get('plan') or [('te', 3 * MS + k * 16667 * US) for k in range(5)] + \
+        [('frame', 3 * MS + 20 * US + k * 16667 * US) for k in range(4)]
+    shown = False
+    for kind, dt in plan:
+        play(b, t0, kind, dt)
+        if line == 'after_menu' and kind not in ('te', 'change') and not shown:
+            shown = True
+            b.wait(1 * MS)
+            logo_line(b)
+    if any(kind == 'offcut' for kind, _ in plan):
+        expect.append('poweroff')
+    return b.text(), expect
+
+
+def play(b, t0, kind, dt):
+    """One step of a plan at t0 + dt: 'te' a TE rising edge; 'change' a CHANGE; 'frame' a frame by DMA at
+    70 ns a byte; 'cut' a DMA send that stalls after 50 000 bytes and is stopped 40 ms after its first byte;
+    'cpu' a frame sent by the CPU, 200 ns a byte; 'late' a DMA send that runs 60 ms; 'offcut' a slow send,
+    400 ns a byte, with the power-off 10 ms after its first byte, stopped 60 ms after the power-off, then
+    0x51 00 00 02."""
+    if kind == 'te':
+        b.te_at(t0 + dt)
+        return
+    if kind == 'change':
+        b.lines.append('%d\tCHANGE' % (t0 + dt))
+        return
+    b.at(t0 + dt)
+    if kind == 'frame':
+        frame(b)
+    elif kind == 'cut':
+        b.cmd(0x2C)
+        b.run(25000, b'\x00\x00', 70)
+    elif kind == 'cpu':
+        frame(b, byte_ns=200)
+    elif kind == 'late':
+        frame(b, byte_ns=279)
+    elif kind == 'offcut':
+        b.cmd(0x2C)
+        b.lines.append('%d\tMARK\tpoweroff' % (b.t + 10 * MS))
+        b.run(87500, b'\x00\x00', 400)
+        b.wait(1 * MS)
+        b.ev('MSG51', '00 00 02')
+
+
+def te_every(n, start=3 * MS):
+    return [('te', start + k * 16667 * US) for k in range(n)]
+
+
+# S-13c.017 in recovery: a send stopped at 40 ms, then the CPU's frames at TE; a send running 60 ms; a slow
+# send at the power-off, stopped 60 ms after it.
+FRONT_DMA_STOPPED = te_every(10) + [('frame', 3 * MS + 20 * US), ('cut', 19687 * US),
+                                    ('cpu', 69687 * US), ('cpu', 119687 * US)]
+FRONT_DMA_LATE = te_every(6) + [('frame', 3 * MS + 20 * US), ('late', 19687 * US)]
+FRONT_POWEROFF_CUT = te_every(7) + [('frame', 3 * MS + 20 * US), ('offcut', 19687 * US)]
 
 
 # Held-mode plans for the TE-miss vectors (S-13c.017): (kind, ns after MARK held). A frame takes 215 040 x
@@ -622,6 +698,20 @@ VECTORS = {
                                        'poweroff', 'S-13c.022'),
     # S-13c.019 a held start: no frame of its own between the early logo frame and held mode
     'bad_held_extra_frame':  (dict(path='held', extra=True), 'held_start', 'S-13c.019'),
+    # S-13c.017 in recovery (the front's frames): paced by TE in the logo form, TE stopping and coming back,
+    # a send stopped at 40 ms then whole frames by the CPU, a frame stopped 60 ms into a power-off; a send that
+    # runs 60 ms with no power-off
+    'good_front_te':         (dict(path='recovery', way='chord', logo_first=True), None, 'S-13c.017'),
+    'good_front_te_stops':   (dict(path='recovery', way='chord', plan=TE_STOPS), None, 'S-13c.017'),
+    'good_front_dma_stopped': (dict(path='recovery', way='chord', plan=FRONT_DMA_STOPPED), None, 'S-13c.017'),
+    'good_front_poweroff_cut': (dict(path='recovery', way='chord', plan=FRONT_POWEROFF_CUT), None,
+                                'S-13c.017, S-13c.022'),
+    'bad_front_dma_late':    (dict(path='recovery', way='chord', plan=FRONT_DMA_LATE), 'te', 'S-13c.017'),
+    # S-13c.025 the front's line under the logo, on each way into recovery; not after recovery's first frame
+    'good_front_recovery_line_chord': (dict(path='recovery', way='chord'), None, 'S-13c.025, S-15.151'),
+    'good_front_recovery_line_check': (dict(path='recovery', way='check'), None, 'S-13c.025, S-15.151'),
+    'good_front_recovery_line_count': (dict(path='recovery', way='count'), None, 'S-13c.025, S-15.151'),
+    'bad_front_line_after_menu': (dict(path='recovery', way='chord', line='after_menu'), 'lines', 'S-13c.025'),
 }
 
 

@@ -113,6 +113,20 @@
   "fails_rule": "te",
   "requirement": "S-13c.018"
  },
+ "bad_front_dma_late": {
+  "expect": [
+   "recovery"
+  ],
+  "fails_rule": "te",
+  "requirement": "S-13c.017"
+ },
+ "bad_front_line_after_menu": {
+  "expect": [
+   "recovery"
+  ],
+  "fails_rule": "lines",
+  "requirement": "S-13c.025"
+ },
  "bad_gamma_no_tables": {
   "expect": [
    "boot"
@@ -499,6 +513,56 @@
   ],
   "fails_rule": null,
   "requirement": "S-13c.013"
+ },
+ "good_front_dma_stopped": {
+  "expect": [
+   "recovery"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.017"
+ },
+ "good_front_poweroff_cut": {
+  "expect": [
+   "recovery",
+   "poweroff"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.017, S-13c.022"
+ },
+ "good_front_recovery_line_check": {
+  "expect": [
+   "recovery"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.025, S-15.151"
+ },
+ "good_front_recovery_line_chord": {
+  "expect": [
+   "recovery"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.025, S-15.151"
+ },
+ "good_front_recovery_line_count": {
+  "expect": [
+   "recovery"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.025, S-15.151"
+ },
+ "good_front_te": {
+  "expect": [
+   "recovery"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.017"
+ },
+ "good_front_te_stops": {
+  "expect": [
+   "recovery"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.017"
  },
  "good_held": {
   "expect": [
