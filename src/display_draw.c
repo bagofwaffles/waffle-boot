@@ -9,14 +9,15 @@
 
 #include "waffle/s15_lines.h"
 
-/* S-15.002, S-15.003: 27 + 8 * 19 + 16 = 195 < 202; 205 + 16 =
- * 221 <= 222; 16 + 56 * 8 + 8 = 472 <= 480. */
+/* S-15.002, S-15.003: 33 + 8 * 19 + 16 = 201 < 202; 205 + 16 =
+ * 221 <= 222; 16 + 56 * 8 + 8 = 472 <= 480. Row 0 stands 9 pixels
+ * below the title bar. */
 const struct s15_geometry wb_display_geometry = {
 	.width = WB_DISPLAY_W,
 	.height = WB_DISPLAY_H,
 	.edge = 8,
 	.margin = 16,
-	.top = 27,
+	.top = 33,
 	.pitch = 19,
 	.glyph_w = WB_FONT_W,
 	.glyph_h = WB_FONT_H,

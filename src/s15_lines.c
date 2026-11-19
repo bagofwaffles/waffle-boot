@@ -487,9 +487,9 @@ const char s15_hold_line[] = "   Hold key to make selection";
 void s15_hold_hint(struct s15_buf *out, unsigned digit)
 {
 	s15_buf_init(out);
-	s15_buf_str(out, "Hold ");
+	s15_buf_str(out, "Hold `");
 	s15_buf_dec(out, digit);
-	s15_buf_str(out, " for ");
+	s15_buf_str(out, "` for ");
 	s15_buf_dec(out, S15_CONFIRM_HOLD_MS / 1000u);
 	s15_buf_str(out, " s");
 }

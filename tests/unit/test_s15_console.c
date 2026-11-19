@@ -176,6 +176,19 @@ static unsigned col(unsigned c)
 	return geom.margin + c * geom.glyph_w;
 }
 
+/* Whether a key badge for digit d stands at (x, y): the digit inked in
+ * black twice, a pixel apart, on a cell of bg from x - 1 to x + 9 and y to
+ * y + 13 with its corner pixels left out. */
+static bool badge(unsigned x, unsigned y, const char *d, uint16_t bg)
+{
+	return drawn(x, y, d, S15_BLACK, CLEAR) &&
+	       drawn(x + 1u, y, d, S15_BLACK, CLEAR) &&
+	       fb[y][x] == bg && fb[y][x + 8u] == bg && fb[y][x - 1u] != bg &&
+	       fb[y][x + 9u] != bg && fb[y + 1u][x - 1u] == bg &&
+	       fb[y + 12u][x + 9u] == bg && fb[y + 13u][x - 1u] != bg &&
+	       fb[y + 13u][x + 4u] == bg && fb[y + 14u][x + 4u] != bg;
+}
+
 static enum s15_style style_of(const char *name)
 {
 	for (unsigned i = 0; i < S15_ST_COUNT; i++)
@@ -702,36 +715,41 @@ static void test_render_row(void)
 	      "head");
 
 	/* keys: gray, the backquoted spans amber, the backquotes not
-	 * drawn */
+	 * drawn, a span of one digit a key badge */
 	row(3, S15_ST_KEYS, "`Shift` + `4` skips");
-	CHECK(n_texts == 4u && drawn(col(0), y, "Shift", S15_AMBER, B) &&
+	CHECK(n_texts == 5u && drawn(col(0), y, "Shift", S15_AMBER, B) &&
 	      drawn(col(5), y, " + ", S15_DIM, B) &&
-	      drawn(col(8), y, "4", S15_AMBER, B) &&
+	      badge(col(8), y, "4", S15_AMBER) &&
 	      drawn(col(9), y, " skips", S15_DIM, B),
 	      "keys spans");
+	row(3, S15_ST_KEYS, "`48` and `x`");
+	CHECK(n_texts == 3u && drawn(col(0), y, "48", S15_AMBER, B) &&
+	      drawn(col(7), y, "x", S15_AMBER, B), "keys: no badge but a digit's");
 
-	/* item: the digit in column 0, the label from 3, the hint
+	/* item: the digit's badge in column 0, the label from 3, the hint
 	 * right-aligned to column 55 */
 	row(3, S15_ST_ITEM, "7 Factory reset\tRemoves your data only");
-	CHECK(n_texts == 3u && drawn(col(0), y, "7", S15_AMBER, B) &&
+	CHECK(n_texts == 4u && badge(col(0), y, "7", S15_AMBER) &&
 	      drawn(col(3), y, "Factory reset", S15_TEXT, B) &&
 	      drawn(col(S15_COLS - 22u), y, "Removes your data only", S15_DIM, B),
 	      "item");
 	row(3, S15_ST_ITEM, "5 System");
-	CHECK(n_texts == 2u && drawn(col(0), y, "5", S15_AMBER, B) &&
+	CHECK(n_texts == 3u && badge(col(0), y, "5", S15_AMBER) &&
 	      drawn(col(3), y, "System", S15_TEXT, B), "item, no hint");
 	row(3, S15_ST_ITEM_ON, "6 Protected writes\tOn");
-	CHECK(drawn(col(0), y, "6", S15_AMBER, B) &&
+	CHECK(badge(col(0), y, "6", S15_AMBER) &&
 	      drawn(col(3), y, "Protected writes", S15_TEXT, B) &&
 	      drawn(col(S15_COLS - 2u), y, "On", S15_RED, B),
 	      "item-on: the hint red");
-	row(3, S15_ST_ARMED, "7 Factory reset\tHold 7 for 5 s");
-	CHECK(drawn(col(0), y, "7", S15_RED, B) &&
+	row(3, S15_ST_ARMED, "7 Factory reset\tHold `7` for 5 s");
+	CHECK(n_texts == 7u && badge(col(0), y, "7", S15_RED) &&
 	      drawn(col(3), y, "Factory reset", S15_RED, B) &&
-	      drawn(col(S15_COLS - 14u), y, "Hold 7 for 5 s", S15_RED, B),
-	      "armed: the whole row red");
+	      drawn(col(S15_COLS - 14u), y, "Hold ", S15_RED, B) &&
+	      badge(col(S15_COLS - 9u), y, "7", S15_RED) &&
+	      drawn(col(S15_COLS - 8u), y, " for 5 s", S15_RED, B),
+	      "armed: the whole row red, the badges red");
 	row(3, S15_ST_BACK, "8 Back to Main Menu");
-	CHECK(n_texts == 2u && drawn(col(0), y, "8", S15_AMBER, B) &&
+	CHECK(n_texts == 3u && badge(col(0), y, "8", S15_AMBER) &&
 	      drawn(col(3), y, "Back to Main Menu", S15_DIM, B),
 	      "back: the label gray");
 
@@ -861,7 +879,7 @@ static void test_render_row(void)
 	CHECK(n_texts == 1u && strlen(texts[0].s) == S15_COLS &&
 	      texts[0].y == s15_row_y(&geom, 8), "56 columns shown");
 	row(8, S15_ST_ITEM, "1 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-	CHECK(n_texts == 2u && strlen(texts[1].s) == S15_COLS - 3u,
+	CHECK(n_texts == 3u && strlen(texts[0].s) == S15_COLS - 3u,
 	      "an item's label clipped at column 55");
 	texts_placed("rows");
 }
@@ -905,7 +923,7 @@ static void test_frames(void)
 	s15_render_console(&con, &geom, &draw, &f);
 	CHECK(text_at(geom.margin, s15_row_y(&geom, 0), NULL, NULL) == NULL,
 	      "S-15.002 a blank row draws nothing");
-	CHECK(drawn(col(0), s15_row_y(&geom, 1), "1", S15_AMBER, S15_BLACK) &&
+	CHECK(drawn(col(0), s15_row_y(&geom, 1), "1", S15_BLACK, CLEAR) &&
 	      drawn(col(3), s15_row_y(&geom, 1), "Install firmware", S15_TEXT,
 		    S15_BLACK) &&
 	      drawn(col(0), s15_row_y(&geom, 2), "!", S15_RED, S15_BLACK),

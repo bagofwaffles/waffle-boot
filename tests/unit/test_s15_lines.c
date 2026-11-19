@@ -575,7 +575,7 @@ static void test_required_info(void)
 	/* S-15.015: the hold's hint names its key and time; its row fits
 	 * with the bar at its widest */
 	s15_hold_hint(&b, 7);
-	CHECK(strcmp(b.s, "Hold 7 for 5 s") == 0, "S-15.015 hint '%s'", b.s);
+	CHECK(strcmp(b.s, "Hold `7` for 5 s") == 0, "S-15.015 hint '%s'", b.s);
 	snprintf(row, sizeof row, "1 Format drive\t%.40s", b.s);
 	CHECK(fits(S15_ST_ARMED, row), "format: the hold as the item's hint");
 	snprintf(row, sizeof row, "7 Factory reset\t%.40s", b.s);

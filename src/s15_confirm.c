@@ -61,7 +61,7 @@ void s15_confirm_lines(const struct s15_confirm_info *info,
 void s15_confirm_bar(struct s15_buf *out, unsigned fill, unsigned left_s)
 {
 	s15_buf_init(out);
-	s15_buf_str(out, "Hold 1\t");
+	s15_buf_str(out, "Hold `1`\t");
 	s15_buf_dec(out, fill > 100u ? 100u : fill);
 	s15_buf_str(out, "%\t");
 	s15_buf_dec(out, left_s);

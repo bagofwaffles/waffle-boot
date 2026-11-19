@@ -111,8 +111,9 @@ void s15_console_append_raw(struct s15_console *con, const uint8_t *text,
 	push(con, S15_ST_TEXT, text, len);
 }
 
-/* Every appended line is also a level-3 log line of its full
- * text, before clipping: backquotes left out, each tab two spaces. */
+/* Every appended line is also a level-3 log line of its full text,
+ * before clipping: in a KEYS line and the styles a tab splits, the
+ * backquotes left out and each tab two spaces. */
 static void log_line(struct s15_console *con, enum s15_style style,
 		     const uint8_t *text, size_t len)
 {
@@ -126,7 +127,7 @@ static void log_line(struct s15_console *con, enum s15_style style,
 		return;
 	}
 	for (i = 0; i < len && n + 2u <= sizeof buf; i++) {
-		if (text[i] == '`' && style == S15_ST_KEYS)
+		if (text[i] == '`')
 			continue;
 		if (text[i] == '\t' && splits(style)) {
 			buf[n++] = ' ';
@@ -257,16 +258,6 @@ static void put(const struct s15_geometry *g, const struct s15_draw_ops *d,
 		d->text(d->ctx, col_x(g, col), y, s, n, fg, S15_BLACK);
 }
 
-/* Right-aligned to the body's last column. */
-static void put_right(const struct s15_geometry *g,
-		      const struct s15_draw_ops *d, uint16_t y, const char *s,
-		      size_t n, uint16_t fg)
-{
-	if (n > S15_COLS)
-		n = S15_COLS;
-	put(g, d, (unsigned)(S15_COLS - n), y, s, n, fg);
-}
-
 /* Up to four tab-separated parts of s[0..n). */
 struct parts {
 	const char *p[4];
@@ -289,13 +280,62 @@ static void split(const char *s, size_t n, struct parts *pt)
 	}
 }
 
-/* A KEYS line: gray, backquoted spans amber, the backquotes not drawn. */
-static void put_keys(const struct s15_geometry *g,
-		     const struct s15_draw_ops *d, uint16_t y, const char *s,
-		     size_t n)
+/*
+ * A key badge: the key's digit in bold black (its glyph drawn twice, one
+ * pixel apart) on a solid cell BADGE_W x BADGE_H with its corner pixels
+ * left out, from a pixel left of the digit's column and the row's top.
+ */
+#define BADGE_W 11u
+#define BADGE_H 14u
+
+static void put_badge(const struct s15_geometry *g,
+		      const struct s15_draw_ops *d, unsigned col, uint16_t y,
+		      char digit, uint16_t bg)
 {
-	unsigned col = 0;
-	bool amber = false;
+	uint16_t x;
+
+	if (col >= S15_COLS)
+		return;
+	x = col_x(g, col);
+	d->fill(d->ctx, x, y, BADGE_W - 2u, 1, bg);
+	d->fill(d->ctx, (uint16_t)(x - 1u), (uint16_t)(y + 1u), BADGE_W,
+		BADGE_H - 2u, bg);
+	d->fill(d->ctx, x, (uint16_t)(y + BADGE_H - 1u), BADGE_W - 2u, 1, bg);
+	if (d->ink != NULL) {
+		d->ink(d->ctx, x, y, &digit, 1, S15_BLACK);
+		d->ink(d->ctx, (uint16_t)(x + 1u), y, &digit, 1, S15_BLACK);
+	} else {
+		d->text(d->ctx, x, y, &digit, 1, S15_BLACK, bg);
+	}
+}
+
+static bool is_digit(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
+/* The columns s[0..n) takes: its backquotes take none. */
+static size_t shown(const char *s, size_t n)
+{
+	size_t i, k = 0;
+
+	for (i = 0; i < n; i++)
+		k += s[i] != '`' ? 1u : 0u;
+	return k;
+}
+
+/*
+ * Text from a column in fg, its backquoted spans in span and the
+ * backquotes not drawn; a span of one digit is a key badge in badge. The
+ * badges come last, so that the text beside them leaves them whole.
+ */
+static void put_spans(const struct s15_geometry *g,
+		      const struct s15_draw_ops *d, unsigned col, uint16_t y,
+		      const char *s, size_t n, uint16_t fg, uint16_t span,
+		      uint16_t badge)
+{
+	unsigned c = col;
+	bool in = false;
 	size_t i = 0;
 
 	while (i < n) {
@@ -303,34 +343,62 @@ static void put_keys(const struct s15_geometry *g,
 
 		while (j < n && s[j] != '`')
 			j++;
-		put(g, d, col, y, s + i, j - i, amber ? S15_AMBER : S15_DIM);
-		col += (unsigned)(j - i);
+		if (!(in && j - i == 1u && is_digit(s[i])))
+			put(g, d, c, y, s + i, j - i, in ? span : fg);
+		c += (unsigned)(j - i);
 		if (j < n)
-			amber = !amber;
+			in = !in;
 		i = j + 1u;
+	}
+	for (i = 0, c = col, in = false; i < n; i++) {
+		if (s[i] == '`') {
+			in = !in;
+			continue;
+		}
+		if (in && i + 1u < n && s[i + 1u] == '`' && i > 0u &&
+		    s[i - 1u] == '`' && is_digit(s[i]))
+			put_badge(g, d, c, y, s[i], badge);
+		c++;
 	}
 }
 
-/* "D Label[\tHint]": the digit in column 0, the label from column 3. */
+/* A KEYS line: gray, backquoted spans amber, a digit's a key badge. */
+static void put_keys(const struct s15_geometry *g,
+		     const struct s15_draw_ops *d, uint16_t y, const char *s,
+		     size_t n)
+{
+	put_spans(g, d, 0, y, s, n, S15_DIM, S15_AMBER, S15_AMBER);
+}
+
+/* "D Label[\tHint]": the digit's key badge in column 0, the label from
+ * column 3, the hint right-aligned with its spans as a KEYS line's. */
 static void put_item(const struct s15_geometry *g,
 		     const struct s15_draw_ops *d, uint16_t y, const char *s,
 		     size_t n, uint16_t digit, uint16_t label, uint16_t hint)
 {
 	struct parts pt;
-	size_t room = S15_COLS - 3u;
+	size_t room = S15_COLS - 3u, hn = 0;
 
 	split(s, n, &pt);
 	if (pt.n[0] == 0u)
 		return;
-	put(g, d, 0, y, pt.p[0], 1, digit);
 	/* a long label stops a column short of its hint */
-	if (pt.count > 1u)
-		room = pt.n[1] + 4u < S15_COLS ? S15_COLS - 4u - pt.n[1] : 0u;
+	if (pt.count > 1u) {
+		hn = shown(pt.p[1], pt.n[1]);
+		if (hn > S15_COLS)
+			hn = S15_COLS;
+		room = hn + 4u < S15_COLS ? S15_COLS - 4u - hn : 0u;
+	}
 	if (pt.n[0] > 2u)
 		put(g, d, 3, y, pt.p[0] + 2, pt.n[0] - 2u < room ? pt.n[0] - 2u
 							       : room, label);
 	if (pt.count > 1u)
-		put_right(g, d, y, pt.p[1], pt.n[1], hint);
+		put_spans(g, d, (unsigned)(S15_COLS - hn), y, pt.p[1],
+			  pt.n[1], hint, hint, digit);
+	if (is_digit(pt.p[0][0]))
+		put_badge(g, d, 0, y, pt.p[0][0], digit);
+	else
+		put(g, d, 0, y, pt.p[0], 1, digit);
 }
 
 /* A mark in column 0 and a sentence from column 3. */
@@ -375,7 +443,7 @@ static void put_step(const struct s15_geometry *g,
 
 	split(s, n, &pt);
 	put(g, d, 0, y, &marks[k], 1, color[k]);
-	put(g, d, 3, y, pt.p[0], pt.n[0], S15_TEXT);
+	put_spans(g, d, 3, y, pt.p[0], pt.n[0], S15_TEXT, S15_AMBER, S15_AMBER);
 	if (pt.count < 2u)
 		return;
 	if (style == S15_ST_STEP_RUN && percent(pt.p[1], pt.n[1], &p)) {

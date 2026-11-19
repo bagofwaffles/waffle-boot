@@ -244,11 +244,11 @@ static void test_font(void)
 	CHECK(s15_geometry_ok(geo));
 	CHECK(geo->width == WB_DISPLAY_W && geo->height == WB_DISPLAY_H);
 	CHECK(geo->glyph_w == WB_FONT_W && geo->glyph_h == WB_FONT_H);
-	/* wiki/Screen-Style-Guide.md: the bar y 0 - 23, rows 19 apart from y 27
+	/* wiki/Screen-Style-Guide.md: the bar y 0 - 23, rows 19 apart from y 33
 	 * at x 16, the rule at y 202, the bars' text from x 8 */
-	CHECK(geo->edge == 8u && geo->margin == 16u && geo->top == 27u &&
+	CHECK(geo->edge == 8u && geo->margin == 16u && geo->top == 33u &&
 	      geo->pitch == 19u && geo->bar_h == 24u && geo->status_y == 202u);
-	CHECK(s15_row_y(geo, S15_ROWS - 1u) + geo->glyph_h == 195u &&
+	CHECK(s15_row_y(geo, S15_ROWS - 1u) + geo->glyph_h == 201u &&
 	      s15_status_text_y(geo) == 205u &&
 	      s15_status_text_y(geo) + geo->glyph_h <= WB_DISPLAY_H);
 	CHECK(geo->margin + S15_COLS * geo->glyph_w == 464u);
@@ -324,13 +324,13 @@ static void test_text(void)
 	o = wb_display_draw(&d);
 	o->fill(o->ctx, 0, 0, geo->width, geo->height, 0x1234u);
 	o->text(o->ctx, geo->margin, geo->top, s, 4, S15_WHITE, S15_BLACK);
-	CHECK(glyph_at(16, 27, 'A', S15_WHITE));
-	CHECK(glyph_at(24, 27, 'g', S15_WHITE));
-	CHECK(glyph_at(32, 27, '~', S15_WHITE));
-	CHECK(glyph_at(40, 27, '?', S15_WHITE));
-	CHECK(spx(16, 27 + 16) == 0x1234u);	/* below the cells */
-	CHECK(spx(15, 27) == 0x1234u);		/* before them */
-	CHECK(spx(48, 27) == 0x1234u);		/* after them */
+	CHECK(glyph_at(16, 33, 'A', S15_WHITE));
+	CHECK(glyph_at(24, 33, 'g', S15_WHITE));
+	CHECK(glyph_at(32, 33, '~', S15_WHITE));
+	CHECK(glyph_at(40, 33, '?', S15_WHITE));
+	CHECK(spx(16, 33 + 16) == 0x1234u);	/* below the cells */
+	CHECK(spx(15, 33) == 0x1234u);		/* before them */
+	CHECK(spx(48, 33) == 0x1234u);		/* after them */
 	/* Text on a filled bar: the background is bg */
 	o->text(o->ctx, geo->edge, 2, "Main", 4, S15_BLACK, S15_AMBER);
 	CHECK(glyph_on(8, 2, 'M', S15_BLACK, S15_AMBER));
@@ -342,9 +342,9 @@ static void test_text(void)
 	o->text(o->ctx, geo->margin, s15_row_y(geo, S15_ROWS - 1u),
 		"0123456789012345678901234567890123456789012345678901234567890123",
 		64, 0xF800u, S15_BLACK);
-	CHECK(glyph_at(16u + 55u * 8u, 179, '5', 0xF800u));
-	CHECK(glyph_at(472, 179, '7', 0xF800u));
-	CHECK(spx(479, 179 + 16) == 0x1234u);
+	CHECK(glyph_at(16u + 55u * 8u, 185, '5', 0xF800u));
+	CHECK(glyph_at(472, 185, '7', 0xF800u));
+	CHECK(spx(479, 185 + 16) == 0x1234u);
 	/* the bottom rows: the status text's last row is y 220 */
 	o->text(o->ctx, geo->edge, s15_status_text_y(geo), "_", 1, S15_WHITE,
 		S15_BLACK);

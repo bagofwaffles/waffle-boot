@@ -13,7 +13,7 @@ left, y from the top.
 | Part | Where | What |
 | --- | --- | --- |
 | Title bar | y 0–23, solid from side to side, four squares at x 392–471; text at y 4 | the active screen's name, top left |
-| Body | 9 rows, y 27 + 19 × row, x 16–463 | the screen's lines, 56 columns |
+| Body | 9 rows, y 33 + 19 × row, x 16–463 | the screen's lines, 56 columns |
 | Status bar | solid y 202–221, text at y 205 | the status words left, `waffle-boot v<version>` right |
 
 - **Title bar.** Solid amber from side to side with the screen's name in
@@ -27,7 +27,7 @@ left, y from the top.
   `Protected writes on` stands in white ending at x 374. A fatal error
   turns the bar red with the name `Fatal Error`. A title of up to 17
   characters fits beside the indicator.
-- **Body.** Nine console rows, 3 pixels below the bar. A tenth line
+- **Body.** Nine console rows, 9 pixels below the bar. A tenth line
   pushes the oldest off the top. Each row has a line style (below); all
   text lies on the 8-pixel grid from x 16.
 - **Status bar.** No rule: dark gray (`2124`, `212421`) from y 202 to
@@ -56,7 +56,8 @@ The bars are flat, with no texture. The constants are in
 
 Recovery's screens are drawn by the front (`src/front/`), which holds its
 own copy of the red title bar and the status bar; a unit test keeps the
-copy equal to these, pixel for pixel.
+copy equal to these, pixel for pixel. Its body rows still start 3 pixels
+below the bar, and its key digits are amber text.
 
 ## Font
 
@@ -81,12 +82,21 @@ RGB565, as the panel shows them.
 | faint | `5A5A5A` | `5ACB` | the `v0.9.13` of the version |
 | unlit | `484848` | `4A49` | status words that do not apply |
 | rule | `383838` | `39C7` | the key test's outlines |
-| amber | `FFB020` | `FD84` | the title bar, item digits, key names, warnings |
+| amber | `FFB020` | `FD84` | the title bar, key badges, key names, warnings |
 | red | `FF5040` | `FA88` | protected writes on, an item held to confirm it, errors |
 | green | `50D870` | `56CE` | done, installed |
 
 Black text on amber and white text on red are the only text on a filled
-background; the status bar's text sits on its dark gray.
+background, with a key badge's black digit; the status bar's text sits on
+its dark gray.
+
+### Key badges
+
+Every key digit on a screen is a key badge: a solid amber cell 11 × 14,
+from a pixel left of the digit's column and the row's top, its four corner
+pixels left out, with the digit in bold black (its glyph drawn twice, one
+pixel apart). No border and no second shade. On an `armed` row the badges
+are red. With the color off they draw as the grays below.
 
 ### Grayscale
 
@@ -104,7 +114,8 @@ tests that the panel shows them.
 
 `tests/vectors/s15/ui/` writes a line as `style:text`; a line with no style is
 `text`. In the text, a tab (`\t`) separates the parts of a line, and a
-backquote (`` ` ``) starts and ends an amber span. Columns count from the
+backquote (`` ` ``) starts and ends an amber span in a `keys` line, an
+item's hint and a step's label; a span of one digit is a key badge. Columns count from the
 body's left edge (x 16).
 
 | Style | Text | Drawn as |
@@ -112,11 +123,11 @@ body's left edge (x 16).
 | `text` | anything | white |
 | `dim` | anything | gray |
 | `head` | a heading or question | amber |
-| `keys` | a sentence naming keys | gray, the `` `spans` `` amber |
-| `item` | `D Label` or `D Label\tHint` | the digit amber in column 0, the label white from column 3, the hint gray, right-aligned |
+| `keys` | a sentence naming keys | gray, the `` `spans` `` amber, a digit's span a key badge |
+| `item` | `D Label` or `D Label\tHint` | the digit's key badge in column 0, the label white from column 3, the hint gray, right-aligned |
 | `item-on` | as `item` | the hint red (a setting that is on and needs care) |
-| `armed` | as `item` | the whole row red: a destructive item whose key is being held to confirm it |
-| `back` | `8 Back to <Screen>` | the digit amber, the label gray |
+| `armed` | as `item` | the whole row red, its badges too: a destructive item whose key is being held to confirm it |
+| `back` | `8 Back to <Screen>` | the digit's key badge, the label gray |
 | `ok` | a sentence | a green `+` in column 0, the sentence green from column 3 |
 | `warn` | a sentence | an amber `!` in column 0, the sentence amber from column 3 |
 | `error` | a sentence | a red `!` in column 0, the sentence red from column 3 |
@@ -128,8 +139,8 @@ body's left edge (x 16).
 
 A tab means something only in the styles with parts (`item`, `item-on`,
 `armed`, `back`, `kv`, `step-*`); elsewhere it shows as `?`. The log
-gets the text with a `keys` line's backquotes removed and each
-separating tab written as two spaces.
+gets the text with the backquotes of a `keys` line and of the styles with
+parts removed, and each separating tab written as two spaces.
 
 ## Writing
 
@@ -139,8 +150,8 @@ separating tab written as two spaces.
   proper names only (`Remove content packs`, `Factory reset`).
   Abbreviations stay in capitals (DSP, BLE, USB, MTP, OS, TE, OP-XY);
   `waffle-boot` is always written so.
-- **Key names** are lower case inside a sentence and set in amber:
-  `` Hold `2` for 5 s to turn it on ``.
+- **Key names** are lower case inside a sentence and set in amber, a
+  digit as a key badge: `` Hold `2` for 5 s to turn it on ``.
 - **Length.** A line is at most 56 characters; an item's label and hint
   together at most 51. Shorter is better: say one thing per line.
 - **Punctuation.** Items, hints and headings carry no full stop; sentences

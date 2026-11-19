@@ -437,13 +437,13 @@ static void test_lines(void)
 
 	/* the bar's row: the label, the percent for the bar, the seconds */
 	s15_confirm_bar(&bar, 40, 52);
-	CHECK(strcmp(bar.s, "Hold 1\t40%\t52 s") == 0 &&
+	CHECK(strcmp(bar.s, "Hold `1`\t40%\t52 s") == 0 &&
 	      fits(S15_ST_STEP_RUN, bar.s), "bar: '%s'", bar.s);
 	s15_confirm_bar(&bar, 250, 60);
-	CHECK(strcmp(bar.s, "Hold 1\t100%\t60 s") == 0 &&
+	CHECK(strcmp(bar.s, "Hold `1`\t100%\t60 s") == 0 &&
 	      fits(S15_ST_STEP_RUN, bar.s), "bar at most 100%%: '%s'", bar.s);
 	s15_confirm_bar(&bar, 0, 0);
-	CHECK(strcmp(bar.s, "Hold 1\t0%\t0 s") == 0, "bar empty: '%s'", bar.s);
+	CHECK(strcmp(bar.s, "Hold `1`\t0%\t0 s") == 0, "bar empty: '%s'", bar.s);
 	CHECK(strcmp(s15_confirm_title, "Confirm Install") == 0, "the title");
 }
 

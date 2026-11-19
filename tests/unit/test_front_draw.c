@@ -196,9 +196,11 @@ static void test_bars(void)
 	}
 }
 
-/* Body rows: the front's inks drawn as held mode's styles draw text. */
+/* Body rows: the front's inks drawn as held mode's styles draw text, on
+ * the front's rows, which start 3 pixels below the title bar. */
 static void test_rows(void)
 {
+	struct s15_geometry front_rows = wb_display_geometry;
 	static const struct {
 		enum fr_ink ink;
 		enum s15_style style;
@@ -211,13 +213,14 @@ static void test_rows(void)
 	struct fr_screen s;
 	unsigned bad = 0;
 
+	front_rows.top = 27;
 	fr_screen_text(&s, "Recovery");
 	for (unsigned i = 0; i < FR_LINES; i++)
 		fr_screen_line(&s, i, map[i % 3u].ink, text + i);
 	CHECK(strlen(s.line[0]) == FR_COLS);	/* cut to 56 */
 	wb_display_init(&disp, fb);
 	for (unsigned i = 0; i < FR_LINES; i++)
-		s15_render_row(&wb_display_geometry, wb_display_draw(&disp), i,
+		s15_render_row(&front_rows, wb_display_draw(&disp), i,
 			       map[i % 3u].style, text + i, strlen(text + i));
 	rows_of(&s, frame);
 	for (unsigned x = 0; x < 480u; x++)
