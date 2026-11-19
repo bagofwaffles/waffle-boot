@@ -295,7 +295,9 @@ static void test_summary(void)
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 23u));
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 24u));
 	CHECK(line_empty(&t, BOOT_TIME_COUNT + 25u));
-	CHECK(line_is(&t, BOOT_TIME_COUNT + 26u, "end of report"));
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 26u));	/* no front reports */
+	CHECK(line_empty(&t, BOOT_TIME_COUNT + 27u));	/* no running slot */
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 28u, "end of report"));
 	CHECK(line_empty(&t, BOOT_TIME_LINES));
 	CHECK(line_of(&t, "end of report") == BOOT_TIME_LINES - 1u);
 }
@@ -679,7 +681,7 @@ static void test_record(void)
 	uint32_t mhz = 0;
 	unsigned i;
 
-	CHECK(BOOT_TIME_RECORD == 182u * 4u + 8u * BOOT_TIME_COUNT + 4u);
+	CHECK(BOOT_TIME_RECORD == 189u * 4u + 8u * BOOT_TIME_COUNT + 4u);
 	CHECK(BOOT_TIME_COUNT == 59u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
@@ -1201,6 +1203,50 @@ static void test_boot_menu(void)
 	}
 }
 
+/*
+ * The front's version 2 reports (S-01.023), and how the running slot was
+ * found: the front's span from the key read to its jump beside the main
+ * image's own inference, run for comparison. The record carries them.
+ */
+static void test_front_slot(void)
+{
+	struct boot_time t = fresh(), back;
+	uint8_t rec[BOOT_TIME_RECORD];
+	uint32_t mhz = 0;
+
+	t.flags = BOOT_TIME_FRONT_REPORTS;
+	t.front_gap_us = 840u;
+	t.front_overruns = 3u;
+	t.front_te_misses = 1u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 26u,
+		      "front: longest gap between PSoC link reads 840 us, 3 reads found the "
+		      "receiver overrun, 1 frames sent without a TE edge"));
+	boot_time_mark(&t, BOOT_TIME_SLOT_FOUND, US(900000));
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 27u,
+		      "running slot: inferred by the main image from the slots' streams"));
+	t.flags |= BOOT_TIME_SLOT_GIVEN;
+	t.slot_given = 1u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 27u, "running slot: Slot 2, from the front's record"));
+	boot_time_mark(&t, BOOT_TIME_KEYS, US(400000));
+	boot_time_mark(&t, BOOT_TIME_FRONT_HANDOFF, US(412500));
+	t.flags |= BOOT_TIME_SLOT_TIMED;
+	t.slot_infer = US(61250);
+	t.slot_inferred = 1u;
+	CHECK(line_is(&t, BOOT_TIME_COUNT + 27u,
+		      "running slot: Slot 2, from the front's record; front, key read to jump "
+		      "(image check, start log, running slot, drain) 12.500 ms; main image's "
+		      "inference from both slots, timed only, not used: 61.250 ms, Slot 2"));
+	t.slot_inferred = 2u;
+	boot_time_pack(&t, MHZ, rec);
+	CHECK(boot_time_unpack(rec, &back, &mhz));
+	CHECK(back.front_gap_us == 840u && back.front_overruns == 3u && back.front_te_misses == 1u &&
+	      back.slot_given == 1u && back.slot_inferred == 2u && back.slot_infer == US(61250));
+	CHECK(line_is(&back, BOOT_TIME_COUNT + 27u,
+		      "running slot: Slot 2, from the front's record; front, key read to jump "
+		      "(image check, start log, running slot, drain) 12.500 ms; main image's "
+		      "inference from both slots, timed only, not used: 61.250 ms, no slot"));
+}
+
 int main(void)
 {
 	RUN(test_mark);
@@ -1219,5 +1265,6 @@ int main(void)
 	RUN(test_power);
 	RUN(test_os_start);
 	RUN(test_boot_menu);
+	RUN(test_front_slot);
 	return check_summary("boot_time");
 }

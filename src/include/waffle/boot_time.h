@@ -37,7 +37,8 @@ enum boot_time_id {
 	BOOT_TIME_SLOT_PROBED,		/* the slot to read first chosen */
 	BOOT_TIME_SLOT_READ,		/* its stream read, once, for the stream */
 	BOOT_TIME_SLOT_CHECKED,		/* its CRC computed over that read */
-	BOOT_TIME_SLOT_FOUND,		/* compared with memory: the running slot inferred */
+	BOOT_TIME_SLOT_FOUND,		/* the running slot inferred from memory, or
+					 * taken from the front's record (first then) */
 	BOOT_TIME_STREAM_END,		/* the slave's boot stream sent */
 	BOOT_TIME_SLAVE_READY,		/* the slave ready for the init session */
 	BOOT_TIME_LINKED,		/* init, echo and the first pull done */
@@ -117,6 +118,14 @@ enum boot_time_id {
 #define BOOT_TIME_LINE_DRAWN    0x8000u	/* the line under the logo drawn */
 #define BOOT_TIME_NORDIC_ANSWERED 0x10000u	/* the Nordic answered its greeting */
 #define BOOT_TIME_MOUNT_READ    0x20000u	/* mount holds the slave's figures */
+#define BOOT_TIME_FRONT_REPORTS 0x40000u	/* the front's record of version 2:
+						 * front_gap_us, front_overruns and
+						 * front_te_misses hold its reports */
+#define BOOT_TIME_SLOT_GIVEN    0x80000u	/* the running slot taken from that
+						 * record, slot_given */
+#define BOOT_TIME_SLOT_TIMED    0x100000u	/* and the inference from the slots'
+						 * streams run for comparison:
+						 * slot_infer, slot_inferred */
 
 /*
  * The slave's side of the mount (S-09.018), gathered on the slave in a
@@ -282,6 +291,14 @@ struct boot_time {
 	/* Held mode's start: the mount's result and error (S-09.041), the
 	 * Nordic greeting's tries (S-08.002), and the slave's figures. */
 	uint32_t mount_rc, mount_err, greet_tries;
+	/* The front's version 2 record (S-01.023): the longest time between
+	 * two of its reads of the PSoC link's receiver in us, the reads that
+	 * found its overrun flag set, the frames sent without a TE edge; the
+	 * running slot it named; and with BOOT_TIME_SLOT_TIMED the cycles the
+	 * main image's own inference took and the slot it gave (2: none). */
+	uint32_t front_gap_us, front_overruns, front_te_misses;
+	uint32_t slot_given, slot_inferred;
+	uint64_t slot_infer;
 	struct boot_time_mount mount;
 	struct boot_time_split split;
 };
@@ -373,11 +390,12 @@ void boot_time_gap(struct boot_time *t, uint64_t cycles, uint32_t at);
  * (seven lines), the stream's faster reads, the power at the start, the start
  * into the OS in spans (two lines), held mode's start to its first frame in
  * spans (two lines), the slave's mount (four lines: its reads, their
- * phases, the time outside them and the caches), and an end line. A line k with nothing to say
+ * phases, the time outside them and the caches), the front's reports, how
+ * the running slot was found with the time each side took, and an end line. A line k with nothing to say
  * leaves *out empty and returns false. cycles_per_us converts counts after
  * INIT's clock set-up; counts taken before it are shown as they are.
  */
-#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 27u)
+#define BOOT_TIME_LINES (BOOT_TIME_COUNT + 29u)
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out);
 
@@ -387,8 +405,8 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
  * bytes; unpack() refuses a record whose magic, version or check is wrong.
  */
 #define BOOT_TIME_MAGIC   0x4D495442u	/* "BTIM" */
-#define BOOT_TIME_VERSION 17u
-#define BOOT_TIME_WORDS   (68u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
+#define BOOT_TIME_VERSION 18u
+#define BOOT_TIME_WORDS   (75u + BOOT_TIME_RAISE_STEPS + 2u * BOOT_TIME_FIRST + \
 			   3u * BOOT_TIME_GAPS + BOOT_TIME_MOUNT_WORDS)
 #define BOOT_TIME_RECORD  (BOOT_TIME_WORDS * 4u + 8u * BOOT_TIME_COUNT + 4u)
 void boot_time_pack(const struct boot_time *t, uint32_t cycles_per_us,

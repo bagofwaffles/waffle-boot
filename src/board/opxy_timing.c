@@ -112,6 +112,13 @@ void opxy_timing_front(const struct fr_handoff *ho)
 	for (i = 0; i < sizeof flag / sizeof flag[0]; i++)
 		if ((ho->flags & flag[i].from) != 0u)
 			opxy_boot_time.flags |= flag[i].to;
+	if (ho->version >= 2u) {
+		/* S-01.023's reports, offsets 145 to 151 */
+		opxy_boot_time.front_gap_us = ho->link_gap_max_us;
+		opxy_boot_time.front_overruns = ho->link_overruns;
+		opxy_boot_time.front_te_misses = ho->te_misses;
+		opxy_boot_time.flags |= BOOT_TIME_FRONT_REPORTS;
+	}
 	if (ho->battery_len != 0u) {
 		struct s07_battery b;
 
@@ -394,6 +401,14 @@ void opxy_timing_slot_check(const struct s02_image *im)
 	opxy_boot_time.slot_reread++;
 	if (im->good)
 		opxy_boot_time.slot_reread_good++;
+}
+
+void opxy_timing_slot_inferred(unsigned given, uint64_t cycles, unsigned inferred)
+{
+	opxy_boot_time.slot_given = given;
+	opxy_boot_time.slot_infer = cycles;
+	opxy_boot_time.slot_inferred = inferred;
+	opxy_boot_time.flags |= BOOT_TIME_SLOT_GIVEN | BOOT_TIME_SLOT_TIMED;
 }
 
 void opxy_timing_battery(bool on)

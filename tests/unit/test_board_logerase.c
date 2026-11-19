@@ -3,7 +3,8 @@
  * S-02.101: the main image's erase of the start log (opxy_front.c): the
  * scan of a slot's log as the front reads it, every branch of the guard,
  * the erase and its read-back, and each state a cut of that erase can
- * leave, with what the next start then does. Also the settings sector's
+ * leave, with what the next start then does; the front's version 2 record
+ * lifting the guard on the other slot's trial mark. Also the settings sector's
  * save and clear (opxy_store.c), made with the writers' tries (S-13b.017).
  */
 #include "support/check.h"
@@ -59,7 +60,8 @@ static void unfinished(unsigned slot, unsigned e)
 
 static struct opxy_log_start normal(unsigned s, unsigned entry)
 {
-	struct opxy_log_start st = { true, true, (uint8_t)s, (uint16_t)entry, true, (uint8_t)s, false };
+	struct opxy_log_start st = { true, true, (uint8_t)s, (uint16_t)entry, true, (uint8_t)s, false,
+				      false, 0 };
 
 	return st;
 }
@@ -273,6 +275,71 @@ static void master(unsigned s, bool logged, unsigned entry)
 	m.running_slot = (uint8_t)s;
 	s14_log_init(&m.sv.log, S14_MASTER, NULL, NULL, NULL, NULL);
 	ff_reset(&g_f);
+}
+
+/*
+ * S-02.101 guard 4: the other slot's trial mark (0xFD pending, 0xFC started)
+ * blocks the (b) or (c) erase, unless the front's version 2 record says it
+ * established the selected slot and marked no trial. With version 1, the
+ * running flag clear, the trial mark set, or the other slot named, the
+ * guard stands. Through the tidy step, from the record as taken.
+ */
+static void test_front_record(void)
+{
+	static const struct { uint16_t version; uint32_t flags; uint8_t run; bool erased; } c[] = {
+		{ 1, FR_HO_RUNNING, 0, false },			/* version 1 */
+		{ 2, FR_HO_RUNNING, 0, true },			/* no trial, this slot */
+		{ 2, FR_HO_RUNNING | FR_HO_TRIAL_MARKED, 0, false },
+		{ 2, FR_HO_RUNNING, 1, false },			/* the other slot named */
+		{ 2, 0, 0, false },				/* no running flag */
+	};
+	static const uint8_t other[] = { 0xFD, OPXY_TRIAL_STARTED_BYTE };
+
+	for (unsigned i = 0; i < sizeof c / sizeof c[0]; i++)
+		for (unsigned o = 0; o < sizeof other; o++)
+			for (unsigned odd = 0; odd < 2u; odd++) {
+				flash(0);
+				/* full, or odd */
+				memset(g_f.mem + FR_LOG_OFF(0), odd ? 0xFF : 0x00, S02_SECTOR_SIZE);
+				if (odd)
+					g_f.mem[FR_LOG_OFF(0) + 2u] = 0x01u;
+				g_f.mem[FR_LOG_OFF(1)] = other[o];
+				master(0, false, 0);
+				m.ho.version = c[i].version;
+				m.ho.flags = c[i].flags;
+				m.ho.run_slot = c[i].run;
+				opxy_start_log_tidy(&m);
+				CHECK(m.log_tidied);
+				CHECK(g_f.nmut == (c[i].erased ? 1u : 0u));
+				CHECK(g_f.mem[FR_LOG_OFF(0)] == (c[i].erased ? 0xFFu : odd ? 0xFFu : 0x00u));
+				CHECK(g_f.mem[FR_LOG_OFF(0) + 2u] ==
+				      (c[i].erased ? 0xFFu : odd ? 0x01u : 0x00u));
+				/* never the other slot's log */
+				CHECK(g_f.mem[FR_LOG_OFF(1)] == other[o]);
+			}
+	/* the guard alone: the record's word for this slot lifts it, another
+	 * slot's does not */
+	{
+		struct opxy_log_start st = normal(0, 0);
+		uint32_t off;
+
+		st.logged = false;
+		flash(0);
+		memset(g_f.mem + FR_LOG_OFF(0), 0x00, S02_SECTOR_SIZE);
+		g_f.mem[FR_LOG_OFF(1)] = 0xFD;
+		CHECK(guard(&st, &off) == OPXY_ERASE_NO);
+		st.no_trial = true;
+		CHECK(guard(&st, &off) == OPXY_ERASE_FULL && off == FR_LOG_OFF(0));
+		st.no_trial_slot = 1;
+		CHECK(guard(&st, &off) == OPXY_ERASE_NO);
+		/* the other conditions still hold: a trial start, not established */
+		st.no_trial_slot = 0;
+		st.trial = true;
+		CHECK(guard(&st, &off) == OPXY_ERASE_NO);
+		st.trial = false;
+		st.established = false;
+		CHECK(guard(&st, &off) == OPXY_ERASE_NO);
+	}
 }
 
 static void test_tidy(void)
@@ -494,6 +561,7 @@ int main(void)
 	RUN(test_start_conditions);
 	RUN(test_full_odd);
 	RUN(test_tidy);
+	RUN(test_front_record);
 	RUN(test_cuts);
 	RUN(test_store_tries);
 	return check_summary("test_board_logerase");

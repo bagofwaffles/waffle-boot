@@ -84,6 +84,10 @@ void opxy_timing_stream_end(void);
  * s02_image_check(). */
 void opxy_timing_slot_read(const struct s02_image *im);
 void opxy_timing_slot_check(const struct s02_image *im);
+/* The running slot the front's record gave, and the inference from the
+ * slots' streams run once for comparison: its cycles and its answer (2:
+ * none). */
+void opxy_timing_slot_inferred(unsigned given, uint64_t cycles, unsigned inferred);
 #ifndef OPXY_BOOT_TIMING_WINDOW_US
 #define OPXY_BOOT_TIMING_WINDOW_US OPXY_BOOT_LINK_SETTLE_US
 #endif
@@ -376,6 +380,19 @@ struct opxy_master {
  */
 bool opxy_front_take(struct fr_handoff *out);
 /*
+ * S-01.023: the checks on the record's bytes at rec (FR_HO_SIZE readable):
+ * version 1 of FR_HO_SIZE_V1 bytes or version 2 of FR_HO_SIZE, its magic and
+ * its CRC; version 2's fields read 0 in a version 1 record. True with the
+ * record in *out.
+ */
+bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out);
+/* S-01.023: a version 2 record with FR_HO_RUNNING names the running slot,
+ * established (S-01.002); false otherwise. */
+bool opxy_front_running(const struct fr_handoff *ho, unsigned *slot);
+/* The same, with FR_HO_TRIAL_MARKED clear: the front marked no trial
+ * (S-02.101 guard 4). */
+bool opxy_front_no_trial(const struct fr_handoff *ho, unsigned *slot);
+/*
  * S-02.095: the main image's half of the start log. opxy_log_finish_at()
  * gives the byte and value that clear the finished bit of the entry the
  * record names, false when it names none (no flag, a slot past 1, an entry
@@ -442,6 +459,10 @@ struct opxy_log_start {
 	bool established;	/* the running slot (S-01.002) */
 	uint8_t running;
 	bool trial;		/* its stream was read under the trial mark */
+	/* S-02.101 guard 4: the front's version 2 record says it established
+	 * no_trial_slot as the running slot and marked no trial */
+	bool no_trial;
+	uint8_t no_trial_slot;
 };
 enum opxy_log_erase { OPXY_ERASE_NO, OPXY_ERASE_USED, OPXY_ERASE_FULL, OPXY_ERASE_ODD };
 /* The guard: why the sector *off, the selected slot's last sector, is to be

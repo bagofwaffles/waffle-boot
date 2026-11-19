@@ -15,6 +15,7 @@
 #include "s02_fake_flash.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/s05_handoff.h"
+#include "waffle/wire_crc.h"
 
 #define MEMB 0x88040000u	/* the image's code and constant data */
 #define MEML 0x4000u
@@ -26,9 +27,13 @@ static uint8_t g_mem[MEML];
 static uint8_t g_a[0x2000], g_b[0x2000];
 static uint32_t g_alen, g_blen;
 
+/* The memory compares made, and the slots the faster read touched. */
+static unsigned g_mem_reads, g_fast_slots;
+
 static bool mem_read(void *ctx, uint32_t addr, uint8_t *buf, uint32_t len)
 {
 	(void)ctx;
+	g_mem_reads++;
 	if (addr < MEMB || (uint64_t)addr + len > (uint64_t)MEMB + MEML)
 		return false;
 	memcpy(buf, g_mem + (addr - MEMB), len);
@@ -46,6 +51,7 @@ static int fast_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 	const struct fake_flash *f = ctx;
 
 	g_fast++;
+	g_fast_slots |= 1u << (off >= s02_slot_base(1) ? 1u : 0u);
 	memcpy(buf, f->mem + off, len);
 	if (g_fast_wrong)
 		for (uint32_t i = 0x40u; i < len; i += 0x100u)
@@ -134,7 +140,192 @@ static void set_up(unsigned selected, const uint8_t *loaded)
 	memcpy(g_mem, loaded + 16, 3000);
 	g_warned = 0;
 	g_fast = 0;
+	g_mem_reads = 0;
+	g_fast_slots = 0;
 	g_fast_wrong = false;
+}
+
+/* A hand-off record's bytes (S-01.023): the layout of `version` with the
+ * size field `size`, its CRC at size - 4; version 2's fields filled in all
+ * the same, so that a version 1 record shows they are not taken. */
+static void ho_bytes(uint8_t rec[FR_HO_SIZE], unsigned version, unsigned size, uint32_t flags,
+		     uint8_t run_slot)
+{
+	memset(rec, 0, FR_HO_SIZE);
+	ff_put32(rec, FR_HO_MAGIC);
+	rec[4] = (uint8_t)version;
+	rec[6] = (uint8_t)size;
+	ff_put32(rec + 8, flags);
+	rec[45] = 1u;			/* log_slot */
+	rec[46] = 0x34u;		/* log_entry */
+	rec[47] = 0x12u;
+	rec[80] = 0x77u;		/* the first stamp */
+	rec[144] = run_slot;
+	rec[145] = 9u;			/* te_misses */
+	rec[146] = 0x02u;		/* link_overruns */
+	rec[147] = 0x01u;
+	ff_put32(rec + 148, 1234u);	/* link_gap_max_us */
+	if (size >= 8u && size <= FR_HO_SIZE)
+		ff_put32(rec + size - 4u, wire_crc32(0, rec, size - 4u));
+}
+
+/* S-01.023: the two layouts the main image accepts, and the rest refused. */
+static void test_accept(void)
+{
+	uint8_t rec[FR_HO_SIZE];
+	struct fr_handoff ho;
+	unsigned slot = 9;
+
+	ho_bytes(rec, 2, FR_HO_SIZE, FR_HO_RUNNING | FR_HO_START_LOGGED, 1);
+	CHECK(opxy_front_accept(rec, &ho));
+	CHECK(ho.version == 2u && ho.size == FR_HO_SIZE && ho.log_slot == 1u &&
+	      ho.log_entry == 0x1234u && ho.stamps[0] == 0x77u);
+	CHECK(ho.run_slot == 1u && ho.te_misses == 9u && ho.link_overruns == 0x0102u &&
+	      ho.link_gap_max_us == 1234u);
+	CHECK(opxy_front_running(&ho, &slot) && slot == 1u);
+	/* version 1 of 148 bytes: version 2's fields read 0, its flag not taken */
+	ho_bytes(rec, 1, FR_HO_SIZE_V1, FR_HO_RUNNING | FR_HO_START_LOGGED, 1);
+	memset(&ho, 0xA5, sizeof ho);
+	CHECK(opxy_front_accept(rec, &ho));
+	CHECK(ho.version == 1u && ho.size == FR_HO_SIZE_V1 && ho.log_entry == 0x1234u);
+	CHECK(ho.run_slot == 0u && ho.te_misses == 0u && ho.link_overruns == 0u &&
+	      ho.link_gap_max_us == 0u);
+	slot = 9;
+	CHECK(!opxy_front_running(&ho, &slot) && slot == 9u);
+	CHECK(!opxy_front_no_trial(&ho, &slot));
+	/* a version with the other's size, each CRC right for that size */
+	ho_bytes(rec, 2, FR_HO_SIZE_V1, 0, 0);
+	CHECK(!opxy_front_accept(rec, &ho));
+	ho_bytes(rec, 1, FR_HO_SIZE, 0, 0);
+	CHECK(!opxy_front_accept(rec, &ho));
+	ho_bytes(rec, 3, FR_HO_SIZE, 0, 0);
+	CHECK(!opxy_front_accept(rec, &ho));
+	/* a wrong CRC, a wrong magic, and any one byte changed */
+	for (unsigned v = 1; v <= 2u; v++) {
+		const unsigned n = v == 1u ? FR_HO_SIZE_V1 : FR_HO_SIZE;
+
+		ho_bytes(rec, v, n, 0, 0);
+		rec[n - 1u] ^= 0x01u;
+		CHECK(!opxy_front_accept(rec, &ho));
+		ho_bytes(rec, v, n, 0, 0);
+		rec[0] ^= 0x01u;
+		ff_put32(rec + n - 4u, wire_crc32(0, rec, n - 4u));
+		CHECK(!opxy_front_accept(rec, &ho));
+		for (unsigned i = 0; i < n; i++) {
+			ho_bytes(rec, v, n, 0, 0);
+			rec[i] ^= 0x40u;
+			CHECK(!opxy_front_accept(rec, &ho));
+		}
+	}
+	/* version 2: the flag with no slot that exists; the trial mark */
+	ho_bytes(rec, 2, FR_HO_SIZE, FR_HO_RUNNING, 2);
+	CHECK(opxy_front_accept(rec, &ho) && !opxy_front_running(&ho, &slot));
+	ho_bytes(rec, 2, FR_HO_SIZE, 0, 1);
+	CHECK(opxy_front_accept(rec, &ho) && !opxy_front_running(&ho, &slot));
+	ho_bytes(rec, 2, FR_HO_SIZE, FR_HO_RUNNING | FR_HO_TRIAL_MARKED, 0);
+	CHECK(opxy_front_accept(rec, &ho) && opxy_front_running(&ho, &slot) && slot == 0u);
+	CHECK(!opxy_front_no_trial(&ho, &slot));
+	ho_bytes(rec, 2, FR_HO_SIZE, FR_HO_RUNNING, 0);
+	CHECK(opxy_front_accept(rec, &ho) && opxy_front_no_trial(&ho, &slot) && slot == 0u);
+}
+
+/* The front's record for the stream tests: taken, of `version`. */
+static void give_record(unsigned version, uint32_t flags, uint8_t run_slot)
+{
+	uint8_t rec[FR_HO_SIZE];
+
+	ho_bytes(rec, version, version == 1u ? FR_HO_SIZE_V1 : FR_HO_SIZE, flags, run_slot);
+	m.front = opxy_front_accept(rec, &m.ho);
+	CHECK(m.front);
+}
+
+/* No flash read of the slot not named, and no memory compared. */
+static bool only_slot_read(unsigned slot)
+{
+	const uint32_t lo = s02_slot_base(1u - slot), hi = lo + S02_SLOT_CAPACITY;
+
+	for (unsigned i = 0; i < g_f.nlog && i < FF_LOG_MAX; i++)
+		if (g_f.log[i].off >= lo && g_f.log[i].off < hi)
+			return false;
+	return g_mem_reads == 0u && g_fast_slots == 1u << slot;
+}
+
+/*
+ * S-01.023: the running slot from a version 2 record with its flag, read
+ * from no stream; its stream alone read, for the slave, and judged as
+ * always (S-02.016). Without the flag, or with version 1, the streams.
+ */
+static void test_from_record(void)
+{
+	const uint8_t *stream = NULL;
+	bool established = false;
+	uint32_t len = 0;
+	unsigned slot;
+
+	/* the record names the slot memory would not: memory holds Slot 1's
+	 * image, the selector names Slot 1, the record Slot 2 */
+	for (unsigned named = 0; named < 2u; named++) {
+		set_up(0, g_a);
+		put_slot(0, g_a, g_alen, 0);
+		put_slot(1, g_b, g_blen, 0);
+		give_record(2, FR_HO_RUNNING, (uint8_t)named);
+		slot = opxy_stream_slot(&m, &g_src, &established);
+		CHECK(established);
+		CHECK_EQ(slot, named);
+		CHECK_EQ(g_warned, 0u);
+		CHECK(only_slot_read(named));
+		CHECK(opxy_stream_checked(&m, slot, established, &stream, &len));
+		CHECK_EQ(len, named ? g_blen : g_alen);
+		CHECK(memcmp(stream, named ? g_b : g_a, len) == 0);
+		CHECK_EQ(g_fast, 1u);		/* read once */
+		CHECK(only_slot_read(named));
+	}
+	/* a trial start the front established: the trial slot's record still
+	 * read, and its stream sent on the trial mark (S-02.016) */
+	set_up(0, g_b);
+	put_slot(0, g_a, g_alen, 0);
+	put_slot(1, g_b, g_blen, 2);
+	give_record(2, FR_HO_RUNNING | FR_HO_TRIAL_MARKED, 1);
+	slot = opxy_stream_slot(&m, &g_src, &established);
+	CHECK(established && slot == 1u);
+	CHECK(only_slot_read(1));
+	CHECK(opxy_stream_trial(1));
+	CHECK(opxy_stream_checked(&m, slot, established, &stream, &len));
+	CHECK_EQ(len, g_blen);
+	/* a bad CRC in the slot named: established, not sent */
+	set_up(0, g_a);
+	put_slot(0, g_a, g_alen, 1);
+	put_slot(1, g_b, g_blen, 0);
+	give_record(2, FR_HO_RUNNING, 0);
+	slot = opxy_stream_slot(&m, &g_src, &established);
+	CHECK(established && slot == 0u);
+	CHECK(!opxy_stream_checked(&m, slot, established, &stream, &len));
+	CHECK_EQ(len, 0u);
+	/* without the flag, with version 1, with no slot that exists: the
+	 * streams, as before; memory holds Slot 2's image */
+	for (unsigned c = 0; c < 3u; c++) {
+		set_up(0, g_b);
+		put_slot(0, g_a, g_alen, 0);
+		put_slot(1, g_b, g_blen, 0);
+		if (c == 0u)
+			give_record(2, 0, 0);
+		else if (c == 1u)
+			give_record(1, FR_HO_RUNNING, 0);
+		else
+			give_record(2, FR_HO_RUNNING, 2);
+		slot = opxy_stream_slot(&m, &g_src, &established);
+		CHECK(established);
+		CHECK_EQ(slot, 1u);
+		CHECK(g_mem_reads != 0u);
+	}
+	/* no record taken at all: the streams */
+	set_up(0, g_b);
+	put_slot(0, g_a, g_alen, 0);
+	put_slot(1, g_b, g_blen, 0);
+	give_record(2, FR_HO_RUNNING, 0);
+	m.front = false;
+	slot = opxy_stream_slot(&m, &g_src, &established);
+	CHECK(established && slot == 1u && g_mem_reads != 0u);
 }
 
 int main(void)
@@ -279,6 +470,9 @@ int main(void)
 	CHECK(memcmp(stream, g_b, len) == 0);
 	CHECK_EQ(g_fast, 1u);
 	CHECK_EQ(g_warned, 0u);
+
+	test_accept();
+	test_from_record();
 
 	/* the two steps write nothing */
 	for (unsigned i = 0; i < g_f.nlog && i < FF_LOG_MAX; i++)

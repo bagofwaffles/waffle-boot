@@ -248,27 +248,85 @@ static bool loaded_read(void *ctx, uint32_t addr, uint8_t *buf, uint32_t len)
  * this image it is the slot later starts settle on (S-02.054's tie-break),
  * as the front names it. When the slot is not established (neither slot
  * matches, a read failure) it is the selected slot, 0 when the selector
- * cannot be read, and a log line; *established says which.
+ * cannot be read, and a log line; *established says which. A version 2
+ * hand-off record with FR_HO_RUNNING gives the slot instead (S-01.023),
+ * established, and only that slot's stream is read, for the slave.
  */
 static struct s02_image stream_image;
+
+/* The inference itself, into im: 2 when no slot is established. stamped
+ * says whether this is the start's own (its stamps and counts), or the
+ * timing build's comparison run, which leaves both alone. */
+static unsigned infer_slot(struct opxy_master *m, const struct opxy_stream_src *src,
+			   unsigned selected, struct s02_image *im, bool stamped)
+{
+	unsigned first, slot = 2u;
+
+	s02_image_init(im, slot_stream, sizeof(slot_stream), src->fast, src->fast_ctx);
+	OPXY_CRUMB(11u); first = s02_running_first(&m->flash, src->mem, &src->probe, selected, im);
+	if (stamped) {
+		OPXY_TIME(BOOT_TIME_SLOT_PROBED);
+	}
+	(void)s02_image_read(&m->flash, first, im);
+	if (stamped) {
+		OPXY_TIME(BOOT_TIME_SLOT_READ); OPXY_TIMING_SLOT_READ(im);
+	}
+	(void)s02_image_check(&m->flash, im);
+	if (stamped) {
+		OPXY_TIME(BOOT_TIME_SLOT_CHECKED); OPXY_TIMING_SLOT_CHECK(im);
+	}
+	if (s02_running_image(&m->flash, src->mem, &src->probe, im, first, &slot) != S02_OK)
+		slot = 2u;
+	return slot;
+}
+
+#if OPXY_BOOT_TIMING
+/* The timing build alone: with the running slot taken from the front's
+ * record, the inference from the slots' streams is run once more, after
+ * that decision, so that its time can be shown beside the front's. Its
+ * answer goes to the report only, and the stream buffer is emptied, so the
+ * start then reads the running slot as a normal build does. It writes
+ * nothing. */
+static void infer_slot_timed(struct opxy_master *m, const struct opxy_stream_src *src,
+			     unsigned given)
+{
+	struct s02_selector sel;
+	unsigned selected = 0u, slot;
+	const uint64_t from = wb_core_cycles();
+
+	if (s02_read_selector(&m->flash, &sel) == S02_OK)
+		selected = s02_selected_slot(sel.index);
+	slot = infer_slot(m, src, selected, &stream_image, false);
+	opxy_timing_slot_inferred(given, wb_core_cycles() - from, slot);
+	s02_image_init(&stream_image, slot_stream, sizeof(slot_stream), src->fast, src->fast_ctx);
+}
+#endif
 
 unsigned opxy_stream_slot(struct opxy_master *m, const struct opxy_stream_src *src,
 			  bool *established)
 {
 	struct s02_image *im = &stream_image;
 	struct s02_selector sel;
-	unsigned selected = 0u, first, slot = 2u;
+	unsigned selected = 0u, slot = 2u;
 
+	/* S-01.023: the front's version 2 record names the running slot; no
+	 * stream is read to decide it, the running slot's alone for the
+	 * slave (S-09.002) */
+	if (m->front && opxy_front_running(&m->ho, &slot)) {
+		OPXY_TIME(BOOT_TIME_SLOT_FOUND);
+#if OPXY_BOOT_TIMING
+		infer_slot_timed(m, src, slot);
+#endif
+		s02_image_init(im, slot_stream, sizeof(slot_stream), src->fast, src->fast_ctx);
+		(void)s02_image_read(&m->flash, slot, im); OPXY_TIME(BOOT_TIME_SLOT_READ); OPXY_TIMING_SLOT_READ(im);
+		(void)s02_image_check(&m->flash, im); OPXY_TIME(BOOT_TIME_SLOT_CHECKED); OPXY_TIMING_SLOT_CHECK(im);
+		*established = true;
+		return slot;
+	}
 	if (s02_read_selector(&m->flash, &sel) == S02_OK)
 		selected = s02_selected_slot(sel.index);
-	s02_image_init(im, slot_stream, sizeof(slot_stream), src->fast, src->fast_ctx);
-	OPXY_CRUMB(11u); first = s02_running_first(&m->flash, src->mem, &src->probe, selected, im);
-	OPXY_TIME(BOOT_TIME_SLOT_PROBED);
-	(void)s02_image_read(&m->flash, first, im); OPXY_TIME(BOOT_TIME_SLOT_READ); OPXY_TIMING_SLOT_READ(im);
-	(void)s02_image_check(&m->flash, im); OPXY_TIME(BOOT_TIME_SLOT_CHECKED); OPXY_TIMING_SLOT_CHECK(im);
 	/* 2, no slot: neither matches, or a failure */
-	if (s02_running_image(&m->flash, src->mem, &src->probe, im, first, &slot) != S02_OK)
-		slot = 2u;
+	slot = infer_slot(m, src, selected, im, true);
 	*established = slot < 2u; OPXY_CRUMB(12u); OPXY_TIME(BOOT_TIME_SLOT_FOUND);
 	if (*established)
 		return slot;
@@ -492,6 +550,17 @@ static enum s05_keys psoc_start(void *ctx)
 		if ((f & FR_HO_GREET_WAITED) != 0u)
 			psoc_log(m, S07_LOG_GREET_FAILED, 0u, 0u);
 		m->display_lit = (f & FR_HO_PANEL_LIT) != 0u;
+		if (m->ho.version >= 2u) {
+			/* S-01.023: the front's reports, logged and not acted on */
+			s14_text_init(&t);
+			s14_text_str(&t, "front: longest PSoC link read gap ");
+			s14_text_dec(&t, m->ho.link_gap_max_us);
+			s14_text_str(&t, " us, overruns ");
+			s14_text_dec(&t, m->ho.link_overruns);
+			s14_text_str(&t, ", frames without TE ");
+			s14_text_dec(&t, m->ho.te_misses);
+			s14_log_text(&m->sv.log, S14_DEBUG, S14_TAG("boot"), &t);
+		}
 		OPXY_TIMING_FRONT(m);
 		if (s07_battery_rest(&m->psoc) == S07_POWEROFF)
 			opxy_powered_off(m);	/* S-07.051 */

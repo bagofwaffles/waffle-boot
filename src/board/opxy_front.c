@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "waffle/bytes.h"
 #include "waffle/wire_crc.h"
 
 /* S-01.007, S-01.021: as the front found them at the INIT call (its
@@ -18,30 +19,69 @@ uint32_t opxy_init_dflt;
 /* The INIT stage's stamps, for BOOT_TIMING=1 (waffle/board/opxy_boot.h). */
 uint64_t opxy_init_cycles[3];
 
+/* The record's layout on the host as on the target, up to its CRC; the host
+ * adds only tail padding. */
+_Static_assert(offsetof(struct fr_handoff, stamps) == 80u &&
+	       offsetof(struct fr_handoff, run_slot) == 144u &&
+	       offsetof(struct fr_handoff, link_gap_max_us) == 148u &&
+	       offsetof(struct fr_handoff, crc32) == FR_HO_SIZE - 4u,
+	       "S-01.023: the hand-off record's offsets");
+
+bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out)
+{
+	const uint16_t version = wb_get_le16(rec + 4u), size = wb_get_le16(rec + 6u);
+	uint32_t n;
+
+	/* S-01.023: version 1 of 148 bytes or version 2 of 156, each with its
+	 * CRC in its last four bytes; version 1 reads 0 in version 2's fields */
+	if (wb_get_le32(rec) != FR_HO_MAGIC)
+		return false;
+	if (version == 1u && size == FR_HO_SIZE_V1)
+		n = FR_HO_SIZE_V1 - 4u;
+	else if (version == 2u && size == FR_HO_SIZE)
+		n = FR_HO_SIZE - 4u;
+	else
+		return false;
+	if (wire_crc32(0, rec, n) != wb_get_le32(rec + n))
+		return false;
+	memset(out, 0, sizeof(*out));
+	memcpy(out, rec, n);
+	out->crc32 = wb_get_le32(rec + n);
+	return true;
+}
+
+bool opxy_front_running(const struct fr_handoff *ho, unsigned *slot)
+{
+	/* S-01.023: version 2's flag, with a slot that exists */
+	if (ho->version < 2u || (ho->flags & FR_HO_RUNNING) == 0u || ho->run_slot > 1u)
+		return false;
+	*slot = ho->run_slot;
+	return true;
+}
+
+bool opxy_front_no_trial(const struct fr_handoff *ho, unsigned *slot)
+{
+	return opxy_front_running(ho, slot) && (ho->flags & FR_HO_TRIAL_MARKED) == 0u;
+}
+
 bool opxy_front_take(struct fr_handoff *out)
 {
 #if defined(__bfin__) && !defined(OPXY_TEST_OS)
-	const uint8_t *rec = (const uint8_t *)(uintptr_t)FR_HANDOFF_ADDR;
-	struct fr_handoff ho;
+	uint8_t rec[FR_HO_SIZE];
 
-	memcpy(&ho, rec, sizeof ho);
+	/* version 2's length; a version 1 record does not use the last 8 */
+	memcpy(rec, (const void *)(uintptr_t)FR_HANDOFF_ADDR, sizeof rec);
 	/* S-01.023: the record taken, its magic cleared, so a later stream
 	 * finds none: L2 survives a hard reset (NOMEMINIT, opxy_reset.c). The
 	 * DCPLB for L2 is write-through (cplb.c's bf703_dcplb), so the store
 	 * reaches L2 without a flush. */
 	*(volatile uint32_t *)(uintptr_t)FR_HANDOFF_ADDR = 0u;
-	if (ho.magic != FR_HO_MAGIC || ho.version != FR_HO_VERSION ||
-	    ho.size != sizeof ho ||
-	    wire_crc32(0, (const uint8_t *)&ho, offsetof(struct fr_handoff, crc32)) != ho.crc32)
-		return false;
-	*out = ho;
-	return true;
+	return opxy_front_accept(rec, out);
 #else
 	(void)out;
 	return false;
 #endif
 }
-
 
 bool opxy_log_finish_at(const struct fr_handoff *ho, uint32_t *off, uint8_t *value)
 {
@@ -220,9 +260,12 @@ enum opxy_log_erase opxy_log_erase_at(const struct s02_env *env, const struct op
 		 * the front's step may have been the trial start's mark of an
 		 * image both slots hold: no erase while the other slot's log
 		 * reads a trial pending or just started (0xFD or 0xFC, the rest
-		 * 0xFF), or cannot be read.
+		 * 0xFF), or cannot be read. Unless the front's version 2 record
+		 * names this slot as the one it established and marked no
+		 * trial: the other slot's mark is then a trial not taken in
+		 * this start.
 		 */
-		if (!st->logged) {
+		if (!st->logged && !(st->no_trial && st->no_trial_slot == s)) {
 			if (opxy_log_scan(env, 1u - s, &other) != 0 ||
 			    (other.trial_alone && (other.byte0 == 0xFDu ||
 						   other.byte0 == OPXY_TRIAL_STARTED_BYTE)))
@@ -261,12 +304,15 @@ void opxy_start_log_tidy(struct opxy_master *m)
 		[OPXY_ERASE_FULL] = "full",
 		[OPXY_ERASE_ODD] = "not valid",
 	};
+	unsigned named = 2u;
+	const bool no_trial = m->front && opxy_front_no_trial(&m->ho, &named);
 	const struct opxy_log_start st = {
 		m->front,
 		(m->ho.flags & FR_HO_START_LOGGED) != 0u && m->ho.log_slot <= 1u &&
 			m->ho.log_entry < FR_LOG_ENTRIES,
 		m->ho.log_slot, m->ho.log_entry,
 		m->running_established, m->running_slot, m->running_trial,
+		no_trial, (uint8_t)named,
 	};
 	enum opxy_log_erase e;
 	struct s14_text t;

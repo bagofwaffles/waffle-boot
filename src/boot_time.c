@@ -893,6 +893,63 @@ static void slot_dma_text(uint32_t v, struct s14_text *out)
 	}
 }
 
+/* The front's reports in its version 2 record (S-01.023). */
+static bool front_reports(const struct boot_time *t, struct s14_text *out)
+{
+	if (!(t->flags & BOOT_TIME_FRONT_REPORTS))
+		return false;
+	s14_text_str(out, "front: longest gap between PSoC link reads ");
+	s14_text_dec(out, t->front_gap_us);
+	s14_text_str(out, " us, ");
+	s14_text_dec(out, t->front_overruns);
+	s14_text_str(out, " reads found the receiver overrun, ");
+	s14_text_dec(out, t->front_te_misses);
+	s14_text_str(out, " frames sent without a TE edge");
+	return true;
+}
+
+static void text_slot(struct s14_text *out, uint32_t slot)
+{
+	if (slot > 1u) {
+		s14_text_str(out, "no slot");
+		return;
+	}
+	s14_text_str(out, "Slot ");
+	s14_text_dec(out, slot + 1u);
+}
+
+/*
+ * How the running slot was found, and what each side spent. The record has
+ * no stamp for the front's own step, so its span from the key read to the
+ * jump is shown, which holds the image check, the start log's step, the
+ * running slot and the drain; the main image's inference is the time of its
+ * comparison run (BOOT_TIME_SLOT_TIMED).
+ */
+static bool slot_line(const struct boot_time *t, uint32_t cpu, struct s14_text *out)
+{
+	if (!reached(t, BOOT_TIME_SLOT_FOUND))
+		return false;
+	if (!(t->flags & BOOT_TIME_SLOT_GIVEN)) {
+		s14_text_str(out, "running slot: inferred by the main image from the slots' streams");
+		return true;
+	}
+	s14_text_str(out, "running slot: ");
+	text_slot(out, t->slot_given);
+	s14_text_str(out, ", from the front's record");
+	if (reached(t, BOOT_TIME_KEYS) && reached(t, BOOT_TIME_FRONT_HANDOFF)) {
+		s14_text_str(out, "; front, key read to jump (image check, start log, "
+				  "running slot, drain) ");
+		text_ms(out, span_us(t, BOOT_TIME_KEYS, BOOT_TIME_FRONT_HANDOFF, cpu));
+	}
+	if (t->flags & BOOT_TIME_SLOT_TIMED) {
+		s14_text_str(out, "; main image's inference from both slots, timed only, not used: ");
+		text_ms(out, t->slot_infer / cpu);
+		s14_text_str(out, ", ");
+		text_slot(out, t->slot_inferred);
+	}
+	return true;
+}
+
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out)
 {
@@ -1066,6 +1123,10 @@ bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_u
 	case 25:
 		return mount_how(t, out);
 	case 26:
+		return front_reports(t, out);
+	case 27:
+		return slot_line(t, cpu, out);
+	case 28:
 		s14_text_str(out, "end of report");
 		return true;
 	default:
@@ -1096,7 +1157,7 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 	struct boot_time_split *sp = &t->split;
 	uint64_t *const two[] = {
 		&t->set, &t->stream_wait, &sp->xfer, &sp->window, &sp->sample, &sp->select,
-		&sp->send,
+		&sp->send, &t->slot_infer,
 	};
 	uint32_t *const one[] = {
 		&t->bytes, &t->flags, &t->stream_high,
@@ -1108,7 +1169,9 @@ static void counts(struct boot_time *t, uint32_t w[COUNT_WORDS], bool unpack)
 		&t->dma_fcs_samples, &t->dma_fcs_held, &t->dma_fcs_parts, &t->dma_fcs_first,
 		&t->power_state, &t->battery, &t->battery_ma, &t->copy_link, &t->copy_fell,
 		&t->copy_quad, &t->copy_qbytes, &t->copy_qstate, &t->copy_qtest_us,
-		&t->mount_rc, &t->mount_err, &t->greet_tries, &t->mount.valid, &t->mount.cpu,
+		&t->mount_rc, &t->mount_err, &t->greet_tries, &t->front_gap_us,
+		&t->front_overruns, &t->front_te_misses, &t->slot_given, &t->slot_inferred,
+		&t->mount.valid, &t->mount.cpu,
 		&t->mount.mount_us, &t->mount.reads, &t->mount.failed, &t->mount.read_us,
 		&t->mount.read_min, &t->mount.read_max, &t->mount.tags_reads, &t->mount.tags_us,
 		&t->mount.whole_reads, &t->mount.fell_back, &t->mount.allocs, &t->mount.frees,
