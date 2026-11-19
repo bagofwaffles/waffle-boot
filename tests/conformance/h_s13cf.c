@@ -146,7 +146,7 @@ static int cmp_line(const void *a, const void *b)
  * short or odd run. */
 static void emit_bytes(uint64_t t0, const uint8_t *p, size_t n, uint64_t byte_ns, bool cs_low)
 {
-	size_t i = 0, j;
+	size_t i = 0;
 
 	if (n == 0u)
 		return;
@@ -157,7 +157,7 @@ static void emit_bytes(uint64_t t0, const uint8_t *p, size_t n, uint64_t byte_ns
 			tr.oom = true;
 			return;
 		}
-		for (j = 0; j < n; j++)
+		for (size_t j = 0; j < n; j++)
 			snprintf(buf + 2u * j, 3, "%02X", p[j]);
 		if (tr.on && !tr.oom) {
 			size_t len = 2u * n + 96u;
