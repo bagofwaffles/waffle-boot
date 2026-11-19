@@ -19,6 +19,10 @@
 #define FR_RECORD_OFF(k) (0xE000u + 0x1000u * (k))
 #define FR_SLOT_BASE(k) (0x10000u + 0x78000u * (k))
 #define FR_SLOT_CAP     0x78000u
+/* S-02.084: recovery's images, which leave the slot's settings sector
+ * (S-02.103) and its start log free. */
+#define FR_IMAGE_MAX    0x76000u
+#define FR_SETTINGS_OFF(k) (FR_SLOT_BASE(k) + FR_IMAGE_MAX)
 #define FR_TAG          0x0000B004u
 #define FR_NO_SLOT      0xFFu
 
@@ -88,8 +92,23 @@ struct fr_slot_info {
 				 * byte 0 of its last sector */
 	uint8_t log0;
 	struct fr_desc desc;
+	uint8_t kind;		/* enum fr_kind_of, by fr_slot_kind() */
+	uint16_t te_version[4];	/* with FR_KIND_TE_BUILD: its table row's */
+};
+
+/* S-02.106: which bootloader a good or tried slot holds. */
+enum fr_kind_of {
+	FR_KIND_NONE,		/* neither good nor tried: no kind */
+	FR_KIND_WB,		/* a valid descriptor: desc.bl_version */
+	FR_KIND_TE_BUILD,	/* a row of the TE table: te_version */
+	FR_KIND_TE,		/* only the prefix CRC matches */
+	FR_KIND_UNKNOWN		/* "??" */
 };
 int fr_slot_info(const struct fr_flash *f, unsigned k, struct fr_slot_info *out);
+/* The kind of slot k from what fr_slot_info() read of it into s: rules 1
+ * and 2 read nothing more; rule 3 reads the slot's first 4,468 bytes, and
+ * only when they fail. FR_FLASH_IO when that read fails (kind unknown). */
+int fr_slot_kind(const struct fr_flash *f, unsigned k, struct fr_slot_info *s);
 
 /* The trial mark (S-02.016): the tag, a length inside the slot, and crc32
  * the complement of the CRC-32 crc of the slot's length bytes. A slot with
@@ -117,7 +136,7 @@ bool fr_tried(const struct fr_record *r, uint32_t crc);
  */
 enum fr_image_rc {
 	FR_IMG_OK = 0,
-	FR_IMG_SIZE,		/* 0 bytes, or more than FR_LOG_IMAGE_MAX (S-02.084) */
+	FR_IMG_SIZE,		/* 0 bytes, or more than FR_IMAGE_MAX (S-02.084) */
 	FR_IMG_STREAM,		/* S-02.091 rule 1: headers, FINAL, lengths */
 	FR_IMG_INIT,		/* rule 2 */
 	FR_IMG_SPACES,		/* rule 3 */
@@ -246,7 +265,7 @@ enum fr_tier {
 
 enum fr_writer_state {
 	FR_WS_IDLE, FR_WS_SELECT_ERASE, FR_WS_SELECT_PROGRAM, FR_WS_SLOT, FR_WS_LOG_ERASE,
-	FR_WS_LOG_PENDING, FR_WS_SELECT_LOG, FR_WS_RECORD_ERASE, FR_WS_RECORD_PROGRAM,
+	FR_WS_SETTINGS_ERASE, FR_WS_LOG_PENDING, FR_WS_SELECT_LOG, FR_WS_RECORD_ERASE, FR_WS_RECORD_PROGRAM,
 	FR_WS_READBACK, FR_WS_SELECTOR_ERASE, FR_WS_SELECTOR_PROGRAM, FR_WS_TRIAL_VERIFIED,
 	FR_WS_TRIAL_INDEX, FR_WS_ACT, FR_WS_DONE
 };

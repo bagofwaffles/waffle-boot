@@ -299,6 +299,35 @@ def main():
             'S01_SRULE_' + rules[rb] if rb else '0u', c['name'], c['length']))
     w('};')
     w('')
+    # slot_kinds.json (S-02.106): each case's bytes are its fill with its patches.
+    sk = load_json('slot_kinds.json')
+    w('/* slot_kinds.json: byte i of a case is (i * 37 + seed) & 0xff, then its patches;')
+    w(' * kind 0 WB, 1 TE with a version, 2 TE alone, 3 ??. */')
+    w('struct v_skind_patch { uint32_t off; uint8_t b[4]; };')
+    w('struct v_skind { const char *name; uint32_t length; uint8_t seed; unsigned npatch;')
+    w('\tstruct v_skind_patch patch[2]; uint32_t crc32; int desc_valid; uint16_t desc_version[4];')
+    w('\tint kind; uint16_t version[4]; };')
+    w('static const struct v_skind v_slot_kinds[] = {')
+    for c in sk['cases']:
+        assert len(c['patches']) <= 2 and 0 <= c['seed'] <= 255, c['name']
+        pats = [(int(p['offset']), bytes.fromhex(p['bytes'])) for p in c['patches']]
+        pats += [(0, bytes(4))] * (2 - len(pats))
+        if c['kind'] == 'WB':
+            kind = 0
+        elif c['kind'] == 'TE':
+            kind = 1 if c['version'] else 2
+        else:
+            assert c['kind'] == '??', c['name']
+            kind = 3
+        dv = c['descriptor_version'] or [0, 0, 0, 0]
+        v = c['version'] if kind == 1 else [0, 0, 0, 0]
+        w('\t{"%s", %d, %d, %d, {%s}, %s, %d, {%s}, %d, {%s}},' % (
+            c['name'], c['length'], c['seed'], len(c['patches']),
+            ', '.join('{%d, %s}' % (o, carr(list(bb))) for o, bb in pats), c['crc32'],
+            int(c['descriptor_valid']), ', '.join(str(x) for x in dv), kind,
+            ', '.join(str(x) for x in v)))
+    w('};')
+    w('')
     w('#endif /* S02_VECTORS_H */')
 
     text = '\n'.join(out) + '\n'

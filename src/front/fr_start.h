@@ -25,8 +25,9 @@
  * this often. */
 #define FR_KEYS_GAP_US   50000u
 #define FR_KEYS_MISS_US  500000u
-/* Recovery redraws its screen at most this often. */
-#define FR_DRAW_GAP_US   250000u
+/* Recovery redraws its screen, a progress bar's fill among it, at most this
+ * often, and only when no frame is going out (S-13c.024). */
+#define FR_DRAW_GAP_US   40000u
 /* While it holds the power-off after a read that failed, recovery reads
  * the selector and the slots again this often (S-02.084). */
 #define FR_RESURVEY_US   5000000u
@@ -44,6 +45,8 @@ struct fr_start_hw {
 	uint32_t (*usb_ma)(void);
 	const struct fr_bytes *serial;
 	uint8_t *staging;			/* FR_SLOT_CAP bytes */
+	uint8_t *frame;				/* FR_PANEL_FRAME_BYTES: the panel's
+						 * frame buffer (S-01.023) */
 };
 
 enum fr_next {
@@ -73,6 +76,8 @@ struct fr_start {
 	bool panel_up;
 	bool lit;
 	struct fr_screen screen;
+	struct fr_screen drawn;	/* what the frame buffer holds, when drawn_ok */
+	bool drawn_ok;
 	bool desc_ok;		/* the loaded descriptor parses */
 	struct fr_desc desc;
 	uint8_t why;		/* FR_WHY_* when recovery follows */

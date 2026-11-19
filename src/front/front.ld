@@ -7,8 +7,8 @@
  *     libgcc included (S-01.010: nothing outside L1 is loaded before it
  *     runs), and the loops that must be quick (.fr_fast);
  *   - L1 data A 0x11802000-0x11804000: what the INIT stage reads and
- *     writes, and its stack (S-01.007, S-01.021), and the panel's row
- *     buffer (.bss.fr_fast), clear of 0x11807000-0x11808000 (S-02.091
+ *     writes, and its stack (S-01.007, S-01.021), and the quick loops'
+ *     data (.bss.fr_fast), clear of 0x11807000-0x11808000 (S-02.091
  *     rule 4);
  *   - L2 0x08002000-0x08030000: the rest; its .bss and stack are not
  *     loaded and are cleared by the front.

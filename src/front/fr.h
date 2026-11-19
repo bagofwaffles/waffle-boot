@@ -42,12 +42,20 @@ struct fr_mem {
 	void *ctx;
 };
 
-/* The panel bus (S-13c.001), write only. */
+/* The panel bus (S-13c.001), write only, with the TE input and one memory
+ * DMA to the bank (S-13c.018). te NULL: no TE line, frames go unpaced;
+ * dma_start NULL: no DMA, every byte goes by data(). */
+enum fr_dma_state { FR_DMA_IDLE, FR_DMA_BUSY, FR_DMA_ERROR };
 struct fr_panel_bus {
 	void (*reset)(void *ctx, bool high);
 	void (*select)(void *ctx, bool on);
 	void (*cmd)(void *ctx, uint8_t c);
 	void (*data)(void *ctx, const uint8_t *p, size_t n);
+	bool (*te)(void *ctx);			/* the TE line's level now */
+	/* n bytes from p as parameter bytes, one per write cycle */
+	void (*dma_start)(void *ctx, const uint8_t *p, uint32_t n);
+	int (*dma_state)(void *ctx);		/* enum fr_dma_state */
+	void (*dma_stop)(void *ctx);		/* disabled, its status cleared */
 	void *ctx;
 };
 

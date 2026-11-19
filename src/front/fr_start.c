@@ -32,10 +32,29 @@ static void poweroff(void *ctx)
 		fr_panel_off(&s->panel);
 }
 
+/* The screen into the frame buffer, then out (S-01.023's frame). */
 static void draw(struct fr_start *s)
 {
-	if (s->panel_up)
-		fr_panel_frame(&s->panel, fr_screen_row, &s->screen);
+	if (!s->panel_up)
+		return;
+	fr_panel_idle(&s->panel);
+	fr_paint(s->hw->frame, &s->screen);
+	s->drawn = s->screen;
+	s->drawn_ok = true;
+	fr_panel_frame(&s->panel, s->hw->frame);
+}
+
+/* S-13c.025's front's line, under the early logo frame, on every way into
+ * recovery: from the frame buffer's first bytes, which recovery's first
+ * frame paints whole again. */
+static void loading_line(struct fr_start *s)
+{
+	if (!s->panel_up)
+		return;
+	fr_panel_idle(&s->panel);
+	fr_paint_line(s->hw->frame, "Loading recovery menu...");
+	s->drawn_ok = false;
+	fr_panel_line(&s->panel, s->hw->frame);
 }
 
 /* 0x51 {3C FF 02} after the frame's last byte (S-13c.019, S-05.004). */
@@ -58,13 +77,14 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	s->hw = hw;
 	s->panel_up = false;
 	s->lit = false;
+	s->drawn_ok = false;
 	s->why = 0;
 	raw = hw->mem->map(hw->mem->ctx, FR_DESC_ADDR, FR_DESC_MAX);
 	s->desc_ok = raw != NULL && fr_desc_parse(raw, FR_DESC_MAX, &s->desc);
 
 	/* S-13c.004-S-13c.013, S-05.004: the panel and the logo frame first,
 	 * dark; every wait in it is bounded and the bus is write only. */
-	if (hw->panel != NULL) {
+	if (hw->panel != NULL && hw->frame != NULL) {
 		const uint64_t floor_us = ho->stamps[FR_STAMP_INIT_ENTRY] / FR_CCLK_MHZ + PANEL_FLOOR_US;
 
 		fr_panel_begin(&s->panel, hw->panel, hw->clock, ho->dma9_xmod,
@@ -128,6 +148,7 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 		/* S-02.080: Power + M4, key 4 alone; no reply is no chord. */
 		if (fr_keys_one(s->psoc.keys, s->psoc.keys_len) == FR_KEY_4) {
 			s->why = FR_WHY_KEYS;	/* S-02.084, S-15.150 */
+			loading_line(s);
 			return FR_NEXT_RECOVERY;
 		}
 	}
@@ -135,6 +156,7 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	/* S-01.023: the rest of the image as the image tool recorded it. */
 	if (!fr_image_check(hw->mem, &s->desc)) {
 		s->why = FR_WHY_CHECK;
+		loading_line(s);
 		return FR_NEXT_RECOVERY;
 	}
 	/* S-02.095: this start in the selected slot's log, for the main image
@@ -145,6 +167,7 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	switch (fr_log_step(hw->flash, hw->mem, &log)) {
 	case FR_LOG_RECOVERY:
 		s->why = FR_WHY_COUNT;
+		loading_line(s);
 		return FR_NEXT_RECOVERY;
 	case FR_LOG_GO_MARKED:
 		ho->flags |= FR_HO_START_LOGGED;
@@ -155,11 +178,31 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	default:
 		break;
 	}
-	/* The power messages that came while the image was checked and the
-	 * log written, before the power state is handed over: a power-off ends
-	 * the start here. A greeting or ping is not answered here (S-07.076). */
-	if (fr_psoc_poll_power(&s->psoc) == FR_PSOC_OFF)
+	if (log.trial == FR_LOG_TRIAL_MARKED)
+		ho->flags |= FR_HO_TRIAL_MARKED;
+	/* S-01.023: the running slot, for the main image to take; the log
+	 * step's reading where it made one. */
+	if (!log.run_read) {
+		unsigned slot = 0;
+		bool est = false, both = false;
+
+		if (fr_running_slots(hw->flash, hw->mem, &slot, &est, &both) == FR_FLASH_OK) {
+			log.run_est = est;
+			log.run_slot = (uint8_t)slot;
+		}
+	}
+	if (log.run_est && log.run_slot < 2u) {
+		ho->flags |= FR_HO_RUNNING;
+		ho->run_slot = log.run_slot;
+	}
+	/* S-07.076, the front's point: every message that came while the image
+	 * was checked and the log written is handled before the state is
+	 * handed over: a ping answered, a greeting given S-07.024's answer,
+	 * and a power-off ends the start here. */
+	if (fr_psoc_poll(&s->psoc) == FR_PSOC_OFF)
 		return FR_NEXT_HALT;
+	if (s->psoc.greeted)
+		ho->flags |= FR_HO_GREETED;
 	ho->power_state = s->psoc.state;
 	if (s->psoc.state_known)
 		ho->flags |= FR_HO_POWER_KNOWN;
@@ -169,6 +212,10 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	/* The bytes out before the full bootloader opens the UART again. */
 	fr_psoc_drain(&s->psoc, 20000u);
 	ho->psoc_seq = s->psoc.seq;
+	/* MDMA2 left disabled, its status cleared, for the main image's held
+	 * mode to start its frames on */
+	if (s->panel_up)
+		fr_panel_end(&s->panel);
 	stamp(s, ho, FR_STAMP_HANDOFF, now(s));
 	return FR_NEXT_MAIN;
 }

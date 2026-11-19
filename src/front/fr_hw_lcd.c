@@ -3,12 +3,14 @@
  * The panel bus on the OP-XY (S-13c.001 - S-13c.003), the front's copy of
  * the full bootloader's SMC driver (drivers/bf70x/lcd.c with its OP-XY
  * pins), trimmed to what the front sends: every byte a write cycle of
- * SMC0 bank 0 by the CPU, no DMA (the transfer engines stay free) and no
- * reads. D/C (PA5), RD (PA13), CS (PA15) and RESET (PA8) are GPIO outputs,
+ * SMC0 bank 0, by the CPU or by the one memory DMA of wb_lcd_frame_start()
+ * on MDMA2 (DMA20 from memory, DMA21 to the bank; the ROM and the hand-over
+ * use MDMA0), and no reads. D/C (PA5), RD (PA13), CS (PA15) and RESET (PA8) are GPIO outputs,
  * TE (PA7) an input, D[7:0] port B and WR (PA14) the SMC's, on the
  * functions fr_hw_pins() selected (S-13b.003). Writes to the bank are
  * posted: a change of D/C or CS follows wb_mmr_sync(), so the earlier
- * write cycle has ended at the pins. Target only; nothing here waits.
+ * write cycle has ended at the pins. Target only; nothing here waits but
+ * a channel's stop, at most 100 us (wb_dma_stop_idle()).
  *
  * The front runs with the data CPLBs off, so the bank does not have the
  * I/O device space attribute the full bootloader's table gives it
@@ -17,8 +19,11 @@
  * each, so every byte is followed by SSYNC: each byte has gone out before
  * the next is stored.
  */
+#include "fr_handoff.h"
 #include "fr_hw.h"
 
+#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_lcd.h"
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/mmr.h"
@@ -31,6 +36,10 @@
 #define PA_CS    (1u << 15)
 #define DATA_PINS 0xFFu
 #define BANK     WB_LCD_SMC_BANK0
+#define MDMA_SRC WB_DMA_MDMA_SRC(2)	/* DMA20 */
+#define MDMA_DST WB_DMA_MDMA_DST(2)	/* DMA21 */
+#define STAT_W1C (DMA_STAT_IRQDONE | DMA_STAT_IRQERR | DMA_STAT_PIRQ)
+#define STOP_US  100u
 
 static bool dc_high = true;
 
@@ -96,8 +105,76 @@ FR_FAST static void b_data(void *ctx, const uint8_t *p, size_t n)
 		put(*p++);
 }
 
+/* cppcheck-suppress constParameterCallback ; fr_panel_bus fixes the type */
+static bool b_te(void *ctx)
+{
+	(void)ctx;
+	return (wb_mmr_read32(PORT_DATA(WB_PORT_A)) & PA_TE) != 0u;
+}
+
+/* wb_lcd_frame_start(): the destination one byte per write cycle at the
+ * bank's fixed address, then the source, one byte at a time. The front
+ * runs with the data cache off: nothing to flush. */
+static void b_dma_start(void *ctx, const uint8_t *p, uint32_t n)
+{
+	(void)ctx;
+	set_dc(true);
+	wb_mmr_write32(DMA_STAT(MDMA_DST), STAT_W1C);
+	wb_mmr_write32(DMA_ADDRSTART(MDMA_DST), BANK);
+	wb_mmr_write32(DMA_XCNT(MDMA_DST), n);
+	wb_mmr_write32(DMA_XMOD(MDMA_DST), 0);
+	wb_mmr_write32(DMA_CFG(MDMA_DST), DMA_CFG_EN | DMA_CFG_WNR | DMA_CFG_FLOW_STOP |
+			       DMA_CFG_INT_X | ((uint32_t)WB_DMA_1B << DMA_CFG_PSIZE_SHIFT) |
+			       ((uint32_t)WB_DMA_1B << DMA_CFG_MSIZE_SHIFT));
+	wb_mmr_write32(DMA_STAT(MDMA_SRC), STAT_W1C);
+	wb_mmr_write32(DMA_ADDRSTART(MDMA_SRC), (uint32_t)(uintptr_t)p);
+	wb_mmr_write32(DMA_XCNT(MDMA_SRC), n);
+	wb_mmr_write32(DMA_XMOD(MDMA_SRC), 1);
+	wb_mmr_write32(DMA_CFG(MDMA_SRC), DMA_CFG_EN | DMA_CFG_FLOW_STOP |
+			       ((uint32_t)WB_DMA_1B << DMA_CFG_PSIZE_SHIFT) |
+			       ((uint32_t)WB_DMA_1B << DMA_CFG_MSIZE_SHIFT));
+	wb_mmr_sync();
+}
+
+/* wb_lcd_frame_busy(): the destination's status. */
+/* cppcheck-suppress constParameterCallback ; fr_panel_bus fixes the type */
+static int b_dma_state(void *ctx)
+{
+	uint32_t stat;
+
+	(void)ctx;
+	if ((wb_mmr_read32(DMA_CFG(MDMA_DST)) & DMA_CFG_EN) == 0u)
+		return FR_DMA_IDLE;
+	stat = wb_mmr_read32(DMA_STAT(MDMA_DST));
+	if ((stat & DMA_STAT_IRQERR) != 0u)
+		return FR_DMA_ERROR;
+	if ((stat & DMA_STAT_IRQDONE) != 0u && (stat & DMA_STAT_RUN_MASK) == 0u)
+		return FR_DMA_IDLE;
+	return FR_DMA_BUSY;
+}
+
+/* wb_dma_stop_idle() on each channel, the source first. */
+static void stop(unsigned ch)
+{
+	const uint64_t end = wb_core_cycles() + (uint64_t)STOP_US * FR_CCLK_MHZ;
+
+	wb_mmr_write32(DMA_CFG(ch), 0);
+	wb_mmr_sync();
+	while ((wb_mmr_read32(DMA_STAT(ch)) & DMA_STAT_RUN_MASK) != 0u && wb_core_cycles() < end)
+		;
+	wb_mmr_write32(DMA_STAT(ch), STAT_W1C);
+	wb_mmr_sync();
+}
+
+static void b_dma_stop(void *ctx)
+{
+	(void)ctx;
+	stop(MDMA_SRC);
+	stop(MDMA_DST);
+}
+
 static const struct fr_panel_bus bus = {
-	b_reset, b_select, b_cmd, b_data, NULL,
+	b_reset, b_select, b_cmd, b_data, b_te, b_dma_start, b_dma_state, b_dma_stop, NULL,
 };
 
 const struct fr_panel_bus *fr_hw_lcd_start(void)

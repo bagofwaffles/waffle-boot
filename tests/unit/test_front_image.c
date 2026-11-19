@@ -236,7 +236,7 @@ static void test_handoff_seal(void)
 	ho.strap = 0x0104u;
 	fr_handoff_seal(&ho);
 	CHECK(ho.magic == FR_HO_MAGIC && ho.version == FR_HO_VERSION);
-	CHECK(ho.size == sizeof ho);
+	CHECK(ho.size == FR_HO_SIZE && FR_HO_SIZE == offsetof(struct fr_handoff, crc32) + 4u);
 	/* The full bootloader's own CRC agrees (opxy_front_take()). */
 	CHECK(wire_crc32(0, (const uint8_t *)&ho, offsetof(struct fr_handoff, crc32)) ==
 	      ho.crc32);

@@ -2,7 +2,7 @@
 /*
  * The front's recovery writer (src/front/fr_slots.c) against the RAM NOR
  * fake: S-02.049's order, S-02.042's footprint, S-02.045's extent with the
- * erase of the slot's last sector, the record and selector bytes
+ * erases of the slot's last sector and its settings sector, the record and selector bytes
  * (S-02.046, S-02.048), the read-back's place (S-02.047); the four cells of
  * S-02.052's table for recovery's two requests (S-02.084): the default
  * write, the write of the running slot with the other slot selected first,
@@ -249,8 +249,8 @@ static uint32_t build_image(uint8_t *dst, uint32_t n, uint32_t seed)
 	CHECK(off <= n);
 	CHECK(FRONT_BYTE >= 32u && FRONT_BYTE < 32u + 256u);	/* l1c's payload */
 	CHECK(MAIN_BYTE >= off - 16u - 512u && MAIN_BYTE < off - 16u);	/* ml2's */
-	/* S-02.084: at most 0x77000 bytes */
-	CHECK_EQ(fr_image_valid(dst, n, NULL), n <= 0x77000u ? FR_IMG_OK : FR_IMG_SIZE);
+	/* S-02.084: at most 0x76000 bytes */
+	CHECK_EQ(fr_image_valid(dst, n, NULL), n <= 0x76000u ? FR_IMG_OK : FR_IMG_SIZE);
 	return off;
 }
 
@@ -273,10 +273,13 @@ static void put_slot(unsigned k, const uint8_t *img, uint32_t n)
 	ff_put32(g_f.mem + FR_RECORD_OFF(k) + 8u, FR_TAG);
 }
 
-/* A start log in slot k's last sector (S-02.095): three entries used. */
+/* A start log in slot k's last sector (S-02.095): three entries used; and
+ * bytes in its settings sector (S-02.103), which a write empties. */
 static void put_log(unsigned k)
 {
 	g_f.mem[FR_SLOT_BASE(k) + FR_SLOT_CAP - FR_SECTOR] = 0xEAu;
+	g_f.mem[FR_SLOT_BASE(k) + 0x76000u] = 0x5Au;
+	g_f.mem[FR_SLOT_BASE(k) + 0x76FFFu] = 0x00u;
 }
 
 /* --- Starts --- */
@@ -287,8 +290,8 @@ static const uint8_t starts[][2] = {{0x00, 0x01}, {0x01, 0x01}, {0x02, 0x01}, {0
 #define CUR_LEN 0x1345u
 #define OLD_TARGET_LEN 0x3456u	/* a longer predecessor in the target */
 /* A write of N_IMAGE bytes: 3 sector erases, 36 page programs, the last
- * sector's erase, the record's erase and program. */
-#define SLOT_OPS (3u + 36u + 1u + 2u)
+ * sector's erase, the settings sector's, the record's erase and program. */
+#define SLOT_OPS (3u + 36u + 1u + 1u + 2u)
 
 static void snapshot(void)
 {
@@ -297,7 +300,8 @@ static void snapshot(void)
 }
 
 /* Both slots good, the selected one holding an image with the front of
- * FRONT_SEED (S-02.084), each with a start log in its last sector, the
+ * FRONT_SEED (S-02.084), each with a start log in its last sector and
+ * settings bytes in the sector before it, the
  * first-stage area and metadata a known pattern. Nothing done yet in this
  * recovery: home cleared, no faults. */
 static void setup(uint8_t index, uint8_t verified)
@@ -551,11 +555,12 @@ static void check_log(unsigned t, uint32_t n, unsigned way)
 {
 	static uint8_t programmed[FR_SLOT_CAP];
 	const uint32_t base = FR_SLOT_BASE(t), rec = FR_RECORD_OFF(t);
-	const uint32_t last = base + FR_SLOT_CAP - FR_SECTOR;
+	const uint32_t last = base + FR_SLOT_CAP - FR_SECTOR, settings = base + 0x76000u;
 	const uint32_t sectors = (n + FR_SECTOR - 1u) / FR_SECTOR;
 	const bool log_erase = true;	/* every image leaves the last sector */
 	unsigned i, from = 0, rec_erase, rec_prog, sel_erase = ~0u, sel_prog = ~0u, end;
 	unsigned erases = 0, last_prog = 0, log_at = ~0u, log_n = 0, kind_end = 0;
+	unsigned set_at = ~0u, set_n = 0;
 	/* the selector before the write, and before its final settling */
 	unsigned pre = g_start.mem[FR_SELECTOR_OFF] | (unsigned)g_start.mem[FR_SELECTOR_OFF + 1u] << 8;
 
@@ -638,6 +643,11 @@ static void check_log(unsigned t, uint32_t n, unsigned way)
 				log_n++;
 				continue;
 			}
+			if (o->off == settings) {
+				set_at = i;		/* S-02.103: the settings sector */
+				set_n++;
+				continue;
+			}
 			CHECK(o->off < base + sectors * FR_SECTOR);	/* nothing wholly beyond */
 			continue;
 		}
@@ -667,7 +677,11 @@ static void check_log(unsigned t, uint32_t n, unsigned way)
 	} else {
 		CHECK_EQ(log_n, 0);
 	}
-	CHECK_EQ(erases, sectors + (log_erase ? 1u : 0u) + 1u +
+	/* S-02.103: the settings sector erased once, the operation right after
+	 * the log's erase, before the record */
+	CHECK_EQ(set_n, 1);
+	CHECK(set_at != ~0u && set_at == log_at + 1u && set_at < rec_erase);
+	CHECK_EQ(erases, sectors + (log_erase ? 1u : 0u) + 1u + 1u +
 			 (g_split ? (kind_end == 2u ? 1u : 0u) : way == FR_WAY_IN_PLACE ? 0u : 1u));
 	/* S-02.047: the read-back strictly between the record program and the
 	 * selector erase. */
@@ -680,7 +694,7 @@ static void check_final(unsigned t, uint32_t n, unsigned way)
 {
 	const unsigned keep = 1u - t;
 	const uint32_t base = FR_SLOT_BASE(t), end = (n + FR_SECTOR - 1u) / FR_SECTOR * FR_SECTOR;
-	const uint32_t keep_to = n <= FR_LOG_IMAGE_MAX ? FR_LOG_IMAGE_MAX : FR_SLOT_CAP;
+	const uint32_t keep_to = 0x76000u;	/* the settings sector, then the log */
 	uint32_t j;
 	uint8_t want[32];
 
@@ -689,7 +703,7 @@ static void check_final(unsigned t, uint32_t n, unsigned way)
 		CHECK_EQ(g_f.mem[base + j], 0xFFu);
 	if (end < keep_to)
 		CHECK(memcmp(g_f.mem + base + end, g_start.mem + base + end, keep_to - end) == 0);
-	/* S-02.045, S-02.095: an empty start log */
+	/* S-02.045, S-02.095, S-02.103: an empty settings sector and start log */
 	for (j = keep_to; j < FR_SLOT_CAP; j++)
 		if (g_f.mem[base + j] != 0xFFu) {
 			CHECK(0);
@@ -827,16 +841,17 @@ static void test_write_ok(void)
 		}
 	}
 
-	/* The largest image, 0x77000 bytes: 119 sectors, the last one left
-	 * to the start log and erased (S-02.084, S-02.045). */
+	/* The largest image, 0x76000 bytes: 118 sectors, the next left to
+	 * the settings and the last to the start log, both erased (S-02.084,
+	 * S-02.045, S-02.103). */
 	{
 		struct fr_running run = running_of(0x01);
 
 		setup(0x01, 0x01);
-		make_image(0x77000u, 99u);
-		CHECK_EQ(write_all(0x77000u, g_sha, &run), FR_WR_OK);
-		check_log(0, 0x77000u, FR_WAY_PLAIN);
-		check_final(0, 0x77000u, FR_WAY_PLAIN);
+		make_image(0x76000u, 99u);
+		CHECK_EQ(write_all(0x76000u, g_sha, &run), FR_WR_OK);
+		check_log(0, 0x76000u, FR_WAY_PLAIN);
+		check_final(0, 0x76000u, FR_WAY_PLAIN);
 	}
 	/* A one-sector image shorter than a page at its end. */
 	{
@@ -852,11 +867,12 @@ static void test_write_ok(void)
 
 static void refused(int want, struct fr_running run, uint32_t n, const uint8_t *sha);
 
-/* --- S-02.045: the last sector, about 0x77000 --- */
+/* --- S-02.045, S-02.084: the image's end, about 0x76000 --- */
 
 static void test_extent(void)
 {
-	static const uint32_t sizes[] = { 0x76FFFu, 0x77000u, 0x77001u, 0x77100u, 0x78000u };
+	static const uint32_t sizes[] = { 0x75FFFu, 0x76000u, 0x76001u, 0x76100u, 0x77000u,
+					  0x78000u };
 
 	for (unsigned i = 0; i < N(sizes); i++)
 		for (unsigned way = 0; way < 2u; way++) {
@@ -865,7 +881,7 @@ static void test_extent(void)
 			setup(0x00, 0x01);
 			g_flags = way ? FR_BEGIN_F_RUNNING : 0u;
 			make_image(sizes[i], 70u + i);
-			if (sizes[i] > 0x77000u) {
+			if (sizes[i] > 0x76000u) {
 				/* S-02.084: refused as a size, nothing written */
 				refused(FR_WR_SIZE, run, sizes[i], g_sha);
 				CHECK_EQ(g_w.image_rc, FR_IMG_SIZE);
@@ -1276,10 +1292,18 @@ static void test_faults(void)
 			check_untouched(0);
 		}
 		setup(0x01, 0x01);
-		g_f.fail = m - 4u;	/* the last sector's */
+		g_f.fail = m - 5u;	/* the last sector's */
+		CHECK_EQ(write_all(N_IMAGE, g_sha, &run), FR_WR_FLASH);
+		CHECK_EQ(g_f.nmut, m - 5u);
+		CHECK_EQ(g_f.log[g_f.nlog - 1u].off, FR_SLOT_BASE(0) + FR_LOG_IMAGE_MAX);
+		CHECK_EQ(find_op(FF_ERASE, FR_SLOT_BASE(0) + 0x76000u, 0), ~0u);
+		CHECK_EQ(find_op(FF_ERASE, FR_RECORD_OFF(0), 0), ~0u);
+		no_selector_op();
+		setup(0x01, 0x01);
+		g_f.fail = m - 4u;	/* the settings sector's (S-02.103) */
 		CHECK_EQ(write_all(N_IMAGE, g_sha, &run), FR_WR_FLASH);
 		CHECK_EQ(g_f.nmut, m - 4u);
-		CHECK_EQ(g_f.log[g_f.nlog - 1u].off, FR_SLOT_BASE(0) + FR_LOG_IMAGE_MAX);
+		CHECK_EQ(g_f.log[g_f.nlog - 1u].off, FR_SLOT_BASE(0) + 0x76000u);
 		CHECK_EQ(find_op(FF_ERASE, FR_RECORD_OFF(0), 0), ~0u);
 		no_selector_op();
 		setup(0x01, 0x01);
@@ -4131,6 +4155,12 @@ static void check_trial_final(unsigned b)
 	/* the start log of the slot written holds entry 0 pending, the rest
 	 * free (S-02.095) */
 	CHECK_EQ(g_f.mem[FR_LOG_OFF(b)], 0xFDu);
+	/* and its settings sector empty (S-02.103) */
+	for (uint32_t j = 0x76000u; j < FR_LOG_IMAGE_MAX; j++)
+		if (g_f.mem[FR_SLOT_BASE(b) + j] != 0xFFu) {
+			CHECK(0);
+			break;
+		}
 	for (uint32_t j = FR_LOG_IMAGE_MAX + 1u; j < FR_SLOT_CAP; j++)
 		if (g_f.mem[FR_SLOT_BASE(b) + j] != 0xFFu) {
 			CHECK(0);
@@ -4142,8 +4172,9 @@ static void check_trial_final(unsigned b)
 	CHECK(ff_slot_good(&g_f, a));
 }
 
-/* The order of the trial's operations: B's slot, its log sector erased and
- * entry 0 programmed pending (0xFD, read back), its record (erased,
+/* The order of the trial's operations: B's slot, its log sector erased, its
+ * settings sector erased, entry 0 programmed pending (0xFD, read back), its
+ * record (erased,
  * programmed with the trial mark), the read-back, then the selector: its
  * erase and, for slot 0, verified then the index, a byte at a time, each
  * read back. */
@@ -4155,7 +4186,9 @@ static void check_trial_log(unsigned b)
 	const unsigned lp = find_op(FF_PROGRAM, FR_LOG_OFF(b), 0);
 	const struct ff_op *o = g_f.log;
 
-	CHECK(le != ~0u && lp == le + 1u && lp + 2u == find_op(FF_ERASE, FR_RECORD_OFF(b), 0));
+	CHECK(le != ~0u && lp == le + 2u && lp + 2u == find_op(FF_ERASE, FR_RECORD_OFF(b), 0));
+	CHECK(le != ~0u && le + 1u < g_f.nlog && o[le + 1u].kind == FF_ERASE &&
+	      o[le + 1u].off == FR_SLOT_BASE(b) + 0x76000u);
 	if (lp != ~0u && lp + 1u < g_f.nlog) {
 		CHECK_EQ(o[lp].len, 1);
 		CHECK(o[lp + 1u].kind == FF_READ && o[lp + 1u].off == FR_LOG_OFF(b) && o[lp + 1u].len == 1u);

@@ -2,14 +2,14 @@
 /*
  * The panel (S-13c), the front's copy of the full bootloader's
  * s13c_panel.c, trimmed: the same transactions in the same order as its
- * s13c_begin(), s13c_start() with the gamma load, the hand-over frame's
- * RAMWR and rows (s13c_boot_frame()) and a power-off that sends nothing,
- * with one difference: no color is written before DISPON; the first frame
- * is sent with the display off and DISPON follows its last byte
- * (S-13c.010).
+ * s13c_begin(), s13c_start() with the gamma load, and a power-off that
+ * sends nothing, with one difference: no color is written before DISPON;
+ * the first frame is sent with the display off and DISPON follows its last
+ * byte (S-13c.010). Frames go as held mode's do (wb_lcd_te_wait(),
+ * wb_lcd_frame_start()): RAMWR on a TE rising edge, then one memory DMA of
+ * the frame buffer (S-13c.017, S-13c.018).
  * Left out: the identification reads, which S-13c.011 permits and on
- * which nothing depends, and TE pacing (the front's frames are not held
- * mode's, S-13c.017).
+ * which nothing depends.
  */
 #include "fr_panel.h"
 
@@ -67,6 +67,8 @@ void fr_panel_begin(struct fr_panel *p, const struct fr_panel_bus *bus,
 	p->ready = false;
 	p->on = false;
 	p->started = false;
+	p->cpu = false;
+	p->out = FR_OUT_NONE;
 	now_ms = (uint32_t)(now_us(p) / 1000u);
 	/* S-13c.004, S-17.003: PA8 strapped low reset the panel again. */
 	if ((pa8 & 1u) == 0u)
@@ -204,37 +206,202 @@ void fr_panel_start(struct fr_panel *p)
 	p->ready = true;
 }
 
-/* A window row, in L1 data on the target. */
-static uint8_t line[FR_PANEL_ROW_BYTES] FR_FAST_BSS;
+/* How often the waits look at TE and at the DMA. */
+#define POLL_TE_US  10u
+#define POLL_DMA_US 50u
 
-/* S-13c.015, S-13c.016: RAMWR and the 480 rows, by the CPU, with nothing
- * between them; the frame has ended when this returns. */
-void fr_panel_frame(struct fr_panel *p,
-		    void (*row)(void *ctx, unsigned r, uint8_t *out), void *ctx)
+/* S-13c.025: columns 189-204. */
+static const uint8_t p_caset_line[] = { 0x00, FR_PANEL_LINE_COL, 0x00,
+					FR_PANEL_LINE_COL + FR_PANEL_LINE_COLS - 1u };
+
+/* S-13c.017: a TE rising edge, at most FR_PANEL_TE_US; a wait that saw
+ * none is counted. The link is served on every pass. */
+static void te_wait(struct fr_panel *p)
 {
 	const struct fr_panel_bus *b = p->bus;
-	unsigned r;
+	const uint64_t start = now_us(p);
+	bool low = false;
 
-	if (!p->ready)
-		return;
-	b->cmd(b->ctx, C_RAMWR);
-	for (r = 0; r < FR_PANEL_ROWS; r++) {
-		row(ctx, r, line);
-		b->data(b->ctx, line, sizeof line);
+	if (b->te == NULL)
+		return;		/* no TE line */
+	for (;;) {
 		fr_serve();
-	}
-	/* S-13c.010: the first frame has written the visible window, so the
-	 * panel's memory is the frame's when the display comes on. */
-	if (!p->on) {
-		send(p, C_DISPON, 0, 0);
-		p->on = true;
+		if (!b->te(b->ctx))
+			low = true;
+		else if (low)
+			return;
+		if (now_us(p) - start >= FR_PANEL_TE_US) {
+			if (p->te_misses < 255u)
+				p->te_misses++;
+			return;
+		}
+		delay_us(p, POLL_TE_US);
 	}
 }
 
-/* S-13c.022: no frame is in progress (they end before fr_panel_frame()
- * returns); no frame after this, and nothing is sent: the panel keeps its
- * last frame, in display-on. */
+/* The CPU's send of what (enum fr_panel_out) from buf: every byte by
+ * data(), a window row at a time, the link served between rows. */
+static void cpu_send(const struct fr_panel *p, const uint8_t *buf, uint8_t what)
+{
+	const struct fr_panel_bus *b = p->bus;
+	const size_t row = what == FR_OUT_LINE ? 2u * FR_PANEL_LINE_COLS : FR_PANEL_ROW_BYTES;
+	unsigned r;
+
+	for (r = 0; r < FR_PANEL_ROWS; r++) {
+		b->data(b->ctx, buf + (size_t)r * row, row);
+		fr_serve();
+	}
+}
+
+/* After a line's last byte: the frame window's columns again (S-13c.025,
+ * S-13c.014). */
+static void sent(const struct fr_panel *p, uint8_t what)
+{
+	if (what == FR_OUT_LINE)
+		send(p, C_CASET, p_caset_frame, sizeof p_caset_frame);
+}
+
+/* S-13c.016: RAMWR and the bytes, by one DMA, or by the CPU when there is
+ * none or one was stopped; the CPU's has ended when this returns. */
+static void go(struct fr_panel *p, const uint8_t *buf, uint8_t what)
+{
+	const struct fr_panel_bus *b = p->bus;
+
+	b->cmd(b->ctx, C_RAMWR);
+	if (p->cpu || b->dma_start == NULL) {
+		cpu_send(p, buf, what);
+		sent(p, what);
+		return;
+	}
+	b->dma_start(b->ctx, buf, what == FR_OUT_LINE ? FR_PANEL_LINE_BYTES : FR_PANEL_FRAME_BYTES);
+	p->out = what;
+	p->out_buf = buf;
+	p->out_at = now_us(p);
+}
+
+/* S-13c.017's "A send that does not end": a DMA send that failed, or has
+ * not ended FR_PANEL_DMA_US after its start, is stopped and sent again by
+ * the CPU, whole, paced unless it is the early logo frame; so is every
+ * later one. A send that ended leaves both channels disabled. */
+void fr_panel_watch(struct fr_panel *p)
+{
+	const struct fr_panel_bus *b = p->bus;
+
+	if (p->out == FR_OUT_NONE || p->stopped)
+		return;
+	if (b->dma_state(b->ctx) == FR_DMA_BUSY && now_us(p) - p->out_at < FR_PANEL_DMA_US)
+		return;
+	if (b->dma_state(b->ctx) == FR_DMA_IDLE)
+		return;		/* ended: settle() finishes it */
+	b->dma_stop(b->ctx);
+	p->stopped = true;
+}
+
+static void settle(struct fr_panel *p, bool paced)
+{
+	const struct fr_panel_bus *b = p->bus;
+	const uint8_t what = p->out;
+	int st;
+
+	if (what == FR_OUT_NONE)
+		return;
+	st = p->stopped ? FR_DMA_ERROR : b->dma_state(b->ctx);
+	if (st == FR_DMA_BUSY && now_us(p) - p->out_at < FR_PANEL_DMA_US)
+		return;
+	p->out = FR_OUT_NONE;
+	p->stopped = false;
+	b->dma_stop(b->ctx);
+	if (st == FR_DMA_IDLE) {
+		sent(p, what);
+		return;
+	}
+	p->cpu = true;
+	if (paced)
+		te_wait(p);
+	go(p, p->out_buf, what);
+}
+
+static void wait_end(struct fr_panel *p, bool paced)
+{
+	while (p->out != FR_OUT_NONE) {
+		settle(p, paced);
+		if (p->out == FR_OUT_NONE)
+			break;
+		fr_serve();
+		delay_us(p, POLL_DMA_US);
+	}
+}
+
+void fr_panel_frame(struct fr_panel *p, const uint8_t *buf)
+{
+	if (!p->ready)
+		return;
+	if (!p->on) {
+		/* S-13c.010, S-13c.017: the early logo frame, not paced; the
+		 * panel's memory is the frame's when the display comes on. */
+		go(p, buf, FR_OUT_FRAME);
+		wait_end(p, false);
+		send(p, C_DISPON, 0, 0);
+		p->on = true;
+		return;
+	}
+	wait_end(p, true);
+	te_wait(p);
+	go(p, buf, FR_OUT_FRAME);
+}
+
+void fr_panel_line(struct fr_panel *p, const uint8_t *band)
+{
+	if (!p->ready || !p->on)
+		return;
+	wait_end(p, true);
+	te_wait(p);
+	send(p, C_CASET, p_caset_line, sizeof p_caset_line);
+	send(p, C_RASET, p_raset, sizeof p_raset);
+	go(p, band, FR_OUT_LINE);
+}
+
+bool fr_panel_busy(struct fr_panel *p)
+{
+	settle(p, true);
+	return p->out != FR_OUT_NONE;
+}
+
+void fr_panel_idle(struct fr_panel *p)
+{
+	wait_end(p, true);
+}
+
+/* S-13c.022: a send going out is left to end, at most FR_PANEL_OFF_US,
+ * then stopped where it is; no frame after this, and nothing is sent: the
+ * panel keeps its last frame, in display-on. The link is not served here:
+ * this runs inside the power-off's own handling. */
 void fr_panel_off(struct fr_panel *p)
 {
+	const struct fr_panel_bus *b = p->bus;
+
+	if (p->out != FR_OUT_NONE) {
+		const uint64_t start = now_us(p);
+
+		/* the last poll ends no later than FR_PANEL_OFF_US */
+		while (!p->stopped && b->dma_state(b->ctx) == FR_DMA_BUSY &&
+		       now_us(p) - start + POLL_DMA_US <= FR_PANEL_OFF_US)
+			delay_us(p, POLL_DMA_US);
+		b->dma_stop(b->ctx);
+		p->out = FR_OUT_NONE;
+	}
 	p->ready = false;	/* no frame after it */
+}
+
+/* The main image's held mode starts its first frame only on channels that
+ * are not enabled (wb_lcd_frame_start()). */
+void fr_panel_end(struct fr_panel *p)
+{
+	const struct fr_panel_bus *b = p->bus;
+
+	if (b == NULL)
+		return;
+	wait_end(p, true);
+	if (b->dma_stop != NULL)
+		b->dma_stop(b->ctx);
 }

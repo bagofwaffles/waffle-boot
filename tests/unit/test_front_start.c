@@ -269,11 +269,26 @@ static struct {
 } frames[FRAMES_MAX];
 static unsigned n_frames;
 
+/* A body row says text, read as it shows: its control bytes and their
+ * arguments out, a badge's digit kept (fr_draw.h). */
 static bool screen_says(const struct fr_screen *scr, const char *text)
 {
-	for (unsigned i = 0; i < FR_LINES; i++)
-		if (strstr(scr->line[i], text) != NULL)
+	for (unsigned i = 0; i < FR_LINES; i++) {
+		char t[FR_LINE_MAX + 1];
+		size_t n = 0;
+
+		for (size_t k = 0; k < FR_LINE_MAX && scr->line[i][k] != '\0'; k++) {
+			const unsigned char b = (unsigned char)scr->line[i][k];
+
+			if (b == 0x01u || b == 0x05u)
+				k += scr->line[i][k + 1u] != '\0';
+			else if (b >= 0x20u)
+				t[n++] = (char)b;
+		}
+		t[n] = '\0';
+		if (strstr(t, text) != NULL)
 			return true;
+	}
 	return false;
 }
 
@@ -316,7 +331,11 @@ static void b_data(void *ctx, const uint8_t *p, size_t n)
 	panel_last = ++g_order;
 }
 
-static const struct fr_panel_bus bus = { b_reset, b_select, b_cmd, b_data, NULL };
+/* The panel's frame buffer (S-01.023's DDR range on the unit). */
+static uint8_t panel_fb[FR_PANEL_FRAME_BYTES];
+
+static const struct fr_panel_bus bus = { b_reset, b_select, b_cmd, b_data, NULL, NULL, NULL,
+					 NULL, NULL };
 
 /* ---- the loaded image: a descriptor and one region ---- */
 
@@ -325,9 +344,13 @@ static uint8_t desc[FR_DESC_MAX], region[256];
 static bool map_soft;		/* refuse the front's own ranges, as for the
 				 * running slot's streams (fr_map_rule.h) */
 static uint64_t last_map_at;	/* the last read of the region, in that order */
+static uint64_t check_map_at;	/* the last one before the first program */
 static bool off_in_check;	/* 0x31 {14} arrives while the image is checked */
+static bool inbox_in_check;	/* a ping and a greeting arrive then */
 static unsigned n_region_maps;	/* the region's reads: the image check's, then any
 				 * comparison of a slot's stream with memory */
+
+static bool any_program(void);
 
 static const uint8_t *map(void *ctx, uint32_t addr, uint32_t len)
 {
@@ -348,8 +371,18 @@ static const uint8_t *map(void *ctx, uint32_t addr, uint32_t len)
 			emit(0x41u, 0x31u, s14, 1);
 			t_us += 300u;
 		}
+		if (inbox_in_check) {
+			static const uint8_t ping[2] = { 0x56, 0x78 }, hello[2] = { 0x01, 0x04 };
+
+			inbox_in_check = false;
+			emit(0x41u, 0x01u, ping, sizeof ping);
+			emit(0x41u, 0x05u, hello, sizeof hello);
+			t_us += 300u;
+		}
 		n_region_maps++;
 		last_map_at = ++g_order;
+		if (!any_program())
+			check_map_at = last_map_at;
 		return region;
 	}
 	return NULL;
@@ -508,6 +541,14 @@ static int f_program(void *ctx, uint32_t off, const uint8_t *b, uint32_t n)
 
 static const struct fr_flash flash = { f_read, f_erase, f_program, NULL };
 
+static bool any_program(void)
+{
+	for (unsigned i = 0; i < n_fops; i++)
+		if (fops[i].kind == 'p')
+			return true;
+	return false;
+}
+
 static size_t ldr_hdr(uint8_t *o, uint16_t flags, uint32_t target, uint32_t count)
 {
 	uint8_t x = 0;
@@ -606,6 +647,7 @@ static enum fr_next run(bool panel, struct fr_handoff *ho)
 	hw.clock = &clock;
 	hw.psoc = &link;
 	hw.panel = panel ? &bus : NULL;
+	hw.frame = panel_fb;
 	hw.flash = &flash;
 	hw.mem = &mem;
 	memset(ho, 0, sizeof *ho);
@@ -675,6 +717,73 @@ static void test_normal_order(void)
 	/* The flash: no erase, and one program, the start log's (S-02.095) */
 	CHECK(count_fops('e') == 0u);
 	CHECK(count_fops('p') == 1u && log_program() != ~0u);
+}
+
+/* The index of the first logged message after `from` with this id, or
+ * psoc.n_log. */
+static unsigned next_sent(unsigned from, uint8_t id, uint8_t p0)
+{
+	for (unsigned i = from; i < psoc.n_log; i++)
+		if (psoc.log[i].id == id && (psoc.log[i].len == 0u || psoc.log[i].p0 == p0))
+			return i;
+	return psoc.n_log;
+}
+
+/* S-07.076, the front's point: a ping and a greeting that arrive while the
+ * image is checked are answered before the jump: the ping 0x02, the
+ * greeting S-07.024's answer, the re-greeting, 0x51 {3C FF 02}, 0x43
+ * {01 01} and 0x06 {40}, in that order; the record's sequence number and
+ * flags are the link's after them. */
+static void test_inbox_before_jump(void)
+{
+	struct fr_handoff ho;
+	unsigned keys, pong, greet, held, sub, ok;
+
+	model_reset();
+	psoc.answers = true;
+	psoc.answer_keys = true;
+	image(true);
+	inbox_in_check = true;
+	CHECK(run(true, &ho) == FR_NEXT_MAIN);
+	CHECK(!inbox_in_check);
+	keys = next_sent(0, 0x41u, 0);
+	CHECK(keys < psoc.n_log);
+	pong = next_sent(keys, 0x02u, 0x56u);
+	greet = next_sent(keys, 0x05u, 0x01u);
+	held = next_sent(greet, 0x51u, 0x3Cu);
+	sub = next_sent(held, 0x43u, 0x01u);
+	ok = next_sent(sub, 0x06u, 0x40u);
+	CHECK(pong < psoc.n_log && greet < psoc.n_log && held < psoc.n_log && sub < psoc.n_log &&
+	      ok < psoc.n_log);
+	CHECK(psoc.log[pong].len == 2u && psoc.log[pong].p1 == 0x78u);
+	CHECK(psoc.log[held].p1 == 0xFFu && psoc.log[held].p2 == 0x02u);
+	CHECK(ok == psoc.n_log - 1u || next_sent(ok + 1u, 0x06u, 0x40u) == psoc.n_log);
+	CHECK(ho.psoc_seq == st.psoc.seq);
+	CHECK((ho.flags & (FR_HO_GREETED | FR_HO_SUBSCRIBED)) == (FR_HO_GREETED | FR_HO_SUBSCRIBED));
+	CHECK(st.psoc.in_count == 0u);
+	/* without them, no answer after the key read */
+	model_reset();
+	psoc.answers = true;
+	psoc.answer_keys = true;
+	image(true);
+	CHECK(run(true, &ho) == FR_NEXT_MAIN);
+	keys = next_sent(0, 0x41u, 0);
+	CHECK(next_sent(keys, 0x02u, 0x56u) == psoc.n_log && next_sent(keys, 0x05u, 0x01u) == psoc.n_log);
+}
+
+/* S-01.023, version 2: the running slot established, every start that goes
+ * on, with no trial marked on a normal start. */
+static void test_record_running(void)
+{
+	struct fr_handoff ho;
+
+	model_reset();
+	psoc.answers = true;
+	psoc.answer_keys = true;
+	image(true);
+	CHECK(run(true, &ho) == FR_NEXT_MAIN);
+	CHECK((ho.flags & FR_HO_RUNNING) != 0u && ho.run_slot == 0u);
+	CHECK((ho.flags & FR_HO_TRIAL_MARKED) == 0u);
 }
 
 /* The bound with a silent PSoC: the panel (<= 121 ms and its writes), ten
@@ -797,6 +906,7 @@ static void test_reset_wait_floor(void)
 	hw.clock = &clock;
 	hw.psoc = &link;
 	hw.panel = &bus;
+	hw.frame = panel_fb;
 	hw.flash = &flash;
 	hw.mem = &mem;
 	memset(&ho, 0, sizeof ho);
@@ -971,8 +1081,9 @@ static void expect_marked(const struct fr_handoff *ho, unsigned k, uint32_t e, u
 	CHECK(at + 1u < n_fops && fops[at + 1u].kind == 'r' && fops[at + 1u].off == fops[at].off &&
 	      fops[at + 1u].len == 1u);
 	CHECK(fmem[FR_LOG_OFF(k) + e / 4u] == (uint8_t)(before & v));
-	/* after the key read, and after the image check's last read */
-	CHECK(fops[at].t > psoc.keys_at && fops[at].order > last_map_at);
+	/* after the key read, and after the image check's last read; the
+	 * running slot's comparison for the record may follow (S-01.023) */
+	CHECK(fops[at].t > psoc.keys_at && fops[at].order > check_map_at && check_map_at != 0u);
 	CHECK(fops[at].t <= ho->stamps[FR_STAMP_HANDOFF] / 400u);
 	CHECK((ho->flags & FR_HO_START_LOGGED) != 0u);
 	CHECK(ho->log_slot == k && ho->log_entry == e);
@@ -1071,7 +1182,10 @@ static void test_log_trial_start(void)
 	fmem[FR_LOG_OFF(1)] = 0xFDu;
 	n_region_maps = 0;
 	CHECK(run(true, &ho) == FR_NEXT_MAIN);
-	CHECK(n_region_maps > base_maps);
+	/* the log step's comparison is the record's too: one either way */
+	CHECK(n_region_maps == base_maps);
+	CHECK((ho.flags & FR_HO_RUNNING) != 0u && ho.run_slot == 0u);
+	CHECK((ho.flags & FR_HO_TRIAL_MARKED) == 0u);
 	CHECK(fmem[FR_LOG_OFF(1)] == 0xF9u && fmem[FR_LOG_OFF(0)] == 0xFEu);
 	CHECK(count_fops('p') == 2u && count_fops('e') == 0u);
 	for (unsigned i = 0, k = 0; i < n_fops; i++)
@@ -1123,6 +1237,9 @@ static void test_log_trial_start(void)
 		CHECK(run(true, &ho) == FR_NEXT_MAIN);
 		CHECK(fmem[FR_LOG_OFF(1)] == 0xFCu && (ho.flags & FR_HO_START_LOGGED) == 0u);
 		CHECK(count_fops('p') == 1u);
+		/* S-01.023: a trial start, from slot 1 */
+		CHECK((ho.flags & (FR_HO_TRIAL_MARKED | FR_HO_RUNNING)) ==
+		      (FR_HO_TRIAL_MARKED | FR_HO_RUNNING) && ho.run_slot == 1u);
 	}
 
 	/* Power + M4 in a trial start: recovery, and no mark */
@@ -1145,7 +1262,14 @@ static void test_log_trial_start(void)
 	n_ref = n_fops;
 	answering();
 	CHECK(run(true, &ho) == FR_NEXT_MAIN);
-	CHECK(n_fops == n_ref + 1u);
+	/* up to the mark's read-back; the record's comparison follows */
+	{
+		const unsigned at = log_program();
+
+		CHECK(at != ~0u && at + 2u == n_ref + 1u);
+		if (at != ~0u)
+			n_fops = at + 2u;
+	}
 	for (unsigned i = 0; i < n_fops && j <= n_ref; i++) {
 		if (fops[i].kind == 'r' && fops[i].off == FR_LOG_OFF(1)) {
 			/* after the scan, before the mark's read of its byte */
@@ -1388,13 +1512,15 @@ static void keys_setup(const uint8_t *keys)
 /* run() over a bus that records the frames. */
 static enum fr_next keys_go(bool panel, struct fr_handoff *ho)
 {
-	static const struct fr_panel_bus kbus = { b_reset, b_select, k_cmd, k_data, NULL };
+	static const struct fr_panel_bus kbus = { b_reset, b_select, k_cmd, k_data, NULL, NULL,
+						  NULL, NULL, NULL };
 	static struct fr_start_hw hw;
 
 	memset(&hw, 0, sizeof hw);
 	hw.clock = &clock;
 	hw.psoc = &link;
 	hw.panel = panel ? &kbus : NULL;
+	hw.frame = panel_fb;
 	hw.flash = &flash;
 	hw.mem = &mem;
 	memset(ho, 0, sizeof *ho);
@@ -1510,8 +1636,47 @@ static void test_logo_alone(void)
 	desc[FR_DESC_O_MAGIC] ^= 0x01u;		/* no descriptor */
 	CHECK(keys_go(true, &ho) == FR_NEXT_RECOVERY && st.why == FR_WHY_CHECK);
 	CHECK(!st.desc_ok);
-	CHECK(n_shown == 1u && shown[0].kind == FR_SCREEN_LOGO && shown[0].right[0] == '\0');
+	/* the logo, then the line under it (S-13c.025) */
+	CHECK(n_shown == 2u && shown[0].kind == FR_SCREEN_LOGO && shown[0].right[0] == '\0');
+	CHECK(shown[1].bytes == FR_PANEL_LINE_BYTES);
 	CHECK(shown[0].hash == hash && shown[0].bytes == 215040u);
+	image(true);
+}
+
+/*
+ * S-13c.025's front's line, S-15.151's "Before the first screen": on each
+ * way into recovery (Power + M4, a failed image check, three unfinished
+ * starts), right after the early logo frame, one logo line: the band
+ * fr_paint_line() paints, after its CASET; none on a start that goes on
+ * to the main image, and none with no panel. The front's frame buffer is
+ * sent from, and the frames' bytes are the buffer's.
+ */
+static void test_recovery_line(void)
+{
+	static const uint8_t m4[9] = { 0, 0x02 }, none[9] = { 0 };
+	static uint8_t band[FR_PANEL_LINE_BYTES];
+	struct fr_handoff ho;
+	uint32_t h = 2166136261u;
+
+	fr_paint_line(band, "Loading recovery menu...");
+	for (size_t i = 0; i < sizeof band; i++)
+		h = (h ^ band[i]) * 16777619u;
+	CHECK(run_keys(true, m4, &ho) == FR_NEXT_RECOVERY && st.why == FR_WHY_KEYS);
+	CHECK(n_shown == 2u && shown[0].kind == FR_SCREEN_LOGO && shown[0].bytes == 215040u);
+	CHECK(shown[1].bytes == sizeof band && shown[1].hash == h);
+	CHECK(memcmp(panel_fb, band, sizeof band) == 0 && !st.drawn_ok);
+	keys_setup(none);
+	image(false);
+	CHECK(keys_go(true, &ho) == FR_NEXT_RECOVERY && st.why == FR_WHY_CHECK);
+	CHECK(n_shown == 2u && shown[1].bytes == sizeof band && shown[1].hash == h);
+	answering();
+	for (unsigned k = 0; k < 3u; k++)
+		CHECK(run(true, &ho) == FR_NEXT_MAIN);
+	CHECK(keys_go(true, &ho) == FR_NEXT_RECOVERY && st.why == FR_WHY_COUNT);
+	CHECK(n_shown == 2u && shown[1].bytes == sizeof band && shown[1].hash == h);
+	/* none on the way to the main image, or with no panel */
+	CHECK(run_keys(true, none, &ho) == FR_NEXT_MAIN && n_shown == 1u);
+	CHECK(run_keys(false, m4, &ho) == FR_NEXT_RECOVERY && n_shown == 0u && panel_bytes == 0u);
 	image(true);
 }
 
@@ -1556,7 +1721,8 @@ static void test_no_blink(void)
 
 		CHECK(run_keys(true, m4, &ho) == FR_NEXT_RECOVERY);
 		CHECK(st.why == FR_WHY_KEYS);
-		CHECK(n_shown == 1u);
+		/* the logo frame, then only the line under it, no blink */
+		CHECK(n_shown == 2u && shown[1].bytes == FR_PANEL_LINE_BYTES);
 	}
 	/* no panel: nothing drawn, the same time */
 	CHECK(run_keys(false, keys[0], &ho) == FR_NEXT_MAIN);
@@ -1942,6 +2108,7 @@ static enum fr_next rec_go(const struct hstep *steps, const uint8_t *img, size_t
 	hw.clock = &clock;
 	hw.psoc = &link;
 	hw.panel = &bus;
+	hw.frame = panel_fb;
 	hw.flash = &flash;
 	hw.mem = &mem;
 	hw.usb_start = u_start;
@@ -2854,7 +3021,7 @@ static void test_rec_trial(void)
 		CHECK(!wrote_in(FR_RECORD_OFF(0), FR_RECORD_OFF(0) + FR_SECTOR));
 		CHECK(screen_says(&st.screen, "Done: slot 2 is written for one trial start"));
 		CHECK(screen_says(&st.screen, "If it does not start, switch off and on: slot 1 boots"));
-		CHECK(strcmp(st.screen.status_right, "v1.0.0 F16") == 0);
+		CHECK(strcmp(st.screen.status_right, "v1.0.0 F17") == 0);
 
 		/* the trial start */
 		CHECK(first_stage() == 1u);
@@ -2912,7 +3079,7 @@ static void test_rec_trial(void)
 		CHECK(fmem[FR_LOG_OFF(1)] == 0xFCu);
 		CHECK(!wrote_in(FR_RECORD_OFF(0), FR_RECORD_OFF(0) + FR_SECTOR));
 		CHECK(wrote_in(FR_RECORD_OFF(1), FR_RECORD_OFF(1) + FR_SECTOR));
-		CHECK(screen_says(&st.screen, "Done: slot 2 is kept and selected"));
+		CHECK(screen_says(&st.screen, "Done: slot 2 is kept as the boot slot"));
 		/* the next start checks slot 2 and trusts it */
 		CHECK(first_stage() == 1u);
 		CHECK(fmem[FR_SELECTOR_OFF] == 0x01u && fmem[FR_SELECTOR_OFF + 1u] == 0x01u);
@@ -3106,6 +3273,8 @@ int main(void)
 	RUN(test_rec_other_ways_poweroff);
 	RUN(test_rec_battery);
 	RUN(test_normal_order);
+	RUN(test_inbox_before_jump);
+	RUN(test_record_running);
 	RUN(test_log_step);
 	RUN(test_log_trial_start);
 	RUN(test_log_trial_spend);
@@ -3125,6 +3294,7 @@ int main(void)
 	RUN(test_rec_keys_abort);
 	RUN(test_rec_keys_quiet);
 	RUN(test_logo_alone);
+	RUN(test_recovery_line);
 	RUN(test_no_slot_chords);
 	RUN(test_no_blink);
 	return check_summary("test_front_start");

@@ -123,9 +123,6 @@ int fr_psoc_poll(struct fr_psoc *p);
  * the long loops, so that a frame the front does not serve is dropped as
  * it comes and a power message is kept. Sends nothing. */
 void fr_psoc_take(struct fr_psoc *p);
-/* Takes what has arrived and handles its power messages alone (S-07.050-
- * S-07.053); greetings and pings wait. */
-int fr_psoc_poll_power(struct fr_psoc *p);
 /* Polls for us microseconds. */
 int fr_psoc_sleep(struct fr_psoc *p, uint32_t us);
 

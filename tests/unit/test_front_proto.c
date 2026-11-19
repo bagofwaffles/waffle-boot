@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "support/check.h"
+#include "vectors/s02_vectors.h"
 
 #include "front/fr.h"
 #include "front/fr_handoff.h"
@@ -346,8 +347,10 @@ static void survey(void)
 	unsigned k;
 
 	st.selector_ok = fr_read_selector(&fl, &st.sel) == FR_FLASH_OK;
-	for (k = 0; k < 2; k++)
+	for (k = 0; k < 2; k++) {
 		CHECK(fr_slot_info(&fl, k, &st.slot[k]) == FR_FLASH_OK);
+		CHECK(fr_slot_kind(&fl, k, &st.slot[k]) == FR_FLASH_OK);
+	}
 	fr_rec_target(&st);
 }
 
@@ -510,7 +513,7 @@ static void test_hello(void)
 	start(0, 1, true);
 	CHECK(ask(FR_T_HELLO, NULL, 0, r) == (int)FR_HELLO_LEN);
 	CHECK(r[FR_HELLO_O_PROTO] == FR_PROTO_VERSION);
-	CHECK(fr_le16(r + FR_HELLO_O_FRONT) == FR_FRONT_VERSION && FR_FRONT_VERSION == 16u);
+	CHECK(fr_le16(r + FR_HELLO_O_FRONT) == FR_FRONT_VERSION && FR_FRONT_VERSION == 17u);
 	CHECK(r[FR_HELLO_O_PROTO] == 2u);
 	CHECK(fr_le16(r + FR_HELLO_O_MAX_DATA) == FR_PROTO_MAX_DATA);
 	CHECK(r[FR_HELLO_O_WHY] == FR_WHY_KEYS);
@@ -1174,7 +1177,7 @@ static void test_battery(void)
 	/* refused for its size: no request */
 	start(0, 1, true);
 	fail_other();
-	CHECK(begin_f(0x77001u, h, FR_BEGIN_F_RUNNING) == FR_WR_SIZE);
+	CHECK(begin_f(0x76001u, h, FR_BEGIN_F_RUNNING) == FR_WR_SIZE);
 	CHECK(begin_f(0, h, FR_BEGIN_F_RUNNING) == FR_WR_SIZE);
 	CHECK(battery_calls == 0u);
 	/* no hook: accepted all the same */
@@ -1796,7 +1799,7 @@ static int begin_reply(uint32_t len, const uint8_t *image_sha, uint8_t flags, ui
 }
 
 /* S-02.093: BEGIN answers its status, the way and the target; a refusal
- * way 0 and 0xFF. The size is 1 to 0x77000 bytes (S-02.084). */
+ * way 0 and 0xFF. The size is 1 to 0x76000 bytes (S-02.084). */
 static void test_begin_reply(void)
 {
 	uint8_t r[16], h[FR_SHA256_LEN];
@@ -1804,12 +1807,12 @@ static void test_begin_reply(void)
 	memset(h, 0x11, sizeof h);
 	/* the default: plain, slot 1 */
 	start(0, 1, true);
-	CHECK(begin_reply(0x77000u, h, 0, r) == (int)FR_BEGIN_REPLY_LEN);
+	CHECK(begin_reply(0x76000u, h, 0, r) == (int)FR_BEGIN_REPLY_LEN);
 	CHECK(r[0] == FR_WR_OK && r[1] == FR_WAY_PLAIN && r[2] == 1u);
-	CHECK(proto.len == 0x77000u);
-	/* sizes over 0x77000, and 0 */
+	CHECK(proto.len == 0x76000u);
+	/* sizes over 0x76000, and 0: status 6 */
 	{
-		static const uint32_t big[] = { 0x77001u, 0x78000u, 0x78001u, 0 };
+		static const uint32_t big[] = { 0x76001u, 0x77000u, 0x77001u, 0x78000u, 0x78001u, 0 };
 
 		for (unsigned i = 0; i < ARRAY_LEN(big); i++) {
 			CHECK(begin_reply(big[i], h, 0, r) == (int)FR_BEGIN_REPLY_LEN);
@@ -1823,7 +1826,7 @@ static void test_begin_reply(void)
 	fail_other();
 	CHECK(begin_reply(0x1000u, h, FR_BEGIN_F_RUNNING, r) == (int)FR_BEGIN_REPLY_LEN);
 	CHECK(r[0] == FR_WR_OK && r[1] == FR_WAY_IN_PLACE && r[2] == 0u);
-	CHECK(begin_reply(0x77000u, h, FR_BEGIN_F_RUNNING, r) == (int)FR_BEGIN_REPLY_LEN);
+	CHECK(begin_reply(0x76000u, h, FR_BEGIN_F_RUNNING, r) == (int)FR_BEGIN_REPLY_LEN);
 	CHECK(r[0] == FR_WR_OK);
 	/* slot 1 good: selected first, slot 0 */
 	start_b_good(0, 1);
@@ -3705,7 +3708,7 @@ static void test_info_refused(void)
 	n = make_image(img_b, 0x2400, 9, true);
 	sha(img_b, n, h);
 	CHECK(begin_f((uint32_t)n, h, FR_BEGIN_F_RUNNING) == FR_WR_NOT_SELECTED);
-	CHECK(begin_f(FR_LOG_IMAGE_MAX + 1u, h, FR_BEGIN_F_FORCE) == FR_WR_SIZE);
+	CHECK(begin_f(FR_IMAGE_MAX + 1u, h, FR_BEGIN_F_FORCE) == FR_WR_SIZE);
 	info(r);
 	CHECK(r[FR_INFO_O_REFUSED] == FR_WR_SIZE);
 	CHECK(r[FR_INFO_O_PHASE] == FR_PH_DONE && r[FR_INFO_O_ACT] == FR_ACT_SWITCH);
@@ -4009,7 +4012,7 @@ static void test_act_force(void)
 /*
  * The force flag on BEGIN: the selector not naming A (3), verified not 01
  * (4) and an in-place write before a write of B failed (15) are lifted, and
- * the write goes where the notes say; a size over 0x77000 (6), the running
+ * the write goes where the notes say; a size over 0x76000 (6), the running
  * slot unknown (2) and S-02.091's rules (7) are kept. Another front without
  * the trial flag (12), and a bootable stream with no front (7 with image
  * result 7), are written and selected under force.
@@ -4052,7 +4055,7 @@ static void test_begin_force(void)
 	start(0, 1, false);
 	CHECK(begin_f((uint32_t)n, h, FR_BEGIN_F_FORCE) == FR_WR_NOT_RUNNING);
 	start(0, 1, true);
-	CHECK(begin_f(FR_LOG_IMAGE_MAX + 1u, h, FR_BEGIN_F_FORCE) == FR_WR_SIZE);
+	CHECK(begin_f(FR_IMAGE_MAX + 1u, h, FR_BEGIN_F_FORCE) == FR_WR_SIZE);
 	CHECK(begin_f(0, h, FR_BEGIN_F_FORCE) == FR_WR_SIZE);
 	CHECK(n_fops == 0u);
 	/* kept: 7 for a stream that fails S-02.091's rules */
@@ -4200,6 +4203,88 @@ static void test_log_read_fails(void)
 	fail_read_always_at = UINT32_MAX;
 }
 
+/* Slot 1 holding slot_kinds.json's case `name` (S-02.106), its record good
+ * or tried. */
+static void put_kind_case(const char *name, bool tried)
+{
+	const struct v_skind *c = NULL;
+	uint8_t *d = flash + FR_SLOT_BASE(1);
+
+	for (unsigned i = 0; i < ARRAY_LEN(v_slot_kinds); i++)
+		if (strcmp(v_slot_kinds[i].name, name) == 0)
+			c = &v_slot_kinds[i];
+	CHECK(c != NULL);
+	if (c == NULL)
+		return;
+	memset(d, 0xFF, FR_SLOT_CAP);
+	for (uint32_t i = 0; i < c->length; i++)
+		d[i] = (uint8_t)(i * 37u + c->seed);
+	for (unsigned j = 0; j < c->npatch; j++)
+		memcpy(d + c->patch[j].off, c->patch[j].b, 4);
+	CHECK(fr_crc32(0, d, c->length) == c->crc32);
+	memset(flash + FR_RECORD_OFF(1), 0xFF, FR_SECTOR);
+	fr_put32(flash + FR_RECORD_OFF(1), tried ? ~c->crc32 : c->crc32);
+	fr_put32(flash + FR_RECORD_OFF(1) + 4u, c->length);
+	fr_put32(flash + FR_RECORD_OFF(1) + 8u, FR_TAG);
+}
+
+/* INFO's slot flag bit 5 (S-02.093): set for a good or tried slot whose
+ * kind S-02.106's rule 3 decides, clear where rule 1 or 2 decides first or
+ * no rule holds, or the slot is neither good nor tried; a write of the slot
+ * reads its kind again. */
+static void test_info_te_prefix(void)
+{
+	static const struct {
+		const char *name;
+		bool bit5;
+	} cases[] = {
+		{ "te_prefix_only", true }, { "te_prefix_shortest", true },
+		{ "te_row_and_prefix", false }, { "te_row_1000_0_20", false },
+		{ "prefix_span_short", false }, { "prefix_too_short", false }, { "unknown", false },
+	};
+	uint8_t r[300] = { 0 };
+	size_t n;
+
+	for (unsigned i = 0; i < ARRAY_LEN(cases); i++)
+		for (unsigned t = 0; t < 2u; t++) {
+			const uint8_t f = t ? FR_SLOT_F_TRIED : FR_SLOT_F_GOOD;
+
+			start(0, 1, true);
+			put_kind_case(cases[i].name, t != 0u);
+			survey();
+			info(r);
+			CHECK(r[FR_INFO_O_SLOT(1) + FR_INFO_S_FLAGS] ==
+			      (uint8_t)(f | (cases[i].bit5 ? FR_SLOT_F_TE_PREFIX : 0u)));
+			/* slot 0's image has a descriptor: rule 1 */
+			CHECK((r[FR_INFO_O_SLOT(0) + FR_INFO_S_FLAGS] & FR_SLOT_F_TE_PREFIX) == 0u);
+		}
+	/* neither good nor tried: no kind */
+	start(0, 1, true);
+	put_kind_case("te_prefix_only", false);
+	flash[FR_RECORD_OFF(1)] ^= 0x01u;
+	survey();
+	info(r);
+	CHECK(r[FR_INFO_O_SLOT(1) + FR_INFO_S_FLAGS] == 0u);
+	/* recovery's own survey reads the kind too */
+	start(0, 1, true);
+	put_kind_case("te_prefix_only", false);
+	fr_rec_survey(&st, &fl);
+	info(r);
+	CHECK(r[FR_INFO_O_SLOT(1) + FR_INFO_S_FLAGS] == (FR_SLOT_F_GOOD | FR_SLOT_F_TE_PREFIX));
+	/* the slot written is read again with its kind: a waffle-boot image
+	 * over the TE one clears bit 5 */
+	start(0, 1, true);
+	put_kind_case("te_prefix_only", false);
+	survey();
+	n = make_image(img_b, 0x2400, 9, true);
+	CHECK(write_img(img_b, n, 0, r) == FR_WR_OK);
+	info(r);
+	CHECK(r[FR_INFO_O_RESULT] == FR_WR_OK && r[FR_INFO_O_WRITTEN] == 1u);
+	CHECK(r[FR_INFO_O_SLOT(1) + FR_INFO_S_FLAGS] ==
+	      (FR_SLOT_F_GOOD | FR_SLOT_F_HAS_DESC | FR_SLOT_F_HAS_FRONT));
+	CHECK(st.slot[1].kind == FR_KIND_WB);
+}
+
 int main(void)
 {
 	RUN(test_trial_spent);
@@ -4253,5 +4338,6 @@ int main(void)
 	RUN(test_begin_force);
 	RUN(test_info_v2);
 	RUN(test_log_read_fails);
+	RUN(test_info_te_prefix);
 	return check_summary("front_proto");
 }

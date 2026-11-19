@@ -42,6 +42,10 @@ struct fr_log {
 	uint8_t trial;		/* FR_LOG_TRIAL_*, from fr_log_step() */
 	uint16_t next;		/* the first free entry */
 	uint16_t unfinished;	/* the unfinished entries just before it */
+	/* fr_log_step()'s reading of the running slot, where it made one */
+	bool run_read;		/* fr_running_slots() ran and did not fail */
+	bool run_est;		/* and established run_slot */
+	uint8_t run_slot;
 };
 
 /* Reads the selector, the selected slot's record and its last sector. The

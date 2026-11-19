@@ -543,14 +543,6 @@ void fr_psoc_take(struct fr_psoc *p)
 		take_bytes(p);
 }
 
-int fr_psoc_poll_power(struct fr_psoc *p)
-{
-	if (p->off)
-		return FR_PSOC_OFF;
-	take_bytes(p);
-	return handle_power(p);
-}
-
 int fr_psoc_poll(struct fr_psoc *p)
 {
 	if (p->off)

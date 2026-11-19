@@ -830,13 +830,14 @@ static void test_kept(void)
 			psoc_at(fk.now + (20u + i) * MS, 0x41, 0x37, b2, sizeof b2);
 		CHECK(fr_psoc_key_status(&psoc) == FR_PSOC_OK);
 		CHECK(count(0x40, 0x14, from) == 5u);
-		/* and only the power messages at the hand-off: a ping waits */
+		/* and at the hand-off, a ping is answered with the power
+		 * message (S-07.076's front's point) */
 		from = fk.nout;
 		psoc_at(fk.now + 1 * MS, 0x41, 0x01, ping, sizeof ping);
 		psoc_at(fk.now + 2 * MS, 0x41, 0x31, s16, 1);
 		fk.now += 3 * MS;
-		CHECK(fr_psoc_poll_power(&psoc) == FR_PSOC_OK);
-		CHECK(count(0x40, 0x14, from) == 1u && count(0x02, 0x14, from) == 0u);
+		CHECK(fr_psoc_poll(&psoc) == FR_PSOC_OK);
+		CHECK(count(0x40, 0x14, from) == 1u && count(0x02, 0x14, from) == 1u);
 	}
 
 	/* fr_psoc_take(), as the long loops' hook calls it: twenty key events

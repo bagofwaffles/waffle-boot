@@ -92,7 +92,10 @@ static void to_confirm(uint8_t act)
 }
 
 /* Recovery entered with key 4 still held: nothing acts until a reading
- * shows no key; unread and two-key readings never arm. */
+ * shows no key; unread and two-key readings never arm. S-15.151's "Before
+ * the first screen": the entry is after the front's line, and no reading
+ * is taken while it shows, so the chord's own keys, or any key pressed or
+ * held under the line, choose nothing until every key has read up. */
 static void test_gate_entry(void)
 {
 	static const unsigned noarm[] = { FR_KEY_4, FR_KEYS_UNREAD, FR_KEYS_MANY, FR_KEY_1,

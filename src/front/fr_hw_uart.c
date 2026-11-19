@@ -6,7 +6,9 @@
  * fills the transmit FIFO and no more. Target only.
  */
 #include "fr_hw.h"
+#include "fr_handoff.h"
 
+#include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_uart.h"
 #include "waffle/drivers/mmr.h"
 
@@ -18,13 +20,26 @@
 
 static uint8_t ring[RING];
 static uint32_t head, tail;
+/* The link's reports for the hand-off record (S-01.023). */
+static uint64_t last_read;
+static uint32_t gap_max;
+static uint16_t overruns;
 
 /* RX FIFO to the ring; line errors cleared. A full ring leaves the bytes
- * in the controller (which then overruns: the frame's check drops it). */
+ * in the controller (which then overruns: the frame's check drops it).
+ * Each call also keeps the longest time since the call before and counts
+ * the reads that found the overrun flag. */
 static void take(void)
 {
+	const uint64_t t = wb_core_cycles();
 	uint32_t stat = wb_mmr_read32(UART_STAT(PSOC_UART));
+	const uint64_t gap = (t - last_read) / FR_CCLK_MHZ;
 
+	if (gap > gap_max)
+		gap_max = gap > 0xFFFFFFFFu ? 0xFFFFFFFFu : (uint32_t)gap;
+	last_read = t;
+	if ((stat & UART_STAT_OE) != 0u && overruns != 0xFFFFu)
+		overruns++;
 	if (stat & UART_STAT_ERRORS)
 		wb_mmr_write32(UART_STAT(PSOC_UART), stat & UART_STAT_ERRORS);
 	for (unsigned i = 0; i < HW_FIFO && head - tail < RING; i++) {
@@ -41,9 +56,18 @@ void fr_hw_uart_take(void)
 	take();
 }
 
+void fr_hw_uart_report(uint32_t *gap_max_us, uint16_t *overrun_reads)
+{
+	*gap_max_us = gap_max;
+	*overrun_reads = overruns;
+}
+
 void fr_hw_uart_start(void)
 {
 	head = tail = 0;
+	gap_max = 0;
+	overruns = 0;
+	last_read = wb_core_cycles();
 	wb_mmr_write32(UART_CTL(PSOC_UART), 0);
 	wb_mmr_write32(UART_IMSK_CLR(PSOC_UART), 0xFFu);	/* polled */
 	wb_mmr_write32(UART_CLK(PSOC_UART), PSOC_CLK);

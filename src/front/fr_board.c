@@ -31,6 +31,8 @@ static struct fr_start start;
  * started the link; before that the UART's bytes into memory. */
 static void serve_link(void)
 {
+	if (start.panel_up)
+		fr_panel_watch(&start.panel);
 	if (start.psoc.io != NULL)
 		fr_psoc_take(&start.psoc);
 	else
@@ -102,6 +104,7 @@ uint32_t fr_main(void)
 			&fr_hw_clock, &fr_hw_psoc, NULL, &fr_hw_flash, &mem,
 			fr_usb_start, fr_usb_poll, fr_usb_configured, fr_usb_ma,
 			&fr_usb_serial, (uint8_t *)(uintptr_t)FR_STAGING_START,
+			(uint8_t *)(uintptr_t)FR_FRAME_START,
 		};
 		struct fr_start_hw h = hw;
 		enum fr_next next;
@@ -118,6 +121,9 @@ uint32_t fr_main(void)
 			for (;;)
 				fr_halt(&start, 1000000u);	/* the PSoC ends it */
 		d = start.desc;
+		/* S-01.023's reports */
+		ho->te_misses = start.panel.te_misses;
+		fr_hw_uart_report(&ho->link_gap_max_us, &ho->link_overruns);
 	} else if (!fr_image_check(&mem, &d)) {
 		/* The slave: its stream came from the master, which checked it.
 		 * It has no PSoC link to serve. */

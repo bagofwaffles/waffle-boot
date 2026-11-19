@@ -8,8 +8,9 @@
  * window in one color and sends DISPON in its start, the front sends its
  * first frame with the display off and DISPON after that frame's last
  * byte. The waits' bounds (S-13c.006, S-13c.007); the logo frame, the
- * logo alone, byte for byte (S-15.132); DISPON once; nothing at a power-off
- * (S-13c.022).
+ * logo alone, byte for byte (S-15.132), sent by the CPU from the frame
+ * buffer on a bus with no DMA; DISPON once; nothing at a power-off
+ * (S-13c.022). test_front_draw has the TE pacing and the DMA.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -135,7 +136,8 @@ static void rec_init(struct rec *r, uint64_t t0)
 
 static struct fr_panel_bus fr_bus(struct rec *r)
 {
-	struct fr_panel_bus b = { r_reset, r_select, r_cmd, r_data, r };
+	/* no TE line and no DMA: every frame unpaced, by the CPU */
+	struct fr_panel_bus b = { r_reset, r_select, r_cmd, r_data, NULL, NULL, NULL, NULL, r };
 
 	return b;
 }
@@ -345,6 +347,15 @@ static const struct scenario cases[] = {
 
 static struct rec ra, rb, rc;
 
+/* A screen in a frame buffer, as fr_paint() leaves it. */
+static uint8_t painted[FR_PANEL_FRAME_BYTES];
+
+static const uint8_t *paint(const struct fr_screen *s)
+{
+	fr_paint(painted, s);
+	return painted;
+}
+
 static unsigned fails_seen;
 
 /* Stop a scenario loop at its first failure, naming it. */
@@ -456,7 +467,7 @@ static void test_frames_and_off(void)
 	fr_panel_begin(&fp, &fb, &fc, 0, 0, 1);
 	fr_screen_logo(&s);
 	n = ra.len;
-	fr_panel_frame(&fp, fr_screen_row, &s);	/* not started: nothing */
+	fr_panel_frame(&fp, paint(&s));	/* not started: nothing */
 	fr_panel_off(&fp);
 	CHECK(ra.len == n);
 	fr_panel_start(&fp);
@@ -467,7 +478,7 @@ static void test_frames_and_off(void)
 
 	g_served = 0;
 	fr_serve_hook = count_serve;	/* the link served after each row */
-	fr_panel_frame(&fp, fr_screen_row, &s);
+	fr_panel_frame(&fp, paint(&s));
 	fr_serve_hook = NULL;
 	CHECK(g_served >= FR_PANEL_ROWS);
 	CHECK(ra.len == n + FRAME_LOG + 2u);
@@ -476,7 +487,7 @@ static void test_frames_and_off(void)
 	CHECK(first_frame_then_dispon(&ra));
 	CHECK(fp.on);
 	n = ra.len;
-	fr_panel_frame(&fp, fr_screen_row, &s);
+	fr_panel_frame(&fp, paint(&s));
 	CHECK(ra.len == n + FRAME_LOG);
 	CHECK(ra.log[n] == EV_CMD && ra.log[n + 1u] == S13C_RAMWR);
 	CHECK(count_cmd(&ra, 0, S13C_DISPON) == 1u);
@@ -486,7 +497,7 @@ static void test_frames_and_off(void)
 	CHECK(ra.len == n);			/* no DISPOFF, no command */
 	CHECK(fp.on && !fp.ready);
 	n = ra.len;
-	fr_panel_frame(&fp, fr_screen_row, &s);
+	fr_panel_frame(&fp, paint(&s));
 	fr_panel_off(&fp);
 	fr_panel_start(&fp);
 	CHECK(ra.len == n);
@@ -499,7 +510,7 @@ static void test_frames_and_off(void)
 	fr_panel_off(&fp);
 	CHECK(ra.len == n);
 	CHECK(!fp.on && !fp.ready);
-	fr_panel_frame(&fp, fr_screen_row, &s);
+	fr_panel_frame(&fp, paint(&s));
 	fr_panel_off(&fp);
 	fr_panel_start(&fp);
 	CHECK(ra.len == n);
@@ -544,7 +555,7 @@ static void test_logo_frame(void)
 		fr_panel_start(&fp);
 		fr_screen_logo(&s);
 		at = ra.len;
-		fr_panel_frame(&fp, fr_screen_row, &s);
+		fr_panel_frame(&fp, paint(&s));
 
 		rec_init(&rb, c->t0);
 		sb = full_bus(&rb, true);

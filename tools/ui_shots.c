@@ -254,6 +254,7 @@ static void recovery_unit(void)
 		rec_st.slot[k].has_desc = true;
 		rec_st.slot[k].has_front = true;
 		rec_st.slot[k].bootable = true;
+		rec_st.slot[k].kind = FR_KIND_WB;
 		memcpy(rec_st.slot[k].desc.bl_version, v[k], sizeof v[k]);
 	}
 	rec_st.own_desc = true;

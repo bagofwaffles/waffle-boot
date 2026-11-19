@@ -26,6 +26,8 @@
 #define FR_HANDOFF_ADDR   0x08030800u	/* written by the front */
 #define FR_STAGING_START  0x88400000u	/* recovery's received image */
 #define FR_STAGING_END    0x88478000u
+#define FR_FRAME_START    0x8FE00000u	/* the front's frame, in bus order */
+#define FR_FRAME_END      0x8FE34800u
 
 /* --- The image descriptor (tools/mkldr.py writes it; little-endian) --- */
 
@@ -61,7 +63,9 @@
 /* --- The hand-off record (written by the front, read by main) --- */
 
 #define FR_HO_MAGIC       0x4F484257u	/* "WBHO" */
-#define FR_HO_VERSION     1u
+#define FR_HO_VERSION     2u
+#define FR_HO_SIZE        156u	/* version 2's bytes, the CRC included */
+#define FR_HO_SIZE_V1     148u	/* version 1's, from a front before 17 */
 #define FR_HO_KEYS_MAX    16u
 #define FR_HO_BATTERY_MAX 16u
 #define FR_HO_STAMPS      8u
@@ -78,6 +82,9 @@
 #define FR_HO_CHORD_SHOWN   0x0100u	/* never set: kept for the layout */
 #define FR_HO_START_LOGGED  0x0200u	/* log_slot and log_entry name this start's
 					 * entry in the start log (S-02.095) */
+#define FR_HO_RUNNING       0x0400u	/* version 2: run_slot is the running slot,
+					 * established (S-01.002, S-02.054) */
+#define FR_HO_TRIAL_MARKED  0x0800u	/* version 2: a trial start the front marked */
 
 /* The core clock (S-13a.001): the time base of every front wait, and the
  * stamps' unit, FR_CCLK_MHZ cycles a microsecond. */
@@ -116,12 +123,17 @@ struct fr_handoff {
 	uint8_t keys[FR_HO_KEYS_MAX];	/* the 0x41 reply's payload */
 	uint8_t battery[FR_HO_BATTERY_MAX];	/* the last 0x37 payload */
 	uint64_t stamps[FR_HO_STAMPS];	/* enum fr_stamp */
+	/* version 2 (version 1 has its crc32 here, at 144) */
+	uint8_t run_slot;		/* with FR_HO_RUNNING: 0 or 1 */
+	uint8_t te_misses;		/* frames sent without a TE edge, saturating */
+	uint16_t link_overruns;		/* PSoC UART reads with the overrun flag set */
+	uint32_t link_gap_max_us;	/* the longest time between two of them */
 	uint32_t crc32;			/* CRC-32 of the bytes before it */
 };
 
 #if defined(__bfin__)
-/* S-01.023's 148 bytes: the target aligns a u64 to 4, so no tail padding. */
-_Static_assert(sizeof(struct fr_handoff) == 148u, "S-01.023: the hand-off record is 148 bytes");
+/* S-01.023's 156 bytes: the target aligns a u64 to 4, so no tail padding. */
+_Static_assert(sizeof(struct fr_handoff) == FR_HO_SIZE, "S-01.023: the hand-off record is 156 bytes");
 #endif
 
 #endif /* FR_HANDOFF_H */

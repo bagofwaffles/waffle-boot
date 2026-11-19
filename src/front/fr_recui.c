@@ -2,8 +2,9 @@
 /*
  * Recovery's keys (S-02.084, S-15.151): the main screen, the slot menu and
  * the confirm screen, driven by one key reading at a time (fr_keys_one()).
- * No key acts until a reading has shown every key up, after entry and after
- * each change of screen; a reading that did not come, or shows more than
+ * No key acts until a reading has shown every key up, after entry (which
+ * follows the front's line under the logo, S-13c.025, so the chord's own
+ * keys choose nothing) and after each change of screen; a reading that did not come, or shows more than
  * one key, is no key and ends a hold. An action starts only when key 1 was
  * read down, alone, in every reading for FR_HOLD_US on the confirm screen.
  */

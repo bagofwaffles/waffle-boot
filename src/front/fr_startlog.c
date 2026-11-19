@@ -177,11 +177,17 @@ enum fr_log_step fr_log_step(const struct fr_flash *f, const struct fr_mem *mem,
 
 	fr_log_scan(f, l);
 	l->trial = FR_LOG_TRIAL_NONE;
+	l->run_read = l->run_est = false;
+	l->run_slot = 0;
 	/* one 1-byte read when no trial is pending; the running slot only
 	 * where one is, and only an established one acts */
 	if (fr_log_trial_pending(f, l, &slot) &&
-	    fr_running_slots(f, mem, &running, &established, &both) == FR_FLASH_OK &&
-	    established) {
+	    fr_running_slots(f, mem, &running, &established, &both) == FR_FLASH_OK) {
+		l->run_read = true;
+		l->run_est = established;
+		l->run_slot = (uint8_t)running;
+	}
+	if (l->run_est) {
 		/* both slots match this image's memory, and the flash holds
 		 * the same bytes in both: the pending slot's image, its front
 		 * included, is the one that has come this far, whichever slot

@@ -35,8 +35,16 @@ struct mop {
 static struct mop g_mops[64];
 static unsigned g_nmops;
 
+/* S-02.103: an action keeps each slot's settings sector. */
+static bool in_settings(uint32_t off)
+{
+	return (off >= FR_SETTINGS_OFF(0) && off < FR_SETTINGS_OFF(0) + FR_SECTOR) ||
+	       (off >= FR_SETTINGS_OFF(1) && off < FR_SETTINGS_OFF(1) + FR_SECTOR);
+}
+
 static int m_erase(void *ctx, uint32_t off)
 {
+	CHECK(!in_settings(off));
 	if (g_nmops < N(g_mops))
 		g_mops[g_nmops++] = (struct mop){ 'e', off, FR_SECTOR, { 0 } };
 	return ff_erase(ctx, off);
@@ -44,6 +52,7 @@ static int m_erase(void *ctx, uint32_t off)
 
 static int m_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t len)
 {
+	CHECK(!in_settings(off));
 	if (g_nmops < N(g_mops)) {
 		struct mop *m = &g_mops[g_nmops++];
 
@@ -469,6 +478,69 @@ static void test_try_ops(void)
 			expect_starts(b, a);
 		}
 	}
+}
+
+/*
+ * A try of B = slot 0 whose index step reads back wrong (S-02.093): the
+ * selector, {00, FE}, is settled back on A = slot 1 by an erase and
+ * {01, 01} a byte at a time, the index first, read back (S-02.084). A cut
+ * inside that index program leaves the verified byte erased, so it never
+ * leaves a torn index with verified 0x01.
+ */
+static void test_try_settle_back(void)
+{
+	static const struct want w[] = {
+		E(FR_LOG_OFF(0)), P1(FR_LOG_OFF(0), 0xFD), E(FR_RECORD_OFF(0)), PREC(0), E(SEL),
+		P1(SEL + 1u, 0xFE), P1(SEL, 0x00), E(SEL), P1(SEL, 0x01), P1(SEL + 1u, 0x01),
+	};
+	unsigned r = 0, k = 0, n_cut = 0;
+
+	setup(1, BK_GOOD);
+	CHECK_EQ(act(FR_ACT_TRY, false, NULL), FR_WR_OK);
+	/* the read of the index step's read-back: the first read after the
+	 * program of index 0x00 */
+	for (unsigned i = 0, reads = 0, seen = 0; i < g_f.nlog && i < FF_LOG_MAX; i++) {
+		const struct ff_op *o = &g_f.log[i];
+
+		if (o->kind == FF_READ) {
+			reads++;
+			if (seen && r == 0u)
+				r = reads;
+		} else if (o->kind == FF_PROGRAM && o->off == SEL && o->len == 1u) {
+			seen = 1;
+		}
+	}
+	CHECK(r != 0u);
+	restore();
+	g_f.garble_read = r;
+	CHECK_EQ(act(FR_ACT_TRY, false, NULL), FR_WR_SELECTOR);
+	expect_ops(w, N(w), ~g_crc_b, g_len_b);
+	sel_is(0x01, 0x01);
+	CHECK(g_home.trial);
+	expect_starts(1, 1);
+	for (unsigned i = 0; i < g_nmops; i++)
+		if (g_mops[i].kind == 'p' && g_mops[i].off == SEL && g_mops[i].b[0] == 0x01u)
+			k = i + 1u;	/* the settling's index program */
+	CHECK_EQ(k, 9);
+	for (unsigned t = 0; t < 256u + 8u; t++) {
+		unsigned s[2];
+
+		restore();
+		g_f.garble_read = r;
+		g_f.tear = k;
+		g_f.tear_kind = t < 256u ? FF_TEAR_SEED : FF_TEAR_BIT;
+		g_f.tear_a = t < 256u ? t + 1u : 0u;
+		g_f.tear_b = t < 256u ? 0u : t - 256u;
+		(void)act(FR_ACT_TRY, false, NULL);
+		CHECK(g_f.dead);
+		CHECK_EQ(g_f.mem[SEL + 1u], 0xFF);	/* never {torn, 01} */
+		CHECK_EQ(fr_selected_slot(g_f.mem[SEL]), 1);
+		if (g_f.mem[SEL] != 0x01u)
+			n_cut++;
+		first_stages(s, 2);
+		CHECK(s[0] == 1u && s[1] == 1u);
+	}
+	CHECK(n_cut > 0u);	/* some cuts tore the index */
 }
 
 static void test_switch_ops(void)
@@ -997,6 +1069,7 @@ static void test_cut_states(void)
 int main(void)
 {
 	test_try_ops();
+	test_try_settle_back();
 	test_switch_ops();
 	test_switch_damaged();
 	test_switch_damaged_torn();

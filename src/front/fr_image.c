@@ -82,7 +82,7 @@ void fr_handoff_seal(struct fr_handoff *ho)
 {
 	ho->magic = FR_HO_MAGIC;
 	ho->version = FR_HO_VERSION;
-	ho->size = (uint16_t)sizeof *ho;
+	ho->size = FR_HO_SIZE;
 	ho->crc32 = fr_crc32(0, (const uint8_t *)ho,
 			     offsetof(struct fr_handoff, crc32));
 }

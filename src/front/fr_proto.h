@@ -32,7 +32,7 @@
 #include "fr_slots.h"
 
 #define FR_PROTO_VERSION  2u
-#define FR_FRONT_VERSION  16u	/* the front's own version, bumped with its pin */
+#define FR_FRONT_VERSION  17u	/* the front's own version, bumped with its pin */
 #define FR_PROTO_MAX_DATA 1024u	/* image bytes in one DATA, after its offset */
 #define FR_PROTO_MAX      (FR_PROTO_MAX_DATA + 8u)	/* a frame's payload */
 #define FR_PROTO_HEAD     6u	/* "WR", type, seq, len */
@@ -128,6 +128,7 @@
 #define FR_SLOT_F_HAS_FRONT  0x04u
 #define FR_SLOT_F_TRIED      0x08u	/* its record carries the trial mark (fr_tried()) */
 #define FR_SLOT_F_STARTED    0x10u	/* tried, and its front marked a trial start */
+#define FR_SLOT_F_TE_PREFIX  0x20u	/* good or tried, kind decided by S-02.106 rule 3 */
 
 /* RESTART: {status}. BEGIN: {status, enum fr_way, the target slot or
  * FR_NO_SLOT}: what END will do, or refuse with FR_WR_CHANGED.

@@ -520,8 +520,8 @@ enum fr_image_rc fr_image_valid(const uint8_t *img, uint32_t n, struct fr_desc *
 	enum fr_image_rc rc;
 	bool has;
 
-	/* S-02.084: a waffle-boot image leaves the slot's last sector free */
-	if (img == NULL || n == 0u || n > FR_LOG_IMAGE_MAX)
+	/* S-02.084: an image leaves the settings sector and the log free */
+	if (img == NULL || n == 0u || n > FR_IMAGE_MAX)
 		return FR_IMG_SIZE;
 	(void)scan(&w, &rc, desc != NULL ? desc : &own, &has);
 	return rc;
@@ -578,6 +578,49 @@ int fr_slot_info(const struct fr_flash *f, unsigned k, struct fr_slot_info *out)
 		return FR_FLASH_IO;
 	out->bootable = rc == FR_IMG_OK || rc == FR_IMG_NO_FRONT;
 	out->has_front = rc == FR_IMG_OK;
+	return FR_FLASH_OK;
+}
+
+/* S-02.106 rule 2: a TE build by its image's length and CRC-32. */
+static const struct te_row {
+	uint32_t n, crc;
+	uint16_t v[4];
+} te_rows[] = {
+	{ 0x5ADB0u, 0x7AF4665Cu, { 1000u, 0u, 12u, 0u } },
+	{ 0x5B7ACu, 0x0789B2D9u, { 1000u, 0u, 13u, 0u } },
+	{ 0x60000u, 0x5DEE4B51u, { 1000u, 0u, 20u, 0u } },
+	{ 0x60CA4u, 0xA930BEF3u, { 1000u, 0u, 23u, 0u } },
+};
+/* Rule 3: the CRC-32 of the slot's first TE_PREFIX_LEN bytes. */
+#define TE_PREFIX_LEN 4468u
+#define TE_PREFIX_CRC 0x31D25812u
+
+int fr_slot_kind(const struct fr_flash *f, unsigned k, struct fr_slot_info *s)
+{
+	uint32_t c, crc = 0;
+
+	s->kind = FR_KIND_NONE;
+	if (k > 1u)
+		return FR_FLASH_IO;
+	if (!s->good && !s->tried)
+		return FR_FLASH_OK;
+	s->kind = FR_KIND_WB;
+	if (s->has_desc)
+		return FR_FLASH_OK;
+	c = s->tried ? ~s->rec.crc32 : s->rec.crc32;
+	for (unsigned i = 0; i < sizeof te_rows / sizeof te_rows[0]; i++)
+		if (te_rows[i].n == s->rec.length && te_rows[i].crc == c) {
+			s->kind = FR_KIND_TE_BUILD;
+			fr_copy(s->te_version, te_rows[i].v, sizeof s->te_version);
+			return FR_FLASH_OK;
+		}
+	s->kind = FR_KIND_UNKNOWN;
+	if (s->rec.length < TE_PREFIX_LEN)
+		return FR_FLASH_OK;
+	if (flash_crc(f, FR_SLOT_BASE(k), TE_PREFIX_LEN, &crc) != FR_FLASH_OK)
+		return FR_FLASH_IO;
+	if (crc == TE_PREFIX_CRC)
+		s->kind = FR_KIND_TE;
 	return FR_FLASH_OK;
 }
 
@@ -1109,10 +1152,11 @@ static bool selector_reads(const struct fr_writer *w, uint8_t index, uint8_t ver
 }
 
 /*
- * The erased selector programmed {index, verified} and read back.
+ * The erased selector programmed {index, verified} a byte at a time: the
+ * index byte first, alone, read back before the verified byte follows.
  *
- * While the running slot is damaged (w->rescue) the index byte goes first,
- * alone, and is read back before the verified byte follows. A program cut
+ * So while the running slot is damaged (w->rescue), and in every settling
+ * (settle()). A program cut
  * short clears some of its bits (S-02 Terms), so the two bytes written at
  * once could be left as the damaged slot's index with verified 0x01,
  * which the first stage trusts for ever (S-02.020). Written one by
@@ -1121,18 +1165,26 @@ static bool selector_reads(const struct fr_writer *w, uint8_t index, uint8_t ver
  * under the whole index of a slot read good. A trial's settling back on
  * the running slot (S-02.093) is written so too: the other slot is tried.
  */
-static bool selector_put(const struct fr_writer *w, uint8_t index, uint8_t verified)
+static bool selector_bytes(const struct fr_writer *w, uint8_t index, uint8_t verified)
 {
 	const uint8_t raw[2] = {index, verified};
 	uint8_t back;
 
-	if (!w->rescue && w->way != FR_WAY_TRIAL && !w->bytewise)
-		return w_program(w, FR_SELECTOR_OFF, raw, 2u) &&
-		       selector_reads(w, index, verified);
 	return w_program(w, FR_SELECTOR_OFF, raw, 1u) &&
 	       flash_read(w->f, FR_SELECTOR_OFF, &back, 1u) == FR_FLASH_OK && back == index &&
 	       w_program(w, FR_SELECTOR_OFF + 1u, raw + 1, 1u) &&
 	       selector_reads(w, index, verified);
+}
+
+/* The erased selector programmed {index, verified} and read back: a byte
+ * at a time where selector_bytes() says, else in one program. */
+static bool selector_put(const struct fr_writer *w, uint8_t index, uint8_t verified)
+{
+	const uint8_t raw[2] = {index, verified};
+
+	if (w->rescue || w->way == FR_WAY_TRIAL || w->bytewise)
+		return selector_bytes(w, index, verified);
+	return w_program(w, FR_SELECTOR_OFF, raw, 2u) && selector_reads(w, index, verified);
 }
 
 /*
@@ -1146,7 +1198,8 @@ static bool selector_put(const struct fr_writer *w, uint8_t index, uint8_t verif
  * short it leaves the index naming the slot it named or slot 0, and
  * verified short of 0x01 or at it; an erase cut short could set the bits
  * of another index under a verified it left at 0x01. Else the sector is
- * erased and {t, 0x01} programmed, the index first (selector_put()).
+ * erased and {t, 0x01} programmed, the index first, read back, then
+ * verified (S-02.084, S-02.048), whatever way the writer runs.
  */
 static bool settle(const struct fr_writer *w, unsigned t)
 {
@@ -1167,7 +1220,7 @@ static bool settle(const struct fr_writer *w, unsigned t)
 			return false;
 		return selector_reads(w, 0x00u, 0x01u);
 	}
-	return w_erase(w, FR_SELECTOR_OFF) && selector_put(w, (uint8_t)t, 0x01u);
+	return w_erase(w, FR_SELECTOR_OFF) && selector_bytes(w, (uint8_t)t, 0x01u);
 }
 
 /* S-02.093: a selector step of the trial failed: the selector settled back
@@ -1656,6 +1709,13 @@ bool fr_writer_step(struct fr_writer *w)
 		 * empty start log (S-02.095). */
 		if (!w_erase(w, FR_LOG_OFF(w->target)))
 			return stop(w, FR_WR_FLASH);
+		w->state = FR_WS_SETTINGS_ERASE;
+		break;
+	case FR_WS_SETTINGS_ERASE:
+		/* S-02.103: the slot's settings sector, so that the new image
+		 * starts with its defaults; class 1, before the record. */
+		if (!w_erase(w, FR_SETTINGS_OFF(w->target)))
+			return stop(w, FR_WR_FLASH);
 		w->state = w->way == FR_WAY_TRIAL ? FR_WS_LOG_PENDING : FR_WS_RECORD_ERASE;
 		break;
 	case FR_WS_LOG_PENDING:
@@ -1774,6 +1834,7 @@ unsigned fr_writer_progress(const struct fr_writer *w)
 		done = w->pos;
 		break;
 	case FR_WS_LOG_ERASE:
+	case FR_WS_SETTINGS_ERASE:
 	case FR_WS_LOG_PENDING:
 	case FR_WS_SELECT_LOG:
 	case FR_WS_RECORD_ERASE:

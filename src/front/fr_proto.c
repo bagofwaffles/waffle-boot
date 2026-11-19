@@ -73,6 +73,17 @@ void fr_rec_act(const struct fr_rec_status *st, uint8_t act, bool force, struct 
 	fr_act_decide(&x, plan);
 }
 
+/* Slot k read into s with its kind (S-02.106); false when a read failed,
+ * and then s is not good. */
+static bool slot_read(const struct fr_flash *f, unsigned k, struct fr_slot_info *s)
+{
+	if (fr_slot_info(f, k, s) != FR_FLASH_OK) {
+		s->good = false;
+		return false;
+	}
+	return fr_slot_kind(f, k, s) == FR_FLASH_OK;
+}
+
 /* The survey, with idle called before each slot's passes and after them. */
 static void survey(struct fr_rec_status *st, const struct fr_flash *f, void (*idle)(void *),
 		   void *ctx)
@@ -84,10 +95,8 @@ static void survey(struct fr_rec_status *st, const struct fr_flash *f, void (*id
 	for (unsigned k = 0; k < 2u; k++) {
 		if (idle != NULL)
 			idle(ctx);
-		if (fr_slot_info(f, k, &st->slot[k]) != FR_FLASH_OK) {
-			st->slot[k].good = false;
+		if (!slot_read(f, k, &st->slot[k]))
 			st->read_error = true;
-		}
 	}
 	if (idle != NULL)
 		idle(ctx);
@@ -301,7 +310,8 @@ static void info(struct fr_proto *p, uint8_t seq)
 					       (s->has_desc ? FR_SLOT_F_HAS_DESC : 0u) |
 					       (s->has_front ? FR_SLOT_F_HAS_FRONT : 0u) |
 					       (s->tried ? FR_SLOT_F_TRIED : 0u) |
-					       (s->started ? FR_SLOT_F_STARTED : 0u));
+					       (s->started ? FR_SLOT_F_STARTED : 0u) |
+					       (s->kind == FR_KIND_TE ? FR_SLOT_F_TE_PREFIX : 0u));
 		fr_put32(q + FR_INFO_S_LENGTH, s->rec.length);
 		fr_put32(q + FR_INFO_S_CRC, s->rec.crc32);
 		if (s->has_desc) {
@@ -367,7 +377,7 @@ static uint8_t begin(struct fr_proto *p, const uint8_t *pl, size_t n)
 		no_write(p, plan.refusal, FR_IMG_OK);
 		return plan.refusal;
 	}
-	if (len == 0 || len > FR_LOG_IMAGE_MAX) {	/* S-02.084 */
+	if (len == 0 || len > FR_IMAGE_MAX) {	/* S-02.084 */
 		no_write(p, FR_WR_SIZE, FR_IMG_SIZE);
 		return FR_WR_SIZE;
 	}
@@ -697,8 +707,8 @@ static bool next_frame(struct fr_proto *p)
 }
 
 /* After a write ends: the selector and the target slot as the flash now
- * holds them (one CRC pass, at most FR_SLOT_CAP bytes), then the target.
- * The other slot was not written. */
+ * holds them (one CRC pass, at most FR_SLOT_CAP bytes, and its kind,
+ * S-02.106), then the target. The other slot was not written. */
 static void reread(struct fr_proto *p)
 {
 	struct fr_rec_status *st = p->st;
@@ -707,10 +717,8 @@ static void reread(struct fr_proto *p)
 	st->selector_ok = fr_read_selector(p->flash, &st->sel) == FR_FLASH_OK;
 	if (!st->selector_ok)
 		st->read_error = true;
-	if (k < 2u && fr_slot_info(p->flash, k, &st->slot[k]) != FR_FLASH_OK) {
-		st->slot[k].good = false;
+	if (k < 2u && !slot_read(p->flash, k, &st->slot[k]))
 		st->read_error = true;
-	}
 	fr_rec_target(st);
 }
 

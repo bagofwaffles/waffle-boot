@@ -21,8 +21,12 @@ void fr_hw_uart_start(void);
 extern const struct fr_bytes fr_hw_psoc;
 /* What the controller holds into memory, for fr_serve_hook. */
 void fr_hw_uart_take(void);
+/* Since fr_hw_uart_start(): the longest time between two reads of the
+ * receiver, and the reads that found its overrun flag set (saturating). */
+void fr_hw_uart_report(uint32_t *gap_max_us, uint16_t *overrun_reads);
 
-/* S-13c.001: the panel bus on SMC0 bank 0, D/C, RD, CS, RESET and TE. */
+/* S-13c.001: the panel bus on SMC0 bank 0, D/C, RD, CS, RESET and TE, and
+ * the one memory DMA to the bank on MDMA2 (S-13c.018). */
 const struct fr_panel_bus *fr_hw_lcd_start(void);
 
 /* S-13b.010, S-13b.011: the flash on SPI2, mode 3, SCLK0 / 4, with its

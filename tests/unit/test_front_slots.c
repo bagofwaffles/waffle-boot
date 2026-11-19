@@ -187,17 +187,19 @@ static void test_bootable_vectors(void)
 	}
 	CHECK_EQ(slots, 20);
 
-	/* S-02.084: small_slot padded with 0xFF; recovery's bound is 0x77000,
-	 * which leaves the slot's last sector to the start log (S-02.095) */
+	/* S-02.084: small_slot padded with 0xFF; recovery's bound is 0x76000,
+	 * which leaves the settings sector (S-02.103) and the slot's last
+	 * sector, the start log (S-02.095) */
 	{
-		static const uint32_t sizes[] = {0x2345u, FR_LOG_IMAGE_MAX, FR_LOG_IMAGE_MAX + 1u,
+		static const uint32_t sizes[] = {0x2345u, FR_IMAGE_MAX, FR_IMAGE_MAX + 1u,
+						 FR_LOG_IMAGE_MAX, FR_LOG_IMAGE_MAX + 1u,
 						 FR_SLOT_CAP, FR_SLOT_CAP + 1u};
 
 		for (i = 0; i < N(sizes); i++) {
 			memset(g_img, 0xFF, sizes[i]);
 			memcpy(g_img, v_boot_small_slot, sizeof v_boot_small_slot);
 			CHECK_EQ(fr_image_valid(g_img, sizes[i], NULL),
-				 sizes[i] > 0x77000u ? FR_IMG_SIZE : FR_IMG_NO_FRONT);
+				 sizes[i] > 0x76000u ? FR_IMG_SIZE : FR_IMG_NO_FRONT);
 		}
 		CHECK_EQ(fr_image_valid(g_img, 0, NULL), FR_IMG_SIZE);
 		CHECK_EQ(fr_image_valid(v_boot_one_byte, 1, NULL), FR_IMG_STREAM);
@@ -280,10 +282,11 @@ static void test_front_condition(void)
 	CHECK_EQ(d.bl_version[0], 1);
 	CHECK_EQ(d.bl_version[3], 4);
 	CHECK_EQ(d.addr[2], 0x84000000u);
-	/* trailing bytes after FINAL, up to 0x77000 (S-02.091 rule 1, S-02.084) */
+	/* trailing bytes after FINAL, up to 0x76000 (S-02.091 rule 1, S-02.084) */
 	memset(g_img + n, 0xFF, FR_SLOT_CAP - n);
-	CHECK_EQ(fr_image_valid(g_img, 0x77000u, NULL), FR_IMG_OK);
-	CHECK_EQ(fr_image_valid(g_img, 0x77001u, NULL), FR_IMG_SIZE);
+	CHECK_EQ(fr_image_valid(g_img, 0x76000u, NULL), FR_IMG_OK);
+	CHECK_EQ(fr_image_valid(g_img, 0x76001u, NULL), FR_IMG_SIZE);
+	CHECK_EQ(fr_image_valid(g_img, 0x77000u, NULL), FR_IMG_SIZE);
 	CHECK_EQ(fr_image_valid(g_img, FR_SLOT_CAP, NULL), FR_IMG_SIZE);
 	CHECK_EQ(fr_image_valid(g_img, FR_SLOT_CAP + 1u, NULL), FR_IMG_SIZE);
 
@@ -515,6 +518,138 @@ static void test_slot_info(void)
 	CHECK_EQ(fr_slot_info(f, 1, &in), FR_FLASH_OK);
 	CHECK(!in.good && !in.has_desc && !in.has_front);
 	CHECK_EQ(g_f.nmut, 0);
+}
+
+/* Slot 1 holding case c's bytes, its record good or tried; the rest of
+ * the slot erased. */
+static void put_kind_case(const struct v_skind *c, bool tried)
+{
+	uint8_t *d = g_f.mem + FR_SLOT_BASE(1);
+
+	memset(d, 0xFF, FR_SLOT_CAP);
+	for (uint32_t i = 0; i < c->length; i++)
+		d[i] = (uint8_t)(i * 37u + c->seed);
+	for (unsigned j = 0; j < c->npatch; j++)
+		memcpy(d + c->patch[j].off, c->patch[j].b, 4);
+	memset(g_f.mem + FR_RECORD_OFF(1), 0xFF, FR_SECTOR);
+	ff_put32(g_f.mem + FR_RECORD_OFF(1), tried ? ~c->crc32 : c->crc32);
+	ff_put32(g_f.mem + FR_RECORD_OFF(1) + 4u, c->length);
+	ff_put32(g_f.mem + FR_RECORD_OFF(1) + 8u, FR_TAG);
+}
+
+/* The bytes slot 1's reads covered since the last ff_reset(), all within
+ * [lo, hi): their total, or ~0u when one fell outside. */
+static uint32_t read_bytes(uint32_t lo, uint32_t hi)
+{
+	uint32_t sum = 0;
+
+	CHECK(g_f.nlog <= FF_LOG_MAX);
+	for (unsigned i = 0; i < g_f.nlog && i < FF_LOG_MAX; i++) {
+		const struct ff_op *o = &g_f.log[i];
+
+		if (o->kind != FF_READ)
+			continue;
+		if (o->off < lo || o->off + o->len > hi)
+			return ~0u;
+		sum += o->len;
+	}
+	return sum;
+}
+
+/*
+ * S-02.106 over slot_kinds.json: each case in slot 1, its record good and
+ * tried, read by fr_slot_info() and then fr_slot_kind(). A case with a
+ * valid descriptor has it set in the slot information (no fill holds one).
+ * Rules 1 and 2 read nothing; rule 3 reads the slot's first 4,468 bytes,
+ * the link served between its reads, and only when 1 and 2 fail; a slot
+ * neither good nor tried has no kind and reads nothing.
+ */
+static void test_slot_kinds(void)
+{
+	static const uint8_t kinds[] = { FR_KIND_WB, FR_KIND_TE_BUILD, FR_KIND_TE, FR_KIND_UNKNOWN };
+	const struct fr_flash *f = flash();
+	struct fr_slot_info in;
+	unsigned rule3 = 0;
+
+	CHECK_EQ(N(v_slot_kinds), 15);
+	for (unsigned i = 0; i < N(v_slot_kinds); i++) {
+		const struct v_skind *c = &v_slot_kinds[i];
+		const uint8_t want = kinds[c->kind];
+
+		for (unsigned t = 0; t < 2u; t++) {
+			bool by3;
+			uint32_t read;
+
+			ff_init(&g_f);
+			put_kind_case(c, t != 0u);
+			CHECK_EQ(ref_crc32(0, g_f.mem + FR_SLOT_BASE(1), c->length), c->crc32);
+			CHECK_EQ(fr_slot_info(f, 1, &in), FR_FLASH_OK);
+			CHECK(t ? in.tried && !in.good : in.good && !in.tried);
+			CHECK(!in.has_desc);
+			CHECK_EQ(in.kind, FR_KIND_NONE);	/* fr_slot_info() leaves it */
+			if (c->desc_valid) {
+				in.has_desc = true;
+				memcpy(in.desc.bl_version, c->desc_version, sizeof in.desc.bl_version);
+			}
+			ff_reset(&g_f);
+			g_served = 0;
+			fr_serve_hook = count_serve;
+			CHECK_EQ(fr_slot_kind(f, 1, &in), FR_FLASH_OK);
+			fr_serve_hook = NULL;
+			CHECK_EQ(in.kind, want);
+			if (want == FR_KIND_TE_BUILD)
+				CHECK(memcmp(in.te_version, c->version, sizeof in.te_version) == 0);
+			if (want == FR_KIND_WB)
+				CHECK_EQ(in.desc.bl_version[1], c->desc_version[1]);
+			/* rule 3's read: only past rules 1 and 2, and only at a
+			 * length of 4,468 or more */
+			by3 = want != FR_KIND_WB && want != FR_KIND_TE_BUILD && c->length >= 4468u;
+			read = read_bytes(FR_SLOT_BASE(1), FR_SLOT_BASE(1) + 4468u);
+			CHECK_EQ(read, by3 ? 4468u : 0u);
+			CHECK(!by3 || g_served >= 4468u / FR_PAGE);
+			rule3 += by3 ? 1u : 0u;
+			CHECK_EQ(g_f.nmut, 0);
+		}
+	}
+	CHECK_EQ(rule3, 14);	/* 7 cases, good and tried */
+	/* neither good nor tried: no kind, nothing read */
+	ff_init(&g_f);
+	put_kind_case(&v_slot_kinds[0], false);
+	g_f.mem[FR_RECORD_OFF(1)] ^= 0x01u;
+	CHECK_EQ(fr_slot_info(f, 1, &in), FR_FLASH_OK);
+	CHECK(!in.good && !in.tried);
+	ff_reset(&g_f);
+	CHECK_EQ(fr_slot_kind(f, 1, &in), FR_FLASH_OK);
+	CHECK_EQ(in.kind, FR_KIND_NONE);
+	CHECK_EQ(g_f.nlog, 0);
+	/* rule 3's read failing: an error, the kind unknown */
+	for (unsigned i = 0; i < N(v_slot_kinds); i++)
+		if (strcmp(v_slot_kinds[i].name, "te_prefix_only") == 0) {
+			ff_init(&g_f);
+			put_kind_case(&v_slot_kinds[i], false);
+			CHECK_EQ(fr_slot_info(f, 1, &in), FR_FLASH_OK);
+			ff_reset(&g_f);
+			g_f.fail_read = 2;
+			CHECK_EQ(fr_slot_kind(f, 1, &in), FR_FLASH_IO);
+			CHECK(in.kind != FR_KIND_TE);
+		}
+	/* a real waffle-boot image: rule 1, from its own descriptor */
+	ff_init(&g_f);
+	{
+		uint32_t n = build_front(g_img, &good_opt);
+
+		memcpy(g_f.mem + FR_SLOT_BASE(1), g_img, n);
+		ff_put32(g_f.mem + FR_RECORD_OFF(1), ~ref_crc32(0, g_img, n));
+		ff_put32(g_f.mem + FR_RECORD_OFF(1) + 4u, n);
+		ff_put32(g_f.mem + FR_RECORD_OFF(1) + 8u, FR_TAG);
+		CHECK_EQ(fr_slot_info(f, 1, &in), FR_FLASH_OK);
+		CHECK(in.tried && in.has_desc);
+		ff_reset(&g_f);
+		CHECK_EQ(fr_slot_kind(f, 1, &in), FR_FLASH_OK);
+		CHECK_EQ(in.kind, FR_KIND_WB);
+		CHECK_EQ(g_f.nlog, 0);
+	}
+	CHECK_EQ(fr_slot_kind(f, 2, &in), FR_FLASH_IO);
 }
 
 /* The 1-byte reads of slot k's log byte 0 in the op log. */
@@ -1112,6 +1247,7 @@ int main(void)
 	test_front_condition();
 	test_selector_and_records();
 	test_slot_info();
+	test_slot_kinds();
 	test_tried_and_log();
 	test_running_slot();
 	test_running_whole();

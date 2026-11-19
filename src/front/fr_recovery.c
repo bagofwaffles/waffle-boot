@@ -65,16 +65,34 @@ static void survey_idle(void *ctx)
 
 	s->hw->usb_poll();
 	(void)fr_psoc_poll(&s->psoc);
+	if (s->panel_up)
+		(void)fr_panel_busy(&s->panel);	/* S-13c.017: a stalled send */
 }
 
-/* The screen as it is now. */
-static void draw(struct fr_start *s, bool usb)
+/*
+ * The screen as it is now, painted into the frame buffer only while no
+ * frame goes out (S-13c.024): at once after the frame going out when
+ * forced (a change of phase), else not this time when one is going out.
+ * Only the rows that changed are painted again, and a screen that did not
+ * change is not sent.
+ */
+static void draw(struct fr_start *s, bool usb, bool force)
 {
+	if (s->panel_up) {
+		if (force)
+			fr_panel_idle(&s->panel);
+		else if (fr_panel_busy(&s->panel))
+			return;
+	}
 	fr_rec_screen(&s->screen, &s->rec, &s->proto, usb, &s->ui);
-	if (s->panel_up)
-		fr_panel_frame(&s->panel, fr_screen_row, &s->screen);
 	s->drawn_at = now(s);
 	s->drawn_changes = s->proto.changes;
+	if (!s->panel_up || (s->drawn_ok && fr_same(&s->drawn, &s->screen, sizeof s->screen)))
+		return;
+	fr_paint_rows(s->hw->frame, &s->screen, s->drawn_ok ? &s->drawn : NULL);
+	fr_copy(&s->drawn, &s->screen, sizeof s->screen);
+	s->drawn_ok = true;
+	fr_panel_frame(&s->panel, s->hw->frame);
 }
 
 /*
@@ -131,7 +149,7 @@ enum fr_next fr_recovery_run(struct fr_start *s)
 	s->keys_at = now(s);
 	s->keys_gap = FR_KEYS_GAP_US;
 	fr_proto_clock(&s->proto, now(s));
-	draw(s, false);
+	draw(s, false, true);
 	if (s->panel_up && !s->lit) {
 		fr_psoc_report(&s->psoc, FR_REPORT_HELD);
 		s->lit = true;
@@ -142,6 +160,10 @@ enum fr_next fr_recovery_run(struct fr_start *s)
 		const bool quiet = fr_proto_in_place(&s->proto);
 		bool usb, hold;
 
+		/* S-13c.017: a send that has stalled is stopped and sent again
+		 * by the CPU, whether or not the screen changes */
+		if (s->panel_up)
+			(void)fr_panel_busy(&s->panel);
 		hw->usb_poll();
 		usb = hw->usb_configured();
 		if (usb != s->usb_was) {
@@ -190,11 +212,12 @@ enum fr_next fr_recovery_run(struct fr_start *s)
 			fr_psoc_reset(&s->psoc);
 			return FR_NEXT_HALT;
 		}
-		/* Not redrawn for progress during an in-place write. */
+		/* Not redrawn for progress during an in-place write: its
+		 * screen goes once, before the first erase. */
 		if (s->proto.changes != s->drawn_changes &&
 		    (s->proto.phase != phase ||
 		     (!fr_proto_in_place(&s->proto) &&
 		      now(s) - s->drawn_at >= FR_DRAW_GAP_US)))
-			draw(s, usb);
+			draw(s, usb, s->proto.phase != phase);
 	}
 }
