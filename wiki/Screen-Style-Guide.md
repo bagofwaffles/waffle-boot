@@ -56,8 +56,15 @@ The bars are flat, with no texture. The constants are in
 
 Recovery's screens are drawn by the front (`src/front/`), which holds its
 own copy of the red title bar and the status bar; a unit test keeps the
-copy equal to these, pixel for pixel. Its body rows still start 3 pixels
-below the bar, and its key digits are amber text.
+copy equal to these, pixel for pixel. Its body rows are the frame's, and
+its key digits are key badges. A slot line is drawn in parts: the slot's
+name and, for `WB` and a known `TE` build, its version (`v0.9.36`) in the
+title bar's font; the bootloader type (`WB`, `TE`, `??`) as a chip filled
+dark gray with light text; then the state chips, outlined in the color of
+their meaning (`checked` green, `check failed` red, `tried`, `running` and
+`being written` amber, `boot slot` gray). While an image arrives, a bar
+under `Receiving n of m KiB` fills with it. On every way into recovery,
+`Loading recovery menu...` shows under the logo until its first frame.
 
 ## Font
 

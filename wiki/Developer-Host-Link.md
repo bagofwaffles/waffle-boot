@@ -5,7 +5,7 @@ every request is refused and changes nothing. `ping`, `rd` and `wr` work as with
 
 > **Warning.** A hand-over with options can leave a unit that only the other slot brings back. Try
 > hand-overs only with a working bootloader in the other slot, and start that slot from the recovery menu
-> (Power + M4, then 1, Choose the slot to start; [How to Recover](How-to-Recover#start-the-other-slot-once-and-keep-it)).
+> (Power + M4, then 1, Change the boot slot; [How to Recover](How-to-Recover#start-the-other-slot-once-and-keep-it)).
 
 ## Turning it on
 

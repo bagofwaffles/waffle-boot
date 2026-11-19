@@ -1,4 +1,4 @@
-Reference for recovery in front version 16: every write, refusal and result. Step-by-step guides are in
+Reference for recovery in front version 17: every write, refusal and result. Step-by-step guides are in
 [How to Recover](How-to-Recover); the safety rules are in [The Front](The-Front#the-failsafes). This page is
 also the reference for the recovery round on a unit that a changed front needs before it is committed to a
 slot ([The Front](The-Front#changing-it)).
@@ -11,7 +11,8 @@ slot ([The Front](The-Front#changing-it)).
 | By itself | The rest of the image fails its check |
 | By itself | Three starts in a row ended before the boot menu or the OS (S-02.095). The next start is normal |
 
-Opening recovery writes nothing to the slots (after three unfinished starts it clears one start-log bit).
+On every way in, `Loading recovery menu...` shows under the logo until the menu draws. Opening recovery
+writes nothing to the slots (after three unfinished starts it clears one start-log bit).
 Switching off or restarting leaves the unit as it was.
 
 ## The rules it keeps
@@ -32,7 +33,7 @@ Some failures leave a unit that only an external SPI flash programmer brings bac
 
 It shows each slot's bootloader type and state (`checked`, `check failed`, `tried`, `tried, started`),
 which slot runs (`running`) and which the selector names (`boot slot`), and what a write would replace. The status bar shows `USB` and the image and front
-versions (`v1.0.10 F16`). No key acts until every key has been released once; an unreadable key counts as
+versions (`v1.0.10 F17`). No key acts until every key has been released once; an unreadable key counts as
 not pressed.
 
 ### Bootloader type
@@ -59,7 +60,7 @@ A version prints as `v` and `major.minor.patch`, with `+build` when the build is
 reaches them as INFO's slot flag bit 5, which fronts before version 17 leave clear, so with an older front
 an unknown TE build shows `??`.
 
-### The slot menu (key 1)
+### The slot menu (key 1, `Change the boot slot (optional)`)
 
 N is the slot the unit does not run from. Only items that apply are shown. Key 8 goes back.
 
@@ -128,10 +129,10 @@ before sending.
 
 ### Limits
 
-- The tool sends an image of at most `0x76000` bytes, which leaves the slot its settings sector and its
-  start log (S-02.104); the unit itself takes up to `0x77000`. A recovery write leaves the slot's settings
-  sector as it is, and the new image reads its settings at their defaults, since the settings saved there
-  belong to the image they were saved for (S-02.097); the same image written again keeps them.
+- The tool and the unit take an image of at most `0x76000` bytes, which leaves the slot its settings sector
+  and its start log (S-02.104); a front before version 17 takes up to `0x77000`. Every recovery write of an
+  image erases the slot's settings sector after its start log, so the new image starts with its settings at
+  their defaults (S-02.103). `try`, `switch`, `keep`, `select` and `put-back` erase neither.
 - The file must be a stream the boot ROM can start (S-02.091), with a waffle-boot front whose pin is its
   own and matches the unit's (else `--new-front`). The tool compares the read-back with the file afterwards.
 
@@ -216,7 +217,7 @@ Every reply but HELLO and INFO starts with a status byte: 0 is accepted, low val
 results (as `wbrecover.py` lists them), and `0x40` malformed or unknown request, `0x41` not now, `0x42`
 DATA not at the next offset, `0x43` END before every byte came or DATA past the end, `0x44` restart
 refused. While a write runs, only HELLO and INFO are served; the rest are answered busy. An image is 1 to
-`0x77000` bytes, sent in order. After an accepted END or ACT the unit counts down 15 s before its first
+`0x76000` bytes, sent in order; BEGIN refuses a longer one with status 6. After an accepted END or ACT the unit counts down 15 s before its first
 erase; the host leaving the port in that time, or during a transfer, stops it with nothing written. Poll
 INFO to follow a write to its end.
 
@@ -225,7 +226,7 @@ INFO to follow a write to its end.
 | Reason | What to do |
 | --- | --- |
 | The running slot is not the boot slot, or the selector is not settled | Restart once without a key, then Power + M4 (4 under the display); or `--force`, except after a write of Slot 1 in the same recovery |
-| The boot slot's check failed and its front is not intact | Key 1, choose the slot to start; or `try` / `switch` |
+| The boot slot's check failed and its front is not intact | Key 1, `Change the boot slot first`; or `try` / `switch` |
 | Not a slot image with a front, or over `0x76000` bytes | Use the image from `make cross` |
 | `--running` in place before a plain `write` failed | Run a plain `write` first |
 | A read failed, the unit's state changed, or the file arrived damaged | `info`, then try again |

@@ -31,7 +31,8 @@ The code numbers the slots 0 and 1; screens show them as Slot 1 and Slot 2.
 Which writer takes which size: the package's bootloader step takes an image of up to `0x78000` bytes, the
 whole slot (S-02.044). waffle-boot's own writers take at most `0x76000` bytes, which leaves the slot's last two
 sectors to its settings and its start log (S-02.104): the installer, `wbrecover.py` and waffle-boot's own build
-(`make cross`) refuse a longer image. Recovery in the front takes up to `0x77000` bytes. A slot whose image is
+(`make cross`) refuse a longer image, and so does recovery in the front (a front before version 17 takes up
+to `0x77000` bytes). A slot whose image is
 longer than `0x76000` bytes has its settings sector filled with image bytes: it has no settings, every one reads
 at its default, and a save is refused. Over `0x77000` bytes it has no start log either.
 
@@ -150,7 +151,7 @@ main image's erase of the start log keeps that at 512 one-bit programs.
 | A normal start, once in 256 or more | 1 | The selected slot's last sector: its start log |
 | Install with an OS | 9 | `0xB000` six times and `0xC000` three times: each of three metadata writes erases the mirror twice |
 | An install that was interrupted, at the next start | 3 | `0xB000` twice, `0xC000` once |
-| A bootloader image written (package or recovery) | One for each 4 KiB of the image, plus the slot's last sector, its settings sector (not by recovery), its record and the selector; one more of the selector by the first stage at the next start | The slot written, its record, `0xD000` |
+| A bootloader image written (package or recovery) | One for each 4 KiB of the image, plus the slot's last sector, its settings sector, its record and the selector; one more of the selector by the first stage at the next start | The slot written, its record, `0xD000` |
 | Try a slot once | Up to 3, and 1 by the first stage | The slot's last sector, its record, `0xD000` |
 | Switch slots | 1, and 1 by the first stage | `0xD000` |
 | Keep a tried slot | 2, and 1 by the first stage | Its record, `0xD000` |

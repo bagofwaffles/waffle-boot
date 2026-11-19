@@ -33,7 +33,7 @@ The full map, with every writer, is in [Flash Layout and Write Safety](Flash-Lay
 | `0x00000` | The first stage, which picks a slot on every start. It reads no keys; the front never writes it |
 | `0xD000` | The selector: the slot to start, and `verified` (`0x01`: start it without a check) |
 | `0xE000`, `0xF000` | One record per slot: the image's CRC-32, length and a tag |
-| `0x10000` | Slot 1: an image of at most `0x76000` bytes from waffle-boot's writers (`0x77000` from recovery); then its settings sector and, last, its start log |
+| `0x10000` | Slot 1: an image of at most `0x76000` bytes from waffle-boot's writers, recovery included; then its settings sector and, last, its start log |
 | `0x88000` | Slot 2: the same; its settings sector is `0xFE000` |
 
 A slot whose image is over `0x76000` bytes has no settings (S-02.096 to S-02.099): its settings sector holds
@@ -69,7 +69,8 @@ image bytes, every setting reads at its default and a save is refused. Over `0x7
 - **Recovery checks before it erases**: size, the boot ROM's rules, the announced SHA-256, and a front
   matching its descriptor and the one the unit runs. A state change during
   the transfer refuses with nothing written (status 16). The read-back must match before the selector is
-  touched (S-02.084, S-02.093).
+  touched (S-02.084, S-02.093). Every image it writes erases the slot's settings sector too, so the new
+  image starts with its settings at their defaults (S-02.103).
 - **The running slot** is written only on request. With the other slot good, the selector points there
   first. With it bad, the write goes in place with no fallback: only after a plain write of the other slot
   failed, after the typed phrase, and with the power switch held off. After a failed write of the running
