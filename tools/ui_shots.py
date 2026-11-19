@@ -97,7 +97,8 @@ def frame_rows(fb):
 
 # The README's tour: each screen and how long it stays, in hundredths of a second.
 TOUR = (('handover', 150), ('main', 300), ('settings', 250), ('developer', 250), ('system', 250),
-        ('info', 250), ('upgrade-run', 250), ('recovery', 300))
+        ('info', 250), ('upgrade-run', 250), ('recovery-loading', 150),
+        ('recovery', 300))
 
 
 def lzw(indexes, bits):

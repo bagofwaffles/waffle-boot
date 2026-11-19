@@ -229,10 +229,9 @@ static void e_osw(void *c, struct s15_osw_end *end)
 }
 
 /* Recovery's own composer (src/front/fr_recscreen.c) over a sample unit:
- * slot 1 running and selected with this version, slot 2 good with the patch
- * before it, both
- * with the running front, USB connected. ui NULL is the main screen; p
- * the protocol's state. */
+ * slot 1 running and the boot slot with this version, slot 2 checked with
+ * the patch before it, both with the running front, USB connected. ui
+ * NULL is the main screen; p the protocol's state. */
 static struct fr_rec_status rec_st;
 static struct fr_proto rec_p;
 
@@ -268,6 +267,24 @@ static void recovery_unit(void)
 static void recovery_shot(struct fr_screen *s, const struct fr_ui *ui)
 {
 	fr_rec_screen(s, &rec_st, &rec_p, true, ui);
+}
+
+/* A TE slot's version, for the slot line; no TE bytes are used. */
+static const uint16_t te[4] = { 1000, 0, 20, 0 };
+
+/* The logo line over fb, as src/front/fr_start.c's loading_line() paints
+ * it under the logo frame (S-13c.025). */
+static void loading_line(void)
+{
+	for (unsigned x = 0; x < WB_DISPLAY_W; x++)
+		for (unsigned dy = 0; dy < 16u; dy++) {
+			uint16_t p = fr_line_pixel("Loading recovery menu...", x, dy);
+			uint8_t *q = &fb[2u * ((size_t)(WB_DISPLAY_W - 1u - x) * S13C_FRAME_W +
+					       FR_LINE_Y + dy)];
+
+			q[0] = (uint8_t)(p >> 8);
+			q[1] = (uint8_t)p;
+		}
 }
 
 /* A front screen into fb, a pixel at a time (S-13c.023). */
@@ -360,8 +377,9 @@ int main(int argc, char **argv)
 	bad |= write_raw(d, "handover");
 
 	/* recovery (S-02.084): the main screen, the slot menu (key 1), the
-	 * confirm screen of a try with key 1 held 3 s, and the countdown
-	 * before a host's write of slot 2 */
+	 * confirm screen of a try with key 1 held 3 s, the countdown before
+	 * a host's write of slot 2, that write received and written, and the
+	 * slot line's other kinds */
 	{
 		static struct fr_screen rs;
 		struct fr_ui ui;
@@ -396,6 +414,57 @@ int main(int argc, char **argv)
 		recovery_shot(&rs, NULL);
 		front_shot(&rs);
 		bad |= write_raw(d, "recovery-countdown");
+
+		/* a 360 KiB image for slot 2, 40% received, then written
+		 * with the slot's bytes 60% programmed */
+		recovery_unit();
+		rec_p.phase = FR_PH_RECEIVING;
+		rec_p.plan_way = FR_WAY_PLAIN;
+		rec_p.plan_target = 1;
+		rec_p.len = 360u * 1024u;
+		rec_p.got = 144u * 1024u;
+		recovery_shot(&rs, NULL);
+		front_shot(&rs);
+		bad |= write_raw(d, "recovery-receiving");
+
+		rec_p.phase = FR_PH_WRITING;
+		rec_p.w.way = FR_WAY_PLAIN;
+		rec_p.w.act = FR_ACT_NONE;
+		rec_p.w.target = 1;
+		rec_p.w.state = FR_WS_SLOT;
+		rec_p.w.n = rec_p.len;
+		rec_p.w.pos = rec_p.len / 5u * 3u;
+		recovery_shot(&rs, NULL);
+		front_shot(&rs);
+		bad |= write_raw(d, "recovery-writing");
+
+		/* S-02.106: slot 2 holds a build of the TE table, then a
+		 * bootloader of no known kind; slot information only */
+		recovery_unit();
+		rec_st.slot[1].kind = FR_KIND_TE_BUILD;
+		rec_st.slot[1].has_desc = false;
+		rec_st.slot[1].has_front = false;
+		memcpy(rec_st.slot[1].te_version, te, sizeof te);
+		fr_rec_target(&rec_st);
+		recovery_shot(&rs, NULL);
+		front_shot(&rs);
+		bad |= write_raw(d, "recovery-te");
+
+		rec_st.slot[1].kind = FR_KIND_UNKNOWN;
+		memset(rec_st.slot[1].te_version, 0, sizeof te);
+		recovery_shot(&rs, NULL);
+		front_shot(&rs);
+		bad |= write_raw(d, "recovery-unknown");
+	}
+
+	/* S-13c.025: the line under the logo on the way into recovery */
+	{
+		static struct fr_screen ls;
+
+		fr_screen_logo(&ls);
+		front_shot(&ls);
+		loading_line();
+		bad |= write_raw(d, "recovery-loading");
 	}
 
 	setup(); start();
