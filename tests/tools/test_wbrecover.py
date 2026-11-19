@@ -8,6 +8,7 @@ library, the same commands also run against the real C code. Python 3,
 standard library only."""
 import ctypes
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -787,6 +788,79 @@ class Sync(unittest.TestCase):
             self.assertEqual(got, [(w.HELLO, 1, b'')], k)
 
 
+class SlotKind(unittest.TestCase):
+    """S-02.106: a slot's kind from INFO's slot fields and flag bit 5, against the oracle's synthetic
+    vectors (tests/oracle/S-02-spi-flash/vectors/slot_kinds.json)."""
+    ORACLE = os.path.join(TOP, 'tests', 'oracle', 'S-02-spi-flash')
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, cls.ORACLE)
+        import slot_kind
+        cls.model = slot_kind
+        with open(os.path.join(cls.ORACLE, 'vectors', 'slot_kinds.json'), encoding='utf-8') as f:
+            cls.cases = json.load(f)['cases']
+
+    def slot(self, case, tried):
+        """INFO's slot fields for a case's image as a good or a tried slot, bit 5 as the front sets it."""
+        data = self.model.build(case)
+        crc = int(case['crc32'], 16)
+        prefix = len(data) >= self.model.PREFIX_LEN and \
+            zlib.crc32(data[:self.model.PREFIX_LEN]) == self.model.PREFIX_CRC
+        return {'good': not tried, 'tried': tried, 'started': False, 'has_desc': case['descriptor_valid'],
+                'version': tuple(case['descriptor_version'] or (0, 0, 0, 0)), 'length': len(data),
+                'crc': crc ^ 0xFFFFFFFF if tried else crc, 'te_prefix': prefix}
+
+    def test_table(self):
+        self.assertEqual(w.TE_BUILDS, self.model.TE_BUILDS)
+
+    def test_vectors(self):
+        self.assertEqual(len(self.cases), 15)
+        for case in self.cases:
+            want = (case['kind'], tuple(case['version']) if case['version'] else None)
+            for tried in (False, True):
+                with self.subTest(case=case['name'], tried=tried):
+                    self.assertEqual(w.slot_kind(self.slot(case, tried)), want)
+                    if case['text'] is not None:
+                        self.assertEqual(w.kind_text(want), 'TE ' + case['text'])
+
+    def test_no_kind(self):
+        """A slot that is neither good nor tried has no kind, and its line shows none."""
+        s = self.slot(self.cases[-1], False)
+        s['good'] = False
+        self.assertIsNone(w.slot_kind(s))
+
+    def test_made_up_row(self):
+        """A row the table gains names its build, with +build when build is not 0."""
+        s = {'good': True, 'tried': False, 'has_desc': False, 'version': (0, 0, 0, 0),
+             'length': 0x1234, 'crc': 0xCAFEF00D, 'te_prefix': True}
+        self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE')
+        with mock.patch.dict(w.TE_BUILDS, {(0x1234, 0xCAFEF00D): (2, 1, 0, 7)}):
+            self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE 2.1.0+7')
+            s['te_prefix'] = False
+            self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE 2.1.0+7')
+        self.assertEqual(w.kind_text(w.slot_kind(s)), '??')
+        s['has_desc'], s['version'] = True, (0, 9, 37, 0)
+        self.assertEqual(w.kind_text(w.slot_kind(s)), 'WB 0.9.37')
+
+    def test_info_bit5(self):
+        """INFO's slot flag bit 5 reaches the slot as te_prefix; the state words."""
+        p = bytearray(w.INFO_V11)
+        for k, sf in enumerate((w.S_GOOD | w.S_TE_PREFIX, w.S_GOOD)):
+            struct.pack_into('<BII', p, w.INFO_O_SLOT + w.INFO_SLOT_LEN * k, sf, 0x40000, 0x12345678)
+        i = w.parse_info(bytes(p))
+        self.assertEqual([w.kind_text(w.slot_kind(x)) for x in i['slots']], ['TE', '??'])
+        s = {'good': True, 'tried': False, 'started': False, 'has_desc': False, 'has_front': False,
+             'version': (0, 0, 0, 0), 'length': 0x40000, 'crc': 0x12345678, 'te_prefix': True,
+             'pin': bytes(32)}
+        self.assertEqual(w.slot_state(s), 'checked')
+        self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE')
+        s['tried'], s['started'] = True, True
+        self.assertEqual(w.slot_state(s), 'tried, started')
+        s['tried'], s['good'] = False, False
+        self.assertEqual(w.slot_state(s), 'check failed')
+
+
 class Words(unittest.TestCase):
     def test_status_texts(self):
         self.assertIn('not the running slot with its front intact', w.status_text(5))
@@ -800,10 +874,10 @@ class Words(unittest.TestCase):
         self.assertNotIn('restart the unit', w.status_text(11))
         self.assertEqual(w.status_text(17), 'the selector or a slot could not be read for the start '
                          'condition; nothing was written. Run info and try again.')
-        self.assertIn('the target is the only good slot, so the unit accepts only the image it '
+        self.assertIn('the target is the only checked slot, so the unit accepts only the image it '
                       'holds, to settle the selector on it', w.status_text(18))
-        self.assertIn('already names that slot for good', w.status_text(22))
-        self.assertIn('bad and not tried', w.status_text(23))
+        self.assertIn('that slot is already the boot slot', w.status_text(22))
+        self.assertIn('failed its check and is not tried', w.status_text(23))
         self.assertEqual(w.status_text(24), 'the write was stopped before its first erase: the unit '
                          'was switched off or USB was unplugged, and nothing was written. Run info, '
                          'then start the command again if it is still wanted.')
@@ -868,8 +942,8 @@ class OverPty(PtyCase):
         self.assertIn('Power + M4 was held', out.text)
         self.assertIn('Running:  Slot 1', out.text)
         self.assertIn('Selector: names Slot 1, verified 01', out.text)
-        self.assertIn('Slot 1:   valid', out.text)
-        self.assertIn('[running, selected]', out.text)
+        self.assertIn('Slot 1:   checked', out.text)
+        self.assertIn('[running, boot slot]', out.text)
         self.assertIn('version 0.9.0', out.text)
         self.assertIn('Write:    would go to Slot 2', out.text)
         self.assertIn('State:    idle', out.text)
@@ -878,10 +952,10 @@ class OverPty(PtyCase):
         self.model(sel=(1, 1), running=1, slots=(make_image(), None))
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('Slot 2:   not valid', out.text)
-        self.assertIn('refused: the selected slot is bad', out.text)
+        self.assertIn('Slot 2:   check failed', out.text)
+        self.assertIn('refused: the boot slot failed its check', out.text)
         self.assertNotIn('Power + 1', out.text)
-        self.assertIn('if it is good and holds a stream the boot ROM can start (S-02.091)', out.text)
+        self.assertIn('if it is checked and holds a stream the boot ROM can start (S-02.091)', out.text)
 
     def test_info_not_established(self):
         """S-01.002: the running slot is the one slot whose stream matches whole."""
@@ -1241,8 +1315,8 @@ class OverPty(PtyCase):
         a_img = m.slots[0]
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('A write of this recovery read Slot 1, the running slot, back good but did not '
-                      'settle the selector on it, and Slot 2 is bad.', out.text)
+        self.assertIn('A write of this recovery read Slot 1, the running slot, back checked but did not '
+                      'settle the selector on it, and Slot 2 failed its check.', out.text)
         self.assertIn('with --running: would go to Slot 1, which takes only the image it holds '
                       '(version 1.2.3+4, %d bytes, CRC-32 %08x), to settle the selector on it: the '
                       'slot is not erased, only the selector is written'
@@ -1259,7 +1333,7 @@ class OverPty(PtyCase):
         out = Lines()
         self.assertEqual(w.cmd_write(self.link, make_image(seed=7), out, running=True,
                                      ask=no_prompt), 1)
-        self.assertIn('Refused before sending: Slot 1 is the only good slot, so the unit accepts only '
+        self.assertIn('Refused before sending: Slot 1 is the only checked slot, so the unit accepts only '
                       'the image it holds', out.text)
         self.assertNotIn(w.BEGIN, m.seen)
         out = Lines()
@@ -1365,7 +1439,7 @@ class OverPty(PtyCase):
         out = Lines()
         self.assertEqual(w.cmd_write(self.link, self.NEW, out, ask=no_prompt, new_front=True,
                                      pins=self.pins()), 1)
-        self.assertIn('Refused before sending: a trial needs the running slot good', out.text)
+        self.assertIn('Refused before sending: a trial needs the running slot checked', out.text)
         self.assertNotIn(w.BEGIN, m.seen)
 
     def test_trial_begin_other_way(self):
@@ -1425,7 +1499,7 @@ class OverPty(PtyCase):
                       "The file's front is not the one this unit runs.\n"
                       '  running: front 7, pin %s...   file: pin %s..., a pin this checkout has '
                       'signed: a commit set it in src/front/front.pin (front v7)\n'
-                      'Slot 2 holds no good image, so nothing good is lost.\n'
+                      'Slot 2 holds no checked image, so nothing checked is lost.\n'
                       'It will be written to Slot 2 and started ONCE. If the unit does not come up, '
                       'switch it off and on: it boots Slot 1 again. Nothing is selected until a '
                       'select (wbrecover.py select IMAGE).\n'
@@ -1454,7 +1528,7 @@ class OverPty(PtyCase):
         m.started = {1}
         out = Lines()
         self.assertEqual(w.cmd_select(self.link, self.NEW, out, ask=no_prompt), 1)
-        self.assertIn('Refused: a trial needs the running slot good, and neither a trial nor a select '
+        self.assertIn('Refused: a trial needs the running slot checked, and neither a trial nor a select '
                       'is taken once this recovery has begun a write of the running slot, written the '
                       'selector to the other slot, or begun a trial write (S-02.084). Run info to see '
                       'the state; after a trial write, restart first.', out.text)
@@ -1462,8 +1536,8 @@ class OverPty(PtyCase):
         m.started, m.sel = set(), [0xFF, 0xFF]
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('Slot 2:   not valid', out.text)
-        self.assertIn('[selected, tried]', out.text)
+        self.assertIn('Slot 2:   tried, WB 1.3.0', out.text)
+        self.assertIn('[boot slot]', out.text)
         self.assertIn('Slot 2 is tried: the next start runs it once, its trial start.', out.text)
         self.assertNotIn('trial mark', out.text)     # the select's refusal is no failed trial write
 
@@ -1474,7 +1548,7 @@ class OverPty(PtyCase):
         self.assertIn('It will be written to Slot 1 and started ONCE. If the unit does not come up, '
                       'switch it off and on: it boots Slot 2 again.', text)
         self.assertNotIn('short windows', text)
-        self.assertIn('Slot 1 holds no good image, so nothing good is lost.', text)
+        self.assertIn('Slot 1 holds no checked image, so nothing checked is lost.', text)
         self.assertEqual((m.slots[0], m.tried, m.sel), (self.NEW, {0}, [0, 0xFE]))
         self.assertIn('the selector reads 00 fe.', text)
 
@@ -1632,7 +1706,7 @@ class OverPty(PtyCase):
         out = Lines()
         self.assertEqual(w.cmd_write(self.link, self.NEW, out, ask=no_prompt, new_front=True,
                                      pins=self.pins()), 1)
-        self.assertIn('Refused before sending: a trial needs the running slot good', out.text)
+        self.assertIn('Refused before sending: a trial needs the running slot checked', out.text)
         self.assertNotIn(w.BEGIN, m.seen)
 
     def test_status_19_20_from_unit(self):
@@ -1641,7 +1715,7 @@ class OverPty(PtyCase):
         out = Lines()
         self.assertEqual(w.cmd_write(self.link, self.NEW, out, ask=no_prompt, new_front=True,
                                      pins=self.pins()), 1)
-        self.assertIn('Refused: a trial needs the running slot good', out.text)
+        self.assertIn('Refused: a trial needs the running slot checked', out.text)
         self.assertNotIn(w.DATA, m.seen)
         m.begin_st = 20
         m.slots[1] = self.NEW
@@ -1683,7 +1757,7 @@ class OverPty(PtyCase):
         m = self.tried_unit(True)
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('[running, tried]', out.text)
+        self.assertIn('Slot 2:   tried, WB 1.3.0', out.text)
         self.assertIn('This is the trial start of Slot 2: select IMAGE keeps it', out.text)
         ask = Ask('yes')
         out = Lines()
@@ -1702,7 +1776,7 @@ class OverPty(PtyCase):
         m = self.tried_unit(False)
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('[tried, started]', out.text)
+        self.assertIn(':   tried, started, ', out.text)
         self.assertIn('Slot 2 is tried and its front marked its trial start: select IMAGE keeps it.',
                       out.text)
         out = Lines()
@@ -1724,7 +1798,7 @@ class OverPty(PtyCase):
         m.started = set()
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('[tried]', out.text)
+        self.assertIn('Slot 2:   tried, WB', out.text)
         self.assertNotIn('started]', out.text)
         self.assertIn('Slot 2 is tried, its front has left no mark of a trial start, and the '
                       'selector trusts Slot 1, so no trial start will come: a select is refused.',
@@ -1941,7 +2015,7 @@ class Front11(PtyCase):
         m.bad.add(1)
         rc, text, _ = self.act(w.ACT_TRY)
         self.assertEqual(rc, 1)
-        self.assertIn('Refused before sending: Slot 2 is bad and not tried: nothing checks it at a '
+        self.assertIn('Refused before sending: Slot 2 failed its check and is not tried: nothing checks it at a '
                       'start. Write an image to it first (wbrecover.py write IMAGE). --force lifts '
                       'this refusal, after a warning. Nothing was sent.', text)
         self.assertEqual(m.seen, [w.HELLO, w.INFO])
@@ -1949,8 +2023,8 @@ class Front11(PtyCase):
         m.sel = [1, 1]
         rc, text, _ = self.act(w.ACT_SWITCH, force=True)
         self.assertEqual(rc, 1)
-        self.assertIn('Refused before sending, even with --force: the selector already names Slot 2 '
-                      'for good (verified 01). Nothing to do', text)
+        self.assertIn('Refused before sending, even with --force: Slot 2 is already the boot '
+                      'slot (verified 01). Nothing to do', text)
         self.assertEqual(m.seen, [w.HELLO, w.INFO])
         m = self.unit()
         rc, text, _ = self.act(w.ACT_PUT_BACK)
@@ -1958,22 +2032,22 @@ class Front11(PtyCase):
         self.assertEqual(m.seen, [w.HELLO, w.INFO])
 
     def test_switch_phrase(self):
-        """A switch for good asks for its phrase, not yes; a wrong answer sends nothing."""
+        """A switch asks for its phrase, not yes; a wrong answer sends nothing."""
         for answer in ('yes', 'y', 'switch', ''):
             m = self.unit()
             rc, text, ask = self.act(w.ACT_SWITCH, answer)
             self.assertEqual(rc, 1)
-            self.assertEqual(ask.prompts, ['Type "switch for good" to go on: '])
+            self.assertEqual(ask.prompts, ['Type "make it the boot slot" to go on: '])
             self.assertEqual(m.seen, [w.HELLO, w.INFO])
             self.drop_model(m)
         m = self.unit()
         rc, text, _ = self.act(w.ACT_SWITCH, w.SWITCH_PHRASE)
         self.assertEqual(rc, 0, text)
         self.assertEqual(m.sel, [1, 0])
-        self.assertIn('Done: the selector names Slot 2 for good (it reads 01 00).', text)
+        self.assertIn('Done: Slot 2 is the boot slot (the selector reads 01 00).', text)
 
-    SAME = ('Slot 2 holds an image with the front this unit runs (version 0.9.0). A switch is for '
-            'good: every start boots Slot 2 from now on. A try starts it once first: wbrecover.py '
+    SAME = ('Slot 2 holds an image with the front this unit runs (version 0.9.0). A switch makes it '
+            'the boot slot: every start boots Slot 2 from now on. A try starts it once first: wbrecover.py '
             'try.')
     FRONT = ('WARNING: Slot 2 holds another waffle-boot front (version 1.3.0). Once switched, recovery '
              'may not be reachable from it: if that front does not start, or its recovery is not this '
@@ -1981,8 +2055,8 @@ class Front11(PtyCase):
     FOREIGN = ('WARNING: Slot 2 holds no waffle-boot front. Once switched, there is no recovery from '
                'there: Power + M4 does nothing, and nothing on the unit brings waffle-boot back. A try '
                'starts it once first: wbrecover.py try.')
-    BAD = ('DANGER: Slot 2 is bad: its record fails the check. Switched to, the selector trusts it, and '
-           'nothing will ever check this slot again: if its image does not start, there may be no way '
+    BAD = ('DANGER: Slot 2 failed its check: its record does not match its bytes. Switched to, the '
+           'selector trusts it, and nothing will ever check this slot again: if its image does not start, there may be no way '
            'back without a flash programmer. A try starts it once first: wbrecover.py try --force.')
 
     def test_tier_warnings(self):
@@ -2073,7 +2147,7 @@ class Front11(PtyCase):
         rc, text, _ = self.act(w.ACT_PUT_BACK, 'yes')
         self.assertEqual(rc, 0, text)
         self.assertIn('The unit begins at once, with no countdown: it holds the power-off while a '
-                      'write of this recovery has left no good slot to start.', text)
+                      'write of this recovery has left no checked slot to start.', text)
         self.assertIn('The unit began at once, with no countdown', text)
         self.assertNotIn('Countdown', text)
         self.assertFalse([ph for ph, _ in m.phases if ph == w.COUNTING])
@@ -2173,13 +2247,13 @@ class Front11(PtyCase):
         m.tried, m.started = {1}, {1}
         rc, text, _ = self.act(w.ACT_KEEP, 'yes')
         self.assertEqual(rc, 0, text)
-        self.assertIn('Keeping Slot 2.\nSlot 2 is tried; the keep makes it the selected slot', text)
-        self.assertIn('Kept: Slot 2 is valid and selected, to be checked at the next start.', text)
+        self.assertIn('Keeping Slot 2.\nSlot 2 is tried; the keep makes it the boot slot', text)
+        self.assertIn('Kept: Slot 2 is the boot slot, to be checked again at the next start.', text)
         m = self.unit(running=1, sel=(0, 1))
         m.tried = {1}
         rc, text, _ = self.act(w.ACT_KEEP, 'yes')
         self.assertEqual(rc, 0, text)
-        self.assertIn('This is the trial start of Slot 2. The keep makes Slot 2 the selected slot',
+        self.assertIn('This is the trial start of Slot 2. The keep makes Slot 2 the boot slot',
                       text)
         self.assertEqual((m.sel, m.tried), ([1, 0], set()))
         m = self.unit(sel=(0xFF, 0xFF))
@@ -2218,7 +2292,8 @@ class Front11(PtyCase):
                       'one, or may not open\n', out.text)
         self.assertIn('Try:      would start Slot 2 once, at the next start\n', out.text)
         self.assertIn('Switch:   with --force only (Slot 2 does not hold the front this unit runs: a '
-                      'switch to it would be for good, with no trial): would select Slot 2 for good\n',
+                      'switch to it would make it the boot slot with no trial): would make Slot 2 the '
+                      'boot slot\n',
                       out.text)
         self.assertIn('Keep:     refused: no slot is tried where a keep can take it', out.text)
         self.assertIn('Put back: refused: Slot 2 is not tried', out.text)
@@ -2226,7 +2301,7 @@ class Front11(PtyCase):
         m.phase, m.count, m.act = w.COUNTING, 7, w.ACT_KEEP
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('[tried, started]', out.text)
+        self.assertIn(':   tried, started, ', out.text)
         self.assertIn('State:    counting down: 7 s left before the first erase of the keep of Slot 2. '
                       'Switching the unit off or unplugging USB now stops it, with nothing written',
                       out.text)
@@ -2240,7 +2315,7 @@ class Front11(PtyCase):
         w.cmd_info(self.link, out)
         self.assertNotIn('Power + 1', out.text)
         self.assertNotIn('Power + 2', out.text)
-        self.assertIn('wbrecover.py try starts it once, wbrecover.py switch for good; or key 1, '
+        self.assertIn('wbrecover.py try starts it once, wbrecover.py switch makes it the boot slot; or key 1, '
                       '"Choose the slot to start", in the recovery menu.', out.text)
         for front in (8, 10, 11):
             self.assertNotIn('Power + 1', w.status_text(5, i={'front': front, 'spoiled': False}))
@@ -2370,7 +2445,7 @@ class Front11(PtyCase):
         self.assertEqual(w.cmd_write(self.link, make_image(seed=8), out, poll=0.001, force=True,
                                      ask=Ask('force the write', 'yes')), 1)
         self.assertIn('Refused before sending, even with --force: the running slot is not the slot '
-                      'the selector names, and that slot is bad (status 5). Nothing was sent.',
+                      'the selector names, and that slot failed its check (status 5). Nothing was sent.',
                       out.text)
         self.assertEqual(m.seen, [w.HELLO, w.INFO])
         self.assertEqual(m.slots[0], make_image(seed=1))
@@ -3021,7 +3096,7 @@ class AgainstC(unittest.TestCase):
         ask = Ask('yes')
         rc, text = self.write(img, ask=ask)
         self.assertEqual(rc, 0, text)
-        self.assertIn('Slot 2 holds a good image (version 0.9.0), which this write replaces', text)
+        self.assertIn('Slot 2 holds a checked image (version 0.9.0), which this write replaces', text)
         self.assertNotIn('only good image', text)
         self.assertEqual(ask.prompts, ['Type yes to go on: '])
         self.assertEqual(self.seen[:4], [w.HELLO, w.INFO, w.BEGIN, w.INFO])
@@ -3121,7 +3196,7 @@ class AgainstC(unittest.TestCase):
         ask = Ask('yes')
         rc, text = self.write(img, ask=ask)
         self.assertEqual(rc, 0, text)
-        self.assertIn('Slot 2 holds no good image, so nothing good is lost. Slot 1, the running slot, '
+        self.assertIn('Slot 2 holds no checked image, so nothing checked is lost. Slot 1, the running slot, '
                       'is left as it is: if the write is interrupted, the unit starts as before.', text)
         self.assertEqual(ask.prompts, ['Type yes to go on: '])
         self.assertEqual(self.slot(1, len(img)), img)
@@ -3140,7 +3215,7 @@ class AgainstC(unittest.TestCase):
         img = make_image(seed=5, size=3000)
         rc, text = self.write(img, running=True)
         self.assertEqual(rc, 1)
-        self.assertIn('Refused: the other slot is bad, and an in-place write of the running slot '
+        self.assertIn('Refused: the other slot failed its check, and an in-place write of the running slot '
                       'becomes possible only after a write of the other slot has failed in this '
                       'recovery (S-02.084). Try a plain write first (wbrecover.py write IMAGE): it is '
                       'safe and loses nothing. Nothing was sent.', text)
@@ -3156,7 +3231,7 @@ class AgainstC(unittest.TestCase):
         rc, text = self.write(img, running=True, ask=ask)
         self.assertEqual(rc, 0, text)
         self.assertEqual(ask.prompts, ['Type "%s" to go on: ' % w.PHRASE])
-        self.assertIn('DANGER: Slot 2 holds no good image, so this write erases Slot 1, the running '
+        self.assertIn('DANGER: Slot 2 holds no checked image, so this write erases Slot 1, the running '
                       'slot, and writes it in place.', text)
         self.assertIn('If the write is interrupted (a power cut, a pulled cable with no charged '
                       'battery, the power switch), the unit cannot be repaired without a flash '
@@ -3176,8 +3251,8 @@ class AgainstC(unittest.TestCase):
         img = make_image(seed=5)
         rc, text = self.write(img, ask=Ask('yes'))
         self.assertEqual(rc, 0, text)
-        self.assertIn('Slot 2 holds a good image (version 0.9.0), which this write replaces', text)
-        self.assertIn('Slot 1, the running slot, is bad, so Slot 2 holds the only good image. '
+        self.assertIn('Slot 2 holds a checked image (version 0.9.0), which this write replaces', text)
+        self.assertIn('Slot 1, the running slot, failed its check, so Slot 2 holds the only checked image. '
                       'write --running is the safer choice in this state: it selects Slot 2 first '
                       'and rewrites Slot 1, so an interruption starts Slot 2.', text)
         self.assertEqual(self.slot(1, len(img)), img)
@@ -3197,7 +3272,7 @@ class AgainstC(unittest.TestCase):
         img = make_image(seed=5)
         rc, text = self.write(img, ask=Ask('yes'))
         self.assertEqual(rc, 0, text)
-        self.assertIn('Slot 2 holds no good image, so nothing good is lost', text)
+        self.assertIn('Slot 2 holds no checked image, so nothing checked is lost', text)
         self.assertEqual(self.slot(1, len(img)), img)
         self.assertEqual(self.selector(), (1, 0))
 
@@ -3383,7 +3458,7 @@ class AgainstC(unittest.TestCase):
         self.record_a(b'\xff' * 12, 'good')
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('Slot 1:   not valid, version 1.2.3+4, front present', out.text)
+        self.assertIn('Slot 1:   check failed, version 1.2.3+4, front present', out.text)
         self.assertIn('Write:    would go to Slot 2', out.text)
         rc, text = self.write(self.A_IMG, running=True, ask=Ask('yes'))
         self.assertEqual(rc, 0, text)
@@ -3411,7 +3486,7 @@ class AgainstC(unittest.TestCase):
         self.record_a(struct.pack('<III', 0, 0x80000000, 0xB004), 'good')
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('Write:    refused: the selected slot is bad, and is not the running slot '
+        self.assertIn('Write:    refused: the boot slot failed its check, and is not the running slot '
                       'with its front intact', out.text)
 
     # statuses 5, 6, 13, 14
@@ -3427,11 +3502,11 @@ class AgainstC(unittest.TestCase):
             self.lib.shim_start(0, 1)
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('refused: the selected slot is bad, and is not the running slot with its '
+        self.assertIn('refused: the boot slot failed its check, and is not the running slot with its '
                       'front intact', out.text)
         rc, text = self.write(make_image(seed=5), running=True)
         self.assertEqual(rc, 1)
-        self.assertIn('Refused before sending: the selected slot is bad', text)
+        self.assertIn('Refused before sending: the boot slot failed its check', text)
         self.assertNotIn(w.BEGIN, self.seen)
 
     def test_status_6(self):
@@ -3497,7 +3572,7 @@ class AgainstC(unittest.TestCase):
         self.assertEqual(rc, 0, text)
         self.assertIn('Writing %d bytes to Slot 1.' % len(img), text)
         self.assertIn('The unit announced a write of Slot 1, the running slot, with no selector write '
-                      'before it (way 1): the selector leads to Slot 2, which is good and is not '
+                      'before it (way 1): the selector leads to Slot 2, which is checked and is not '
                       'touched.\nThe write ends by settling the selector on Slot 1.', text)
         self.assertEqual(len(ask.prompts), 1)
         self.assertEqual(self.slot(0, len(img)), img)
@@ -3523,12 +3598,12 @@ class AgainstC(unittest.TestCase):
     HELD = ("The unit holds the power switch's power-off and refuses a restart. Keep the cable in "
             'until a write has settled the selector (the ways out below); with no host, keep the '
             'unit powered.')
-    NOTHING = 'The unit does not start at all if it is restarted or loses power now: no slot is good.'
+    NOTHING = 'The unit does not start at all if it is restarted or loses power now: no slot is checked.'
 
     @staticmethod
     def cut(slot):
         return ("A start that is not cut short would reach %s, but a cut of the first stage's own "
-                'selector write could leave a selector that leads to no good slot, so a restart is '
+                'selector write could leave a selector that leads to no checked slot, so a restart is '
                 'not safe yet.' % slot)
 
     def test_retry_after_in_place(self):
@@ -3709,7 +3784,7 @@ class AgainstC(unittest.TestCase):
         self.seen = []
         rc, text = self.write(make_image(seed=11), ask=no_prompt)
         self.assertEqual(rc, 1)
-        self.assertIn('Refused before sending: Slot 1 is the only good slot, so the unit accepts only '
+        self.assertIn('Refused before sending: Slot 1 is the only checked slot, so the unit accepts only '
                       'the image it holds (version 1.2.3+4, ', text)
         self.assertIn('to settle the selector on it, and this file is not it (status 18).\nWays out: '
                       'write with the image Slot 1 holds', text)
@@ -3763,7 +3838,7 @@ class AgainstC(unittest.TestCase):
         rc, text = self.write(img, running=True, ask=ask)
         self.assertEqual(rc, 0, text)
         self.assertIn('The unit announced a write of Slot 2, the running slot, with no selector write '
-                      'before it (way 1): the selector leads to Slot 1, which is good and is not '
+                      'before it (way 1): the selector leads to Slot 1, which is checked and is not '
                       'touched.', text)
         self.assertIn('The write ends by settling the selector on Slot 2.', text)
         erased = [self.lib.shim_erase_at(k) for k in range(before, self.lib.shim_erases())]
@@ -3847,8 +3922,8 @@ class AgainstC(unittest.TestCase):
 
     def test_run22(self):
         img, text = self.run22()
-        self.assertIn('A write of this recovery read Slot 1, the running slot, back good but did not '
-                      'settle the selector on it, and Slot 2 is bad.\n' + self.cut('Slot 1') + '\n' +
+        self.assertIn('A write of this recovery read Slot 1, the running slot, back checked but did not '
+                      'settle the selector on it, and Slot 2 failed its check.\n' + self.cut('Slot 1') + '\n' +
                       self.HELD, text)
         i = w.get_info(self.link)
         self.assertEqual((i['spoiled'], i['held'], i['unsettled']), (False, True, True))
@@ -3857,7 +3932,7 @@ class AgainstC(unittest.TestCase):
         # another image with the flag: refused before BEGIN, and 18 from the unit
         rc, out = self.write(make_image(seed=22), running=True, ask=no_prompt)
         self.assertEqual(rc, 1)
-        self.assertIn('Refused before sending: Slot 1 is the only good slot', out)
+        self.assertIn('Refused before sending: Slot 1 is the only checked slot', out)
         self.assertEqual(self.end_status(make_image(seed=22), b'\x01'), 18)
         # without the flag: a write of slot 1
         sha = hashlib.sha256(img).digest()
@@ -3893,7 +3968,7 @@ class AgainstC(unittest.TestCase):
                       out.text)
         rc, text = self.write(make_image(seed=23), ask=no_prompt)
         self.assertEqual(rc, 1)
-        self.assertIn('Refused before sending: Slot 1 is the only good slot', text)
+        self.assertIn('Refused before sending: Slot 1 is the only checked slot', text)
         img = make_image(seed=23)
         r = self.link.request(w.BEGIN, struct.pack('<I', len(img)) + hashlib.sha256(img).digest() +
                               b'\x01')[0]
@@ -3975,7 +4050,7 @@ class AgainstC(unittest.TestCase):
         out = Lines()
         w.cmd_info(self.link, out)
         self.assertIn('Recovery runs because three starts in a row did not finish', out.text)
-        self.assertIn('Write:    would go to Slot 2, replacing a good image (version 0.9.0)', out.text)
+        self.assertIn('Write:    would go to Slot 2, replacing a checked image (version 0.9.0)', out.text)
         self.assertIn("with --running: would go to Slot 1, the running slot, after the selector "
                       "names Slot 2", out.text)
         self.assertIn('Battery:  unknown', out.text)
@@ -3983,7 +4058,7 @@ class AgainstC(unittest.TestCase):
     def test_info_write_restart(self):
         out = Lines()
         self.assertEqual(w.cmd_info(self.link, out), 0, out.text)
-        self.assertIn('Slot 1:   valid', out.text)
+        self.assertIn('Slot 1:   checked', out.text)
         self.assertIn('version 1.2.3+4', out.text)
         self.assertIn('would go to Slot 2', out.text)
         img = make_image(seed=5, size=5000)
@@ -4022,7 +4097,7 @@ class AgainstC(unittest.TestCase):
 
     def test_try_put_back_switch(self):
         """try marks Slot 2 tried and writes the trial's selector; put-back makes its record good
-        and settles the selector back on Slot 1; switch names Slot 2 for good. Each waits out the
+        and settles the selector back on Slot 1; switch makes Slot 2 the boot slot. Each waits out the
         countdown."""
         self.start('good', 'good')
         n, crc = len(self.B_IMG), zlib.crc32(self.B_IMG)
@@ -4062,11 +4137,11 @@ class AgainstC(unittest.TestCase):
             self.seen = []
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('[tried, started]', out.text)
+        self.assertIn(':   tried, started, ', out.text)
         self.assertIn('Keep:     would keep Slot 2, with no image sent', out.text)
         rc, text = self.act(w.ACT_KEEP, 'yes')
         self.assertEqual(rc, 0, text)
-        self.assertIn('Kept: Slot 2 is valid and selected', text)
+        self.assertIn('Kept: Slot 2 is the boot slot', text)
         self.assertEqual(self.selector(), (1, 0))
         self.assertEqual(self.record(1), (zlib.crc32(self.B_IMG), len(self.B_IMG), 0xB004))
 
@@ -4076,11 +4151,11 @@ class AgainstC(unittest.TestCase):
         self.start('good', 'bad')
         rc, text = self.act(w.ACT_SWITCH)
         self.assertEqual(rc, 1)
-        self.assertIn('Refused before sending: Slot 2 is bad and not tried', text)
+        self.assertIn('Refused before sending: Slot 2 failed its check and is not tried', text)
         self.assertNotIn(w.ACT, self.seen)
         rc, text = self.act(w.ACT_SWITCH, 'force the switch', force=True)
         self.assertEqual(rc, 0, text)
-        self.assertIn('DANGER: Slot 2 is bad', text)
+        self.assertIn('DANGER: Slot 2 failed its check', text)
         self.assertEqual([pl for t, pl in self.frames if t == w.ACT], [b'\x02\x80'])
         self.assertEqual(self.selector(), (1, 1))
 

@@ -20,8 +20,9 @@ It also opens by itself:
 | `This image failed its check` | The rest of the running image is damaged |
 | `Three starts in a row did not finish` | Three starts in a row ended before the boot menu or the OS came up. Quickly switching off three times during start-up does it too |
 
-The top two lines show each slot: version, `good`, `bad`, `tried` or `tried, started`, and which one is
-`running` and `selected`. In this menu, keys 1 to 4 are **M1 to M4**, and 8 is **sound key 8**. Knob clicks
+The top two lines show each slot: which bootloader it holds (`WB` and the version for waffle-boot, `TE`
+for a TE bootloader, with its version when it is a known build, or `??`), its state (`checked`,
+`check failed`, `tried` or `tried, started`), and which one is `running` and which is the `boot slot`. In this menu, keys 1 to 4 are **M1 to M4**, and 8 is **sound key 8**. Knob clicks
 and other keys do nothing.
 
 To leave, switch off and on with no key held: the unit starts normally.
@@ -54,8 +55,8 @@ To leave, switch off and on with no key held: the unit starts normally.
 Some failures leave nothing on the unit that can start, so neither menu appears. Only an **external SPI
 flash programmer**, connected to the flash chip, brings such a unit back:
 
-- a power cut during an in-place write of the only good slot;
-- a selected slot whose front fails before it reads the keys (the screen stays dark, or shows only the
+- a power cut during an in-place write of the only checked slot;
+- a boot slot whose front fails before it reads the keys (the screen stays dark, or shows only the
   logo, and Power + M4 does nothing);
 - a damaged factory first stage.
 
@@ -86,12 +87,12 @@ Or hold M4 (4 under the display) during the trial start itself: the screen says
 
 | Key | Item | What it does |
 | --- | --- | --- |
-| 2 | `Switch to slot N for good` | Slot N starts from now on, with no trial |
-| 4 | `Put slot N's record back` | Undoes a try that was not kept: slot N reads good again, nothing else changes |
+| 2 | `Make slot N the boot slot` | Slot N starts from now on, with no trial |
+| 4 | `Put slot N's record back` | Undoes a try that was not kept: slot N reads `checked` again, nothing else changes |
 
 Each asks you to hold 1 for 5 s. **8** goes back.
 
-> **Warning.** Read the red lines before you confirm a switch. `Its record is bad`,
+> **Warning.** Read the red lines before you make a slot the boot slot. `Its check failed`,
 > `It is not a waffle-boot image` or `There may be no way back without a flash programmer` mean the unit may
 > never start again from that slot. Try it once first (8, then 1).
 

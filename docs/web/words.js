@@ -30,6 +30,15 @@ export const BATT_MAX = 16;
 export const F_ESTABLISHED = 1, F_SELECTOR = 2, F_OWN_DESC = 4, F_MOVED = 8, F_SPOILED = 16,
     F_HELD = 32, F_READ_ERROR = 64, F_UNSETTLED = 128;
 export const S_GOOD = 1, S_HAS_DESC = 2, S_HAS_FRONT = 4, S_TRIED = 8, S_STARTED = 16;
+// good or tried, and S-02.106 rule 3 holds (front 17 and later)
+export const S_TE_PREFIX = 32;
+// S-02.106: the TE bootloader builds by (length, CRC-32 of the slot's bytes).
+export const TE_BUILDS = [
+    [0x5ADB0, 0x7AF4665C, [1000, 0, 12, 0]],
+    [0x5B7AC, 0x0789B2D9, [1000, 0, 13, 0]],
+    [0x60000, 0x5DEE4B51, [1000, 0, 20, 0]],
+    [0x60CA4, 0xA930BEF3, [1000, 0, 23, 0]],
+];
 export const BEGIN_F_RUNNING = 1, BEGIN_F_TRIAL = 2, BEGIN_F_SELECT = 4, BEGIN_F_FORCE = 0x80;
 export const WAY_NONE = 0, WAY_PLAIN = 1, WAY_SELECT_FIRST = 2, WAY_IN_PLACE = 3, WAY_TRIAL = 4,
     WAY_SELECT = 5, WAY_TRY = 6, WAY_SWITCH = 7, WAY_KEEP = 8, WAY_PUT_BACK = 9;
@@ -50,18 +59,18 @@ export const WHY = {
 };
 export const PHRASE = 'erase the running slot in place';
 export const TRIAL_PHRASE = 'try the new front';
-export const SWITCH_PHRASE = 'switch for good';
+export const SWITCH_PHRASE = 'make it the boot slot';
 export const forcePhrase = (name) => `force the ${name}`;
 export const PHASES = ['idle', 'receiving', 'writing', 'done', 'failed', 'counting down'];
 export const IDLE = 0, RECEIVING = 1, WRITING = 2, DONE = 3, FAILED = 4, COUNTING = 5;
 
 export const RESET_HINT = 'Restart once without holding a key, then hold Power + M4 again.';
-export const SAFE_HINT = 'Run info first: restart only with a good slot selected; the unit refuses ' +
-    'a restart while a write of this recovery has left no good slot selected.';
+export const SAFE_HINT = 'Run info first: restart only with a checked boot slot; the unit refuses ' +
+    'a restart while a write of this recovery has left no checked boot slot.';
 export const FRONT_HINT = 'Another front goes in only as a trial: write --new-front IMAGE, on a ' +
     'front of version 7 or later; from an older front, the test OS installer (wiki/Test-OS.md).';
-export const OTHER_HINT = 'Start the other slot if it is good and holds a stream the boot ROM can ' +
-    'start (S-02.091): wbrecover.py try starts it once, wbrecover.py switch for good; or key 1, ' +
+export const OTHER_HINT = 'Start the other slot if it is checked and holds a stream the boot ROM can ' +
+    'start (S-02.091): wbrecover.py try starts it once, wbrecover.py switch makes it the boot slot; or key 1, ' +
     '"Choose the slot to start", in the recovery menu.';
 export const SLOT_MENU = 'or key 1, "Choose the slot to start", in the recovery menu';
 export const NOT_STARTED_HINT = 'Write it again with --new-front and restart with no key held, so ' +
@@ -79,7 +88,7 @@ export const STATUS = {
     2: ['the unit could not establish which slot it is running from (S-01.002)', RESET_HINT],
     3: ['the running slot is not the slot the selector names', RESET_HINT],
     4: ['the selector is not settled: its verified byte is not 01 (S-02.090)', RESET_HINT],
-    5: ['the selected slot is bad, and is not the running slot with its front intact (S-02.084)',
+    5: ['the boot slot failed its check, and is not the running slot with its front intact (S-02.084)',
         OTHER_HINT],
     6: ['the image is empty or too large: recovery takes at most 0x77000 bytes (S-02.084)',
         'Check the file: wbrecover.py check IMAGE.'],
@@ -93,9 +102,9 @@ export const STATUS = {
     11: ['the slot was written and read back, but the selector write failed or did not read back',
         SAFE_HINT],
     12: ["the image's front is not the one this unit runs and no trial was asked for, or the " +
-        'running slot is good and holds no waffle-boot front (S-02.084)', FRONT_HINT],
+        'running slot is checked and holds no waffle-boot front (S-02.084)', FRONT_HINT],
     13: ['the slot that is kept already holds this image, so the unit could not tell which slot ' +
-        'runs; or the target is the good running slot, which already holds it (a front before ' +
+        'runs; or the target is the checked running slot, which already holds it (a front before ' +
         'version 14 refuses this; from version 14 both slots may hold the same image)',
         'Nothing to do; or write another build.'],
     14: ['the selector write before the write of the running slot failed; no slot or record was ' +
@@ -107,9 +116,9 @@ export const STATUS = {
         'answer said, and nothing was written', 'Run info, then write again.'],
     17: ['the selector or a slot could not be read for the start condition; nothing was written',
         'Run info and try again.'],
-    18: ['the target is the only good slot, so the unit accepts only the image it holds, to settle ' +
+    18: ['the target is the only checked slot, so the unit accepts only the image it holds, to settle ' +
         'the selector on it (S-02.084)', 'Take one of the ways out that wbrecover.py info lists.'],
-    19: ['a trial needs the running slot good, and neither a trial nor a select is taken once ' +
+    19: ['a trial needs the running slot checked, and neither a trial nor a select is taken once ' +
         'this recovery has begun a write of the running slot, written the selector to the other ' +
         'slot, or begun a trial write (S-02.084)',
         'Run info to see the state; after a trial write, restart first.'],
@@ -118,9 +127,9 @@ export const STATUS = {
         'Send the file that was written with --new-front, after its trial start has run.'],
     21: ['the tried slot has not started: its front has left no mark of a trial start (S-02.084)',
         NOT_STARTED_HINT],
-    22: ['the selector already names that slot for good (verified 01), so nothing was written',
+    22: ['that slot is already the boot slot (verified 01), so nothing was written',
         'Nothing to do: restart the unit (wbrecover.py restart) to start it.'],
-    23: ['the other slot is bad and not tried: nothing checks it at a start (S-02.084)',
+    23: ['the other slot failed its check and is not tried: nothing checks it at a start (S-02.084)',
         'Write an image to it first (wbrecover.py write IMAGE).'],
     24: ['the write was stopped before its first erase: the unit was switched off or USB was ' +
         'unplugged, and nothing was written',
@@ -167,20 +176,20 @@ export const FORCE_HEAD = 'With --force the unit lifts the refusals that protect
 // What force lifts for a write (S-02.084), and what could go wrong.
 export const WRITE_RISK = {
     3: 'The selector does not name the running slot. Forced, the write goes to the running slot, ' +
-        'the one the selector does not name; the unit takes it only while the selected slot is ' +
-        'good, which a cut of the write then starts.',
+        'the one the selector does not name; the unit takes it only while the boot slot is ' +
+        'checked, which a cut of the write then starts.',
     4: 'The selector is not settled: its verified byte is not 01, so the next start was to check ' +
         'it. Forced, the write goes on over it: a cut can leave a selector that leads to no good ' +
         'slot.',
-    5: "The selected slot is bad, and the running slot's front is not intact in the flash. Forced, " +
+    5: "The boot slot failed its check, and the running slot's front is not intact in the flash. Forced, " +
         'no front is asked of the image: the unit can end on an image whose recovery is not this one, ' +
         'or none.',
     12: "The running slot's front is not intact in the flash. Forced, no front is asked of the " +
         'image: the unit can end on an image whose recovery is not this one, or none.',
-    15: 'The other slot is bad and no write of it has failed here. Forced, the running slot is ' +
+    15: 'The other slot failed its check and no write of it has failed here. Forced, the running slot is ' +
         'erased and written in place at once: a cut leaves a unit that cannot be repaired without a ' +
         'flash programmer. A plain write of the other slot first is safe (wbrecover.py write IMAGE).',
-    19: 'The running slot is not good. Forced, the trial goes on: if the new front does not come up, ' +
+    19: 'The running slot is not checked. Forced, the trial goes on: if the new front does not come up, ' +
         'switching off and on starts the running slot, which may not start either.',
     front: "The file's front is not the one this unit runs. Forced, it is written and selected for " +
         'good, with no trial: if that front does not start, recovery may not be reachable. A ' +
@@ -198,15 +207,15 @@ export const SELECT_RISK = {
 const ACT_LABELS = { 1: 'Try:', 2: 'Switch:', 3: 'Keep:', 4: 'Put back:' };
 const DONE_WORDS = {
     [WAY_TRY]: (s) => `${s} marked for one trial start`,
-    [WAY_SWITCH]: (s) => `the selector names ${s} for good`,
-    [WAY_KEEP]: (s) => `${s} kept and selected`,
+    [WAY_SWITCH]: (s) => `${s} is the boot slot`,
+    [WAY_KEEP]: (s) => `${s} kept as the boot slot`,
     [WAY_PUT_BACK]: (s) => `${s}'s record made good again`,
 };
 export const TIER_WORDS = {
     [TIER_SAME]: 'holds an image with the front this unit runs',
     [TIER_FRONT]: 'holds another waffle-boot front: its recovery may not be this one, or may not open',
     [TIER_FOREIGN]: 'holds no waffle-boot front: there is no recovery there',
-    [TIER_BAD]: 'is bad: its record fails the check, and nothing checks it at a start',
+    [TIER_BAD]: 'failed its check: its record does not match its bytes, and nothing checks it at a start',
 };
 
 // --- small helpers ---
@@ -222,7 +231,7 @@ export function sameBytes(a, b) {
             return false;
     return true;
 }
-const BAD_SLOT = { good: false, has_desc: false, has_front: false, tried: false, started: false,
+const BAD_SLOT = { good: false, has_desc: false, has_front: false, tried: false, started: false, te_prefix: false,
     length: 0, crc: 0, version: [0, 0, 0, 0], front_crc: 0, pin: new Uint8Array(32) };
 // slot k of INFO; an index INFO cannot name reads as an empty bad slot
 export const slotOf = (i, k) => i.slots[k] || BAD_SLOT;
@@ -235,6 +244,30 @@ export function slotName(k) {
 // As the unit's screens show it: three places, and the build number after a '+' when not 0.
 export function version(v) {
     return `${v[0]}.${v[1]}.${v[2]}` + (v[3] ? `+${v[3]}` : '');
+}
+
+// S-02.106: ['WB', version], ['TE', version], ['TE', null] or ['??', null] for a good or tried slot,
+// from INFO's slot fields and flag bit 5; null for any other slot.
+export function slotKind(s) {
+    if (!s.good && !s.tried)
+        return null;
+    if (s.has_desc)
+        return ['WB', s.version];
+    const c = (s.tried ? ~s.crc : s.crc) >>> 0;
+    const row = TE_BUILDS.find((r) => r[0] === s.length && r[1] === c);
+    if (row)
+        return ['TE', row[2]];
+    return s.te_prefix ? ['TE', null] : ['??', null];
+}
+
+// A slot kind as the slot lines show it: 'WB 0.9.36', 'TE 1000.0.20', 'TE' or '??'.
+export const kindText = (k) => (k[1] === null ? k[0] : `${k[0]} ${version(k[1])}`);
+
+// S-15.151's state word: checked, tried, tried, started, or check failed.
+export function slotState(s) {
+    if (s.tried)
+        return s.started ? 'tried, started' : 'tried';
+    return s.good ? 'checked' : 'check failed';
 }
 
 export const v11 = (i) => i != null && (i.front || 0) >= ACTS_FRONT;
@@ -315,8 +348,8 @@ export function stateLine(i) {
     const a = slotName(i.running), b = slotName(1 - i.running);
     if (i.spoiled)
         return `The failed write left ${a}, the running slot, damaged.`;
-    return `A write of this recovery read ${a}, the running slot, back good but did not settle the ` +
-        `selector on it, and ${b} is bad.`;
+    return `A write of this recovery read ${a}, the running slot, back checked but did not settle the ` +
+        `selector on it, and ${b} failed its check.`;
 }
 
 // Bit 5: why the unit holds, said as INFO lets it be said (S-02.084).
@@ -328,15 +361,15 @@ export function heldLines(i) {
     } else if (n === null) {
         let reason;
         if (!slotOf(i, 0).good && !slotOf(i, 1).good)
-            reason = 'no slot is good';
+            reason = 'no slot is checked';
         else if (i.selector_ok && i.sel_verified === 1)
             reason = `the selector trusts ${slotName(selected(i.sel_index))}, which is damaged`;
         else
-            reason = 'no start falls back from the slot the selector names to a good one';
+            reason = 'no start falls back from the slot the selector names to a checked one';
         why = `The unit does not start at all if it is restarted or loses power now: ${reason}.`;
     } else {
         why = `A start that is not cut short would reach ${slotName(n)}, but a cut of the first ` +
-            "stage's own selector write could leave a selector that leads to no good slot, so a " +
+            "stage's own selector write could leave a selector that leads to no checked slot, so a " +
             'restart is not safe yet.';
     }
     return [why, "The unit holds the power switch's power-off and refuses a restart. Keep the cable " +
@@ -350,7 +383,7 @@ export function reachWords(i) {
     if (slotOf(i, n).good)
         return `a restart starts ${slotName(n)}, which the selector names`;
     if (!slotOf(i, 1 - n).good)
-        return 'the unit reports that a start reaches a good slot';
+        return 'the unit reports that a start reaches a checked slot';
     return `the first restart starts ${slotName(n)}, which the selector names and which is ` +
         `damaged: it may hang or open recovery again. The restart after it starts ${slotName(1 - n)}`;
 }
@@ -358,7 +391,7 @@ export function reachWords(i) {
 // In the damaged state: the selector leads to the other slot, which is good, so the unit writes
 // the running slot again for either request.
 export const leadsToOther = (i) => damaged(i) && i.target === i.running;
-// In the damaged state, the target already good: the only good slot, which the unit takes only
+// In the damaged state, the target already good: the only checked slot, which the unit takes only
 // with the image it holds, to settle the selector on it (status 18).
 export const onlySelect = (i, target) =>
     damaged(i) && (target === 0 || target === 1) && slotOf(i, target).good;
@@ -442,7 +475,7 @@ export function runWords(i) {
     if (way === WAY_SELECT_FIRST)
         return `would go to ${a}, the running slot, after the selector names ${b}`;
     if (way === WAY_IN_PLACE)
-        return `would go to ${a}, the running slot, in place, since ${b} is bad: an interruption ` +
+        return `would go to ${a}, the running slot, in place, since ${b} failed its check: an interruption ` +
             'leaves a unit that does not start';
     return `refused: ${refusalText(i.run_refusal, i)}`;
 }
@@ -477,12 +510,12 @@ export function actText(act, st, i, hint = true) {
     const B = slotName(otherOf(i));
     const restartFirst = 'Restart first (wbrecover.py restart), with no key held.';
     const words = {
-        [`${ACT_TRY},19`]: ['a try needs the running slot good with its front intact, and none ' +
+        [`${ACT_TRY},19`]: ['a try needs the running slot checked with its front intact, and none ' +
             'comes once this recovery has written the running slot or the selector', restartFirst],
         [`${ACT_SWITCH},7`]: [`${B}'s stream does not pass S-02.091's rules: the boot ROM would not ` +
-            'start it', 'Write a good image to it first (wbrecover.py write IMAGE).'],
-        [`${ACT_SWITCH},12`]: [`${B} does not hold the front this unit runs: a switch to it would be ` +
-            'for good, with no trial', 'Try it once first (wbrecover.py try).'],
+            'start it', 'Write a bootable image to it first (wbrecover.py write IMAGE).'],
+        [`${ACT_SWITCH},12`]: [`${B} does not hold the front this unit runs: a switch to it would make ` +
+            'it the boot slot with no trial', 'Try it once first (wbrecover.py try).'],
         [`${ACT_SWITCH},19`]: ['this recovery has written the running slot or the selector', restartFirst],
         [`${ACT_SWITCH},21`]: [`${B} is tried, but its front has left no mark of a trial start: ` +
             'nothing shows that it comes up', 'Restart with no key held so that it starts once; ' +
@@ -498,9 +531,9 @@ export function actText(act, st, i, hint = true) {
         [`${ACT_PUT_BACK},20`]: [`${B} is not tried: there is no trial mark to take off`, 'Nothing to do.'],
     };
     for (const act2 of [ACT_TRY, ACT_SWITCH]) {
-        words[`${act2},22`] = [`the selector already names ${B} for good (verified 01)`,
+        words[`${act2},22`] = [`${B} is already the boot slot (verified 01)`,
             'Nothing to do: restart the unit (wbrecover.py restart) to start it.'];
-        words[`${act2},23`] = [`${B} is bad and not tried: nothing checks it at a start`,
+        words[`${act2},23`] = [`${B} failed its check and is not tried: nothing checks it at a start`,
             'Write an image to it first (wbrecover.py write IMAGE).'];
     }
     const got = words[`${act},${st}`];
@@ -516,7 +549,7 @@ export function actGoal(i, act) {
     const k = slotName(actSlot(i, act));
     return {
         [ACT_TRY]: `would start ${k} once, at the next start`,
-        [ACT_SWITCH]: `would select ${k} for good`,
+        [ACT_SWITCH]: `would make ${k} the boot slot`,
         [ACT_KEEP]: `would keep ${k}, with no image sent`,
         [ACT_PUT_BACK]: `would make ${k}'s record good again, with no selector write`,
     }[act];
@@ -561,7 +594,7 @@ export function switchLines(i, b) {
     const B = slotName(b), A = slotName(1 - b);
     const tier = i.tier;
     if (tier === TIER_BAD)
-        return [`DANGER: ${B} is bad: its record fails the check. Switched to, the selector trusts ` +
+        return [`DANGER: ${B} failed its check: its record does not match its bytes. Switched to, the selector trusts ` +
             'it, and nothing will ever check this slot again: if its image does not start, there ' +
             `may be no way back without a flash programmer.${trialHint(i)}`];
     if (tier === TIER_FOREIGN)
@@ -572,8 +605,8 @@ export function switchLines(i, b) {
         return [`WARNING: ${B} holds another waffle-boot front (${slotWords(i, b)}). Once switched, ` +
             'recovery may not be reachable from it: if that front does not start, or its recovery ' +
             `is not this one, there may be no way back to ${A}.${trialHint(i)}`];
-    return [`${B} holds an image with the front this unit runs (${slotWords(i, b)}). A switch is ` +
-        `for good: every start boots ${B} from now on.${trialHint(i)}`];
+    return [`${B} holds an image with the front this unit runs (${slotWords(i, b)}). A switch makes ` +
+        `it the boot slot: every start boots ${B} from now on.${trialHint(i)}`];
 }
 
 // What a try of slot b does, by its tier.
@@ -599,7 +632,7 @@ export function tryLines(i, b) {
 export function keepLines(i, k) {
     const K = slotName(k), other = slotName(1 - k);
     if (k === i.running) {
-        const lines = [`This is the trial start of ${K}. The keep makes ${K} the selected slot: its ` +
+        const lines = [`This is the trial start of ${K}. The keep makes ${K} the boot slot: its ` +
             `record is made good and the selector names it; its image is not written again, and ` +
             `${other} is kept as it is.`];
         if (i.why === 2)
@@ -608,7 +641,7 @@ export function keepLines(i, k) {
                 'recovery.');
         return lines;
     }
-    const lines = [`${K} is tried; the keep makes it the selected slot: its record is made good and ` +
+    const lines = [`${K} is tried; the keep makes it the boot slot: its record is made good and ` +
         'the selector names it, to be checked at the next start. Its image is not written again, ' +
         `and ${other} is kept as it is.`];
     if (i.tier === TIER_FRONT || i.tier === TIER_FOREIGN)
@@ -643,7 +676,7 @@ export function forceLines(act, st, i) {
     else if (st === 23)
         lines.push(`Forced, the unit acts on ${B} as it lies: nothing has checked its image.`);
     else if (st === 21)
-        lines.push(`Forced, ${B} is kept for good although its front never showed that it starts: ` +
+        lines.push(`Forced, ${B} is kept as the boot slot although its front never showed that it starts: ` +
             'if it does not, recovery may not be reachable.');
     else if (st === 19 || st === 20)
         lines.push(`Forced, the ${ACT_NAMES[act]} goes on from the state this recovery left.`);
@@ -656,7 +689,7 @@ export function countdownNote(i) {
         return [];
     if (i.held)
         return ['The unit begins at once, with no countdown: it holds the power-off while a write of ' +
-            'this recovery has left no good slot to start.'];
+            'this recovery has left no checked slot to start.'];
     return [`Once confirmed, the unit counts down ${COUNTDOWN} s before its first erase: switching ` +
         'it off or unplugging USB in that time stops it, with the flash untouched.'];
 }
@@ -718,7 +751,7 @@ export function triedLines(i, failedTrial = false) {
         if (sel[0] === a && sel[1] === 1 && v11(i))
             return [`${A} is tried, but the selector trusts it although it never passed a trial: ` +
                 'every start boots it, and a select is refused. To leave this state, switch to ' +
-                `${B} from here (wbrecover.py switch, ${SLOT_MENU}), if it is good and holds a ` +
+                `${B} from here (wbrecover.py switch, ${SLOT_MENU}), if it is checked and holds a ` +
                 `stream the boot ROM can start; from its recovery, wbrecover.py try starts ${A} ` +
                 'once, or a plain write replaces it.'];
         if (sel[0] === a && sel[1] === 1)
@@ -805,17 +838,17 @@ export function describeLines(i) {
     else
         out.push("Front:    the running image's descriptor was not found");
     i.slots.forEach((s, k) => {
-        const tags = [['running', i.established && i.running === k], ['selected', sel === k],
-            ['tried', s.tried], ['started', s.tried && s.started]].filter((t) => t[1]).map((t) => t[0]);
-        let line = `${slotName(k)}:   ${s.good ? 'valid' : 'not valid'}`;
-        if (s.good)
-            line += `, ${s.length} bytes, CRC-32 ${hex8(s.crc)}`;
-        if (s.has_desc) {
+        const tags = [['running', i.established && i.running === k], ['boot slot', sel === k]]
+            .filter((t) => t[1]).map((t) => t[0]);
+        const kind = slotKind(s);
+        let line = `${slotName(k)}:   ${slotState(s)}`;
+        if (kind !== null)
+            line += `, ${kindText(kind)}, ${s.length} bytes, CRC-32 ${hex8(s.crc)}`;
+        else if (s.has_desc)
             line += `, version ${version(s.version)}`;
+        if (s.has_desc) {
             line += `, front ${s.has_front ? 'present' : 'damaged'}`;
             line += ` (pin ${hex(s.pin.subarray(0, 8))}...)`;
-        } else if (s.good) {
-            line += ', no waffle-boot front';
         }
         if (tags.length)
             line += ` [${tags.join(', ')}]`;
@@ -831,7 +864,7 @@ export function describeLines(i) {
         else if (leadsToOther(i))
             line += ', the running slot, again (way 1), with no selector write before it';
         else if (t.good)
-            line += `, replacing a good image (${imageWords(t)})`;
+            line += `, replacing a checked image (${imageWords(t)})`;
         out.push(line);
     } else {
         out.push(`Write:    refused: ${refusalText(i.refusal, i)}`);
@@ -914,26 +947,26 @@ function baseLines(i, way, target) {
     }
     if (target === a && damaged(i))
         return [`The unit announced a write of ${A}, the running slot, with no selector write ` +
-            `before it (way 1): the selector leads to ${B}, which is good and is not touched.`].concat(held);
+            `before it (way 1): the selector leads to ${B}, which is checked and is not touched.`].concat(held);
     if (target === a) {
         const lines = [`This write goes to ${A}, the running slot, with no selector write before ` +
             `it: ${B} is selected, and an interruption starts ${B}'s image (${imageWords(sb)}).`];
         if (sa.good)
-            lines.push(`${A} holds a good image (${imageWords(sa)}), which this write replaces.`);
+            lines.push(`${A} holds a checked image (${imageWords(sa)}), which this write replaces.`);
         return lines;
     }
     if (damaged(i))
         return [stateLine(i) + ' An interruption of this write leaves no settled selector either: ' +
             'until a write has ended well, a restart is not safe.'].concat(held);
     if (sb.good) {
-        const lines = [`${B} holds a good image (${imageWords(sb)}), which this write replaces.`];
+        const lines = [`${B} holds a checked image (${imageWords(sb)}), which this write replaces.`];
         if (i.v6 && !sa.good)
-            lines.push(`${A}, the running slot, is bad, so ${B} holds the only good image. write ` +
+            lines.push(`${A}, the running slot, failed its check, so ${B} holds the only checked image. write ` +
                 `--running is the safer choice in this state: it selects ${B} first and rewrites ` +
                 `${A}, so an interruption starts ${B}.`);
         return lines;
     }
-    return [`${B} holds no good image, so nothing good is lost. ${A}, the running slot, is left as ` +
+    return [`${B} holds no checked image, so nothing checked is lost. ${A}, the running slot, is left as ` +
         'it is: if the write is interrupted, the unit starts as before.'];
 }
 
@@ -941,7 +974,7 @@ function baseLines(i, way, target) {
 export function inPlaceLines(i, target = null) {
     const a = slotName(i.running), b = slotName(1 - i.running);
     const [state, words] = battery(i.batt);
-    const lines = [`DANGER: ${b} holds no good image, so this write erases ${a}, the running slot, ` +
+    const lines = [`DANGER: ${b} holds no checked image, so this write erases ${a}, the running slot, ` +
         'and writes it in place.',
         'If the write is interrupted (a power cut, a pulled cable with no charged battery, the ' +
         'power switch), the unit cannot be repaired without a flash programmer.'];
@@ -984,7 +1017,7 @@ export function trialLines(i, front, target, signed) {
         lines.push(`${slotName(target)} holds an image (${imageWords(t)}), which this write ` +
             'erases: it is lost, whether or not the new front starts.');
     else
-        lines.push(`${slotName(target)} holds no good image, so nothing good is lost.`);
+        lines.push(`${slotName(target)} holds no checked image, so nothing checked is lost.`);
     lines.push(`It will be written to ${slotName(target)} and started ONCE. If the unit does not ` +
         `come up, switch it off and on: it boots ${slotName(i.running)} again. Nothing is selected ` +
         'until a select (wbrecover.py select IMAGE).');
@@ -1000,7 +1033,7 @@ export function selectLines(i, k) {
     const m = slotName(k), other = slotName(1 - k);
     if (trialStart(i)) {
         const lines = [`This is the trial start of ${m}, the new front, and it came up. The select ` +
-            `makes ${m} the selected slot: its record is made good and the selector names it; its ` +
+            `makes ${m} the boot slot: its record is made good and the selector names it; its ` +
             `image is not written again, and ${other} is kept as it is.`];
         if (i.why === 2)
             lines.push('WARNING: recovery runs because the image check failed: the new front runs, ' +
@@ -1009,7 +1042,7 @@ export function selectLines(i, k) {
         return lines;
     }
     return [`${m} holds the new front, tried, and the unit recorded the new front's start in its ` +
-        `trial. The select makes ${m} the selected slot: its record is made good and the selector ` +
+        `trial. The select makes ${m} the boot slot: its record is made good and the selector ` +
         `names it; its image is not written again, and ${other} is kept as it is.`];
 }
 

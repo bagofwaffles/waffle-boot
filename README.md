@@ -27,7 +27,7 @@ own OS, writing a slot over USB from recovery, and the trial and commit that the
   holds the settings, device information, and a System screen with a key test, format and factory reset.
   Anything that erases asks first.
 - **Recovery menu.** Hold **M4**, and no other key, while switching the unit on. From it you can try the
-  other slot for one start, switch slots for good, or write a new image sent from a computer over USB.
+  other slot for one start, make the other slot the boot slot, or write a new image sent from a computer over USB.
   Recovery is part of the front, the small first part of every image, so it still runs when the rest of the
   image is damaged. It opens by itself when the rest of the image fails its check, or after three starts in
   a row that did not finish.

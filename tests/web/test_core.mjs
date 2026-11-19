@@ -416,10 +416,11 @@ test('describe gives INFO as data', needPython, () => {
     let d = core.describe(infoOf(step('model-f14-info')));
     assert.equal(d.running, 0);
     assert.deepEqual(d.selector, { read: true, slot: 0, verified: 1, settled: true });
-    assert.deepEqual(d.slots.map((s) => [s.name, s.version, s.state, s.running, s.selected, s.frontMatches]),
-        [['Slot 1', '1.2.3+4', 'good', true, true, true], ['Slot 2', '0.9.0', 'good', false, false, true]]);
+    assert.deepEqual(d.slots.map((s) => [s.name, s.version, s.state, s.kind, s.running, s.selected,
+        s.frontMatches]), [['Slot 1', '1.2.3+4', 'checked', 'WB 1.2.3+4', true, true, true],
+        ['Slot 2', '0.9.0', 'checked', 'WB 0.9.0', false, false, true]]);
     assert.deepEqual(d.commands.write, { allowed: true, target: 1, code: 0,
-        text: 'would go to Slot 2, replacing a good image (version 0.9.0)' });
+        text: 'would go to Slot 2, replacing a checked image (version 0.9.0)' });
     assert.equal(d.commands.running.way, core.WAY_SELECT_FIRST);
     assert.deepEqual(d.commands.try, { allowed: true, forceWouldLift: false, slot: 1, code: 0,
         text: 'would start Slot 2 once, at the next start' });
@@ -524,7 +525,7 @@ test('the phrases, the dangers and what force lifts', needPython, async () => {
     let p = await plan('model-f14-write-good');
     assert.deepEqual([p.action, p.allowed, p.phrase, p.target, p.way, p.countdown, p.danger, p.force],
         ['write', true, 'yes', 1, core.WAY_PLAIN, true, 'caution', false]);
-    assert.ok(p.lines.includes('Slot 2 holds a good image (version 0.9.0), which this write replaces.'));
+    assert.ok(p.lines.includes('Slot 2 holds a checked image (version 0.9.0), which this write replaces.'));
     p = await plan('model-f14-write-empty');
     assert.deepEqual([p.phrase, p.danger], ['yes', 'none']);
     p = await plan('model-f6-write-good');
@@ -540,7 +541,7 @@ test('the phrases, the dangers and what force lifts', needPython, async () => {
     assert.ok(p.lines.includes('Battery: present and charged (charging, 40 %, 4000 mV).'));
     p = await plan('model-f14-running-other-bad');
     assert.deepEqual([p.allowed, p.refusal.code, p.forceWouldLift], [false, 15, true]);
-    assert.match(p.refusal.text, new RegExp('^Refused: the other slot is bad, and an in-place write .*' +
+    assert.match(p.refusal.text, new RegExp('^Refused: the other slot failed its check, and an in-place write .*' +
         ' Nothing was sent\\.$'));
     p = await plan('model-f14-running-other-bad', 1);
     assert.deepEqual([p.allowed, p.phrase, p.target, p.way, p.danger, p.force],
@@ -562,7 +563,7 @@ test('the phrases, the dangers and what force lifts', needPython, async () => {
     p = await plan('model-f14-try');
     assert.deepEqual([p.action, p.phrase, p.target, p.way, p.danger], ['try', 'yes', 1, core.WAY_TRY, 'none']);
     p = await plan('model-f14-switch');
-    assert.deepEqual([p.phrase, p.danger], ['switch for good', 'caution']);
+    assert.deepEqual([p.phrase, p.danger], ['make it the boot slot', 'caution']);
     p = await plan('model-f14-switch-bad', 2);
     assert.deepEqual([p.phrase, p.danger, p.force], ['force the switch', 'no-fallback', true]);
     p = await plan('model-f14-keep');
@@ -814,7 +815,7 @@ test('a plan that no longer holds, a confirmation declined, a forced write with 
             assert.deepEqual([r.outcome, r.code], ['stopped', 'declined']);
             assert.deepEqual([asked.phrase, asked.way, asked.target, asked.danger],
                 ['erase the running slot in place', core.WAY_IN_PLACE, 0, 'no-fallback']);
-            assert.ok(asked.lines.some((l) => l.startsWith('DANGER: Slot 2 holds no good image')));
+            assert.ok(asked.lines.some((l) => l.startsWith('DANGER: Slot 2 holds no checked image')));
             let state = await bridge.state();
             assert.ok(types(state).includes(core.BEGIN) && !types(state).includes(core.END));
             assert.equal(state.requests.find((q) => q[0] === core.BEGIN)[1].slice(72), '81');
@@ -975,4 +976,54 @@ test("the front's own code: a lost END, and the host leaving in the countdown", 
         state = await bridge.state();
         assert.deepEqual([state.sel, state.records], [before.sel, before.records]);
     });
+});
+
+// S-02.015's CRC-32, bit by bit.
+function crc32(b) {
+    let c = 0xFFFFFFFF;
+    for (const x of b) {
+        c ^= x;
+        for (let k = 0; k < 8; k++)
+            c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1;
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+// S-02.106: a slot's kind from INFO's slot fields and flag bit 5, against the oracle's synthetic vectors.
+test('slot kinds follow S-02.106', async () => {
+    const { readFileSync } = await import('node:fs');
+    const W = await import('../../docs/web/words.js');
+    const dir = new URL('../oracle/S-02-spi-flash/vectors/slot_kinds.json', import.meta.url);
+    const { cases } = JSON.parse(readFileSync(dir, 'utf8'));
+    assert.equal(cases.length, 15);
+    for (const c of cases) {
+        const data = new Uint8Array(c.length);
+        for (let i = 0; i < c.length; i++)
+            data[i] = (i * 37 + c.seed) & 0xFF;
+        for (const p of c.patches)
+            data.set(Buffer.from(p.bytes, 'hex'), p.offset);
+        const crc = parseInt(c.crc32, 16);
+        const prefix = c.length >= 4468 && crc32(data.subarray(0, 4468)) === 0x31D25812;
+        for (const tried of [false, true]) {
+            const s = { good: !tried, tried, started: false, has_desc: c.descriptor_valid,
+                version: c.descriptor_version || [0, 0, 0, 0], length: c.length,
+                crc: tried ? (~crc) >>> 0 : crc, te_prefix: prefix };
+            assert.deepEqual(W.slotKind(s), [c.kind, c.version], `${c.name}, tried ${tried}`);
+            if (c.text !== null)
+                assert.equal(W.kindText(W.slotKind(s)), `TE ${c.text}`);
+        }
+    }
+    const s = { good: true, tried: false, has_desc: false, version: [0, 0, 0, 0], length: 0x1234,
+        crc: 0xCAFEF00D, te_prefix: false };
+    assert.equal(W.kindText(W.slotKind(s)), '??');
+    W.TE_BUILDS.push([0x1234, 0xCAFEF00D, [2, 1, 0, 7]]);      // a made-up row
+    try {
+        assert.equal(W.kindText(W.slotKind(s)), 'TE 2.1.0+7');
+    } finally {
+        W.TE_BUILDS.pop();
+    }
+    assert.equal(W.kindText(W.slotKind({ ...s, te_prefix: true })), 'TE');
+    assert.equal(W.slotKind({ ...s, good: false }), null);
+    assert.deepEqual(W.TE_BUILDS.map((r) => r[2].join('.')),
+        ['1000.0.12.0', '1000.0.13.0', '1000.0.20.0', '1000.0.23.0']);
 });

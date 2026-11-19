@@ -30,10 +30,33 @@ Some failures leave a unit that only an external SPI flash programmer brings bac
 
 <img src="../docs/ui/recovery.png" width="480" alt="The recovery menu">
 
-It shows each slot's version and state (`good`, `bad`, `tried`, `tried, started`), which slot runs and
-which is selected, and what a write would replace. The status bar shows `USB` and the image and front
+It shows each slot's bootloader type and state (`checked`, `check failed`, `tried`, `tried, started`),
+which slot runs (`running`) and which the selector names (`boot slot`), and what a write would replace. The status bar shows `USB` and the image and front
 versions (`v1.0.10 F16`). No key acts until every key has been released once; an unreadable key counts as
 not pressed.
+
+### Bootloader type
+
+Each checked or tried slot shows which bootloader it holds (S-02.106), by the first rule that holds:
+
+| Shows | When |
+| --- | --- |
+| `WB` and the version | the image has a valid waffle-boot descriptor |
+| `TE` and the version | the slot's length and CRC-32 are a row of the table below |
+| `TE` | the slot is at least 4,468 bytes and the CRC-32 of its bytes `[0, 4468)` is `0x31D25812` |
+| `??` | none of these |
+
+| Length (bytes) | CRC-32 | Version |
+| --- | --- | --- |
+| 372,144 (`0x5ADB0`) | `0x7AF4665C` | 1000.0.12 |
+| 374,700 (`0x5B7AC`) | `0x0789B2D9` | 1000.0.13 |
+| 393,216 (`0x60000`) | `0x5DEE4B51` | 1000.0.20 |
+| 396,452 (`0x60CA4`) | `0xA930BEF3` | 1000.0.23 |
+
+The CRC-32 is that of the slot's bytes, the record's for a checked slot and its complement for a tried one.
+A version prints as `major.minor.patch`, with `+build` when the build is not 0. `wbrecover.py info` and the
+browser page show the same; the third rule reaches them as INFO's slot flag bit 5, which fronts before
+version 17 leave clear, so with an older front an unknown TE build shows `??`.
 
 ### The slot menu (key 1)
 
@@ -42,22 +65,23 @@ N is the slot the unit does not run from. Only items that apply are shown. Key 8
 | Item | Does |
 | --- | --- |
 | `1  Try slot N once (suggested)` | The next start runs slot N once, then the current slot again. Writes only N's record |
-| `2  Switch to slot N for good` | The unit starts slot N from now on |
+| `2  Make slot N the boot slot` | The unit starts slot N from now on |
 | `3  Keep slot N` | For a tried slot that came up: start it from now on. In a trial start, the tried slot's own recovery offers this for itself |
-| `4  Put slot N's record back` | A tried, unkept slot reads good again; also cancels a try not yet started |
+| `4  Put slot N's record back` | A tried, unkept slot reads `checked` again; also cancels a try not yet started |
 
 **Hold key 1 for 5 s to confirm**; releasing early writes nothing. The confirm screen warns, but does not
 refuse:
 
 | Slot N | Warning |
 | --- | --- |
-| Good, same front | A trial first is suggested |
-| Good, another front | Recovery may not open from it |
-| Good, not waffle-boot | No recovery from there |
-| Bad record | Nothing will check it; there may be no way back without a flash programmer |
+| Checked, same front | A trial first is suggested |
+| Checked, another front | Recovery may not open from it |
+| Checked, not waffle-boot | No recovery from there |
+| Check failed | Nothing will check it; there may be no way back without a flash programmer |
 
-A tried slot reads `tried` and counts as bad until kept or put back. A power cut between a record's erase
-and program leaves the slot bad with its image intact: write it again, or switch to it knowing that.
+A tried slot reads `tried` and does not count as checked until kept or put back. A power cut between a
+record's erase and program leaves the slot `check failed` with its image intact: write it again, or make it
+the boot slot knowing that.
 
 ## The browser page
 
@@ -81,13 +105,13 @@ Below, the running slot is the one the unit runs from, and the other slot is the
 | `check IMAGE.ldr` | Checks a file; no unit needed | |
 | `info` | What the unit reports, and what each command would do now | |
 | `write IMAGE.ldr` | Writes the other slot, and selects it | `yes` |
-| `write --running IMAGE.ldr` | Writes the running slot: the other slot is selected first if good; in place if it is bad | `yes`, or `erase the running slot in place` |
+| `write --running IMAGE.ldr` | Writes the running slot: the other slot is made the boot slot first if checked; in place if its check failed | `yes`, or `erase the running slot in place` |
 | `write --new-front IMAGE.ldr` | Writes an image with another front to the other slot for one trial start; that slot's old image is lost | `try the new front` |
 | `try` | Starts the other slot once, as it is | `yes` |
-| `switch` | Starts the other slot from now on | `switch for good` |
+| `switch` | Makes the other slot the boot slot | `make it the boot slot` |
 | `keep` | Keeps a slot that was tried and started | `yes` |
 | `select IMAGE.ldr` | Keeps the slot IMAGE was tried in, checked against IMAGE | `yes` |
-| `put-back` | Makes a tried slot's record good again | `yes` |
+| `put-back` | Makes a tried slot's record pass its check again | `yes` |
 | `restart` | Restarts the unit | |
 | any, with `--force` (after the command) | Lifts the refusals that only protect you (below) | `force the <command>` |
 
@@ -97,7 +121,7 @@ Restart before another write: one write per visit.
 
 Both slots may hold the same image: every command works as with two different ones. Recovery then counts
 as the running slot the one the unit goes on starting, which is the one the selector names when it is
-trusted or good; the boot menu's status bar names the same slot. A front before version 14 refuses the
+trusted or checked; the boot menu's status bar names the same slot. A front before version 14 refuses the
 image a slot already holds, and refuses every write while both slots hold the same image; the tool says so
 before sending.
 
@@ -119,16 +143,16 @@ of the running slot have no countdown.
 
 ### Warnings
 
-- **`write --running` with the other slot bad writes the running slot in place, with no fallback.** It is
+- **`write --running` with the other slot's check failed writes the running slot in place, with no fallback.** It is
   refused until a plain `write` of the other slot has failed in this recovery (or `--force`). A power cut, a
   pulled cable with a flat battery, or the power switch during it leaves a unit only a flash programmer can
   repair. The tool shows the battery; the unit holds off the power switch and answers only status requests
   until the write ends. Keep the cable in until it ends.
-- `write --running` with the other slot good: an interruption starts the other slot. If it is not
+- `write --running` with the other slot checked: an interruption starts the other slot. If it is not
   waffle-boot, the unit is then without this recovery.
 - **After a failed write of the running slot**, the unit re-reads the flash before every answer and `info`
   says which write each command would make. Writes start without a countdown and settle the selector on the
-  slot written. Until a start would reach a good slot, the screen says
+  slot written. Until a start would reach a checked slot, the screen says
   `Keep the power on until a write has finished`, the power switch is held off and `restart` is refused
   (unless forced). Keep the cable in.
 - **A new front**: the next start runs the other slot once and the selector returns to the running slot. If
@@ -144,12 +168,12 @@ Read every line the tool prints before you type a phrase.
 
 Lifts, on `write`, `select`, `try`, `switch`, `keep` and `restart`: another front with no trial; an image
 with no waffle-boot front; an in-place write of the running slot before a write of the other slot failed; a
-write with the selector unsettled or naming the other slot (only while that slot is good); a keep of a slot
-that has not started; a try of or switch to a bad slot; a restart while no start would reach a good slot.
+write with the selector unsettled or naming the other slot (only while that slot is checked); a keep of a slot
+that has not started; a try of or switch to a slot whose check failed; a restart while no start would reach a checked slot.
 
 Never lifted: a damaged, too large or unbootable image; a flash operation that failed or did not read back;
-a unit that cannot tell which slot it runs from; a write of the running slot while the selector names a bad
-slot; a switch to a slot with nothing the boot ROM can start. And, in the tool, any forced request after a
+a unit that cannot tell which slot it runs from; a write of the running slot while the boot slot's check
+failed; a switch to a slot with nothing the boot ROM can start. And, in the tool, any forced request after a
 write of Slot 1 in the same recovery, while the selector is not settled: restart the unit first (S-02.090).
 
 ## Results
@@ -199,8 +223,8 @@ INFO to follow a write to its end.
 
 | Reason | What to do |
 | --- | --- |
-| The running slot is not selected, or the selector is not settled | Restart once without a key, then Power + M4 (4 under the display); or `--force`, except after a write of Slot 1 in the same recovery |
-| The selected slot is bad and its front not intact | Key 1, choose the slot to start; or `try` / `switch` |
+| The running slot is not the boot slot, or the selector is not settled | Restart once without a key, then Power + M4 (4 under the display); or `--force`, except after a write of Slot 1 in the same recovery |
+| The boot slot's check failed and its front is not intact | Key 1, choose the slot to start; or `try` / `switch` |
 | Not a slot image with a front, or over `0x76000` bytes | Use the image from `make cross` |
 | `--running` in place before a plain `write` failed | Run a plain `write` first |
 | A read failed, the unit's state changed, or the file arrived damaged | `info`, then try again |

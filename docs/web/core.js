@@ -38,7 +38,7 @@
 //       result, image_rc, written, established, selector_ok, own_desc, moved, spoiled, held,
 //       read_error, unsettled, run_way, run_refusal, way, batt, count, act, tier,
 //       acts: [4] | null, forced: [4] | null, keep, refused, version: [4], pin, readback,
-//       slots: [2 x { good, has_desc, has_front, tried, started, length, crc, version: [4],
+//       slots: [2 x { good, has_desc, has_front, tried, started, te_prefix, length, crc, version: [4],
 //                     front_crc, pin }] }
 //       front (the front's version) is added by getInfo(); set it yourself on a parsed payload.
 //   battery(batt) -> [state: 'charged' | 'low' | 'absent' | 'unknown', words]
@@ -47,7 +47,8 @@
 //       selector: { read, slot, verified, settled } ,
 //       front: { version: '1.2.3', pin: hex } | null,          the running image's
 //       slots: [2 x { index, name: 'Slot 1' | 'Slot 2', version: '1.2.3' | null,
-//                     state: 'good' | 'bad' | 'tried' | 'tried, started', good, tried, started,
+//                     state: 'checked' | 'check failed' | 'tried' | 'tried, started', kind: 'WB 0.9.36' |
+//                     'TE 1000.0.20' | 'TE' | '??' | null (S-02.106), good, tried, started,
 //                     running, selected, hasDesc, hasFront, frontMatches, length, crc, pin: hex }],
 //       battery: { state, text } | null,                        null from a version 5 front
 //       tier, tierText,                                         the other slot against this front
@@ -94,7 +95,7 @@
 //       confirmations: [{ phrase: string | null, lines: string[], danger }],   in order; every
 //                                 one is to be shown, and its phrase typed where it has one
 //       phrase: string | null,    the first phrase to type: 'yes', 'erase the running slot in
-//                                 place', 'try the new front', 'switch for good', 'force the <command>'
+//                                 place', 'try the new front', 'make it the boot slot', 'force the <command>'
 //       lines: string[],          every confirmation's lines, in order
 //       countdown: bool,          the unit counts down 15 s before its first erase
 //       danger: 'none' | 'caution' | 'no-fallback' }
@@ -426,7 +427,8 @@ export function parseInfo(p) {
         const o = 93 + 53 * k, sf = p[o];
         i.slots.push({ good: !!(sf & W.S_GOOD), has_desc: !!(sf & W.S_HAS_DESC),
             has_front: !!(sf & W.S_HAS_FRONT), tried: !!(sf & W.S_TRIED),
-            started: !!(sf & W.S_STARTED), length: u32(p, o + 1), crc: u32(p, o + 5),
+            started: !!(sf & W.S_STARTED), te_prefix: !!(sf & W.S_TE_PREFIX),
+            length: u32(p, o + 1), crc: u32(p, o + 5),
             version: versionAt(p, o + 9), front_crc: u32(p, o + 17), pin: p.slice(o + 21, o + 53) });
     }
     return i;
@@ -489,7 +491,7 @@ export function describe(i) {
         front: i.own_desc ? { version: W.version(i.version), pin: hex(i.pin) } : null,
         slots: i.slots.map((s, k) => ({
             index: k, name: slotName(k), version: s.has_desc ? W.version(s.version) : null,
-            state: s.tried ? (s.started ? 'tried, started' : 'tried') : s.good ? 'good' : 'bad',
+            state: W.slotState(s), kind: W.slotKind(s) ? W.kindText(W.slotKind(s)) : null,
             good: s.good, tried: s.tried, started: s.tried && s.started,
             running: a === k, selected: sel === k, hasDesc: s.has_desc, hasFront: s.has_front,
             frontMatches: W.waffle(s) && i.own_desc && sameBytes(s.pin, i.pin),
@@ -776,7 +778,7 @@ export async function checkImage(bytes, { knownPins = null } = {}) {
 
 // What the unit would refuse in the image at END, judged from INFO (S-02.084): 12 when its
 // front is not the running slot's (not for a trial, and not forced); for a front before version
-// 14, 13 when the slot that is kept already holds it, or the target is the good running slot
+// 14, 13 when the slot that is kept already holds it, or the target is the checked running slot
 // and holds it. The unit checks again on the slots' bytes.
 export function refusalBefore(i, image, target, way = WAY_PLAIN, force = false) {
     if (!i.selector_ok || !i.established || !isSlot(i.running))
@@ -874,7 +876,7 @@ function lift(plan, again) {
 // A refusal of the start condition, before BEGIN or after it.
 function refusedLines(st, i, before) {
     if (st === 15)
-        return [`Refused: the other slot is bad, and ${STATUS[15][0]}. ${STATUS[15][1]} ` +
+        return [`Refused: the other slot failed its check, and ${STATUS[15][0]}. ${STATUS[15][1]} ` +
             (before ? 'Nothing was sent.' : 'Nothing was sent beyond BEGIN.')];
     const text = before ? refusalText(st, i) : statusText(st, { info: i });
     const lines = [`Refused${before ? ' before sending' : ''}: ${text}`];
@@ -939,7 +941,7 @@ function writePlan(plan, i, image) {
         return refuse(plan, 'front-unknown', ['Refused before sending: the unit does not report ' +
             "the front it runs (the running image's descriptor is not valid), so the tool cannot " +
             "tell whether the file's front differs; and the unit takes a trial only with the " +
-            'running slot good. Run info. Nothing was sent.']);
+            'running slot checked. Run info. Nothing was sent.']);
     const other = front !== null && i.own_desc && !sameBytes(front.pin, i.pin);
     let trial = other && !running;
     // INFO's prediction, to refuse early; the unit decides at BEGIN and again at END.
@@ -965,7 +967,7 @@ function writePlan(plan, i, image) {
         // S-02.084: no write of the running slot under a selector that names a bad slot
         if (refusal === 3 && !slotOf(i, 1 - i.running).good)
             return refuse(plan, 5, [`Refused before sending, even with --force: ${STATUS[3][0]}, ` +
-                'and that slot is bad (status 5). Nothing was sent.']);
+                'and that slot failed its check (status 5). Nothing was sent.']);
         if (!isSlot(target) && [3, 4, 5, 12, 15].includes(refusal)) {
             risks.push(W.WRITE_RISK[refusal]);
             target = null;              // BEGIN's answer says where it goes
@@ -1007,7 +1009,7 @@ function writePlan(plan, i, image) {
     if (target !== null && W.onlySelect(i, target) &&
             (slotOf(i, target).length !== image.length || slotOf(i, target).crc !== image.crc32))
         // status 18's case, judged from INFO's record of the target before BEGIN
-        return refuse(plan, 18, [`Refused before sending: ${slotName(target)} is the only good ` +
+        return refuse(plan, 18, [`Refused before sending: ${slotName(target)} is the only checked ` +
             `slot, so the unit accepts only the image it holds (${W.recordWords(slotOf(i, target))}), ` +
             'to settle the selector on it, and this file is not it (status 18).',
             'Ways out: ' + W.waysOut(i)]);
@@ -1155,7 +1157,7 @@ function actPlan(plan, i) {
     if (!isSlot(k))
         return refuse(plan, 'no-slot', [`INFO names no slot for the ${name}; run info`]);
     plan.said.push({ [ACT_TRY]: `Trying ${slotName(k)} once.`,
-        [ACT_SWITCH]: `Switching to ${slotName(k)} for good.`, [ACT_KEEP]: `Keeping ${slotName(k)}.`,
+        [ACT_SWITCH]: `Making ${slotName(k)} the boot slot.`, [ACT_KEEP]: `Keeping ${slotName(k)}.`,
         [ACT_PUT_BACK]: `Putting ${slotName(k)} back.` }[act]);
     const lines = W.actConfirmLines(i, act, k).concat(W.countdownNote(i));
     const bad = act === ACT_SWITCH && i.tier === W.TIER_BAD;
@@ -1315,7 +1317,7 @@ async function follow(ctx, way, before) {
             ph = i.phase;
             if (seen === null && ph !== COUNTING && W.v11(i) && before != null && before.held)
                 ctx.say('The unit began at once, with no countdown: it holds the power-off while a ' +
-                    'write of this recovery has left no good slot to start.');
+                    'write of this recovery has left no checked slot to start.');
             if (ph === COUNTING) {
                 if (seen !== COUNTING) {
                     ctx.say(W.COUNTDOWN_LINE);
@@ -1571,7 +1573,7 @@ export function runWrite(link, plan, image, hooks) {
             ['the read-back SHA-256', sameBytes(i.readback, image.sha256)],
             ["the slot's record length", s !== null && s.length === image.length],
             ["the slot's record CRC-32", s !== null && s.crc === image.crc32],
-            ['the slot is valid', s !== null && s.good], sel],
+            ['the slot is checked', s !== null && s.good], sel],
         settle ? 'Run info first, and write again as it says.' : W.SAFE_HINT);
         if (no)
             return result(ctx, 'failed', 'not-verified', no, { info: i });
@@ -1626,7 +1628,7 @@ export function runSelect(link, plan, image, hooks) {
             ['the read-back SHA-256', sameBytes(i.readback, image.sha256)],
             ["the slot's record length", s !== null && s.length === image.length],
             ["the slot's record CRC-32", s !== null && s.crc === image.crc32],
-            ['the slot is valid', s !== null && s.good && !s.tried],
+            ['the slot is checked', s !== null && s.good && !s.tried],
             [`the selector, which should read ${hex2(k)} 00`,
                 i.selector_ok && i.sel_index === k && i.sel_verified === 0]], W.SAFE_HINT);
         if (no)
@@ -1653,7 +1655,7 @@ export function actChecks(act, before, i, k) {
             checks.push(['the slot is tried', s !== null && s.tried]);
         return checks;
     }
-    const valid = ['the slot is valid and not tried', s !== null && s.good && !s.tried];
+    const valid = ['the slot is checked and not tried', s !== null && s.good && !s.tried];
     if (act === ACT_PUT_BACK) {
         const checks = [valid];
         const old = W.selKnown(before);
@@ -1724,11 +1726,11 @@ export function runAct(link, plan, hooks) {
                     `wbrecover.py keep, from its own recovery in that start or from ${other}'s ` +
                     `after it, ${W.SLOT_MENU}.`] });
         if (act === ACT_SWITCH)
-            return result(ctx, 'done', 0, `Done: the selector names ${K} for good (it reads ` +
+            return result(ctx, 'done', 0, `Done: ${K} is the boot slot (the selector reads ` +
                 `${reads}). Restart the unit (wbrecover.py restart) without holding a key: it ` +
                 `starts ${K}.`, { info: after });
         if (act === ACT_KEEP)
-            return result(ctx, 'done', 0, `Kept: ${K} is valid and selected, to be checked at the ` +
+            return result(ctx, 'done', 0, `Kept: ${K} is the boot slot, to be checked again at the ` +
                 'next start. Restart the unit (wbrecover.py restart) without holding a key.',
             { info: after });
         return result(ctx, 'done', 0, `Put back: ${K}'s record is good again and it is no longer ` +

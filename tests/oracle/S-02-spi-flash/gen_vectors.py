@@ -15,6 +15,8 @@ import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 VEC = os.path.join(HERE, "vectors")
+sys.path.insert(0, HERE)
+import slot_kind  # noqa: E402  S-02.106
 
 FLASH_SIZE = 0x100000
 SECTOR = 0x1000
@@ -2611,6 +2613,7 @@ def render():
     out["bootable_images.json"] = json.dumps(bootable_cases(), indent=1) + "\n"
     out["recovery_actions.json"] = json.dumps(act_data(), indent=1) + "\n"
     out["settings_sector.json"] = json.dumps(settings_sector(), indent=1) + "\n"
+    out["slot_kinds.json"] = json.dumps({"cases": slot_kind.cases()}, indent=1) + "\n"
     return out
 
 

@@ -225,12 +225,12 @@ function show(info) {
 	const d = state.desc = describe(info);
 	const rows = d.slots.map((s) => {
 		const row = el('div', 'slot');
-		row.append(el('span', 'sname', s.name), el('span', 'sver', s.version ? 'v' + s.version : 'no image'),
-			   el('span', 'chip ' + (s.good ? 'on' : 'off'), s.state));
+		row.append(el('span', 'sname', s.name), el('span', 'sver', s.kind || 'no image'),
+			   el('span', 'chip ' + (s.good ? 'on' : s.tried ? 'warn' : 'off'), s.state));
 		if (s.running)
 			row.append(el('span', 'chip warn', 'running'));
 		if (s.selected)
-			row.append(el('span', 'chip', 'selected'));
+			row.append(el('span', 'chip', 'boot slot'));
 		if (s.hasDesc && !s.hasFront)
 			row.append(el('span', 'chip off', 'no recovery'));
 		return row;

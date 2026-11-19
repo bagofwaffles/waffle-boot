@@ -9,20 +9,22 @@
 | **Selector** | Two bytes in the flash: which slot to start, and `verified` |
 | **Verified** | The selector byte that says "start without a check" (`0x01`): the first stage then starts the selected slot as it is. Any other value makes the first stage check the slot and write the selector (S-02.020 to S-02.022) |
 | **Record** | One per slot: the image's length, CRC-32 and a tag |
-| **Good, bad** | A slot whose record matches its image is good |
-| **Running slot** | The slot this start came from. Usually the selected one |
+| **Checked, check failed** | A slot whose record matches its image is checked; otherwise its check failed |
+| **Boot slot** | The slot the selector names: the one the next start runs |
+| **Bootloader type** | `WB` (waffle-boot), `TE` (a TE bootloader) or `??`, shown for each checked or tried slot |
+| **Running slot** | The slot this start came from. Usually the boot slot |
 | **Front** | The small first part of every waffle-boot image: start-up to the key read, and recovery. Frozen and pinned |
 | **Front pin** | The SHA-256 of the front's bytes, kept in `src/front/front.pin` |
 | **Main image** | The rest of a waffle-boot image: the boot menu, the OS load, installs |
 | **Try, trial start** | A slot started once without being trusted. If it does not come up, the next start boots the old slot |
 | **Tried, started** | A slot under trial; `started` once its front has come up in that trial |
-| **Keep** | Select a tried slot that started, for good |
-| **Switch** | Select the other slot for good, with no trial |
-| **Put back** | Make a tried slot's record good again, undoing a try |
+| **Keep** | Make a tried slot that started the boot slot |
+| **Switch** | Make the other slot the boot slot, with no trial |
+| **Put back** | Make a tried slot's record pass its check again, undoing a try |
 | **Start log** | The last sector of a slot. Counts starts that did not finish; three in a row open recovery |
 | **Settings sector** | The SPI flash sector below each slot's start log (`0x86000`, `0xFE000`) that holds the settings of that slot's image |
 | **Countdown** | The 15 s before recovery writes for a computer. Switching off in it stops the write |
-| **In-place write** | A write of the running slot while the other slot is bad. The one write with nothing to fall back on |
+| **In-place write** | A write of the running slot while the other slot's check failed. The one write with nothing to fall back on |
 | **Protected writes** | A boot menu setting, until the next restart, that lets installs write the slots. No install writes the first stage |
 | **The eMMC** | The flash memory chip soldered on the board. Holds the OS and the internal drive |
 | **Internal drive** | The yaffs2 volume on the eMMC: user data, content packs, logs |

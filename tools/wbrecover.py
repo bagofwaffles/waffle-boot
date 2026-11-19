@@ -29,7 +29,7 @@ select   keeps a slot written with --new-front: from that slot's own recovery in
          start, or from the old front's recovery once the trial start has run
 try      (front version 11 or later) has the next start run the other slot's image once, as it
          lies; no image is sent. The starts after it boot the running slot again, until a keep
-switch   (front 11) names the other slot in the selector for good, after a warning by what it
+switch   (front 11) makes the other slot the boot slot, after a warning by what it
          holds and a typed phrase; no image is sent
 keep     (front 11) keeps a tried slot with no image sent: the other slot once its trial start has
          run, or the running slot in its own trial start
@@ -104,6 +104,14 @@ F_ESTABLISHED, F_SELECTOR, F_OWN_DESC, F_MOVED, F_SPOILED, F_HELD, F_READ_ERROR,
 S_GOOD, S_HAS_DESC, S_HAS_FRONT = 1, 2, 4
 S_TRIED = 8                    # the record carries the trial mark
 S_STARTED = 16                 # tried, and its front marked its trial start in its log
+S_TE_PREFIX = 32               # good or tried, and S-02.106 rule 3 holds (front 17 and later)
+# S-02.106: the TE bootloader builds by (length, CRC-32 of the slot's bytes).
+TE_BUILDS = {
+    (0x5ADB0, 0x7AF4665C): (1000, 0, 12, 0),
+    (0x5B7AC, 0x0789B2D9): (1000, 0, 13, 0),
+    (0x60000, 0x5DEE4B51): (1000, 0, 20, 0),
+    (0x60CA4, 0xA930BEF3): (1000, 0, 23, 0),
+}
 BEGIN_F_RUNNING, BEGIN_F_TRIAL, BEGIN_F_SELECT = 1, 2, 4
 BEGIN_F_FORCE = 0x80           # in BEGIN's, ACT's and RESTART's flags
 WAY_NONE, WAY_PLAIN, WAY_SELECT_FIRST, WAY_IN_PLACE, WAY_TRIAL, WAY_SELECT, \
@@ -122,7 +130,7 @@ WHY = {1: 'Power + M4 was held', 2: "the image check failed: the running slot's 
           'the next start is a normal one'}
 PHRASE = 'erase the running slot in place'
 TRIAL_PHRASE = 'try the new front'
-SWITCH_PHRASE = 'switch for good'
+SWITCH_PHRASE = 'make it the boot slot'
 FORCE_PHRASE = 'force the %s'  # the command's name: force the write, force the switch, ...
 # While a write of this recovery has left the running slot bad, the unit reads the selector and
 # both slots again before it answers INFO, BEGIN and RESTART, plans from the flash at END, and
@@ -136,12 +144,12 @@ PHASES = ['idle', 'receiving', 'writing', 'done', 'failed', 'counting down']
 IDLE, RECEIVING, WRITING, DONE, FAILED, COUNTING = range(6)
 
 RESET_HINT = 'Restart once without holding a key, then hold Power + M4 again.'
-SAFE_HINT = ('Run info first: restart only with a good slot selected; the unit refuses a restart '
-             'while a write of this recovery has left no good slot selected.')
+SAFE_HINT = ('Run info first: restart only with a checked boot slot; the unit refuses a restart '
+             'while a write of this recovery has left no checked boot slot.')
 FRONT_HINT = ('Another front goes in only as a trial: write --new-front IMAGE, on a front of '
               'version 7 or later; from an older front, the test OS installer (wiki/Test-OS.md).')
-OTHER_HINT = ('Start the other slot if it is good and holds a stream the boot ROM can start '
-              '(S-02.091): wbrecover.py try starts it once, wbrecover.py switch for good; or '
+OTHER_HINT = ('Start the other slot if it is checked and holds a stream the boot ROM can start '
+              '(S-02.091): wbrecover.py try starts it once, wbrecover.py switch makes it the boot slot; or '
               'key 1, "Choose the slot to start", in the recovery menu.')
 SLOT_MENU = 'or key 1, "Choose the slot to start", in the recovery menu'
 NOT_STARTED_HINT = ('Write it again with --new-front and restart with no key held, so that it starts '
@@ -158,7 +166,7 @@ STATUS = {
     2: ('the unit could not establish which slot it is running from (S-01.002)', RESET_HINT),
     3: ('the running slot is not the slot the selector names', RESET_HINT),
     4: ("the selector is not settled: its verified byte is not 01 (S-02.090)", RESET_HINT),
-    5: ('the selected slot is bad, and is not the running slot with its front intact (S-02.084)',
+    5: ('the boot slot failed its check, and is not the running slot with its front intact (S-02.084)',
         OTHER_HINT),
     6: ('the image is empty or too large: recovery takes at most 0x77000 bytes (S-02.084)',
         'Check the file: wbrecover.py check IMAGE.'),
@@ -172,9 +180,9 @@ STATUS = {
     11: ('the slot was written and read back, but the selector write failed or did not read back',
          SAFE_HINT),
     12: ("the image's front is not the one this unit runs and no trial was asked for, or the "
-         'running slot is good and holds no waffle-boot front (S-02.084)', FRONT_HINT),
+         'running slot is checked and holds no waffle-boot front (S-02.084)', FRONT_HINT),
     13: ('the slot that is kept already holds this image, so the unit could not tell which slot '
-         'runs; or the target is the good running slot, which already holds it (a front before '
+         'runs; or the target is the checked running slot, which already holds it (a front before '
          'version 14 refuses this; from version 14 both slots may hold the same image)',
          'Nothing to do; or write another build.'),
     14: ('the selector write before the write of the running slot failed; no slot or record was '
@@ -186,9 +194,9 @@ STATUS = {
          'answer said, and nothing was written', 'Run info, then write again.'),
     17: ('the selector or a slot could not be read for the start condition; nothing was written',
          'Run info and try again.'),
-    18: ('the target is the only good slot, so the unit accepts only the image it holds, to settle '
+    18: ('the target is the only checked slot, so the unit accepts only the image it holds, to settle '
          'the selector on it (S-02.084)', 'Take one of the ways out that wbrecover.py info lists.'),
-    19: ('a trial needs the running slot good, and neither a trial nor a select is taken once '
+    19: ('a trial needs the running slot checked, and neither a trial nor a select is taken once '
          'this recovery has begun a write of the running slot, written the selector to the other '
          'slot, or begun a trial write (S-02.084)',
          'Run info to see the state; after a trial write, restart first.'),
@@ -197,9 +205,9 @@ STATUS = {
          'Send the file that was written with --new-front, after its trial start has run.'),
     21: ('the tried slot has not started: its front has left no mark of a trial start (S-02.084)',
          NOT_STARTED_HINT),
-    22: ('the selector already names that slot for good (verified 01), so nothing was written',
+    22: ('that slot is already the boot slot (verified 01), so nothing was written',
          'Nothing to do: restart the unit (wbrecover.py restart) to start it.'),
-    23: ('the other slot is bad and not tried: nothing checks it at a start (S-02.084)',
+    23: ('the other slot failed its check and is not tried: nothing checks it at a start (S-02.084)',
          'Write an image to it first (wbrecover.py write IMAGE).'),
     24: ('the write was stopped before its first erase: the unit was switched off or USB was '
          'unplugged, and nothing was written', 'Run info, then start the command again if it is '
@@ -512,6 +520,7 @@ def parse_info(p):
         i['slots'].append({'good': bool(sf & S_GOOD), 'has_desc': bool(sf & S_HAS_DESC),
                            'has_front': bool(sf & S_HAS_FRONT), 'tried': bool(sf & S_TRIED),
                            'started': bool(sf & S_STARTED),
+                           'te_prefix': bool(sf & S_TE_PREFIX),
                            'length': length, 'crc': crc,
                            'version': struct.unpack_from('<4H', p, o + INFO_S_VERSION),
                            'front_crc': struct.unpack_from('<I', p, o + INFO_S_FRONT_CRC)[0],
@@ -526,6 +535,31 @@ def selected(index):
 
 def waffle(s):
     return s['has_desc'] and s['has_front']
+
+
+def slot_kind(s):
+    """S-02.106: ('WB', version), ('TE', version), ('TE', None) or ('??', None) for a good or tried
+    slot, from INFO's slot fields and flag bit 5; None for any other slot."""
+    if not (s['good'] or s['tried']):
+        return None
+    if s['has_desc']:
+        return ('WB', tuple(s['version']))
+    v = TE_BUILDS.get((s['length'], s['crc'] ^ 0xFFFFFFFF if s['tried'] else s['crc']))
+    if v is not None:
+        return ('TE', v)
+    return ('TE', None) if s['te_prefix'] else ('??', None)
+
+
+def kind_text(k):
+    """A slot kind as the slot lines show it: 'WB 0.9.36', 'TE 1000.0.20', 'TE' or '??'."""
+    return k[0] if k[1] is None else '%s %s' % (k[0], version(k[1]))
+
+
+def slot_state(s):
+    """S-15.151's state word: checked, tried, tried, started, or check failed."""
+    if s['tried']:
+        return 'tried, started' if s['started'] else 'tried'
+    return 'checked' if s['good'] else 'check failed'
 
 
 def image_words(s):
@@ -591,8 +625,8 @@ def state_line(i):
     a, b = slot_name(i['running']), slot_name(1 - i['running'])
     if i['spoiled']:
         return 'The failed write left %s, the running slot, damaged.' % a
-    return ('A write of this recovery read %s, the running slot, back good but did not settle the '
-            'selector on it, and %s is bad.' % (a, b))
+    return ('A write of this recovery read %s, the running slot, back checked but did not settle the '
+            'selector on it, and %s failed its check.' % (a, b))
 
 
 def held_lines(i):
@@ -604,16 +638,16 @@ def held_lines(i):
                'start.')
     elif n is None:
         if not i['slots'][0]['good'] and not i['slots'][1]['good']:
-            reason = 'no slot is good'
+            reason = 'no slot is checked'
         elif i['selector_ok'] and i['sel_verified'] == 1:
             reason = ('the selector trusts %s, which is damaged'
                       % slot_name(selected(i['sel_index'])))
         else:
-            reason = 'no start falls back from the slot the selector names to a good one'
+            reason = 'no start falls back from the slot the selector names to a checked one'
         why = ('The unit does not start at all if it is restarted or loses power now: %s.' % reason)
     else:
         why = ('A start that is not cut short would reach %s, but a cut of the first stage\'s own '
-               'selector write could leave a selector that leads to no good slot, so a restart is '
+               'selector write could leave a selector that leads to no checked slot, so a restart is '
                'not safe yet.' % slot_name(n))
     return [why, "The unit holds the power switch's power-off and refuses a restart. Keep the cable "
                  'in until a write has settled the selector (the ways out below); with no host, '
@@ -626,7 +660,7 @@ def reach_words(i):
     if i['slots'][n]['good']:
         return 'a restart starts %s, which the selector names' % slot_name(n)
     if not i['slots'][1 - n]['good']:       # INFO disagrees with itself
-        return 'the unit reports that a start reaches a good slot'
+        return 'the unit reports that a start reaches a checked slot'
     return ('the first restart starts %s, which the selector names and which is damaged: it may '
             'hang or open recovery again. The restart after it starts %s'
             % (slot_name(n), slot_name(1 - n)))
@@ -639,7 +673,7 @@ def leads_to_other(i):
 
 
 def only_select(i, target):
-    """In the damaged state, the target already good: the only good slot, which the unit takes
+    """In the damaged state, the target already good: the only checked slot, which the unit takes
     only with the image it holds, to settle the selector on it (S-02.084, status 18)."""
     return damaged(i) and target in (0, 1) and i['slots'][target]['good']
 
@@ -723,7 +757,7 @@ def run_words(i):
     if way == WAY_SELECT_FIRST:
         return 'would go to %s, the running slot, after the selector names %s' % (a, b)
     if way == WAY_IN_PLACE:
-        return ('would go to %s, the running slot, in place, since %s is bad: an interruption '
+        return ('would go to %s, the running slot, in place, since %s failed its check: an interruption '
                 'leaves a unit that does not start' % (a, b))
     return 'refused: %s' % refusal_text(i['run_refusal'], i)
 
@@ -745,13 +779,13 @@ def settle_lines(i, way, target):
 # --- the actions on the image a slot holds (front version 11) ---
 
 ACT_LABELS = {ACT_TRY: 'Try:', ACT_SWITCH: 'Switch:', ACT_KEEP: 'Keep:', ACT_PUT_BACK: 'Put back:'}
-DONE_WORDS = {WAY_TRY: '%s marked for one trial start', WAY_SWITCH: 'the selector names %s for good',
-              WAY_KEEP: '%s kept and selected', WAY_PUT_BACK: "%s's record made good again"}
+DONE_WORDS = {WAY_TRY: '%s marked for one trial start', WAY_SWITCH: '%s is the boot slot',
+              WAY_KEEP: '%s kept as the boot slot', WAY_PUT_BACK: "%s's record made good again"}
 TIER_WORDS = {
     TIER_SAME: 'holds an image with the front this unit runs',
     TIER_FRONT: 'holds another waffle-boot front: its recovery may not be this one, or may not open',
     TIER_FOREIGN: 'holds no waffle-boot front: there is no recovery there',
-    TIER_BAD: 'is bad: its record fails the check, and nothing checks it at a start'}
+    TIER_BAD: 'failed its check: its record does not match its bytes, and nothing checks it at a start'}
 
 
 def other_of(i):
@@ -774,13 +808,13 @@ def act_text(act, st, i, hint=True):
     """An action's refusal (S-02.084), said for that action, with what to do."""
     B = slot_name(other_of(i))
     words = {
-        (ACT_TRY, 19): ('a try needs the running slot good with its front intact, and none comes once '
+        (ACT_TRY, 19): ('a try needs the running slot checked with its front intact, and none comes once '
                         'this recovery has written the running slot or the selector',
                         'Restart first (wbrecover.py restart), with no key held.'),
         (ACT_SWITCH, 7): ("%s's stream does not pass S-02.091's rules: the boot ROM would not start it"
-                          % B, 'Write a good image to it first (wbrecover.py write IMAGE).'),
-        (ACT_SWITCH, 12): ('%s does not hold the front this unit runs: a switch to it would be for '
-                           'good, with no trial' % B, 'Try it once first (wbrecover.py try).'),
+                          % B, 'Write a bootable image to it first (wbrecover.py write IMAGE).'),
+        (ACT_SWITCH, 12): ('%s does not hold the front this unit runs: a switch to it would make it '
+                           'the boot slot with no trial' % B, 'Try it once first (wbrecover.py try).'),
         (ACT_SWITCH, 19): ('this recovery has written the running slot or the selector',
                            'Restart first (wbrecover.py restart), with no key held.'),
         (ACT_SWITCH, 21): ('%s is tried, but its front has left no mark of a trial start: nothing '
@@ -798,9 +832,9 @@ def act_text(act, st, i, hint=True):
                              'Nothing to do.'),
     }
     for act2 in (ACT_TRY, ACT_SWITCH):
-        words[(act2, 22)] = ('the selector already names %s for good (verified 01)' % B,
+        words[(act2, 22)] = ('%s is already the boot slot (verified 01)' % B,
                              'Nothing to do: restart the unit (wbrecover.py restart) to start it.')
-        words[(act2, 23)] = ('%s is bad and not tried: nothing checks it at a start' % B,
+        words[(act2, 23)] = ('%s failed its check and is not tried: nothing checks it at a start' % B,
                              'Write an image to it first (wbrecover.py write IMAGE).')
     if (act, st) not in words:
         return status_text(st, hint=hint, i=i)
@@ -813,7 +847,7 @@ def act_text(act, st, i, hint=True):
 def act_goal(i, act):
     k = slot_name(act_slot(i, act))
     return {ACT_TRY: 'would start %s once, at the next start' % k,
-            ACT_SWITCH: 'would select %s for good' % k,
+            ACT_SWITCH: 'would make %s the boot slot' % k,
             ACT_KEEP: 'would keep %s, with no image sent' % k,
             ACT_PUT_BACK: "would make %s's record good again, with no selector write" % k}[act]
 
@@ -857,7 +891,7 @@ def switch_lines(i, b):
     B, A = slot_name(b), slot_name(1 - b)
     tier = i['tier']
     if tier == TIER_BAD:
-        return ['DANGER: %s is bad: its record fails the check. Switched to, the selector trusts it, '
+        return ['DANGER: %s failed its check: its record does not match its bytes. Switched to, the selector trusts it, '
                 'and nothing will ever check this slot again: if its image does not start, there may '
                 'be no way back without a flash programmer.%s' % (B, trial_hint(i))]
     if tier == TIER_FOREIGN:
@@ -868,7 +902,7 @@ def switch_lines(i, b):
         return ['WARNING: %s holds another waffle-boot front (%s). Once switched, recovery may not be '
                 'reachable from it: if that front does not start, or its recovery is not this one, '
                 'there may be no way back to %s.%s' % (B, slot_words(i, b), A, trial_hint(i))]
-    return ['%s holds an image with the front this unit runs (%s). A switch is for good: every start '
+    return ['%s holds an image with the front this unit runs (%s). A switch makes it the boot slot: every start '
             'boots %s from now on.%s' % (B, slot_words(i, b), B, trial_hint(i))]
 
 
@@ -896,7 +930,7 @@ def try_lines(i, b):
 def keep_lines(i, k):
     K, other = slot_name(k), slot_name(1 - k)
     if k == i['running']:
-        lines = ['This is the trial start of %s. The keep makes %s the selected slot: its record is '
+        lines = ['This is the trial start of %s. The keep makes %s the boot slot: its record is '
                  'made good and the selector names it; its image is not written again, and %s is kept '
                  'as it is.' % (K, K, other)]
         if i['why'] == 2:
@@ -904,7 +938,7 @@ def keep_lines(i, k):
                          'does not pass its own check. Keeping it leaves a unit that starts only into '
                          'recovery.')
         return lines
-    lines = ['%s is tried; the keep makes it the selected slot: its record is made good and the '
+    lines = ['%s is tried; the keep makes it the boot slot: its record is made good and the '
              'selector names it, to be checked at the next start. Its image is not written again, '
              'and %s is kept as it is.' % (K, other)]
     if i['tier'] in (TIER_FRONT, TIER_FOREIGN):
@@ -939,7 +973,7 @@ def force_lines(act, st, i):
     elif st == 23:
         lines.append('Forced, the unit acts on %s as it lies: nothing has checked its image.' % B)
     elif st == 21:
-        lines.append('Forced, %s is kept for good although its front never showed that it starts: '
+        lines.append('Forced, %s is kept as the boot slot although its front never showed that it starts: '
                      'if it does not, recovery may not be reachable.' % B)
     elif st in (19, 20):
         lines.append('Forced, the %s goes on from the state this recovery left.' % ACT_NAMES[act])
@@ -952,7 +986,7 @@ def countdown_note(i):
         return []
     if i['held']:
         return ['The unit begins at once, with no countdown: it holds the power-off while a write of '
-                'this recovery has left no good slot to start.']
+                'this recovery has left no checked slot to start.']
     return ['Once confirmed, the unit counts down %d s before its first erase: switching it off or '
             'unplugging USB in that time stops it, with the flash untouched.' % COUNTDOWN]
 
@@ -980,17 +1014,16 @@ def describe(i):
         out.append("Front:    the running image's descriptor was not found")
     for k, s in enumerate(i['slots']):
         tags = [t for t, on in (('running', i['established'] and i['running'] == k),
-                                ('selected', sel == k), ('tried', s['tried']),
-                                ('started', s['tried'] and s['started'])) if on]
-        line = '%s:   %s' % (slot_name(k), 'valid' if s['good'] else 'not valid')
-        if s['good']:
-            line += ', %d bytes, CRC-32 %08x' % (s['length'], s['crc'])
-        if s['has_desc']:
+                                ('boot slot', sel == k)) if on]
+        kind = slot_kind(s)
+        line = '%s:   %s' % (slot_name(k), slot_state(s))
+        if kind is not None:
+            line += ', %s, %d bytes, CRC-32 %08x' % (kind_text(kind), s['length'], s['crc'])
+        elif s['has_desc']:
             line += ', version %s' % version(s['version'])
+        if s['has_desc']:
             line += ', front %s' % ('present' if s['has_front'] else 'damaged')
             line += ' (pin %s...)' % s['pin'][:8].hex()
-        elif s['good']:
-            line += ', no waffle-boot front'
         if tags:
             line += ' [%s]' % ', '.join(tags)
         out.append(line)
@@ -1004,7 +1037,7 @@ def describe(i):
         elif leads_to_other(i):
             line += ', the running slot, again (way 1), with no selector write before it'
         elif t['good']:
-            line += ', replacing a good image (%s)' % image_words(t)
+            line += ', replacing a checked image (%s)' % image_words(t)
         out.append(line)
     else:
         out.append('Write:    refused: %s' % refusal_text(i['refusal'], i))
@@ -1106,7 +1139,7 @@ def tried_lines(i, failed_trial=False):
         if sel == (a, 1) and v11(i):
             return ['%s is tried, but the selector trusts it although it never passed a trial: '
                     'every start boots it, and a select is refused. To leave this state, switch to '
-                    '%s from here (wbrecover.py switch, %s), if it is good and holds a stream the '
+                    '%s from here (wbrecover.py switch, %s), if it is checked and holds a stream the '
                     'boot ROM can start; from its recovery, wbrecover.py try starts %s once, or a '
                     'plain write replaces it.' % (A, B, SLOT_MENU, A)]
         if sel == (a, 1):
@@ -1432,26 +1465,26 @@ def base_lines(i, way, target):
             (held_lines(i) if i['held'] else [])
     if target == a and damaged(i):      # S-02.084's retry rule, way 1
         lines = ['The unit announced a write of %s, the running slot, with no selector write before '
-                 'it (way 1): the selector leads to %s, which is good and is not touched.' % (A, B)]
+                 'it (way 1): the selector leads to %s, which is checked and is not touched.' % (A, B)]
         return lines + (held_lines(i) if i['held'] else [])
     if target == a:     # a retry after the other slot was selected
         lines = ['This write goes to %s, the running slot, with no selector write before it: %s is '
                  "selected, and an interruption starts %s's image (%s)." % (A, B, B, image_words(sb))]
         if sa['good']:
-            lines.append('%s holds a good image (%s), which this write replaces.' % (A, image_words(sa)))
+            lines.append('%s holds a checked image (%s), which this write replaces.' % (A, image_words(sa)))
         return lines
     if damaged(i):
         lines = [state_line(i) + ' An interruption of this write leaves no settled selector either: '
                  'until a write has ended well, a restart is not safe.']
         return lines + (held_lines(i) if i['held'] else [])
     if sb['good']:
-        lines = ['%s holds a good image (%s), which this write replaces.' % (B, image_words(sb))]
+        lines = ['%s holds a checked image (%s), which this write replaces.' % (B, image_words(sb))]
         if i['v6'] and not sa['good']:
-            lines.append('%s, the running slot, is bad, so %s holds the only good image. write '
+            lines.append('%s, the running slot, failed its check, so %s holds the only checked image. write '
                          '--running is the safer choice in this state: it selects %s first and '
                          'rewrites %s, so an interruption starts %s.' % (A, B, B, A, B))
         return lines
-    return ['%s holds no good image, so nothing good is lost. %s, the running slot, is left as it '
+    return ['%s holds no checked image, so nothing checked is lost. %s, the running slot, is left as it '
             'is: if the write is interrupted, the unit starts as before.' % (B, A)]
 
 
@@ -1459,7 +1492,7 @@ def in_place_lines(i, target=None):
     """The warning before an in-place write, with the battery report INFO carries."""
     a, b = slot_name(i['running']), slot_name(1 - i['running'])
     state, words = battery(i['batt'])
-    lines = ['DANGER: %s holds no good image, so this write erases %s, the running slot, and '
+    lines = ['DANGER: %s holds no checked image, so this write erases %s, the running slot, and '
              'writes it in place.' % (b, a),
              'If the write is interrupted (a power cut, a pulled cable with no charged battery, the '
              'power switch), the unit cannot be repaired without a flash programmer.']
@@ -1480,7 +1513,7 @@ def in_place_lines(i, target=None):
 
 def refused(out, st, i, before):
     if st == 15:
-        out('Refused: the other slot is bad, and %s. %s %s' % (
+        out('Refused: the other slot failed its check, and %s. %s %s' % (
             STATUS[15][0], STATUS[15][1],
             'Nothing was sent.' if before else 'Nothing was sent beyond BEGIN.'))
         return 1
@@ -1494,7 +1527,7 @@ def refused(out, st, i, before):
 def only_good_refusal(out, i, target):
     """Status 18's case, judged from INFO's record of the target before BEGIN."""
     T = slot_name(target)
-    out('Refused before sending: %s is the only good slot, so the unit accepts only the image it '
+    out('Refused before sending: %s is the only checked slot, so the unit accepts only the image it '
         'holds (%s), to settle the selector on it, and this file is not it (status 18).'
         % (T, record_words(i['slots'][target])))
     out('Ways out: ' + ways_out(i))
@@ -1551,7 +1584,7 @@ def trial_lines(h, i, front, target, signed):
         lines.append('%s holds an image (%s), which this write erases: it is lost, whether or not '
                      'the new front starts.' % (slot_name(target), image_words(t)))
     else:
-        lines.append('%s holds no good image, so nothing good is lost.' % slot_name(target))
+        lines.append('%s holds no checked image, so nothing checked is lost.' % slot_name(target))
     lines.append('It will be written to %s and started ONCE. If the unit does not come up, switch '
                  'it off and on: it boots %s again. Nothing is selected until a select '
                  '(wbrecover.py select IMAGE).' % (slot_name(target), slot_name(a)))
@@ -1613,7 +1646,7 @@ def follow(link, way, out, poll, deadline, before=None):
             ph = i['phase']
             if seen is None and ph != COUNTING and v11(i) and before is not None and before['held']:
                 out('The unit began at once, with no countdown: it holds the power-off while a write '
-                    'of this recovery has left no good slot to start.')
+                    'of this recovery has left no checked slot to start.')
             if ph == COUNTING:
                 if seen != COUNTING:
                     out(COUNTDOWN_LINE)
@@ -1780,20 +1813,20 @@ def trial_done(out, i, data, sha, crc):
 # What --force lifts for a write (S-02.084), and what could go wrong.
 WRITE_RISK = {
     3: ('The selector does not name the running slot. Forced, the write goes to the running slot, '
-        'the one the selector does not name; the unit takes it only while the selected slot is '
-        'good, which a cut of the write then starts.'),
+        'the one the selector does not name; the unit takes it only while the boot slot is '
+        'checked, which a cut of the write then starts.'),
     4: ('The selector is not settled: its verified byte is not 01, so the next start was to check '
         'it. Forced, the write goes on over it: a cut can leave a selector that leads to no good '
         'slot.'),
-    5: ("The selected slot is bad, and the running slot's front is not intact in the flash. Forced, "
+    5: ("The boot slot failed its check, and the running slot's front is not intact in the flash. Forced, "
         'no front is asked of the image: the unit can end on an image whose recovery is not this one, '
         'or none.'),
     12: ("The running slot's front is not intact in the flash. Forced, no front is asked of the "
          'image: the unit can end on an image whose recovery is not this one, or none.'),
-    15: ('The other slot is bad and no write of it has failed here. Forced, the running slot is '
+    15: ('The other slot failed its check and no write of it has failed here. Forced, the running slot is '
          'erased and written in place at once: a cut leaves a unit that cannot be repaired without a '
          'flash programmer. A plain write of the other slot first is safe (wbrecover.py write IMAGE).'),
-    19: ('The running slot is not good. Forced, the trial goes on: if the new front does not come up, '
+    19: ('The running slot is not checked. Forced, the trial goes on: if the new front does not come up, '
          'switching off and on starts the running slot, which may not start either.'),
     'front': ("The file's front is not the one this unit runs. Forced, it is written and selected for "
               'good, with no trial: if that front does not start, recovery may not be reachable. A '
@@ -1855,7 +1888,7 @@ def cmd_write(link, data, out=print, poll=0.2, deadline=900.0, running=False, as
     if new_front and not i['own_desc']:
         out("Refused before sending: the unit does not report the front it runs (the running "
             "image's descriptor is not valid), so the tool cannot tell whether the file's front "
-            'differs; and the unit takes a trial only with the running slot good. Run info. '
+            'differs; and the unit takes a trial only with the running slot checked. Run info. '
             'Nothing was sent.')
         return 1
     other = front is not None and i['own_desc'] and front['pin'] != i['pin']
@@ -1876,7 +1909,7 @@ def cmd_write(link, data, out=print, poll=0.2, deadline=900.0, running=False, as
             way = WAY_PLAIN if not running else way
         if refusal == 3 and not i['slots'][1 - i['running']]['good']:
             # S-02.084: no write of the running slot under a selector that names a bad slot
-            out('Refused before sending, even with --force: %s, and that slot is bad (status 5). '
+            out('Refused before sending, even with --force: %s, and that slot failed its check (status 5). '
                 'Nothing was sent.' % STATUS[3][0])
             return 1
         if target not in (0, 1) and refusal in (3, 4, 5, 12, 15):
@@ -1996,7 +2029,7 @@ def cmd_write(link, data, out=print, poll=0.2, deadline=900.0, running=False, as
     checks = [('the read-back SHA-256', i['readback'] == sha),
               ("the slot's record length", s is not None and s['length'] == len(data)),
               ("the slot's record CRC-32", s is not None and s['crc'] == crc),
-              ('the slot is valid', s is not None and s['good']), sel]
+              ('the slot is checked', s is not None and s['good']), sel]
     if unverified(out, k, checks,
                   'Run info first, and write again as it says.' if settle else SAFE_HINT):
         return 1
@@ -2020,7 +2053,7 @@ def select_lines(i, k):
     m, other = slot_name(k), slot_name(1 - k)
     if trial_start(i):
         lines = ['This is the trial start of %s, the new front, and it came up. The select makes %s '
-                 'the selected slot: its record is made good and the selector names it; its image '
+                 'the boot slot: its record is made good and the selector names it; its image '
                  'is not written again, and %s is kept as it is.' % (m, m, other)]
         if i['why'] == 2:
             lines.append('WARNING: recovery runs because the image check failed: the new front runs, '
@@ -2028,7 +2061,7 @@ def select_lines(i, k):
                          'starts only into recovery.')
         return lines
     return ['%s holds the new front, tried, and the unit recorded the new front\'s start in its '
-            'trial. The select makes %s the selected slot: its record is made good and the selector '
+            'trial. The select makes %s the boot slot: its record is made good and the selector '
             'names it; its image is not written again, and %s is kept as it is.' % (m, m, other)]
 
 
@@ -2128,7 +2161,7 @@ def cmd_select(link, data, out=print, poll=0.2, deadline=900.0, ask=ask_tty, for
     checks = [('the read-back SHA-256', i['readback'] == sha),
               ("the slot's record length", s is not None and s['length'] == len(data)),
               ("the slot's record CRC-32", s is not None and s['crc'] == crc),
-              ('the slot is valid', s is not None and s['good'] and not s['tried']),
+              ('the slot is checked', s is not None and s['good'] and not s['tried']),
               ('the selector, which should read %02x 00' % k,
                i['selector_ok'] and (i['sel_index'], i['sel_verified']) == (k, 0))]
     if unverified(out, k, checks, SAFE_HINT):
@@ -2254,7 +2287,7 @@ def act_checks(act, before, i, k):
             checks.append(('the slot is tried', s is not None and s['tried']))
         return checks
     if act == ACT_PUT_BACK:
-        checks = [('the slot is valid and not tried', s is not None and s['good'] and not s['tried'])]
+        checks = [('the slot is checked and not tried', s is not None and s['good'] and not s['tried'])]
         old = sel_known(before)
         if old is not None and old[0] == k and old[1] != 1 and not settled:
             checks.append(('the selector, which should name %s again' % slot_name(1 - k),
@@ -2262,7 +2295,7 @@ def act_checks(act, before, i, k):
         return checks
     checks = []
     if act == ACT_KEEP or was['good'] or was['tried']:
-        checks.append(('the slot is valid and not tried', s is not None and s['good'] and not s['tried']))
+        checks.append(('the slot is checked and not tried', s is not None and s['good'] and not s['tried']))
     if settled or (act == ACT_SWITCH and not was['good'] and not was['tried']):
         # the selector settled on k, or a bad slot named with verified 01
         checks.append(('the selector, which should name %s with verified 01' % slot_name(k),
@@ -2290,11 +2323,11 @@ def act_done(out, act, before, i, k):
             'has come up: wbrecover.py keep, from its own recovery in that start or from %s\'s '
             'after it, %s.' % (K, other, K, other, SLOT_MENU))
     elif act == ACT_SWITCH:
-        out('Done: the selector names %s for good (it reads %02x %02x). Restart the unit '
+        out('Done: %s is the boot slot (the selector reads %02x %02x). Restart the unit '
             '(wbrecover.py restart) without holding a key: it starts %s.'
             % (K, i['sel_index'], i['sel_verified'], K))
     elif act == ACT_KEEP:
-        out('Kept: %s is valid and selected, to be checked at the next start. Restart the unit '
+        out('Kept: %s is the boot slot, to be checked again at the next start. Restart the unit '
             '(wbrecover.py restart) without holding a key.' % K)
     else:
         out("Put back: %s's record is good again and it is no longer tried; the selector reads "
@@ -2334,7 +2367,7 @@ def cmd_act(link, act, out=print, poll=0.2, deadline=900.0, ask=ask_tty, force=F
         flag = BEGIN_F_FORCE
     if k not in (0, 1):
         raise Failure('INFO names no slot for the %s; run info' % name)
-    out({ACT_TRY: 'Trying %s once.', ACT_SWITCH: 'Switching to %s for good.',
+    out({ACT_TRY: 'Trying %s once.', ACT_SWITCH: 'Making %s the boot slot.',
          ACT_KEEP: 'Keeping %s.', ACT_PUT_BACK: 'Putting %s back.'}[act] % slot_name(k))
     lines = act_confirm_lines(i, act, k) + countdown_note(i)
     if flag and slot1_window(i):
@@ -2416,7 +2449,7 @@ def main(argv=None):
     s.add_argument('--force', **force)
     s.add_argument('image')
     for name, words in (('try', 'start the other slot once, as it lies (front version 11 or later)'),
-                        ('switch', 'select the other slot for good (front version 11 or later)'),
+                        ('switch', 'make the other slot the boot slot (front version 11 or later)'),
                         ('keep', 'keep a tried slot, with no image sent (front version 11 or later)')):
         sub.add_parser(name, help=words).add_argument('--force', **force)
     sub.add_parser('put-back', help="make the tried other slot's record good again (front version "

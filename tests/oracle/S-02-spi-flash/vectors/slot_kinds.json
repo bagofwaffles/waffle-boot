@@ -1,0 +1,297 @@
+{
+ "cases": [
+  {
+   "name": "te_row_1000_0_12",
+   "length": 372144,
+   "seed": 100,
+   "patches": [
+    {
+     "offset": 186072,
+     "bytes": "d8adb736"
+    }
+   ],
+   "crc32": "0x7AF4665C",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "TE",
+   "version": [
+    1000,
+    0,
+    12,
+    0
+   ],
+   "text": "1000.0.12"
+  },
+  {
+   "name": "te_row_1000_0_13",
+   "length": 374700,
+   "seed": 101,
+   "patches": [
+    {
+     "offset": 187350,
+     "bytes": "89691489"
+    }
+   ],
+   "crc32": "0x0789B2D9",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "TE",
+   "version": [
+    1000,
+    0,
+    13,
+    0
+   ],
+   "text": "1000.0.13"
+  },
+  {
+   "name": "te_row_1000_0_20",
+   "length": 393216,
+   "seed": 102,
+   "patches": [
+    {
+     "offset": 196608,
+     "bytes": "188db8e5"
+    }
+   ],
+   "crc32": "0x5DEE4B51",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "TE",
+   "version": [
+    1000,
+    0,
+    20,
+    0
+   ],
+   "text": "1000.0.20"
+  },
+  {
+   "name": "te_row_1000_0_23",
+   "length": 396452,
+   "seed": 103,
+   "patches": [
+    {
+     "offset": 198226,
+     "bytes": "79a5b2a7"
+    }
+   ],
+   "crc32": "0xA930BEF3",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "TE",
+   "version": [
+    1000,
+    0,
+    23,
+    0
+   ],
+   "text": "1000.0.23"
+  },
+  {
+   "name": "row_crc_wrong_length",
+   "length": 393215,
+   "seed": 3,
+   "patches": [
+    {
+     "offset": 1000,
+     "bytes": "975048b6"
+    }
+   ],
+   "crc32": "0x5DEE4B51",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "??",
+   "version": null,
+   "text": null
+  },
+  {
+   "name": "row_length_wrong_crc",
+   "length": 393216,
+   "seed": 4,
+   "patches": [],
+   "crc32": "0x8ECB43CC",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "??",
+   "version": null,
+   "text": null
+  },
+  {
+   "name": "te_prefix_only",
+   "length": 262144,
+   "seed": 5,
+   "patches": [
+    {
+     "offset": 4460,
+     "bytes": "ce1fe669"
+    }
+   ],
+   "crc32": "0x7E4803BD",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "TE",
+   "version": null,
+   "text": null
+  },
+  {
+   "name": "te_prefix_shortest",
+   "length": 4468,
+   "seed": 6,
+   "patches": [
+    {
+     "offset": 100,
+     "bytes": "dcbf3409"
+    }
+   ],
+   "crc32": "0x31D25812",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "TE",
+   "version": null,
+   "text": null
+  },
+  {
+   "name": "te_row_and_prefix",
+   "length": 374700,
+   "seed": 7,
+   "patches": [
+    {
+     "offset": 4460,
+     "bytes": "e996c382"
+    },
+    {
+     "offset": 187350,
+     "bytes": "eae91b0e"
+    }
+   ],
+   "crc32": "0x0789B2D9",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "TE",
+   "version": [
+    1000,
+    0,
+    13,
+    0
+   ],
+   "text": "1000.0.13"
+  },
+  {
+   "name": "prefix_span_short",
+   "length": 262144,
+   "seed": 8,
+   "patches": [
+    {
+     "offset": 4459,
+     "bytes": "edfbd4b9"
+    }
+   ],
+   "crc32": "0x99473A03",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "??",
+   "version": null,
+   "text": null
+  },
+  {
+   "name": "prefix_span_long",
+   "length": 262144,
+   "seed": 9,
+   "patches": [
+    {
+     "offset": 4461,
+     "bytes": "8e3e303b"
+    }
+   ],
+   "crc32": "0xF92AEA86",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "??",
+   "version": null,
+   "text": null
+  },
+  {
+   "name": "prefix_too_short",
+   "length": 4467,
+   "seed": 10,
+   "patches": [
+    {
+     "offset": 100,
+     "bytes": "4b3738b7"
+    }
+   ],
+   "crc32": "0x31D25812",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "??",
+   "version": null,
+   "text": null
+  },
+  {
+   "name": "wb_over_row",
+   "length": 393216,
+   "seed": 11,
+   "patches": [
+    {
+     "offset": 4460,
+     "bytes": "072abd9b"
+    },
+    {
+     "offset": 196608,
+     "bytes": "8bb95b4d"
+    }
+   ],
+   "crc32": "0x5DEE4B51",
+   "descriptor_valid": true,
+   "descriptor_version": [
+    0,
+    9,
+    37,
+    0
+   ],
+   "kind": "WB",
+   "version": [
+    0,
+    9,
+    37,
+    0
+   ],
+   "text": null
+  },
+  {
+   "name": "wb_plain",
+   "length": 196608,
+   "seed": 12,
+   "patches": [],
+   "crc32": "0x33D3809E",
+   "descriptor_valid": true,
+   "descriptor_version": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "kind": "WB",
+   "version": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "text": null
+  },
+  {
+   "name": "unknown",
+   "length": 196608,
+   "seed": 13,
+   "patches": [],
+   "crc32": "0x34C9C352",
+   "descriptor_valid": false,
+   "descriptor_version": null,
+   "kind": "??",
+   "version": null,
+   "text": null
+  }
+ ]
+}
