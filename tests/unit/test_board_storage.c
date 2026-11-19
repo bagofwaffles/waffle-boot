@@ -394,7 +394,7 @@ static void stuck_run(enum stuck stuck, bool cmd2_first, uint64_t min_us)
 
 	/* No eMMC command from here on. */
 	n = emmc.n;
-	CHECK(s.store.os_status(s.store.ctx) == 1u);	/* S-03.046 */
+	CHECK(s.store.os_status(s.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
 	CHECK(s.staged == S05_FAIL_SELECT);
 	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) != 0);
 	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
@@ -528,7 +528,7 @@ static void select_guard(void)
 	/* The slave's own load: BP1's select fails, and its select 0 after it
 	 * (S-03.046); no image is read. */
 	emmc.fail_select = 3u;
-	CHECK(s.store.os_status(s.store.ctx) == 1u);
+	CHECK(s.store.os_status(s.store.ctx, 0u, 0u) == 1u);
 	n = data_cmds();
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == -1 && err == S09_ENODEV);
 	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
@@ -749,8 +749,28 @@ static void test_features_once(void)
 	CHECK(emmc.sw[34] == 1u && emmc.sw[33] == 1u && emmc.sw[163] == 1u);
 	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) == 0);
-	(void)s.store.os_status(s.store.ctx);
+	(void)s.store.os_status(s.store.ctx, 0u, 0u);
 	CHECK(features() == 3u);
+}
+
+/* S-09.082, S-05.035: a file start's release with no volume mounted is
+ * "no OS", with no boot partition selected and no sector read; one with
+ * the arguments 0 is the boot partition's load. */
+static void test_file_release(void)
+{
+	unsigned n;
+
+	reset(GOOD);
+	opxy_slave_storage(&s);
+	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	n = data_cmds();
+	emmc.fail_select = 6u;		/* a boot partition's select would fail */
+	CHECK(s.store.os_status(s.store.ctx, 742764u, 0x1234ABCDu) == 1u);
+	CHECK(s.staged == S05_FAIL_NO_OS && s.staged_len == 0u);
+	CHECK(data_cmds() == n && s.part == S03_PART_USER);
+	CHECK(s.store.os_status(s.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
+	CHECK(s.staged == S05_FAIL_SELECT);
+	emmc.fail_select = 0;
 }
 
 /* A switch that fails after its retries fails the request, within its
@@ -773,7 +793,7 @@ static void test_features_fail(void)
 	CHECK(s.hw.msi.c == &opxy_msi);
 
 	t0 = fake_core_peek_cycles();
-	CHECK(s.store.os_status(s.store.ctx) == 1u);	/* S-03.046 */
+	CHECK(s.store.os_status(s.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
 	CHECK(s.staged == S05_FAIL_SELECT);
 	CHECK((fake_core_peek_cycles() - t0) / CCLK_MHZ <= 8000000u);
 	CHECK(emmc.sw[34] == 2u * S03_RETRIES && features() == emmc.sw[34]);
@@ -999,6 +1019,7 @@ int main(void)
 	RUN(test_mount_on_request);
 	RUN(test_shutdown_unmount);	/* on that volume */
 	RUN(test_features_once);
+	RUN(test_file_release);
 	RUN(test_features_fail);
 	RUN(test_user_bd_erase);
 	RUN(test_flush_needs_cache);

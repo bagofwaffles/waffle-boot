@@ -217,9 +217,11 @@ static int32_t st_read(void *ctx, uint32_t fd, uint8_t *b, uint32_t n, uint32_t 
 	return (int32_t)r;
 }
 
-static uint32_t st_os_status(void *ctx)
+static uint32_t st_os_status(void *ctx, uint32_t len, uint32_t crc)
 {
 	(void)ctx;
+	(void)len;
+	(void)crc;
 	return (uint32_t)answer[S09_RELEASE].result;
 }
 

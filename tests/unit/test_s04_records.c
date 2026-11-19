@@ -124,6 +124,7 @@ static void test_writers(void)
 		{1, 30, "SEUWH"}, {1, 10, "SEUWH"}, {1, 50, "SEUWH"}, {1, 40, "SEUWH"},
 		{2, 0, "PSXUWQ"}, {3, 0, "SXDUWH"}, {4, 0, "SEUWH"},
 		{6, 0, "SXLUWH"}, {7, 20, "SUWH"}, {7, 30, "SUWH"}, {9, 0, "UWH"},
+		{11, 0, "SXUWH"}, {12, 0, "SXUWH"},
 	};
 	unsigned i;
 
@@ -166,6 +167,19 @@ static void test_writers(void)
 			CHECK_EQ(g_written, runs[i].arg);
 		if (runs[i].id == 3)
 			CHECK(g_delay >= 10u);		/* S-04.023 */
+		if (runs[i].id == 12)
+			CHECK_EQ(g_written, S04_REASON_OS_FILE);	/* S-04.014 */
+	}
+	/* S-04.014: reason 90 boots, and a present record acts once. */
+	{
+		uint8_t rec[S04_REBOOT_SIZE] = { 0 };
+		struct s04_reason_effect e;
+
+		s04_reboot_write(rec, S04_REASON_OS_FILE);
+		CHECK_EQ(s04_reboot_consume(rec), S04_REASON_OS_FILE);
+		s04_reason_effect(S04_REASON_OS_FILE, &e);
+		CHECK(e.boot_os && e.screen == S04_SCREEN_MAIN && !e.cdc);
+		CHECK_EQ(s04_reboot_consume(rec), S04_REASON_DEFAULT);
 	}
 }
 

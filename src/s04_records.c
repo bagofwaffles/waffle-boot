@@ -136,6 +136,10 @@ void s04_writer_rule(enum s04_writer w, uint16_t arg, struct s04_writer_rule *ou
 		out->reason = S04_REASON_OS_ONCE;
 		out->nordic = S04_NORDIC_EXIT_DFU;
 		break;
+	case S04_W12:		/* Start /os.ldr once (S-04.014, S-15.194) */
+		out->reason = S04_REASON_OS_FILE;
+		out->nordic = S04_NORDIC_EXIT_DFU;
+		break;
 	case S04_W9:		/* the slave's power-off (S-04.025) */
 		out->reason = S04_REASON_BOOT;
 		out->shutdown = false;

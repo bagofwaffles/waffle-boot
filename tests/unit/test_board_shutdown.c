@@ -56,7 +56,13 @@ static int32_t st_emmc(void *c, uint8_t cmd, uint32_t a0, uint32_t a1,
 
 static uint32_t st_erase_group(void *c) { (void)c; return S03_GROUP_SECTORS; }
 static uint32_t st_boot_size(void *c) { (void)c; return 0x40000u; }
-static uint32_t st_os(void *c) { (void)c; return 1; }
+static uint32_t st_os(void *c, uint32_t len, uint32_t crc)
+{
+	(void)c;
+	(void)len;
+	(void)crc;
+	return 1;
+}
 static uint64_t st_cycles(void *c) { (void)c; return 0; }
 static void st_adjust(void *c, int64_t d) { (void)c; (void)d; }
 

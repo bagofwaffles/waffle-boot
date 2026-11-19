@@ -236,14 +236,17 @@ def screens(o):
             cstr(x.get('slave') or '')))
     o.w('/* S-15.163: a failed start; main is the notice\'s second line, info Device Info\'s OS start value. */')
     o.w('struct s15v_start { const char *name; struct s15_start start; enum s15_slave slave;'
-        ' const char *main, *info, *dsp2; };')
+        ' const char *first, *main, *info, *dsp2; };')
     o.w('static const struct s15v_start s15v_starts[] = {')
     for c in v['start']['cases']:
         s = c['start']
-        o.w('\t{ %s, { S15_START_%s, %du, %du, %du, S15_CHECK_%s, %s, 0x%02Xu, 0x%02Xu }, S15_SLAVE_%s,' % (
-            cstr(c['name']), s['why'], s.get('part', 0), s.get('value', 0), s.get('limit', 0),
-            s.get('check', 'LENGTH'), cbool(s.get('lost', False)), s.get('cmd', 0), s.get('at', 0), c['slave']))
-        o.w('\t  %s, %s, %s },' % (cstr(c['main']), cstr(c['info']), cstr(c['dsp2'])))
+        o.w('\t{ %s, { S15_START_%s, %du, %du, %du, S15_CHECK_%s, %s, 0x%02Xu, 0x%02Xu, %s, S15_OSW_WHY_%s },'
+            ' S15_SLAVE_%s,' % (
+                cstr(c['name']), s['why'], s.get('part', 0), s.get('value', 0), s.get('limit', 0),
+                s.get('check', 'LENGTH'), cbool(s.get('lost', False)), s.get('cmd', 0), s.get('at', 0),
+                cbool(s.get('file', False)), s.get('file_why', 'NONE'), c['slave']))
+        o.w('\t  %s, %s, %s, %s },' % (cstr(c.get('first', v['start']['first'])), cstr(c['main']),
+                                       cstr(c['info']), cstr(c['dsp2'])))
     o.w('};')
     r = v['os_reinstall']
     o.w('static const char s15v_os_reinstall_text[] = %s;' % cstr(r['text']))

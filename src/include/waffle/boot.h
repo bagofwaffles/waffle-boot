@@ -16,6 +16,7 @@
 #include "waffle/s03_emmc.h"
 #include "waffle/s05_handoff.h"
 #include "waffle/s09_master.h"
+#include "waffle/s15_lines.h"
 #include "waffle/testos.h"
 
 /* S-05.025: the boot prompt is a property of the build (BOOT_PROMPT=1,
@@ -40,6 +41,12 @@ struct boot_start {
 	uint8_t reply;			/* and its value */
 	bool lost;			/* the bridge lost the slave (S-09.008) */
 	struct s09_lost why;		/* how, when lost */
+	/* S-05.035: a file start's, which read /yaffs2/os.ldr and no boot
+	 * partition (load all zero but its length): what the read found, and
+	 * the CRC-32 of the master's copy */
+	bool file;
+	struct s15_os_file os_file;
+	uint32_t file_crc;
 };
 
 /* Why held mode was entered, for its entry steps and S-15's screens. */

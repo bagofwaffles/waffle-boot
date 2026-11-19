@@ -2660,9 +2660,9 @@ void s09_master_service(struct s09_master *m)
 	m->busy = false;
 }
 
-int s09_master_release(struct s09_master *m)
+static int release(struct s09_master *m, uint32_t len, uint32_t crc)
 {
-	struct s09_req r = { S09_RELEASE, 0, 0, 0, 0 };
+	struct s09_req r = { S09_RELEASE, 0, 0, len, crc };
 	uint32_t err;
 	int32_t v;
 
@@ -2676,6 +2676,16 @@ int s09_master_release(struct s09_master *m)
 		return 1;
 	absent(m);
 	return -1;
+}
+
+int s09_master_release(struct s09_master *m)
+{
+	return release(m, 0u, 0u);
+}
+
+int s09_master_release_file(struct s09_master *m, uint32_t len, uint32_t crc)
+{
+	return release(m, len, crc);
 }
 
 /* ---- the CPU link's port ---- */

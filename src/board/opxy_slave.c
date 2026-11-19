@@ -616,16 +616,44 @@ static OPXY_TESTOS_UNUSED enum s05_fail stage_os(struct opxy_slave *s,
 }
 
 /*
- * S-09.051, S-05.020 step 1: staged and checked inside the release
- * request, while the server takes no further header and PA4 is high.
+ * S-09.082, S-05.035: a file start's image, from /os.ldr on the volume the
+ * master's 0x08 mounted, into the same staging area; only a copy whose
+ * length and CRC-32 are the master's goes on to S-05.024's check. The user
+ * area stays selected; nothing is written.
  */
-static uint32_t os_status(void *ctx)
+static OPXY_TESTOS_UNUSED enum s05_fail stage_file(struct opxy_slave *s,
+						   uint32_t len, uint32_t crc,
+						   uint32_t *length)
+{
+	uint8_t *staging = (uint8_t *)(uintptr_t)OPXY_STAGING;
+	uint32_t err;
+
+	*length = 0;
+	if (!volume_usable(s, &err) ||
+	    wire_s09_os_file(&files, s->emmc.crc32, s->emmc.crc32_fast, staging,
+			     S03_OS_MAX, len, crc) != WIRE_OS_FILE_OK)
+		return S05_FAIL_NO_OS;
+	*length = len;
+	if (s05_check_image(staging, len) != S05_ACCEPT)
+		return S05_FAIL_REFUSED;
+	return S05_FAIL_NONE;
+}
+
+/*
+ * S-09.051, S-05.020 step 1: staged and checked inside the release
+ * request, while the server takes no further header and PA4 is high;
+ * from the file a release with arguments names (S-09.082).
+ */
+static uint32_t os_status(void *ctx, uint32_t len, uint32_t crc)
 {
 	struct opxy_slave *s = ctx;
 
+	(void)len;	/* the test OS stages nothing */
+	(void)crc;
 	s->staged = OPXY_TESTOS_OR(S05_FAIL_NO_OS,
-				   features_ready(s) ? stage_os(s, &s->staged_len) :
-						       S05_FAIL_SELECT);
+				   !features_ready(s) ? S05_FAIL_SELECT :
+				   len != 0u ? stage_file(s, len, crc, &s->staged_len) :
+					       stage_os(s, &s->staged_len));
 	/* cppcheck-suppress knownConditionTrueFalse ; true of the test OS's build only (waffle/testos.h) */
 	return s->staged == S05_FAIL_NONE ? 0u : 1u;
 }

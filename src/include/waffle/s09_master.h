@@ -705,6 +705,9 @@ void s09_master_service(struct s09_master *m);
  * any other value or no reply within T_RELEASE (then the slave is absent).
  */
 int s09_master_release(struct s09_master *m);
+/* S-09.082: a file start's release, with the file's length (not 0) and the
+ * CRC-32 of the master's copy as its arguments; returns as above. */
+int s09_master_release_file(struct s09_master *m, uint32_t len, uint32_t crc);
 
 /* The CPU link's port (S-09.045): an S-06 link over channel 0 of the tunnel. */
 extern const struct s06_port_ops s09_tunnel_port;

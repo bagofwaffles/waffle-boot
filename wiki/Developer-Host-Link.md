@@ -115,7 +115,8 @@ last plain start: The OS could not be started.
   bridge:   the slave was lost on request 0x12 (arg 0x501): the reply broke off [the reply ran out its bound; rc -5, status 0x0, 3 words left]
 ```
 
-A refused image adds `refusal` (S-05.024), a failed release adds `release`. With no failed start it prints
+A refused image adds `refusal` (S-05.024), a failed release adds `release`. A start from `/os.ldr`
+(S-05.035) begins `/os.ldr could not be started.` and adds `file`, the file's length and its copy's CRC. With no failed start it prints
 `the last plain start did not fail, or none was tried`. Layout: `opxy_start_report()` in
 `src/include/waffle/board/opxy_services.h`.
 

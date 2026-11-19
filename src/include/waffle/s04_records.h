@@ -35,6 +35,9 @@
 /* S-04.013: boots as 20 does, and start in boot menu (S-15.175) does not
  * apply to that one start. Written only by W11. */
 #define S04_REASON_OS_ONCE 80u
+/* S-04.014: boots as 20 does, with the OS image read from /yaffs2/os.ldr
+ * instead of the boot partition (S-05.035). Written only by W12. */
+#define S04_REASON_OS_FILE 90u
 
 /* S-04.002: present when the magic is 0xDEADF00D. */
 bool s04_reboot_present(const uint8_t rec[S04_REBOOT_SIZE]);
@@ -63,7 +66,7 @@ uint16_t s04_host_mode_reason(const uint8_t *payload, size_t len);
 
 /* W5 and W8 are withdrawn; the numbers stay S-04.020's. */
 enum s04_writer { S04_W1 = 1, S04_W2, S04_W3, S04_W4, S04_W6 = 6, S04_W7, S04_W9 = 9,
-		  S04_W10, S04_W11 };
+		  S04_W10, S04_W11, S04_W12 };
 enum s04_nordic { S04_NORDIC_NONE = 0, S04_NORDIC_ENTER_DFU, S04_NORDIC_EXIT_DFU };
 enum s04_reset { S04_RESET_HARD = 0, S04_RESET_SOFT };
 

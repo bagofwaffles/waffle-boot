@@ -261,7 +261,7 @@ static void start_lines(struct s15_menu *m, const struct s15_start *s)
 
 	if (s->why == S15_START_OK)
 		return;
-	sline(m, S15_ST_ERROR, s15_start_failed);
+	sline(m, S15_ST_ERROR, s->file ? s15_start_failed_file : s15_start_failed);
 	if (s->why == S15_START_ENCRYPTED) {               /* S-15.161 */
 		sline(m, S15_ST_ERROR, s15_os_reinstall);
 		return;
@@ -856,13 +856,14 @@ static void format_key(struct s15_menu *m, unsigned key)
 
 /* ---- the factory menu: S-15.092 - S-15.095 -------------------------- */
 
-/* The items keep their digits; digits 1, 3 and 4 are no items. */
+/* The items keep their digits; digits 1 and 4 are no items. */
 static void draw_factory(struct s15_menu *m)
 {
 	enter(m, S15_SCR_FACTORY, "Developer");
 	blank(m);
 	sline(m, S15_ST_ITEM, m->mtp_macos ? "2 MTP file transfer\tmacOS" :
 					      "2 MTP file transfer\tWindows");
+	sline(m, S15_ST_ITEM, s15_once_item);
 	sline(m, S15_ST_ITEM, "5 Write /os.ldr to boot partition");
 	sline(m, S15_ST_ITEM, s15_restart_item);
 	blank(m);
@@ -986,6 +987,38 @@ static void restart(struct s15_menu *m)
 	m->env->reset_w7(m->env->ctx);
 }
 
+/* S-15.194: the restart into a start from /yaffs2/os.ldr, or the reason
+ * there is none, under the developer menu drawn again. The start in boot
+ * menu a next start would read refuses it, as that start would open the
+ * boot menu (S-15.175). */
+static void os_once(struct s15_menu *m)
+{
+	struct s15_os_file file = { S15_OSW_WHY_NONE, 0, 0 };
+	struct s15_buf why, b;
+	enum s15_once r;
+
+	if (m->fs_held)
+		return;		/* fs held says why: no reset while it shows */
+	if (m->env->os_once_check == NULL || m->env->os_once == NULL)
+		r = S15_ONCE_DISABLED;
+	else if (m->start_menu)
+		r = S15_ONCE_START_MENU;
+	else
+		r = m->env->os_once_check(m->env->ctx, &file);
+	if (r == S15_ONCE_STARTED) {
+		/* the view whole on the panel before the shutdown begins */
+		enter(m, S15_SCR_STARTING, s15_cont_title);
+		sline(m, S15_ST_WARN, s15_once_restarting);
+		m->env->os_once(m->env->ctx);
+		return;
+	}
+	draw_factory(m);
+	sline(m, S15_ST_ERROR, s15_once_not_started);
+	s15_once_reason(&why, r, &file);
+	s15_reason_line(&b, why.s);
+	sline(m, S15_ST_DIM, b.s);
+}
+
 /* S-15.190: the restart offered after an install or an OS write starts the
  * OS, whatever reason this boot took. */
 static void restart_to_os(struct s15_menu *m)
@@ -1021,6 +1054,9 @@ static void factory_key(struct s15_menu *m, unsigned key)
 	switch (d) {
 	case 2:                                    /* S-15.174 */
 		mtp_on(m, m->mtp_macos ? S15_MTP_VENDOR : S15_MTP_STANDARD);
+		break;
+	case 3:
+		os_once(m);                        /* S-15.194 */
 		break;
 	case 5:
 		os_write(m);

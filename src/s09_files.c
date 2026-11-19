@@ -1070,6 +1070,67 @@ static int osw_same(struct s09_files *f, const uint8_t *image, uint32_t size)
 	return same;
 }
 
+/* S-05.035: a failed request's reason, from f->err. */
+static bool os_file_unread(const struct s09_files *f, struct s15_os_file *out)
+{
+	out->why = f->err == S09_ENOENT ? S15_OSW_WHY_MISSING : S15_OSW_WHY_READ;
+	out->value = f->err;
+	return false;
+}
+
+bool s09_files_os_check(struct s09_files *f, uint32_t cap, struct s15_os_file *out,
+			uint32_t *len)
+{
+	const uint32_t most = cap < S03_OS_MAX ? cap : S03_OS_MAX;
+	struct s09_stat st;
+
+	out->why = S15_OSW_WHY_NONE;
+	out->value = out->limit = 0;
+	*len = 0;
+	if (!f->mounted && !s09_files_volume_refused(f) && s09_files_mount(f) < 0 &&
+	    !s09_files_volume_refused(f))
+		return os_file_unread(f, out);	/* the slave did not answer */
+	/* S-12.052: what a refused volume holds is not read. */
+	if (s09_files_volume_refused(f)) {
+		out->why = S15_OSW_WHY_REFUSED;
+		return false;
+	}
+	if (s09_files_stat(f, OS_LDR, &st) != 0)
+		return os_file_unread(f, out);
+	if (is_dir(&st)) {
+		out->why = S15_OSW_WHY_DIRECTORY;
+		return false;
+	}
+	out->value = st.size;
+	if (st.size > most) {
+		out->why = S15_OSW_WHY_TOO_LARGE;
+		out->limit = most;
+		return false;
+	}
+	if (st.size < S03_MIN_IMAGE) {		/* S-03.051: L + 512 < 10000 */
+		out->why = S15_OSW_WHY_TOO_SMALL;
+		out->limit = S03_MIN_IMAGE;
+		return false;
+	}
+	out->value = 0;
+	*len = st.size;
+	return true;
+}
+
+bool s09_files_os_read(struct s09_files *f, uint8_t *buf, uint32_t cap,
+		       struct s15_os_file *out, uint32_t *len)
+{
+	uint32_t n;
+
+	*len = 0;
+	if (!s09_files_os_check(f, cap, out, &n))
+		return false;
+	if (!osw_read(f, buf, n, NULL))
+		return os_file_unread(f, out);
+	*len = n;
+	return true;
+}
+
 /* S-03.051's refusal, by the rule it failed. */
 static void osw_refused(uint32_t len, uint32_t boot_size, struct s15_osw_end *end)
 {

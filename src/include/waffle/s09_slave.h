@@ -55,8 +55,10 @@ struct s09_store_ops {
 	/* S-09.035: one piece: read until n bytes, the end of file or failure. */
 	int32_t (*read)(void *ctx, uint32_t fd, uint8_t *buf, uint32_t n,
 			uint32_t *err);
-	/* S-09.051: stage and check the slave's own OS: 0 accepted, 1 no OS. */
-	uint32_t (*os_status)(void *ctx);
+	/* S-09.051: stage and check the slave's own OS: 0 accepted, 1 no OS.
+	 * len and crc are the release's arguments: 0 and 0 for the boot
+	 * partition's image, else a file start's (S-09.082). */
+	uint32_t (*os_status)(void *ctx, uint32_t len, uint32_t crc);
 	/* S-09.036: the cycle counter, and an adjustment of it. */
 	uint64_t (*cycles)(void *ctx);
 	void (*adjust)(void *ctx, int64_t delta);

@@ -504,3 +504,36 @@ int32_t wire_s09_read(void *ctx, uint32_t fd, uint8_t *buf, uint32_t n,
 	*err = 0;
 	return (int32_t)got;
 }
+
+enum wire_os_file wire_s09_os_file(struct wire_s09 *s, s03_crc32_fn crc32,
+				   s03_crc32_fn crc32_fast, uint8_t *buf,
+				   uint32_t cap, uint32_t len, uint32_t crc)
+{
+	struct yaffs_stat st;
+	uint32_t got = 0, sum;
+	int fd;
+
+	if (!s->y->mounted || wire_yaffs_volume_refused(s->y) ||
+	    !wire_yaffs_full_path(s->y, "os.ldr", s->path) ||
+	    yaffs_stat(s->path, &st) != 0 || (st.st_mode & S_IFMT) == S_IFDIR)
+		return WIRE_OS_FILE_UNREAD;
+	if (st.st_size < 0 || (uint64_t)st.st_size != len || len > cap)
+		return WIRE_OS_FILE_LENGTH;
+	fd = yaffs_open(s->path, O_RDONLY, 0);
+	if (fd < 0)
+		return WIRE_OS_FILE_UNREAD;
+	while (got < len) {
+		const int r = yaffs_read(fd, buf + got, len - got);
+
+		if (r <= 0)
+			break;
+		got += (uint32_t)r;
+	}
+	(void)yaffs_close(fd);
+	if (got != len)
+		return WIRE_OS_FILE_UNREAD;
+	sum = crc32_fast != NULL ? crc32_fast(0u, buf, len) : ~crc;
+	if (sum != crc)
+		sum = crc32(0u, buf, len);
+	return sum == crc ? WIRE_OS_FILE_OK : WIRE_OS_FILE_CRC;
+}

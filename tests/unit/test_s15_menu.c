@@ -14,7 +14,8 @@
  * S-15.052, S-15.060, S-15.061, S-15.062, S-15.065, S-15.071, S-15.072,
  * S-15.073, S-15.081, S-15.082, S-15.092, S-15.093, S-15.094, S-15.095, S-15.100,
  * S-15.102, S-15.103, S-15.104, S-15.105, S-15.115, S-15.140, S-15.161,
- * S-15.170, S-15.172, S-15.175, S-15.180, S-15.190, S-05.033, S-16.012,
+ * S-15.170, S-15.172, S-15.175, S-15.180, S-15.190, S-15.194, S-15.195,
+ * S-05.033, S-16.012,
  * S-16.123, S-16.161.
  */
 #include <stdbool.h>
@@ -76,6 +77,11 @@ struct fake {
 	 * then reads when it was not saved */
 	enum s15_store_save store_rc;
 	bool store_after;
+	/* S-15.194: Start /os.ldr once; what the check gives */
+	unsigned once_checks, once;
+	bool once_view;                   /* the restarting view shown at the call */
+	enum s15_once once_rc;
+	struct s15_os_file once_file;
 	/* S-02.105: the factory reset's clears and what they give */
 	unsigned clears;
 	enum s15_store_save clear_rc;
@@ -275,19 +281,42 @@ static enum s15_store_save f_clear(void *c)
 	return F.clear_rc;
 }
 
+/* S-15.194 */
+static enum s15_once f_once_check(void *c, struct s15_os_file *file)
+{
+	(void)c;
+	F.once_checks++;
+	*file = F.once_file;
+	return F.once_rc;
+}
+
+static void f_once(void *c)
+{
+	size_t n = 0;
+	const char *s = M.con.count != 0u ?
+			s15_console_row(&M.con, M.con.count - 1u, &n) : "";
+
+	(void)c;
+	F.once++;
+	F.once_view = M.screen == S15_SCR_STARTING &&
+		      n == strlen(s15_once_restarting) &&
+		      memcmp(s, s15_once_restarting, n) == 0;
+}
+
 static const struct s15_env_ops env = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, f_settings, NULL, f_lost, f_continue,
-	f_logread, f_files, f_clear,
+	f_logread, f_files, f_clear, f_once_check, f_once,
 };
 
-/* A board with no boot store and no continue_os for the host. */
+/* A board with no boot store, no continue_os for the host and no file
+ * start (the test OS). */
 static const struct s15_env_ops env_bare = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, NULL, NULL, f_lost, NULL,
-	NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL,
 };
 
 static void clear_records(void)
@@ -295,6 +324,8 @@ static void clear_records(void)
 	F.n_usb = F.n_removed = 0;
 	F.volcal = F.leds_start = F.leds_end = F.erase_fat = F.format = 0;
 	F.os_write = F.reset_w7 = F.sysinfo = F.scan = 0;
+	F.once_checks = F.once = 0;
+	F.once_view = false;
 	F.option = -1;
 	F.saves = 0;
 	F.dir_checks = F.vol_checks = 0;
@@ -308,6 +339,9 @@ static void reset_fake(void)
 	n_app = 0;
 	memset(&F, 0, sizeof F);
 	F.osw = S15_OSW_OK;
+	F.once_rc = S15_ONCE_FILE;	/* no /os.ldr unless a test puts one */
+	F.once_file.why = S15_OSW_WHY_MISSING;
+	F.once_file.value = 2u;
 	clear_records();
 }
 
@@ -987,6 +1021,10 @@ static void observe(struct toks *t, const struct rstate *st,
 		add(t, "scan_now");
 	if (F.cont)
 		add(t, "continue");
+	if (F.once_checks)
+		add(t, "once_check");
+	if (F.once)
+		add(t, "once");
 	if (F.saves != 0u && F.saved.start_menu != BOOT.settings.start_menu)
 		add(t, F.saved.start_menu ? "start_menu_on" : "start_menu_off");
 }
@@ -1056,6 +1094,7 @@ enum rule {
 	R_CONTINUE,           /* S-15.190: digit 6 on a written OS's result alone */
 	R_START_MENU,         /* S-15.175: Settings' digit 6 alone */
 	R_HOLD,               /* S-15.015: the hold's time runs the action once */
+	R_OS_ONCE,            /* S-15.194: the developer menu's digit 3 alone */
 	R_N
 };
 
@@ -1065,7 +1104,7 @@ static const char *const rule_names[R_N] = {
 	"reset_confirmed", "from_system", "upgrade_exit", "option_keys",
 	"upgrade_gate", "format_keys", "mtp_busy", "osw_result",
 	"packs_back", "screen", "prompt", "cancel_only", "pack_keys",
-	"result_back", "continue", "start_menu", "hold",
+	"result_back", "continue", "start_menu", "hold", "os_once",
 };
 
 static unsigned rule_bad[R_N], rule_seen[R_N];
@@ -1435,8 +1474,8 @@ static void test_rules(void)
 						rule(R_MTP_TARGET, only(&got, st->macos ?
 						     "usb:MTP vendor" : "usb:MTP"), n, key, down, &got);
 					if (d == 3u)
-						rule(R_MTP_TARGET, next == S15_SCR_FACTORY &&
-						     got.n == 0u, n, key, down, &got);
+						rule(R_OS_ONCE, next == S15_SCR_FACTORY &&
+						     only(&got, "once_check"), n, key, down, &got);
 				}
 				if (before == S15_SCR_SETTINGS && down && d == 3u && !armed_st)
 					rule(R_COLOR, next == S15_SCR_SETTINGS &&
@@ -1451,6 +1490,11 @@ static void test_rules(void)
 				if (tok_has(&got, "start_menu"))
 					rule(R_START_MENU, before == S15_SCR_SETTINGS && down &&
 					     d == 6u, n, key, down, &got);
+				if (tok(&got, "once_check") || tok(&got, "once"))
+					rule(R_OS_ONCE, down && d == 3u &&
+					     before == S15_SCR_FACTORY && st->mtp == MTP_OFF &&
+					     !st->osw_done && !st->osw_written,
+					     n, key, down, &got);
 				if (tok(&got, "continue"))
 					rule(R_CONTINUE, down && d == 6u &&
 					     before == S15_SCR_FACTORY && st->osw_written,
@@ -1581,7 +1625,7 @@ static void test_start_screens(void)
 		      "S-15.163 %s: two lines under the items", c->name);
 		if (n != items + 2u)
 			continue;
-		CHECK(strcmp(got[items], "error:The OS could not be started.") == 0,
+		CHECK(strcmp(got[items], c->first) == 0,
 		      "S-15.163 %s: %s", c->name, got[items]);
 		CHECK(strcmp(got[items + 1u], c->main) == 0, "S-15.163 %s main: %s",
 		      c->name, got[items + 1u]);
@@ -2427,7 +2471,8 @@ static void test_factory(void)
 	CHECK(F.n_usb == 2u && F.usb[0] == S15_USB_MTP_VENDOR &&
 	      F.usb[1] == S15_USB_SERIAL, "S-15.174 macOS, the vendor interface");
 	press(0x08);
-	CHECK(F.n_usb == 2u && M.mtp == S15_MTP_OFF, "3 is no item");
+	CHECK(F.n_usb == 2u && M.mtp == S15_MTP_OFF && F.once_checks == 1u,
+	      "S-15.194 3 is the file start, no MTP");
 	/* S-15.174: Windows, the standard interface, and the item says so */
 	reset_fake(); default_boot(); BOOT.settings.mtp_macos = false; start();
 	press(0x08);
@@ -3034,6 +3079,115 @@ static void test_run_end_skipped(void)
 
 /* ---- S-15.190, S-05.033: continue to the OS ------------------------ */
 
+/* S-15.194: Start /os.ldr once, digit 3 on the developer menu. */
+static void test_os_once(void)
+{
+	static const struct {
+		enum s15_once rc;
+		enum s15_osw_why why;
+		uint32_t value, limit;
+		const char *screen;
+	} refused[] = {
+		{ S15_ONCE_FILE, S15_OSW_WHY_MISSING, 2u, 0u, "factory_once_missing" },
+		{ S15_ONCE_FILE, S15_OSW_WHY_TOO_LARGE, 8388609u, 8388608u,
+		  "factory_once_too_large" },
+		{ S15_ONCE_SLAVE, S15_OSW_WHY_NONE, 0u, 0u, "factory_once_slave" },
+	};
+	uint32_t before;
+
+	/* The file there: the restarting view whole, then the board's W12. */
+	reset_fake(); default_boot(); start();
+	press(0x08);
+	expect_screen("factory");
+	F.once_rc = S15_ONCE_STARTED;
+	clear_records();
+	press(0x08);
+	CHECK(F.once_checks == 1u && F.once == 1u && F.once_view &&
+	      M.screen == S15_SCR_STARTING && F.reset_w7 == 0u && F.cont == 0u,
+	      "S-15.194 the check, the view, then the restart");
+	expect_screen("factory_once_restarting");
+	expect_title("restarting");
+	CHECK(appended(s15_once_restarting), "S-15.004 the line is logged");
+	/* No key acts on the restarting view. */
+	before = s15_menu_changes(&M);
+	clear_records();
+	for (unsigned key = 0; key < S15_NKEYS; key++)
+		press(key);
+	CHECK(F.once == 0u && F.once_checks == 0u && F.reset_w7 == 0u &&
+	      M.screen == S15_SCR_STARTING && s15_menu_changes(&M) == before,
+	      "S-15.194 no key on the restarting view");
+
+	/* Each refusal: no restart, the developer menu with the reason, which
+	 * stays usable. */
+	for (size_t i = 0; i < sizeof refused / sizeof refused[0]; i++) {
+		reset_fake(); default_boot(); start();
+		press(0x08);
+		F.once_rc = refused[i].rc;
+		F.once_file.why = refused[i].why;
+		F.once_file.value = refused[i].value;
+		F.once_file.limit = refused[i].limit;
+		clear_records();
+		press(0x08);
+		CHECK(F.once_checks == 1u && F.once == 0u && M.screen == S15_SCR_FACTORY,
+		      "S-15.194 %s: no restart", refused[i].screen);
+		expect_screen(refused[i].screen);
+		press(0x08);			/* again: drawn again, not stacked */
+		expect_screen(refused[i].screen);
+		press(0x13);
+		CHECK(F.reset_w7 == 1u, "S-15.095 %s: 6 still restarts", refused[i].screen);
+	}
+
+	/* Start in boot menu on: the next start would open the boot menu,
+	 * so no check and no restart. */
+	reset_fake(); default_boot(); BOOT.settings.start_menu = true; start();
+	press(0x08);
+	F.once_rc = S15_ONCE_STARTED;
+	clear_records();
+	press(0x08);
+	CHECK(F.once_checks == 0u && F.once == 0u && M.screen == S15_SCR_FACTORY,
+	      "S-15.194 refused with start in boot menu on");
+	expect_screen("factory_once_start_menu");
+
+	/* fs held: nothing at all, as the restart (S-02.071). */
+	reset_fake(); default_boot(); start();
+	press(0x08);
+	F.once_rc = S15_ONCE_STARTED;
+	s15_up_fs_held(&M, true, false);
+	clear_records();
+	press(0x08);
+	CHECK(F.once_checks == 0u && F.once == 0u, "S-15.194 fs held: no restart");
+
+	/* MTP on, or an OS write's result shown: digit 3 does nothing. */
+	reset_fake(); default_boot(); start();
+	press(0x08);
+	F.once_rc = S15_ONCE_STARTED;
+	press(0x07);
+	clear_records();
+	press(0x08);
+	CHECK(F.once_checks == 0u && F.once == 0u && M.mtp != S15_MTP_OFF,
+	      "S-15.092 busy with MTP: digit 3 does nothing");
+	reset_fake(); default_boot(); start();
+	press(0x08);
+	F.once_rc = S15_ONCE_STARTED;
+	press(0x12);
+	clear_records();
+	press(0x08);
+	CHECK(F.once_checks == 0u && F.once == 0u && M.osw == S15_OSW_VIEW_DONE,
+	      "S-15.092 the OS write's result: digit 3 does nothing");
+
+	/* A build that starts no OS (the test OS): refused, with why. */
+	reset_fake(); default_boot();
+	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
+	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_start(&M);
+	press(0x08);
+	clear_records();
+	press(0x08);
+	CHECK(F.once_checks == 0u && F.once == 0u && M.screen == S15_SCR_FACTORY,
+	      "S-15.194 no file start in this build");
+	expect_screen("factory_once_disabled");
+}
+
 static void test_continue(void)
 {
 	uint32_t before;
@@ -3575,6 +3729,7 @@ int main(void)
 	test_reset_and_system();
 	test_format();
 	test_factory();
+	test_os_once();
 	test_os_write();
 	test_hold();
 	test_upgrade();

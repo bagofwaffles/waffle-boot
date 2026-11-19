@@ -221,6 +221,19 @@ bool s09_files_erase_os_fat(struct s09_files *f);
  * False for a failed format: the select or an erase failed. */
 bool s09_files_format(struct s09_files *f);
 /*
+ * S-05.035, S-15.194: /yaffs2/os.ldr as a file start takes it, by its stat:
+ * true when it is a file whose length L S-03.051 allows (L + 512 >= 10000,
+ * L <= 0x800000 and not over cap; the partition's room apart), with *len
+ * set; else out->why says why. A volume not mounted is mounted first
+ * (0x08), unless it is refused. Nothing is written.
+ */
+bool s09_files_os_check(struct s09_files *f, uint32_t cap, struct s15_os_file *out,
+			uint32_t *len);
+/* ... and then read whole into buf, cap bytes; true when every byte of it
+ * was read, with *len its length. */
+bool s09_files_os_read(struct s09_files *f, uint8_t *buf, uint32_t cap,
+		       struct s15_os_file *out, uint32_t *len);
+/*
  * S-15.094: read /yaffs2/os.ldr whole into image (cap bytes, at least
  * S03_OS_MAX: a longer file is one S-03.051 refuses) and write it with
  * S-03's OS write. env->ops is usually s09_files_emmc_ops()'s. Each step

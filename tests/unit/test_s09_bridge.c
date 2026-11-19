@@ -30,6 +30,7 @@ static struct {
 	uint32_t file_len, pos;
 	int read_calls, fail_call;
 	uint32_t os;
+	uint32_t os_len, os_crc;	/* the last release's arguments */
 	int64_t adjusted;
 	char last_path[64];
 	int emmc_calls, file_calls;
@@ -91,7 +92,13 @@ static int32_t f_read(void *c, uint32_t fd, uint8_t *buf, uint32_t n,
 	return (int32_t)k;
 }
 
-static uint32_t f_os(void *c) { (void)c; return st.os; }
+static uint32_t f_os(void *c, uint32_t len, uint32_t crc)
+{
+	(void)c;
+	st.os_len = len;
+	st.os_crc = crc;
+	return st.os;
+}
 static uint64_t f_cycles(void *c) { (void)c; return 78187493530ull; }
 static void f_adjust(void *c, int64_t d) { (void)c; st.adjusted = d; }
 
@@ -845,7 +852,9 @@ static void test_release(void)
 	fresh_pair();
 	CHECK(s09_master_start(&ms));
 	st.os = 0;
+	st.os_len = st.os_crc = 0xFFFFFFFFu;
 	CHECK_EQ(s09_master_release(&ms), 0);
+	CHECK(st.os_len == 0u && st.os_crc == 0u);	/* the boot partition's */
 	before = lb.nlog;
 	CHECK_EQ(s09_master_call(&ms, &sel, 0, 0, 0, 0, 0, &err), -1);
 	CHECK_EQ(lb.nlog, before);		/* no further bridge request */
@@ -864,6 +873,21 @@ static void test_release(void)
 	st.os = 7;
 	CHECK_EQ(s09_master_release(&ms), -1);
 	CHECK(ms.absent);
+
+	/* S-09.082: a file start's release carries the file's length and CRC */
+	t_case = "file";
+	fresh_pair();
+	CHECK(s09_master_start(&ms));
+	st.os = 1;
+	CHECK_EQ(s09_master_release_file(&ms, 742764u, 0x1234ABCDu), 1);
+	CHECK(st.os_len == 742764u && st.os_crc == 0x1234ABCDu);
+	CHECK(!ms.absent);
+	st.os = 0;
+	CHECK_EQ(s09_master_release_file(&ms, 9488u, 0u), 0);
+	CHECK(st.os_len == 9488u && st.os_crc == 0u);
+	before = lb.nlog;
+	CHECK_EQ(s09_master_call(&ms, &sel, 0, 0, 0, 0, 0, &err), -1);
+	CHECK_EQ(lb.nlog, before);
 }
 
 /*

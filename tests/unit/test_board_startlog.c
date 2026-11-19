@@ -430,7 +430,7 @@ static void boot_path(bool front, bool good, enum s05_fail result)
 {
 	static struct s09_bus_ops bus;
 	struct s05_master_ops ops;
-	const struct s05_master sm = { staged, 0u, false };
+	const struct s05_master sm = { staged, 0u, false, false };
 
 	reset(front, FR_HO_START_LOGGED, 1, 7);
 	opxy_master_handoff(&m);

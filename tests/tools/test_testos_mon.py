@@ -707,11 +707,12 @@ class Start(unittest.TestCase):
 
     @staticmethod
     def report(**kw):
-        d = dict.fromkeys(m.START_FIELDS, 0)
+        d = dict.fromkeys(m.START_FIELDS + m.START_FILE_FIELDS, 0)
         d['attempted'] = 1
         d.update(kw)
         fault = d.pop('fault', (0, 0, 0, 0))
-        return struct.pack(m.START_LAYOUT, *(d[k] for k in m.START_FIELDS), *fault)
+        return struct.pack(m.START_LAYOUT, *(d[k] for k in m.START_FIELDS), *fault,
+                           *(d[k] for k in m.START_FILE_FIELDS))
 
     def test_layout(self):
         self.assertEqual(struct.calcsize(m.START_LAYOUT), m.START_REPORT)
@@ -732,6 +733,19 @@ class Start(unittest.TestCase):
 
     def test_none(self):
         self.assertEqual(m.start_lines(bytes(m.START_REPORT)), [m.START_NONE])
+
+    def test_file_start(self):
+        # S-05.035: a file start's /os.ldr too large, then the slave's copy refused
+        r = self.report(cause=7, file=1, file_why=7, file_length=0, file_value=8388609,
+                        file_limit=8388608)
+        lines = m.start_lines(r)
+        self.assertEqual(lines[0], 'last plain start: /os.ldr could not be started.')
+        self.assertEqual(lines[1], '  reason:   8388609 bytes, at most 8388608')
+        self.assertEqual(lines[2], '  OS start: /os.ldr 8388609 bytes, at most 8388608')
+        r = self.report(cause=5, replied=1, reply=1, file=1, file_length=742764, file_crc=0x1234ABCD)
+        lines = m.start_lines(r)
+        self.assertEqual(lines[1], '  reason:   DSP2 could not load the same /os.ldr')
+        self.assertIn('  file:     /os.ldr, 742764 bytes, CRC 1234abcd of the copy read', lines)
 
     def test_lost_read(self):
         # the unit's case: the bridge lost on a 128-sector read of partition 2

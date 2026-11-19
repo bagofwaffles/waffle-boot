@@ -7,7 +7,7 @@
   "handover":      {"messages": [{"id": "0x51", "payload": "3cff32"}],
                     "after": "boot-logo frame (S-05.004)", "before": "first storage request for the OS image"},
   "shutdown":      {"messages": [{"id": "0x51", "payload": "000002"}, {"id": "0x40", "payload": "01"}],
-                    "before": "the reset of W1-W4, W6, W7, W10, W11, or the idle after a power-off"},
+                    "before": "the reset of W1-W4, W6, W7, W10, W11, W12, or the idle after a power-off"},
   "regreet":       {"messages": [{"id": "0x51", "payload": "3cff02"}, {"id": "0x43", "payload": "0101"}],
                     "after": "the PSoC's repeated greeting and the master's greeting back"},
   "reset_request": {"messages": [{"id": "0x97", "payload": "deadbeef"}, {"id": "0x51", "payload": "000002"}, {"id": "0x40", "payload": "01"}],

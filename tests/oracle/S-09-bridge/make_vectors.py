@@ -45,6 +45,9 @@ def requests():
     add('echo', {'cmd': 0x0A, 'slot': 0, 'arg0': 0x12345678}, bytes.fromhex('0a000000' '78563412' '00000000'))
     add('poll', {'cmd': 0x06, 'slot': 2}, bytes.fromhex('06020000' '00000000' '00000000'))
     add('release', {'cmd': 0x07, 'slot': 1}, bytes.fromhex('07010000' '00000000' '00000000'))
+    # S-09.082: a file start's release, the file's length and its CRC-32 as the arguments
+    add('release_file', {'cmd': 0x07, 'slot': 1, 'arg0': 742764, 'arg1': 0x1234ABCD},
+        bytes.fromhex('07010000' '6c550b00' 'cdab3412'))
     add('select_bp1', {'cmd': 0x18, 'slot': 1, 'arg0': 1}, bytes.fromhex('18010000' '01000000' '00000000'))
     add('read_sectors', {'cmd': 0x12, 'slot': 1, 'arg0': 0x81, 'arg1': 0x80},
         bytes.fromhex('12010000' '81000000' '80000000'))
