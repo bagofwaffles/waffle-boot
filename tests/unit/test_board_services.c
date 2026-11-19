@@ -988,6 +988,8 @@ static void test_os_once_restart(void)
 		m.slave_present = k != 1;
 		m.bridge.absent = k == 2;
 		CHECK(m.sv.env.os_once_check != NULL && m.sv.env.os_once != NULL);
+		if (m.sv.env.os_once_check == NULL || m.sv.env.os_once == NULL)
+			return;
 		CHECK(m.sv.env.os_once_check(m.sv.env.ctx, &f) == S15_ONCE_SLAVE);
 		opxy_usb_stop();
 	}
@@ -1005,6 +1007,8 @@ static void test_os_once_restart(void)
 	rs_n = 0;
 	fake_core_set_cycle_step(400u * 1000u);	/* 1 ms a read */
 	t0 = fake_core_peek_cycles();
+	if (m.sv.env.os_once == NULL)
+		return;
 	m.sv.env.os_once(m.sv.env.ctx);
 	CHECK(rs_n == 4u && memcmp(rs_ev, "SXRH", 4) == 0);
 	CHECK(rs_reason == S04_REASON_OS_FILE);
