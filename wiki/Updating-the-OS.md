@@ -10,6 +10,7 @@ waffle-boot. To install waffle-boot itself, see [How to Install](How-to-Install)
 | Replace waffle-boot in one slot with another waffle-boot build | [How to Recover](How-to-Recover#write-a-slot-from-a-computer) |
 | Update the Bluetooth (BLE) or backplane (PSoC) chips | **Not supported yet.** Those steps show `Skipped: not in this version` |
 | Return to the factory bootloader | **Not supported yet** |
+| Build a package with your own OS image | Developers: [Building Custom OS Updates (.tfw)](Building-Custom-OS-Updates) |
 | Write an OS image file directly | Developers: Boot menu → Developer menu → 5 ([Test OS](Test-OS#loading-it)) |
 
 ## Steps
@@ -35,7 +36,7 @@ the bootloader or the first stage.
 
 | Message | Meaning |
 | --- | --- |
-| `No valid package found` | No file with `tfw` in its name in the disk's top folder, or the package was refused. The reason line says why |
+| `No valid package found` | No file with `tfw` in its name in the disk's top folder, or the package was refused. The reason line says why ([the reasons](Building-Custom-OS-Updates#refusal-reasons)) |
 | `Upgrade failed.` or `Installation failed.` | A step failed; its row says which. Switch off and on, then install again |
 | `The last install did not finish.` | The unit stopped mid-install. Install the same package again |
 | `Bootloader  Skipped: written, runs on restart` | The same package was installed again before a restart: its bootloader is already in the other slot and starts after the next restart |

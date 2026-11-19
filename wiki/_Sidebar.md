@@ -23,6 +23,7 @@
 **Developers**
 - [Building and Testing](Building-and-Testing)
 - [Test OS](Test-OS)
+- [Building Custom OS Updates (.tfw)](Building-Custom-OS-Updates)
 - [Developer Host Link](Developer-Host-Link)
 - [Screen Style Guide](Screen-Style-Guide)
 - [Requirement Labels](Specification)

@@ -39,6 +39,8 @@ Chrome or Edge over USB.
 
 - [Building and Testing](Building-and-Testing): toolchain, builds, tests, local CI, the source map.
 - [Test OS](Test-OS): the boot menu built as an OS image.
+- [Building Custom OS Updates (.tfw)](Building-Custom-OS-Updates): a firmware package with your own OS
+  image, unsigned and in plaintext.
 - [Developer Host Link](Developer-Host-Link): USB requests the boot menu answers with developer mode on.
 - [Screen Style Guide](Screen-Style-Guide): how the screens look and read.
 - [Requirement Labels](Specification): the `S-NN.NNN` labels code and tests cite.
