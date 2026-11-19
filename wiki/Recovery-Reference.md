@@ -129,6 +129,10 @@ To write a build: `make bump-version`, `make cross`, Power + M4 (4 under the dis
 then `write build/bf703/waffle-boot.ldr`. On `Verified`, `restart` or switch off and on without a key.
 Restart before another write: one write per visit.
 
+> **Warning.** The same build file in both slots makes every start about 2.7 s slower: the front then has to
+> compare both slots in full to tell which one is running. A normal build and a timing build of one version
+> count as different. Keep two different builds in the slots.
+
 Both slots may hold the same image: every command works as with two different ones. Recovery then counts
 as the running slot the one the unit goes on starting, which is the one the selector names when it is
 trusted or checked; the boot menu's status bar names the same slot. A front before version 14 refuses the

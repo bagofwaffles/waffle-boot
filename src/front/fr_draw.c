@@ -42,10 +42,12 @@
 #define STATUS_Y  202u	/* the status bar's first row */
 #define STATUS_TY (STATUS_Y + 3u)
 
-/* A key badge (s15_console.c's put_badge()): a solid cell from a pixel
- * left of the digit's column, its corner pixels left out. */
-#define BADGE_W   11u
-#define BADGE_H   14u
+/* A key badge (s15_console.c's put_badge()): a solid 16 x 16 cell
+ * centered on the digit's column, from 4 pixels left of it and a pixel
+ * above the row's top, its corner pixels left out. */
+#define BADGE_W   16u
+#define BADGE_H   16u
+#define BADGE_L   4u	/* the cell from this far left of the digit's x */
 
 #if !defined(__bfin__)
 static size_t len_of(const char *s, size_t max)
@@ -174,7 +176,7 @@ FR_FAST static uint16_t ink_of(unsigned ink)
 }
 
 #define CHIP_PAD   4u	/* a chip's text from its side */
-#define BADGE_RIGHT 10u	/* a badge's cell ends 10 pixels right of its digit's x */
+#define BADGE_RIGHT 12u	/* a badge's cell ends 12 pixels right of its digit's x */
 
 FR_FAST static void emit(part_fn fn, void *ctx, uint8_t kind, uint8_t ch, unsigned x,
 			 unsigned w, uint16_t color)
@@ -456,9 +458,9 @@ static void probe_part(void *ctx, const struct part *p)
 	}
 	case P_BADGE:
 	default:
-		/* the cell from a pixel left of the digit, 11 x 14 less its
-		 * corners; the digit in black at x and x + 1 */
-		if (box_at(q, p->x - 1u, BADGE_W, q->y0, BADGE_H) != 0u) {
+		/* the 16 x 16 cell less its corners; the digit in black at x
+		 * and x + 1 */
+		if (box_at(q, p->x - BADGE_L, BADGE_W, q->y0 - 1u, BADGE_H) != 0u) {
 			q->hit = true;
 			q->c = p->color;
 		}
@@ -634,7 +636,7 @@ FR_FAST static void paint_part(void *ctx, const struct part *p)
 		break;
 	case P_BADGE:
 	default:
-		box(n->buf, p->x - 1u, BADGE_W, n->y0, BADGE_H, p->color, true);
+		box(n->buf, p->x - BADGE_L, BADGE_W, n->y0 - 1u, BADGE_H, p->color, true);
 		glyph8(n->buf, p->x, n->y0, p->ch, BLACK);
 		glyph8(n->buf, p->x + 1u, n->y0, p->ch, BLACK);
 		break;

@@ -100,10 +100,11 @@ its dark gray.
 
 ### Key badges
 
-Every key digit on a screen is a key badge: a solid amber cell 11 × 14,
-from a pixel left of the digit's column and the row's top, its four corner
-pixels left out, with the digit in bold black (its glyph drawn twice, one
-pixel apart). No border and no second shade. On an `armed` row the badges
+Every key digit on a screen is a key badge: a solid amber cell 16 × 16,
+centered on the digit's column (from 4 pixels left of it and a pixel above
+the row's top), its four corner pixels left out, with the digit in bold black
+(its glyph drawn twice, one pixel apart). The cell covers half of each column
+beside the digit, so a badge always has a blank column, or a tab, on each side. No border and no second shade. On an `armed` row the badges
 are red. With the color off they draw as the grays below.
 
 ### Grayscale

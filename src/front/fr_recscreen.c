@@ -225,7 +225,7 @@ static void tier_rows(struct fr_screen *scr, unsigned row, unsigned tier, bool s
 		fr_screen_line(scr, row + 1u, FR_INK_ERROR,
 			       "There may be no way back without a flash programmer");
 	else if (tier == FR_TIER_FRONT || tier == FR_TIER_FOREIGN)
-		fr_screen_line(scr, row + 1u, FR_INK_WARN, "Try it once first (" FR_C_BADGE "8" ", then " FR_C_BADGE "1" ")");
+		fr_screen_line(scr, row + 1u, FR_INK_WARN, "Try it once first: " FR_C_BADGE "8" " then " FR_C_BADGE "1");
 }
 
 /* What a write or an action will do, in plain words, from row on, with its
@@ -581,7 +581,7 @@ void fr_rec_screen(struct fr_screen *scr, const struct fr_rec_status *st,
 		if (st->select_target == run && st->select_refusal == FR_WR_OK) {
 			/* a trial start, in the tried slot's own recovery */
 			slot_text(line, "Trial start of slot ", run,
-				  ": to keep it, " FR_C_BADGE "1" ", then " FR_C_BADGE "3");
+				  ": to keep it, " FR_C_BADGE "1" " then " FR_C_BADGE "3");
 			fr_screen_line(scr, 6, FR_INK_HEAD, line);
 		}
 		break;

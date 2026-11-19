@@ -177,16 +177,17 @@ static unsigned col(unsigned c)
 }
 
 /* Whether a key badge for digit d stands at (x, y): the digit inked in
- * black twice, a pixel apart, on a cell of bg from x - 1 to x + 9 and y to
- * y + 13 with its corner pixels left out. */
+ * black twice, a pixel apart, on a cell of bg from x - 4 to x + 11 and
+ * y - 1 to y + 14 with its corner pixels left out. */
 static bool badge(unsigned x, unsigned y, const char *d, uint16_t bg)
 {
 	return drawn(x, y, d, S15_BLACK, CLEAR) &&
 	       drawn(x + 1u, y, d, S15_BLACK, CLEAR) &&
-	       fb[y][x] == bg && fb[y][x + 8u] == bg && fb[y][x - 1u] != bg &&
-	       fb[y][x + 9u] != bg && fb[y + 1u][x - 1u] == bg &&
-	       fb[y + 12u][x + 9u] == bg && fb[y + 13u][x - 1u] != bg &&
-	       fb[y + 13u][x + 4u] == bg && fb[y + 14u][x + 4u] != bg;
+	       fb[y][x - 4u] == bg && fb[y][x + 11u] == bg && fb[y][x - 5u] != bg &&
+	       fb[y][x + 12u] != bg && fb[y - 1u][x - 4u] != bg &&
+	       fb[y - 1u][x - 3u] == bg && fb[y - 2u][x + 4u] != bg &&
+	       fb[y + 14u][x + 11u] != bg && fb[y + 14u][x + 4u] == bg &&
+	       fb[y + 15u][x + 4u] != bg;
 }
 
 static enum s15_style style_of(const char *name)

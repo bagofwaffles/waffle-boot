@@ -283,10 +283,12 @@ static void split(const char *s, size_t n, struct parts *pt)
 /*
  * A key badge: the key's digit in bold black (its glyph drawn twice, one
  * pixel apart) on a solid cell BADGE_W x BADGE_H with its corner pixels
- * left out, from a pixel left of the digit's column and the row's top.
+ * left out, centered on the digit's column: from BADGE_L pixels left of it
+ * and a pixel above the row's top, over half of each blank column beside it.
  */
-#define BADGE_W 11u
-#define BADGE_H 14u
+#define BADGE_W 16u
+#define BADGE_H 16u
+#define BADGE_L 4u
 
 static void put_badge(const struct s15_geometry *g,
 		      const struct s15_draw_ops *d, unsigned col, uint16_t y,
@@ -297,10 +299,10 @@ static void put_badge(const struct s15_geometry *g,
 	if (col >= S15_COLS)
 		return;
 	x = col_x(g, col);
-	d->fill(d->ctx, x, y, BADGE_W - 2u, 1, bg);
-	d->fill(d->ctx, (uint16_t)(x - 1u), (uint16_t)(y + 1u), BADGE_W,
-		BADGE_H - 2u, bg);
-	d->fill(d->ctx, x, (uint16_t)(y + BADGE_H - 1u), BADGE_W - 2u, 1, bg);
+	d->fill(d->ctx, (uint16_t)(x - BADGE_L + 1u), (uint16_t)(y - 1u), BADGE_W - 2u, 1, bg);
+	d->fill(d->ctx, (uint16_t)(x - BADGE_L), y, BADGE_W, BADGE_H - 2u, bg);
+	d->fill(d->ctx, (uint16_t)(x - BADGE_L + 1u), (uint16_t)(y + BADGE_H - 2u), BADGE_W - 2u, 1,
+		bg);
 	if (d->ink != NULL) {
 		d->ink(d->ctx, x, y, &digit, 1, S15_BLACK);
 		d->ink(d->ctx, (uint16_t)(x + 1u), y, &digit, 1, S15_BLACK);

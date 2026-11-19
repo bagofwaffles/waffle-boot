@@ -82,7 +82,7 @@ To keep slot N after it started in its trial:
 3. Hold **1** for 5 s.
 
 Or hold M4 (4 under the display) during the trial start itself: the screen says
-`Trial start of slot N: to keep it, 1, then 3`.
+`Trial start of slot N: to keep it, 1 then 3`.
 
 ### Other choices (key 1 first)
 
@@ -95,12 +95,15 @@ Each asks you to hold 1 for 5 s. **8** goes back.
 
 > **Warning.** Read the red lines before you make a slot the boot slot. `Its check failed`,
 > `It is not a waffle-boot image` or `There may be no way back without a flash programmer` mean the unit may
-> never start again from that slot. Try it once first (8, then 1).
+> never start again from that slot. Try it once first: 8, then 1.
 
 ## Write a slot from a computer
 
 A write goes into the slot the unit is not running from. The running slot is not touched, so the unit still
 starts if the write is interrupted.
+
+> **Note.** Don't write the file the running slot already holds: with the same build in both slots, every
+> start takes about 2.7 s longer. A normal and a timing build of one version count as different.
 
 ### In a browser
 

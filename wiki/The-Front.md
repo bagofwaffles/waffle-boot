@@ -59,6 +59,11 @@ image bytes, every setting reads at its default and a save is refused. Over `0x7
   chord, and an unreadable key counts as not pressed (S-02.080, S-15.150).
 - **Recovery writes only from a known place**: its slot established, the boot slot, trusted, with an intact
   front. It starts no second processor, does not touch the eMMC and reads no settings (S-02.084).
+- **The running slot, quickly.** Once the main image's check has passed, the front first reads only each
+  slot's image descriptor. When one slot's is the loaded one and the other's differs, as with two builds,
+  that slot is the running one and no stream is read. Otherwise, as when both slots hold the same file, the
+  front compares memory with each slot's whole stream, as below, which adds about 2.7 s to that start.
+  Recovery always compares the whole streams.
 - **Both slots may hold the same image.** The front tells its slot by comparing memory with each slot's
   stream. When both match whole, either one is this image, and the front counts as its own the slot the unit
   goes on starting: the one the selector names when it is trusted or checked, otherwise the other one. A write

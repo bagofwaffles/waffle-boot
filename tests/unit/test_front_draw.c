@@ -424,7 +424,7 @@ static const struct fr_ui *rui;		/* the screen with keys; NULL: the main one */
 static const char *rows[FR_LINES + 1u];
 
 static const uint16_t v_a[4] = { 1, 2, 3, 0 }, v_b[4] = { 1, 3, 0, 0 };
-static const char *want_status = "v1.2.3 F17";	/* the running image's, v_a */
+static const char *want_status = "v1.2.3 F18";	/* the running image's, v_a */
 static bool paint_check = true;		/* rec_draw() checks the painter */
 static bool clip_ok;			/* a slot line may lose parts at the clip */
 static struct fr_screen rs_prev;	/* the screen inc holds */
@@ -456,7 +456,7 @@ static void rec_base(void)
 	rp.st = &rst;
 	rp.phase = FR_PH_IDLE;
 	rp.w.target = FR_NO_SLOT;
-	want_status = "v1.2.3 F17";
+	want_status = "v1.2.3 F18";
 }
 
 /* The x a body row's parts end at, as fr_draw.c lays them out with no
@@ -600,8 +600,8 @@ static void rec_draw(bool usb)
 	}
 	/* the status bar: the running image's version and the front's, and
 	 * no key hint */
-	CHECK(strcmp(rs.status_right, rst.own_desc ? want_status : "F17") == 0);
-	CHECK(FR_FRONT_VERSION == 17u);
+	CHECK(strcmp(rs.status_right, rst.own_desc ? want_status : "F18") == 0);
+	CHECK(FR_FRONT_VERSION == 18u);
 	CHECK(strcmp(rs.status_left, usb ? "USB" : "") == 0);
 }
 
@@ -1375,7 +1375,7 @@ static void test_rec_trial(void)
 	fr_rec_target(&rst);
 	CHECK(rst.refusal == FR_WR_NOT_SELECTED && rst.select_target == 1u);
 	rec_draw(true);
-	CHECK(strcmp(rs.line[6], "Trial start of slot 2: to keep it, 1, then 3") == 0);
+	CHECK(strcmp(rs.line[6], "Trial start of slot 2: to keep it, 1 then 3") == 0);
 	CHECK(!anywhere("no write"));
 	CHECK(shows("Slot 2 WB v1.3.0 tried running"));
 	CHECK(has("recovery:running", s2) && has("recovery:selected", s1));
@@ -1495,12 +1495,12 @@ static void test_rec_main(void)
 	ui_base();
 	memcpy(rst.desc.bl_version, v_real, sizeof v_real);
 	memcpy(rst.slot[0].desc.bl_version, v_real, sizeof v_real);
-	want_status = "v1.0.10 F17";
+	want_status = "v1.0.10 F18";
 	rec_draw(true);
 	CHECK(strcmp(rs.line[0], "Slot 1 WB v1.0.10 checked running boot slot") == 0);
 	CHECK(strcmp(rs.line[1], "Slot 2 WB v1.3.0 checked") == 0);
 	CHECK(rs.ink[0] == FR_INK_TEXT && rs.ink[1] == FR_INK_TEXT);
-	CHECK(strcmp(rs.status_right, "v1.0.10 F17") == 0 && strcmp(rs.status_left, "USB") == 0);
+	CHECK(strcmp(rs.status_right, "v1.0.10 F18") == 0 && strcmp(rs.status_left, "USB") == 0);
 	/* no key hint in the status bar, with or without USB */
 	CHECK(!s15t_word_in(rs.status_left, "1", NULL) && !s15t_word_in(rs.status_right, "key", NULL));
 	rec_draw(false);
@@ -1538,7 +1538,7 @@ static void test_rec_main(void)
 	ui_base();
 	rst.own_desc = false;
 	rec_draw(false);
-	CHECK(strcmp(rs.status_right, "F17") == 0);
+	CHECK(strcmp(rs.status_right, "F18") == 0);
 	/* the running slot not known: neither line says running */
 	ui_base();
 	rst.running.established = false;
@@ -1601,8 +1601,9 @@ static void test_rec_chips(void)
 }
 
 /* Every key digit on recovery's screens is a key badge (s15_console.c's):
- * an amber cell 11 x 14 from a pixel left of the digit's column, its corner
- * pixels left out, the digit in bold black. */
+ * an amber cell 16 x 16 centered on the digit's column, from 4 pixels left
+ * of it and a pixel above the row's top, its corner pixels left out, the
+ * digit in bold black. */
 static void test_rec_badges(void)
 {
 	static struct fr_ui ui;
@@ -1612,10 +1613,12 @@ static void test_rec_badges(void)
 	fr_rec_screen(&rs, &rst, &rp, true, NULL);
 	CHECK(row_misses(&rs) == 0u);
 	/* "1  Change ...": the badge at column 0 */
-	CHECK(fr_screen_pixel(&rs, 15, y5 + 1u) == S15_AMBER && fr_screen_pixel(&rs, 15, y5) == 0u);
-	CHECK(fr_screen_pixel(&rs, 16, y5) == S15_AMBER && fr_screen_pixel(&rs, 25, y5 + 1u) == S15_AMBER);
-	CHECK(fr_screen_pixel(&rs, 25, y5) == 0u && fr_screen_pixel(&rs, 25, y5 + 13u) == 0u);
-	CHECK(fr_screen_pixel(&rs, 16, y5 + 14u) == 0u);
+	CHECK(fr_screen_pixel(&rs, 12, y5) == S15_AMBER && fr_screen_pixel(&rs, 12, y5 - 1u) == 0u);
+	CHECK(fr_screen_pixel(&rs, 13, y5 - 1u) == S15_AMBER && fr_screen_pixel(&rs, 27, y5) == S15_AMBER);
+	CHECK(fr_screen_pixel(&rs, 27, y5 - 1u) == 0u && fr_screen_pixel(&rs, 27, y5 + 14u) == 0u);
+	CHECK(fr_screen_pixel(&rs, 12, y5 + 14u) == 0u && fr_screen_pixel(&rs, 13, y5 + 14u) == S15_AMBER);
+	CHECK(fr_screen_pixel(&rs, 11, y5) == 0u && fr_screen_pixel(&rs, 28, y5) == 0u);
+	CHECK(fr_screen_pixel(&rs, 16, y5 + 15u) == 0u);
 	{
 		unsigned black = 0;
 
@@ -1631,7 +1634,7 @@ static void test_rec_badges(void)
 	fr_rec_screen(&rs, &rst, &rp, true, &ui);
 	CHECK(row_misses(&rs) == 0u);
 	CHECK(fr_screen_pixel(&rs, 16, y8 + 7u) == S15_AMBER || fr_screen_pixel(&rs, 17, y8 + 7u) == 0u);
-	CHECK(fr_screen_pixel(&rs, 15, y8 + 1u) == S15_AMBER);
+	CHECK(fr_screen_pixel(&rs, 12, y8 + 1u) == S15_AMBER);
 	CHECK(fr_screen_pixel(&rs, 16u + 5u * 8u - 1u, 33u + 6u * 19u + 1u) == S15_AMBER);
 }
 
@@ -1781,10 +1784,10 @@ static void test_rec_confirm(void)
 		{ FR_ACT_SWITCH, FR_TIER_SAME, "Slot 2 (v1.3.0) will be the boot slot",
 		  "A trial first costs one restart, and is safer", "" },
 		{ FR_ACT_SWITCH, FR_TIER_FRONT, "Slot 2 (v1.3.0) will be the boot slot",
-		  "It has another front: recovery may not open from it", "Try it once first (8, then 1)" },
+		  "It has another front: recovery may not open from it", "Try it once first: 8 then 1" },
 		{ FR_ACT_SWITCH, FR_TIER_FOREIGN, "Slot 2 (v1.3.0) will be the boot slot",
 		  "It is not a waffle-boot image: no recovery from there",
-		  "Try it once first (8, then 1)" },
+		  "Try it once first: 8 then 1" },
 		{ FR_ACT_SWITCH, FR_TIER_BAD, "Slot 2 (an image) will be the boot slot",
 		  "Its check failed: nothing will ever check it again",
 		  "There may be no way back without a flash programmer" },
@@ -2037,7 +2040,7 @@ static void test_rec_fits(void)
 				memcpy(rst.slot[0].desc.bl_version, v_real, sizeof v_real);
 				memcpy(rst.slot[1].desc.bl_version, v_real, sizeof v_real);
 				memcpy(rst.desc.bl_version, v_real, sizeof v_real);
-				want_status = "v1.0.10 F17";
+				want_status = "v1.0.10 F18";
 				fr_rec_target(&rst);
 				rp.made = (v & 1u) != 0u;
 				rp.flags = (v & 2u) ? FR_BEGIN_F_SELECT : 0u;
@@ -2153,7 +2156,7 @@ static void test_parts(void)
 	fr_screen_text(&s, "Recovery: confirm");
 	for (unsigned i = 0; i < FR_LINES; i++)
 		fr_screen_line(&s, i, (enum fr_ink)(i % 6u), lines[i]);
-	fr_screen_status(&s, "USB", "v0.9.36 F17");
+	fr_screen_status(&s, "USB", "v0.9.36 F18");
 	CHECK(row_misses(&s) == 0u);
 	/* the cut ends: an argument, a badge's digit, a chip's text */
 	fr_screen_text(&t, "Recovery");
