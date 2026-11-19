@@ -551,8 +551,9 @@ def slot_kind(s):
 
 
 def kind_text(k):
-    """A slot kind as the slot lines show it: 'WB 0.9.36', 'TE 1000.0.20', 'TE' or '??'."""
-    return k[0] if k[1] is None else '%s %s' % (k[0], version(k[1]))
+    """A slot kind as the slot lines show it: 'WB v0.9.36', 'TE v1000.0.20' (with '+build' when the
+    build is not 0), 'TE' or '??'."""
+    return k[0] if k[1] is None else '%s v%s' % (k[0], version(k[1]))
 
 
 def slot_state(s):

@@ -260,8 +260,9 @@ export function slotKind(s) {
     return s.te_prefix ? ['TE', null] : ['??', null];
 }
 
-// A slot kind as the slot lines show it: 'WB 0.9.36', 'TE 1000.0.20', 'TE' or '??'.
-export const kindText = (k) => (k[1] === null ? k[0] : `${k[0]} ${version(k[1])}`);
+// A slot kind as the slot lines show it: 'WB v0.9.36', 'TE v1000.0.20' (with '+build' when the build is
+// not 0), 'TE' or '??'.
+export const kindText = (k) => (k[1] === null ? k[0] : `${k[0]} v${version(k[1])}`);
 
 // S-15.151's state word: checked, tried, tried, started, or check failed.
 export function slotState(s) {

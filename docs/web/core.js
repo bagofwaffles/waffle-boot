@@ -47,8 +47,8 @@
 //       selector: { read, slot, verified, settled } ,
 //       front: { version: '1.2.3', pin: hex } | null,          the running image's
 //       slots: [2 x { index, name: 'Slot 1' | 'Slot 2', version: '1.2.3' | null,
-//                     state: 'checked' | 'check failed' | 'tried' | 'tried, started', kind: 'WB 0.9.36' |
-//                     'TE 1000.0.20' | 'TE' | '??' | null (S-02.106), good, tried, started,
+//                     state: 'checked' | 'check failed' | 'tried' | 'tried, started', kind: 'WB v0.9.36' |
+//                     'TE v1000.0.20' | 'TE' | '??' | null (S-02.106), good, tried, started,
 //                     running, selected, hasDesc, hasFront, frontMatches, length, crc, pin: hex }],
 //       battery: { state, text } | null,                        null from a version 5 front
 //       tier, tierText,                                         the other slot against this front

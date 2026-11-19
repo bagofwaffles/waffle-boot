@@ -54,9 +54,10 @@ Each checked or tried slot shows which bootloader it holds (S-02.106), by the fi
 | 396,452 (`0x60CA4`) | `0xA930BEF3` | 1000.0.23 |
 
 The CRC-32 is that of the slot's bytes, the record's for a checked slot and its complement for a tried one.
-A version prints as `major.minor.patch`, with `+build` when the build is not 0. `wbrecover.py info` and the
-browser page show the same; the third rule reaches them as INFO's slot flag bit 5, which fronts before
-version 17 leave clear, so with an older front an unknown TE build shows `??`.
+A version prints as `v` and `major.minor.patch`, with `+build` when the build is not 0: `WB v0.9.36`,
+`TE v1000.0.20`, `TE v1000.0.20+3`. `wbrecover.py info` and the browser page show the same; the third rule
+reaches them as INFO's slot flag bit 5, which fronts before version 17 leave clear, so with an older front
+an unknown TE build shows `??`.
 
 ### The slot menu (key 1)
 

@@ -417,8 +417,8 @@ test('describe gives INFO as data', needPython, () => {
     assert.equal(d.running, 0);
     assert.deepEqual(d.selector, { read: true, slot: 0, verified: 1, settled: true });
     assert.deepEqual(d.slots.map((s) => [s.name, s.version, s.state, s.kind, s.running, s.selected,
-        s.frontMatches]), [['Slot 1', '1.2.3+4', 'checked', 'WB 1.2.3+4', true, true, true],
-        ['Slot 2', '0.9.0', 'checked', 'WB 0.9.0', false, false, true]]);
+        s.frontMatches]), [['Slot 1', '1.2.3+4', 'checked', 'WB v1.2.3+4', true, true, true],
+        ['Slot 2', '0.9.0', 'checked', 'WB v0.9.0', false, false, true]]);
     assert.deepEqual(d.commands.write, { allowed: true, target: 1, code: 0,
         text: 'would go to Slot 2, replacing a checked image (version 0.9.0)' });
     assert.equal(d.commands.running.way, core.WAY_SELECT_FIRST);
@@ -1010,7 +1010,7 @@ test('slot kinds follow S-02.106', async () => {
                 crc: tried ? (~crc) >>> 0 : crc, te_prefix: prefix };
             assert.deepEqual(W.slotKind(s), [c.kind, c.version], `${c.name}, tried ${tried}`);
             if (c.text !== null)
-                assert.equal(W.kindText(W.slotKind(s)), `TE ${c.text}`);
+                assert.equal(W.kindText(W.slotKind(s)), `TE v${c.text}`);
         }
     }
     const s = { good: true, tried: false, has_desc: false, version: [0, 0, 0, 0], length: 0x1234,
@@ -1018,7 +1018,7 @@ test('slot kinds follow S-02.106', async () => {
     assert.equal(W.kindText(W.slotKind(s)), '??');
     W.TE_BUILDS.push([0x1234, 0xCAFEF00D, [2, 1, 0, 7]]);      // a made-up row
     try {
-        assert.equal(W.kindText(W.slotKind(s)), 'TE 2.1.0+7');
+        assert.equal(W.kindText(W.slotKind(s)), 'TE v2.1.0+7');
     } finally {
         W.TE_BUILDS.pop();
     }

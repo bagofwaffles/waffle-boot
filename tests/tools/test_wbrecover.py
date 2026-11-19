@@ -822,7 +822,7 @@ class SlotKind(unittest.TestCase):
                 with self.subTest(case=case['name'], tried=tried):
                     self.assertEqual(w.slot_kind(self.slot(case, tried)), want)
                     if case['text'] is not None:
-                        self.assertEqual(w.kind_text(want), 'TE ' + case['text'])
+                        self.assertEqual(w.kind_text(want), 'TE v' + case['text'])
 
     def test_no_kind(self):
         """A slot that is neither good nor tried has no kind, and its line shows none."""
@@ -836,12 +836,12 @@ class SlotKind(unittest.TestCase):
              'length': 0x1234, 'crc': 0xCAFEF00D, 'te_prefix': True}
         self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE')
         with mock.patch.dict(w.TE_BUILDS, {(0x1234, 0xCAFEF00D): (2, 1, 0, 7)}):
-            self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE 2.1.0+7')
+            self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE v2.1.0+7')
             s['te_prefix'] = False
-            self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE 2.1.0+7')
+            self.assertEqual(w.kind_text(w.slot_kind(s)), 'TE v2.1.0+7')
         self.assertEqual(w.kind_text(w.slot_kind(s)), '??')
         s['has_desc'], s['version'] = True, (0, 9, 37, 0)
-        self.assertEqual(w.kind_text(w.slot_kind(s)), 'WB 0.9.37')
+        self.assertEqual(w.kind_text(w.slot_kind(s)), 'WB v0.9.37')
 
     def test_info_bit5(self):
         """INFO's slot flag bit 5 reaches the slot as te_prefix; the state words."""
@@ -1536,7 +1536,7 @@ class OverPty(PtyCase):
         m.started, m.sel = set(), [0xFF, 0xFF]
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('Slot 2:   tried, WB 1.3.0', out.text)
+        self.assertIn('Slot 2:   tried, WB v1.3.0', out.text)
         self.assertIn('[boot slot]', out.text)
         self.assertIn('Slot 2 is tried: the next start runs it once, its trial start.', out.text)
         self.assertNotIn('trial mark', out.text)     # the select's refusal is no failed trial write
@@ -1757,7 +1757,7 @@ class OverPty(PtyCase):
         m = self.tried_unit(True)
         out = Lines()
         w.cmd_info(self.link, out)
-        self.assertIn('Slot 2:   tried, WB 1.3.0', out.text)
+        self.assertIn('Slot 2:   tried, WB v1.3.0', out.text)
         self.assertIn('This is the trial start of Slot 2: select IMAGE keeps it', out.text)
         ask = Ask('yes')
         out = Lines()
