@@ -407,7 +407,7 @@ class Screen(Base):
         f = self.font
         self.assertEqual(T15.check_font(f, extent=222), 'ok')
         # Spleen 8x16 on the frame of wiki/Screen-Style-Guide.md
-        self.assertEqual((f['height'], f['width'], f['margin'], f['top'], f['pitch']), (16, 8, 16, 27, 19))
+        self.assertEqual((f['height'], f['width'], f['margin'], f['top'], f['pitch']), (16, 8, 16, 33, 19))
         self.assertEqual((f['title_row'], f['status_row']), (4, 205))
         self.assertLessEqual(f['margin'] + COLS * f['width'], 480 - EDGE)
         self.assertLessEqual(EDGE + BAR_COLS * f['width'], 480 - EDGE)
