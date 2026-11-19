@@ -186,7 +186,7 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 		unsigned slot = 0;
 		bool est = false, both = false;
 
-		if (fr_running_slots(hw->flash, hw->mem, &slot, &est, &both) == FR_FLASH_OK) {
+		if (fr_running_slots_checked(hw->flash, hw->mem, &slot, &est, &both) == FR_FLASH_OK) {
 			log.run_est = est;
 			log.run_slot = (uint8_t)slot;
 		}

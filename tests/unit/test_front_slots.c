@@ -762,9 +762,19 @@ static bool readable(uint32_t addr, uint32_t len)
 	       !fr_map_forbidden(addr, len);
 }
 
+/* The loaded descriptor's half, for fr_running_slots_checked(). */
+static uint8_t g_desc[FR_DESC_MAX];
+
+static bool in_desc(uint32_t addr, uint64_t len)
+{
+	return addr >= FR_DESC_ADDR && addr + len <= (uint64_t)FR_DESC_ADDR + FR_DESC_MAX;
+}
+
 static const uint8_t *mem_map(void *ctx, uint32_t addr, uint32_t len)
 {
 	(void)ctx;
+	if (in_desc(addr, len))
+		return g_desc + (addr - FR_DESC_ADDR);
 	return readable(addr, len) ? g_mem + (addr - MEMB) : NULL;
 }
 
@@ -828,6 +838,8 @@ static void load(const uint8_t *s, uint32_t len)
 		if (!(b.flags & S05_FLAG_FILL) && s05_block_has_destination(&b) &&
 		    b.target >= MEMB && (uint64_t)b.target + b.count <= (uint64_t)MEMB + MEML)
 			memcpy(g_mem + (b.target - MEMB), s + b.offset + 16u, b.count);
+		else if (!(b.flags & S05_FLAG_FILL) && in_desc(b.target, b.count))
+			memcpy(g_desc + (b.target - FR_DESC_ADDR), s + b.offset + 16u, b.count);
 		if (b.flags & S05_FLAG_FINAL)
 			break;
 	}
@@ -1240,6 +1252,111 @@ static void test_running_strict(void)
 	CHECK_EQ(g_f.nmut, 0);
 }
 
+/* A descriptor of n bytes: magic, version, size, the rest from seed. */
+static void make_desc(uint8_t *d, uint32_t n, unsigned seed)
+{
+	ff_fill_image(d, n, seed);
+	ff_put32(d + FR_DESC_O_MAGIC, FR_DESC_MAGIC);
+	d[FR_DESC_O_VERSION] = (uint8_t)FR_DESC_VERSION;
+	d[FR_DESC_O_VERSION + 1u] = 0;
+	d[FR_DESC_O_SIZE] = (uint8_t)n;
+	d[FR_DESC_O_SIZE + 1u] = (uint8_t)(n >> 8);
+}
+
+/* A stream: the descriptor's block (flags dflags, n bytes of d, or none),
+ * then one DDR block from seed. */
+static uint32_t desc_stream(uint8_t *s, const uint8_t *d, uint32_t n, uint32_t dflags, unsigned seed)
+{
+	static uint8_t pay[0x3000];
+	uint32_t off = 0;
+
+	if (d != NULL)
+		off = put_block(s, off, dflags, FR_DESC_ADDR, n, d);
+	ff_fill_image(pay, sizeof pay, seed);
+	off = put_block(s, off, 0, MEMB + 0x1000u, sizeof pay, pay);
+	return put_block(s, off, S05_FLAG_FINAL, MEMB + 0x1000u, 0, NULL);
+}
+
+/* The checked form against the whole compare: the same slot, flag and
+ * both; fast says it read no stream payload (a few reads, not thousands). */
+static void same_as_whole(bool fast, unsigned want, bool want_est)
+{
+	static const struct fr_mem fmem = {mem_map, NULL};
+	unsigned s1 = 5, s2 = 6, reads;
+	bool e1 = false, e2 = true, b1 = false, b2 = true;
+
+	ff_reset(&g_f);
+	CHECK_EQ(fr_running_slots_checked(flash(), &fmem, &s1, &e1, &b1), FR_FLASH_OK);
+	reads = g_f.nreads;
+	CHECK_EQ(fr_running_slots(flash(), &fmem, &s2, &e2, &b2), FR_FLASH_OK);
+	CHECK(s1 == s2 && e1 == e2 && b1 == b2);
+	CHECK(e1 == want_est);
+	if (want_est)
+		CHECK_EQ(s1, want);
+	if (fast)
+		CHECK(reads <= 16u);
+	else
+		CHECK(reads > 16u);
+}
+
+static void test_running_checked(void)
+{
+	static uint8_t a[0x4000], b[0x4000], c[0x4000];
+	uint8_t da[0x5C], db[0x5C];
+	uint32_t alen, blen, clen;
+
+	ff_init(&g_f);
+	g_map_lo = MEMB;
+	g_map_hi = MEMB + MEML;
+	make_desc(da, sizeof da, 61);
+	memcpy(db, da, sizeof db);
+	db[FR_DESC_O_MAIN_CRC] ^= 0x5Au;	/* another build: its main CRC */
+	alen = desc_stream(a, da, sizeof da, 0, 62);
+	blen = desc_stream(b, db, sizeof db, 0, 63);
+	put_slot(0, a, alen, 1);
+	put_slot(1, b, blen, 1);
+	g_f.mem[FR_SELECTOR_OFF] = 0x00u;
+	g_f.mem[FR_SELECTOR_OFF + 1u] = 0x01u;
+
+	/* two builds: the loaded one's descriptor names its slot, no stream read */
+	memset(g_mem, 0x5A, sizeof g_mem);
+	memset(g_desc, 0, sizeof g_desc);
+	load(a, alen);
+	same_as_whole(true, 0u, true);
+	memset(g_mem, 0x5A, sizeof g_mem);
+	load(b, blen);
+	same_as_whole(true, 1u, true);
+
+	/* the same file in both slots: the whole compare and its tie-break */
+	put_slot(1, a, alen, 1);
+	load(a, alen);
+	same_as_whole(false, 0u, true);
+	g_f.mem[FR_SELECTOR_OFF] = 0x01u;
+	same_as_whole(false, 1u, true);
+	g_f.mem[FR_SELECTOR_OFF] = 0x00u;
+
+	/* the same descriptor in a copy cut after it: the whole compare */
+	memcpy(c, a, alen);
+	clen = 16u + sizeof da + 16u + 0x1000u;
+	put_slot(1, c, clen, 0);
+	same_as_whole(false, 0u, true);
+
+	/* a slot with no descriptor, or one by FILL: not told, the whole compare */
+	clen = desc_stream(c, NULL, 0, 0, 63);
+	put_slot(1, c, clen, 1);
+	same_as_whole(false, 0u, true);
+	clen = desc_stream(c, da, sizeof da, S05_FLAG_FILL, 63);
+	put_slot(1, c, clen, 1);
+	same_as_whole(false, 0u, true);
+
+	/* no descriptor in memory: the whole compare, which the streams'
+	 * descriptor blocks then fail */
+	put_slot(1, b, blen, 1);
+	memset(g_desc, 0, sizeof g_desc);
+	same_as_whole(false, 0u, false);
+	CHECK_EQ(g_f.nmut, 0);
+}
+
 int main(void)
 {
 	test_bootable_vectors();
@@ -1252,5 +1369,6 @@ int main(void)
 	test_running_slot();
 	test_running_whole();
 	test_running_strict();
+	test_running_checked();
 	return finish("test_front_slots");
 }

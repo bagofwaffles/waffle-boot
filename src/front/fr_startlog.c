@@ -182,7 +182,7 @@ enum fr_log_step fr_log_step(const struct fr_flash *f, const struct fr_mem *mem,
 	/* one 1-byte read when no trial is pending; the running slot only
 	 * where one is, and only an established one acts */
 	if (fr_log_trial_pending(f, l, &slot) &&
-	    fr_running_slots(f, mem, &running, &established, &both) == FR_FLASH_OK) {
+	    fr_running_slots_checked(f, mem, &running, &established, &both) == FR_FLASH_OK) {
 		l->run_read = true;
 		l->run_est = established;
 		l->run_slot = (uint8_t)running;

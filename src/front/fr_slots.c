@@ -300,6 +300,78 @@ static int settled_slot(const struct fr_flash *f, unsigned *slot)
  * with two blocks that load the same byte never matches, so is never
  * established.
  */
+/* Slot k's stream against the loaded descriptor alone. */
+enum desc_vote { D_UNSURE, D_MATCH, D_DIFFER };
+
+/*
+ * The descriptor's bytes as slot k's stream loads them, read from the
+ * flash with no other payload read: D_DIFFER when one of them differs
+ * from memory, which fails slot_score()'s whole match too; D_MATCH when
+ * the stream loads every one and each is equal; D_UNSURE otherwise (a
+ * FILL block or a gap over the descriptor, no descriptor in memory),
+ * which leaves the answer to the whole compare.
+ */
+static int desc_vote(const struct fr_flash *f, const struct fr_mem *mem, unsigned k,
+		     enum desc_vote *v)
+{
+	const uint8_t *m = mem->map(mem->ctx, FR_DESC_ADDR, FR_DESC_HEAD);
+	struct fr_record rec;
+	uint8_t h[LDR_HDR];
+	uint32_t base = FR_SLOT_BASE(k), len = FR_SLOT_CAP, off = 0, size, seen = 0;
+
+	*v = D_UNSURE;
+	if (m == NULL || fr_le32(m + FR_DESC_O_MAGIC) != FR_DESC_MAGIC)
+		return FR_FLASH_OK;
+	size = fr_le16(m + FR_DESC_O_SIZE);
+	if (size < FR_DESC_HEAD || size > FR_DESC_MAX ||
+	    (m = mem->map(mem->ctx, FR_DESC_ADDR, size)) == NULL)
+		return FR_FLASH_OK;
+	if (fr_read_record(f, k, &rec) != FR_FLASH_OK)
+		return FR_FLASH_IO;
+	if (plausible(&rec))
+		len = rec.length;
+	while ((uint64_t)off + LDR_HDR <= len) {
+		uint32_t flags, target, count, lo, hi;
+
+		if (flash_read(f, base + off, h, LDR_HDR) != FR_FLASH_OK)
+			return FR_FLASH_IO;
+		if (!header_ok(h))
+			break;
+		flags = fr_le32(h) & 0xFFF0u;
+		target = fr_le32(h + 4);
+		count = fr_le32(h + 8);
+		off += LDR_HDR;
+		lo = target > FR_DESC_ADDR ? target : FR_DESC_ADDR;
+		hi = (uint64_t)target + count < (uint64_t)FR_DESC_ADDR + size ?
+			     (uint32_t)((uint64_t)target + count) : FR_DESC_ADDR + size;
+		if (count != 0u && lo < hi && !(flags & LDR_IGNORE)) {
+			if (flags & LDR_FILL)
+				return FR_FLASH_OK;	/* D_UNSURE */
+			if ((uint64_t)off + (lo - target) + (hi - lo) > len)
+				break;
+			if (flash_read(f, base + off + (lo - target), descbuf, hi - lo) !=
+			    FR_FLASH_OK)
+				return FR_FLASH_IO;
+			for (uint32_t i = 0; i < hi - lo; i++)
+				if (descbuf[i] != m[lo - FR_DESC_ADDR + i]) {
+					*v = D_DIFFER;
+					return FR_FLASH_OK;
+				}
+			seen += hi - lo;
+		}
+		if (!(flags & LDR_FILL)) {
+			if ((uint64_t)off + count > len)
+				break;
+			off += count;
+		}
+		if (flags & LDR_FINAL)
+			break;
+	}
+	if (seen == size)
+		*v = D_MATCH;
+	return FR_FLASH_OK;
+}
+
 int fr_running_slots(const struct fr_flash *f, const struct fr_mem *mem, unsigned *slot,
 		     bool *established, bool *both)
 {
@@ -334,6 +406,35 @@ int fr_running_slots(const struct fr_flash *f, const struct fr_mem *mem, unsigne
 	*slot = w;
 	*established = true;
 	return FR_FLASH_OK;
+}
+
+/*
+ * The same answer after fr_image_check() has passed, with less read: the
+ * loaded descriptor came from the slot the ROM read, and the check has
+ * proved memory against its CRCs. Where one slot's descriptor is the
+ * loaded one and the other's differs, the first is the one whose stream
+ * matches whole and the second's cannot, so no stream is compared. Equal
+ * descriptors (the same image in both slots) or a slot its descriptor does
+ * not tell are left to the whole compare. Recovery, which may run on an
+ * image that failed its check or was never checked, uses the whole compare.
+ */
+int fr_running_slots_checked(const struct fr_flash *f, const struct fr_mem *mem, unsigned *slot,
+			     bool *established, bool *both)
+{
+	enum desc_vote dv[2];
+
+	*slot = FR_NO_SLOT;
+	*established = false;
+	*both = false;
+	for (unsigned k = 0; k < 2u; k++)
+		if (desc_vote(f, mem, k, &dv[k]) != FR_FLASH_OK)
+			return FR_FLASH_IO;
+	if ((dv[0] == D_MATCH && dv[1] == D_DIFFER) || (dv[0] == D_DIFFER && dv[1] == D_MATCH)) {
+		*slot = dv[0] == D_MATCH ? 0u : 1u;
+		*established = true;
+		return FR_FLASH_OK;
+	}
+	return fr_running_slots(f, mem, slot, established, both);
 }
 
 int fr_running_slot(const struct fr_flash *f, const struct fr_mem *mem, unsigned *slot,
