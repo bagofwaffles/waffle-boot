@@ -8,7 +8,8 @@ rest is damaged. Opening it changes nothing.
 
 1. Switch the unit off.
 2. Hold **M4 (4 under the display)**, and no other key. Switch the unit on.
-3. Keep holding until the red **Recovery** screen shows, then let go of every key. Nothing acts until all
+3. Keep holding until the red **Recovery** screen shows (`Loading recovery menu...` under the logo comes
+   first), then let go of every key. Nothing acts until all
    keys are up.
 
 <img src="../docs/ui/recovery.png" width="480" alt="Recovery">
@@ -113,7 +114,13 @@ You need Chrome or Edge on a computer, a USB cable, and a waffle-boot image, `wa
 6. The unit counts down 15 s. Switching it off in that time stops the write with nothing written.
 
    <img src="../docs/ui/recovery-countdown.png" width="480" alt="The countdown before a write">
-7. When the write is verified, press **Restart the unit**. If it does not come up, switch off and on: it
+7. The image arrives (`Receiving n of m KiB for slot N`), then is written (`Writing slot N: keep the power
+   on`), each with its bar. The slot reads `being written` meanwhile. Keep the power on.
+
+   | | |
+   | --- | --- |
+   | <img src="../docs/ui/recovery-receiving.png" width="480" alt="Receiving 144 of 360 KiB for slot 2"> | <img src="../docs/ui/recovery-writing.png" width="480" alt="Writing slot 2: keep the power on, slot 2 being written"> |
+8. When the write is verified, press **Restart the unit**. If it does not come up, switch off and on: it
    starts the slot it ran before.
 
 The **Advanced** tab, chosen under **Upgrade / Recover**, has every command of the host tool.

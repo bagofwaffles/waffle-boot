@@ -44,7 +44,7 @@ also erases the log, once 256 or more entries are used or when it reads full or 
 ## Slots and the trial start
 
 There are two bootloader slots, shown as **Slot 1** and **Slot 2**. The selector names one. The running
-slot is the one that actually started; it differs from the selected one only after a failed check.
+slot is the one that actually started; it differs from the boot slot only after a failed check.
 
 A **trial start** runs a new image once without trusting it:
 

@@ -63,7 +63,8 @@ title bar's font; the bootloader type (`WB`, `TE`, `??`) as a chip filled
 dark gray with light text; then the state chips, outlined in the color of
 their meaning (`checked` green, `check failed` red, `tried`, `running` and
 `being written` amber, `boot slot` gray). While an image arrives, a bar
-under `Receiving n of m KiB` fills with it. On every way into recovery,
+under `Receiving n of m KiB` fills with it, and while it is written, one
+under `Writing slot N: keep the power on`. On every way into recovery,
 `Loading recovery menu...` shows under the logo until its first frame.
 
 ## Font
@@ -318,8 +319,16 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | Write OS (developer menu, 5), the write running | Continue to the OS |
 | <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |
 | the OS written, 8 back to the developer menu | the OS write failed: the step, the reason, what the eMMC was left with |
-| <img src="../docs/ui/info2.png" width="480" alt="Device Info 2"> | |
-| Device Info 2, from Device Info's 1: the start log | |
+| <img src="../docs/ui/info2.png" width="480" alt="Device Info 2"> | <img src="../docs/ui/recovery-loading.png" width="480" alt="Loading recovery menu..."> |
+| Device Info 2, from Device Info's 1: the start log | the line under the logo on the way into recovery |
+| <img src="../docs/ui/recovery.png" width="480" alt="Recovery"> | <img src="../docs/ui/recovery-slots.png" width="480" alt="Recovery: slots"> |
+| Recovery, connected | the slot menu (1, `Change the boot slot (optional)`) |
+| <img src="../docs/ui/recovery-confirm.png" width="480" alt="Recovery: confirm"> | <img src="../docs/ui/recovery-countdown.png" width="480" alt="The countdown"> |
+| a try confirmed with 1 held for 3 of the 5 s | the countdown before a write from a computer |
+| <img src="../docs/ui/recovery-receiving.png" width="480" alt="Receiving"> | <img src="../docs/ui/recovery-writing.png" width="480" alt="Writing"> |
+| an image for slot 2 arriving | slot 2 being written |
+| <img src="../docs/ui/recovery-te.png" width="480" alt="A TE slot"> | <img src="../docs/ui/recovery-unknown.png" width="480" alt="An unknown slot"> |
+| slot 2 holds `TE v1000.0.20` | slot 2 holds `??` |
 
 ## Adding a screen
 

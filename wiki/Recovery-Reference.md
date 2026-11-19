@@ -11,8 +11,11 @@ slot ([The Front](The-Front#changing-it)).
 | By itself | The rest of the image fails its check |
 | By itself | Three starts in a row ended before the boot menu or the OS (S-02.095). The next start is normal |
 
-On every way in, `Loading recovery menu...` shows under the logo until the menu draws. Opening recovery
-writes nothing to the slots (after three unfinished starts it clears one start-log bit).
+On every way in, `Loading recovery menu...` shows under the logo until the menu draws.
+
+<img src="../docs/ui/recovery-loading.png" width="480" alt="Loading recovery menu... under the logo">
+
+Opening recovery writes nothing to the slots (after three unfinished starts it clears one start-log bit).
 Switching off or restarting leaves the unit as it was.
 
 ## The rules it keeps
@@ -60,6 +63,11 @@ A version prints as `v` and `major.minor.patch`, with `+build` when the build is
 reaches them as INFO's slot flag bit 5, which fronts before version 17 leave clear, so with an older front
 an unknown TE build shows `??`.
 
+| | |
+| --- | --- |
+| <img src="../docs/ui/recovery-te.png" width="480" alt="Slot 2: TE v1000.0.20, checked"> | <img src="../docs/ui/recovery-unknown.png" width="480" alt="Slot 2: ??, checked"> |
+| Slot 2 holds a TE build of the table | Slot 2 holds a bootloader of no known type |
+
 ### The slot menu (key 1, `Change the boot slot (optional)`)
 
 N is the slot the unit does not run from. Only items that apply are shown. Key 8 goes back.
@@ -106,7 +114,7 @@ Below, the running slot is the one the unit runs from, and the other slot is the
 | --- | --- | --- |
 | `check IMAGE.ldr` | Checks a file; no unit needed | |
 | `info` | What the unit reports, and what each command would do now | |
-| `write IMAGE.ldr` | Writes the other slot, and selects it | `yes` |
+| `write IMAGE.ldr` | Writes the other slot, and makes it the boot slot | `yes` |
 | `write --running IMAGE.ldr` | Writes the running slot: the other slot is made the boot slot first if checked; in place if its check failed | `yes`, or `erase the running slot in place` |
 | `write --new-front IMAGE.ldr` | Writes an image with another front to the other slot for one trial start; that slot's old image is lost | `try the new front` |
 | `try` | Starts the other slot once, as it is | `yes` |

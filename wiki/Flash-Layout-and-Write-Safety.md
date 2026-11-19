@@ -46,7 +46,7 @@ when its boot menu shows (`0xFD` to `0xFC` to `0xF0`, S-02.095); the installer
 - **Two slots.** A write goes to the slot the selector does not name. The running slot is untouched.
 - **A fixed order.** Image, start-log sector, record, a read-back of the whole slot, and only then the
   selector. A power cut before the selector write leaves the unit as it was.
-- **The first stage's check.** A new slot is selected untrusted. If its check fails, the other slot is
+- **The first stage's check.** A new slot is made the boot slot, untrusted. If its check fails, the other slot is
   trusted again.
 - **The front's own check.** Before it starts the main image, the front checks it. A damaged one opens
   recovery.
@@ -72,14 +72,14 @@ the record. Nothing writes below `0xB000`: the package's first-stage step, the o
 is switched off in every build, whatever Protected writes says.
 
 **The slot the unit starts from is not written.** A write goes to the slot the selector does not name. It
-starts only when the selector reads `verified` = `0x01` and, for a package step, the selected slot reads
-good.
+starts only when the selector reads `verified` = `0x01` and, for a package step, the boot slot reads
+checked.
 
 **One order.** The image, the slot's last sector and, for an image of at most `0x76000` bytes, its settings
 sector (S-02.103), the record's erase, the record, a read-back of the whole
 slot, and only then the selector. A failure anywhere before the selector leaves the selector as it was. A
 power cut before the selector's erase leaves the unit starting as before; from that erase on both slots are
-good, so any selector value starts a good one.
+checked, so any selector value starts a checked one.
 
 **Both slots may hold the same image.** No writer refuses the image a slot already holds. The front and
 the main image then count as the running slot the one the unit goes on starting, so the slot a write keeps
@@ -89,7 +89,7 @@ is the one a start after a power cut runs.
 recovery, its SHA-256 and its front. Recovery reads the selector and both slots again at that moment.
 
 **Only the main image erases a start log, and only its own.** Each start clears one bit and reads it back;
-the front never erases. Once it is up on a normal start of the selected slot, the main image erases that
+the front never erases. Once it is up on a normal start of the boot slot, the main image erases that
 slot's log when 256 or more entries are used and this start's is the newest and finished, or when the log
 reads full or not valid (S-02.101). It reads the selector, the slot's record and the log again just before,
 never erases in a trial start or the other slot's log, and erases nothing on any doubt. A cut during that
@@ -121,8 +121,8 @@ for 5 s.
 
 These leave a unit that only an **external SPI flash programmer** brings back:
 
-- A power cut during an **in-place write** of the running slot, which is taken only when the other slot is
-  bad. Recovery refuses it until a plain write has failed, asks for a typed phrase, and holds the power-off,
+- A power cut during an **in-place write** of the running slot, which is taken only when the other slot's
+  check failed. Recovery refuses it until a plain write has failed, asks for a typed phrase, and holds the power-off,
   but the hold may not close the window.
 - A **front that fails before it reads the keys**, in a slot that is trusted. Recovery lives in the front.
 - Two short windows in a **trial of another front** to Slot 2: a cut during the selector erase at the end
@@ -143,12 +143,12 @@ main image's erase of the start log keeps that at 512 one-bit programs.
 
 | Action | Sector erases | Where |
 | --- | --- | --- |
-| A normal start | 0 | Two one-bit programs in the selected slot's last sector |
+| A normal start | 0 | Two one-bit programs in the boot slot's last sector |
 | A setting changed | 0, and 1 once in 16 changes | One page program in the running slot's settings sector |
 | A factory reset | 1 | The running slot's settings sector, when it holds anything |
 | Protected writes turned on | 0 | Kept in memory only |
 | Install, content only | 0 | None |
-| A normal start, once in 256 or more | 1 | The selected slot's last sector: its start log |
+| A normal start, once in 256 or more | 1 | The boot slot's last sector: its start log |
 | Install with an OS | 9 | `0xB000` six times and `0xC000` three times: each of three metadata writes erases the mirror twice |
 | An install that was interrupted, at the next start | 3 | `0xB000` twice, `0xC000` once |
 | A bootloader image written (package or recovery) | One for each 4 KiB of the image, plus the slot's last sector, its settings sector, its record and the selector; one more of the selector by the first stage at the next start | The slot written, its record, `0xD000` |

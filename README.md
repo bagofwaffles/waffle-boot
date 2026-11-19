@@ -19,7 +19,7 @@ Install with the guided page: https://bagofwaffles.github.io/waffle-boot/?mode=i
 own OS, writing a slot over USB from recovery, and the trial and commit that the installer reuses.
 [Status and roadmap](https://github.com/bagofwaffles/waffle-boot/wiki/Status-and-Roadmap) covers open work and what is out of scope.
 
-<img src="docs/ui/tour.gif" width="480" alt="waffle-boot's screens on the OP-XY's display: the frame shown while the OS loads, the main menu, Settings, the developer menu, System, Device Info, an install running and the recovery menu">
+<img src="docs/ui/tour.gif" width="480" alt="waffle-boot's screens on the OP-XY's display: the frame shown while the OS loads, the main menu, Settings, the developer menu, System, Device Info, an install running, the line under the logo on the way into recovery, and the recovery menu">
 
 ## What it does
 
@@ -40,7 +40,7 @@ own OS, writing a slot over USB from recovery, and the trial and commit that the
 - **Diagnostics.** When the OS cannot be started, the boot menu opens by itself, and its main screen and
   Device Info say why.
 - **Two slots, so a write has a way back.** The SPI flash holds two bootloader images, Slot 1 and Slot 2. A
-  new image is written to the slot the unit is not starting from, read back, and only then selected, so a
+  new image is written to the slot the unit is not starting from, read back, and only then made the boot slot, so a
   power cut before that leaves the unit starting as it did. A new slot is checked at its first start, and
   one that fails gives way to the other slot from the next start on.
 

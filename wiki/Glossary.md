@@ -7,7 +7,7 @@
 | **First stage** | The program at flash offset 0 that the boot ROM loads; it picks a slot on every start. Not part of waffle-boot |
 | **Slot** | One of two places in the flash for a bootloader image: **Slot 1** and **Slot 2** on screen (0 and 1 in the code) |
 | **Selector** | Two bytes in the flash: which slot to start, and `verified` |
-| **Verified** | The selector byte that says "start without a check" (`0x01`): the first stage then starts the selected slot as it is. Any other value makes the first stage check the slot and write the selector (S-02.020 to S-02.022) |
+| **Verified** | The selector byte that says "start without a check" (`0x01`): the first stage then starts the boot slot as it is. Any other value makes the first stage check the slot and write the selector (S-02.020 to S-02.022) |
 | **Record** | One per slot: the image's length, CRC-32 and a tag |
 | **Checked, check failed** | A slot whose record matches its image is checked; otherwise its check failed |
 | **Boot slot** | The slot the selector names: the one the next start runs |
