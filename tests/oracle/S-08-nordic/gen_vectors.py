@@ -347,13 +347,14 @@ def transcripts():
                 [300, 420], peer={'rules': [silent_rule({'id': '0x09'}, until_ms=300), info_rule(APP)]},
                 reqs=['S-08.032', 'S-08.033']))
     T.append(tr('exit_dfu_greeting', 'mode:bootloader until 200 ms, silent until 400 ms, then mode:application; the '
-                'application greets {0xAA,2} at 350 ms (answered 0x06 {0x40}); phase 2 succeeds on its first query.',
+                'application greets {0xAA,2} at 350 ms (answered 0x06 {0x40}); phase 2 succeeds on its first query, '
+                'and the exchange returns after the link is read through the 20 ms after the answer (S-08.014).',
                 'exit_dfu', [{'dut': CMD_EXIT}, {'dut': INFO_Q, 'count': [60, 110], 'gap_ms': [1, 104]},
                              {'dut': dict(ACCEPT, kind='message'), 't_ms': [350, 405]},
-                             {'dut': INFO_Q, 'count': 1, 't_ms': [400, 410]}], True, [400, 420],
+                             {'dut': INFO_Q, 'count': 1, 't_ms': [400, 410]}], True, [400, 432],
                 peer={'rules': [info_rule(BOOT, until_ms=200), silent_rule({'id': '0x09'}, until_ms=400),
                                 info_rule(APP)], 'greet': [{'at_ms': 350, 'payload': 'aa02'}]},
-                reqs=['S-08.033']))
+                reqs=['S-08.014', 'S-08.033']))
     T.append(tr('exit_dfu_stuck', 'The Nordic answers mode:bootloader within 1 ms, always: 2500 queries in phase 1, '
                 '20 in phase 2, failure, nothing more.',
                 'exit_dfu', [{'dut': CMD_EXIT}, {'dut': INFO_Q, 'count': 2520}], False, [5000, 12500],

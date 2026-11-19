@@ -1,6 +1,7 @@
 {
  "name": "exit_dfu_greeting",
  "requirements": [
+  "S-08.014",
   "S-08.033"
  ],
  "procedure": "exit_dfu",
@@ -101,6 +102,6 @@
  "result": true,
  "end_ms": [
   400,
-  420
+  432
  ]
 }

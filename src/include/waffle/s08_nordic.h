@@ -195,8 +195,12 @@ bool s08_link_greeting(struct s08_nordic *n);
  */
 int s08_poll(struct s08_nordic *n);
 
-/* S-08.014: between an install run's steps, answer the greetings that
- * arrived; other messages wait for held mode's loop. */
+/*
+ * S-08.014: between an install run's steps, answer the greetings that
+ * arrived; other messages wait for held mode's loop. After a greeting
+ * answer this, s08_poll() and the exchanges return only once the link has
+ * been read through the 20 ms that follow it.
+ */
 void s08_answer_greetings(struct s08_nordic *n);
 
 /* Held mode with nothing in progress, for us microseconds (S-08.014). */

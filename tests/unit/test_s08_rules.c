@@ -146,6 +146,57 @@ static void mode_peer(void *ctx, struct t_port *p, const uint8_t *d, size_t n)
 			    in_dfu ? sizeof boot - 1u : sizeof app - 1u);
 }
 
+/* The longest time between two of the clock's idles while on. */
+static uint32_t tick_last, tick_gap;
+static bool tick_on;
+
+static void gap_tick(void *ctx)
+{
+	const uint32_t t = ((struct t_sim *)ctx)->now;
+
+	if (tick_on && t - tick_last > tick_gap)
+		tick_gap = t - tick_last;
+	tick_last = t;
+}
+
+/* S-08.014: an answer at a step's start, then a long step that does not
+ * read the link, with a greeting 50 ms into it: the link is read through
+ * the 20 ms after the answer, every 1 ms, before the step goes on, so the
+ * greeting is judged after the window and answered at the next step's
+ * start. */
+static void test_step_window(void)
+{
+	static const uint8_t bb[2] = { 0xBB, 0x02 };
+	uint8_t ids[64] = { 0 }, first[64] = { 0 };
+	uint32_t step;
+
+	t_case = "greeting during a long step";
+	t_nrig_init(S08_STATE_UPGRADING, S06_MS(10000));
+	nrig.ops.log = count_drops;
+	drops_logged = 0;
+	nrig.sim.tick = gap_tick;
+	nrig.sim.tick_ctx = &nrig.sim;
+	tick_on = true;
+	tick_gap = 0;
+	tick_last = 0;
+	t_port_inject_frame(&nrig.port, 0, 0x31, 0, 0x05, bb, 2);
+	s08_answer_greetings(&nrig.nordic);		/* step 1 starts */
+	tick_on = false;
+	CHECK_EQ(sent_list(ids, first, 64), 1);
+	CHECK_EQ(nrig.nordic.answered_at, 0);
+	CHECK(nrig.sim.now > S06_MS(20));
+	CHECK(nrig.link.read_at > S06_MS(20));
+	CHECK(tick_gap <= S06_MS(2));
+	step = nrig.sim.now;				/* step 1's own work */
+	t_port_inject_frame(&nrig.port, step + S06_MS(50), 0x31, 1, 0x05, bb, 2);
+	nrig.sim.now = step + S06_MS(3000);
+	s08_answer_greetings(&nrig.nordic);		/* step 2 starts */
+	CHECK_EQ(sent_list(ids, first, 64), 2);
+	CHECK(ids[1] == 0x0D && first[1] == 0xEE);
+	CHECK_EQ(drops_logged, 0);
+	nrig.sim.tick = 0;
+}
+
 static void test_one_answer(void)
 {
 	static const uint8_t bb[2] = { 0xBB, 0x02 }, aa[2] = { 0xAA, 0x02 },
@@ -196,7 +247,8 @@ static void test_one_answer(void)
 	s08_idle(&nrig.nordic, S06_MS(100));
 	CHECK_EQ(sent_list(ids, first, 64), 2);
 	CHECK_EQ(drops_logged, 2);
-	CHECK_EQ(nrig.nordic.answered_at, S06_MS(40));
+	CHECK(nrig.nordic.answered_at >= S06_MS(40) &&
+	      nrig.nordic.answered_at <= S06_MS(41));
 
 	/* an answer long past is forgotten, so the clock's wrap never makes it
 	 * recent again */
@@ -568,6 +620,7 @@ int main(void)
 	test_greeting();
 	test_step_greetings();
 	test_one_answer();
+	test_step_window();
 	test_slot_unread();
 	test_accept();
 	test_queries();

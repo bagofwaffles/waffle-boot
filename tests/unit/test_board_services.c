@@ -2266,17 +2266,16 @@ static void nordic_greets(uint8_t flag)
 		nin_len[nin_n] = s06_frame_encode(0x31u, (uint8_t)nin_n, 0x05u, p,
 						  sizeof(p), crc8, nin[nin_n]);
 		nin_n++;
+		nin_gap = false;	/* the next read takes it */
 	}
 }
 
 /* 30 ms with the link read at its end: the next greeting is not within
- * 20 ms of the last answer (S-08.014). Two polls keep nport_read()'s
- * alternation in step. */
+ * 20 ms of the last answer (S-08.014). */
 static void nordic_quiet(void)
 {
 	fake_core_set_cycles(fake_core_peek_cycles() +
 			     (uint64_t)m.hw.time.cycles_per_us * 30000u);
-	s06_node_poll(&m.node);
 	s06_node_poll(&m.node);
 }
 

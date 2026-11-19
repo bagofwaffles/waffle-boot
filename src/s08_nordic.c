@@ -148,7 +148,8 @@ static void forget_answer(struct s08_nordic *n)
 		n->answered = false;
 }
 
-int s08_poll(struct s08_nordic *n)
+/* The frames delivered so far, handled. */
+static int handle_all(struct s08_nordic *n)
 {
 	struct s06_frame f;
 
@@ -156,6 +157,15 @@ int s08_poll(struct s08_nordic *n)
 	while (s06_link_take(n->node->link[n->link], &f))
 		handle(n, &f);
 	forget_answer(n);
+	return n->power_status;
+}
+
+static void read_window(struct s08_nordic *n);
+
+int s08_poll(struct s08_nordic *n)
+{
+	(void)handle_all(n);
+	read_window(n);
 	return n->power_status;
 }
 
@@ -175,6 +185,7 @@ void s08_answer_greetings(struct s08_nordic *n)
 			s06_link_put(l, &f);
 	}
 	forget_answer(n);
+	read_window(n);
 }
 
 /* S-08.015: the frames delivered so far, discarded unhandled. */
@@ -197,6 +208,33 @@ static void wait(struct s08_nordic *n, uint32_t us)
 		if (s06_time_reached(now(n), end))
 			return;
 		s06_idle(n->node->clock, end);
+	}
+}
+
+/*
+ * S-08.014: for 20 ms after a greeting answer the link is read every 1 ms,
+ * receiving (frames queue) but handling nothing, before the caller's own
+ * work goes on. Each read that finds the port empty moves the earliest
+ * arrival of what comes later, so a greeting arriving after the window is
+ * never dropped as possibly within it. Returns at once once the window
+ * has passed.
+ */
+static void read_window(struct s08_nordic *n)
+{
+	/* the last read starts after the window: an arrival judged by it is
+	 * more than 20 ms after the answer */
+	const uint32_t end = n->answered_at + S08_ANSWER_GAP_US + 1u;
+
+	if (!n->answered)
+		return;
+	for (;;) {
+		uint32_t t = now(n);
+
+		s06_node_poll(n->node);
+		if (s06_time_reached(t, end))
+			return;
+		s06_idle(n->node->clock,
+			 s06_time_reached(t + STEP_US, end) ? end : t + STEP_US);
 	}
 }
 
@@ -284,7 +322,8 @@ bool s08_enter_dfu(struct s08_nordic *n)
 	uint32_t t_dfu, deadline;
 	int q;
 
-	(void)s08_poll(n);	/* a pending greeting is answered first */
+	/* a pending greeting is answered first; step 2 reads the link */
+	(void)handle_all(n);
 	n->connected = false;
 	message(n, ID_DFU, DFU_ENTER);			/* step 1 */
 	wait(n, ENTER_WAIT_US);				/* step 2 */
@@ -301,7 +340,7 @@ bool s08_enter_dfu(struct s08_nordic *n)
 	deadline = t_dfu + ENTER_GREET_US;
 	n->connected = false;
 	for (;;) {
-		(void)s08_poll(n);
+		(void)handle_all(n);
 		if (n->connected)
 			break;
 		if (s06_time_reached(now(n), deadline)) {
@@ -312,33 +351,42 @@ bool s08_enter_dfu(struct s08_nordic *n)
 	}
 	wait(n, AFTER_GREET_US);			/* step 5 */
 	discard(n);
+	read_window(n);
 	return true;
+}
+
+/* The rest of an answer's read window before the caller goes on. */
+static bool exit_end(struct s08_nordic *n, bool ok)
+{
+	read_window(n);
+	return ok;
 }
 
 bool s08_exit_dfu(struct s08_nordic *n)
 {
 	int silent = 0;
 
-	(void)s08_poll(n);	/* a pending greeting is answered first */
+	/* a pending greeting is answered first; the queries read the link */
+	(void)handle_all(n);
 	message(n, ID_DFU, DFU_EXIT);			/* step 1 */
 	n->connected = false;
 	for (int q = 0; q < EXIT_PHASE1; q++) {		/* phase 1 */
 		if (s08_mode_query(n) == S08_NOT_IN_DFU)
-			return true;
+			return exit_end(n, true);
 		/* any reply restarts the count of queries without one */
 		silent = n->replied ? 0 : silent + 1;
 		if (silent >= EXIT_SILENCE)
 			break;
-		(void)s08_poll(n);
+		(void)handle_all(n);
 		if (n->connected)
 			break;
 		wait(n, STEP_US);
 	}
 	for (int q = 0; q < EXIT_PHASE2; q++)		/* phase 2 */
 		if (s08_mode_query(n) == S08_NOT_IN_DFU)
-			return true;
+			return exit_end(n, true);
 	log_ev(n, S08_LOG_EXIT_FAILED, 0, 0, 0);
-	return false;
+	return exit_end(n, false);
 }
 
 /* ---- DFU requests and the transfer (S-08.040-S-08.047) ---- */
