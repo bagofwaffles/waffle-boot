@@ -638,8 +638,9 @@ static void immediate(struct s09_slave *s, const struct s09_req *r,
 	case OPXY_DEV_PEEK_REQ: case OPXY_DEV_POKE_REQ: v = s->ops->dev_cmd(s->ops->ctx, r->cmd, r->arg0, r->arg1); break;
 #endif
 	case S09_RELEASE:
-		/* S-09.051: staged and checked before the reply */
-		v = s->ops->os_status(s->ops->ctx);
+		/* S-09.051: staged and checked before the reply; S-09.082:
+		 * from the file the arguments describe, when not 0 */
+		v = s->ops->os_status(s->ops->ctx, r->arg0, r->arg1);
 		s->released = v == 0;
 		break;
 	default:				/* S09_ECHO */

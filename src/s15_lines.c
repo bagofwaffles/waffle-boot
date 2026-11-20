@@ -467,6 +467,7 @@ const char *const s15_interrupted[S15_INTERRUPTED_LINES] = {
 };
 const char s15_restarting[] = "Restarting...";
 const char s15_restart_item[] = "6 Restart";
+const char s15_continue_item[] = "7 Continue to OS";
 const char s15_format_unreadable[] =
 	"The drive can't be read; formatting erases it";
 const char s15_reset_unreadable[] =
@@ -516,6 +517,7 @@ void s15_reason_line(struct s15_buf *out, const char *reason)
 /* ---- S-15.163: a plain start that failed ----------------------------- */
 
 const char s15_start_failed[] = "The OS could not be started.";
+const char s15_start_failed_file[] = "/os.ldr could not be started.";
 
 static void buf_hex8(struct s15_buf *b, uint32_t v)
 {
@@ -627,7 +629,12 @@ void s15_start_reason(struct s15_buf *out, const struct s15_start *s)
 					      (unsigned)s->check : 0u]);
 		break;
 	case S15_START_SLAVE_NO_OS:
-		s15_buf_str(out, "DSP2 could not load the OS");
+		/* S-15.195: DSP2's copy unread, or not the master's */
+		s15_buf_str(out, s->file ? "DSP2 could not load the same /os.ldr" :
+					   "DSP2 could not load the OS");
+		break;
+	case S15_START_FILE:
+		s15_osw_reason(out, s->file_why, 0u, s->value, s->limit);
 		break;
 	case S15_START_NO_REPLY:
 		s15_buf_str(out, lost ? "at the release" :
@@ -652,6 +659,24 @@ static void lost_info(struct s15_buf *out, const struct s15_start *s)
 	buf_hex2(out, s->cmd);
 	s15_buf_str(out, " ");
 	s15_buf_str(out, start_at[at < S15_AT_COUNT ? at : 0u]);
+}
+
+/* S-15.195: a file start's own step, for Device Info. */
+static void file_info(struct s15_buf *out, const struct s15_start *s)
+{
+	struct s15_buf why;
+
+	s15_buf_str(out, "/os.ldr ");
+	if (s->file_why == S15_OSW_WHY_MISSING) {
+		s15_buf_str(out, "not on the drive");
+	} else if (s->file_why == S15_OSW_WHY_DIRECTORY) {
+		s15_buf_str(out, "is a directory");
+	} else if (s->file_why == S15_OSW_WHY_REFUSED) {
+		s15_buf_str(out, "on a drive that can't be read");
+	} else {
+		s15_osw_reason(&why, s->file_why, 0u, s->value, s->limit);
+		s15_buf_str(out, why.s);
+	}
 }
 
 void s15_start_info(struct s15_buf *out, const struct s15_start *s)
@@ -726,8 +751,12 @@ void s15_start_info(struct s15_buf *out, const struct s15_start *s)
 					    (unsigned)s->check : 0u]);
 		break;
 	case S15_START_SLAVE_NO_OS:
-		s15_buf_str(out, "DSP2 answered no OS, reply ");
+		s15_buf_str(out, s->file ? "DSP2 refused /os.ldr, reply " :
+					   "DSP2 answered no OS, reply ");
 		s15_buf_dec(out, s->value);
+		break;
+	case S15_START_FILE:
+		file_info(out, s);
 		break;
 	case S15_START_NO_REPLY:
 		s15_buf_str(out, lost ? "Release" : "No reply to the release");
@@ -767,6 +796,33 @@ static const char *const osw_labels[S15_OSW_STEP_COUNT] = {
 const char s15_osw_written[] = "Firmware written.";
 const char s15_osw_select0_failed[] = "The eMMC did not switch back; please restart";
 const char s15_osw_back[] = "8 Back to Developer";
+
+/* ---- S-15.194: Start /os.ldr once (does not write) ----------- */
+
+const char s15_once_item[] = "3 Start /os.ldr once (does not write)";
+const char s15_once_not_started[] = "/os.ldr was not started";
+const char s15_once_restarting[] = "Restarting to start /os.ldr once, writing nothing";
+
+void s15_once_reason(struct s15_buf *out, enum s15_once why,
+		     const struct s15_os_file *file)
+{
+	s15_buf_init(out);
+	switch (why) {
+	case S15_ONCE_FILE:
+		if (file != NULL)
+			s15_osw_reason(out, file->why, 0u, file->value, file->limit);
+		break;
+	case S15_ONCE_SLAVE:
+		s15_buf_str(out, "DSP2 does not answer: the drive is on it");
+		break;
+	case S15_ONCE_DISABLED:
+		s15_buf_str(out, "the test OS starts no OS");
+		break;
+	case S15_ONCE_STARTED:
+	default:
+		break;
+	}
+}
 
 /* ---- S-15.190, S-05.033: continue to the OS, at a host's request ---- */
 

@@ -8,4 +8,5 @@ W6	CPU-link power-off request ends held mode, last PSoC power state 0x16	20	hard
 W7	developer menu's restart, digit 6 (S-15.095)	taken	hard	none	yes	no	0	yes
 W10	developer request for a calibrated start (S-10c.110)	70	hard	none	yes	no	0	yes
 W11	Continue to the OS, the slave present (S-05.033, S-15.190, S-10c.076)	80	hard	exit	yes	no	0	yes
+W12	Start /os.ldr once, the slave present (S-04.014, S-15.194)	90	hard	exit	yes	no	0	yes
 W9	slave power-off request, sent by every master shutdown (slave record)	0	hard	none	n/a	no	0	n/a

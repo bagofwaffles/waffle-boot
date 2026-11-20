@@ -44,6 +44,7 @@
 #include "waffle/wire_crc.h"
 #include "waffle/wire_s09.h"
 #include "waffle/wire_yaffs.h"
+#include "yaffsfs.h"
 
 #define BLOCKS 40u			/* the yaffs2 volume on the user area */
 #define VOL_LEN ((size_t)BLOCKS * 128u * 4096u)
@@ -225,12 +226,22 @@ static uint32_t st_boot_size(void *c) { (void)c; return B_SIZE; }
 static uint64_t st_cycles(void *c) { (void)c; return 0; }
 static void st_adjust(void *c, int64_t d) { (void)c; (void)d; }
 
-static uint32_t st_os(void *c)
+/* S-09.082: the slave's own staging area, and its last file start's copy */
+static uint8_t *sl_staging;
+static enum wire_os_file sl_file;
+
+static uint32_t st_os(void *c, uint32_t len, uint32_t crc)
 {
 	(void)c;
 	(void)features_ready();
 	cost_us += tm.release_us;
-	return 0;			/* the slave's own OS staged and accepted */
+	if (len == 0u)
+		return 0;		/* the slave's own OS staged and accepted */
+	/* as opxy_slave.c's stage_file(), S-05.024's check apart */
+	sl_file = sl_part != S03_PART_USER ? WIRE_OS_FILE_UNREAD :
+		  wire_s09_os_file(&S, wire_crc32, NULL, sl_staging, S03_OS_MAX,
+				   len, crc);
+	return sl_file == WIRE_OS_FILE_OK ? 0u : 1u;
 }
 
 static int32_t st_file(void *c, const struct s09_req *r, const char *p1,
@@ -1066,15 +1077,134 @@ static void test_write_still_absent(void)
 	CHECK_EQ(sv.execs[S09_WRITE], 1u);
 }
 
+/* ---- S-05.035, S-09.082: a file start ---- */
+
+/* /yaffs2/os.ldr as an earlier boot left it: len bytes of image, or a
+ * directory; then unmounted, so the start's 0x08 mounts the volume. */
+static void put_os_file(uint32_t len, bool dir)
+{
+	CHECK_EQ(wire_yaffs_mount(&Y), WIRE_MOUNT_OK);
+	if (dir) {
+		CHECK(yaffs_mkdir("/yaffs2/os.ldr", 0755) == 0);
+	} else {
+		const int fd = yaffs_open("/yaffs2/os.ldr", O_CREAT | O_WRONLY | O_TRUNC, 0666);
+
+		CHECK(fd >= 0);
+		CHECK(yaffs_write(fd, image, len) == (int)len);
+		CHECK(yaffs_close(fd) == 0);
+	}
+	/* forced: an earlier case's run may have left a handle open */
+	CHECK(yaffs_unmount2("/yaffs2", 1) == 0);
+	Y.mounted = false;
+}
+
+/* The start-up a plain start runs, up to the stage. */
+static void start_up(void)
+{
+	const uint32_t end = sim.now + S09_T_INIT_US;
+
+	while (!bus.ready(bus.ctx) && !s06_time_reached(sim.now, end))
+		s06_idle(&sim.clock, sim.now + 100u);
+	CHECK(s09_master_start(&ms));
+	sv_run();
+}
+
+/*
+ * The master reads the file over the bridge as the board's stage does
+ * (s09_files_os_read() after the 0x08), its copy's CRC-32 goes in the
+ * release, and the slave reads its own copy from the volume: both the
+ * file's bytes, no boot partition read. A copy that is not the master's
+ * (its CRC or length) is refused with reply 1, the bridge kept.
+ */
+static void test_file_start(void)
+{
+	static const uint32_t lens[] = { 742764u, S03_MIN_IMAGE, S03_OS_MAX };
+	struct s15_os_file out;
+	uint32_t len, crc;
+
+	times_unit();
+	for (unsigned i = 0; i < sizeof lens / sizeof lens[0]; i++) {
+		t_case = "file start";
+		put_os(lens[i], lens[i] * 3u + 5u);	/* the image, also in BP2 */
+		memset(bp[1], 0, B_SIZE);		/* no partition active */
+		fresh();
+		put_os_file(lens[i], false);
+		start_up();
+		memset(staging, 0xA5, S03_OS_MAX);
+		memset(sl_staging, 0x5A, S03_OS_MAX);
+		mm.reads = 0;
+		s09_files_init(&F, &ms);
+		CHECK(s09_files_os_read(&F, staging, S03_OS_MAX, &out, &len));
+		CHECK(out.why == S15_OSW_WHY_NONE && len == lens[i]);
+		CHECK(F.mount_sent && F.mounted);
+		CHECK(memcmp(staging, image, len) == 0);
+		CHECK_EQ(mm.reads, 0u);			/* no sector read */
+		crc = opxy_crc32_long(0u, staging, len);
+		CHECK_EQ(s09_master_release_file(&ms, len, crc), 0);
+		CHECK(sv.released && sl_file == WIRE_OS_FILE_OK);
+		CHECK(memcmp(sl_staging, image, len) == 0);
+		CHECK_EQ(sl_part, S03_PART_USER);
+	}
+
+	/* the slave's copy is not the master's: reply 1, the bridge kept */
+	t_case = "file start, another crc";
+	put_os(742764u, 11u);
+	fresh();
+	put_os_file(742764u, false);
+	start_up();
+	s09_files_init(&F, &ms);
+	CHECK(s09_files_os_read(&F, staging, S03_OS_MAX, &out, &len));
+	staging[1000] ^= 0x40u;			/* damaged on the bridge */
+	crc = opxy_crc32_long(0u, staging, len);
+	CHECK_EQ(s09_master_release_file(&ms, len, crc), 1);
+	CHECK(!sv.released && sl_file == WIRE_OS_FILE_CRC && !ms.absent);
+	CHECK_EQ(s09_master_release_file(&ms, len + 1u, crc), 1);
+	CHECK(sl_file == WIRE_OS_FILE_LENGTH && !ms.absent);
+}
+
+/* S-05.035's refusals before any release: each with its reason. */
+static void file_refused(const char *what, uint32_t len, bool dir, bool none,
+			 enum s15_osw_why why, uint32_t value, uint32_t limit)
+{
+	struct s15_os_file out;
+	uint32_t got = 7u;
+
+	t_case = what;
+	put_os(len != 0u ? len : 1000u, 3u);
+	fresh();
+	if (!none)
+		put_os_file(len, dir);
+	start_up();
+	s09_files_init(&F, &ms);
+	CHECK(!s09_files_os_read(&F, staging, S03_OS_MAX, &out, &got));
+	CHECK_EQ(out.why, why);
+	CHECK(out.value == value && out.limit == limit && got == 0u);
+	CHECK(!ms.absent);
+}
+
+static void test_file_refused(void)
+{
+	times_unit();
+	file_refused("no os.ldr", 0u, false, true, S15_OSW_WHY_MISSING, S09_ENOENT, 0u);
+	file_refused("os.ldr a directory", 0u, true, false, S15_OSW_WHY_DIRECTORY, 0u, 0u);
+	file_refused("os.ldr too small", S03_MIN_IMAGE - 1u, false, false,
+		     S15_OSW_WHY_TOO_SMALL, S03_MIN_IMAGE - 1u, S03_MIN_IMAGE);
+	file_refused("os.ldr empty", 0u, false, false, S15_OSW_WHY_TOO_SMALL, 0u,
+		     S03_MIN_IMAGE);
+	file_refused("os.ldr too large", S03_OS_MAX + 1u, false, false,
+		     S15_OSW_WHY_TOO_LARGE, S03_OS_MAX + 1u, S03_OS_MAX);
+}
+
 int main(void)
 {
 	vol = calloc(1, VOL_LEN);
 	bp[0] = calloc(1, B_SIZE);
 	bp[1] = calloc(1, B_SIZE);
-	image = calloc(1, S03_OS_MAX);
+	image = calloc(1, S03_OS_MAX + 1u);
 	staging = calloc(1, S03_OS_MAX);
+	sl_staging = calloc(1, S03_OS_MAX);
 	if (vol == NULL || bp[0] == NULL || bp[1] == NULL || image == NULL ||
-	    staging == NULL)
+	    staging == NULL || sl_staging == NULL)
 		return 2;
 	test_plain();
 	test_tunnel_frame();
@@ -1086,6 +1216,8 @@ int main(void)
 	test_late_read();
 	test_select();
 	test_write_still_absent();
+	test_file_start();
+	test_file_refused();
 	wire_s09_release(&S);
 	wire_yaffs_detach(&Y);
 	free(vol);
@@ -1093,5 +1225,6 @@ int main(void)
 	free(bp[1]);
 	free(image);
 	free(staging);
+	free(sl_staging);
 	return t_finish("test_board_plain_load");
 }

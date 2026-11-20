@@ -355,6 +355,7 @@ static void do_master(const struct h_cmd *c)
 	m.staging = staging;
 	m.config_addr = CONFIG_ADDR;
 	m.sw_version_nonzero = h_num(c, 4) != 0u;
+	m.file = false;
 	h_put("begin");
 	s05_master_handoff(&ops, &m);
 	h_end();

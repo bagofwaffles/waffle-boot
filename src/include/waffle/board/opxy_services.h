@@ -199,10 +199,13 @@ void opxy_start_log(struct opxy_master *m, enum s05_fail cause,
  * sector:4 count:4 (a failed image read's) format:4 length:4 crc:4 (the
  * header's) image_crc:4 boot_size:4 refusal:1 (S05_REFUSE_...) replied:1
  * reply:1 lost:1 cmd:1 at:1 (S09_AT_..., S09_LOST_IN_POLL) arg0:4 fault:16
- * (the driver's four words). attempted 0: no start was attempted, and the
- * rest is zeros. Returns OPXY_START_REPORT.
+ * (the driver's four words), then a file start's (S-05.035): file:1
+ * file_why:1 (S15_OSW_WHY_...) file_length:4 file_value:4 file_limit:4
+ * file_crc:4 (its copy's), all 0 for a start from a boot partition.
+ * attempted 0: no start was attempted, and the rest is zeros. Returns
+ * OPXY_START_REPORT.
  */
-#define OPXY_START_REPORT 61u
+#define OPXY_START_REPORT 79u
 size_t opxy_start_report(const struct opxy_master *m,
 			 uint8_t out[OPXY_START_REPORT]);
 /* S-17.021 step 1: the Nordic's exchange, then the PSoC's reply given. */

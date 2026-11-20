@@ -311,6 +311,37 @@ static void test_load_failures(void)
 	CHECK(strcmp(trace, "BDMRKSPGLH") == 0);
 	CHECK(mf.h.cause == S05_FAIL_SLAVE && mf.meta_writes == 0u);
 
+	/* S-05.035: a file start's failures, its refusal included, say
+	 * nothing of the installed OS: no metadata write (S-04.045 M6). */
+	for (i = 0; i < ARRAY_LEN(fails); i++) {
+		master_reset();
+		mf.reason = S04_REASON_OS_FILE;
+		mf.stage = fails[i];
+		mf.nonzero = true;
+		boot_master(&master_ops);
+		CHECK(strcmp(trace, "BDMRKSPGH") == 0 && mf.meta_writes == 0u);
+		CHECK(mf.h.load_attempted && mf.h.cause == fails[i]);
+	}
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	mf.stage = S05_FAIL_FILE;
+	mf.nonzero = true;
+	boot_master(&master_ops);
+	CHECK(strcmp(trace, "BDMRKSPGH") == 0 && mf.h.cause == S05_FAIL_FILE &&
+	      mf.meta_writes == 0u);
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	stage_image(S05_FLAG_INIT);
+	mf.nonzero = true;
+	boot_master(&master_ops);
+	CHECK(strcmp(trace, "BDMRKSPGH") == 0 && mf.h.cause == S05_FAIL_REFUSED &&
+	      mf.meta_writes == 0u);
+	/* ... and a start from the file that goes through hands over */
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	boot_master(&master_ops);
+	CHECK(strcmp(trace, "BDMRKSPGLTkVJ") == 0 && !mf.held);
+
 	/* S-09.052: no reply within T_RELEASE. */
 	master_reset();
 	mf.release_rc = -1;
@@ -447,6 +478,34 @@ static void test_start_in_menu(void)
 	mf.prompt = BOOT_PROMPT_START;
 	boot_master(&menu_prompt_ops);
 	CHECK(strcmp(trace, "BDMRKSQPGLTkVJ") == 0 && mf.menu_asks == 0u);
+
+	/* S-04.014: the start after Start /os.ldr once is treated as the one
+	 * after Continue: the setting is not asked, held keys still hold, and
+	 * a build with the boot prompt still asks. */
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	mf.start_menu = true;
+	boot_master(&menu_ops);
+	CHECK(strcmp(trace, "BDMRKSPGLTkVJ") == 0 && !mf.held && mf.menu_asks == 0u);
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	mf.start_menu = true;
+	mf.keys = S05_KEYS_HELD;
+	boot_master(&menu_ops);
+	CHECK(strcmp(trace, "BDMRKSH") == 0 && mf.held && mf.menu_asks == 0u &&
+	      !mf.h.load_attempted && mf.h.reason == S04_REASON_OS_FILE);
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	mf.start_menu = true;
+	mf.prompt = BOOT_PROMPT_START;
+	boot_master(&menu_prompt_ops);
+	CHECK(strcmp(trace, "BDMRKSQPGLTkVJ") == 0 && mf.menu_asks == 0u);
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	mf.start_menu = true;
+	mf.prompt = BOOT_PROMPT_HELD;
+	boot_master(&menu_prompt_ops);
+	CHECK(strcmp(trace, "BDMRKSQH") == 0 && !mf.h.load_attempted);
 
 	/* The prompt comes after it, and only with the setting off. */
 	master_reset();

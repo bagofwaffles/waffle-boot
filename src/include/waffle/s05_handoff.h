@@ -122,7 +122,8 @@ enum s05_fail {
 	S05_FAIL_SELECT,	/* a failed partition select or read (S-05.007) */
 	S05_FAIL_REFUSED,	/* S-05.024 */
 	S05_FAIL_SLAVE,		/* the release reply was not 0 (S-05.018, S-05.021) */
-	S05_FAIL_SLAVE_START	/* reply 0, but the slave's OS did not start (S-05.032) */
+	S05_FAIL_SLAVE_START,	/* reply 0, but the slave's OS did not start (S-05.032) */
+	S05_FAIL_FILE		/* a file start's /os.ldr not read or out of bounds (S-05.035) */
 };
 
 struct s05_master_ops {
@@ -161,6 +162,7 @@ struct s05_master {
 	const uint8_t *staging;	/* where stage() puts the image (0x8A000000 on the target) */
 	uint32_t config_addr;	/* the configuration block, in the handover reserve */
 	bool sw_version_nonzero;	/* S-04.045 M6's condition on the record read */
+	bool file;		/* S-05.035: a file start, whose failure clears nothing */
 };
 
 /* S-05.018 on the master.  Returns only into held mode, or with test ops. */

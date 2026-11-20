@@ -662,6 +662,7 @@ static void test_start_lines(void)
 	struct s15_buf why, line, info;
 
 	CHECK(fits(S15_ST_ERROR, s15_start_failed), "S-15.163 the first line fits");
+	CHECK(fits(S15_ST_ERROR, s15_start_failed_file), "S-15.195 the first line fits");
 	for (unsigned w = S15_START_NO_ACTIVE; w < S15_START_COUNT; w++)
 		for (unsigned k = 0; k < 2u * S15_CHECK_COUNT; k++)
 			for (unsigned at = 0; at < S15_AT_COUNT; at++) {
@@ -674,6 +675,12 @@ static void test_start_lines(void)
 				s.lost = (k & 1u) != 0u;
 				s.cmd = 0xFFu;
 				s.at = (uint8_t)(at | S15_AT_IN_POLL);
+				/* S-15.195: a file start's, each reason its read gives */
+				s.file = (at & 1u) != 0u || w == S15_START_FILE;
+				s.file_why = (enum s15_osw_why)(S15_OSW_WHY_REFUSED +
+								at % (S15_OSW_WHY_TOO_LARGE));
+				if (w == S15_START_FILE)
+					s.limit = 0x800000u;	/* its largest, S03_OS_MAX */
 				s15_start_reason(&why, &s);
 				s15_reason_line(&line, why.s);
 				s15_start_info(&info, &s);
@@ -692,6 +699,18 @@ static void test_start_lines(void)
 	s15_start_reason(&why, &s);
 	s15_start_info(&info, &s);
 	CHECK(why.n == 0u && info.n == 0u, "S-15.163 no start failed, no words");
+	/* S-15.194: every reason of Start /os.ldr once fits under its line */
+	CHECK(fits(S15_ST_ERROR, s15_once_not_started) && fits(S15_ST_WARN, s15_once_restarting) &&
+	      fits(S15_ST_ITEM, s15_once_item), "S-15.194 its lines fit");
+	for (unsigned r = S15_ONCE_FILE; r <= S15_ONCE_DISABLED; r++)
+		for (unsigned fw = S15_OSW_WHY_REFUSED; fw <= S15_OSW_WHY_TOO_LARGE; fw++) {
+			const struct s15_os_file f = { (enum s15_osw_why)fw, 0xFFFFFFFFu, 0xFFFFFFFFu };
+
+			s15_once_reason(&why, (enum s15_once)r, &f);
+			s15_reason_line(&line, why.s);
+			CHECK(why.n > 0u && fits(S15_ST_DIM, line.s), "S-15.194 reason %u %u: '%s'",
+			      r, fw, line.s);
+		}
 }
 
 int main(void)

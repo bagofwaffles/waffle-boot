@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 
+#include "waffle/s03_emmc.h"
 #include "waffle/s09_bridge.h"
 #include "waffle/wire_yaffs.h"
 
@@ -46,6 +47,24 @@ int32_t wire_s09_file(void *ctx, const struct s09_req *r, const char *path,
  * of the file or a failure. */
 int32_t wire_s09_read(void *ctx, uint32_t fd, uint8_t *buf, uint32_t n,
 		      uint32_t *err);
+
+/* S-09.082: how the slave's copy of a file start's image came out. */
+enum wire_os_file {
+	WIRE_OS_FILE_OK,	/* read whole, its length and CRC-32 the release's */
+	WIRE_OS_FILE_UNREAD,	/* not mounted, missing, a directory, or not read whole */
+	WIRE_OS_FILE_LENGTH,	/* another length than the release's, or over cap */
+	WIRE_OS_FILE_CRC	/* the CRC-32 of the bytes read is not the release's */
+};
+
+/*
+ * S-09.082: /os.ldr of the mounted volume read whole into buf, at most cap
+ * bytes, and checked against the release's len and crc: the CRC-32 by
+ * crc32_fast first when it is not NULL, and by crc32 when that differs
+ * (S-03.044's rule). The file is not written; nothing else is read.
+ */
+enum wire_os_file wire_s09_os_file(struct wire_s09 *s, s03_crc32_fn crc32,
+				   s03_crc32_fn crc32_fast, uint8_t *buf,
+				   uint32_t cap, uint32_t len, uint32_t crc);
 
 /* Closes the directory handles left open (the release, S-09.052). */
 void wire_s09_release(struct wire_s09 *s);

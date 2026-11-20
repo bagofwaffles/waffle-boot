@@ -974,6 +974,50 @@ static void test_continue_restart(void)
 }
 
 /*
+ * S-15.194, S-04.014: Start /os.ldr once's check refuses without the slave
+ * (a soft reboot cannot carry the request) and makes no request; with it,
+ * the restart is W12 with reason 90, the view held first.
+ */
+static void test_os_once_restart(void)
+{
+	struct s15_os_file f;
+	uint64_t t0;
+
+	for (int k = 1; k < 3; k++) {
+		held_setup();
+		m.slave_present = k != 1;
+		m.bridge.absent = k == 2;
+		CHECK(m.sv.env.os_once_check != NULL && m.sv.env.os_once != NULL);
+		if (m.sv.env.os_once_check == NULL || m.sv.env.os_once == NULL)
+			return;
+		CHECK(m.sv.env.os_once_check(m.sv.env.ctx, &f) == S15_ONCE_SLAVE);
+		opxy_usb_stop();
+	}
+	held_setup();
+	m.boot_reason = 30u;
+	m.slave_present = true;
+	m.bridge.absent = false;
+	m.sv.reboot.shutdown = rs_shutdown;
+	m.sv.reboot.write_record = rs_write;
+	m.sv.reboot.hard_reset = rs_hard;
+	m.sv.reboot.psoc_reset_request = rs_psoc;
+	m.sv.reboot.nordic_enter_dfu = rs_other;
+	m.sv.reboot.nordic_exit_dfu = rs_exit;
+	m.sv.reboot.wait_for_psoc = rs_wait;
+	rs_n = 0;
+	fake_core_set_cycle_step(400u * 1000u);	/* 1 ms a read */
+	t0 = fake_core_peek_cycles();
+	if (m.sv.env.os_once == NULL)
+		return;
+	m.sv.env.os_once(m.sv.env.ctx);
+	CHECK(rs_n == 4u && memcmp(rs_ev, "SXRH", 4) == 0);
+	CHECK(rs_reason == S04_REASON_OS_FILE);
+	CHECK(rs_at[0] - t0 >= (uint64_t)OPXY_RESTART_HOLD_MS * 1000u * 400u);
+	fake_core_set_cycle_step(1u);
+	opxy_usb_stop();
+}
+
+/*
  * S-04.063, S-04.028: a reboot's real shutdown (no slave, no display),
  * then OPXY_BACKLIGHT_SETTLE_MS with nothing sent, then the record and the
  * reset. A PSoC power-off answers at once (test_held_power_off).
@@ -1389,6 +1433,28 @@ static void test_failed_start(void)
 	st.replied = false;
 	opxy_start_view(S05_FAIL_SLAVE, &st, &v);
 	CHECK(v.why == S15_START_NO_REPLY);
+	/* S-05.035, S-15.195: a file start's account: its read's reason, and
+	 * every cause marked as the file's */
+	memset(&st, 0, sizeof(st));
+	st.file = true;
+	st.os_file.why = S15_OSW_WHY_TOO_LARGE;
+	st.os_file.value = S03_OS_MAX + 1u;
+	st.os_file.limit = S03_OS_MAX;
+	opxy_start_view(S05_FAIL_FILE, &st, &v);
+	CHECK(v.why == S15_START_FILE && v.file && v.file_why == S15_OSW_WHY_TOO_LARGE &&
+	      v.value == S03_OS_MAX + 1u && v.limit == S03_OS_MAX);
+	st.replied = true;
+	st.reply = 1u;
+	opxy_start_view(S05_FAIL_SLAVE, &st, &v);
+	CHECK(v.why == S15_START_SLAVE_NO_OS && v.file);
+	opxy_start_view(S05_FAIL_NONE, &st, &v);
+	CHECK(v.why == S15_START_OK && !v.file);
+	st.load.length = 742764u;
+	st.file_crc = 0x1234ABCDu;
+	setup();
+	opxy_start_log(&m, S05_FAIL_SLAVE, &st);
+	CHECK(wire_has("OS not started from /os.ldr: DSP2 could not load the same /os.ldr"));
+	CHECK(wire_has("length 742764 crc 1234abcd reply 1"));
 	/* S-05.006, S-05.007: only a failed request is S05_FAIL_SELECT */
 	for (i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
 		ld.result = results[i];
@@ -1472,6 +1538,32 @@ static void test_failed_start(void)
 	CHECK(rep[38] == 1u && rep[39] == S09_READ_SECTORS &&
 	      rep[40] == S09_AT_REPLY_BROKE && rep[41] == 0x01u && rep[42] == 0x05u);
 	CHECK(rep[45] == 0xF5u && rep[60] == 0x00u && rep[57] == 0xA5u);
+	CHECK(rep[61] == 0u && rep[62] == 0u && rep[78] == 0u);	/* no file start */
+	opxy_usb_stop();
+
+	/* S-05.035: a file start's report adds what the read found */
+	memset(&h, 0, sizeof(h));
+	held_setup();
+	h.load_attempted = true;
+	h.cause = S05_FAIL_FILE;
+	h.start.file = true;
+	h.start.os_file.why = S15_OSW_WHY_MISSING;
+	h.start.os_file.value = S09_ENOENT;
+	opxy_held_screen(&m, &h);
+	CHECK(con_has(S15_ST_ERROR, "/os.ldr could not be started."));
+	CHECK(con_has(S15_ST_DIM, "   Reason: no /os.ldr on the drive"));
+	CHECK(opxy_start_report(&m, rep) == OPXY_START_REPORT);
+	CHECK(rep[1] == S05_FAIL_FILE && rep[61] == 1u && rep[62] == S15_OSW_WHY_MISSING &&
+	      rep[67] == S09_ENOENT);
+	opxy_usb_stop();
+
+	/* S-04.014: the request taken by a start that held mode stopped first */
+	memset(&h, 0, sizeof(h));
+	held_setup();
+	h.reason = S04_REASON_OS_FILE;
+	opxy_held_screen(&m, &h);
+	CHECK(!con_has(S15_ST_ERROR, "/os.ldr could not be started."));
+	CHECK(wire_has("/os.ldr not started: this start opened the boot menu"));
 	opxy_usb_stop();
 
 	/* A boot that attempted no start: no notice, a report of zeros. */
@@ -2824,6 +2916,7 @@ int main(void)
 	test_powered_off();
 	test_restart_hold();
 	test_continue_restart();
+	test_os_once_restart();
 	test_reboot_settle();
 	test_reboot_os_detach();
 	test_nordic_link_stop();

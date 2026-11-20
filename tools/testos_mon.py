@@ -148,7 +148,7 @@ DEV_YTAGS, DEV_YMETA = 27, 28
 DEV_SCREEN, DEV_KEY, DEV_FRAME = 29, 30, 31
 DEV_BENCH, DEV_CHECK, DEV_EXTRACT = 32, 33, 34
 DEV_LINK_RECORD, DEV_LINK_TEST = 35, 36
-DEV_BOOT_START, START_REPORT = 37, 61   # OPXY_DEV_BOOT_START and OPXY_START_REPORT's bytes
+DEV_BOOT_START, START_REPORT = 37, 79   # OPXY_DEV_BOOT_START and OPXY_START_REPORT's bytes
 DEV_CAL_START = 38      # OPXY_DEV_CAL_START
 DEV_QUAD_REPLY = 39     # OPXY_DEV_QUAD_REPLY (S-09.080)
 DEV_STREAM, STREAM_REPORT = 40, 88     # OPXY_DEV_STREAM and OPXY_STREAM_REPORT's bytes (S-09.009)
@@ -1600,18 +1600,23 @@ def show_link_record(mon):
 
 # OPXY_DEV_BOOT_START's report (waffle/board/opxy_services.h), and the words S-15.163's main screen and
 # Device Info use for it (src/s15_lines.c), so the host reads what the unit showed.
-START_LAYOUT = '<7B7I6BI4I'
+START_LAYOUT = '<7B7I6BI4I2B4I'
 START_FIELDS = ('attempted', 'cause', 'result', 'step', 'step_part', 'part', 'select0_failed', 'sector',
                 'count', 'format', 'length', 'crc', 'image_crc', 'boot_size', 'refusal', 'replied', 'reply',
                 'lost', 'cmd', 'at', 'arg0')
+# after the driver's four words: a file start's (S-05.035)
+START_FILE_FIELDS = ('file', 'file_why', 'file_length', 'file_value', 'file_limit', 'file_crc')
 START_CAUSES = ['none', 'no OS (S-05.006)', 'the image marked encrypted', 'a failed select or read (S-05.007)',
-                "S-05.024's refusal", "the slave's release (S-05.021)", "the slave's OS did not start (S-05.032)"]
+                "S-05.024's refusal", "the slave's release (S-05.021)", "the slave's OS did not start (S-05.032)",
+                "/os.ldr not read or out of bounds (S-05.035)"]
+# S15_OSW_WHY_..., the reasons a file start's /os.ldr gives (s15_osw_reason())
+FILE_WHYS = ['NONE', 'REFUSED', 'MISSING', 'DIRECTORY', 'READ', 'MEMORY', 'TOO_SMALL', 'TOO_LARGE']
 START_RESULTS = ['loaded', 'no active partition', 'length 0', 'too long', 'past the partition', 'format refused',
                  'encrypted', 'CRC mismatch', 'a select or read failed']
 START_STEPS = ['none', 'a select', 'a header read', 'an image read', "the user area's select"]
 START_WHYS = ['OK', 'NO_ACTIVE', 'SELECT', 'HEADER_READ', 'IMAGE_READ', 'USER_SELECT', 'FORMAT', 'ZERO_LENGTH',
               'TOO_LONG', 'PAST_PARTITION', 'CRC', 'ENCRYPTED', 'REFUSED', 'SLAVE_NO_OS', 'NO_REPLY',
-              'SLAVE_START']
+              'SLAVE_START', 'FILE']
 # S-05.024's rules, by S05_REFUSE_... less one (S15_CHECK_...): the main screen's words, then Device Info's
 CHECKS = ['LENGTH', 'PARSE', 'FLAGS', 'SPACE', 'STAGING', 'RESERVE', 'RECORD', 'BOOT_RESERVE']
 CHECK_REASON = ['the image is too long to stage', "the image's block headers are not valid",
@@ -1629,8 +1634,10 @@ S03_OS_MAX = 0x800000
 def start_fields(r):
     """The report's fields by name, 'fault' the driver's four words."""
     v = struct.unpack(START_LAYOUT, bytes(r[:START_REPORT]))
+    n = len(START_FIELDS)
     d = dict(zip(START_FIELDS, v))
-    d['fault'] = v[len(START_FIELDS):]
+    d['fault'] = v[n:n + 4]
+    d.update(zip(START_FILE_FIELDS, v[n + 4:]))
     return d
 
 
@@ -1655,6 +1662,9 @@ def start_view(d):
         v.update(why='SLAVE_NO_OS' if d['replied'] else 'NO_REPLY', value=d['reply'])
     elif cause == 6:
         v['why'] = 'SLAVE_START'
+    elif cause == 7:
+        v.update(why='FILE', value=d['file_value'], limit=d['file_limit'],
+                 file_why=FILE_WHYS[d['file_why']] if d['file_why'] < len(FILE_WHYS) else 'NONE')
     elif result == 2:
         v['why'] = 'ZERO_LENGTH'
     elif result == 3:
@@ -1667,7 +1677,17 @@ def start_view(d):
         v.update(why='CRC', value=d['image_crc'], limit=d['crc'])
     else:
         v['why'] = 'NO_ACTIVE'
+    v['file'] = bool(d.get('file', 0)) and v['why'] != 'OK'
     return v
+
+
+def file_reason(v):
+    """A file start's /os.ldr reason (s15_osw_reason())."""
+    w, value, limit = v.get('file_why', 'NONE'), v.get('value', 0), v.get('limit', 0)
+    return {'REFUSED': "the drive can't be read", 'MISSING': 'no /os.ldr on the drive',
+            'DIRECTORY': '/os.ldr is a directory', 'READ': 'read failed, error %d' % value,
+            'MEMORY': 'not enough memory', 'TOO_SMALL': '%d bytes, at least %d' % (value, limit),
+            'TOO_LARGE': '%d bytes, at most %d' % (value, limit)}.get(w, '')
 
 
 def start_lost(v):
@@ -1703,7 +1723,9 @@ def start_reason(v):
     elif w == 'REFUSED':
         t = CHECK_REASON[CHECKS.index(v.get('check', 'LENGTH'))]
     elif w == 'SLAVE_NO_OS':
-        t = 'DSP2 could not load the OS'
+        t = 'DSP2 could not load the same /os.ldr' if v.get('file') else 'DSP2 could not load the OS'
+    elif w == 'FILE':
+        t = file_reason(v)
     elif w == 'NO_REPLY':
         t = 'at the release' if lost else 'DSP2 did not answer the release'
     elif w == 'SLAVE_START':
@@ -1742,7 +1764,10 @@ def start_info(v):
     elif w == 'REFUSED':
         t = 'Hand-over check: ' + CHECK_INFO[CHECKS.index(v.get('check', 'LENGTH'))]
     elif w == 'SLAVE_NO_OS':
-        t = 'DSP2 answered no OS, reply %d' % value
+        t = ('DSP2 refused /os.ldr, reply %d' if v.get('file') else 'DSP2 answered no OS, reply %d') % value
+    elif w == 'FILE':
+        t = '/os.ldr ' + {'MISSING': 'not on the drive', 'DIRECTORY': 'is a directory',
+                          'REFUSED': "on a drive that can't be read"}.get(v.get('file_why'), file_reason(v))
     elif w == 'NO_REPLY':
         t = 'Release' if lost else 'No reply to the release'
     elif w == 'SLAVE_START':
@@ -1761,7 +1786,8 @@ def start_lines(r):
         return [START_NONE]
     d = start_fields(r)
     v = start_view(d)
-    out = ['last plain start: The OS could not be started.']
+    out = ['last plain start: ' + ('/os.ldr could not be started.' if v['file'] else
+                                   'The OS could not be started.')]
     if v['why'] == 'ENCRYPTED':
         out.append('  reason:   OS needs reinstalling: install a TE firmware update')
     else:
@@ -1780,6 +1806,8 @@ def start_lines(r):
         out.append('  step:     none failed; partition %d chosen' % d['part'])
     if d['select0_failed']:
         out.append("  step:     the user area's select after it failed too")
+    if v['file']:
+        out.append('  file:     /os.ldr, %d bytes, CRC %08x of the copy read' % (d['file_length'], d['file_crc']))
     if d['format'] or d['length'] or d['crc']:
         line = "  header:   format %d, length %d bytes, CRC %08x" % (d['format'], d['length'], d['crc'])
         if d['result'] == 7:

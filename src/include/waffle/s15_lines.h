@@ -138,6 +138,36 @@ uint16_t s15_logo_pixel(unsigned x, unsigned y);
 uint16_t s15_handover_pixel(unsigned c, unsigned r);
 void s15_handover_frame(void (*put)(void *ctx, uint16_t pixel), void *ctx);
 
+/* ---- /yaffs2/os.ldr: the OS write and the file start ----------------- */
+
+/* Why a write stopped: its reason line. */
+enum s15_osw_why {
+	S15_OSW_WHY_NONE,
+	S15_OSW_WHY_REFUSED,	/* the volume is refused (S-12.052) */
+	S15_OSW_WHY_MISSING,	/* no /yaffs2/os.ldr */
+	S15_OSW_WHY_DIRECTORY,
+	S15_OSW_WHY_READ,	/* value: the bridge's errno (S-09.042) */
+	S15_OSW_WHY_MEMORY,	/* no buffer for the image */
+	S15_OSW_WHY_TOO_SMALL,	/* S-03.051: value the length, limit the least */
+	S15_OSW_WHY_TOO_LARGE,	/* value the length, limit the most */
+	S15_OSW_WHY_NO_ROOM,	/* value the sectors needed, limit B's (0: unknown) */
+	S15_OSW_WHY_SELECT,	/* part */
+	S15_OSW_WHY_EMMC_READ,	/* part, value the sector */
+	S15_OSW_WHY_EMMC_WRITE,	/* part, value the sector */
+	S15_OSW_WHY_ERASE,	/* part, value the erase group */
+	S15_OSW_WHY_MISMATCH,	/* part, value the sector read back wrong */
+	S15_OSW_WHY_DISABLED,	/* the test OS (waffle/testos.h) writes nothing */
+	S15_OSW_WHY_FLUSH,	/* S-03.068 */
+	S15_OSW_WHY_READS_DIFFER,	/* the file read differently twice */
+	S15_OSW_WHY_NOT_OS	/* S-05.024 would refuse the image */
+};
+
+/* S-05.035, S-15.194: what a file start found of /yaffs2/os.ldr. */
+struct s15_os_file {
+	enum s15_osw_why why;	/* S15_OSW_WHY_NONE: found, or read whole */
+	uint32_t value, limit;	/* as why names them */
+};
+
 /* ---- S-15.163: a plain start that failed ----------------------------- */
 
 /* Its step: what failed, in the order the boot tries them (S-05.005 -
@@ -159,6 +189,7 @@ enum s15_start_why {
 	S15_START_SLAVE_NO_OS,	/* value: the release's reply */
 	S15_START_NO_REPLY,	/* the release got no reply */
 	S15_START_SLAVE_START,	/* released; its OS did not start */
+	S15_START_FILE,		/* S-05.035: /os.ldr, file_why with value, limit */
 	S15_START_COUNT
 };
 
@@ -187,10 +218,13 @@ struct s15_start {
 	enum s15_check check;	/* S15_START_REFUSED */
 	bool lost;		/* the slave stopped answering on it */
 	uint8_t cmd, at;	/* then the request and where it broke */
+	bool file;		/* S-15.195: a file start's (S-05.035) */
+	enum s15_osw_why file_why;	/* S15_START_FILE */
 };
 
-/* The notice's first line (S15_ST_ERROR). */
+/* The notice's first line (S15_ST_ERROR); a file start's (S-15.195). */
 extern const char s15_start_failed[];
+extern const char s15_start_failed_file[];
 /* Its second: the reason, for s15_reason_line(); not for an encrypted
  * image, whose second line is s15_os_reinstall. */
 void s15_start_reason(struct s15_buf *out, const struct s15_start *s);
@@ -227,6 +261,7 @@ extern const char s15_os_reinstall[];         /* exact text, S-15.161 */
 extern const char *const s15_interrupted[S15_INTERRUPTED_LINES];  /* S-11.080 */
 extern const char s15_restarting[];
 extern const char s15_restart_item[];	/* S15_ST_ITEM, digit 6 */
+extern const char s15_continue_item[];	/* S15_ST_ITEM, the main screen's digit 7 */
 extern const char s15_format_unreadable[];
 extern const char s15_reset_unreadable[];
 extern const char s15_reset_incomplete[];
@@ -260,27 +295,6 @@ enum s15_osw_step {
 	S15_OSW_STEP_COUNT
 };
 
-/* Why a write stopped: its reason line. */
-enum s15_osw_why {
-	S15_OSW_WHY_NONE,
-	S15_OSW_WHY_REFUSED,	/* the volume is refused (S-12.052) */
-	S15_OSW_WHY_MISSING,	/* no /yaffs2/os.ldr */
-	S15_OSW_WHY_DIRECTORY,
-	S15_OSW_WHY_READ,	/* value: the bridge's errno (S-09.042) */
-	S15_OSW_WHY_MEMORY,	/* no buffer for the image */
-	S15_OSW_WHY_TOO_SMALL,	/* S-03.051: value the length, limit the least */
-	S15_OSW_WHY_TOO_LARGE,	/* value the length, limit the most */
-	S15_OSW_WHY_NO_ROOM,	/* value the sectors needed, limit B's (0: unknown) */
-	S15_OSW_WHY_SELECT,	/* part */
-	S15_OSW_WHY_EMMC_READ,	/* part, value the sector */
-	S15_OSW_WHY_EMMC_WRITE,	/* part, value the sector */
-	S15_OSW_WHY_ERASE,	/* part, value the erase group */
-	S15_OSW_WHY_MISMATCH,	/* part, value the sector read back wrong */
-	S15_OSW_WHY_DISABLED,	/* the test OS (waffle/testos.h) writes nothing */
-	S15_OSW_WHY_FLUSH,	/* S-03.068 */
-	S15_OSW_WHY_READS_DIFFER,	/* the file read differently twice */
-	S15_OSW_WHY_NOT_OS	/* S-05.024 would refuse the image */
-};
 
 /* The boot partitions after a failed write (S-03.056 - S-03.062, S-03.068). */
 enum s15_osw_emmc {
@@ -307,6 +321,23 @@ void s15_osw_emmc_line(struct s15_buf *out, enum s15_style *style,
 extern const char s15_osw_written[];
 extern const char s15_osw_select0_failed[];	/* S15_ST_WARN, S-03.063 */
 extern const char s15_osw_back[];
+
+/* ---- S-15.194: Start /os.ldr once (does not write) ----------- */
+
+/* Why the item made no restart. */
+enum s15_once {
+	S15_ONCE_STARTED,	/* the restart is under way */
+	S15_ONCE_FILE,		/* the file: struct s15_os_file says why */
+	S15_ONCE_SLAVE,		/* DSP2 absent or not answering */
+	S15_ONCE_DISABLED	/* this build starts no OS (the test OS) */
+};
+
+extern const char s15_once_item[];		/* S15_ST_ITEM, digit 3 */
+extern const char s15_once_not_started[];	/* S15_ST_ERROR */
+extern const char s15_once_restarting[];	/* S15_ST_WARN */
+/* The reason, for s15_reason_line(); file with S15_ONCE_FILE. */
+void s15_once_reason(struct s15_buf *out, enum s15_once why,
+		     const struct s15_os_file *file);
 
 /* ---- S-15.190, S-05.033: continue to the OS, at a host's request ---- */
 

@@ -643,6 +643,52 @@ static void pre_load(void *ctx)
 static struct s03_load stage_load;
 static bool release_replied;
 static uint8_t release_reply;
+/* S-05.035: a file start's read, and the CRC-32 of its copy for the
+ * release (S-09.082) */
+static struct s15_os_file stage_file;
+static uint32_t stage_file_crc;
+
+/* S-04.014: this start reads the OS from /yaffs2/os.ldr */
+static bool file_start(const struct opxy_master *m)
+{
+	return m->boot_reason == S04_REASON_OS_FILE;
+}
+
+#if !defined(OPXY_TEST_OS)
+/*
+ * S-05.035: /yaffs2/os.ldr whole into the staging area over the bridge's
+ * file commands, the volume mounted first (0x08, S-09.018), the link
+ * raised for the bytes (S-09.075) and plain again after them; no boot
+ * partition is selected or read. Only the length bounds are checked here:
+ * S-05.024's check follows, and the slave compares its own copy with this
+ * one's length and CRC-32 at the release (S-09.082).
+ */
+static enum s05_fail stage_os_file(struct opxy_master *m, uint32_t *length)
+{
+	uint8_t *staging = (uint8_t *)(uintptr_t)OPXY_STAGING;
+	struct s14_text t;
+	uint32_t len = 0;
+	bool ok;
+
+	memset(&stage_load, 0, sizeof stage_load);
+	s09_files_init(&m->sv.files, &m->bridge);
+	opxy_bridge_fast(m);
+	ok = s09_files_os_read(&m->sv.files, staging, S03_OS_MAX, &stage_file, &len);
+	opxy_bridge_plain(m);
+	stage_file_crc = ok ? m->emmc.crc32(0u, staging, len) : 0u;
+	stage_load.length = len;	/* S-05.024's check and the account */
+	*length = len;
+	if (!ok)
+		return S05_FAIL_FILE;	/* logged with the account (load_failed()) */
+	s14_text_init(&t);
+	s14_text_str(&t, "/os.ldr read for this start: ");
+	s14_text_dec(&t, len);
+	s14_text_str(&t, " bytes, crc ");
+	s14_text_hex(&t, stage_file_crc, 8u);
+	s14_log_text(&m->sv.log, S14_INFO, S14_TAG("boot"), &t);
+	return S05_FAIL_NONE;
+}
+#endif
 
 /* S-05.005-S-05.007 over S-03.040-S-03.048. */
 static enum s05_fail stage(void *ctx, uint32_t *length)
@@ -650,6 +696,10 @@ static enum s05_fail stage(void *ctx, uint32_t *length)
 	struct opxy_master *m = ctx;
 	const struct s03_load *ld = &stage_load;
 
+#if !defined(OPXY_TEST_OS)
+	if (file_start(m))			/* S-05.035 */
+		return stage_os_file(m, length);
+#endif
 	/* S-09.081: the link raised, with quad data replies when the quad
 	 * reply test passes; the test OS copies on the plain link */
 	OPXY_TESTOS_OR((void)0, opxy_bridge_copy_link(m, true)); OPXY_TIME(BOOT_TIME_LINK_UP);
@@ -681,7 +731,10 @@ static int release(void *ctx, uint8_t *reply)
 	 * hand-over leaves no time for a sector erase. */
 	opxy_start_finished(m);
 	opxy_start_log_tidy(m); OPXY_TIME(BOOT_TIME_RELEASE_SENT);
-	v = s09_master_release(&m->bridge);
+	/* S-09.082: a file start's release names its copy */
+	v = file_start(m) ? s09_master_release_file(&m->bridge, stage_load.length,
+						    stage_file_crc) :
+			    s09_master_release(&m->bridge);
 
 	OPXY_CRUMB(19u); OPXY_TIME(BOOT_TIME_RELEASED);
 	release_replied = v >= 0;
@@ -730,6 +783,9 @@ static void load_failed(void *ctx, enum s05_fail cause)
 	st.reply = st.replied ? release_reply : 0u;
 	st.lost = cause != S05_FAIL_SLAVE_START &&
 		  s09_master_lost(&m->bridge, &st.why);
+	st.file = file_start(m);		/* S-05.035 */
+	st.os_file = stage_file;
+	st.file_crc = stage_file_crc;
 	opxy_start_log(m, cause, &st);
 	boot_master_load_failed(&m->ops, cause, &st);
 }

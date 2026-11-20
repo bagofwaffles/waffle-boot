@@ -1,4 +1,4 @@
-# S-05.001, S-15.175, S-02.095, S-09.008, S-05.025, S-02.097, S-04.013, S-04.006, S-16.008, S-11.080, S-02.084
+# S-05.001, S-15.175, S-02.095, S-09.008, S-05.025, S-02.097, S-04.013, S-04.014, S-04.006, S-16.008, S-11.080, S-02.084
 case	reason	state	keys	slave	build	store	outcome
 start	0	0x0000	not_held	present	release	off	boot
 start	0	0x0000	not_held	present	release	on	held_no_load
@@ -21,6 +21,9 @@ start	0x3d	0x0000	not_held	present	release	erased	boot
 start	80	0x0000	not_held	present	release	off	boot
 start	80	0x0000	not_held	present	release	on	boot
 start	80	0x0000	not_held	present	release	erased	boot
+start	90	0x0000	not_held	present	release	off	boot
+start	90	0x0000	not_held	present	release	on	boot
+start	90	0x0000	not_held	present	release	erased	boot
 start	10	0x0000	not_held	present	release	off	held
 start	10	0x0000	not_held	present	release	on	held
 start	30	0x0000	not_held	present	release	off	held
@@ -52,3 +55,8 @@ start	80	0xab0d	not_held	present	release	on	held
 start	80	0x0000	not_held	absent	release	on	held
 start	80	0x0000	not_held	present	prompt	on	prompt
 power4	80	0x0000	not_held	present	release	on	recovery
+start	90	0x0000	held	present	release	on	held
+start	90	0xab0d	not_held	present	release	on	held
+start	90	0x0000	not_held	absent	release	on	held
+start	90	0x0000	not_held	present	prompt	on	prompt
+power4	90	0x0000	not_held	present	release	on	recovery

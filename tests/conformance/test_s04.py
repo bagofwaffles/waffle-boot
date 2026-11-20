@@ -48,7 +48,7 @@ def expected_ops(wid, reason):
     return ops
 
 
-WRITER_NUM = {'W%d' % i: i for i in range(1, 12)}
+WRITER_NUM = {'W%d' % i: i for i in range(1, 13)}
 
 
 class Reasons(unittest.TestCase):
@@ -184,6 +184,12 @@ class Writers(unittest.TestCase):
         """W11 writes 80 whatever this boot took (S-04.013), after one exit-DFU exchange."""
         for taken in (20, 30):
             self.check_writer('W11', taken, 80)
+
+    @scenario('S-04/R-W12')
+    def test_R_W12(self):
+        """W12 writes 90 whatever this boot took (S-04.014), after one exit-DFU exchange."""
+        for taken in (20, 30):
+            self.check_writer('W12', taken, 90)
 
     @scenario('S-04/R-W9')
     def test_R_W9(self):

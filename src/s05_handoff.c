@@ -140,13 +140,15 @@ void s05_load_step(uint8_t cfg[S05_CONFIG_SIZE], const uint8_t *staging,
 /*
  * S-05.006, S-05.007: a failed load leaves the device in the bootloader.  The
  * software version is cleared only when the OS is absent or unusable; a failed
- * select or read says nothing about the image.
+ * select or read says nothing about the image, and a file start's image
+ * nothing about the installed OS (S-05.035).
  */
 static void failed_load(const struct s05_master_ops *ops, const struct s05_master *m,
 			enum s05_fail cause)
 {
-	bool unusable = cause == S05_FAIL_NO_OS || cause == S05_FAIL_ENCRYPTED ||
-			cause == S05_FAIL_REFUSED;
+	bool unusable = !m->file &&
+			(cause == S05_FAIL_NO_OS || cause == S05_FAIL_ENCRYPTED ||
+			 cause == S05_FAIL_REFUSED);
 
 	if (m->sw_version_nonzero && unusable)	/* S-16.111, S-04.045 M6 */
 		ops->clear_sw_version(ops->ctx);

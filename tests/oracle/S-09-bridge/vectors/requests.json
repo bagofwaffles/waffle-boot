@@ -49,6 +49,20 @@
   "slave_session_len": 12
  },
  {
+  "name": "release_file",
+  "note": "",
+  "req": {
+   "arg0": 742764,
+   "arg1": 305441741,
+   "cmd": 7,
+   "slot": 1
+  },
+  "session_hex": "070100006c550b00cdab3412",
+  "session_len": 12,
+  "slave_rx_len": 12,
+  "slave_session_len": 12
+ },
+ {
   "name": "select_bp1",
   "note": "",
   "req": {

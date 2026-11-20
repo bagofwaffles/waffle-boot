@@ -11,6 +11,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
+#include "waffle/wire_crc.h"
 #include "waffle/wire_s09.h"
 
 #include "vectors/wire_vectors.h"
@@ -294,6 +295,51 @@ static void test_reads(void)
 	}
 }
 
+/* A CRC that is always wrong, for the fast path that must be checked. */
+static uint32_t bad_crc(uint32_t crc, const uint8_t *p, uint32_t n)
+{
+	return ~wire_crc32(crc, p, n);
+}
+
+/* S-09.082: the slave's copy of a file start's /os.ldr, checked against
+ * the release's length and CRC-32. */
+static void test_os_file(void)
+{
+	static uint8_t img[20000], got[20000];
+	uint32_t err, crc;
+	int32_t fd;
+
+	for (size_t i = 0; i < sizeof img; i++)
+		img[i] = (uint8_t)(i * 7u + 3u);
+	crc = wire_crc32(0u, img, sizeof img);
+	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof got, sizeof img, crc) ==
+	      WIRE_OS_FILE_UNREAD, "os.ldr: missing");
+	CHECK(path_cmd(S09_MKDIR, 0755, "os.ldr", &err) == 0, "a directory");
+	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof got, sizeof img, crc) ==
+	      WIRE_OS_FILE_UNREAD, "os.ldr: a directory");
+	CHECK(path_cmd(S09_RMDIR, 0, "os.ldr", &err) == 0, "removed");
+	fd = path_cmd(S09_OPEN, S09_O_RDWR | S09_O_CREAT | S09_O_TRUNC, "os.ldr", &err);
+	for (uint32_t off = 0; fd >= 0 && off < sizeof img; off += 0x1000u) {
+		uint32_t k = (uint32_t)sizeof img - off < 0x1000u ? (uint32_t)sizeof img - off : 0x1000u;
+
+		(void)cmd(S09_WRITE, (uint32_t)fd, k, (uint16_t)k, NULL, NULL, img + off, k, &err);
+	}
+	CHECK(fd >= 0 && cmd(S09_CLOSE, (uint32_t)fd, 0, 0, NULL, NULL, NULL, 0, &err) == 0,
+	      "os.ldr written");
+	memset(got, 0, sizeof got);
+	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof got, sizeof img, crc) ==
+	      WIRE_OS_FILE_OK && !memcmp(got, img, sizeof img), "os.ldr: read whole");
+	CHECK(wire_s09_os_file(&S, wire_crc32, bad_crc, got, sizeof got, sizeof img, crc) ==
+	      WIRE_OS_FILE_OK, "a fast CRC that differs is computed again");
+	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof got, sizeof img, crc ^ 1u) ==
+	      WIRE_OS_FILE_CRC, "another CRC");
+	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof got, sizeof img - 1u, crc) ==
+	      WIRE_OS_FILE_LENGTH, "another length");
+	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof img - 1u, sizeof img, crc) ==
+	      WIRE_OS_FILE_LENGTH, "over the buffer");
+	CHECK(path_cmd(S09_UNLINK, 0, "os.ldr", &err) == 0, "removed");
+}
+
 static void test_unmount(void)
 {
 	uint32_t err;
@@ -352,6 +398,7 @@ int main(void)
 	test_dirs();
 	test_space();
 	test_reads();
+	test_os_file();
 	test_unmount();
 	test_refused();
 	wire_s09_release(&S);

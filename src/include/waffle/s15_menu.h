@@ -222,6 +222,15 @@ struct s15_env_ops {
 	/* S-02.105: the factory reset's clear of the running slot's settings
 	 * sector. NULL: none. */
 	enum s15_store_save (*settings_clear)(void *ctx);
+	/* S-15.194: whether Start /os.ldr once can restart now: the slave
+	 * answering, then /yaffs2/os.ldr as S-05.035 would take it (*file
+	 * says why not, with S15_ONCE_FILE). Nothing is written. NULL: this
+	 * build starts no OS. */
+	enum s15_once (*os_once_check)(void *ctx, struct s15_os_file *file);
+	/* S-15.194, S-04.020 W12: the restart whose next start reads the OS
+	 * from /yaffs2/os.ldr, the restarting view drawn. Does not return on
+	 * the device. */
+	void (*os_once)(void *ctx);
 };
 
 /* What the upgrade screen is doing (S-15.103). */

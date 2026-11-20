@@ -384,7 +384,7 @@ class StartInMenu(unittest.TestCase):
         op; `held`: as with the setting off. The recovery rows are the front's, which never reads the store
         (test_s02.py SC-SETTINGS footprint)."""
         starts = [r for r in self.rows if r['case'] == 'start']
-        self.assertEqual(len(starts) + 7, len(self.rows))
+        self.assertEqual(len(starts) + 8, len(self.rows))
         cmds = []
         for r in starts:
             reason = 20 if r['reason'] == 'none' else int(r['reason'], 0)     # S-05.001: missing reads as 20
@@ -398,7 +398,7 @@ class StartInMenu(unittest.TestCase):
                 self.assertEqual(got[got.index('pre'):], handover_ops(), what)
                 self.assertEqual(held, [], what)
                 self.assertEqual('prompt' in got, r['outcome'] == 'prompt', what)
-                if r['reason'] == '80':                    # S-04.013: the setting is not asked
+                if r['reason'] in ('80', '90'):            # S-04.013, S-04.014: the setting is not asked
                     self.assertNotIn('store', got, what)
                 else:
                     self.assertLess(got.index('store'), got.index('pre'), what)

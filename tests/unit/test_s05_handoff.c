@@ -272,19 +272,26 @@ static void test_sequences(void)
 		bool sw_nonzero;
 		const char *seq;
 		enum s05_fail cause;
+		bool from_file;		/* S-05.035: a file start */
 	} cases[] = {
-		{S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 0, true, "PSRTKVJ", S05_FAIL_NONE},	/* H-ORDER */
-		{S05_FAIL_NO_OS, NULL, 0, 0, true, "PSCH", S05_FAIL_NO_OS},		/* F-NOOS, F-BADCRC */
-		{S05_FAIL_NO_OS, NULL, 0, 0, false, "PSH", S05_FAIL_NO_OS},		/* M6 not needed */
-		{S05_FAIL_ENCRYPTED, NULL, 0, 0, true, "PSCH", S05_FAIL_ENCRYPTED},	/* F-ENC */
-		{S05_FAIL_SELECT, NULL, 0, 0, true, "PSH", S05_FAIL_SELECT},		/* F-SELECT: no M6 */
-		{S05_FAIL_NONE, "refuse_ddr_reserve.ldr", 0, 0, true, "PSCH", S05_FAIL_REFUSED},	/* F-REFUSE */
-		{S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 1, true, "PSRH", S05_FAIL_SLAVE},	/* reply 1 */
-		{S05_FAIL_NONE, "synthetic_os_b.ldr", -1, 0, true, "PSRH", S05_FAIL_SLAVE},	/* no reply */
+		{S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 0, true, "PSRTKVJ", S05_FAIL_NONE, false},	/* H-ORDER */
+		{S05_FAIL_NO_OS, NULL, 0, 0, true, "PSCH", S05_FAIL_NO_OS, false},		/* F-NOOS, F-BADCRC */
+		{S05_FAIL_NO_OS, NULL, 0, 0, false, "PSH", S05_FAIL_NO_OS, false},		/* M6 not needed */
+		{S05_FAIL_ENCRYPTED, NULL, 0, 0, true, "PSCH", S05_FAIL_ENCRYPTED, false},	/* F-ENC */
+		{S05_FAIL_SELECT, NULL, 0, 0, true, "PSH", S05_FAIL_SELECT, false},		/* F-SELECT: no M6 */
+		{S05_FAIL_NONE, "refuse_ddr_reserve.ldr", 0, 0, true, "PSCH", S05_FAIL_REFUSED, false},	/* F-REFUSE */
+		{S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 1, true, "PSRH", S05_FAIL_SLAVE, false},	/* reply 1 */
+		{S05_FAIL_NONE, "synthetic_os_b.ldr", -1, 0, true, "PSRH", S05_FAIL_SLAVE, false},	/* no reply */
 		{S05_FAIL_NONE, "synthetic_os_b.ldr", 0, S05_REPLY_NO_START, true, "PSRH",
-		 S05_FAIL_SLAVE_START},	/* H-OSSTART: no teardown, no kernel call */
+		 S05_FAIL_SLAVE_START, false},	/* H-OSSTART: no teardown, no kernel call */
 		{S05_FAIL_NONE, "synthetic_os_b.ldr", -1, S05_REPLY_NO_START, true, "PSRH",
-		 S05_FAIL_SLAVE},	/* no reply: what the op left is not read */
+		 S05_FAIL_SLAVE, false},	/* no reply: what the op left is not read */
+		/* S-05.035: a file start's failures clear nothing (no M6) */
+		{S05_FAIL_FILE, NULL, 0, 0, true, "PSH", S05_FAIL_FILE, true},
+		{S05_FAIL_NO_OS, NULL, 0, 0, true, "PSH", S05_FAIL_NO_OS, true},
+		{S05_FAIL_NONE, "refuse_ddr_reserve.ldr", 0, 0, true, "PSH", S05_FAIL_REFUSED, true},
+		{S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 1, true, "PSRH", S05_FAIL_SLAVE, true},
+		{S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 0, true, "PSRTKVJ", S05_FAIL_NONE, true},
 	};
 	unsigned i;
 
@@ -302,6 +309,7 @@ static void test_sequences(void)
 		m.staging = g_img;
 		m.config_addr = 0x0803D000u;
 		m.sw_version_nonzero = cases[i].sw_nonzero;
+		m.file = cases[i].from_file;
 		s05_master_handoff(&g_mops, &m);
 		CHECK(strcmp(g_ev, cases[i].seq) == 0);
 		CHECK_EQ(g_held_cause, cases[i].cause);

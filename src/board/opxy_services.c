@@ -974,10 +974,44 @@ void opxy_start_view(enum s05_fail cause, const struct boot_start *st,
 	case S05_FAIL_SLAVE_START:
 		out->why = S15_START_SLAVE_START;
 		break;
+	case S05_FAIL_FILE:			/* S-05.035 */
+		out->why = S15_START_FILE;
+		out->file_why = st->os_file.why;
+		out->value = st->os_file.value;
+		out->limit = st->os_file.limit;
+		break;
 	case S05_FAIL_NO_OS:
 	default:
 		start_no_os(st, out);
 		break;
+	}
+	out->file = cause != S05_FAIL_NONE && st->file;	/* S-15.195 */
+}
+
+/* The boot partition's load, as a failed start's line gives it. */
+static void load_log(struct s14_text *t, const struct s03_load *ld)
+{
+	s14_text_str(t, " load ");
+	s14_text_dec(t, (uint32_t)ld->result);
+	s14_text_str(t, " step ");
+	s14_text_dec(t, (uint32_t)ld->step);
+	s14_text_str(t, " part ");
+	s14_text_dec(t, ld->step != S03_STEP_NONE ? ld->step_part : ld->part);
+	if (ld->step == S03_STEP_IMAGE) {
+		s14_text_str(t, " sector ");
+		s14_text_dec(t, ld->sector);
+		s14_text_str(t, "+");
+		s14_text_dec(t, ld->count);
+	}
+	s14_text_str(t, " length ");
+	s14_text_dec(t, ld->header.length);
+	s14_text_str(t, " format ");
+	s14_text_dec(t, ld->header.format);
+	if (ld->result == S03_LOAD_CRC) {
+		s14_text_str(t, " crc ");
+		s14_text_hex(t, ld->crc, 8u);
+		s14_text_str(t, " header ");
+		s14_text_hex(t, ld->header.crc, 8u);
 	}
 }
 
@@ -993,31 +1027,17 @@ void opxy_start_log(struct opxy_master *m, enum s05_fail cause,
 	opxy_start_view(cause, st, &s);
 	s15_start_reason(&why, &s);
 	s14_text_init(&t);
-	s14_text_str(&t, "OS not started: ");
+	s14_text_str(&t, st->file ? "OS not started from /os.ldr: " : "OS not started: ");
 	s14_text_str(&t, why.s);
 	s14_text_str(&t, "; cause ");
 	s14_text_dec(&t, (uint32_t)cause);
-	s14_text_str(&t, " load ");
-	s14_text_dec(&t, (uint32_t)ld->result);
-	s14_text_str(&t, " step ");
-	s14_text_dec(&t, (uint32_t)ld->step);
-	s14_text_str(&t, " part ");
-	s14_text_dec(&t, ld->step != S03_STEP_NONE ? ld->step_part : ld->part);
-	if (ld->step == S03_STEP_IMAGE) {
-		s14_text_str(&t, " sector ");
-		s14_text_dec(&t, ld->sector);
-		s14_text_str(&t, "+");
-		s14_text_dec(&t, ld->count);
-	}
-	s14_text_str(&t, " length ");
-	s14_text_dec(&t, ld->header.length);
-	s14_text_str(&t, " format ");
-	s14_text_dec(&t, ld->header.format);
-	if (ld->result == S03_LOAD_CRC) {
+	if (st->file) {				/* S-05.035: no partition read */
+		s14_text_str(&t, " length ");
+		s14_text_dec(&t, ld->length);
 		s14_text_str(&t, " crc ");
-		s14_text_hex(&t, ld->crc, 8u);
-		s14_text_str(&t, " header ");
-		s14_text_hex(&t, ld->header.crc, 8u);
+		s14_text_hex(&t, st->file_crc, 8u);
+	} else {
+		load_log(&t, ld);
 	}
 	if (cause == S05_FAIL_REFUSED) {
 		s14_text_str(&t, " refusal ");
@@ -1091,6 +1111,12 @@ size_t opxy_start_report(const struct opxy_master *m,
 	p = put32(p, st->why.arg0);
 	for (unsigned i = 0; i < 4u; i++)
 		p = put32(p, st->why.fault[i]);
+	p = put8(p, st->file ? 1u : 0u);		/* S-05.035 */
+	p = put8(p, (uint32_t)st->os_file.why);
+	p = put32(p, st->file ? ld->length : 0u);
+	p = put32(p, st->os_file.value);
+	p = put32(p, st->os_file.limit);
+	p = put32(p, st->file_crc);
 	return (size_t)(p - out);
 }
 
@@ -1167,6 +1193,11 @@ static void boot_info(struct opxy_master *m, const struct boot_held *h)
 void opxy_held_screen(struct opxy_master *m, const struct boot_held *h)
 {
 	m->sv.held = *h;
+	/* S-04.014: a start from /os.ldr that held mode took before its load;
+	 * the request is gone, and the reason is the screen's own */
+	if (h->reason == S04_REASON_OS_FILE && !h->load_attempted)
+		s14_log_str(&m->sv.log, S14_WARNING, S14_TAG("boot"),
+			    "/os.ldr not started: this start opened the boot menu");
 	boot_info(m, h);
 	opxy_display_held_start(m);
 	/* S-14.025: level-0 lines reach the screen once the display is up;
@@ -1459,6 +1490,37 @@ static void env_continue_os(void *ctx)
 	opxy_reboot(m, slave ? S04_W11 : S04_W2, 0u);
 }
 
+/*
+ * S-15.194: the slave answering, and /yaffs2/os.ldr there as the next
+ * start will take it (S-05.035), by its stat alone; nothing is written. A
+ * soft reboot cannot carry the request (S-04.029), so with the slave absent
+ * or not answering there is none.
+ */
+static enum s15_once env_os_once_check(void *ctx, struct s15_os_file *file)
+{
+	struct opxy_master *m = ctx;
+	uint32_t len;
+
+	if (!m->slave_present || m->bridge.absent)
+		return S15_ONCE_SLAVE;
+	if (!s09_files_os_check(&m->sv.files, S03_OS_MAX, file, &len))
+		return m->bridge.absent ? S15_ONCE_SLAVE : S15_ONCE_FILE;
+	return S15_ONCE_STARTED;
+}
+
+/* S-15.194, S-04.014: the view on the panel as for W7, then W12, whose
+ * next start reads the OS from the file. */
+static void env_os_once(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	s14_log_str(&m->sv.log, S14_INFO, S14_TAG("boot"),
+		    "restarting to start /os.ldr once, writing nothing");
+	opxy_menu_show_now(m);
+	wb_delay_us(&m->hw.time, OPXY_RESTART_HOLD_MS * 1000u);
+	opxy_reboot(m, S04_W12, 0u);
+}
+
 /* S-15.172, S-02.098: the running slot's settings sector; nothing of the
  * eMMC is touched */
 static enum s15_store_save env_settings_save(void *ctx, const struct s15_settings *s,
@@ -1517,6 +1579,9 @@ void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 	env->continue_os = OPXY_TESTOS_OR(NULL, env_continue_os);
 	env->start_log_read = env_start_log_read;
 	env->files_scan = env_files_scan;
+	/* S-15.194: the test OS (waffle/testos.h) hands over to no OS */
+	env->os_once_check = OPXY_TESTOS_OR(NULL, env_os_once_check);
+	env->os_once = OPXY_TESTOS_OR(NULL, env_os_once);
 }
 
 __attribute__((weak)) const struct s15_geometry *opxy_display_geometry(void)
