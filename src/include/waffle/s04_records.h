@@ -35,8 +35,9 @@
 /* S-04.013: boots as 20 does, and start in boot menu (S-15.175) does not
  * apply to that one start. Written only by W11. */
 #define S04_REASON_OS_ONCE 80u
-/* S-04.014: boots as 20 does, with the OS image read from /yaffs2/os.ldr
- * instead of the boot partition (S-05.035). Written only by W12. */
+/* S-04.014: boots as 80 does (start in boot menu does not apply), with the
+ * OS image read from /yaffs2/os.ldr instead of the boot partition
+ * (S-05.035). Written only by W12. */
 #define S04_REASON_OS_FILE 90u
 
 /* S-04.002: present when the magic is 0xDEADF00D. */

@@ -45,9 +45,9 @@ void boot_master(const struct boot_master_ops *ops)
 	if (OPXY_TESTOS_OR(false, d.boot_os) && present) {
 		/* S-15.175: the setting, read only at a start; with it on, held
 		 * mode with no load attempted and no boot prompt. Not on the
-		 * one start after Continue to the OS (S-04.013); on the one
-		 * after Start /os.ldr once as on any other (S-04.014). */
-		if (reason != S04_REASON_OS_ONCE &&
+		 * one start after Continue to the OS (S-04.013) or after Start
+		 * /os.ldr once (S-04.014). */
+		if (reason != S04_REASON_OS_ONCE && reason != S04_REASON_OS_FILE &&
 		    ops->start_in_menu != NULL && ops->start_in_menu(ops->ctx)) {
 			ops->held(ops->ctx, &master_held);
 			return;

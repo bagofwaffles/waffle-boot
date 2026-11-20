@@ -22,7 +22,7 @@ start	80	0x0000	not_held	present	release	off	boot
 start	80	0x0000	not_held	present	release	on	boot
 start	80	0x0000	not_held	present	release	erased	boot
 start	90	0x0000	not_held	present	release	off	boot
-start	90	0x0000	not_held	present	release	on	held_no_load
+start	90	0x0000	not_held	present	release	on	boot
 start	90	0x0000	not_held	present	release	erased	boot
 start	10	0x0000	not_held	present	release	off	held
 start	10	0x0000	not_held	present	release	on	held
@@ -55,3 +55,8 @@ start	80	0xab0d	not_held	present	release	on	held
 start	80	0x0000	not_held	absent	release	on	held
 start	80	0x0000	not_held	present	prompt	on	prompt
 power4	80	0x0000	not_held	present	release	on	recovery
+start	90	0x0000	held	present	release	on	held
+start	90	0xab0d	not_held	present	release	on	held
+start	90	0x0000	not_held	absent	release	on	held
+start	90	0x0000	not_held	present	prompt	on	prompt
+power4	90	0x0000	not_held	present	release	on	recovery

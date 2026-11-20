@@ -988,9 +988,8 @@ static void restart(struct s15_menu *m)
 }
 
 /* S-15.194: the restart into a start from /yaffs2/os.ldr, or the reason
- * there is none, under the developer menu drawn again. The start in boot
- * menu a next start would read refuses it, as that start would open the
- * boot menu (S-15.175). */
+ * there is none, under the developer menu drawn again. That start boots
+ * whatever start in boot menu says (S-04.014). */
 static void os_once(struct s15_menu *m)
 {
 	struct s15_os_file file = { S15_OSW_WHY_NONE, 0, 0 };
@@ -1001,8 +1000,6 @@ static void os_once(struct s15_menu *m)
 		return;		/* fs held says why: no reset while it shows */
 	if (m->env->os_once_check == NULL || m->env->os_once == NULL)
 		r = S15_ONCE_DISABLED;
-	else if (m->start_menu)
-		r = S15_ONCE_START_MENU;
 	else
 		r = m->env->os_once_check(m->env->ctx, &file);
 	if (r == S15_ONCE_STARTED) {

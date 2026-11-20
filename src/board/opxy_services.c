@@ -1515,7 +1515,7 @@ static void env_os_once(void *ctx)
 	struct opxy_master *m = ctx;
 
 	s14_log_str(&m->sv.log, S14_INFO, S14_TAG("boot"),
-		    "restarting to start /os.ldr once");
+		    "restarting to start /os.ldr once, writing nothing");
 	opxy_menu_show_now(m);
 	wb_delay_us(&m->hw.time, OPXY_RESTART_HOLD_MS * 1000u);
 	opxy_reboot(m, S04_W12, 0u);

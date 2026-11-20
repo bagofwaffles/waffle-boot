@@ -7,7 +7,8 @@ The boot menu is waffle-boot's own set of screens, shown instead of starting the
   `Loading boot menu...` appears under the logo, then let go: the menu follows a few seconds later. Keys
   pressed while the line shows do nothing, and a key still held when the menu opens does nothing until let
   go and pressed again.
-- **Settings → 6 Start in boot menu: On.** Every start then opens the menu instead of the OS.
+- **Settings → 6 Start in boot menu: On.** Every start then opens the menu instead of the OS, but the one
+  start after Continue to the OS or after the developer menu's 3 Start /os.ldr once (does not write).
 - **By itself**, when the OS cannot be started, when the last install did not finish, or when the OS
   restarts the unit into the bootloader for an update.
 
@@ -121,6 +122,6 @@ unit. To erase everything instead, use **5 Format drive**.
 | Item | What it does |
 | --- | --- |
 | 2 MTP file transfer | Shares the internal drive with the computer, which can copy, delete, move and rename files and folders on it. 8 turns it off |
-| 3 Start /os.ldr once | Restarts the unit, and that one start loads the OS from the file `os.ldr` on the drive instead of the eMMC's boot partition. Nothing is written to the eMMC; the start after it loads from the boot partition as before. Without a usable file, Start in boot menu on, or DSP2 not answering, it does not restart and says why; a file that fails at the start opens the boot menu with the reason |
+| 3 Start /os.ldr once (does not write) | Restarts the unit, and that one start loads the OS from the file `os.ldr` on the drive instead of the eMMC's boot partition, also with Start in boot menu on. Nothing is written to the eMMC; the start after it loads from the boot partition as before. Without a usable file, or with DSP2 not answering, it does not restart and says why; a file that fails at the start opens the boot menu with the reason |
 | 5 Write /os.ldr to boot partition | Writes the file `os.ldr` from the drive to the eMMC's inactive boot partition. After a success, 6 restarts into the OS |
 | 6 Restart | Restarts the unit |

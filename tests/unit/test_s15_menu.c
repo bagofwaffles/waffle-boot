@@ -3137,16 +3137,16 @@ static void test_os_once(void)
 		CHECK(F.reset_w7 == 1u, "S-15.095 %s: 6 still restarts", refused[i].screen);
 	}
 
-	/* Start in boot menu on: the next start would open the boot menu,
-	 * so no check and no restart. */
+	/* Start in boot menu on: the restart all the same, its start boots
+	 * the file whatever the setting says (S-04.014). */
 	reset_fake(); default_boot(); BOOT.settings.start_menu = true; start();
 	press(0x08);
 	F.once_rc = S15_ONCE_STARTED;
 	clear_records();
 	press(0x08);
-	CHECK(F.once_checks == 0u && F.once == 0u && M.screen == S15_SCR_FACTORY,
-	      "S-15.194 refused with start in boot menu on");
-	expect_screen("factory_once_start_menu");
+	CHECK(F.once_checks == 1u && F.once == 1u && F.once_view && M.start_menu,
+	      "S-15.194 restarts with start in boot menu on, the setting unchanged");
+	CHECK(F.saves == 0u, "S-15.194 no setting saved");
 
 	/* fs held: nothing at all, as the restart (S-02.071). */
 	reset_fake(); default_boot(); start();

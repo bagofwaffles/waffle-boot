@@ -211,7 +211,9 @@ These rules are fixed: only the maintainer changes them.
 - Settings: 1 Developer mode, 2 Protected writes, 3 Color, 5 MTP target,
   6 Start in boot menu; never a digit the white knob also gives.
 - Start in boot menu is off by default. On, every start that would boot
-  the OS opens the boot menu instead (S-15.175). It is kept with the
+  the OS opens the boot menu instead (S-15.175), but the one start after
+  Continue to the OS or after the developer menu's 3 Start /os.ldr once
+  (does not write). It is kept with the
   other settings in the running slot's settings sector in the SPI flash;
   when it cannot be saved, Settings says
   so and the item shows what the next start will read.
@@ -222,6 +224,10 @@ These rules are fixed: only the maintainer changes them.
   even with Start in boot menu on (S-15.190). Those two keys and a host's
   request (`continue-os`, S-10c.076) start it. Its screen says that the
   unit is restarting to start the OS.
+- 3 Start /os.ldr once (does not write) on the developer menu restarts the
+  unit, and that one start boots the OS from the drive's `/os.ldr` even
+  with Start in boot menu on (S-15.194, S-04.014); it writes nothing to
+  the eMMC. Its screen says that the unit is restarting to start it.
 - After a failed first-stage write (a build with the first-stage step
   switched on), until the first stage is written: no key and no host
   request restarts the unit or starts the OS. Continue to the OS, the

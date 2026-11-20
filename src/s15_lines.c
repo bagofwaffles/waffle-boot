@@ -796,11 +796,11 @@ const char s15_osw_written[] = "Firmware written.";
 const char s15_osw_select0_failed[] = "The eMMC did not switch back; please restart";
 const char s15_osw_back[] = "8 Back to Developer";
 
-/* ---- S-15.194: Start /os.ldr once ---------------------------------- */
+/* ---- S-15.194: Start /os.ldr once (does not write) ----------- */
 
-const char s15_once_item[] = "3 Start /os.ldr once";
+const char s15_once_item[] = "3 Start /os.ldr once (does not write)";
 const char s15_once_not_started[] = "/os.ldr was not started";
-const char s15_once_restarting[] = "Restarting to start /os.ldr once...";
+const char s15_once_restarting[] = "Restarting to start /os.ldr once, writing nothing";
 
 void s15_once_reason(struct s15_buf *out, enum s15_once why,
 		     const struct s15_os_file *file)
@@ -813,9 +813,6 @@ void s15_once_reason(struct s15_buf *out, enum s15_once why,
 		break;
 	case S15_ONCE_SLAVE:
 		s15_buf_str(out, "DSP2 does not answer: the drive is on it");
-		break;
-	case S15_ONCE_START_MENU:
-		s15_buf_str(out, "Start in boot menu is on");
 		break;
 	case S15_ONCE_DISABLED:
 		s15_buf_str(out, "the test OS starts no OS");

@@ -321,14 +321,13 @@ extern const char s15_osw_written[];
 extern const char s15_osw_select0_failed[];	/* S15_ST_WARN, S-03.063 */
 extern const char s15_osw_back[];
 
-/* ---- S-15.194: Start /os.ldr once ---------------------------------- */
+/* ---- S-15.194: Start /os.ldr once (does not write) ----------- */
 
 /* Why the item made no restart. */
 enum s15_once {
 	S15_ONCE_STARTED,	/* the restart is under way */
 	S15_ONCE_FILE,		/* the file: struct s15_os_file says why */
 	S15_ONCE_SLAVE,		/* DSP2 absent or not answering */
-	S15_ONCE_START_MENU,	/* start in boot menu is on (S-15.175) */
 	S15_ONCE_DISABLED	/* this build starts no OS (the test OS) */
 };
 

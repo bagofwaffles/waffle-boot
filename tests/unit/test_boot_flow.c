@@ -479,18 +479,33 @@ static void test_start_in_menu(void)
 	boot_master(&menu_prompt_ops);
 	CHECK(strcmp(trace, "BDMRKSQPGLTkVJ") == 0 && mf.menu_asks == 0u);
 
-	/* S-04.014: the start after Start /os.ldr once asks it as any other
-	 * start does: on, held mode with no load; off, the boot path. */
+	/* S-04.014: the start after Start /os.ldr once is treated as the one
+	 * after Continue: the setting is not asked, held keys still hold, and
+	 * a build with the boot prompt still asks. */
 	master_reset();
 	mf.reason = S04_REASON_OS_FILE;
 	mf.start_menu = true;
 	boot_master(&menu_ops);
-	CHECK(strcmp(trace, "BDMRKSUH") == 0 && mf.held && !mf.h.load_attempted &&
-	      mf.h.reason == S04_REASON_OS_FILE);
+	CHECK(strcmp(trace, "BDMRKSPGLTkVJ") == 0 && !mf.held && mf.menu_asks == 0u);
 	master_reset();
 	mf.reason = S04_REASON_OS_FILE;
+	mf.start_menu = true;
+	mf.keys = S05_KEYS_HELD;
 	boot_master(&menu_ops);
-	CHECK(strcmp(trace, "BDMRKSUPGLTkVJ") == 0 && !mf.held);
+	CHECK(strcmp(trace, "BDMRKSH") == 0 && mf.held && mf.menu_asks == 0u &&
+	      !mf.h.load_attempted && mf.h.reason == S04_REASON_OS_FILE);
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	mf.start_menu = true;
+	mf.prompt = BOOT_PROMPT_START;
+	boot_master(&menu_prompt_ops);
+	CHECK(strcmp(trace, "BDMRKSQPGLTkVJ") == 0 && mf.menu_asks == 0u);
+	master_reset();
+	mf.reason = S04_REASON_OS_FILE;
+	mf.start_menu = true;
+	mf.prompt = BOOT_PROMPT_HELD;
+	boot_master(&menu_prompt_ops);
+	CHECK(strcmp(trace, "BDMRKSQH") == 0 && !mf.h.load_attempted);
 
 	/* The prompt comes after it, and only with the setting off. */
 	master_reset();
