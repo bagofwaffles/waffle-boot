@@ -621,12 +621,14 @@ COMPONENTS = [
     ("psoc_backplane", False, []),
 ]
 UPGRADE_STATE_AREAS = ["metadata", "metadata_mirror"]   # S-02.049, .057, .064
-SWITCHED_OFF = ["nordic_application", "nordic_bootloader", "psoc_backplane"]   # S-11.073
+# S-11.073: the steps a build may switch off; this version switches none off
+SWITCHABLE = ["nordic_application", "nordic_bootloader", "psoc_backplane"]
 
 
-def install_case(case, package, option, selected=None):
+def install_case(case, package, option, selected=None, switched_off=()):
     """One package case's steps. selected: the components selected on the unit (S-11.096); None: every
-    one. A protected component is selected only with the option on."""
+    one. A protected component is selected only with the option on. switched_off: of SWITCHABLE, the
+    steps a build switched off (S-11.073)."""
     selected = [n for n, _, _ in COMPONENTS] if selected is None else list(selected)
     if not option:
         selected = [n for n in selected if n != "bootloader"]
@@ -636,7 +638,7 @@ def install_case(case, package, option, selected=None):
         if protected and not option:
             steps.append({"component": name, "action": "skip", "report": "skipped", "reason": "option_off",
                           "flash_ops": 0})
-        elif name in SWITCHED_OFF:
+        elif name in switched_off:
             steps.append({"component": name, "action": "skip", "report": "skipped", "reason": "switched_off",
                           "flash_ops": 0})
         elif name not in selected:
@@ -663,6 +665,7 @@ def package_steps():
             install_case("option_off_te", "factory", False),
             install_case("option_on_te", "factory", True),
             install_case("option_on_te_bootloader_not_selected", "factory", True, ("os", "content")),
+            install_case("option_on_switched_off", "waffle-boot", True, switched_off=SWITCHABLE),
         ],
     }
 

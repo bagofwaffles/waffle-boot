@@ -8,7 +8,7 @@ waffle-boot. To install waffle-boot itself, see [How to Install](How-to-Install)
 | Install a TE firmware package (content and OS) from the boot menu | Tested on one unit |
 | Install waffle-boot | [How to Install](How-to-Install) |
 | Replace waffle-boot in one slot with another waffle-boot build | [How to Recover](How-to-Recover#write-a-slot-from-a-computer) |
-| Update the Bluetooth (BLE) or backplane (PSoC) chips | **Not supported yet.** Those steps show `Skipped: not in this version` |
+| Update the Bluetooth (BLE) chip, its bootloader, or the backplane (PSoC) | **Not tested on a unit.** Choose them on the list as any part. The backplane step needs the PSoC unlock; a build without it fails that step before anything is sent |
 | Return to the factory bootloader | **Not supported yet** |
 | Build a package with your own OS image | Developers: [Building Custom OS Updates (.tfw)](Building-Custom-OS-Updates) |
 | Write an OS image file directly | Developers: Boot menu → Developer menu → 5 ([Test OS](Test-OS#loading-it)) |
@@ -41,9 +41,11 @@ You need a USB cable, a computer, and the firmware package file (its name contai
 
 A part the package does not carry has no row; the others keep their digits. A row shows the installed
 version and the package's (`1.1.4 > 1.1.5`), or the package's alone. A gray row cannot be chosen, and says
-why: `Not in this version`, `Protected writes off` or `Up to date`. A part left at `No` shows
+why: `Protected writes off`, `Up to date` (the BLE, BLE bootloader or backplane version on the unit is the
+package's), or `Not in this version` (a build that switches a step off). A part left at `No` shows
 `Skipped: not selected` and is not touched. The unit asks again at every install; nothing is remembered. If
-the unit cannot read its keys, it shows no list and installs every part it can but the bootloader.
+the unit cannot read its keys, it shows no list and installs every part it can but the bootloader, the BLE and
+backplane parts included.
 
 With **Protected writes** off (the default), the bootloader cannot be chosen: an install writes content and
 the OS only, and never touches the bootloader or the first stage.

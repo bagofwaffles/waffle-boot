@@ -82,8 +82,8 @@
  *                            "-" when there is none
  *
  * set KEY VALUE (each 0 or 1 unless stated; the default first):
- *   off 3,4,5 | STEPS | -  the switched-off steps (S-11.073), comma-separated;
- *                         "-" for none. The default is this version's
+ *   off - | STEPS         the switched-off steps (S-11.073), comma-separated;
+ *                         "-" for none, this version's
  *   select unasked | install STEPS | cancel  S-11.096: the answer on the
  *                         unit: none (the keys cannot be read), the steps
  *                         given (comma-separated, "all" or "-"), or a
@@ -495,7 +495,7 @@ static struct {
 	enum s11_answer answer;		/* S-11.096 */
 	uint8_t give;			/* the steps given with an install */
 } cfg = { true, true, true, true, true, true, true, 0, -1, 0, false, 0,
-	  0, 0, 0, 0, 0, 0, -1, "", 0, S11_STEPS_SWITCHABLE,
+	  0, 0, 0, 0, 0, 0, -1, "", 0, 0,
 	  S11_ANSWER_UNASKED, 0 };
 
 static struct {

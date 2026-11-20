@@ -572,8 +572,8 @@ int main(int argc, char **argv)
 	(void)s15_menu_continue(&menu);
 	bad |= shot(d, "continue-restarting");
 
-	/* this version's run: the content and the OS installed, the
-	 * Nordic's and the PSoC's parts switched off (S-11.073) */
+	/* a run done: the content, the OS and the BLE installed, the BLE
+	 * bootloader already installed, the backplane left at No */
 	setup(); boot.reason = 30; start();
 	s15_up_run_start(&menu, S15_RUN_FIRMWARE, "1.2.0", NULL, false);
 	s15_up_step_start(&menu, S15_STEP_CONTENT);
@@ -581,16 +581,14 @@ int main(int argc, char **argv)
 	s15_up_step_start(&menu, S15_STEP_OS);
 	s15_up_step_result(&menu, S15_STEP_OS, S15_RES_OK, "1.2.0", false, NULL);
 	s15_up_step_start(&menu, S15_STEP_BLE);
-	s15_up_step_result(&menu, S15_STEP_BLE, S15_RES_SKIPPED_OFF, NULL, false, NULL);
+	s15_up_step_result(&menu, S15_STEP_BLE, S15_RES_OK, "0.9.3", false, NULL);
 	s15_up_step_start(&menu, S15_STEP_BLE_BOOTLOADER);
-	s15_up_step_result(&menu, S15_STEP_BLE_BOOTLOADER, S15_RES_SKIPPED_OFF, NULL,
+	s15_up_step_result(&menu, S15_STEP_BLE_BOOTLOADER, S15_RES_ALREADY, NULL,
 			   false, NULL);
 	s15_up_step_start(&menu, S15_STEP_KEYBOARD);
-	s15_up_step_result(&menu, S15_STEP_KEYBOARD, S15_RES_SKIPPED_OFF, NULL,
-			   false, NULL);
-	s15_up_run_end(&menu, S15_OUT_DONE,
-		       (1u << S15_STEP_BLE) | (1u << S15_STEP_BLE_BOOTLOADER) |
-		       (1u << S15_STEP_KEYBOARD));
+	s15_up_step_result(&menu, S15_STEP_KEYBOARD, S15_RES_SKIPPED_UNSELECTED,
+			   NULL, false, NULL);
+	s15_up_run_end(&menu, S15_OUT_DONE, 0);
 	bad |= shot(d, "upgrade-done");
 
 	/* S-15.116: the selection, protected writes on (Settings, 2, then 2
@@ -627,8 +625,6 @@ int main(int argc, char **argv)
 		s15_up_select(&menu, &info, &sel, 0);
 		bad |= shot(d, "upgrade-select");
 
-		info.row[S15_STEP_BLE].kind = S15_ROW_OFF;
-		info.row[S15_STEP_BLE_BOOTLOADER].kind = S15_ROW_OFF;
 		info.row[S15_STEP_KEYBOARD].kind = S15_ROW_UP_TO_DATE;
 		s15_select_open(&sel, (uint8_t)(S15_SELECT_BIT(S15_STEP_OS) |
 						S15_SELECT_BIT(S15_STEP_CONTENT) |

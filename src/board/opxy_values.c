@@ -301,9 +301,8 @@ bool opxy_otp_fsn(uint32_t words[4])
 
 /*
  * The PSoC unlock, the six bytes that enter the PSoC's bootloader
- * (S-07.081): this board supplies none. A backplane step that ran would
- * fail before the bootloader is entered and send nothing; the step is
- * switched off (S-11.073).
+ * (S-07.081): this board supplies none. The backplane step then fails
+ * before the bootloader is entered and sends nothing.
  */
 bool opxy_psoc_unlock(uint8_t unlock[S07_CY_UNLOCK_LEN])
 {

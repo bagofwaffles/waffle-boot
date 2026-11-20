@@ -1742,9 +1742,7 @@ static void test_whole_hold(void)
 	struct s11_install_result res;
 
 	t_case = "whole: hold";
-	CHECK_EQ(opxy_steps_off(), (uint8_t)(S11_STEP_BIT(S11_STEP_BLE) |
-					     S11_STEP_BIT(S11_STEP_BLE_BOOTLOADER) |
-					     S11_STEP_BIT(S11_STEP_KEYBOARD)));
+	CHECK_EQ(opxy_steps_off(), 0u);		/* S-11.073: none */
 	whole_setup();
 	ks.ev[0] = hold_5s;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
@@ -1764,29 +1762,31 @@ static void test_whole_hold(void)
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 6000u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 6500u);
 	CHECK(cdc_has("1 Install selected  Nothing selected"));
-	CHECK(cdc_has("4 BLE  Not in this version") &&
-	      cdc_has("5 BLE bootloader  Not in this version") &&
-	      cdc_has("6 Backplane  Not in this version"));
+	/* the coprocessors' versions not reported: the package's alone */
+	CHECK(cdc_has("4 BLE  1234.0.0  No") &&
+	      cdc_has("5 BLE bootloader  1234.0.0  No") &&
+	      cdc_has("6 Backplane  1234.0.0  No") && !cdc_has("Not in this version"));
 	/* the running bootloader's version, then the package's (no version
 	 * file: S-11.036's) */
 	CHECK(cdc_has("7 Bootloader  0.9.40 > 1234.0.0  No") &&
 	      cdc_has("7 Bootloader  0.9.40 > 1234.0.0  Yes"));
 	CHECK(cdc_has("Slot 2 is replaced. Recovery remains."));
 	CHECK(cdc_has("install: installing by a 5 s hold, steps selected 0x04"));
-	/* the switched-off steps: Skipped, each after its own report */
-	CHECK(cdc_has("[skipped] ble: switched off") &&
-	      cdc_has("[skipped] ble bootloader: switched off") &&
-	      cdc_has("[skipped] backplane: switched off"));
-	CHECK(cdc_at("[ble]") < cdc_at("[skipped] ble: switched off") &&
-	      cdc_at("[skipped] ble: switched off") < cdc_at("[ble bootloader]") &&
-	      cdc_at("[backplane]") < cdc_at("[skipped] backplane: switched off"));
+	/* the parts left at No: Skipped, each after its own report */
+	CHECK(cdc_has("[skipped] ble: not selected") &&
+	      cdc_has("[skipped] ble bootloader: not selected") &&
+	      cdc_has("[skipped] backplane: not selected"));
+	CHECK(cdc_at("[ble]") < cdc_at("[skipped] ble: not selected") &&
+	      cdc_at("[skipped] ble: not selected") < cdc_at("[ble bootloader]") &&
+	      cdc_at("[backplane]") < cdc_at("[skipped] backplane: not selected"));
 	CHECK(!cdc_has("[skipped] bootloader") && !cdc_has("spiboot") &&
 	      !cdc_has("install: first stage") && !cdc_has("First stage"));
 	CHECK(!cdc_has("no PSoC unlock") && !cdc_has("not in update mode"));
-	CHECK(cdc_has("Not updated: BLE, BLE bootloader, Backplane"));
+	CHECK(!cdc_has("Not updated:"));	/* S-15.115: left out by choice */
 	CHECK(cdc_has("Done!"));
-	/* nothing to the Nordic but the run's queries: no DFU entry (0x0D
-	 * 0xEE), no transfer; nothing for the PSoC's bootloader (0xEE) */
+	/* S-11.061: no Nordic step selected: nothing to the Nordic but the
+	 * run's queries, no DFU entry (0x0D 0xEE), no transfer; nothing for
+	 * the PSoC's bootloader (0xEE) */
 	CHECK(!frame_on(nordic_wire, nordic_n, 0x0Du, 0xEE));
 	CHECK(!frame_on(wire, wire_n, 0xEEu, -1));
 	whole_end();
@@ -1882,8 +1882,9 @@ static void test_whole_timeout(void)
 }
 
 /* Keys that cannot be read (S-07.032 had no reply): no screen, no wait;
- * the run as with nobody to ask: every step but the bootloader, which is
- * Skipped, not selected. */
+ * the run as with nobody to ask: every step but the bootloader, the Nordic
+ * and PSoC steps included. A Nordic that does not enter DFU fails the run
+ * before its first step (S-11.061): nothing is installed. */
 static void test_whole_unreadable(void)
 {
 	struct s11_install_result res;
@@ -1898,13 +1899,14 @@ static void test_whole_unreadable(void)
 	whole_install(true, false, &res);
 	CHECK(cdc_has("install: keys not readable, nothing asked"));
 	CHECK(!cdc_has("1 Install selected"));
-	CHECK(!res.canceled && res.selected == 0u);
+	CHECK(!res.canceled &&
+	      res.selected == (S11_STEP_BIT(S11_STEP_BLE) |
+			       S11_STEP_BIT(S11_STEP_BLE_BOOTLOADER) |
+			       S11_STEP_BIT(S11_STEP_KEYBOARD)));
 	CHECK(slots_untouched());
-	CHECK(cdc_has("[skipped] bootloader: not selected"));
-	/* S-15.115: the step left out is not named among the parts not
-	 * updated */
-	CHECK(cdc_has("Not updated: BLE, BLE bootloader, Backplane"));
-	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
+	CHECK(frame_on(nordic_wire, nordic_n, 0x0Du, 0xEE));	/* DFU entry asked */
+	CHECK(res.run.end == S11_RUN_FAILED && !cdc_has("[ble]") &&
+	      !cdc_has("[bootloader]") && cdc_has("Upgrade failed."));
 	CHECK(ks.asks == 0u);		/* no key was read for it */
 	CHECK(now_ms() - t0 < 30000u);	/* the run's own waits, no 60 s */
 	whole_end();

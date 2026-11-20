@@ -720,7 +720,7 @@ class Runs(unittest.TestCase):
 
     @scenario('S-11/SC-11-SWITCHED-OFF')
     def test_SC_11_SWITCHED_OFF(self):
-        """This version's steps 3-5 switched off (S-11.073). The SC-11-RUN-OK package, option off: no DFU entry,
+        """Steps 3-5 switched off (S-11.073), as a build may have them. The SC-11-RUN-OK package, option off: no DFU entry,
         no boot-slot query, nothing sent to the Nordic or the PSoC; the version read and the exit query made;
         steps 2-5 Skipped with their reasons, step 6 Not found; done, os_version the package's, the coprocessor values unchanged;
         as the model's run. Variants: the Nordic refusing DFU (the same, done); a package of only Nordic and
@@ -743,7 +743,7 @@ class Runs(unittest.TestCase):
         m = model()
         for tag, zz, dfu in (('off', z, True), ('nodfu', z, False), ('only', only, True), ('os_only', os_only, True)):
             with self.subTest(variant=tag):
-                lg, r = self.check_run(out, tag, staged_of(zz), False, dfu=dfu, steps_off=m.STEPS_OFF, answer=None)
+                lg, r = self.check_run(out, tag, staged_of(zz), False, dfu=dfu, steps_off=(3, 4, 5), answer=None)
                 for e in ('nordic:enter_dfu', 'nordic_slot', 'nordic_send:ble', 'nordic_send:bl0', 'nordic_send:bl1',
                           'psoc_program', 'bootloader_write'):
                     self.assertNotIn(e, lg)
@@ -762,7 +762,7 @@ class Runs(unittest.TestCase):
 
     @scenario('S-11/SC-11-CONFIRM')
     def test_SC_11_CONFIRM(self):
-        """S-11.096, the selection, with this version's steps 3-5 switched off. The SC-11-RUN-OK package
+        """S-11.096, the selection, with steps 3-5 switched off (S-11.073). The SC-11-RUN-OK package
         (TE-signed, a first-stage file carried), option on: asked once before the run's first write, offered
         content, the OS and the bootloader (never a first-stage file, nothing writes it); every step offered
         selected: all written, a return to the factory bootloader; the bootloader left out: Skipped, not
@@ -804,7 +804,7 @@ class Runs(unittest.TestCase):
         s.add('log', name='again/log')
         out = s.run()
         m = model()
-        self.assertEqual(m.STEPS_OFF, (3, 4, 5))
+        self.assertEqual(m.STEPS_OFF, ())
         for tag, zz, opt, a in legs:
             with self.subTest(leg=tag):
                 lg, r = self.check_run(out, tag, staged_of(zz), bool(opt), steps_off=(3, 4, 5), answer=answer(a))

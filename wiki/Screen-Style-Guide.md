@@ -317,11 +317,11 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | <img src="../docs/ui/format.png" width="480" alt="Format Drive"> | <img src="../docs/ui/upgrade-wait.png" width="480" alt="Install Firmware"> |
 | Format Drive | Install Firmware, waiting for a package |
 | <img src="../docs/ui/upgrade-run.png" width="480" alt="Installing"> | <img src="../docs/ui/upgrade-done.png" width="480" alt="Done"> |
-| a run in progress | a run done: the BLE and backplane parts skipped, not in this version |
+| a run in progress | a run done: the BLE installed, its bootloader already installed, the backplane left at `No` |
 | <img src="../docs/ui/upgrade-failed.png" width="480" alt="Failed"> | <img src="../docs/ui/upgrade-select.png" width="480" alt="The parts of a package"> |
 | a run failed | the parts of a package, as the list opens: every row at `No` |
 | <img src="../docs/ui/upgrade-picked.png" width="480" alt="Parts chosen"> | <img src="../docs/ui/upgrade-held.png" width="480" alt="Install selected held"> |
-| two parts at `Yes`, the bootloader among them; rows that cannot be picked | 1 held for 2 of the 5 s |
+| two parts at `Yes`, the bootloader among them; a row that cannot be picked, up to date | 1 held for 2 of the 5 s |
 | <img src="../docs/ui/main-failed.png" width="480" alt="The OS not started"> | <img src="../docs/ui/info-failed.png" width="480" alt="Device Info after it"> |
 | Main Menu: the start failed when the second processor stopped answering | Device Info: the step, the request and where it broke |
 | <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | <img src="../docs/ui/upgrade-canceled.png" width="480" alt="Nothing installed"> |

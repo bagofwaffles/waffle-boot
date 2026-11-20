@@ -37,7 +37,7 @@ STEPS = ['content', 'os', 'bootloader', 'ble', 'ble bootloader', 'keyboard', 're
 RESERVED = 6                 # S-11.057: step 6 does nothing and reports Not found
 PROTECTED = {2}
 SWITCHABLE = (3, 4, 5)       # S-11.073: the steps that can be switched off
-STEPS_OFF = (3, 4, 5)        # S-11.073: the steps this version has switched off
+STEPS_OFF = ()               # S-11.073: the steps this version has switched off: none
 NORDIC_STEPS = (3, 4)
 DONE = 7
 # S-11.096: the steps a selection can hold, and the protected ones it holds only when asked

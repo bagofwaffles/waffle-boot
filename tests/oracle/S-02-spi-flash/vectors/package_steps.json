@@ -73,23 +73,20 @@
     },
     {
      "component": "nordic_application",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     },
     {
      "component": "nordic_bootloader",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     },
     {
      "component": "psoc_backplane",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     }
    ],
@@ -131,23 +128,20 @@
     },
     {
      "component": "nordic_application",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     },
     {
      "component": "nordic_bootloader",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     },
     {
      "component": "psoc_backplane",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     }
    ],
@@ -191,21 +185,21 @@
      "component": "nordic_application",
      "action": "skip",
      "report": "skipped",
-     "reason": "switched_off",
+     "reason": "not_selected",
      "flash_ops": 0
     },
     {
      "component": "nordic_bootloader",
      "action": "skip",
      "report": "skipped",
-     "reason": "switched_off",
+     "reason": "not_selected",
      "flash_ops": 0
     },
     {
      "component": "psoc_backplane",
      "action": "skip",
      "report": "skipped",
-     "reason": "switched_off",
+     "reason": "not_selected",
      "flash_ops": 0
     }
    ],
@@ -246,21 +240,21 @@
      "component": "nordic_application",
      "action": "skip",
      "report": "skipped",
-     "reason": "switched_off",
+     "reason": "not_selected",
      "flash_ops": 0
     },
     {
      "component": "nordic_bootloader",
      "action": "skip",
      "report": "skipped",
-     "reason": "switched_off",
+     "reason": "not_selected",
      "flash_ops": 0
     },
     {
      "component": "psoc_backplane",
      "action": "skip",
      "report": "skipped",
-     "reason": "switched_off",
+     "reason": "not_selected",
      "flash_ops": 0
     }
    ],
@@ -305,23 +299,20 @@
     },
     {
      "component": "nordic_application",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     },
     {
      "component": "nordic_bootloader",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     },
     {
      "component": "psoc_backplane",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
+     "action": "install",
+     "report": "step_result",
      "flash_ops": 0
     }
    ],
@@ -333,6 +324,119 @@
   {
    "case": "option_on_te",
    "package": "factory",
+   "option": "on",
+   "selected": [
+    "bootloader",
+    "os",
+    "content",
+    "nordic_application",
+    "nordic_bootloader",
+    "psoc_backplane"
+   ],
+   "steps": [
+    {
+     "component": "bootloader",
+     "action": "install",
+     "report": "written_with_option",
+     "flash_ops": "per S-02.042-.049"
+    },
+    {
+     "component": "os",
+     "action": "install",
+     "report": "step_result",
+     "flash_ops": 0
+    },
+    {
+     "component": "content",
+     "action": "install",
+     "report": "step_result",
+     "flash_ops": 0
+    },
+    {
+     "component": "nordic_application",
+     "action": "install",
+     "report": "step_result",
+     "flash_ops": 0
+    },
+    {
+     "component": "nordic_bootloader",
+     "action": "install",
+     "report": "step_result",
+     "flash_ops": 0
+    },
+    {
+     "component": "psoc_backplane",
+     "action": "install",
+     "report": "step_result",
+     "flash_ops": 0
+    }
+   ],
+   "spi_flash_areas": [
+    "metadata",
+    "metadata_mirror",
+    "selector",
+    "target_record",
+    "target_slot"
+   ]
+  },
+  {
+   "case": "option_on_te_bootloader_not_selected",
+   "package": "factory",
+   "option": "on",
+   "selected": [
+    "os",
+    "content"
+   ],
+   "steps": [
+    {
+     "component": "bootloader",
+     "action": "skip",
+     "report": "skipped",
+     "reason": "not_selected",
+     "flash_ops": 0
+    },
+    {
+     "component": "os",
+     "action": "install",
+     "report": "step_result",
+     "flash_ops": 0
+    },
+    {
+     "component": "content",
+     "action": "install",
+     "report": "step_result",
+     "flash_ops": 0
+    },
+    {
+     "component": "nordic_application",
+     "action": "skip",
+     "report": "skipped",
+     "reason": "not_selected",
+     "flash_ops": 0
+    },
+    {
+     "component": "nordic_bootloader",
+     "action": "skip",
+     "report": "skipped",
+     "reason": "not_selected",
+     "flash_ops": 0
+    },
+    {
+     "component": "psoc_backplane",
+     "action": "skip",
+     "report": "skipped",
+     "reason": "not_selected",
+     "flash_ops": 0
+    }
+   ],
+   "spi_flash_areas": [
+    "metadata",
+    "metadata_mirror"
+   ]
+  },
+  {
+   "case": "option_on_switched_off",
+   "package": "waffle-boot",
    "option": "on",
    "selected": [
     "bootloader",
@@ -389,61 +493,6 @@
     "selector",
     "target_record",
     "target_slot"
-   ]
-  },
-  {
-   "case": "option_on_te_bootloader_not_selected",
-   "package": "factory",
-   "option": "on",
-   "selected": [
-    "os",
-    "content"
-   ],
-   "steps": [
-    {
-     "component": "bootloader",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "not_selected",
-     "flash_ops": 0
-    },
-    {
-     "component": "os",
-     "action": "install",
-     "report": "step_result",
-     "flash_ops": 0
-    },
-    {
-     "component": "content",
-     "action": "install",
-     "report": "step_result",
-     "flash_ops": 0
-    },
-    {
-     "component": "nordic_application",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
-     "flash_ops": 0
-    },
-    {
-     "component": "nordic_bootloader",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
-     "flash_ops": 0
-    },
-    {
-     "component": "psoc_backplane",
-     "action": "skip",
-     "report": "skipped",
-     "reason": "switched_off",
-     "flash_ops": 0
-    }
-   ],
-   "spi_flash_areas": [
-    "metadata",
-    "metadata_mirror"
    ]
   }
  ]

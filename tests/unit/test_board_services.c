@@ -2189,17 +2189,16 @@ static void test_install_ops(void)
 	CHECK(!run.record_write(run.ctx, 1u));	/* no slave */
 	CHECK(!step.os_write(step.ctx));
 	CHECK(!step.bootloader_write(step.ctx));
-	/* The board supplies no PSoC unlock (S-07.081), and its backplane
-	 * step is switched off (S-11.073; test_board_install runs it Skipped
-	 * with its image staged). The programmer itself, were the step on,
-	 * fails on the missing unlock as S-07 reports it (why 10), before the
-	 * PSoC's bootloader is asked for (0xEE). */
+	/* The board supplies no PSoC unlock (S-07.081), and no step is
+	 * switched off (S-11.073). The programmer fails on the missing unlock
+	 * as S-07 reports it (why 10), before the PSoC's bootloader is asked
+	 * for (0xEE). */
 	{
 		uint8_t unlock[S07_CY_UNLOCK_LEN];
 
 		CHECK(!opxy_psoc_unlock(unlock));
 	}
-	CHECK((opxy_steps_off() & S11_STEP_BIT(S11_STEP_KEYBOARD)) != 0u);
+	CHECK(opxy_steps_off() == 0u);
 	m.psoc_ops.log = psoc_why;
 	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	last_why = 0;

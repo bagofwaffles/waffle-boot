@@ -932,7 +932,8 @@ def run_rows():
     R = {n: i for i, n in enumerate(m.RESULT_NAMES)}
     # case, content_only, nordic_images, option, results, outcome, nordic_dfu_ok, version_file[, steps_off,
     # selected]; without the last two: every step switched on and selected (S-11.073, S-11.096)
-    on, off, every = (), m.STEPS_OFF, m.SELECTABLE
+    # off: a build with steps 3-5 switched off (S-11.073), as an earlier version had them
+    on, off, every = (), m.SWITCHABLE, m.SELECTABLE
     cases = [
         ('all_ok', 0, 1, 1, ['OK'] * 6 + ['Not found'], 'done', 1, 1),
         ('normal_install_skips', 0, 1, 0, ['OK', 'OK', 'Skipped', 'OK', 'OK', 'OK', 'Not found'], 'done', 1, 1),
@@ -953,19 +954,19 @@ def run_rows():
                                    'Not found'], 'done', 1, 1),
         ('content_only_fails', 1, 0, 0, ['Failure'], 'failed', 1, 1),
         ('nordic_no_dfu', 0, 1, 0, [], 'failed', 0, 1),
-        # S-11.073: this version's steps 3-5 switched off. Nordic images present: no DFU entry, so a Nordic
-        # refusal changes nothing; step 6 is reserved and reports Not found
-        ('this_version', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'Not found'], 'done', 1,
+        # S-11.073: steps 3-5 switched off. Nordic images present: no DFU entry, so a Nordic refusal changes
+        # nothing; step 6 is reserved and reports Not found
+        ('switched_off', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'Not found'], 'done', 1,
          1, off, (0, 1)),
-        ('this_version_nordic_refuses_dfu', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
+        ('switched_off_nordic_refuses_dfu', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
                                                        'Not found'], 'done', 0, 1, off, (0, 1)),
-        ('this_version_selected', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Not found'],
+        ('switched_off_selected', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Not found'],
          'done', 1, 1, off, (0, 1, 2)),
-        ('this_version_bootloader_not_selected', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
+        ('switched_off_bootloader_not_selected', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
                                                             'Not found'], 'done', 1, 1, off, (0, 1)),
-        ('this_version_only_switched_off', 0, 1, 0, ['Not found', 'Not found', 'Not found', 'Skipped', 'Skipped',
+        ('only_switched_off', 0, 1, 0, ['Not found', 'Not found', 'Not found', 'Skipped', 'Skipped',
                                                       'Skipped', 'Not found'], 'nothing to do', 1, 1, off, ()),
-        ('this_version_os_fails', 0, 1, 0, ['OK', 'Internal error'], 'failed', 1, 1, off, (0, 1)),
+        ('switched_off_os_fails', 0, 1, 0, ['OK', 'Internal error'], 'failed', 1, 1, off, (0, 1)),
         # S-11.096: a step not selected reports Skipped; S-11.064: the package version only with the OS
         # installed in this run; S-11.061: the DFU entry only for a selected Nordic step
         ('os_not_selected', 0, 0, 1, ['OK', 'Skipped', 'OK', 'Not found', 'Not found', 'Not found', 'Not found'],

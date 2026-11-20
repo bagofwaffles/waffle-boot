@@ -47,9 +47,9 @@ static const bool step_on[S11_STEP_DONE] = {
 	[S11_STEP_CONTENT] = true,
 	[S11_STEP_OS] = true,
 	[S11_STEP_BOOTLOADER] = true,
-	[S11_STEP_BLE] = false,
-	[S11_STEP_BLE_BOOTLOADER] = false,
-	[S11_STEP_KEYBOARD] = false,
+	[S11_STEP_BLE] = true,
+	[S11_STEP_BLE_BOOTLOADER] = true,
+	[S11_STEP_KEYBOARD] = true,
 	[S11_STEP_RESERVED] = true,
 };
 
@@ -753,9 +753,9 @@ static int step_nordic_slot(void *ctx)
 
 /*
  * S-11.071, S-07.080-S-07.085: the staged .cyacd text through the PSoC
- * programmer. The board supplies no PSoC unlock (S-07.081), so the
- * programmer fails the step before entry and reports why; the image is
- * not read for it. The step is switched off (S-11.073).
+ * programmer. Without a PSoC unlock (S-07.081) the programmer fails the
+ * step before entry, sends nothing and reports why; the image is not
+ * read for it.
  */
 static bool step_psoc(void *ctx)
 {
