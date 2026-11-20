@@ -19,24 +19,44 @@ You need a USB cable, a computer, and the firmware package file (its name contai
 
 1. Open the [Boot Menu](Boot-Menu) and press **1** (**Install firmware**).
 2. A disk appears on the computer. Copy the package file to the disk's top folder.
-3. Eject the disk. After a short wait the unit checks the package and installs it.
-4. Do not switch off while it runs. Steps show as `Installed`, `Not included` or `Skipped`.
-5. At `Done!`, press **6** to restart into the OS, or switch off and on.
+3. Eject the disk. After a short wait the unit checks and unpacks the package, then lists its parts.
+4. Choose the parts to install: each part's digit switches it between `No` and `Yes`. Every part starts at
+   `No`. Then hold **1** for 5 s. **8**, or 60 s with no key, cancels: nothing is installed.
+5. Do not switch off while it runs. Steps show as `Installed`, `Not included` or `Skipped`.
+6. At `Done!`, press **6** to restart into the OS, or switch off and on.
 
 <img src="../docs/ui/upgrade-wait.png" width="480" alt="Waiting for a package">
 
-With **Protected writes** off (the default), a package installs content and the OS only, and never touches
-the bootloader or the first stage.
+<img src="../docs/ui/upgrade-select.png" width="480" alt="The parts of a package">
 
-> **Warning.** With Protected writes on, an install writes the package's bootloader into a slot in place of
-> waffle-boot. The unit asks for a 5 s hold of 1 first; skip it with 8. A package's first stage is never
-> looked at or written.
+| Digit | Part |
+| --- | --- |
+| 2 | Main DSP (the OS) |
+| 3 | Content |
+| 4 | BLE |
+| 5 | BLE bootloader |
+| 6 | Backplane |
+| 7 | Bootloader |
+
+A part the package does not carry has no row; the others keep their digits. A row shows the installed
+version and the package's (`1.1.4 > 1.1.5`), or the package's alone. A gray row cannot be chosen, and says
+why: `Not in this version`, `Protected writes off` or `Up to date`. A part left at `No` shows
+`Skipped: not selected` and is not touched. The unit asks again at every install; nothing is remembered. If
+the unit cannot read its keys, it shows no list and installs every part it can but the bootloader.
+
+With **Protected writes** off (the default), the bootloader cannot be chosen: an install writes content and
+the OS only, and never touches the bootloader or the first stage.
+
+> **Warning.** With Protected writes on, choosing **7 Bootloader** writes the package's bootloader into a
+> slot in place of waffle-boot; the list says which slot. A package's first stage is never looked at or
+> written.
 
 ## If it does not work
 
 | Message | Meaning |
 | --- | --- |
 | `No valid package found` | No file with `tfw` in its name in the disk's top folder, or the package was refused. The reason line says why ([the reasons](Building-Custom-OS-Updates#refusal-reasons)) |
+| `Nothing was installed.` after the list | The list was canceled with 8 or ran out of time. Press **6** to restart, then copy the package again |
 | `Upgrade failed.` or `Installation failed.` | A step failed; its row says which. Switch off and on, then install again |
 | `The last install did not finish.` | The unit stopped mid-install. Install the same package again |
 | `Bootloader  Skipped: written, runs on restart` | The same package was installed again before a restart: its bootloader is already in the other slot and starts after the next restart |

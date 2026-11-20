@@ -137,6 +137,9 @@ body's left edge (x 16).
 | `item-on` | as `item` | the hint red (a setting that is on and needs care) |
 | `armed` | as `item` | the whole row red, its badges too: an item whose key is being held to confirm it |
 | `back` | `8 Back to <Screen>` | the digit's key badge, the label gray |
+| `pick` | `D Label\tDetail\tNo` | indented: the digit's key badge in column 4, the label white from column 7, the detail white from column 23, the state gray, right-aligned |
+| `pick-on` | as `pick`, `Yes` | the state black on a solid red block, so that it stands apart from `No` in gray too |
+| `pick-off` | `D Label\tWhy` | indented, all gray: the digit plain in column 4, the label from column 7, why it cannot be picked from column 23 |
 | `ok` | a sentence | a green `+` in column 0, the sentence green from column 3 |
 | `warn` | a sentence | an amber `!` in column 0, the sentence amber from column 3 |
 | `error` | a sentence | a red `!` in column 0, the sentence red from column 3 |
@@ -147,7 +150,7 @@ body's left edge (x 16).
 | `step-fail` | `Label\tStatus` | a red `x`, the label white, the status red from column 19 |
 
 A tab means something only in the styles with parts (`item`, `item-on`,
-`armed`, `back`, `kv`, `step-*`); elsewhere it shows as `?`. The log
+`armed`, `back`, `kv`, `step-*`, `pick*`); elsewhere it shows as `?`. The log
 gets the text with the backquotes of a `keys` line and of the styles with
 parts removed, and each separating tab written as two spaces.
 
@@ -176,7 +179,7 @@ These rules are fixed: only the maintainer changes them.
   order. Gaps are fine: a digit keeps its meaning wherever it is shown.
 - Digit 8 leaves a screen. Every screen below the main screen that a key
   leaves is left with 8: as `8 Back to <the screen it returns to>`, or as
-  `8 Skip` where it declines what the screen asks; no screen is left with
+  `8 Cancel` where it declines what the screen asks; no screen is left with
   "any key". The main screen has nothing to go back to, so 8 is no item there. Its
   items keep fixed numbers from 1; an item that is hidden (the developer menu,
   3, while developer mode is off) leaves its number unused. The upgrade screen goes back only while
@@ -188,8 +191,10 @@ These rules are fixed: only the maintainer changes them.
   with the seconds left (`Release to cancel`). Held the whole 5 s, the
   action runs once, and the key's release does nothing more. Released
   earlier, or any other key down, only cancels and draws the screen as it
-  was. The confirmation of a protected component before an install is held
-  the same way, on key 1 with no other key down (S-15.116). A knob click
+  was. The selection of an install's parts is held the same way, on key 1
+  with no other key down and a part at `Yes` (S-15.116); there the item
+  names its hold in its label, `1 Install selected (hold for 5 s)`, with no
+  hint, armed or not. A knob click
   never starts a hold, and the white knob confirms nothing. A factory reset
   is always confirmed, from every menu that offers it.
 - Keys pressed before the boot menu's first screen, while `Loading boot menu...` shows among them, do
@@ -313,12 +318,14 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | Format Drive | Install Firmware, waiting for a package |
 | <img src="../docs/ui/upgrade-run.png" width="480" alt="Installing"> | <img src="../docs/ui/upgrade-done.png" width="480" alt="Done"> |
 | a run in progress | a run done: the BLE and backplane parts skipped, not in this version |
-| <img src="../docs/ui/upgrade-failed.png" width="480" alt="Failed"> | |
-| a run failed | |
+| <img src="../docs/ui/upgrade-failed.png" width="480" alt="Failed"> | <img src="../docs/ui/upgrade-select.png" width="480" alt="The parts of a package"> |
+| a run failed | the parts of a package, as the list opens: every row at `No` |
+| <img src="../docs/ui/upgrade-picked.png" width="480" alt="Parts chosen"> | <img src="../docs/ui/upgrade-held.png" width="480" alt="Install selected held"> |
+| two parts at `Yes`, the bootloader among them; rows that cannot be picked | 1 held for 2 of the 5 s |
 | <img src="../docs/ui/main-failed.png" width="480" alt="The OS not started"> | <img src="../docs/ui/info-failed.png" width="480" alt="Device Info after it"> |
 | Main Menu: the start failed when the second processor stopped answering | Device Info: the step, the request and where it broke |
-| <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | <img src="../docs/ui/upgrade-confirm.png" width="480" alt="Confirm Install"> |
-| System while the second processor does not answer | the bootloader's confirmation before a run, digit 1 held for 2 of the 5 s |
+| <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | |
+| System while the second processor does not answer | |
 | <img src="../docs/ui/oswrite-run.png" width="480" alt="Write OS"> | <img src="../docs/ui/continue-restarting.png" width="480" alt="Restarting to start the OS"> |
 | Write OS (developer menu, 5), the write running | Continue to the OS |
 | <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |

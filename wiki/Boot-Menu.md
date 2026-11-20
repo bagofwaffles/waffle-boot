@@ -33,7 +33,7 @@ key, cancels. A knob click never starts it.
 
 | Item | What it does |
 | --- | --- |
-| 1 Install firmware | Offers a USB disk for a firmware package ([Updating the OS](Updating-the-OS)). Hold **shift** while pressing 1 to also copy system information and logs to the disk ([Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)) |
+| 1 Install firmware | Offers a USB disk for a firmware package ([Updating the OS](Updating-the-OS)). Once the package is checked, the unit lists its parts: choose them with their digits and hold 1 for 5 s, or cancel with 8. Hold **shift** while pressing 1 to also copy system information and logs to the disk ([Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)) |
 | 2 Settings | The settings below |
 | 3 Developer menu | Shown only while developer mode is on |
 | 4 Device info | Serial numbers, versions, the second processor's state, and why the OS did not start. The help key opens it too. Its `1 More` opens a second page: the selected slot's start log, with the starts it holds, the unfinished ones at its end and the count it is erased at, read again each time the page opens |
@@ -50,7 +50,7 @@ the items, the screen says when the OS could not be started, and why.
 | Item | What it does |
 | --- | --- |
 | 1 Developer mode | Off by default. On: shows the developer menu and adds a USB serial port |
-| 2 Protected writes | Lets installs write the bootloader slots, and lets a computer change the unit's serial and identity. 2 opens its screen, which says what it allows; hold 2 there for 5 s to turn it on. While it is on, 2 turns it off. Lasts until the next restart. No install writes the first stage, with or without it |
+| 2 Protected writes | Lets installs write the bootloader slots (the list of parts offers the bootloader only while it is on), and lets a computer change the unit's serial and identity. 2 opens its screen, which says what it allows; hold 2 there for 5 s to turn it on. While it is on, 2 turns it off. Lasts until the next restart. No install writes the first stage, with or without it |
 | 3 Color | Off, the default, draws every screen in gray |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
 | 6 Start in boot menu | Every start opens this menu |

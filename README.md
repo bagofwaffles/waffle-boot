@@ -45,7 +45,7 @@ own OS, writing a slot over USB from recovery, and the trial and commit that the
   the unit adds MTP file transfer to its storage and a USB serial port that carries the log and takes
   requests from a computer.
 - **Firmware installs.** Choose Install firmware and the unit offers a USB disk. Copy a firmware package to
-  it and eject it; the bootloader checks the package, then installs it.
+  it and eject it; the bootloader checks the package, lists its parts, and installs the ones you choose.
 - **Diagnostics.** When the OS cannot be started, the boot menu opens by itself, and its main screen and
   Device Info say why.
 - **Two slots, so a write has a way back.** The SPI flash holds two bootloader images, Slot 1 and Slot 2. A

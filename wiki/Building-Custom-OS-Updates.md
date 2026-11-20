@@ -76,8 +76,8 @@ SHA-256 cover them, the zip's length does not.
 | Member | What it is |
 | --- | --- |
 | `firmware/blackfin/bin/os.ldr` | Your OS image |
-| `firmware/blackfin/bin/os.version` | Its version as text: `1.2.3+0` |
-| `firmware/firmware.version` | The package's version, in the same form. The install screen shows it, and it is recorded as the installed version when the install ends |
+| `firmware/blackfin/bin/os.version` | Its version as text: `1.2.3+0`. The list of parts shows it on the Main DSP row |
+| `firmware/firmware.version` | The package's version, in the same form. The install screen shows it, and it is recorded as the installed version when an install that wrote the OS ends |
 
 Rules for the zip:
 
@@ -88,8 +88,9 @@ Rules for the zip:
 
 Leave these out of an OS package:
 
-- `firmware/blackfin/bin/bootloader.ldr`. With **Protected writes** on, a bootloader in the package replaces
-  waffle-boot in a slot. A `spiboot.ldr` is unpacked with the rest and never used.
+- `firmware/blackfin/bin/bootloader.ldr`. With **Protected writes** on, a bootloader in the package that is
+  chosen on the unit replaces waffle-boot in a slot. A `spiboot.ldr` is unpacked with the rest and never
+  used.
 - `firmware/blackfin/content/`. A package with that folder removes the unit's content (all but `content/dlc/`)
   and installs the package's in its place, unless a file name under it contains `partial_upgrade`.
 
@@ -192,7 +193,8 @@ It does not make the eMMC size check; that one is made on the unit.
 ## Installing it
 
 The file's name must contain `tfw`, in lower case, and must not start with `.`. The unit takes the first such
-file in the disk's top folder. Then follow [Updating the OS](Updating-the-OS#steps).
+file in the disk's top folder. Then follow [Updating the OS](Updating-the-OS#steps): the unit lists the
+package's parts, and writes the OS only when **2 Main DSP** is set to `Yes`.
 
 ## Refusal reasons
 

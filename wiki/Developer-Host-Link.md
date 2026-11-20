@@ -53,7 +53,7 @@ outside the drive can be reached, and the bootloader's own files on it (`os.ldr`
 - A file request while the slave is not answering fails with status 3 (`the slave is not answering`), not
   1 (refused volume): restart the unit.
 - `continue-os` refuses during an install or OS write, and before the boot menu is up.
-- `dev-key` cannot answer an install's `Confirm Install`, which reads the unit's own keys. Nothing else is
+- `dev-key` cannot answer an install's list of parts, which reads the unit's own keys. Nothing else is
   filtered: `dev-key 5 7:down`, then `dev-key 7:up` after 5 s, opens System and runs a factory reset; what
   erases still waits for its key to be held 5 s.
 

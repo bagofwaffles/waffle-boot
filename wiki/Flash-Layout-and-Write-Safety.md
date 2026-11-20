@@ -16,10 +16,10 @@ The master's SPI flash holds everything the unit needs to start: 1 MiB in 256 se
 | --- | --- | --- | --- | --- |
 | `0x00000` | `0xB000` | The first stage, which picks a slot on every start. Not part of waffle-boot | Nothing: the installer has no first-stage step | Never. A first-stage file in a package is no component: it is not checked, and nothing writes it |
 | `0x0B000` | 1 sector | The metadata mirror: the record and its complement | Every metadata write | Written before the record is erased, and erased once the record reads back |
-| `0x0C000` | 1 sector | The metadata record (`0x34` bytes): serial, versions and install state | Metadata writes; the restore at a start | An OS install (three times), a failed OS load (once), a set-metadata request in factory mode; a start that finds the mirror and the record different |
+| `0x0C000` | 1 sector | The metadata record (`0x34` bytes): serial, versions and install state | Metadata writes; the restore at a start | An install that writes the OS (three times), any other install but a content-only one or a canceled one (twice), a failed OS load (once), a set-metadata request in factory mode; a start that finds the mirror and the record different |
 | `0x0D000` | 1 sector | The selector: the slot to start, and `verified` (`0x01` means "start it without a check") | The first stage; a slot write; recovery's try, switch and keep | After a slot has been read back; once by the first stage at the start after it |
 | `0x0E000`, `0x0F000` | 1 sector each | Record 0 and record 1, one per slot: the image's CRC-32, its length and a tag | A write of that slot; recovery's try, keep and put back | After the slot's last program |
-| `0x10000` | `0x76000` | Slot 1's image | The package's bootloader step; recovery; the installer | On request only |
+| `0x10000` | `0x76000` | Slot 1's image | The package's bootloader step; recovery; the installer | On request only: for a package, with Protected writes on and the bootloader chosen on the unit |
 | `0x86000` | 1 sector | Slot 1's settings: Developer mode, Color, MTP target, Start in boot menu | The Settings screen; the factory reset; a slot write erases it | One page when a setting is changed on the unit, an erase once in 16 changes; the factory reset erases it |
 | `0x87000` | 1 sector | Slot 1's start log | The front and the main image; a slot write erases it | One bit at each start, a second when the main image is up; in a trial start, the front's mark and the boot menu's. The main image erases it once 256 or more entries are used, and when it reads full or not valid |
 | `0x88000` | `0x76000` | Slot 2's image | As Slot 1 | On request only |
@@ -117,6 +117,13 @@ value or the defaults. The factory reset erases the running slot's sector under 
 15 s, and switching it off in that time leaves the flash untouched. On the unit, an action needs key 1 held
 for 5 s.
 
+**An install writes only what is chosen on the unit.** After a package is checked and unpacked, and before
+the install's first write, the unit lists the package's parts, all at `No`. Only the parts set to `Yes`
+run; the others are skipped and touch nothing, and the bootloader can be chosen only with Protected writes
+on. Key 1 held for 5 s starts the install; 8, or 60 s with no key, cancels it with nothing written, the
+metadata included. The keys come from the PSoC alone, so no computer can answer. A unit whose keys cannot be
+read is not asked: it installs every part but the bootloader.
+
 ## What is not safe against a power cut
 
 These leave a unit that only an **external SPI flash programmer** brings back:
@@ -147,9 +154,10 @@ main image's erase of the start log keeps that at 512 one-bit programs.
 | A setting changed | 0, and 1 once in 16 changes | One page program in the running slot's settings sector |
 | A factory reset | 1 | The running slot's settings sector, when it holds anything |
 | Protected writes turned on | 0 | Kept in memory only |
-| Install, content only | 0 | None |
+| Install, content only, or canceled on the unit | 0 | None |
+| Install that does not write the OS | 6 | `0xB000` four times and `0xC000` twice: the state set, then cleared |
 | A normal start, once in 256 or more | 1 | The boot slot's last sector: its start log |
-| Install with an OS | 9 | `0xB000` six times and `0xC000` three times: each of three metadata writes erases the mirror twice |
+| Install that writes the OS | 9 | `0xB000` six times and `0xC000` three times: each of three metadata writes erases the mirror twice |
 | An install that was interrupted, at the next start | 3 | `0xB000` twice, `0xC000` once |
 | A bootloader image written (package or recovery) | One for each 4 KiB of the image, plus the slot's last sector, its settings sector, its record and the selector; one more of the selector by the first stage at the next start | The slot written, its record, `0xD000` |
 | Try a slot once | Up to 3, and 1 by the first stage | The slot's last sector, its record, `0xD000` |
