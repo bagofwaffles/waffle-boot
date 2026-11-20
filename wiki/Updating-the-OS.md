@@ -5,7 +5,7 @@ waffle-boot. To install waffle-boot itself, see [How to Install](How-to-Install)
 
 | Task | Status |
 | --- | --- |
-| Install a TE firmware package (content and OS) from the boot menu | Built; **not yet confirmed** on a unit |
+| Install a TE firmware package (content and OS) from the boot menu | Tested on one unit |
 | Install waffle-boot | [How to Install](How-to-Install) |
 | Replace waffle-boot in one slot with another waffle-boot build | [How to Recover](How-to-Recover#write-a-slot-from-a-computer) |
 | Update the Bluetooth (BLE) or backplane (PSoC) chips | **Not supported yet.** Those steps show `Skipped: not in this version` |

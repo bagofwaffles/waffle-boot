@@ -3,17 +3,27 @@
 An open-source bootloader for the Teenage Engineering OP-XY. It brings up the device's two processors, loads
 the OS from the eMMC, and adds its own menus for installs, settings and recovery.
 
+## Why use waffle-boot?
+
+- **Recovery options.** Several [failsafes](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Recover) bring a unit back
+  over USB, and they run apart from the rest of the code.
+- **Upgrade or downgrade.** Install the firmware version you choose, older or newer, or a
+  [package with your own OS image](https://github.com/bagofwaffles/waffle-boot/wiki/Building-Custom-OS-Updates).
+- **For developers.** MTP file transfer, a log over USB, and a way to script changes from a computer. See
+  the [Developer Host Link](https://github.com/bagofwaffles/waffle-boot/wiki/Developer-Host-Link).
+- **Open source.** The code is here to read, build and change.
+
 waffle-boot is a clean-room implementation, not a decompilation. Its code is written from scratch, from
 public documentation and the project's own functional specification, and the repository holds no
 code or data from the device's firmware. It is an independent project, not affiliated with or endorsed by
 Teenage Engineering.
 
 > [!WARNING]
-> **Under development. Use it with caution.** The [installer](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install) has been tested
+> Under development. Use it with caution. The installer has been tested
 > on real hardware, but not widely. A broken bootloader can leave a unit that only an external flash
 > programmer brings back.
 
-Install with the guided page: https://bagofwaffles.github.io/waffle-boot/?mode=install
+**Install with the guided page: https://bagofwaffles.github.io/waffle-boot/?mode=install**
 
 **Status:** it boots on one unit. Shown there so far: a start from a committed slot through to the OP-XY's
 own OS, writing a slot over USB from recovery, and the trial and commit that the installer reuses.
@@ -35,8 +45,7 @@ own OS, writing a slot over USB from recovery, and the trial and commit that the
   the unit adds MTP file transfer to its storage and a USB serial port that carries the log and takes
   requests from a computer.
 - **Firmware installs.** Choose Install firmware and the unit offers a USB disk. Copy a firmware package to
-  it and eject it; the bootloader checks the package, then installs it. This is built, but not yet
-  confirmed on a unit.
+  it and eject it; the bootloader checks the package, then installs it.
 - **Diagnostics.** When the OS cannot be started, the boot menu opens by itself, and its main screen and
   Device Info say why.
 - **Two slots, so a write has a way back.** The SPI flash holds two bootloader images, Slot 1 and Slot 2. A
