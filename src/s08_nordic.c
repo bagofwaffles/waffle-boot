@@ -75,6 +75,7 @@ void s08_init(struct s08_nordic *n, struct s06_node *node, unsigned link,
 	n->sku_read = false;
 	n->product = 0;
 	n->entry_failed = false;
+	n->no_app = false;
 	n->failure.at = S08_AT_NONE;
 	routes(n, false);	/* S-08.004: nothing forwarded before the greeting */
 }
@@ -366,6 +367,11 @@ bool s08_exit_dfu(struct s08_nordic *n)
 {
 	int silent = 0;
 
+	/* S-08.048: with no application the Nordic would turn itself off */
+	if (n->no_app) {
+		log_ev(n, S08_LOG_EXIT_LEFT_OUT, 0, 0, 0);
+		return false;
+	}
 	/* a pending greeting is answered first; the queries read the link */
 	(void)handle_all(n);
 	message(n, ID_DFU, DFU_EXIT);			/* step 1 */
@@ -488,8 +494,13 @@ bool s08_transfer(struct s08_nordic *n, const uint8_t *image, uint32_t len,
 	if (s08_dfu_request(n, p, 1) != S08_DFU_OK)
 		goto fail;
 	f->at = S08_AT_NONE;
+	if (type == S08_TYPE_APP)
+		n->no_app = false;		/* S-08.048 */
 	return true;
 fail:
+	/* S-08.048: the prepare left the Nordic with no application */
+	if (type == S08_TYPE_APP)
+		n->no_app = true;
 	/* a: the DFU command, then the image chunk it was (0: none) */
 	log_ev(n, S08_LOG_TRANSFER_FAILED, 0, 0,
 	       p[0] | (f->at == S08_AT_CHUNK ? (uint32_t)f->chunk << 8 : 0u));

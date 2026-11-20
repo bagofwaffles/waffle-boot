@@ -331,6 +331,17 @@ def upgrade(o):
     for step, cause, line in v['failed_rows']:
         o.w('\t{ %s, %s, %s },' % (cstr(step), cstr(cause), cstr(line)))
     o.w('};')
+    o.w('/* nordic_notes: S-11.069, S-11.070 */')
+    o.w('struct s15v_note { const char *note; const char *const *lines; };')
+    notes = []
+    for note, lines in v['nordic_notes']:
+        ident = o.uid('s15v_nn')
+        o.w(clist(ident, lines))
+        notes.append((note, ident))
+    o.w('static const struct s15v_note s15v_notes[] = {')
+    for note, ident in notes:
+        o.w('\t{ %s, %s },' % (cstr(note), ident))
+    o.w('};')
     pr = v['prepare']
     o.w('static const char s15v_prepare_header[] = %s;' % cstr(pr['header'][0]))
     o.w('static const char s15v_not_found[] = %s;' % cstr(pr['not_found']))

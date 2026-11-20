@@ -135,6 +135,12 @@ uint32_t s08_product_word(uint32_t sku, bool read_ok)
 	return 0x00084000u | (sku <= 999u ? sku : 0u);
 }
 
+/* S-08.048, S-11.070: the prepare is the first request after the query. */
+bool s08_after_prepare(const struct s08_failure *f)
+{
+	return f->at >= S08_AT_PREPARE;
+}
+
 /* S-08.043 */
 void s08_prepare_payload(const uint16_t version[4], uint8_t type,
 			 uint32_t product, uint8_t out[14])

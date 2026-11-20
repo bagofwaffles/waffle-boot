@@ -466,6 +466,8 @@ void s15_up_step_progress(struct s15_menu *m, enum s15_step step,
 void s15_up_step_result(struct s15_menu *m, enum s15_step step,
 			enum s15_result result, const char *version,
 			bool refused_start, const char *cause);
+/* S-11.069, S-11.070: the note's lines after a step's result. */
+void s15_up_step_note(struct s15_menu *m, enum s15_note note);
 /* S-15.115; skipped has bit n set for each step n that reported Skipped:
  * a completed run names them. */
 void s15_up_run_end(struct s15_menu *m, enum s15_outcome outcome,

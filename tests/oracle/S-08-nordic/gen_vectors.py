@@ -200,6 +200,62 @@ ALL = {'greeting': greeting, 'queries': queries, 'dfu_replies': dfu_replies, 'tr
        'messages': messages}
 
 
+# ---- SC-08-NO-APP (S-08.048) ----------------------------------------------------------------------
+
+NO_APP_DOC = ('SC-08-NO-APP\'s runs as a sequence of phases, each an install run (S-11.061 to S-11.064 with one '
+              'Nordic step) or a reboot request with reason 20 (S-04.027), against a Nordic in DFU that answers '
+              'every DFU request T except where a run\'s rule refuses one with {0x84}. Each phase counts the exit '
+              'commands 0x0D {0x18} sent in it (exit) and says whether an enter command 0x0D {0xEE} was sent '
+              '(enter) and whether the no-application state holds after it (no_app, S-08.048); transfer is the '
+              'step\'s transfer result and report what its failure report adds (S-11.069, S-11.070).')
+
+
+def no_app():
+    """SC-08-NO-APP (S-08.048): NO_APP_DOC."""
+    def refuse(skip):
+        # the header chunk is the first 0x03 request, the image chunks follow it
+        return {'on': {'id': '0x0d', 'first': '0x03'}, 'skip': skip, 'times': 1,
+                'send': [{'kind': 'reply', 'id': '0x0e', 'payload': '84', 'delay_ms': 2}]}
+
+    def greet(skip):
+        # a greeting 300 ms after an enter command; the greeting's answer is the same message, so each run's
+        # enter gets a rule of its own
+        return {'on': CMD_ENTER, 'skip': skip, 'times': 1,
+                'send': [{'kind': 'message', 'id': '0x05', 'payload': 'bb02', 'delay_ms': 300}]}
+
+    def install(kind, ok, exits, report=None):
+        return {'do': 'install', 'type': {'ble': '0xb0', 'ble_bootloader': '0xb1'}[kind], 'transfer': ok,
+                'enter': True, 'exit': exits, 'no_app': report == 'no_app', 'report': report}
+
+    reboot = {'do': 'reboot', 'reason': 20, 'enter': False}
+    reqs = ['S-08.048', 'S-11.064', 'S-04.027']
+    runs = [
+        {'name': 'chunk_fails', 'about': 'The second image chunk is refused: no exit at the run\'s end or at the '
+         'reboot.', 'requirements': reqs + ['S-11.069'],
+         'peer': {'rules': [info_rule(BOOT), greet(0), refuse(2), DFU_T]},
+         'sequence': [install('ble', False, 0, 'no_app'), dict(reboot, exit=0, no_app=True)]},
+        {'name': 'prepare_only', 'about': 'The prepare succeeds and the header chunk is refused: as chunk_fails.',
+         'requirements': reqs + ['S-11.069'],
+         'peer': {'rules': [info_rule(BOOT), greet(0), refuse(0), DFU_T]},
+         'sequence': [install('ble', False, 0, 'no_app'), dict(reboot, exit=0, no_app=True)]},
+        {'name': 'failed_then_ok', 'about': 'A run as chunk_fails, then a second install of the same package in the '
+         'same boot that succeeds: its enter command is sent, and its end and the reboot make the exit.',
+         'requirements': reqs + ['S-11.069'],
+         'peer': {'rules': [info_rule(BOOT), greet(0), greet(1), refuse(2), DFU_T]},
+         'sequence': [install('ble', False, 0, 'no_app'), install('ble', True, 1),
+                      dict(reboot, exit=1, no_app=False)]},
+        {'name': 'bootloader_fails', 'about': 'As chunk_fails for a Nordic bootloader transfer: the exits as '
+         'before, and the report says the Nordic may not start.', 'requirements': reqs + ['S-11.070'],
+         'peer': {'rules': [info_rule(BOOT), greet(0), refuse(2), DFU_T]},
+         'sequence': [install('ble_bootloader', False, 1, 'may_not_start'), dict(reboot, exit=1, no_app=False)]},
+    ]
+    return {'_doc': NO_APP_DOC, 'state': AB0D, 'image_len': 500,
+            'version': [1, 1, 0, 0], 'product_word': '0x00084000', 'runs': runs}
+
+
+ALL['no_app'] = no_app
+
+
 # ---- transcripts ---------------------------------------------------------------------------------
 
 def info_rule(text, delay=1.0, **kw):

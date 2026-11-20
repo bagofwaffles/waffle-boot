@@ -6,12 +6,16 @@
  * over, the result and when the exchange ended).
  *
  * Requirements: S-08.002, S-08.003, S-08.011, S-08.014, S-08.015,
- * S-08.020-S-08.023, S-08.030-S-08.035, S-08.040-S-08.047.
+ * S-08.020-S-08.023, S-08.030-S-08.035, S-08.040-S-08.047; with
+ * vectors/no_app.json, S-08.048, S-11.064, S-11.069, S-11.070, S-04.027.
  */
 #include "s08_test.h"
 #include "vectors/s08_transcripts.h"
 
+#include "waffle/s04_records.h"
+
 static const struct s08t *cur;
+static int rule0, nrules;	/* the scripted Nordic's rules */
 static int matched[64];
 static uint8_t peer_seq;
 static unsigned to_host;	/* the peer's frames to destination 2 */
@@ -54,8 +58,8 @@ static void peer(void *ctx, struct t_port *port, const uint8_t *d, size_t n)
 	sent[nsent].len = raw[3];
 	memcpy(sent[nsent].p, raw + 4, raw[3]);
 	nsent++;
-	for (int i = 0; i < cur->rn; i++) {
-		const struct s08t_rule *r = &s08t_rules[cur->r0 + i];
+	for (int i = 0; i < nrules; i++) {
+		const struct s08t_rule *r = &s08t_rules[rule0 + i];
 		int m;
 
 		if (!accepts(r, raw[0], raw[2], raw + 4, raw[3]))
@@ -232,6 +236,130 @@ static void check_stop(int result)
 	}
 }
 
+/* ---- SC-08-NO-APP and R-NORDIC no_app (S-08.048) ---- */
+
+static int left_out;	/* S08_LOG_EXIT_LEFT_OUT events */
+
+static void no_app_log(void *ctx, int ev, const uint8_t *d, size_t n, uint32_t a)
+{
+	(void)ctx;
+	(void)d;
+	(void)n;
+	(void)a;
+	if (ev == S08_LOG_EXIT_LEFT_OUT)
+		left_out++;
+}
+
+/* The commands 0x0D {b} sent from frame `from` on. */
+static unsigned commands(size_t from, uint8_t b)
+{
+	unsigned k = 0;
+
+	for (size_t i = from; i < nsent; i++)
+		if (sent[i].id == 0x0D && sent[i].len == 1 && sent[i].p[0] == b)
+			k++;
+	return k;
+}
+
+static void rb_nop(void *ctx) { (void)ctx; }
+static void rb_delay(void *ctx, uint32_t ms) { (void)ctx; (void)ms; }
+static void rb_record(void *ctx, uint16_t r) { (void)ctx; (void)r; }
+static void rb_enter(void *ctx) { (void)s08_enter_dfu(ctx); }
+static void rb_exit(void *ctx) { (void)s08_exit_dfu(ctx); }
+
+/* S-04.027 on the module: the board's reboot ops reduced to the Nordic. */
+static const struct s04_reboot_ops rb_ops = {
+	&nrig.nordic, rb_nop, rb_nop, rb_enter, rb_exit, rb_nop, rb_delay, NULL,
+	rb_record, rb_nop, rb_nop,
+};
+
+static void no_app_init(int r0, int rn)
+{
+	t_nrig_init(S08N_STATE, S06_MS(400000));
+	nrig.node.routes_off = 0;
+	nrig.ops.log = no_app_log;
+	memset(matched, 0, sizeof matched);
+	nsent = 0;
+	peer_seq = 0;
+	left_out = 0;
+	rule0 = r0;
+	nrules = rn;
+	nrig.port.on_tx = peer;
+}
+
+/*
+ * An install run as S-11 drives it with one Nordic step: the state set,
+ * the run's start, the transfer, the state cleared (S-11.064 item 2), the
+ * run's end (item 3).
+ */
+static void no_app_install(const struct s08n_phase *p)
+{
+	static uint8_t img[S08N_IMAGE_LEN];
+	struct s08_nordic *n = &nrig.nordic;
+	uint8_t buf[256];
+	long len;
+	bool ok;
+
+	for (uint32_t i = 0; i < S08N_IMAGE_LEN; i++)
+		img[i] = (uint8_t)(i * 7 + 3);
+	s08_set_state(n, S08_STATE_UPGRADING);
+	CHECK(s08_run_start(n, true, buf, sizeof buf, &len));
+	ok = s08_transfer(n, img, S08N_IMAGE_LEN, s08n_version, p->type,
+			  S08N_PRODUCT);
+	CHECK_EQ(ok, p->transfer != 0);
+	/* S-11.069, S-11.070: the report's addition after a failure */
+	CHECK_EQ(!ok && s08_after_prepare(&n->failure),
+		 p->report != 0);
+	if (p->report != 0)
+		CHECK_EQ(p->type, p->report == 1 ? S08_TYPE_APP : S08_TYPE_BOOTLOADER);
+	s08_set_state(n, S08_STATE_IDLE);
+	(void)s08_run_end(n);
+}
+
+static void test_no_app(void)
+{
+	for (size_t i = 0; i < s08n_count; i++) {
+		const struct s08n *r = &s08n[i];
+
+		t_case = r->name;
+		no_app_init(r->r0, r->rn);
+		for (int k = 0; k < r->pn; k++) {
+			const struct s08n_phase *p = &s08n_phases[r->p0 + k];
+			const size_t from = nsent;
+			const int lo = left_out;
+
+			if (p->reboot)		/* S-04.027: W2, reason 20 */
+				s04_reboot(&rb_ops, S04_W2, (uint16_t)p->reason);
+			else
+				no_app_install(p);
+			CHECK_EQ(commands(from, 0x18), (unsigned)p->exits);
+			CHECK_EQ(commands(from, 0xEE) != 0, p->enter != 0);
+			CHECK_EQ(nrig.nordic.no_app, p->no_app != 0);
+			/* each exit left out is logged */
+			if (p->exits == 0)
+				CHECK(left_out > lo);
+		}
+	}
+	/* R-NORDIC, variant no_app: every writer after such a failure, and
+	 * the same writers without one */
+	for (size_t i = 0; i < s08n_writers_count; i++) {
+		const struct s08n_writer *w = &s08n_writers[i];
+		const uint16_t arg = w->id == 1 || w->id == 7 ? 30u : 0u;
+
+		for (int no_app = 0; no_app < 2; no_app++) {
+			const int step = no_app ? w->no_app : w->nordic;
+
+			t_case = no_app ? "writers.tsv nordic_no_app" : "writers.tsv nordic";
+			no_app_init(s08n[0].r0, s08n[0].rn);
+			nrig.nordic.no_app = no_app != 0;
+			s04_reboot(&rb_ops, (enum s04_writer)w->id, arg);
+			CHECK_EQ(commands(0, 0x18) != 0, step == 2);
+			CHECK_EQ(commands(0, 0xEE) != 0, step == 1);
+			CHECK_EQ(left_out, no_app && w->nordic == 2);
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
 	for (size_t i = 0; i < s08t_count; i++) {
@@ -247,6 +375,8 @@ int main(int argc, char **argv)
 		peer_seq = 0;
 		to_host = 0;
 		nrig.port.on_tx = peer;
+		rule0 = cur->r0;
+		nrules = cur->rn;
 		/* S-08.004: forwarding is in force after the link greeting */
 		if (cur->proc != 0)
 			nrig.node.routes_off = 0;
@@ -275,5 +405,7 @@ int main(int argc, char **argv)
 			CHECK_EQ(k, to_host);
 		}
 	}
+	if (argc <= 1)
+		test_no_app();
 	return t_finish("test_s08_transcripts");
 }

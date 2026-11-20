@@ -203,6 +203,19 @@ class Writers(unittest.TestCase):
             self.assertEqual(line, records.nordic_step(r), r)
             self.assertEqual(line, m.nordic_step(r), r)
 
+    @scenario('S-04/R-NORDIC')
+    def test_R_NORDIC_no_app(self):
+        """Variant no_app, the tables only: writers.tsv's nordic_no_app leaves out every exit and keeps every
+        enter, as images.records and s04_model say for reason 20 and the others. The module's side (no
+        exit command sent) is tests/unit/test_s08_transcripts.c's, over the same column."""
+        for wid, w in writer_rows().items():
+            want = 'none' if w['nordic'] == 'exit' else w['nordic']
+            self.assertEqual(w['nordic_no_app'], want, wid)
+        for r in range(0x10000):
+            self.assertEqual(records.nordic_step(r, no_app=True), m.nordic_step(r, no_app=True), r)
+            self.assertEqual(records.nordic_step(r, no_app=True),
+                             'none' if records.nordic_step(r) == 'exit' else records.nordic_step(r), r)
+
     @scenario('S-04/R-W4')
     def test_R_W4(self):
         """The scan's name cases of R-W4, then seeded random root listings against S-04.024's rule as

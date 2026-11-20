@@ -122,6 +122,14 @@ size_t s15_outcome_lines(const char *out[2], enum s15_style style[2],
 			 enum s15_outcome outcome, bool any_skipped,
 			 bool reason40, bool content_only, bool cont);
 
+/* S-11.069, S-11.070: what a Nordic step that failed after its prepare
+ * leaves, under the step's failure. */
+enum s15_note { S15_NOTE_NONE = 0, S15_NOTE_NO_APP, S15_NOTE_MAY_NOT_START };
+#define S15_NOTE_LINES 2u
+/* The note's lines into out[], with their styles; returns the count. */
+size_t s15_note_lines(const char *out[S15_NOTE_LINES],
+		      enum s15_style style[S15_NOTE_LINES], enum s15_note note);
+
 /* S-15.041: a pack's name from its manifest.json (data NULL: no file). */
 size_t s15_manifest_name(const uint8_t *data, size_t len, char out[64]);
 /* The label: the name, else the directory name; 63 at most. */

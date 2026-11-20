@@ -523,6 +523,166 @@ static void test_chunks(void)
 	}
 }
 
+/*
+ * S-08.048: a Nordic in DFU that answers every DFU request T, except the
+ * refuse_nth request (from 1) whose first byte is refuse_cmd: {0x84}.
+ * Queries are answered mode:bootloader, or mode:application with not_dfu.
+ */
+static uint8_t refuse_cmd;
+static int refuse_nth, refuse_seen;
+static bool not_dfu;
+static int left_out_logged;
+
+static void no_app_peer(void *ctx, struct t_port *p, const uint8_t *d, size_t n)
+{
+	static const char boot[] = "mode:bootloader", app[] = "mode:application";
+	uint8_t raw[256];
+	size_t k = t_nth_raw(d, n, 0, raw);
+	uint8_t reply = 0x54;
+
+	(void)ctx;
+	if (k < 5)
+		return;
+	if (raw[2] == 0x09) {
+		const char *t = not_dfu ? app : boot;
+
+		t_port_inject_frame(p, p->sim->now + 100, s06_swap_route(raw[0]), 0,
+				    0x0A, (const uint8_t *)t, strlen(t));
+		return;
+	}
+	if (raw[2] != 0x0D || s06_src(raw[0]) < 8)	/* a request */
+		return;
+	if (raw[4] == refuse_cmd && ++refuse_seen == refuse_nth)
+		reply = 0x84;
+	t_port_inject_frame(p, p->sim->now + 100, s06_swap_route(raw[0]), 0,
+			    0x0E, &reply, 1);
+}
+
+static void count_left_out(void *ctx, int ev, const uint8_t *d, size_t n,
+			   uint32_t a)
+{
+	(void)ctx;
+	(void)d;
+	(void)n;
+	(void)a;
+	if (ev == S08_LOG_EXIT_LEFT_OUT)
+		left_out_logged++;
+}
+
+/* One transfer of a 600-byte image (the header chunk and 3 image chunks)
+ * against no_app_peer; refuse_nth 0 refuses nothing. */
+static bool no_app_transfer(uint8_t type, uint8_t cmd, int nth)
+{
+	static uint8_t img[600];
+	static const uint16_t ver[4] = { 1, 1, 0, 0 };
+
+	refuse_cmd = cmd;
+	refuse_nth = nth;
+	refuse_seen = 0;
+	return s08_transfer(&nrig.nordic, img, sizeof img, ver, type, 0x00084000);
+}
+
+static void no_app_rig(void)
+{
+	t_nrig_init(S08_STATE_UPGRADING, S06_MS(400000));
+	nrig.port.on_tx = no_app_peer;
+	nrig.ops.log = count_left_out;
+	not_dfu = false;
+	left_out_logged = 0;
+}
+
+static void test_no_app(void)
+{
+	static const struct {
+		const char *name;
+		uint8_t cmd;
+		int nth;
+		enum s08_stage at;
+	} after[] = {
+		{ "prepare refused", S08_DFU_PREPARE, 1, S08_AT_PREPARE },
+		{ "header refused", S08_DFU_CHUNK, 1, S08_AT_HEADER },
+		{ "image chunk 2 refused", S08_DFU_CHUNK, 3, S08_AT_CHUNK },
+		{ "perform refused", S08_DFU_PERFORM, 1, S08_AT_PERFORM },
+	};
+	uint8_t ids[64], first[64];
+	size_t k;
+
+	/* S-08.048: set by an application transfer failing at or after its
+	 * prepare, whatever the stage; S-11.070's case is the same stop */
+	for (size_t i = 0; i < sizeof after / sizeof after[0]; i++) {
+		t_case = after[i].name;
+		no_app_rig();
+		CHECK(!nrig.nordic.no_app);
+		CHECK(!no_app_transfer(S08_TYPE_APP, after[i].cmd, after[i].nth));
+		CHECK_EQ(nrig.nordic.failure.at, after[i].at);
+		CHECK(s08_after_prepare(&nrig.nordic.failure));
+		CHECK(nrig.nordic.no_app);
+		/* a bootloader image's failure leaves it as it was */
+		no_app_rig();
+		CHECK(!no_app_transfer(S08_TYPE_BOOTLOADER, after[i].cmd,
+				       after[i].nth));
+		CHECK(s08_after_prepare(&nrig.nordic.failure));
+		CHECK(!nrig.nordic.no_app);
+	}
+
+	/* no prepare sent: the step's queries do not give "in DFU" */
+	t_case = "not in DFU";
+	no_app_rig();
+	not_dfu = true;
+	CHECK(!no_app_transfer(S08_TYPE_APP, 0, 0));
+	CHECK_EQ(nrig.nordic.failure.at, S08_AT_QUERY);
+	CHECK(!s08_after_prepare(&nrig.nordic.failure));
+	CHECK(!nrig.nordic.no_app);
+	{
+		struct s08_failure f = { S08_AT_NONE, S08_REPLY_NONE, 0, 0 };
+
+		CHECK(!s08_after_prepare(&f));
+	}
+
+	/* cleared by an application transfer that succeeds, not by a
+	 * bootloader's */
+	t_case = "cleared by success";
+	no_app_rig();
+	CHECK(!no_app_transfer(S08_TYPE_APP, S08_DFU_CHUNK, 2));
+	CHECK(nrig.nordic.no_app);
+	CHECK(no_app_transfer(S08_TYPE_BOOTLOADER, 0, 0));
+	CHECK(nrig.nordic.no_app);
+	CHECK(no_app_transfer(S08_TYPE_APP, 0, 0));
+	CHECK(!nrig.nordic.no_app);
+	CHECK(!no_app_transfer(S08_TYPE_APP, S08_DFU_PERFORM, 1));
+	CHECK(nrig.nordic.no_app);
+
+	/* while set: the exit sends nothing and is logged as left out */
+	t_case = "exit left out";
+	nrig.port.ntx = 0;
+	CHECK(!s08_exit_dfu(&nrig.nordic));
+	CHECK_EQ(nrig.port.ntx, 0);
+	CHECK_EQ(left_out_logged, 1);
+	/* the run's end: its query, and no exit */
+	t_case = "run end left out";
+	CHECK(!s08_run_end(&nrig.nordic));
+	k = sent_list(ids, first, 64);
+	CHECK(k == 1 && ids[0] == 0x09);
+	CHECK_EQ(left_out_logged, 2);
+	/* the enter is still sent */
+	t_case = "enter still sent";
+	nrig.port.ntx = 0;
+	(void)s08_enter_dfu(&nrig.nordic);
+	k = sent_list(ids, first, 64);
+	CHECK(k >= 1 && ids[0] == 0x0D && first[0] == 0xEE);
+	CHECK(nrig.nordic.no_app);
+
+	/* a power-on starts without it */
+	t_case = "init";
+	s08_init(&nrig.nordic, &nrig.node, S06_LINK_NORDIC, &nrig.ops, 0);
+	CHECK(!nrig.nordic.no_app);
+	nrig.port.on_tx = NULL;
+	nrig.port.ntx = 0;
+	(void)s08_exit_dfu(&nrig.nordic);
+	k = sent_list(ids, first, 64);
+	CHECK(k >= 1 && ids[0] == 0x0D && first[0] == 0x18);
+}
+
 /* S-08.004: nothing forwarded between CDC and Nordic before the greeting */
 static void test_forwarding(void)
 {
@@ -628,6 +788,7 @@ int main(void)
 	test_messages();
 	test_transfers();
 	test_chunks();
+	test_no_app();
 	test_forwarding();
 	return t_finish("test_s08_rules");
 }

@@ -128,6 +128,61 @@ def vectors(h):
             'struct s08v_chunks { uint32_t image_len; const uint8_t *lens_be16; size_t len; };')
 
 
+def peer_rules(h, peer, rules, sends):
+    """A scripted Nordic's rules (and what each sends) appended to the tables."""
+    for r in peer.get('rules', []):
+        on = r.get('on', {})
+        s0 = len(sends)
+        for s in r.get('send', []):
+            sends.append('%d, %s, %s, %d, %s' % (s.get('kind', 'reply') == 'reply', s.get('id', '0x05'),
+                                                 s.get('route', '0x31'), us(s.get('delay_ms', 1.0)),
+                                                 h.arr('ps', payload_of(s))))
+        rules.append('%d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d' % (
+            h2i(on['id']) if 'id' in on else -1,
+            {'request': 1, 'message': 0}.get(on.get('kind'), -1),
+            h2i(on['first']) if 'first' in on else -1,
+            'payload' in on, h.arr('po', bytes.fromhex(on.get('payload', ''))),
+            us(r['from_ms']) if 'from_ms' in r else NONE, us(r['until_ms']) if 'until_ms' in r else -NONE,
+            r.get('skip', 0), r['times'] if r.get('times') is not None else -1, s0, len(sends) - s0))
+
+
+def no_app(h, rules, sends):
+    """vectors/no_app.json (SC-08-NO-APP) and writers.tsv's nordic and nordic_no_app columns (S-04's R-NORDIC,
+    variant no_app)."""
+    v = load('vectors/no_app.json')
+    runs, phases = [], []
+    for r in v['runs']:
+        r0, p0 = len(rules), len(phases)
+        peer_rules(h, r['peer'], rules, sends)
+        for p in r['sequence']:
+            report = {None: 0, 'no_app': 1, 'may_not_start': 2}[p.get('report')]
+            phases.append('%d, %s, %d, %d, %d, %d, %d, %d' % (
+                p['do'] == 'reboot', p.get('type', '0'), p.get('reason', 0), int(p.get('transfer', True)),
+                int(p['enter']), p['exit'], int(p['no_app']), report))
+        runs.append('%s, %d, %d, %d, %d' % (h.cstr(r['name']), r0, len(rules) - r0, p0, len(phases) - p0))
+    h.lines.append('#define S08N_STATE %d' % h2i(v['state']))
+    h.lines.append('#define S08N_IMAGE_LEN %du' % v['image_len'])
+    h.lines.append('static const uint16_t s08n_version[4] = { %s };' % ', '.join(str(x) for x in v['version']))
+    h.lines.append('#define S08N_PRODUCT %su' % v['product_word'])
+    h.table('struct s08n_phase', 's08n_phases', phases,
+            '/* report: 0 none, 1 no application, 2 may not start */\n'
+            'struct s08n_phase { int reboot; uint8_t type; int reason; int transfer, enter, exits, no_app, '
+            'report; };')
+    h.table('struct s08n', 's08n', runs,
+            'struct s08n { const char *name; int r0, rn, p0, pn; };')
+    rows = []
+    with open(os.path.join(TOP, 'tests', 'oracle', 'S-04-records', 'writers.tsv')) as f:
+        lines = [x for x in f.read().splitlines() if x and not x.startswith('#')]
+    head = lines[0].split('\t')
+    steps = ['none', 'enter', 'exit']
+    for x in lines[1:]:
+        w = dict(zip(head, x.split('\t')))
+        rows.append('%s, %d, %d' % (w['id'][1:], steps.index(w['nordic']), steps.index(w['nordic_no_app'])))
+    h.table('struct s08n_writer', 's08n_writers', rows,
+            '/* S-04 writers.tsv: the Nordic step, 0 none 1 enter 2 exit, and after S-08.048 */\n'
+            'struct s08n_writer { int id; int nordic, no_app; };')
+
+
 def transcripts(h):
     names = sorted(f[:-5] for f in os.listdir(os.path.join(SPEC, 'transcripts')) if f.endswith('.json'))
     rules, sends, greets, steps, trs = [], [], [], [], []
@@ -135,20 +190,7 @@ def transcripts(h):
         t = load('transcripts/%s.json' % name)
         peer = t.get('peer', {})
         r0, g0, e0 = len(rules), len(greets), len(steps)
-        for r in peer.get('rules', []):
-            on = r.get('on', {})
-            s0 = len(sends)
-            for s in r.get('send', []):
-                sends.append('%d, %s, %s, %d, %s' % (s.get('kind', 'reply') == 'reply', s.get('id', '0x05'),
-                                                     s.get('route', '0x31'), us(s.get('delay_ms', 1.0)),
-                                                     h.arr('ps', payload_of(s))))
-            rules.append('%d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d' % (
-                h2i(on['id']) if 'id' in on else -1,
-                {'request': 1, 'message': 0}.get(on.get('kind'), -1),
-                h2i(on['first']) if 'first' in on else -1,
-                'payload' in on, h.arr('po', bytes.fromhex(on.get('payload', ''))),
-                us(r['from_ms']) if 'from_ms' in r else NONE, us(r['until_ms']) if 'until_ms' in r else -NONE,
-                r.get('skip', 0), r['times'] if r.get('times') is not None else -1, s0, len(sends) - s0))
+        peer_rules(h, peer, rules, sends)
         for g in peer.get('greet', []):
             greets.append('%d, %s, %s, %s' % (us(g['at_ms']), g.get('route', '0x31'), g.get('id', '0x05'),
                                               h.arr('pg', payload_of(g))))
@@ -174,6 +216,7 @@ def transcripts(h):
             us(a.get('ms', 100)), ', '.join(str(x) for x in v), a.get('type', '0xb0'),
             a.get('product_word', '0x00084000'), a.get('nordic_image', True),
             r0, len(rules) - r0, g0, len(greets) - g0, e0, len(steps) - e0))
+    no_app(h, rules, sends)
     h.table('struct s08t_send', 's08t_sends', sends,
             'struct s08t_send { int reply; uint8_t id, route; int32_t delay_us; const uint8_t *p; size_t len; };')
     h.table('struct s08t_rule', 's08t_rules', rules,
