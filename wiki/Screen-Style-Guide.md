@@ -135,7 +135,7 @@ body's left edge (x 16).
 | `keys` | a sentence naming keys | gray, the `` `spans` `` amber, a digit's span a key badge |
 | `item` | `D Label` or `D Label\tHint` | the digit's key badge in column 0, the label white from column 3, the hint gray, right-aligned |
 | `item-on` | as `item` | the hint red (a setting that is on and needs care) |
-| `armed` | as `item` | the whole row red, its badges too: a destructive item whose key is being held to confirm it |
+| `armed` | as `item` | the whole row red, its badges too: an item whose key is being held to confirm it |
 | `back` | `8 Back to <Screen>` | the digit's key badge, the label gray |
 | `ok` | a sentence | a green `+` in column 0, the sentence green from column 3 |
 | `warn` | a sentence | an amber `!` in column 0, the sentence amber from column 3 |
@@ -235,10 +235,10 @@ These rules are fixed: only the maintainer changes them.
   unit, whatever developer mode is; the developer menu offers no reset.
 - Developer mode is off by default, and the Settings item alone sets it. It
   shows the developer menu and adds the USB serial port.
-- The protected-writes item is on Settings alone. Holding 2 shows its
-  prompt with the bar and turns it on at 5 s; one press turns it off. A
-  host install after reason 40, whose screen has no way back, runs with it
-  off.
+- The protected-writes item is on Settings alone. While it is off, 2 opens
+  its screen, Protected Writes, where 2 held for 5 s turns it on; while it
+  is on, 2 turns it off at once. A host install after reason 40, whose
+  screen has no way back, runs with it off.
 - One MTP item, whose interface follows the MTP target setting; 8 turns
   MTP off.
 - The OS write has its own screen: its steps and their progress, and on a
@@ -299,8 +299,10 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | --- | --- |
 | <img src="../docs/ui/main.png" width="480" alt="Main Menu"> | <img src="../docs/ui/main-states.png" width="480" alt="Main Menu with every state"> |
 | Main Menu | developer mode on, the second processor absent, the OS to reinstall, protected writes on |
-| <img src="../docs/ui/settings.png" width="480" alt="Settings"> | <img src="../docs/ui/option.png" width="480" alt="Protected Writes"> |
-| Settings | the protected-writes prompt, 2 held for 2 of the 5 s |
+| <img src="../docs/ui/settings.png" width="480" alt="Settings"> | <img src="../docs/ui/settings-color.png" width="480" alt="Settings, color on"> |
+| Settings | Settings with the color on |
+| <img src="../docs/ui/option.png" width="480" alt="Protected Writes"> | <img src="../docs/ui/option-held.png" width="480" alt="Protected Writes, 2 held"> |
+| Protected Writes, from Settings' 2 while it is off | its 2 held for 2 of the 5 s |
 | <img src="../docs/ui/system.png" width="480" alt="System"> | <img src="../docs/ui/system-armed.png" width="480" alt="Factory reset held"> |
 | System, with content packs | the factory reset, 7 held for 2 of the 5 s |
 | <img src="../docs/ui/info.png" width="480" alt="Device Info"> | <img src="../docs/ui/keytest.png" width="480" alt="Key Test"> |
@@ -311,8 +313,8 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | Format Drive | Install Firmware, waiting for a package |
 | <img src="../docs/ui/upgrade-run.png" width="480" alt="Installing"> | <img src="../docs/ui/upgrade-done.png" width="480" alt="Done"> |
 | a run in progress | a run done: the BLE and backplane parts skipped, not in this version |
-| <img src="../docs/ui/upgrade-failed.png" width="480" alt="Failed"> | <img src="../docs/ui/settings-color.png" width="480" alt="Settings, color on"> |
-| a run failed | Settings with the color on |
+| <img src="../docs/ui/upgrade-failed.png" width="480" alt="Failed"> | |
+| a run failed | |
 | <img src="../docs/ui/main-failed.png" width="480" alt="The OS not started"> | <img src="../docs/ui/info-failed.png" width="480" alt="Device Info after it"> |
 | Main Menu: the start failed when the second processor stopped answering | Device Info: the step, the request and where it broke |
 | <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | <img src="../docs/ui/upgrade-confirm.png" width="480" alt="Confirm Install"> |

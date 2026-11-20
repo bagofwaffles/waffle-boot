@@ -216,7 +216,7 @@ static void held_item(struct s15_menu *m, unsigned digit, const char *label)
 	sline(m, S15_ST_ARMED, b.s);
 }
 
-/* ---- the option: S-15.140 ------------------------------------------- */
+/* ---- the option and its screen: S-15.140 ---------------------------- */
 
 static void set_option(struct s15_menu *m, bool on)
 {
@@ -226,21 +226,54 @@ static void set_option(struct s15_menu *m, bool on)
 
 static void draw_settings(struct s15_menu *m);
 
-/* Settings' digit 2 (S-15.140): off at once; on only by a hold (S-15.015),
- * with the prompt in place of the screen while it lasts. */
-static void option_key(struct s15_menu *m, unsigned key)
+/* The option's screen: what it allows, its item, the way back; the item
+ * held in place, its hold's row to follow. */
+static void draw_option(struct s15_menu *m, bool armed)
+{
+	struct s15_buf b, h;
+
+	enter(m, S15_SCR_OPTION, "Protected Writes");
+	for (size_t i = 0; i < S15_OPTION_PROMPT_LINES; i++)
+		sline(m, s15_option_prompt_style[i], s15_option_prompt[i]);
+	if (armed) {
+		held_item(m, 2u, s15_option_turn_on);
+	} else {
+		s15_buf_init(&b);
+		s15_buf_str(&b, "2 ");
+		s15_buf_str(&b, s15_option_turn_on);
+		s15_buf_str(&b, "\t");
+		s15_hold_hint(&h, 2u);
+		s15_buf_str(&b, h.s);
+		sline(m, S15_ST_ITEM, b.s);
+	}
+	sline(m, S15_ST_BACK, "8 Back to Settings");
+}
+
+/* Settings' digit 2: off at once; while off, the option's screen, with
+ * no hold. The key that opened it is down already, so only a new key down
+ * starts one. */
+static void option_key(struct s15_menu *m)
 {
 	if (m->option_on) {
 		set_option(m, false);
 		draw_settings(m);
 		return;
 	}
-	if (knob_click(key))
-		return;
-	view(m, "Protected Writes");
-	for (size_t i = 0; i < S15_OPTION_PROMPT_LINES; i++)
-		sline(m, s15_option_prompt_style[i], s15_option_prompt[i]);
-	hold_begin(m, S15_ARM_OPTION, key);
+	draw_option(m, false);
+}
+
+/* The option's screen: digit 2 starts the hold that turns it on
+ * (S-15.015), 8 goes back with nothing changed. */
+static void option_screen_key(struct s15_menu *m, unsigned key)
+{
+	const unsigned d = s15_digit(key);
+
+	if (d == 8u) {
+		draw_settings(m);
+	} else if (d == 2u && !knob_click(key)) {
+		draw_option(m, true);
+		hold_begin(m, S15_ARM_OPTION, key);
+	}
 }
 
 /* S-11.080: this boot found an install a reset had interrupted. */
@@ -374,7 +407,7 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 2:
-		option_key(m, key);
+		option_key(m);              /* S-15.140 */
 		break;
 	case 3:
 		m->color = !m->color;
@@ -1539,7 +1572,7 @@ static void hold_cancel(struct s15_menu *m)
 		draw_packs(m, 0, 0);
 		break;
 	case S15_ARM_OPTION:
-		draw_settings(m);
+		draw_option(m, false);
 		break;
 	case S15_ARM_NONE:
 	default:
@@ -1619,6 +1652,9 @@ static void key_down(struct s15_menu *m, unsigned key)
 		break;
 	case S15_SCR_SETTINGS:
 		settings_key(m, key);
+		break;
+	case S15_SCR_OPTION:
+		option_screen_key(m, key);  /* S-15.140 */
 		break;
 	case S15_SCR_FORMAT:
 		format_key(m, key);

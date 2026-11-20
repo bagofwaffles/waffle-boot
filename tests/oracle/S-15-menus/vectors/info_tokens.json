@@ -103,7 +103,7 @@
   ["option-item:off", ["2 Protected writes\tOff"], {}, true],
   ["option-item:on", ["2 Protected writes\tOff"], {}, false],
   ["option prompt", ["Allow protected writes until the next reset?", "- Installs can write the bootloader slots; a TE", "  package's own returns the unit to stock", "- The host can unlock factory mode and change", "  the serial and identity", "- No install writes the first stage", "", "`White knob` turns it on, `any other key` cancels"], {}, false],
-  ["option prompt", ["Allow protected writes until the next reset?", "- Installs can write the bootloader slots; a TE", "  package's own returns the unit to stock", "- The host can unlock factory mode and change", "  the serial and identity", "- No install writes the first stage", "", "Hold `2` for 5 s to turn it on"], {}, true],
+  ["option prompt", ["Allow protected writes until the next reset?", "- Installs can write the bootloader slots; a TE", "  package's own returns the unit to stock", "- The host can unlock factory mode and change", "  the serial and identity", "- No install writes the first stage", "2 Turn on\tHold `2` for 5 s", "8 Back to Settings"], {}, true],
   ["indicator", ["Protected writes on"], {}, true],
   ["indicator", ["2 Protected writes\tOff"], {}, false],
   ["slave:no_os", ["DSP2\tNo OS"], {}, true],

@@ -503,7 +503,7 @@ static void test_required_info(void)
 {
 	struct s15_buf b;
 	const char *rows[9];
-	char row[80];
+	char row[80], item[sizeof b.s + 16];
 	size_t n;
 
 	/* S-15.140: the item's state as its hint */
@@ -516,18 +516,24 @@ static void test_required_info(void)
 	      fits(S15_ST_ITEM, s15_option_item_off),
 	      "S-15.140 option item off");
 
+	/* The option's screen: the rows, its item with the hold's hint, the
+	 * way back; held, the same item armed and the hold's row: nine rows. */
 	for (n = 0; n < S15_OPTION_PROMPT_LINES; n++) {
 		rows[n] = s15_option_prompt[n];
 		CHECK(fits(s15_option_prompt_style[n], rows[n]),
 		      "S-15.140 prompt row %zu fits in %s", n,
 		      s15_style_names[s15_option_prompt_style[n]]);
 	}
+	s15_hold_hint(&b, 2u);
+	snprintf(item, sizeof item, "2 %s\t%s", s15_option_turn_on, b.s);
+	CHECK(fits(S15_ST_ITEM, item) && fits(S15_ST_ARMED, item),
+	      "S-15.140 the item fits");
+	rows[n++] = item;
+	rows[n++] = "8 Back to Settings";
 	CHECK(s15t_match_named("option prompt", rows, n, NULL),
-	      "S-15.140 the prompt names every effect");
+	      "S-15.140 the screen names every effect and the hold");
 	CHECK(s15_option_prompt_style[0] == S15_ST_HEAD &&
-	      s15_option_prompt_style[S15_OPTION_PROMPT_LINES - 1u] == S15_ST_KEYS &&
-	      strchr(s15_option_prompt[S15_OPTION_PROMPT_LINES - 1u], '`') != NULL,
-	      "S-15.140 a question first, the keys last");
+	      n + 1u == S15_ROWS, "S-15.140 a question first; held, every row shown");
 
 	/* The title bar's indicator */
 	CHECK(row_matches("indicator", s15_indicator_text, NULL) &&

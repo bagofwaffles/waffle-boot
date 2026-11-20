@@ -470,10 +470,10 @@ int main(int argc, char **argv)
 	setup(); start();
 	bad |= shot(d, "main");
 
-	/* protected writes on (Settings, 2 held for 5 s), then 8 back */
+	/* protected writes on (Settings, 2, then 2 held for 5 s), then 8 back */
 	setup(); boot.start.why = S15_START_ENCRYPTED; boot.start.part = 1;
 	boot.slave = S15_SLAVE_ABSENT; start();
-	press(0x07); hold(0x07); press(0x15);
+	press(0x07); press(0x07); hold(0x07); press(0x15);
 	bad |= shot(d, "main-states");
 
 	/* S-15.163: a plain start that failed, then Device Info (4) and
@@ -488,8 +488,10 @@ int main(int argc, char **argv)
 	setup(); start();
 	press(0x07);
 	bad |= shot(d, "settings");
-	hold_for(0x07, 2000);	/* 2 of the 5 s */
+	press(0x07);		/* S-15.140: the option's screen */
 	bad |= shot(d, "option");
+	hold_for(0x07, 2000);	/* 2 of the 5 s */
+	bad |= shot(d, "option-held");
 
 	/* S-15.173: Settings with the color on, the one shot in color */
 	setup(); boot.settings.color = true; start();
@@ -592,9 +594,9 @@ int main(int argc, char **argv)
 	bad |= shot(d, "upgrade-done");
 
 	/* S-15.116: the bootloader's confirmation, protected writes on
-	 * (Settings, 2 held for 5 s), digit 1 held for 2 s */
+	 * (Settings, 2, then 2 held for 5 s), digit 1 held for 2 s */
 	setup(); start();
-	press(0x07); hold(0x07); press(0x15); press(0x06);
+	press(0x07); press(0x07); hold(0x07); press(0x15); press(0x06);
 	s15_up_released(&menu, 100000);
 	s15_up_tick(&menu, 102000);
 	s15_up_phase(&menu, S15_PH_EXTRACT_FIRMWARE);

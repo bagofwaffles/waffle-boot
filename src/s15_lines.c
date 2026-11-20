@@ -423,7 +423,8 @@ void s15_handover_frame(void (*put)(void *ctx, uint16_t pixel), void *ctx)
 
 /* ---- required information -------------------------------------------- */
 
-/* S-15.140: the prompt, eight rows naming every effect. */
+/* S-15.140: the option's screen, its question and every effect; its item's
+ * hint names the hold. */
 const char *const s15_option_prompt[S15_OPTION_PROMPT_LINES] = {
 	"Allow protected writes until the next reset?",
 	"- Installs can write the bootloader slots; a TE",
@@ -431,13 +432,12 @@ const char *const s15_option_prompt[S15_OPTION_PROMPT_LINES] = {
 	"- The host can unlock factory mode and change",
 	"  the serial and identity",
 	"- No install writes the first stage",
-	"",
-	"Hold `2` for 5 s to turn it on",
 };
 const enum s15_style s15_option_prompt_style[S15_OPTION_PROMPT_LINES] = {
 	S15_ST_HEAD, S15_ST_TEXT, S15_ST_TEXT, S15_ST_TEXT, S15_ST_TEXT,
-	S15_ST_TEXT, S15_ST_TEXT, S15_ST_KEYS,
+	S15_ST_TEXT,
 };
+const char s15_option_turn_on[] = "Turn on";
 const char s15_option_item_on[] = "2 Protected writes\tOn";
 const char s15_option_item_off[] = "2 Protected writes\tOff";
 const char s15_slave_no_os[] = "No OS";

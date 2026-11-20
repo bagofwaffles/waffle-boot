@@ -511,6 +511,23 @@ static bool back_last(void)
 	       strcmp(row_back(b, 1), "") == 0;
 }
 
+/* A row of the console now, as rows() writes it. */
+static bool on_screen(const char *s)
+{
+	const char *got[S15_ROWS];
+	char b[S15_ROWS][ROWLEN];
+	size_t n = rows(got, b);
+
+	for (size_t i = 0; i < n; i++)
+		if (strcmp(got[i], s) == 0)
+			return true;
+	return false;
+}
+
+/* S-15.140: the option's item, idle and held. */
+#define OPTION_IDLE "item:2 Turn on\tHold `2` for 5 s"
+#define OPTION_ARMED "armed:2 Turn on\tHold `2` for 5 s"
+
 /* ---- the OS write the fake plays (S-15.094) ---------------------------- */
 
 static int named(const char *const *names, size_t n, const char *s)
@@ -745,9 +762,10 @@ enum { MTP_OFF, MTP_VENDOR, MTP_STANDARD };
 /* A screen with the flags that change what its keys do. */
 struct rstate {
 	const char *name; unsigned screen;
-	bool devmode, packs, armed; unsigned opt;      /* Main, system, settings, upgrade (opt) */
+	bool devmode, packs, armed; unsigned opt;      /* Main, system, settings, option, upgrade (opt) */
 	bool color;                                   /* Settings (S-15.173); true elsewhere */
-	unsigned pending;                              /* Packs */
+	unsigned pending;                              /* Packs; the option's screen: 1 while
+							  the key that opened it is down */
 	bool refused, fpend;                           /* Format */
 	unsigned mtp; bool osw_done, osw_written;      /* Factory; the OS write's result shown */
 	bool macos;                                   /* Settings and factory (S-15.174); true elsewhere */
@@ -770,10 +788,6 @@ static const struct rstate rstates[] = {
 	{ "color=0,devmode=0,macos=1,opt=off,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_OFF, false, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "color=1,devmode=0,macos=0,opt=off,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
 	{ "color=1,devmode=0,macos=1,opt=off,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
-	{ "color=0,devmode=0,macos=0,opt=pending,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_PENDING, false, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
-	{ "color=0,devmode=0,macos=1,opt=pending,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_PENDING, false, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
-	{ "color=1,devmode=0,macos=0,opt=pending,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_PENDING, true, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
-	{ "color=1,devmode=0,macos=1,opt=pending,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_PENDING, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "color=0,devmode=0,macos=0,opt=on,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_ON, false, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
 	{ "color=0,devmode=0,macos=1,opt=on,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_ON, false, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "color=1,devmode=0,macos=0,opt=on,screen=settings", S15_SCR_SETTINGS, false, false, false, OPT_ON, true, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
@@ -782,14 +796,13 @@ static const struct rstate rstates[] = {
 	{ "color=0,devmode=1,macos=1,opt=off,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_OFF, false, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "color=1,devmode=1,macos=0,opt=off,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
 	{ "color=1,devmode=1,macos=1,opt=off,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
-	{ "color=0,devmode=1,macos=0,opt=pending,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_PENDING, false, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
-	{ "color=0,devmode=1,macos=1,opt=pending,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_PENDING, false, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
-	{ "color=1,devmode=1,macos=0,opt=pending,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_PENDING, true, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
-	{ "color=1,devmode=1,macos=1,opt=pending,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_PENDING, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "color=0,devmode=1,macos=0,opt=on,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_ON, false, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
 	{ "color=0,devmode=1,macos=1,opt=on,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_ON, false, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "color=1,devmode=1,macos=0,opt=on,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_ON, true, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
 	{ "color=1,devmode=1,macos=1,opt=on,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_ON, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
+	{ "opener=up,screen=option", S15_SCR_OPTION, true, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
+	{ "opener=down,screen=option", S15_SCR_OPTION, true, false, false, OPT_OFF, true, 1u, false, false, MTP_OFF, false, false, true, false, false, false },
+	{ "opt=pending,screen=option", S15_SCR_OPTION, true, false, false, OPT_PENDING, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "fpend=0,refused=0,screen=format", S15_SCR_FORMAT, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "fpend=0,refused=1,screen=format", S15_SCR_FORMAT, false, false, false, OPT_OFF, true, 0u, true, false, MTP_OFF, false, false, true, false, false, false },
 	{ "fpend=1,refused=0,screen=format", S15_SCR_FORMAT, false, false, false, OPT_OFF, true, 0u, false, true, MTP_OFF, false, false, true, false, false, false },
@@ -828,8 +841,8 @@ static unsigned held_key(const struct rstate *st)
 		return st->pending == 1u ? 0x06u : 0x07u;
 	if (st->screen == S15_SCR_FORMAT && st->fpend)
 		return 0x06u;
-	if (st->screen == S15_SCR_SETTINGS && st->opt == OPT_PENDING)
-		return 0x07u;
+	if (st->screen == S15_SCR_OPTION && st->opt == OPT_PENDING)
+		return 0x0fu;
 	return NO_KEY;
 }
 
@@ -877,6 +890,16 @@ static void setup_state(const struct rstate *st)
 	case S15_SCR_SETTINGS:
 		press(0x07);
 		break;
+	case S15_SCR_OPTION:
+		/* S-15.140: opened by 0x07, which stays down for opener=down;
+		 * held by a new down of 0x0F */
+		press(0x07);
+		ev(0x07, true);
+		if (st->pending == 0u)
+			ev(0x07, false);
+		if (st->opt == OPT_PENDING)
+			ev(held_key(st), true);
+		break;
 	case S15_SCR_FORMAT:
 		press(0x12);
 		press(0x12);
@@ -905,11 +928,8 @@ static void setup_state(const struct rstate *st)
 		break;
 	}
 	CHECK(M.screen == st->screen, "setup %s", st->name);
-	if (st->screen == S15_SCR_SETTINGS || st->screen == S15_SCR_UPGRADE) {
+	if (st->screen == S15_SCR_SETTINGS || st->screen == S15_SCR_UPGRADE)
 		M.option_on = st->opt == OPT_ON;
-		if (st->opt == OPT_PENDING)
-			ev(held_key(st), true);
-	}
 	clear_records();
 	n_app = 0;
 }
@@ -932,7 +952,7 @@ static void observe(struct toks *t, const struct rstate *st,
 		    bool pending_before, bool fpend_before, bool osw_before,
 		    bool pack_before)
 {
-	char want[48];
+	char want[48], b[ROWLEN];
 	bool reset_ran = removed("/yaffs2/user");
 	bool armed_now = M.armed == S15_ARM_RESET;
 	/* armed by its key (a redraw of an armed screen is not an arming) */
@@ -966,9 +986,16 @@ static void observe(struct toks *t, const struct rstate *st,
 		add(t, "disarm");
 	if (arm)
 		add(t, "arm");
-	if (appended(s15_option_prompt[0]))
+	/* S-15.140: the option's screen drawn from another, its item held,
+	 * its hold canceled with the screen drawn idle again */
+	if (appended(s15_option_prompt[0]) && before != S15_SCR_OPTION)
 		add(t, "option_prompt");
-	if (pending_before && F.option != 1 && M.armed != S15_ARM_OPTION)
+	if (before == S15_SCR_OPTION && !pending_before && on_screen(OPTION_ARMED) &&
+	    strcmp(last_row(b), "step-run:Release to cancel\t0%\t5 s") == 0)
+		add(t, "option_arm");
+	if (pending_before && F.option != 1 && M.armed != S15_ARM_OPTION &&
+	    M.screen == S15_SCR_OPTION && on_screen(OPTION_IDLE) &&
+	    strcmp(last_row(b), "back:8 Back to Settings") == 0)
 		add(t, "option_cancel");
 	if (F.option == 1)
 		add(t, "option_on");
@@ -1173,7 +1200,9 @@ static void rules_hold(const struct rstate *st)
 	ok = st->screen == S15_SCR_SYSTEM ? tok(&got, "factory_reset") :
 	     st->screen == S15_SCR_PACKS ? tok(&got, want) :
 	     st->screen == S15_SCR_FORMAT ? tok(&got, "format") :
-	     only(&got, "option_on");
+	     /* S-15.140: on, and Settings drawn with it on */
+	     tok(&got, "option_on") && M.option_on && M.screen == S15_SCR_SETTINGS &&
+	     on_screen("item-on:2 Protected writes\tOn");
 	rule(R_HOLD, ok && M.armed == S15_ARM_NONE, st->name, hk, true, &got);
 	clear_records();
 	n_app = 0;
@@ -1428,6 +1457,11 @@ static void test_rules(void)
 					case S15_SCR_INFO2:
 						ok = next == S15_SCR_INFO;
 						break;
+					case S15_SCR_OPTION:    /* nothing changed */
+						ok = next == S15_SCR_SETTINGS &&
+						     only(&got, "open") && F.option == -1 &&
+						     on_screen("item:2 Protected writes\tOff");
+						break;
 					case S15_SCR_FACTORY:
 						if (st->mtp != MTP_OFF)
 							ok = next == S15_SCR_FACTORY &&
@@ -1512,6 +1546,7 @@ static void test_rules(void)
 					     !tok(&got, "format"), n, key, down, &got);
 					if (!armed_st && (before == S15_SCR_SYSTEM ||
 							  before == S15_SCR_SETTINGS ||
+							  before == S15_SCR_OPTION ||
 							  before == S15_SCR_PACKS ||
 							  before == S15_SCR_FORMAT))
 						rule(R_WHITE_KNOB, got.n == 0u,
@@ -1541,16 +1576,43 @@ static void test_rules(void)
 						     got.n == 0u, n, key, down, &got);
 				}
 
+				/* S-15.140: no key event turns the option on; Settings'
+				 * digit 2 turns it off at once, or opens its screen
+				 * with no hold; there a new down of digit 2, not a
+				 * knob click, starts the hold, and 8 goes back */
 				rule(R_OPTION_KEYS, !tok(&got, "option_on"),
 				     n, key, down, &got);
 				if (tok(&got, "option_prompt"))
 					rule(R_OPTION_KEYS, st->opt == OPT_OFF && down &&
-					     before == S15_SCR_SETTINGS && d == 2u &&
-					     key != 0x0bu, n, key, down, &got);
-				if (before == S15_SCR_SETTINGS && st->opt == OPT_OFF &&
-				    down && (key == 0x07u || key == 0x0fu))
-					rule(R_OPTION_KEYS, only(&got, "option_prompt") &&
-					     M.armed == S15_ARM_OPTION, n, key, down, &got);
+					     before == S15_SCR_SETTINGS && d == 2u,
+					     n, key, down, &got);
+				if (tok(&got, "option_arm"))
+					rule(R_OPTION_KEYS, before == S15_SCR_OPTION && down &&
+					     d == 2u && !(key >= 0x0au && key <= 0x0du),
+					     n, key, down, &got);
+				if (before == S15_SCR_SETTINGS && down && d == 2u)
+					rule(R_OPTION_KEYS, st->opt == OPT_ON ?
+					     only(&got, "option_off") && next == S15_SCR_SETTINGS &&
+					     !M.option_on &&
+					     on_screen("item:2 Protected writes\tOff") :
+					     got.n == 2u && tok(&got, "open") &&
+					     tok(&got, "option_prompt") && next == S15_SCR_OPTION &&
+					     M.armed == S15_ARM_NONE && on_screen(OPTION_IDLE),
+					     n, key, down, &got);
+				if (before == S15_SCR_OPTION && down && !armed_st) {
+					const bool opener = st->pending == 1u && key == 0x07u;
+					const bool arms = d == 2u && !opener &&
+							  !(key >= 0x0au && key <= 0x0du);
+
+					rule(R_OPTION_KEYS, arms ? only(&got, "option_arm") &&
+					     next == S15_SCR_OPTION && M.armed == S15_ARM_OPTION :
+					     d == 8u ? next == S15_SCR_SETTINGS :
+					     got.n == 0u && next == S15_SCR_OPTION &&
+					     M.armed == S15_ARM_NONE, n, key, down, &got);
+				}
+				if (before == S15_SCR_OPTION && armed_st && down && d == 8u)
+					rule(R_OPTION_KEYS, next == S15_SCR_OPTION &&
+					     only(&got, "option_cancel"), n, key, down, &got);
 
 				if (before == S15_SCR_FORMAT && down) {
 					if (!st->fpend)
@@ -1735,50 +1797,93 @@ static void test_screens(void)
 	expect_screen("settings");
 	expect_title("settings");
 	CHECK(F.n_usb == 0u, "S-15.170 no USB set");
-	press(0x0b);           /* digit 2 by a knob click: no hold (S-15.015) */
-	expect_screen("settings");
-	CHECK(M.armed == S15_ARM_NONE, "S-15.015 a knob click starts no hold");
-	ev(0x0f, true);        /* digit 2 by a sound key, held */
+	/* S-15.140: digit 2 by a knob click opens the option's screen, no
+	 * hold; 8 goes back with nothing changed */
+	press(0x0b);
 	expect_screen("option_prompt");
+	expect_title("option");
+	CHECK(M.screen == S15_SCR_OPTION && M.armed == S15_ARM_NONE && F.n_usb == 0u,
+	      "S-15.140 the option's screen, no hold, no USB set");
+	press(0x0b);           /* a knob click starts no hold (S-15.015) */
+	expect_screen("option_prompt");
+	CHECK(M.armed == S15_ARM_NONE, "S-15.015 a knob click starts no hold");
+	press(0x15);
+	expect_screen("settings");
+	CHECK(F.option == -1 && !M.option_on, "S-15.140 8: back, nothing changed");
+	/* opened by a key held down: that key does nothing until released and
+	 * pressed again */
+	ev(0x0f, true);
+	expect_screen("option_prompt");
+	tick(S15_CONFIRM_HOLD_MS * 2u);
+	CHECK(F.option == -1 && M.armed == S15_ARM_NONE,
+	      "S-15.140 the opening key, held on, starts no hold");
+	ev(0x0f, true);        /* a repeated down is no new event */
+	ev(0x0f, false);
+	tick(S15_CONFIRM_HOLD_MS);
+	CHECK(F.option == -1 && M.armed == S15_ARM_NONE && M.screen == S15_SCR_OPTION,
+	      "S-15.140 its release does nothing");
+	expect_screen("option_prompt");
+	ev(0x0f, true);        /* a new down: the hold */
+	expect_screen("option_prompt_held");
 	expect_title("option");
 	tick(S15_CONFIRM_HOLD_MS - 1u);
 	CHECK(F.option == -1, "S-15.015 not before 5 s");
 	tick(1u);
-	CHECK(F.option == 1 && F.n_usb == 0u, "S-15.140 on at 5 s, drawn again, no USB set");
+	CHECK(F.option == 1 && F.n_usb == 0u, "S-15.140 on at 5 s, no USB set");
+	CHECK(M.screen == S15_SCR_SETTINGS, "S-15.140 Settings shown with it on");
 	expect_screen("settings_option_on");
+	expect_title("settings");
 	ev(0x0f, false);
 	CHECK(F.option == 1 && M.option_on, "S-15.015 the release after it does nothing");
 	press(0x06);
 	expect_screen("settings_devmode_off_option_on");
 	CHECK(F.saves == 1u && !F.saved.dev_mode && !F.saved.color,
 	      "S-15.172 off, saved with the color as it is");
-	/* A key that cancels the prompt only cancels: digit 1 does not
-	 * also turn developer mode off. */
+	/* while on, digit 2 on Settings turns it off at once */
+	clear_records();
+	press(0x07);
+	CHECK(F.option == 0 && !M.option_on && M.screen == S15_SCR_SETTINGS,
+	      "S-15.140 off at once");
+	expect_screen("settings_devmode_off");
+	/* A key that cancels the hold only cancels, and draws the option's
+	 * screen again: digit 1 does not also turn developer mode off, and a
+	 * first 8 does not also go back. */
 	reset_fake(); default_boot(); start();
+	press(0x07);
 	press(0x07);
 	ev(0x07, true);
 	clear_records();
 	press(0x06);
 	CHECK(F.saves == 0u && M.dev_mode && F.option == -1 &&
 	      M.armed == S15_ARM_NONE, "S-15.140 a cancelling key only cancels");
-	expect_screen("settings");
+	expect_screen("option_prompt");
 	tick(S15_CONFIRM_HOLD_MS);
 	ev(0x07, false);
-	CHECK(F.option == -1 && M.screen == S15_SCR_SETTINGS,
+	CHECK(F.option == -1 && M.screen == S15_SCR_OPTION,
 	      "S-15.015 a canceled hold's key runs nothing");
+	ev(0x07, true);
+	press(0x15);
+	CHECK(M.screen == S15_SCR_OPTION && M.armed == S15_ARM_NONE,
+	      "S-15.140 8 during the hold only cancels");
+	expect_screen("option_prompt");
+	ev(0x07, false);
+	press(0x15);
+	CHECK(M.screen == S15_SCR_SETTINGS && F.option == -1, "S-15.140 a second 8 goes back");
 	/* an early release turns nothing on, and so does a later time */
+	press(0x07);
 	ev(0x07, true);
 	tick(S15_CONFIRM_HOLD_MS - 1u);
 	ev(0x07, false);
 	tick(S15_CONFIRM_HOLD_MS);
 	CHECK(F.option == -1 && !M.option_on && M.armed == S15_ARM_NONE,
 	      "S-15.015 released at 4999 ms: off");
-	expect_screen("settings");
+	expect_screen("option_prompt");
 	/* the white knob turns nothing on */
 	ev(0x07, true);
 	press(0x0d);
 	tick(S15_CONFIRM_HOLD_MS);
 	CHECK(F.option == -1 && M.armed == S15_ARM_NONE, "S-15.015 the white knob only cancels");
+	expect_screen("option_prompt");
 	ev(0x07, false);
 	reset_fake(); default_boot(); start();
 	press(0x07);
@@ -3453,12 +3558,15 @@ static void test_indicator(void)
 	s15_menu_render(&M, &g, &d);
 	CHECK(ind_seen == 0u, "off at the start");
 	press(0x07);
+	press(0x07);           /* the option's screen */
 	ev(0x07, true);
 	press(0x15);           /* only cancels */
 	ev(0x07, false);
-	CHECK(!M.option_on && M.screen == S15_SCR_SETTINGS,
+	CHECK(!M.option_on && M.screen == S15_SCR_OPTION,
 	      "S-15.140 another key only cancels");
 	press(0x15);
+	press(0x15);
+	press(0x07);
 	press(0x07);
 	hold(0x07);
 	press(0x15);
@@ -3469,6 +3577,7 @@ static void test_indicator(void)
 	CHECK(ind_seen == 1u, "indicator");
 
 	reset_fake(); default_boot(); start();
+	press(0x07);
 	press(0x07);
 	hold(0x07);
 	CHECK(M.option_on && M.screen == S15_SCR_SETTINGS,
@@ -3602,7 +3711,8 @@ static void test_gray(void)
 	color_px = gray_px = 0;
 	s15_menu_render(&M, &g, &d);
 	CHECK(color_px == 0u && gray_px != 0u, "S-15.173 Settings all gray");
-	hold(0x07);            /* protected writes on: the red bar */
+	press(0x07);           /* protected writes on: the red bar */
+	hold(0x07);
 	press(0x15);
 	color_px = 0;
 	s15_menu_render(&M, &g, &d);

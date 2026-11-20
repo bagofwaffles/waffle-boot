@@ -36,6 +36,7 @@ enum s15_screen {
 	S15_SCR_RESULT,     /* an erasing action's result: digit 8 alone acts */
 	S15_SCR_STARTING,   /* S-15.190: restarting for the OS; no key acts */
 	S15_SCR_INFO2,      /* S-15.082: Device Info's second page */
+	S15_SCR_OPTION,     /* S-15.140: the option's screen, from Settings */
 	S15_SCR_NONE        /* before held mode's first screen */
 };
 
