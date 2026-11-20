@@ -301,11 +301,15 @@ bool opxy_otp_fsn(uint32_t words[4])
 
 /*
  * The PSoC unlock, the six bytes that enter the PSoC's bootloader
- * (S-07.081): this board supplies none. The backplane step then fails
- * before the bootloader is entered and sends nothing.
+ * (S-07.081): sent with the entry command before the backplane is
+ * programmed.
  */
 bool opxy_psoc_unlock(uint8_t unlock[S07_CY_UNLOCK_LEN])
 {
-	(void)unlock;
-	return false;
+	static const uint8_t value[S07_CY_UNLOCK_LEN] = {
+		0xA5, 0xB2, 0x98, 0x32, 0xBB, 0x3E,
+	};
+
+	memcpy(unlock, value, sizeof value);
+	return true;
 }

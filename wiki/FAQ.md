@@ -36,8 +36,7 @@ No. It removes user data, logs and content packs only. See [Boot Menu](Boot-Menu
 
 **Does waffle-boot update the Bluetooth or backplane chips?**
 It can: choose BLE, BLE bootloader or Backplane on the install's list. These steps are not tested on a unit
-yet. The backplane step needs the PSoC unlock, and a build without it fails that step before anything is
-sent.
+yet.
 
 **Which computer can I use for recovery?**
 A computer with Chrome or Edge, with [the page](https://bagofwaffles.github.io/waffle-boot/). Or macOS

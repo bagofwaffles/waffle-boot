@@ -232,7 +232,7 @@ bool opxy_otp_get(uint32_t item, uint32_t *data);
  * on the host it fails. */
 bool opxy_otp_fsn(uint32_t words[4]);
 
-/* The PSoC unlock, six bytes (S-07.081): false, this board supplies none. */
+/* The PSoC unlock, six bytes (S-07.081): written to unlock[], true. */
 bool opxy_psoc_unlock(uint8_t unlock[6]);
 
 /* S-16.095: the items the bootloader reads. */
