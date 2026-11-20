@@ -88,8 +88,8 @@ Rules for the zip:
 
 Leave these out of an OS package:
 
-- `firmware/blackfin/bin/bootloader.ldr` and `spiboot.ldr`. With **Protected writes** on, a bootloader in the
-  package replaces waffle-boot in a slot.
+- `firmware/blackfin/bin/bootloader.ldr`. With **Protected writes** on, a bootloader in the package replaces
+  waffle-boot in a slot. A `spiboot.ldr` is unpacked with the rest and never used.
 - `firmware/blackfin/content/`. A package with that folder removes the unit's content (all but `content/dlc/`)
   and installs the package's in its place, unless a file name under it contains `partial_upgrade`.
 

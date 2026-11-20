@@ -14,7 +14,7 @@ The master's SPI flash holds everything the unit needs to start: 1 MiB in 256 se
 
 | Offset | Size | Holds | Written by | When |
 | --- | --- | --- | --- | --- |
-| `0x00000` | `0xB000` | The first stage, which picks a slot on every start. Not part of waffle-boot | Nothing: the package's first-stage step is switched off | Never. A package that carries a first stage installs its other parts and reports this one skipped |
+| `0x00000` | `0xB000` | The first stage, which picks a slot on every start. Not part of waffle-boot | Nothing: the installer has no first-stage step | Never. A first-stage file in a package is no component: it is not checked, and nothing writes it |
 | `0x0B000` | 1 sector | The metadata mirror: the record and its complement | Every metadata write | Written before the record is erased, and erased once the record reads back |
 | `0x0C000` | 1 sector | The metadata record (`0x34` bytes): serial, versions and install state | Metadata writes; the restore at a start | An OS install (three times), a failed OS load (once), a set-metadata request in factory mode; a start that finds the mirror and the record different |
 | `0x0D000` | 1 sector | The selector: the slot to start, and `verified` (`0x01` means "start it without a check") | The first stage; a slot write; recovery's try, switch and keep | After a slot has been read back; once by the first stage at the start after it |
@@ -68,8 +68,8 @@ longer busy, bounded at 2 s. A part that stays busy fails the operation.
 selector. A settings save or the factory reset's clear can reach only the running slot's settings sector. A
 package step or the installer reaches the slot it writes (its settings sector and start log included), that
 slot's record and the selector. A metadata write reaches only the mirror and
-the record. Nothing writes below `0xB000`: the package's first-stage step, the only writer of that area,
-is switched off in every build, whatever Protected writes says.
+the record. Nothing writes below `0xB000`, whatever Protected writes says: no install has a first-stage
+step.
 
 **The slot the unit starts from is not written.** A write goes to the slot the selector does not name. It
 starts only when the selector reads `verified` = `0x01` and, for a package step, the boot slot reads

@@ -230,13 +230,6 @@ These rules are fixed: only the maintainer changes them.
   unit, and that one start boots the OS from the drive's `/os.ldr` even
   with Start in boot menu on (S-15.194, S-04.014); it writes nothing to
   the eMMC. Its screen says that the unit is restarting to start it.
-- After a failed first-stage write (a build with the first-stage step
-  switched on), until the first stage is written: no key and no host
-  request restarts the unit or starts the OS. Continue to the OS, the
-  restart, a host's reboot request and the developer menu's restart do
-  nothing, and the last rows of every screen say why (`fs held`, red):
-  the first stage is not written, the unit stays on, and installing the
-  same package again writes it (S-02.071).
 - System holds the key test, the volume calibration reset, the content
   packs, the format and the factory reset. The format is shown on every
   unit, whatever developer mode is; the developer menu offers no reset.

@@ -30,7 +30,7 @@ the bootloader or the first stage.
 
 > **Warning.** With Protected writes on, an install writes the package's bootloader into a slot in place of
 > waffle-boot. The unit asks for a 5 s hold of 1 first; skip it with 8. A package's first stage is never
-> written: its step shows `Skipped: not in this version`.
+> looked at or written.
 
 ## If it does not work
 

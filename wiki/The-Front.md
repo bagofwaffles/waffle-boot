@@ -100,5 +100,5 @@ Any of these can leave a unit that only an external programmer on the SPI flash 
 - a front that fails before its key read, or one that passes its trial start and fails later;
 - an image that passes the stream check (block headers only) but hangs, since a trusted slot starts on
   every reset;
-- the first stage, which nothing here repairs. The bootloader does not write it: the package's first-stage
-  step is switched off (S-11.073).
+- the first stage, which nothing here repairs. The bootloader does not write it: no install has a
+  first-stage step.
