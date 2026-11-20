@@ -52,10 +52,11 @@ def host_mode_reason(mode_payload):
     return {1: 30, 2: 10, 4: 50}.get(mode_payload[0], 40)
 
 
-def nordic_step(reason):
-    """S-04.027, for the reboot requests W1-W4."""
+def nordic_step(reason, no_app=False):
+    """S-04.027, for the reboot requests W1-W4. no_app: after a failed application transfer in this boot
+    (S-08.048), when the exit is left out."""
     if reason == 20:
-        return 'exit'
+        return 'none' if no_app else 'exit'
     return 'enter' if reason != 0 else 'none'
 
 

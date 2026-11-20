@@ -862,7 +862,15 @@ def step_rows():
     for step, c, exp in rows:
         got = R[m.step_result(m.STEPS.index(step), json.loads(c))]
         assert got == exp, (step, c, got, exp)
-    return rows
+    # S-11.064 item 3 after the result, S-08.048: a Failure of the application step whose queries answered
+    # "in DFU" came from its transfer, which sends the prepare first, so the run's end sends no exit
+    out = []
+    for step, c, exp in rows:
+        d = json.loads(c)
+        end = 'no_exit' if step == 'ble' and exp == 'Failure' and d.get('in_dfu', 1) else 'exit'
+        assert m.end_nordic(m.STEPS.index(step), d) == end, (step, c, end)
+        out.append([step, c, exp, end])
+    return out
 
 
 def staged_check_vector():
@@ -1057,8 +1065,9 @@ def main():
     dump('progress', progress_vectors())
     dump('content', content_cases())
     check_acceptance(m.acceptance_rows())
-    write_tsv('steps.tsv', ['step', 'conditions', 'result'], step_rows(),
-              'S-11.066-S-11.073, S-11.096')
+    write_tsv('steps.tsv', ['step', 'conditions', 'result', 'end_nordic'], step_rows(),
+              'S-11.066-S-11.073, S-11.096; end_nordic: S-11.064 item 3 after the result (exit: the query and '
+              'the exit when in DFU; no_exit: no exit command, S-08.048)')
     write_tsv('runs.tsv', ['case', 'content_only', 'nordic_images', 'steps_off', 'dfu_entry', 'option',
                            'confirmed', 'nordic_dfu_ok', 'version_file', 'results', 'outcome', 'progress_after',
                            'metadata_writes', 'writes'], run_rows(),

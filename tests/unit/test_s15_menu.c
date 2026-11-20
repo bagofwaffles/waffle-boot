@@ -2878,6 +2878,28 @@ static void test_upgrade(void)
 	CHECK(strncmp(s, "Bootloader\tFailed", n) == 0 &&
 	      s15_console_row_style(&M.con, M.con.count - 3u) == S15_ST_STEP_FAIL,
 	      "the failed step's row");
+	/* S-11.069: the note's lines under a Nordic step's failure; none
+	 * without one */
+	{
+		const char *note[S15_NOTE_LINES];
+		enum s15_style nst[S15_NOTE_LINES];
+		unsigned before;
+
+		CHECK(s15_note_lines(note, nst, S15_NOTE_NO_APP) == 2u, "two lines");
+		s15_up_step_start(&M, S15_STEP_BLE, false);
+		s15_up_step_result(&M, S15_STEP_BLE, S15_RES_FAILURE, NULL, false,
+				   "chunk 2/3 refused");
+		s15_up_step_note(&M, S15_NOTE_NO_APP);
+		CHECK(appended("Operation 7 failed") && appended(note[0]) &&
+		      appended(note[1]), "no application");
+		s = s15_console_row(&M.con, M.con.count - 1u, &n);
+		CHECK(strncmp(s, note[1], n) == 0 && n == strlen(note[1]) &&
+		      s15_console_row_style(&M.con, M.con.count - 2u) == S15_ST_ERROR,
+		      "the note last");
+		before = M.con.count;
+		s15_up_step_note(&M, S15_NOTE_NONE);
+		CHECK(M.con.count == before, "no note");
+	}
 	s15_up_step_start(&M, S15_STEP_SPIBOOT, true);
 	CHECK(appended(s15_fs_warning), "warning before the step");
 	s15_up_step_result(&M, S15_STEP_SPIBOOT, S15_RES_OK, NULL, false, NULL);

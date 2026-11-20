@@ -162,7 +162,7 @@ void s04_reboot(const struct s04_reboot_ops *ops, enum s04_writer w, uint16_t ar
 	if (r.nordic == S04_NORDIC_ENTER_DFU)
 		ops->nordic_enter_dfu(ops->ctx);
 	else if (r.nordic == S04_NORDIC_EXIT_DFU)
-		ops->nordic_exit_dfu(ops->ctx);
+		ops->nordic_exit_dfu(ops->ctx);	/* S-08.048 may leave it out */
 	if (w == S04_W6)	/* S-04.027: nothing more on UART1 after the exit */
 		ops->nordic_link_stop(ops->ctx);
 	if (r.min_delay_ms != 0u)

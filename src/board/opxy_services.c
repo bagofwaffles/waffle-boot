@@ -152,6 +152,11 @@ static void nordic_log(void *ctx, int ev, const uint8_t *data, size_t n,
 		return;
 	}
 	s14_text_init(&t);
+	if (ev == S08_LOG_EXIT_LEFT_OUT) {	/* S-08.048 */
+		s14_text_str(&t, "exit left out: no application");
+		s14_log_text(&m->sv.log, S14_WARNING, S14_TAG("nordic"), &t);
+		return;
+	}
 	s14_text_str(&t, "nordic ");
 	s14_text_hex(&t, (uint32_t)ev, 1u);
 	s14_text_str(&t, " ");
@@ -337,6 +342,8 @@ static void rb_nordic_enter_dfu(void *ctx)
 	(void)s08_enter_dfu(&m->nordic);
 }
 
+/* S-04.027; nothing is sent after a failed application transfer
+ * (S-08.048). */
 static void rb_nordic_exit_dfu(void *ctx)
 {
 	struct opxy_master *m = ctx;

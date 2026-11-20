@@ -89,6 +89,7 @@ static struct {
 	/* Why the step failed, for its row and the log; "" when the result
 	 * says it all. */
 	char cause[S15_CAUSE_MAX + 1];
+	enum s15_note note;	/* S-11.069, S-11.070: under the failure */
 } cur;
 
 static void cause(const char *text)
@@ -409,6 +410,7 @@ static enum s11_result run_step(void *ctx, unsigned step)
 	cur.announced = cur.refused_start = cur.already_written = false;
 	cur.refusal = S11_OK;
 	cur.cause[0] = '\0';
+	cur.note = S15_NOTE_NONE;
 	host_progress(m, 0u, 1u, s10c_step_label(step));
 	if (step != S11_STEP_SPIBOOT) {
 		s15_up_step_start(menu, (enum s15_step)step, false);
@@ -428,6 +430,7 @@ static enum s11_result run_step(void *ctx, unsigned step)
 	s15_up_step_result(menu, (enum s15_step)step,
 			   shown(r, s11_result_skip(step, &cur.env, r)),
 			   c >= 0 ? v : NULL, cur.refused_start, cur.cause);
+	s15_up_step_note(menu, cur.note);
 	show(m);
 	host_progress(m, 1u, 1u, s10c_step_label(step));
 	if (r == S11_SKIPPED) {
@@ -793,6 +796,10 @@ static bool step_nordic_send(void *ctx, enum s11_component c)
 	free(image);
 	if (!ok)
 		transfer_cause(&m->nordic.failure);
+	/* S-11.069: no application; S-11.070: the slot choice erased */
+	if (!ok && s08_after_prepare(&m->nordic.failure))
+		cur.note = c == S11_C_BLE ? S15_NOTE_NO_APP :
+					    S15_NOTE_MAY_NOT_START;
 	return ok;
 }
 
@@ -888,6 +895,7 @@ void opxy_install_begin(struct opxy_master *m, bool option, bool forced,
 	cur.skipped = 0;
 	cur.refusal = S11_OK;
 	cur.cause[0] = '\0';
+	cur.note = S15_NOTE_NONE;
 	sent.label = NULL;
 }
 

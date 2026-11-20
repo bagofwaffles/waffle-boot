@@ -53,6 +53,7 @@ typedef uint16_t (*s08_crc16_fn)(const uint8_t *data, size_t len);
 #define S08_LOG_GREETING_UNANSWERED 6
 #define S08_LOG_SLOT_UNREAD 7		/* data: the reply without a slot; a: 1 with a reply */
 #define S08_LOG_GREETING_DROPPED 8	/* S-08.014's one-answer rule; data: payload; a: flag byte */
+#define S08_LOG_EXIT_LEFT_OUT 9		/* S-08.048: no exit command sent */
 
 /* S-08.014: a greeting arriving this soon after an answer is dropped. */
 #define S08_ANSWER_GAP_US S06_MS(20)
@@ -112,6 +113,7 @@ struct s08_nordic {
 	bool sku_read;		/* S-08.045: the power-on's sku is latched */
 	uint32_t product;	/* ... and its product word */
 	bool entry_failed;	/* the run's enter exchange failed (S-08.035) */
+	bool no_app;		/* S-08.048: an application transfer failed after its prepare */
 	struct s08_failure failure;	/* the last transfer's, S08_AT_NONE on success */
 };
 
@@ -151,6 +153,9 @@ bool s08_counts_as_greeting(const struct s06_frame *f);
 /* S-08.040 */
 int s08_classify_dfu(uint8_t cmd, uint8_t reply_id, const uint8_t *p,
 		     size_t n);
+
+/* S-08.048, S-11.070: a failed transfer stopped after its prepare was sent. */
+bool s08_after_prepare(const struct s08_failure *f);
 
 /* S-08.045: sku as read at start-up; read_ok false when the read failed. */
 uint32_t s08_product_word(uint32_t sku, bool read_ok);
@@ -216,7 +221,9 @@ int s08_mode_query(struct s08_nordic *n);		/* S-08.021 */
 long s08_boot_slot_query(struct s08_nordic *n);	/* S-08.022 */
 
 /* S-08.031, S-08.033: the frames delivered so far are handled first, so a
- * pending greeting is answered before the command. */
+ * pending greeting is answered before the command. While no_app is set the
+ * exit sends nothing, logs the step as left out and returns false
+ * (S-08.048); the enter is unchanged. */
 bool s08_enter_dfu(struct s08_nordic *n);		/* S-08.031 */
 bool s08_exit_dfu(struct s08_nordic *n);		/* S-08.033 */
 
@@ -224,7 +231,9 @@ bool s08_exit_dfu(struct s08_nordic *n);		/* S-08.033 */
 int s08_dfu_request(struct s08_nordic *n, const uint8_t *p, size_t len);
 
 /* S-08.042-S-08.047: send an image; true when the perform succeeded.
- * n->failure says where a failed one stopped. */
+ * n->failure says where a failed one stopped. An application image sets
+ * no_app when it fails after its prepare and clears it when it succeeds
+ * (S-08.048). */
 bool s08_transfer(struct s08_nordic *n, const uint8_t *image, uint32_t len,
 		  const uint16_t version[4], uint8_t type, uint32_t product);
 
@@ -239,9 +248,10 @@ bool s08_run_start(struct s08_nordic *n, bool nordic_image, uint8_t *info,
 		   size_t max, long *info_len);
 
 /*
- * S-08.035 at the end of a run: one mode query, the exit when in DFU. After
- * a run whose enter exchange failed (s08_run_start() false, S-11.061 item
- * 2) nothing is sent and the result is true.
+ * S-08.035 at the end of a run: one mode query, the exit when in DFU (none
+ * while no_app is set, S-08.048). After a run whose enter exchange failed
+ * (s08_run_start() false, S-11.061 item 2) nothing is sent and the result
+ * is true.
  */
 bool s08_run_end(struct s08_nordic *n);
 

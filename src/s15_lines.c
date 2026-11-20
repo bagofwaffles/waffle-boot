@@ -314,6 +314,26 @@ size_t s15_outcome_lines(const char *out[2], enum s15_style style[2],
 	}
 }
 
+size_t s15_note_lines(const char *out[S15_NOTE_LINES],
+		      enum s15_style style[S15_NOTE_LINES], enum s15_note note)
+{
+	switch (note) {
+	case S15_NOTE_NO_APP:		/* S-08.048 */
+		style[0] = S15_ST_ERROR;
+		out[0] = "The BLE chip has no application now.";
+		style[1] = S15_ST_TEXT;
+		out[1] = "Installing the package again puts one back.";
+		return 2;
+	case S15_NOTE_MAY_NOT_START:	/* S-08 open question 11 */
+		style[0] = S15_ST_ERROR;
+		out[0] = "The BLE chip may not start now.";
+		return 1;
+	case S15_NOTE_NONE:
+	default:
+		return 0;
+	}
+}
+
 /* ---- content packs --------------------------------------------------- */
 
 /* S-15.041 */

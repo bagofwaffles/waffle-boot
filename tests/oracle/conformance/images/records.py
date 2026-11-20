@@ -94,15 +94,17 @@ def host_mode_reason(mode_payload):
     return {1: REASON_UPGRADE_MSC, 2: REASON_STAY_CDC, 4: REASON_HOST_MODE4}.get(mode_payload[0], REASON_UPGRADE_MIDI)
 
 
-def nordic_step(reason):
-    """S-04.027: 'exit' for 20, 'none' for 0, else 'enter'."""
+def nordic_step(reason, no_app=False):
+    """S-04.027: 'exit' for 20, 'none' for 0, else 'enter'. no_app: after an application transfer that failed
+    in this boot after its prepare (S-08.048), no exit: 'none' for 20."""
     if reason == REASON_BOOT_OS:
-        return 'exit'
+        return 'none' if no_app else 'exit'
     return 'none' if reason == REASON_POWER_OFF else 'enter'
 
 
 # S-04.020: the reboot record writers. reason: the value written ('host_mode' = host_mode_reason(payload),
-# 'taken' = the reason this boot took). reset: 'hard' | 'soft'. nordic: nordic_step's result.
+# 'taken' = the reason this boot took). reset: 'hard' | 'soft'. nordic: nordic_step's result (S-08.048
+# leaves out every 'exit' after a failed application transfer: writers.tsv's nordic_no_app).
 # shutdown (S-04.063), psoc_reset (S-04.065), slave_off (S-04.032): steps before the reset; None = n/a.
 # min_delay_ms: least time from the end of the event to the reset.
 WRITERS = {

@@ -1,0 +1,412 @@
+{
+ "_doc": "SC-08-NO-APP's runs as a sequence of phases, each an install run (S-11.061 to S-11.064 with one Nordic step) or a reboot request with reason 20 (S-04.027), against a Nordic in DFU that answers every DFU request T except where a run's rule refuses one with {0x84}. Each phase counts the exit commands 0x0D {0x18} sent in it (exit) and says whether an enter command 0x0D {0xEE} was sent (enter) and whether the no-application state holds after it (no_app, S-08.048); transfer is the step's transfer result and report what its failure report adds (S-11.069, S-11.070).",
+ "state": "0xAB0D",
+ "image_len": 500,
+ "version": [
+  1,
+  1,
+  0,
+  0
+ ],
+ "product_word": "0x00084000",
+ "runs": [
+  {
+   "name": "chunk_fails",
+   "about": "The second image chunk is refused: no exit at the run's end or at the reboot.",
+   "requirements": [
+    "S-08.048",
+    "S-11.064",
+    "S-04.027",
+    "S-11.069"
+   ],
+   "peer": {
+    "rules": [
+     {
+      "on": {
+       "id": "0x09",
+       "kind": "request"
+      },
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0a",
+        "text": "mode:bootloader;sw_version:1.0.1;bl_version:1000.0.10;boot_slot:0",
+        "delay_ms": 1.0
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "payload": "ee",
+       "kind": "message"
+      },
+      "skip": 0,
+      "times": 1,
+      "send": [
+       {
+        "kind": "message",
+        "id": "0x05",
+        "payload": "bb02",
+        "delay_ms": 300
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "first": "0x03"
+      },
+      "skip": 2,
+      "times": 1,
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0e",
+        "payload": "84",
+        "delay_ms": 2
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "kind": "request"
+      },
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0e",
+        "payload": "54",
+        "delay_ms": 2
+       }
+      ]
+     }
+    ]
+   },
+   "sequence": [
+    {
+     "do": "install",
+     "type": "0xb0",
+     "transfer": false,
+     "enter": true,
+     "exit": 0,
+     "no_app": true,
+     "report": "no_app"
+    },
+    {
+     "do": "reboot",
+     "reason": 20,
+     "enter": false,
+     "exit": 0,
+     "no_app": true
+    }
+   ]
+  },
+  {
+   "name": "prepare_only",
+   "about": "The prepare succeeds and the header chunk is refused: as chunk_fails.",
+   "requirements": [
+    "S-08.048",
+    "S-11.064",
+    "S-04.027",
+    "S-11.069"
+   ],
+   "peer": {
+    "rules": [
+     {
+      "on": {
+       "id": "0x09",
+       "kind": "request"
+      },
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0a",
+        "text": "mode:bootloader;sw_version:1.0.1;bl_version:1000.0.10;boot_slot:0",
+        "delay_ms": 1.0
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "payload": "ee",
+       "kind": "message"
+      },
+      "skip": 0,
+      "times": 1,
+      "send": [
+       {
+        "kind": "message",
+        "id": "0x05",
+        "payload": "bb02",
+        "delay_ms": 300
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "first": "0x03"
+      },
+      "skip": 0,
+      "times": 1,
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0e",
+        "payload": "84",
+        "delay_ms": 2
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "kind": "request"
+      },
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0e",
+        "payload": "54",
+        "delay_ms": 2
+       }
+      ]
+     }
+    ]
+   },
+   "sequence": [
+    {
+     "do": "install",
+     "type": "0xb0",
+     "transfer": false,
+     "enter": true,
+     "exit": 0,
+     "no_app": true,
+     "report": "no_app"
+    },
+    {
+     "do": "reboot",
+     "reason": 20,
+     "enter": false,
+     "exit": 0,
+     "no_app": true
+    }
+   ]
+  },
+  {
+   "name": "failed_then_ok",
+   "about": "A run as chunk_fails, then a second install of the same package in the same boot that succeeds: its enter command is sent, and its end and the reboot make the exit.",
+   "requirements": [
+    "S-08.048",
+    "S-11.064",
+    "S-04.027",
+    "S-11.069"
+   ],
+   "peer": {
+    "rules": [
+     {
+      "on": {
+       "id": "0x09",
+       "kind": "request"
+      },
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0a",
+        "text": "mode:bootloader;sw_version:1.0.1;bl_version:1000.0.10;boot_slot:0",
+        "delay_ms": 1.0
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "payload": "ee",
+       "kind": "message"
+      },
+      "skip": 0,
+      "times": 1,
+      "send": [
+       {
+        "kind": "message",
+        "id": "0x05",
+        "payload": "bb02",
+        "delay_ms": 300
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "payload": "ee",
+       "kind": "message"
+      },
+      "skip": 1,
+      "times": 1,
+      "send": [
+       {
+        "kind": "message",
+        "id": "0x05",
+        "payload": "bb02",
+        "delay_ms": 300
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "first": "0x03"
+      },
+      "skip": 2,
+      "times": 1,
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0e",
+        "payload": "84",
+        "delay_ms": 2
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "kind": "request"
+      },
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0e",
+        "payload": "54",
+        "delay_ms": 2
+       }
+      ]
+     }
+    ]
+   },
+   "sequence": [
+    {
+     "do": "install",
+     "type": "0xb0",
+     "transfer": false,
+     "enter": true,
+     "exit": 0,
+     "no_app": true,
+     "report": "no_app"
+    },
+    {
+     "do": "install",
+     "type": "0xb0",
+     "transfer": true,
+     "enter": true,
+     "exit": 1,
+     "no_app": false,
+     "report": null
+    },
+    {
+     "do": "reboot",
+     "reason": 20,
+     "enter": false,
+     "exit": 1,
+     "no_app": false
+    }
+   ]
+  },
+  {
+   "name": "bootloader_fails",
+   "about": "As chunk_fails for a Nordic bootloader transfer: the exits as before, and the report says the Nordic may not start.",
+   "requirements": [
+    "S-08.048",
+    "S-11.064",
+    "S-04.027",
+    "S-11.070"
+   ],
+   "peer": {
+    "rules": [
+     {
+      "on": {
+       "id": "0x09",
+       "kind": "request"
+      },
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0a",
+        "text": "mode:bootloader;sw_version:1.0.1;bl_version:1000.0.10;boot_slot:0",
+        "delay_ms": 1.0
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "payload": "ee",
+       "kind": "message"
+      },
+      "skip": 0,
+      "times": 1,
+      "send": [
+       {
+        "kind": "message",
+        "id": "0x05",
+        "payload": "bb02",
+        "delay_ms": 300
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "first": "0x03"
+      },
+      "skip": 2,
+      "times": 1,
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0e",
+        "payload": "84",
+        "delay_ms": 2
+       }
+      ]
+     },
+     {
+      "on": {
+       "id": "0x0d",
+       "kind": "request"
+      },
+      "send": [
+       {
+        "kind": "reply",
+        "id": "0x0e",
+        "payload": "54",
+        "delay_ms": 2
+       }
+      ]
+     }
+    ]
+   },
+   "sequence": [
+    {
+     "do": "install",
+     "type": "0xb1",
+     "transfer": false,
+     "enter": true,
+     "exit": 1,
+     "no_app": false,
+     "report": "may_not_start"
+    },
+    {
+     "do": "reboot",
+     "reason": 20,
+     "enter": false,
+     "exit": 1,
+     "no_app": false
+    }
+   ]
+  }
+ ]
+}

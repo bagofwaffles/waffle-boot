@@ -51,7 +51,7 @@ COMPONENTS = {
     'os': ('firmware/blackfin/bin/os.ldr', 'firmware/blackfin/bin/os.version', 0x800000),
     'bootloader': ('firmware/blackfin/bin/bootloader.ldr', 'firmware/blackfin/bin/bootloader.version', 0x78000),
     'spiboot': ('firmware/blackfin/bin/spiboot.ldr', 'firmware/blackfin/bin/spiboot.version', 0xB000),
-    'ble': ('firmware/ble/bin/ble.bin', 'firmware/ble/bin/ble.version', 0x70000),
+    'ble': ('firmware/ble/bin/ble.bin', 'firmware/ble/bin/ble.version', 0x6FFFF),
     'nordic_bl0': ('firmware/ble/bin/nordic_bootloader_0.bin', 'firmware/ble/bin/nordic_bootloader.version', 0x3000),
     'nordic_bl1': ('firmware/ble/bin/nordic_bootloader_1.bin', 'firmware/ble/bin/nordic_bootloader.version', 0x3000),
     'backplane': ('firmware/backplane/bin/backplane.cyacd', 'firmware/backplane/bin/backplane.version', 0x30000),
@@ -549,6 +549,16 @@ def step_result(step, c):
             return staged
         return OK if c.get('write_ok', True) else FAILURE
     raise ValueError(step)
+
+
+def end_nordic(step, c):
+    """S-11.064 item 3 after a step with conditions c stopped or ended the run: 'no_exit' when its result is a
+    Failure of the Nordic application step after its prepare was sent (S-08.048; item 5's queries answered
+    "in DFU", so the transfer began with the prepare), otherwise 'exit' (the query, and the exit when in
+    DFU)."""
+    if step == 3 and step_result(step, c) == FAILURE and c.get('in_dfu', True):
+        return 'no_exit'
+    return 'exit'
 
 
 # ---- S-11.057-S-11.065: the run

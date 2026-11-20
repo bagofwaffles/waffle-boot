@@ -21,8 +21,9 @@ const struct s11_component_info s11_components[S11_COMPONENTS] = {
 			       0x78000u },
 	[S11_C_SPIBOOT] = { "firmware/blackfin/bin/spiboot.ldr",
 			    "firmware/blackfin/bin/spiboot.version", 0xB000u },
+	/* the Nordic refuses a chunk reaching its 0x70000-byte area's end */
 	[S11_C_BLE] = { "firmware/ble/bin/ble.bin",
-			"firmware/ble/bin/ble.version", 0x70000u },
+			"firmware/ble/bin/ble.version", 0x6FFFFu },
 	[S11_C_NORDIC_BL0] = { "firmware/ble/bin/nordic_bootloader_0.bin",
 			       "firmware/ble/bin/nordic_bootloader.version",
 			       0x3000u },

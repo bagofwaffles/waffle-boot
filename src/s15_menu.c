@@ -1438,6 +1438,16 @@ void s15_up_step_result(struct s15_menu *m, enum s15_step step,
 	m->row_step = -1;
 }
 
+void s15_up_step_note(struct s15_menu *m, enum s15_note note)
+{
+	const char *out[S15_NOTE_LINES];
+	enum s15_style st[S15_NOTE_LINES];
+	const size_t n = s15_note_lines(out, st, note);
+
+	for (size_t i = 0; i < n; i++)
+		sline(m, st[i], out[i]);
+}
+
 /* S-15.116: the screen, with the bar empty and the whole time left. */
 void s15_up_confirm(struct s15_menu *m, const struct s15_confirm_info *info)
 {

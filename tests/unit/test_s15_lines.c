@@ -361,6 +361,29 @@ static void test_results(void)
 	}
 }
 
+/* S-11.069, S-11.070: the lines under a Nordic step's failure. */
+static void test_notes(void)
+{
+	const char *lines[S15_NOTE_LINES];
+	enum s15_style st[S15_NOTE_LINES];
+
+	CHECK(s15_note_lines(lines, st, S15_NOTE_NONE) == 0u, "no note");
+	for (size_t i = 0; i < S15V_N(s15v_notes); i++) {
+		const struct s15v_note *v = &s15v_notes[i];
+		enum s15_note note = strcmp(v->note, "no_app") == 0 ? S15_NOTE_NO_APP
+								  : S15_NOTE_MAY_NOT_START;
+		size_t n = s15_note_lines(lines, st, note);
+		size_t k;
+
+		for (k = 0; k < n && v->lines[k] != NULL; k++)
+			CHECK(line_is(st[k], lines[k], v->lines[k]) &&
+			      fits(st[k], lines[k]),
+			      "note %s line %zu: '%s' want '%s'", v->note, k,
+			      lines[k], v->lines[k]);
+		CHECK(v->lines[k] == NULL && k == n, "note %s count", v->note);
+	}
+}
+
 static void test_outcomes(void)
 {
 	const char *lines[2];
@@ -723,6 +746,7 @@ int main(void)
 	test_headers();
 	test_results();
 	test_outcomes();
+	test_notes();
 	test_not_updated();
 	test_manifest();
 	test_required_info();

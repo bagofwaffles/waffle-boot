@@ -102,6 +102,8 @@ static enum s11_run_end run(const struct s11_run_ops *ops,
 			(void)ops->meta_state(ops->ctx, 0);
 		res->end = S11_RUN_FAILED;
 	}
+	/* S-11.064 item 3; no exit after a failed application transfer
+	 * (S-08.048) */
 	ops->nordic_exit_dfu(ops->ctx);
 	return res->end;
 }
