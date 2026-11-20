@@ -3,8 +3,8 @@
  * S-11's run on the master: the metadata writes (S-04.045 M1-M4), the
  * progress record on the slave's /yaffs2 (S-11.062), the Nordic's
  * exchanges around the run (S-11.061, S-11.064, S-17.021 step 2), and the
- * steps' writers over the staged images (S-11.066-S-11.072): S-03's OS
- * write, S-02's slot and first-stage upgrades, S-08's DFU transfer.
+ * steps' writers over the staged images (S-11.066-S-11.071): S-03's OS
+ * write, S-02's slot upgrade, S-08's DFU transfer.
  *
  * The staged images are read whole through the S-09 file client into the
  * heap: S-01.016's staging area lies under the RAM disk's second part.
@@ -41,8 +41,7 @@
  * S-11.073: the steps this build runs. A step set false reports Skipped
  * when the package carries its component, and neither writes nor sends
  * anything; setting its line true runs it again. Only the Nordic and PSoC
- * steps and the first-stage step can be switched off; the first stage's
- * line is the build switch OPXY_FIRST_STAGE_STEP (waffle/board/opxy_services.h).
+ * steps can be switched off. Step 6 is reserved and does nothing.
  */
 static const bool step_on[S11_STEP_DONE] = {
 	[S11_STEP_CONTENT] = true,
@@ -51,12 +50,8 @@ static const bool step_on[S11_STEP_DONE] = {
 	[S11_STEP_BLE] = false,
 	[S11_STEP_BLE_BOOTLOADER] = false,
 	[S11_STEP_KEYBOARD] = false,
-	[S11_STEP_SPIBOOT] = OPXY_FIRST_STAGE_STEP != 0,
+	[S11_STEP_RESERVED] = true,
 };
-
-#if OPXY_FIRST_STAGE_STEP
-bool opxy_first_stage_step = true;
-#endif
 
 uint8_t opxy_steps_off(void)
 {
@@ -66,10 +61,6 @@ uint8_t opxy_steps_off(void)
 		if (!step_on[step])
 			off |= S11_STEP_BIT(step);
 	}
-#if OPXY_FIRST_STAGE_STEP
-	if (!opxy_first_stage_step)
-		off |= S11_STEP_BIT(S11_STEP_SPIBOOT);
-#endif
 	return off & S11_STEPS_SWITCHABLE;
 }
 
@@ -77,7 +68,6 @@ uint8_t opxy_steps_off(void)
 static struct {
 	struct s11_staged st;
 	struct s11_step_env env;
-	bool announced;		/* the first stage's start was shown */
 	bool refused_start;	/* S-02.090 refused the bootloader step */
 	bool already_written;	/* in S-11.068 item 5's case */
 	/* For write_failure: S11_BAD_FILE or S11_INTERNAL when the step's
@@ -389,10 +379,9 @@ static void step_failed(struct opxy_master *m, unsigned step,
 }
 
 /*
- * S-11.057's step with its start and its result on the screen. The first
- * stage's start comes with its warning from first_stage_announce() before
- * the first erase; a step that never gets there starts just
- * before its result, with nothing drawn between.
+ * S-11.057's step with its start and its result on the screen and to the
+ * host. The reserved step 6 does nothing and shows nothing, on the screen
+ * or to the host.
  */
 static enum s11_result run_step(void *ctx, unsigned step)
 {
@@ -404,23 +393,21 @@ static enum s11_result run_step(void *ctx, unsigned step)
 
 	if (step >= S11_STEP_DONE)
 		return S11_INTERNAL;
+	if (step == S11_STEP_RESERVED)
+		return s11_step_result(step, &cur.env, &m->sv.step);
 	/* S-08.014: a greeting that arrived during the last step is answered
 	 * before this one begins. */
 	s08_answer_greetings(&m->nordic);
-	cur.announced = cur.refused_start = cur.already_written = false;
+	cur.refused_start = cur.already_written = false;
 	cur.refusal = S11_OK;
 	cur.cause[0] = '\0';
 	cur.note = S15_NOTE_NONE;
 	host_progress(m, 0u, 1u, s10c_step_label(step));
-	if (step != S11_STEP_SPIBOOT) {
-		s15_up_step_start(menu, (enum s15_step)step, false);
-		show(m);
-	}
+	s15_up_step_start(menu, (enum s15_step)step);
+	show(m);
 	opxy_usb_breathe();
 	r = s11_step_result(step, &cur.env, &m->sv.step);
 	opxy_usb_breathe();
-	if (step == S11_STEP_SPIBOOT && !cur.announced)
-		s15_up_step_start(menu, S15_STEP_SPIBOOT, false);
 	c = step_component[step];
 	v[0] = '\0';
 	if (c >= 0)
@@ -672,66 +659,7 @@ static bool step_bootloader(void *ctx)
 	return r == S02_OK;
 }
 
-/*
- * S-02.072: the warning is on the screen before the first erase. The run
- * holds the loop, so the frame is drawn here rather than at the next
- * poll; it stays until the step's result replaces it (S-15 owns it).
- */
-static void first_stage_announce(void *ctx, bool on)
-{
-	struct opxy_master *m = ctx;
-
-	if (!on)
-		return;
-	/* S-07.051: the first-stage window, from before the first erase */
-	s07_fs_window_open(&m->psoc);
-	s15_up_step_start(&m->sv.menu, S15_STEP_SPIBOOT, true);
-	cur.announced = true;
-	show(m);
-}
-
-/* S-11.072, S-02.070, S-02.071; the option as for step_bootloader(). */
-static bool step_spiboot(void *ctx)
-{
-	struct opxy_master *m = ctx;
-	uint32_t len;
-	uint8_t *image;
-	int r;
-
-	cur.write_status = S02_ERR_IO;
-	image = staged(m, S11_C_SPIBOOT, &len);
-	if (image == NULL)
-		return false;
-	opxy_flash_writer(&m->hw, true);	/* S-13b.017 */
-	m->fs_writing = true;
-	r = s02_first_stage_upgrade(&m->flash, cur.env.option, image, len,
-				    first_stage_announce, m);
-	m->fs_writing = false;
-	opxy_flash_writer(&m->hw, false);
-	free(image);
-	cur.write_status = r;
-	cur.refusal = r == S02_ERR_STREAM ? S11_BAD_FILE : S11_OK; /* S-02.091 */
-	flash_cause(r);
-	/*
-	 * S-07.051: the window ends when the read-back matched, or the area
-	 * already held the image; a failed write leaves it open (S-15's fs
-	 * held). A power-off kept in it runs now, inside the step, which then
-	 * has no result (S-11.058).
-	 */
-	if (r == S02_OK && s07_fs_window(&m->psoc)) {
-		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
-			    "install: first stage written, the window ends");
-		if (s07_fs_window_close(&m->psoc) == S07_POWEROFF)
-			opxy_powered_off(m);
-	} else if (r != S02_OK && s07_fs_window(&m->psoc)) {
-		s14_log_str(&m->sv.log, S14_ERROR, S14_NO_TAG,
-			    "install: first stage not written; no reset or "
-			    "power-off until it is");
-	}
-	return r == S02_OK;
-}
-
-/* S-11.095, S-11.068, S-11.072: Bad file when the image's check failed or
+/* S-11.095, S-11.068: Bad file when the image's check failed or
  * S-02.091 refused it, Internal error when a read of it failed; S11_OK
  * when the write or transfer itself failed (the step's own result). */
 static enum s11_result step_write_failure(void *ctx)
@@ -872,7 +800,6 @@ void opxy_install_ops(struct opxy_master *m, struct s11_run_ops *run,
 	step->os_write = step_os_write;
 	step->meta_sw_version = step_sw_version;
 	step->bootloader_write = step_bootloader;
-	step->spiboot_write = step_spiboot;
 	step->write_failure = step_write_failure;
 	step->nordic_send = step_nordic_send;
 	step->nordic_boot_slot = step_nordic_slot;
@@ -933,7 +860,7 @@ static void confirm_key(void *ctx, uint8_t key, bool down)
 	s15_confirm_key(&confirm, key, down, now_ms(m));
 }
 
-static void confirm_log(struct opxy_master *m, enum s11_component c)
+static void confirm_log(struct opxy_master *m)
 {
 	static const char *const how[] = {
 		[S15_CONFIRM_END_NONE] = "not confirmed",
@@ -945,8 +872,7 @@ static void confirm_log(struct opxy_master *m, enum s11_component c)
 	struct s14_text t;
 
 	s14_text_init(&t);
-	s14_text_str(&t, "install: ");
-	s14_text_str(&t, c == S11_C_SPIBOOT ? "first stage " : "bootloader ");
+	s14_text_str(&t, "install: bootloader ");
 	s14_text_str(&t, how[confirm.end]);
 	s14_log_text(&m->sv.log, S14_INFO, S14_NO_TAG, &t);
 }
@@ -970,8 +896,8 @@ static int psoc_drain(struct opxy_master *m)
 }
 
 /*
- * S-11.096: one protected component, asked for on the unit before the
- * run's first write. The start-up key read tells whether the keys can be
+ * S-11.096: the bootloader, asked for on the unit before the run's first
+ * write. The start-up key read tells whether the keys can be
  * read (S-07.032); the keys down when the screen is shown, once every
  * event that arrived before it is taken, act only after an up and a down.
  * The PSoC's messages, the Nordic's greetings and the bus are served
@@ -987,13 +913,11 @@ static bool confirm_ask(void *ctx, enum s11_component c)
 	unsigned fill = 0, left = S15_CONFIRM_TIMEOUT_MS / 1000u;
 
 	version_str(&cur.st.version[c], v);
-	info.step = c == S11_C_SPIBOOT ? S15_STEP_SPIBOOT : S15_STEP_BOOTLOADER;
 	info.package = v;
-	info.installed = c == S11_C_BOOTLOADER ? m->sv.boot.version : NULL;
+	info.installed = m->sv.boot.version;
 	info.slot = -1;
 	/* S-02.043: the slot the step would replace */
-	if (c == S11_C_BOOTLOADER &&
-	    s02_read_selector(&m->flash, &sel) == S02_OK)
+	if (s02_read_selector(&m->flash, &sel) == S02_OK)
 		info.slot = (int)s02_other_slot(sel.index);
 	s15_up_confirm(menu, &info);
 	show(m);
@@ -1021,7 +945,7 @@ static bool confirm_ask(void *ctx, enum s11_component c)
 		s06_idle(&m->clock, s06_now(&m->clock) + 1000u);
 	}
 	m->psoc_ops.key_event = menu_key;
-	confirm_log(m, c);
+	confirm_log(m);
 	return confirm.choice == S15_CONFIRM_INSTALL;
 off:
 	/* S-07.051: the PSoC removes the power. */
@@ -1193,8 +1117,7 @@ static void install(struct opxy_master *m, const struct s11_package_ops *pkg,
 	sv->extracted_sizes = sizes;	/* S-11.095: kept for this run */
 	sv->extracted = true;
 	opxy_install_begin(m, in->option, checked.forced, 0);
-	cur.env.confirmed = s11_confirm(&cur.st, in->option, cur.env.off,
-					confirm_ask, m);
+	cur.env.confirmed = s11_confirm(&cur.st, in->option, confirm_ask, m);
 	out->stock = s11_return_to_stock(in->option, checked.te_signed,
 					 (cur.env.confirmed &
 					  S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u);

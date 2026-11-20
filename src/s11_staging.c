@@ -19,8 +19,6 @@ const struct s11_component_info s11_components[S11_COMPONENTS] = {
 	[S11_C_BOOTLOADER] = { "firmware/blackfin/bin/bootloader.ldr",
 			       "firmware/blackfin/bin/bootloader.version",
 			       0x78000u },
-	[S11_C_SPIBOOT] = { "firmware/blackfin/bin/spiboot.ldr",
-			    "firmware/blackfin/bin/spiboot.version", 0xB000u },
 	/* the Nordic refuses a chunk reaching its 0x70000-byte area's end */
 	[S11_C_BLE] = { "firmware/ble/bin/ble.bin",
 			"firmware/ble/bin/ble.version", 0x6FFFFu },
@@ -198,9 +196,6 @@ static bool extract_once(const struct s11_zip_ops *ops, size_t index,
 	} else if (wb_streq(m->name, s11_components[S11_C_BOOTLOADER].image)) {
 		s01_bootable_begin(stream, S01_BOOTLOADER);
 		x->stream = stream;
-	} else if (wb_streq(m->name, s11_components[S11_C_SPIBOOT].image)) {
-		s01_bootable_begin(stream, S01_FIRST_STAGE);
-		x->stream = stream;
 	}
 	/* the file created empty: a second extraction replaces the first */
 	if (!ops->staging_open(ops->ctx, m->name))
@@ -212,9 +207,9 @@ static bool extract_once(const struct s11_zip_ops *ops, size_t index,
 
 /*
  * S-11.031, S-11.032: one member into the staging area. The bytes of the
- * bootloader and first-stage images go through S-02.091's check as they
- * are written, those of the OS image through S-05.024's; bootable[c] is
- * the verdict on the file staged last.
+ * bootloader image go through S-02.091's check as they are written, those
+ * of the OS image through S-05.024's; bootable[c] is the verdict on the
+ * file staged last.
  */
 static bool stage(const struct s11_zip_ops *ops, size_t index,
 		  const struct s11_member *m, struct s11_staged_sizes *staged,
@@ -301,9 +296,9 @@ enum s11_reason s11_check_zip(const struct s11_zip_ops *ops,
 		if (staged->size[c] > s11_components[c].limit)
 			return S11_REASON_SIZE;
 	}
-	/* Check 18 (S-11.035, S-02.091, S-05.024): a present bootloader or
-	 * first-stage image is a bootable stream of its kind, option or not,
-	 * and a present OS image one the hand-over accepts. */
+	/* Check 18 (S-11.035, S-02.091, S-05.024): a present bootloader image
+	 * is a bootable slot stream, option or not, and a present OS image one
+	 * the hand-over accepts. */
 	for (unsigned c = 0; c < S11_COMPONENTS; c++) {
 		if (staged->size[c] > 0u && !bootable[c])
 			return S11_REASON_STREAM;

@@ -238,10 +238,6 @@
    "phase": "step 5"
   },
   {
-   "label": "[spiboot]",
-   "phase": "step 6"
-  },
-  {
    "label": "[done]",
    "phase": "outcome"
   },
@@ -428,9 +424,9 @@
   },
   {
    "done": 100,
-   "frame_seq0": "0212120e0e92313030255b737069626f6f745d6e00",
-   "label": "[spiboot]",
-   "payload": "92313030255b737069626f6f745d",
+   "frame_seq0": "0212140e1092313030255b6261636b706c616e655d8300",
+   "label": "[backplane]",
+   "payload": "92313030255b6261636b706c616e655d",
    "total": 100
   },
   {
@@ -467,16 +463,6 @@
    "step": 2
   },
   {
-   "label": "[skipped] spiboot: option off",
-   "reason": "option off",
-   "step": 6
-  },
-  {
-   "label": "[skipped] spiboot: not confirmed",
-   "reason": "not confirmed",
-   "step": 6
-  },
-  {
    "label": "[skipped] ble: switched off",
    "reason": "switched off",
    "step": 3
@@ -490,11 +476,6 @@
    "label": "[skipped] backplane: switched off",
    "reason": "switched off",
    "step": 5
-  },
-  {
-   "label": "[skipped] spiboot: switched off",
-   "reason": "switched off",
-   "step": 6
   },
   {
    "label": "[skipped] bootloader: already written",

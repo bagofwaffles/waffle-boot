@@ -3,7 +3,7 @@
  * S-11 runs and the boot after a reset during one. Checks S-11.038,
  * S-11.055, S-11.056, S-11.057, S-11.058, S-11.059, S-11.060, S-11.061,
  * S-11.062, S-11.063, S-11.064, S-11.065, S-11.067, S-11.068, S-11.069,
- * S-11.070, S-11.071, S-11.072, S-11.073, S-11.080, S-11.090, S-11.091,
+ * S-11.070, S-11.071, S-11.073, S-11.080, S-11.090, S-11.091,
  * S-11.093, S-11.094, S-11.095, S-11.096 (a step's use of the
  * confirmation). Power cuts are made by the fakes, which longjmp out of the
  * run after a given number of writes.
@@ -245,7 +245,7 @@ static int s_slot(void *ctx)
 }
 
 static const struct s11_step_ops step_ops = {
-	s_content, s_write, s_sw, s_write, s_write, s_failure, s_send, s_slot, s_write,
+	s_content, s_write, s_sw, s_write, s_failure, s_send, s_slot, s_write,
 	NULL,
 };
 
@@ -253,7 +253,7 @@ static void test_steps(void)
 {
 	static const enum s11_component comp[7] = {
 		S11_COMPONENTS, S11_C_OS, S11_C_BOOTLOADER, S11_C_BLE,
-		S11_C_NORDIC_BL0, S11_C_BACKPLANE, S11_C_SPIBOOT,
+		S11_C_NORDIC_BL0, S11_C_BACKPLANE, S11_COMPONENTS,
 	};
 	const struct s11_version pkg = { 1, 2, 0, 0 };
 
@@ -275,7 +275,7 @@ static void test_steps(void)
 		if (v->step == S11_STEP_BLE_BOOTLOADER) {
 			st.size[S11_C_NORDIC_BL0] = v->present0 ? 1u : 0u;
 			st.size[S11_C_NORDIC_BL1] = v->present1 ? 1u : 0u;
-		} else {
+		} else if (v->step != S11_STEP_RESERVED) {
 			st.size[comp[v->step]] = v->present ? 1u : 0u;
 		}
 		/* rel: the package against what is installed */
@@ -295,9 +295,12 @@ static void test_steps(void)
 		CHECK(r == (enum s11_result)v->result,
 		      "step row %zu (step %u): %d, want %u", i, v->step, (int)r,
 		      v->result);
-		if ((v->step == S11_STEP_BOOTLOADER || v->step == S11_STEP_SPIBOOT) &&
+		if (v->step == S11_STEP_BOOTLOADER &&
 		    (!v->option || !v->confirmed))
 			CHECK(S.writes == 0, "row %zu: no flash access", i);
+		if (v->step == S11_STEP_RESERVED)	/* S-11.057: nothing */
+			CHECK(S.writes == 0 && S.sends == 0 && S.slots == 0,
+			      "row %zu: the reserved step reaches nothing", i);
 		if (!v->switched_on)	/* S-11.073: nothing sent, no slot asked */
 			CHECK(S.writes == 0 && S.sends == 0 && S.slots == 0,
 			      "row %zu: a switched-off step reaches nothing", i);
@@ -327,9 +330,8 @@ static void test_steps(void)
 }
 
 /*
- * S-11.068, S-11.072: a write S-02.091 refuses reports Bad file, any other
- * failure Failure (S-02.090's refusal included); the first-stage step is
- * Skipped in a Power + M4 session (S-02.084), with no write.
+ * S-11.068: a write S-02.091 refuses reports Bad file, any other failure
+ * Failure (S-02.090's refusal included).
  */
 static enum s11_result bad_file(void *ctx)
 {
@@ -360,21 +362,18 @@ static void test_protected_results(void)
 	memset(&st, 0, sizeof(st));
 	memset(&S, 0, sizeof(S));
 	S.v = &fail;			/* every write fails */
-	st.size[S11_C_BOOTLOADER] = st.size[S11_C_SPIBOOT] = 1u;
+	st.size[S11_C_BOOTLOADER] = 1u;
 	s17_copro_init(&copro);
 	memset(&env, 0, sizeof(env));
 	env.staged = &st;
 	env.option = true;
-	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER) |
-			S11_STEP_BIT(S11_STEP_SPIBOOT);
+	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER);
 	env.copro = &copro;	/* env.off 0: every step switched on */
 	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &ops) == S11_FAILURE,
 	      "no write_failure: Failure");
 	ops.write_failure = bad_file;
 	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &ops) == S11_BAD_FILE,
 	      "S-02.091: Bad file");
-	CHECK(s11_step_result(S11_STEP_SPIBOOT, &env, &ops) == S11_BAD_FILE,
-	      "S-02.091 first stage: Bad file");
 	/* S-11.068 item 5: the bootloader step alone takes Skipped from its
 	 * writer, with the reason already written */
 	ops.write_failure = written;
@@ -382,16 +381,13 @@ static void test_protected_results(void)
 	      s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_SKIPPED) ==
 		      S11_SKIP_ALREADY_WRITTEN,
 	      "already written: Skipped");
-	CHECK(s11_step_result(S11_STEP_SPIBOOT, &env, &ops) == S11_FAILURE,
-	      "the first stage never takes already written");
 	CHECK(s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_OK) ==
 		      S11_SKIP_NONE &&
 	      s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_FAILURE) ==
 		      S11_SKIP_NONE, "no reason unless Skipped");
 	ops.write_failure = bad_file;
-	st.size[S11_C_SPIBOOT] = 0;
-	CHECK(s11_step_result(S11_STEP_SPIBOOT, &env, &ops) == S11_NOT_FOUND,
-	      "absent first stage, Not found");
+	CHECK(s11_step_result(S11_STEP_RESERVED, &env, &ops) == S11_NOT_FOUND,
+	      "the reserved step: Not found");
 
 	/* Every step that writes or sends a staged image: Bad file when
 	 * write_failure says its check failed, Internal error when a read of
@@ -433,7 +429,7 @@ static void test_protected_results(void)
 /* ---- S-11.073: the switched-off steps; S-11.058: why a step skipped ---- */
 
 static struct {
-	unsigned os, bootloader, spiboot, sends, slots, psoc;
+	unsigned os, bootloader, sends, slots, psoc;
 } C;
 
 static enum s11_result c_content(void *ctx)
@@ -453,13 +449,6 @@ static bool c_bootloader(void *ctx)
 {
 	(void)ctx;
 	C.bootloader++;
-	return true;
-}
-
-static bool c_spiboot(void *ctx)
-{
-	(void)ctx;
-	C.spiboot++;
 	return true;
 }
 
@@ -486,7 +475,7 @@ static bool c_psoc(void *ctx)
 }
 
 static const struct s11_step_ops count_ops = {
-	c_content, c_os, s_sw, c_bootloader, c_spiboot, NULL, c_send, c_slot,
+	c_content, c_os, s_sw, c_bootloader, NULL, c_send, c_slot,
 	c_psoc, NULL,
 };
 
@@ -507,7 +496,6 @@ static void test_switched_off(void)
 {
 	static const unsigned switchable[] = {
 		S11_STEP_BLE, S11_STEP_BLE_BOOTLOADER, S11_STEP_KEYBOARD,
-		S11_STEP_SPIBOOT,
 	};
 	struct s11_staged st;
 	struct s17_copro copro;
@@ -521,8 +509,7 @@ static void test_switched_off(void)
 	env.copro = &copro;
 	env.nordic_in_dfu = true;
 	env.forced = true;
-	env.option = true;		/* the first stage confirmed: it runs when on */
-	env.confirmed = S11_STEP_BIT(S11_STEP_SPIBOOT);
+	env.option = true;
 
 	/* each switched-off step alone: Skipped, none of its ops called */
 	for (size_t i = 0; i < N(switchable); i++) {
@@ -532,43 +519,34 @@ static void test_switched_off(void)
 		env.off = S11_STEP_BIT(step);
 		CHECK(s11_step_result(step, &env, &count_ops) == S11_SKIPPED,
 		      "step %u switched off: Skipped", step);
-		CHECK(C.sends == 0 && C.slots == 0 && C.psoc == 0 &&
-		      C.spiboot == 0,
+		CHECK(C.sends == 0 && C.slots == 0 && C.psoc == 0,
 		      "step %u switched off: no nordic_send, no nordic_boot_slot, "
-		      "no psoc_program, no first-stage write", step);
+		      "no psoc_program", step);
 		CHECK(s11_step_skip(step, &env) == S11_SKIP_SWITCHED_OFF,
 		      "step %u: the reason", step);
 		env.off = 0;
 		CHECK(s11_step_result(step, &env, &count_ops) == S11_OK &&
-		      (C.sends != 0 || C.psoc != 0 || C.spiboot != 0),
+		      (C.sends != 0 || C.psoc != 0),
 		      "step %u switched on: it runs", step);
 		CHECK(s11_step_skip(step, &env) == S11_SKIP_NONE,
 		      "step %u switched on: no reason", step);
 	}
-	/* only steps 3-6 can be switched off */
+	/* only steps 3-5 can be switched off; step 6 is reserved */
 	env.off = 0xFFu;
 	env.option = true;
-	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER) |
-			S11_STEP_BIT(S11_STEP_SPIBOOT);
+	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER);
 	memset(&C, 0, sizeof(C));
 	CHECK(s11_step_result(S11_STEP_OS, &env, &count_ops) == S11_OK &&
 	      s11_step_result(S11_STEP_BOOTLOADER, &env, &count_ops) == S11_OK &&
 	      C.os == 1 && C.bootloader == 1,
 	      "steps 1 and 2 cannot be switched off");
-	/* S-11.073: the first stage switched off is Skipped before the option
-	 * and the confirmation, with no SPI flash access */
-	CHECK(s11_step_result(S11_STEP_SPIBOOT, &env, &count_ops) ==
-		      S11_SKIPPED && C.spiboot == 0 &&
-	      s11_step_skip(S11_STEP_SPIBOOT, &env) == S11_SKIP_SWITCHED_OFF,
-	      "step 6 switched off, the option on and confirmed: Skipped");
-	env.option = false;
-	CHECK(s11_step_skip(S11_STEP_SPIBOOT, &env) == S11_SKIP_SWITCHED_OFF,
-	      "step 6 switched off, the option off: switched off");
-	env.option = true;
+	CHECK(s11_step_result(S11_STEP_RESERVED, &env, &count_ops) ==
+		      S11_NOT_FOUND &&
+	      s11_step_skip(S11_STEP_RESERVED, &env) == S11_SKIP_NONE,
+	      "step 6: Not found, never Skipped");
 	/* absent component: Not found, as switched on (step 4: both images) */
 	st.size[S11_C_BLE] = st.size[S11_C_BACKPLANE] = 0;
 	st.size[S11_C_NORDIC_BL0] = st.size[S11_C_NORDIC_BL1] = 0;
-	st.size[S11_C_SPIBOOT] = 0;
 	for (size_t i = 0; i < N(switchable); i++) {
 		CHECK(s11_step_result(switchable[i], &env, &count_ops) ==
 			      S11_NOT_FOUND &&
@@ -585,20 +563,15 @@ static void test_switched_off(void)
 	env.off = 0;
 	env.option = false;
 	env.confirmed = 0;
-	CHECK(s11_step_skip(S11_STEP_BOOTLOADER, &env) == S11_SKIP_OPTION_OFF &&
-	      s11_step_skip(S11_STEP_SPIBOOT, &env) == S11_SKIP_OPTION_OFF,
+	CHECK(s11_step_skip(S11_STEP_BOOTLOADER, &env) == S11_SKIP_OPTION_OFF,
 	      "option off");
 	env.option = true;
-	env.confirmed = S11_STEP_BIT(S11_STEP_SPIBOOT);
-	CHECK(s11_step_skip(S11_STEP_BOOTLOADER, &env) == S11_SKIP_NOT_CONFIRMED &&
-	      s11_step_skip(S11_STEP_SPIBOOT, &env) == S11_SKIP_NONE,
-	      "the bootloader not confirmed, the first stage confirmed");
+	CHECK(s11_step_skip(S11_STEP_BOOTLOADER, &env) == S11_SKIP_NOT_CONFIRMED,
+	      "the bootloader not confirmed");
 	memset(&C, 0, sizeof(C));
 	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &count_ops) ==
-		      S11_SKIPPED &&
-	      s11_step_result(S11_STEP_SPIBOOT, &env, &count_ops) == S11_OK &&
-	      C.bootloader == 0 && C.spiboot == 1,
-	      "each protected step writes only after its own confirmation");
+		      S11_SKIPPED && C.bootloader == 0,
+	      "the bootloader writes only after its confirmation");
 	CHECK(s11_step_skip(S11_STEP_OS, &env) == S11_SKIP_NONE &&
 	      s11_step_skip(S11_STEP_CONTENT, &env) == S11_SKIP_NONE,
 	      "content and OS never skip");
@@ -651,7 +624,7 @@ static void test_switched_off(void)
 	      "this version: no DFU entry, the version read and the exit query: %s",
 	      L.text);
 	CHECK(C.sends == 0 && C.slots == 0 && C.psoc == 0 && C.os == 1 &&
-	      C.bootloader == 0 && C.spiboot == 0,
+	      C.bootloader == 0,
 	      "this version: only the OS written");
 	CHECK(strstr(L.text, "meta os_version=package,state=0") != NULL,
 	      "this version: the package version recorded (S-11.073)");
@@ -761,19 +734,18 @@ static enum s11_result d_step(void *ctx, unsigned step)
 {
 	static const enum s11_component comp[7] = {
 		S11_COMPONENTS, S11_C_OS, S11_C_BOOTLOADER, S11_C_BLE,
-		S11_C_NORDIC_BL0, S11_C_BACKPLANE, S11_C_SPIBOOT,
+		S11_C_NORDIC_BL0, S11_C_BACKPLANE, S11_COMPONENTS,
 	};
 
 	(void)ctx;
 	D.steps++;
 	if ((int)step == D.fail_step)
 		return S11_FAILURE;
-	if (step == S11_STEP_CONTENT)
+	if (step == S11_STEP_CONTENT || step == S11_STEP_RESERVED)
 		return S11_NOT_FOUND;
 	if (!D.comp[comp[step]])
 		return S11_NOT_FOUND;
-	if ((step == S11_STEP_BOOTLOADER || step == S11_STEP_SPIBOOT) &&
-	    !D.option)
+	if (step == S11_STEP_BOOTLOADER && !D.option)
 		return S11_SKIPPED;
 	return S11_OK;
 }

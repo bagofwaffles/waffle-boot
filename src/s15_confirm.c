@@ -23,7 +23,6 @@ void s15_confirm_lines(const struct s15_confirm_info *info,
 		       struct s15_buf out[S15_CONFIRM_LINES],
 		       enum s15_style style[S15_CONFIRM_LINES])
 {
-	const bool first_stage = info->step == S15_STEP_SPIBOOT;
 	unsigned i;
 
 	for (i = 0; i < S15_CONFIRM_LINES; i++) {
@@ -31,8 +30,7 @@ void s15_confirm_lines(const struct s15_confirm_info *info,
 		style[i] = S15_ST_TEXT;
 	}
 	style[0] = S15_ST_HEAD;
-	s15_buf_str(&out[0], first_stage ? "Install the first stage?"
-					 : "Install the bootloader?");
+	s15_buf_str(&out[0], "Install the bootloader?");
 	style[1] = S15_ST_KV;
 	s15_buf_str(&out[1], "Package\t");
 	s15_buf_str(&out[1], info->package != NULL ? info->package : "");
@@ -41,10 +39,7 @@ void s15_confirm_lines(const struct s15_confirm_info *info,
 		s15_buf_str(&out[1], info->installed);
 	}
 	style[2] = S15_ST_WARN;
-	if (first_stage) {
-		s15_buf_str(&out[2],
-			    "Nothing on the unit can repair a failed write.");
-	} else if (info->slot >= 0) {
+	if (info->slot >= 0) {
 		s15_buf_str(&out[2], "Slot ");
 		s15_buf_dec(&out[2], s15_slot_number((unsigned)info->slot));
 		s15_buf_str(&out[2], " is replaced. Recovery remains.");

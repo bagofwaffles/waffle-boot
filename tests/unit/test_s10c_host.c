@@ -721,10 +721,12 @@ static void test_labels_and_cdc(void)
 {
 	CHECK(strcmp(s10cv_labels[0], S10C_LABEL_DECRYPTING) == 0 &&
 	      strcmp(s10cv_labels[1], S10C_LABEL_EXTRACTING) == 0, "file labels");
-	for (unsigned k = 0; k < 7; k++)
+	for (unsigned k = 0; k < 6; k++)
 		CHECK(strcmp(s10cv_labels[2 + k], s10c_step_label(k)) == 0,
 		      "step %u label %s", k, s10c_step_label(k));
-	CHECK(s10c_step_label(7)[0] == '\0', "no label past step 6");
+	/* S-11.057: the reserved step 6 has no label */
+	CHECK(s10c_step_label(6)[0] == '\0' && s10c_step_label(7)[0] == '\0',
+	      "no label from step 6 on");
 	/* S-10c.106: the report after a step's Skipped */
 	for (size_t i = 0; i < N(s10cv_skips); i++) {
 		const struct s10cv_skip *v = &s10cv_skips[i];

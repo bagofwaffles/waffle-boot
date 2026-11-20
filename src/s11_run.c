@@ -181,7 +181,7 @@ static bool off(const struct s11_step_env *env, unsigned step)
 	return (env->off & S11_STEPS_SWITCHABLE & S11_STEP_BIT(step)) != 0u;
 }
 
-/* S-11.068, S-11.072, S-11.090: no version test, so a return to the factory
+/* S-11.068, S-11.090: no version test, so a return to the factory
  * bootloader writes any version (S-11.093) */
 static enum s11_result protected_step(const struct s11_step_env *env,
 				      unsigned step, enum s11_component c,
@@ -266,9 +266,8 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 			return S11_ALREADY;
 		return ops->psoc_program(ops->ctx) ? S11_OK :
 						     failed(ops, S11_FAILURE, false);
-	case S11_STEP_SPIBOOT:			/* S-11.072 */
-		return protected_step(env, step, S11_C_SPIBOOT,
-				      ops->spiboot_write, ops);
+	case S11_STEP_RESERVED:		/* S-11.057: nothing is looked for */
+		return S11_NOT_FOUND;
 	default:
 		return S11_INTERNAL;
 	}
@@ -288,8 +287,6 @@ static bool carried(unsigned step, const struct s11_staged *st)
 		       s11_staged_present(st, S11_C_NORDIC_BL1);
 	case S11_STEP_KEYBOARD:
 		return s11_staged_present(st, S11_C_BACKPLANE);
-	case S11_STEP_SPIBOOT:
-		return s11_staged_present(st, S11_C_SPIBOOT);
 	default:
 		return false;
 	}
@@ -299,7 +296,7 @@ enum s11_skip s11_step_skip(unsigned step, const struct s11_step_env *env)
 {
 	if (!carried(step, env->staged))
 		return S11_SKIP_NONE;
-	if (step == S11_STEP_BOOTLOADER || step == S11_STEP_SPIBOOT) {
+	if (step == S11_STEP_BOOTLOADER) {
 		if (off(env, step))
 			return S11_SKIP_SWITCHED_OFF;
 		if (!env->option)
@@ -333,19 +330,13 @@ bool s11_run_nordic(const struct s11_staged *st, uint8_t off_steps)
 		carried(S11_STEP_BLE_BOOTLOADER, st));
 }
 
-uint8_t s11_confirm(const struct s11_staged *st, bool option, uint8_t off,
+uint8_t s11_confirm(const struct s11_staged *st, bool option,
 		    bool (*ask)(void *ctx, enum s11_component c), void *ctx)
 {
-	const uint8_t on = (uint8_t)~(off & S11_STEPS_SWITCHABLE);
-	uint8_t confirmed = 0;
-
 	if (!option || ask == NULL)
 		return 0;
 	if (s11_staged_present(st, S11_C_BOOTLOADER) &&
 	    ask(ctx, S11_C_BOOTLOADER))
-		confirmed |= S11_STEP_BIT(S11_STEP_BOOTLOADER);
-	if ((on & S11_STEP_BIT(S11_STEP_SPIBOOT)) != 0u &&
-	    s11_staged_present(st, S11_C_SPIBOOT) && ask(ctx, S11_C_SPIBOOT))
-		confirmed |= S11_STEP_BIT(S11_STEP_SPIBOOT);
-	return confirmed;
+		return S11_STEP_BIT(S11_STEP_BOOTLOADER);
+	return 0;
 }

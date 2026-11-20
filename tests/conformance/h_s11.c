@@ -56,12 +56,12 @@
  *                            nordic:enter_dfu | nordic:read_versions |
  *                            nordic:exit_dfu_if_in_dfu | nordic_send:C |
  *                            nordic_slot, os_write, sw_version:V,
- *                            bootloader_write, spiboot_write, psoc_program,
+ *                            bootloader_write, psoc_program,
  *                            fs_remove | fs_move | fs_copy (the content step's
  *                            volume changes) and content=RESULT (its code,
- *                            S-11.058), confirm:C=A (S-11.096: component C,
- *                            bootloader or spiboot, asked for and answered
- *                            A, 1 or 0) and skip:STEP=WHY (s11_step_skip()
+ *                            S-11.058), confirm:bootloader=A (S-11.096:
+ *                            asked for and answered A, 1 or 0) and
+ *                            skip:STEP=WHY (s11_step_skip()
  *                            of each step that reported Skipped, after the
  *                            run: option_off | not_confirmed | switched_off);
  *                            or "-"
@@ -81,14 +81,13 @@
  * set KEY VALUE (each 0 or 1 unless stated; the default first):
  *   off 3,4,5 | STEPS | -  the switched-off steps (S-11.073), comma-separated;
  *                         "-" for none. The default is this version's
- *   confirm 0 0 | BL FS   S-11.096: the answers on the unit for the
- *                         bootloader and the first stage; 0 for none, as when
- *                         nobody answers
+ *   confirm 0 | BL        S-11.096: the answer on the unit for the
+ *                         bootloader; 0 for none, as when nobody answers
  *   dfu 1 | indfu 1       the Nordic enters DFU; reports bootloader mode
  *   send 1 | sendbl 1     the Nordic application and bootloader transfers
  *                         succeed
  *   slot 0                the boot slot the Nordic answers
- *   psoc 1 | os 1 | bootloader 1 | spiboot 1  the writes succeed
+ *   psoc 1 | os 1 | bootloader 1  the writes succeed
  *   staged - | bad | read_error  S-11.095's check of each image a step
  *                         would write or send: passes, fails (Bad file),
  *                         a read of the image fails (Internal error); the
@@ -477,7 +476,7 @@ static struct s17_copro copro;
 /* ---- peers, writers, faults ---- */
 
 static struct {
-	bool dfu, indfu, send, sendbl, psoc, os, bootloader, spiboot;
+	bool dfu, indfu, send, sendbl, psoc, os, bootloader;
 	int slot;
 	int space;			/* -1 real, -2 fails, else below */
 	uint64_t space_bytes;
@@ -488,9 +487,9 @@ static struct {
 	char cut_at[LOG_TOKEN];		/* "": none */
 	int staged;			/* S-11.095: 0 passes, 1 bad, 2 read error */
 	uint8_t off;			/* S-11.073: S11_STEP_BIT() each */
-	bool confirm_bl, confirm_fs;	/* S-11.096: the answers */
-} cfg = { true, true, true, true, true, true, true, true, 0, -1, 0, false, 0,
-	  0, 0, 0, 0, 0, 0, -1, "", 0, S11_STEPS_SWITCHABLE, false, false };
+	bool confirm_bl;		/* S-11.096: the answer */
+} cfg = { true, true, true, true, true, true, true, 0, -1, 0, false, 0,
+	  0, 0, 0, 0, 0, 0, -1, "", 0, S11_STEPS_SWITCHABLE, false };
 
 static struct {
 	unsigned stage, remove, move, meta, record;
@@ -733,15 +732,6 @@ static bool s_bootloader(void *ctx)
 	return cfg.bootloader;
 }
 
-static bool s_spiboot(void *ctx)
-{
-	(void)ctx;
-	if (staged_refused())
-		return false;
-	change("spiboot_write");
-	return cfg.spiboot;
-}
-
 static bool s_send(void *ctx, enum s11_component c)
 {
 	(void)ctx;
@@ -770,7 +760,7 @@ static bool s_psoc(void *ctx)
 }
 
 static const struct s11_step_ops step_ops = {
-	s_content, s_os, s_sw, s_bootloader, s_spiboot, s_failure, s_send, s_slot,
+	s_content, s_os, s_sw, s_bootloader, s_failure, s_send, s_slot,
 	s_psoc, NULL,
 };
 
@@ -778,14 +768,11 @@ static const struct s11_step_ops step_ops = {
  * on it */
 static bool u_confirm(void *ctx, enum s11_component c)
 {
-	const bool yes = c == S11_C_BOOTLOADER ? cfg.confirm_bl :
-			 c == S11_C_SPIBOOT ? cfg.confirm_fs : false;
+	const bool yes = c == S11_C_BOOTLOADER && cfg.confirm_bl;
 
 	(void)ctx;
 	note(c == S11_C_BOOTLOADER ? (yes ? "confirm:bootloader=1" :
-					    "confirm:bootloader=0") :
-	     c == S11_C_SPIBOOT ? (yes ? "confirm:spiboot=1" :
-					 "confirm:spiboot=0") : "confirm:?");
+					    "confirm:bootloader=0") : "confirm:?");
 	return yes;
 }
 
@@ -953,10 +940,8 @@ static void note_skips(const struct s11_fs_ops *fs, bool option)
 	env.staged = &st;
 	env.option = option;
 	env.off = cfg.off;
-	env.confirmed = (uint8_t)((option && cfg.confirm_bl ?
-				   S11_STEP_BIT(S11_STEP_BOOTLOADER) : 0u) |
-				  (option && cfg.confirm_fs ?
-				   S11_STEP_BIT(S11_STEP_SPIBOOT) : 0u));
+	env.confirmed = (uint8_t)(option && cfg.confirm_bl ?
+				  S11_STEP_BIT(S11_STEP_BOOTLOADER) : 0u);
 	/* the steps that ran: all of a completed run, those before the step
 	 * that stopped a failed one */
 	for (unsigned step = 0; step < S11_STEP_DONE; step++) {
@@ -1121,20 +1106,17 @@ static bool set(const struct h_cmd *c)
 		cfg.os = b;
 	else if (strcmp(k, "bootloader") == 0)
 		cfg.bootloader = b;
-	else if (strcmp(k, "spiboot") == 0)
-		cfg.spiboot = b;
 	else if (strcmp(k, "slot") == 0)
 		cfg.slot = (int)h_num(c, 2);
 	else if (strcmp(k, "off") == 0) {
 		cfg.off = 0;
 		for (const char *p = v; strcmp(v, "-") != 0 && *p != '\0'; p++) {
-			if (*p >= '0' && *p <= '6')
+			if (*p >= '0' && *p <= '5')
 				cfg.off = (uint8_t)(cfg.off |
 						    S11_STEP_BIT((unsigned)(*p - '0')));
 		}
-	} else if (strcmp(k, "confirm") == 0 && c->n == 4) {
+	} else if (strcmp(k, "confirm") == 0) {
 		cfg.confirm_bl = b;
-		cfg.confirm_fs = strcmp(c->tok[3], "1") == 0;
 	}
 	else if (strcmp(k, "staged") == 0)
 		cfg.staged = strcmp(v, "bad") == 0 ? 1 :

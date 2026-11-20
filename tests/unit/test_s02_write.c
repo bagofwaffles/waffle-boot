@@ -1,15 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-02 writers against the RAM fake: the bootloader-slot upgrade and its
- * power cuts, the start rule, the selector-write rule, the first-stage
- * upgrade and the option gate.
+ * power cuts, the start rule, the selector-write rule and the option gate.
  * Requirements: S-02.004, S-02.024 (factory model), S-02.041-.053,
- * S-02.055-.058, S-02.070, S-02.071, S-02.090, S-02.091, S-02.094.
+ * S-02.055-.058, S-02.090, S-02.091, S-02.094.
  * Vectors: powercut_sequences.json, powercut_cuts.csv, upgrade_cut_boots.csv,
  * package_steps.json, bootable_images.json (vectors/s02_vectors.h);
  * scenarios SC-UPG-OK, SC-UPG-SIZE, SC-UPG-STREAM, SC-UPG-FAULT, SC-UPG-CUT,
  * SC-UPG-START, SC-SEL-WRITE,
- * SC-UPG-SKIP, SC-UPG-NEXT-BOOT, SC-FS-UPG, SC-FS-FAULT, SC-OPT-RESET.
+ * SC-UPG-SKIP, SC-UPG-NEXT-BOOT, SC-OPT-RESET.
  */
 #include <string.h>
 
@@ -306,8 +305,6 @@ static void test_upgrade_size_and_option(void)
 	CHECK_EQ(s02_slot_upgrade(&env, false, g_image, 0x100u, &t), S02_SKIPPED);
 	CHECK_EQ(g_f.nlog, 0);
 	CHECK_EQ(t, 2u);
-	CHECK_EQ(s02_first_stage_upgrade(&env, false, g_image, 0x86C0u, NULL, NULL), S02_SKIPPED);
-	CHECK_EQ(g_f.nlog, 0);
 }
 
 /* SC-UPG-FAULT (S-02.047): no selector write after a fault. */
@@ -699,177 +696,10 @@ static void test_powercut_cuts(void)
 	}
 }
 
-/* --- SC-FS-UPG, SC-FS-FAULT (S-02.070, S-02.071, S-02.072) --- */
-
-struct ann {
-	unsigned on_at, off_at;	/* op count when the announcement went on and off */
-	int ons, offs;
-};
-
-static void announce(void *ctx, bool on)
-{
-	struct ann *a = ctx;
-
-	if (on) {
-		a->on_at = g_f.nall;
-		a->ons++;
-	} else {
-		a->off_at = g_f.nall;
-		a->offs++;
-	}
-}
-
-static void fs_start(void)
-{
-	uint8_t rec[S02_META_SIZE], mirror[S02_MIRROR_SIZE];
-	unsigned i;
-
-	ff_init(&g_f);
-	set_state(0, 0, 1u);
-	set_state(1, 0, 2u);
-	ff_set_selector(&g_f, 0x00, 0x00);
-	for (i = 0; i < S02_META_SIZE; i++)
-		rec[i] = (uint8_t)(i * 3u + 1u);
-	ff_put32(rec, S02_META_MAGIC);
-	s02_mirror_build(rec, mirror);
-	memcpy(g_f.mem + S02_MIRROR_OFF, mirror, S02_MIRROR_SIZE);
-	memcpy(g_f.mem + S02_META_OFF, rec, S02_META_SIZE);
-	ff_fill_image(g_f.mem, 0x86C0u, 77u);
-	memcpy(&g_start.mem, g_f.mem, sizeof g_f.mem);
-	ff_reset(&g_f);
-}
-
-static void test_first_stage_upgrade(void)
-{
-	static const uint32_t sizes[] = {0u, 0x86C0u, 0xB000u, 0xB001u, 0xC000u};
-	struct s02_env env = ff_env(&g_f, &g_ops);
-	unsigned i, j;
-
-	CHECK_EQ(V_FS_LIMIT, S02_FIRST_STAGE_MAX);
-	for (i = 0; i < N(v_fs_refused); i++) {
-		fs_start();
-		CHECK_EQ(s02_first_stage_upgrade(&env, true, g_image, v_fs_refused[i], NULL, NULL),
-			 S02_ERR_SIZE);
-		CHECK_EQ(g_f.nmut, 0);
-	}
-	for (i = 0; i < N(sizes); i++) {
-		struct ann a = {0, 0, 0, 0};
-		uint32_t n = sizes[i];
-		unsigned last_prog = 0, first_erase = ~0u;
-		int rc;
-
-		fs_start();
-		ff_boot_image(g_image, n, 31u + i);
-		rc = s02_first_stage_upgrade(&env, true, g_image, n, announce, &a);
-		if (n == 0u || n > S02_FIRST_STAGE_MAX) {
-			CHECK_EQ(rc, S02_ERR_SIZE);
-			CHECK_EQ(g_f.nmut, 0);
-			CHECK_EQ(a.ons, 0);
-			continue;
-		}
-		CHECK_EQ(rc, S02_OK);
-		CHECK(memcmp(g_f.mem, g_image, n) == 0);
-		/* Nothing at or above 0xB000 changes, the mirror included. */
-		CHECK(memcmp(g_f.mem + S02_MIRROR_OFF, g_start.mem + S02_MIRROR_OFF,
-			     S02_FLASH_SIZE - S02_MIRROR_OFF) == 0);
-		for (j = 0; j < g_f.nlog; j++) {
-			const struct ff_op *o = &g_f.log[j];
-
-			if (o->kind == FF_READ)
-				continue;
-			CHECK(o->off + o->len <= n + S02_SECTOR_SIZE && o->off < S02_MIRROR_OFF);
-			if (o->kind == FF_ERASE && first_erase == ~0u)
-				first_erase = j;
-			if (o->kind == FF_PROGRAM) {
-				CHECK(find_op(FF_ERASE, o->off - (o->off % S02_SECTOR_SIZE), 0) < j);
-				last_prog = j;
-			}
-		}
-		CHECK_EQ(count_kind(FF_ERASE), (n + S02_SECTOR_SIZE - 1u) / S02_SECTOR_SIZE);
-		CHECK(reads_cover(0, n, last_prog, g_f.nlog));
-		/* S-02.072: announced before the first erase, kept to the read-back. */
-		CHECK_EQ(a.ons, 1);
-		CHECK_EQ(a.offs, 1);
-		CHECK(a.on_at <= first_erase);
-		CHECK(a.off_at >= g_f.nall);
-		CHECK(!g_f.bad_call);
-	}
-	/* package_steps.json first_stage_refused_streams: a 1-byte first stage
-	 * is Bad file (S-02.091) before any erase or program. */
-	fs_start();
-	padded(g_image, v_boot_fs_one_byte, sizeof v_boot_fs_one_byte, 1u);
-	CHECK_EQ(s02_first_stage_upgrade(&env, true, g_image, 1u, NULL, NULL),
-		 S02_ERR_STREAM);
-	CHECK_EQ(g_f.nmut, 0);
-	/* package_steps.json first_stage_ops: the erases and programs, exactly. */
-	for (i = 0; i < N(v_fs_upgrades); i++) {
-		const struct v_fsops *v = &v_fs_upgrades[i];
-		unsigned k = 0;
-
-		fs_start();
-		/* package_steps.json: fs_small padded to the case's length. */
-		padded(g_image, v_boot_fs_small, sizeof v_boot_fs_small, v->length);
-		CHECK_EQ(s02_first_stage_upgrade(&env, true, g_image, v->length, NULL, NULL), S02_OK);
-		for (j = 0; j < v->nops; j++) {
-			if (v->ops[j].kind == 'r')
-				continue;
-			while (k < g_f.nlog && g_f.log[k].kind == FF_READ)
-				k++;
-			CHECK(k < g_f.nlog && g_f.log[k].kind == v->ops[j].kind &&
-			      g_f.log[k].off == v->ops[j].off && g_f.log[k].len == v->ops[j].len);
-			k++;
-		}
-	}
-	/*
-	 * SC-FS-FAULT: a corrupted program or a failed erase is made again from
-	 * the first erase, inside one announcement; a fault on every attempt
-	 * fails the step after a bounded number, and a later call works.
-	 */
-	for (i = 0; i < 3u; i++) {
-		struct ann a = {0, 0, 0, 0};
-		int rc;
-
-		fs_start();
-		ff_boot_image(g_image, 0x86C0u, 5u);
-		if (i == 1u) {
-			g_f.fail = 18;	/* the second sector's erase */
-		} else {
-			g_f.corrupt = 5;
-			g_f.corrupt_mask = 0x7F;
-			g_f.corrupt_on = i == 2u;
-		}
-		rc = s02_first_stage_upgrade(&env, true, g_image, 0x86C0u, announce, &a);
-		CHECK_EQ(a.ons, 1);
-		CHECK_EQ(a.offs, 1);
-		CHECK(erases_at(0) >= 2u);	/* sector 0 erased again */
-		if (i < 2u) {
-			CHECK_EQ(rc, S02_OK);
-			CHECK(memcmp(g_f.mem, g_image, 0x86C0u) == 0);
-			continue;
-		}
-		CHECK(rc != S02_OK);
-		CHECK_EQ(erases_at(0), 3u);	/* a bounded number of attempts */
-		ff_reset(&g_f);
-		CHECK_EQ(s02_first_stage_upgrade(&env, true, g_image, 0x86C0u, NULL, NULL), S02_OK);
-		CHECK(memcmp(g_f.mem, g_image, 0x86C0u) == 0);
-	}
-	/* The flash holds the image already: success, no erase, no announcement. */
-	{
-		struct ann a = {0, 0, 0, 0};
-
-		fs_start();
-		ff_boot_image(g_image, 0x86C0u, 6u);
-		memcpy(g_f.mem, g_image, 0x86C0u);
-		CHECK_EQ(s02_first_stage_upgrade(&env, true, g_image, 0x86C0u, announce, &a), S02_OK);
-		CHECK_EQ(g_f.nmut, 0);
-		CHECK_EQ(a.ons, 0);
-	}
-}
-
 /*
  * S-02.091, SC-UPG-STREAM: every case of bootable_images.json, by the S-01
- * rules whole and fed in pieces, and through the writers from selector
- * 01 01 with both slots good (slot cases) or the SC-FS-UPG start.
+ * rules whole and fed in pieces, and through the slot writer from selector
+ * 01 01 with both slots good.
  */
 static void test_bootable_images(void)
 {
@@ -881,8 +711,8 @@ static void test_bootable_images(void)
 	CHECK_EQ(V_FACTORY_FS_STACK_END, S01_FACTORY_FS_STACK_END);
 	for (i = 0; i < N(v_bootables); i++) {
 		const struct v_bootable *v = &v_bootables[i];
-		enum s01_profile p = v->slot ? S01_BOOTLOADER : S01_FIRST_STAGE;
-		uint32_t fail = s01_stream_check(p, v->image, v->length, v->slot ? &factory : NULL);
+		const enum s01_profile p = S01_BOOTLOADER;
+		uint32_t fail = s01_stream_check(p, v->image, v->length, &factory);
 		struct s01_stream s;
 		uint32_t k, step;
 		int rc;
@@ -899,23 +729,18 @@ static void test_bootable_images(void)
 						v->length - k < step ? v->length - k : step);
 			CHECK_EQ(s01_stream_end(&s), fail);
 		}
-		if (v->slot) {
-			ff_init(&g_f);
-			set_state(0, 0, 1u);
-			set_state(1, 0, 2u);
-			ff_set_selector(&g_f, 0x01, 0x01);
-		} else {
-			fs_start();
-		}
+		CHECK(v->slot);
+		ff_init(&g_f);
+		set_state(0, 0, 1u);
+		set_state(1, 0, 2u);
+		ff_set_selector(&g_f, 0x01, 0x01);
 		memcpy(&g_start.mem, g_f.mem, sizeof g_f.mem);
 		memcpy(g_image, v->image, v->length);
 		ff_reset(&g_f);
-		rc = v->slot ? s02_slot_upgrade(&env, true, g_image, v->length, &t)
-			     : s02_first_stage_upgrade(&env, true, g_image, v->length, NULL, NULL);
+		rc = s02_slot_upgrade(&env, true, g_image, v->length, &t);
 		if (v->accepted) {
 			CHECK_EQ(rc, S02_OK);
-			if (v->slot)
-				check_upgrade_log(0, v->length);
+			check_upgrade_log(0, v->length);
 		} else {
 			CHECK_EQ(rc, S02_ERR_STREAM);
 			CHECK_EQ(g_f.nmut, 0);
@@ -971,7 +796,6 @@ int main(void)
 	test_start_and_selector_rule();
 	test_powercut_sequences();
 	test_powercut_cuts();
-	test_first_stage_upgrade();
 	test_bootable_images();
 	return finish("test_s02_write");
 }

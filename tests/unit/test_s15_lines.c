@@ -23,7 +23,7 @@ static enum s15_step step_of(const char *s)
 {
 	static const char *const names[S15_STEP_COUNT] = {
 		"content", "os", "bootloader", "ble", "ble bootloader",
-		"keyboard", "spiboot",
+		"keyboard",
 	};
 
 	for (unsigned i = 0; i < S15_STEP_COUNT; i++)
@@ -202,8 +202,6 @@ static void test_progress(void)
 	}
 	CHECK(s15_step_progress_line(&b, S15_STEP_OS, 42) == S15_OP_REPLACE &&
 	      strcmp(b.s, "Main DSP\t42%") == 0, "os: '%s'", b.s);
-	CHECK(s15_step_progress_line(&b, S15_STEP_SPIBOOT, 42) == S15_OP_NONE,
-	      "the first stage shows no progress row");
 	for (size_t i = 0; i < S15V_N(s15v_progress_rows); i++) {
 		const struct s15v_progress_row *r = &s15v_progress_rows[i];
 		enum s15_op op = s15_step_progress_line(&b, step_of(r->step), r->p);
@@ -575,10 +573,6 @@ static void test_required_info(void)
 		      strcmp(b.s + strlen(want) - strlen("$reason"), "signature") == 0 &&
 		      fits(st, b.s), "reason line: '%s'", b.s);
 	}
-
-	rows[0] = s15_fs_warning;
-	CHECK(s15t_match_named("fs warning", rows, 1, NULL) &&
-	      fits(S15_ST_WARN, s15_fs_warning), "warning");
 
 	/* Reset needed, right after operation 10's failure. */
 	rows[0] = "Operation 10 failed";

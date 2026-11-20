@@ -479,17 +479,6 @@ static void test_options_scope(void)
 	dev_frame(OPXY_DEV_FLAGS, ask, sizeof(ask));
 	CHECK(flags_reply() == 0x2800u);
 
-	/* S-02.071, S-07.051: the first-stage window open, the hand-over
-	 * refused before anything of it */
-	s07_fs_window_open(&m.psoc);
-	dev_frame(OPXY_DEV_HANDOVER, NULL, 0);
-	{
-		size_t hl;
-
-		CHECK(reply_status(&hl) == OPXY_DEV_REFUSED && stages == 0u);
-	}
-	(void)s07_fs_window_close(&m.psoc);
-
 	/* With no options of its own, the request takes those held. */
 	dev_frame(OPXY_DEV_HANDOVER, NULL, 0);
 	CHECK(stages == 1u && seen_flags == 0x2800u);
@@ -992,12 +981,6 @@ static void test_cal_start(void)
 	dev_frame(OPXY_DEV_CAL_START, NULL, 0);
 	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED && cal_ops[0] == '\0');
 	m.sv.menu.dev_mode = true;
-	/* S-02.071, S-07.051: the first-stage window open, refused and
-	 * nothing written */
-	s07_fs_window_open(&m.psoc);
-	dev_frame(OPXY_DEV_CAL_START, NULL, 0);
-	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED && cal_ops[0] == '\0');
-	(void)s07_fs_window_close(&m.psoc);
 	dev_frame(OPXY_DEV_CAL_START, NULL, 0);
 	CHECK(reply_status(&plen) == OPXY_DEV_OK && plen == 1u);
 	CHECK(strcmp(cal_ops, "shutdown write:70 reset") == 0);

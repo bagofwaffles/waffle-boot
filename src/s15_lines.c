@@ -76,7 +76,6 @@ static const struct {
 	[S15_STEP_BLE] = { "BLE", 7 },
 	[S15_STEP_BLE_BOOTLOADER] = { "BLE bootloader", 8 },
 	[S15_STEP_KEYBOARD] = { "Backplane", 9 },
-	[S15_STEP_SPIBOOT] = { "First stage", 12 },
 };
 
 static enum s15_step valid_step(enum s15_step step)
@@ -99,7 +98,7 @@ unsigned s15_step_number(enum s15_step step)
 /* S-11.090: the steps the session option guards. */
 bool s15_step_protected(enum s15_step step)
 {
-	return step == S15_STEP_BOOTLOADER || step == S15_STEP_SPIBOOT;
+	return step == S15_STEP_BOOTLOADER;
 }
 
 /* A step row: its label, a tab, then its status. */
@@ -115,8 +114,6 @@ enum s15_op s15_step_progress_line(struct s15_buf *out, enum s15_step step,
 {
 	static const char spin[] = "/-\\|";
 
-	if (step == S15_STEP_SPIBOOT)
-		return S15_OP_NONE;            /* the first-stage warning instead */
 	label_open(out, step);
 	if (step == S15_STEP_KEYBOARD) {
 		s15_buf_str(out, "Installing ");
@@ -140,8 +137,7 @@ enum s15_op s15_result_line(struct s15_buf *out, enum s15_style *style,
 		*style = S15_ST_STEP_OK;
 		label_open(out, step);
 		s15_buf_str(out, "Installed");
-		if (step != S15_STEP_CONTENT && step != S15_STEP_SPIBOOT &&
-		    version != NULL) {
+		if (step != S15_STEP_CONTENT && version != NULL) {
 			s15_buf_str(out, " ");
 			s15_buf_str(out, version);
 		}
@@ -498,7 +494,6 @@ const char s15_os_write_failed[] = "Writing the OS failed";
 const char s15_reset_needed[] =
 	"Reset needed before the bootloader can be written";
 const char s15_nothing_skipped[] = "Nothing was installed.";
-const char s15_fs_warning[] = "Writing the first stage: keep the power on";
 const char s15_stock_line[] = "This run replaces waffle-boot: back to stock";
 
 /* S-15.015: under the items a hold chooses, while none is held. */

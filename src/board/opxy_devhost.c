@@ -711,10 +711,6 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 		break;
 #endif
 	case OPXY_DEV_CAL_START:
-		if (opxy_fs_refuses(m, "restart")) {	/* S-07.051 */
-			out[0] = OPXY_DEV_REFUSED;
-			break;
-		}
 		/* The answer first: the restart does not return. */
 		(void)s06_send(&m->node, S06_LINK_CDC, s06_swap_route(f->route),
 			       f->id, out, 1u);
@@ -722,10 +718,6 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 		opxy_reboot(m, S04_W10, 0u);
 		return true;			/* only with a test's operations */
 	case OPXY_DEV_HANDOVER: {
-		if (opxy_fs_refuses(m, "hand-over")) {	/* S-07.051 */
-			out[0] = OPXY_DEV_REFUSED;
-			break;
-		}
 		/* flags:4, then optional master-delay:2 and slave-delay:2 (ms).
 		 * The ack goes out first, since a good hand-over does not return;
 		 * on a trace run a milestone frame follows (OPXY_HO_TRACE_MARK),

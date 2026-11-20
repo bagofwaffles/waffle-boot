@@ -267,15 +267,15 @@ size_t s10c_error_text(const struct s11_outcome *o, char *buf)
 	return t.len;
 }
 
-/* S-10c.104 */
+/* S-10c.104: the reserved step 6 has none */
 const char *s10c_step_label(unsigned step)
 {
-	static const char *const labels[7] = {
+	static const char *const labels[6] = {
 		"[content]", "[main dsp]", "[bootloader]", "[ble]",
-		"[ble bootloader]", "[backplane]", "[spiboot]",
+		"[ble bootloader]", "[backplane]",
 	};
 
-	return step < 7 ? labels[step] : "";
+	return step < 6 ? labels[step] : "";
 }
 
 /* S-10c.106 */

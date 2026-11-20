@@ -521,8 +521,6 @@ class Sim:
         self.leds = Leds(lambda p: self.send(0x40, p))
         self.charge_led_enabled = True
         self.key_test = None
-        self.fs_window = False                 # S-07.051: the first-stage window is open
-        self.kept = None                       # S-07.051: the state of a kept power-off
         self.actions = sorted(self.setup.get('actions', []), key=lambda a: a['t_ms'])
         for t, item in self.psoc.initial():
             self._arrive(t, item)
@@ -613,12 +611,7 @@ class Sim:
 
     def power_state(self, s):
         prev, self.state = self.state, s
-        if self.kept is not None and s == 0x10:
-            self.kept = None                        # S-07.051: the switch is on again, the power-off dropped
         if power_off_trigger(prev, s):
-            if self.fs_window:
-                self.kept = s                       # S-07.051: recorded and kept, nothing of steps 1 and 2
-                return
             self.power_off(s)
 
     def power_off(self, s):
@@ -889,18 +882,6 @@ class Sim:
         self.usb_configured = False
         self.target = 100
         self.last_usb = self.t
-
-    def act_fs_window_open(self, a):
-        """S-07.051: the first erase of the first-stage area (S-02.071 step 3)."""
-        self.fs_window = True
-
-    def act_fs_window_close(self, a):
-        """S-07.051: an image in the first-stage area has passed its read-back (S-02.071 step 5); a kept
-        power-off runs now with its kept state."""
-        self.fs_window = False
-        if self.kept is not None:
-            s, self.kept = self.kept, None
-            self.power_off(s)
 
     def act_volcal(self, a):
         self.send(0x48, b'\x01')

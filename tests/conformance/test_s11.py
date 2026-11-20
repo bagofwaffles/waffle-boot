@@ -141,7 +141,7 @@ ALL_ON = dict(steps_off=(), answer=lambda c: True)
 
 WRITES = ('meta', 'meta_fails', 'progress', 'progress_fails', 'nordic')
 STEP_OF = {'os_write': 1, 'sw_version': 1, 'bootloader_write': 2, 'nordic_send:ble': 3, 'nordic_slot': 4,
-           'nordic_send:bl0': 4, 'nordic_send:bl1': 4, 'psoc_program': 5, 'spiboot_write': 6,
+           'nordic_send:bl0': 4, 'nordic_send:bl1': 4, 'psoc_program': 5,
            'fs_remove': 0, 'fs_move': 0, 'fs_copy': 0}
 
 
@@ -183,11 +183,11 @@ def step_effects(lg):
 
 def setup(meta='0 ' + OLD, tree_files=None):
     cmds = ['vol', 'meta ' + meta, otp(), 'copro 0.0.0.0 0.0.0.0 0.0.0.0']
-    for k in ('dfu', 'indfu', 'send', 'sendbl', 'psoc', 'os', 'bootloader', 'spiboot'):
+    for k in ('dfu', 'indfu', 'send', 'sendbl', 'psoc', 'os', 'bootloader'):
         cmds.append('set %s 1' % k)
     cmds += ['set slot 0', 'set space real', 'set readfail -', 'set stagefail 0', 'set removefail 0',
              'set movefail 0', 'set metafail 0', 'set recordfail 0', 'set cut -', 'set cutat -', 'set staged -',
-             'set off -', 'set confirm 1 1']
+             'set off -', 'set confirm 1']
     for p, b in (tree_files or {}).items():
         cmds.append(put(p, b))
     return cmds
@@ -225,10 +225,10 @@ def img(n, seed):
     return bytes((i * 7 + seed) & 0xFF for i in range(n))
 
 
-def boot_img(c, n, seed):
-    """A bootloader or first-stage image that check 18 accepts (S-11.035, S-02.091): the generator's
-    bootable stream of its kind, then img(n, seed) after its FINAL block."""
-    return (gv().BOOT_STREAM if c == 'bootloader' else gv().FS_STREAM) + img(n, seed)
+def boot_img(n, seed):
+    """A bootloader image that check 18 accepts (S-11.035, S-02.091): the generator's bootable slot
+    stream, then img(n, seed) after its FINAL block."""
+    return gv().BOOT_STREAM + img(n, seed)
 
 
 def os_img(n, seed):
@@ -240,16 +240,25 @@ def os_img(n, seed):
 def comp_img(c, n, seed):
     if c == 'os':
         return os_img(n, seed)
-    return boot_img(c, n, seed) if c in ('bootloader', 'spiboot') else img(n, seed)
+    return boot_img(n, seed) if c == 'bootloader' else img(n, seed)
+
+
+# S-11.034: a first-stage image and its version file, staged as plain members
+FIRST_STAGE_FILE = {'firmware/blackfin/bin/spiboot.ldr': img(0xC001, 13),
+                    'firmware/blackfin/bin/spiboot.version': b'1.2.0+0\n'}
 
 
 def full_zip(version=(1, 2, 0), content=True, fw_version=True, **comp_versions):
-    """Every component, both Nordic bootloaders and (content) a content file."""
+    """Every component, both Nordic bootloaders, a first-stage file (S-11.034: no component, never looked
+    for) and (content) a content file."""
     comps = {c: (comp_img(c, 100 + i, i), comp_versions.get(c, version))
-             for i, c in enumerate(('os', 'bootloader', 'spiboot', 'ble', 'backplane'))}
+             for i, c in enumerate(('os', 'bootloader', 'ble', 'backplane'))}
+    extra = dict(FIRST_STAGE_FILE)
+    if content:
+        extra['firmware/blackfin/content/op1.json'] = b'{}'
     z = fwzip.build(comps, version=version, nordic_bootloaders=(img(64, 9), img(64, 11),
                                                                 comp_versions.get('nordic_bl', version)),
-                    extra={'firmware/blackfin/content/op1.json': b'{}'} if content else None)
+                    extra=extra)
     return z if fw_version else without(z, fwzip.TOP_VERSION)
 
 
@@ -326,7 +335,7 @@ class Refusals(unittest.TestCase):
         stream_size_first, before any step: no write, no metadata write, nothing outside the staging area
         changed."""
         cases = [c for c in vectors('zips.json')['cases'] if c['case'].startswith('stream_')]
-        self.assertEqual(len(cases), 14)
+        self.assertEqual(len(cases), 13)
         s = Session()
         for c in cases:
             path = package('zip_' + c['case'], bytes.fromhex(c['zip_hex']))
@@ -698,9 +707,9 @@ class Runs(unittest.TestCase):
 
     @scenario('S-11/SC-11-SWITCHED-OFF')
     def test_SC_11_SWITCHED_OFF(self):
-        """This version's steps 3-6 switched off (S-11.073). The SC-11-RUN-OK package, option off: no DFU entry,
+        """This version's steps 3-5 switched off (S-11.073). The SC-11-RUN-OK package, option off: no DFU entry,
         no boot-slot query, nothing sent to the Nordic or the PSoC; the version read and the exit query made;
-        steps 2-6 Skipped with their reasons; done, os_version the package's, the coprocessor values unchanged;
+        steps 2-5 Skipped with their reasons, step 6 Not found; done, os_version the package's, the coprocessor values unchanged;
         as the model's run. Variants: the Nordic refusing DFU (the same, done); a package of only Nordic and
         PSoC images (nothing to do, nothing sent); a package of only the OS (steps 3-5 Not found)."""
         z = full_zip(version=(1, 2, 0))
@@ -711,7 +720,7 @@ class Runs(unittest.TestCase):
                           'firmware/backplane/bin/backplane.version': b'1.2.0+0\n',
                           'firmware/firmware.version': b'1.2.0+0\n'})
         os_only = fwzip.build({'os': os_img(300, 1)}, version=(1, 2, 0))
-        off = ['set off 3,4,5,6', 'set confirm 0 0']
+        off = ['set off 3,4,5', 'set confirm 0']
         s = Session()
         for tag, zz, extra in (('off', z, off), ('nodfu', z, off + ['set dfu 0']), ('only', only, off),
                                ('os_only', os_only, off)):
@@ -723,14 +732,13 @@ class Runs(unittest.TestCase):
             with self.subTest(variant=tag):
                 lg, r = self.check_run(out, tag, staged_of(zz), False, dfu=dfu, steps_off=m.STEPS_OFF, answer=None)
                 for e in ('nordic:enter_dfu', 'nordic_slot', 'nordic_send:ble', 'nordic_send:bl0', 'nordic_send:bl1',
-                          'psoc_program', 'bootloader_write', 'spiboot_write'):
+                          'psoc_program', 'bootloader_write'):
                     self.assertNotIn(e, lg)
                 self.assertIn('nordic:read_versions', lg)
                 self.assertIn('nordic:exit_dfu_if_in_dfu', lg)
                 self.assertEqual(out[tag + '/copro'], '0.0.0.0 0.0.0.0 0.0.0.0')
         self.assertEqual([t for t in log(out['off/log']) if t.startswith('skip:')],
-                         ['skip:2=option_off', 'skip:3=switched_off', 'skip:4=switched_off', 'skip:5=switched_off',
-                          'skip:6=switched_off'])
+                         ['skip:2=option_off', 'skip:3=switched_off', 'skip:4=switched_off', 'skip:5=switched_off'])
         for tag in ('off', 'nodfu'):
             self.assertEqual(Result(out[tag]).outcome, 'done', tag)
             self.assertEqual(out[tag + '/meta'], '0x0 1.2.0.0', tag)
@@ -741,69 +749,63 @@ class Runs(unittest.TestCase):
 
     @scenario('S-11/SC-11-CONFIRM')
     def test_SC_11_CONFIRM(self):
-        """S-11.096 with this version's steps 3-5 and the first-stage step switched on, as the host build
-        tests its dormant code. The SC-11-RUN-OK package (TE-signed), option on: the bootloader
-        asked first, then the first stage, both before the run's first write; each protected step writes only
-        when its own component was confirmed; not confirmed: Skipped, not confirmed, and no return to the
-        factory bootloader. The option off: nothing asked. A package without protected components: nothing
-        asked. The same package over the CDC firmware command and the MIDI transfer: the same asks. The same
-        package installed again: asked again. Leg `this_version`, the first stage switched off too (S-11.073):
-        only the bootloader asked, the first stage Skipped, switched off, and not written."""
+        """S-11.096 with this version's steps 3-5 switched on, as the host build tests its dormant code. The
+        SC-11-RUN-OK package (TE-signed, a first-stage file carried), option on: the bootloader asked for
+        before the run's first write and written only when confirmed; not confirmed: Skipped, not confirmed,
+        and no return to the factory bootloader. The first-stage file is never asked for and nothing writes
+        it. The option off: nothing asked. A package without the bootloader: nothing asked. The same package
+        over the CDC firmware command and the MIDI transfer: the same ask. The same package installed again:
+        asked again. Leg `this_version`, steps 3-5 switched off (S-11.073): the bootloader asked and
+        written."""
         z = full_zip(version=(1, 2, 0))
         os_only = fwzip.build({'os': os_img(300, 1)}, version=(1, 2, 0))
         body = package('confirm_body', z, pre=False)
         s = Session()
-        legs = [('yes', z, 1, (1, 1)), ('no', z, 1, (0, 0)), ('bl_only', z, 1, (1, 0)), ('fs_only', z, 1, (0, 1)),
-                ('option_off', z, 0, (1, 1)), ('no_protected', os_only, 1, (1, 1))]
-        for tag, zz, opt, (bl, fs) in legs:
-            self.install(s, tag, zz, option=opt, extra=['set off 3,4,5', 'set confirm %d %d' % (bl, fs)])
-        self.install(s, 'this_version', z, option=1, extra=['set off 3,4,5,6', 'set confirm 1 1'])
+        legs = [('yes', z, 1, 1), ('no', z, 1, 0), ('option_off', z, 0, 1), ('no_protected', os_only, 1, 1)]
+        for tag, zz, opt, bl in legs:
+            self.install(s, tag, zz, option=opt, extra=['set off 3,4,5', 'set confirm %d' % bl])
+        self.install(s, 'this_version', z, option=1, extra=['set off 3,4,5', 'set confirm 1'])
         for tag, fwcmd in (('cdc', 1), ('midi', 0)):
-            s.add(*setup(), 'set off 3,4,5', 'set confirm 1 0', 'load ' + body)
+            s.add(*setup(), 'set off 3,4,5', 'set confirm 1', 'load ' + body)
             s.add('install body %d 1 -' % fwcmd, name=tag)
             s.add('log', name=tag + '/log')
-        s.add('set confirm 0 0', 'install body 0 1 -', name='again')
+        s.add('set confirm 0', 'install body 0 1 -', name='again')
         s.add('log', name='again/log')
         out = s.run()
         m = model()
-        for tag, zz, opt, (bl, fs) in legs:
+        for tag, zz, opt, bl in legs:
             with self.subTest(leg=tag):
-                answer = {'bootloader': bl, 'spiboot': fs}.get
+                answer = {'bootloader': bl}.get
                 lg, r = self.check_run(out, tag, staged_of(zz), bool(opt), steps_off=(3, 4, 5), answer=answer)
                 asks = [i for i, t in enumerate(lg) if t.startswith('confirm:')]
                 if asks:
                     first_write = min(i for i, t in enumerate(lg) if t.split(':')[0] in WRITES or t in STEP_OF)
                     self.assertLess(max(asks), first_write, 'asked before the run\'s first write')
                 self.assertEqual('bootloader_write' in lg, bool(opt and bl and zz is z))
-                self.assertEqual('spiboot_write' in lg, bool(opt and fs and zz is z))
+                self.assertFalse([t for t in lg if 'spiboot' in t], tag)
                 self.assertEqual(r.outcome, 'done')
                 if zz is z:
                     self.assertTrue(r.te)
                     self.assertEqual(r.stock, bool(opt and bl),
                                      'S-11.091: a return to the factory bootloader only when confirmed')
-        self.assertEqual([t for t in log(out['yes/log']) if t.startswith('confirm:')],
-                         ['confirm:bootloader=1', 'confirm:spiboot=1'])
-        self.assertEqual(m.STEPS_OFF, (3, 4, 5, 6))
+        self.assertEqual([t for t in log(out['yes/log']) if t.startswith('confirm:')], ['confirm:bootloader=1'])
+        self.assertEqual(m.STEPS_OFF, (3, 4, 5))
         lg, r = self.check_run(out, 'this_version', staged_of(z), True, steps_off=m.STEPS_OFF,
                                answer=lambda c: True)
         self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=1'])
-        self.assertIn('skip:6=switched_off', lg)
+        self.assertNotIn('skip:6', ' '.join(lg))
         self.assertIn('bootloader_write', lg)
-        self.assertNotIn('spiboot_write', lg)
         self.assertEqual(r.outcome, 'done')
         self.assertEqual([t for t in log(out['no/log']) if t.startswith('skip:')],
-                         ['skip:2=not_confirmed', 'skip:3=switched_off', 'skip:4=switched_off', 'skip:5=switched_off',
-                          'skip:6=not_confirmed'])
+                         ['skip:2=not_confirmed', 'skip:3=switched_off', 'skip:4=switched_off', 'skip:5=switched_off'])
         self.assertEqual([t for t in log(out['option_off/log']) if t.startswith('confirm:')], [])
         self.assertEqual([t for t in log(out['no_protected/log']) if t.startswith('confirm:')], [])
         for tag in ('cdc', 'midi'):
             lg = log(out[tag + '/log'])
-            self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=1', 'confirm:spiboot=0'],
-                             tag)
+            self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=1'], tag)
             self.assertIn('bootloader_write', lg, tag)
-            self.assertNotIn('spiboot_write', lg, tag)
         lg = log(out['again/log'])
-        self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=0', 'confirm:spiboot=0'])
+        self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=0'])
         self.assertNotIn('bootloader_write', lg)
 
     @scenario('S-11/SC-11-STAGED')
@@ -853,7 +855,7 @@ class Runs(unittest.TestCase):
         lg, r = self.check_run(out, 'ok', staged_of(z), True)
         self.assertTrue(r.te and not r.forced)
         eff = step_effects(lg)
-        self.assertEqual([k for k in sorted(eff) if k], [1, 2, 3, 4, 5, 6])
+        self.assertEqual([k for k in sorted(eff) if k], [1, 2, 3, 4, 5])    # step 6 reserved: no effect
         self.assertEqual(eff[1], ['os_write', 'sw_version'])
         self.assertIn('nordic_send:bl0', lg)
         _, r = self.check_run(out, 'tampered', staged_of(z), True)
@@ -864,7 +866,7 @@ class Runs(unittest.TestCase):
                 lg = log(out[tag + '/log'])
                 self.assertIn(fail, lg)
                 self.assertEqual(Result(out[tag]).outcome, 'done')
-                self.assertEqual(sorted(k for k in step_effects(lg) if k), [1, 2, 3, 4, 5, 6])
+                self.assertEqual(sorted(k for k in step_effects(lg) if k), [1, 2, 3, 4, 5])
 
     @scenario('S-11/SC-11-RUN-FAIL')
     def test_SC_11_RUN_FAIL(self):
@@ -968,7 +970,7 @@ class Runs(unittest.TestCase):
         unforced Already installed (nothing sent), forced each sent."""
         s = Session()
         for v in ((1, 1, 0), (1, 0, 0), (0, 9, 0)):
-            z = fwzip.build({'bootloader': (boot_img('bootloader', 300, 7), v)}, version=(1, 2, 0))
+            z = fwzip.build({'bootloader': (boot_img(300, 7), v)}, version=(1, 2, 0))
             for forced in (0, 1):
                 hv = (0, 1, 0, 0) if forced else (1, 2, 0, 0)
                 self.install(s, 'on_%s_%d' % (vtext(v), forced), z, sign_d=None, version=hv)

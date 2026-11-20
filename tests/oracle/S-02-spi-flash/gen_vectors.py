@@ -33,7 +33,6 @@ META_MAGIC = 0xDEADBABE
 PROTECTED_END = 0xD000
 MIRROR = 0xB000          # S-02.063
 MIRROR_LEN = 0x68
-FS_LIMIT = MIRROR        # S-02.070: first-stage size limit
 
 STATES = ["good", "badcrc", "badtag", "erased", "badlen", "hugelen", "empty"]
 TABLE_INDICES = [0x00, 0x01, 0x02, 0x7F, 0x80, 0xFE, 0xFF]
@@ -610,11 +609,10 @@ def records():
                                "bytes": META_MAGIC.to_bytes(4, "little").hex(" "), "record_length": "0x34"}}
 
 
-# ------------------------------------------------ the session option (S-02.055-.059, .070-.072)
+# ------------------------------------------------ the session option (S-02.055-.059)
 
 COMPONENTS = [
-    # name, protected, SPI-flash areas the step writes (S-02.042, .070)
-    ("first_stage", True, ["first_stage"]),
+    # name, protected, SPI-flash areas the step writes (S-02.042)
     ("bootloader", True, ["target_slot", "target_record", "selector"]),
     ("os", False, []),
     ("content", False, []),
@@ -623,17 +621,10 @@ COMPONENTS = [
     ("psoc_backplane", False, []),
 ]
 UPGRADE_STATE_AREAS = ["metadata", "metadata_mirror"]   # S-02.049, .057, .064
-FS_SIZES = ["small", 0x86C0, 0xB000]   # "small": fs_small's length; each image is fs_small padded
-
-
-def fs_sizes():
-    return [len(small_images()[1]) if n == "small" else n for n in FS_SIZES]
-
-
 SWITCHED_OFF = ["nordic_application", "nordic_bootloader", "psoc_backplane"]   # S-11.073
 
 
-def install_case(case, package, option, confirmed=("first_stage", "bootloader")):
+def install_case(case, package, option, confirmed=("bootloader",)):
     """One package case's steps. confirmed: the protected components confirmed on the unit (S-11.096)."""
     confirmed = list(confirmed) if option else []
     steps = []
@@ -648,27 +639,10 @@ def install_case(case, package, option, confirmed=("first_stage", "bootloader"))
         else:
             steps.append({"component": name, "action": "install",
                           "report": ("written_with_option" if protected else "step_result"),
-                          "flash_ops": "per S-02.042-.049" if name == "bootloader" else
-                                       ("per S-02.070-.072" if name == "first_stage" else 0)})
+                          "flash_ops": "per S-02.042-.049" if name == "bootloader" else 0})
             areas.update(comp_areas)
     return {"case": case, "package": package, "option": "on" if option else "off", "confirmed": confirmed,
             "steps": steps, "spi_flash_areas": sorted(areas)}
-
-
-def first_stage_ops(n):
-    """S-02.071 steps 3-5 for an image of n bytes (one valid instance)."""
-    ops = []
-    for sec in range(0, (n + SECTOR - 1) // SECTOR * SECTOR, SECTOR):
-        ops.append({"class": "fs_erase", "op": "erase", "offset": "0x%05x" % sec, "length": SECTOR})
-        a, end = sec, min(n, sec + SECTOR)
-        while a < end:
-            ln = min(PAGE - (a % PAGE), end - a)
-            ops.append({"class": "fs_program", "op": "program", "offset": "0x%05x" % a, "length": ln})
-            a += ln
-    ops.append({"class": "fs_readback", "op": "read", "offset": "0x00000", "length": n})
-    for i, o in enumerate(ops, 1):
-        o["n"] = i
-    return ops
 
 
 def package_steps():
@@ -679,18 +653,10 @@ def package_steps():
             install_case("option_off", "waffle-boot", False),
             install_case("option_on", "waffle-boot", True),
             install_case("option_on_unconfirmed", "waffle-boot", True, ()),
-            install_case("option_on_bootloader_only", "waffle-boot", True, ("bootloader",)),
-            install_case("option_on_first_stage_only", "waffle-boot", True, ("first_stage",)),
             install_case("option_off_te", "factory", False),
             install_case("option_on_te", "factory", True),
             install_case("option_on_te_unconfirmed", "factory", True, ()),
         ],
-        "first_stage_size_limit": "0xb000",
-        "first_stage_refused_sizes": ["0x0", "0xb001", "0xc000"],
-        "first_stage_image": "fs_small of vectors/bootable_images.json, padded with 0xFF bytes after its "
-                             "FINAL block to the case's length (S-02.091)",
-        "first_stage_refused_streams": [{"length": "0x1", "result": "Bad file", "refused_by": "S-02.091"}],
-        "first_stage_ops": [{"length": "0x%x" % n, "ops": first_stage_ops(n)} for n in fs_sizes()],
     }
 
 
@@ -1980,18 +1946,17 @@ def _ldr():
 
 
 def small_images():
-    """A small slot image and a small first-stage image accepted by S-02.091 (52 and 36 bytes)."""
+    """A small slot image accepted by S-02.091 (52 bytes), in a tuple."""
     L = _ldr()
     code = {"target": 0x11A00000, "payload": pattern(4, 16)}
     fin = {"flags": L.FINAL, "target": 0x11A00000, "count": 0}
     slot = L.build_ldr([code, {"flags": L.INIT, "target": 0x11A00000, "count": 0}, fin])
-    fs = L.build_ldr([code, fin])
-    return slot, fs
+    return (slot,)
 
 
 def bootable_cases():
-    """Each case: an image (hex), its kind (slot or first_stage), whether S-02.091 accepts it and, when it
-    does not, the S-01 rule (check_stream.py's rule name) that refuses it."""
+    """Each case: an image (hex), its kind (slot), whether S-02.091 accepts it and, when it does not, the
+    S-01 rule (check_stream.py's rule name) that refuses it."""
     L = _ldr()
     I, F, X, FI, FL = L.FIRST | L.IGNORE, L.FINAL, L.INIT, L.FILL, L.FILL
 
@@ -2010,13 +1975,6 @@ def bootable_cases():
               {"target": 0x11A00000, "payload": p(0x40, 5)}] + list(post)
         b += [{"flags": F, "target": 0x11A00000, "count": 0}]
         return L.build_ldr(b) + tail
-
-    def fs(extra=(), code=4):
-        b = [{"flags": I, "target": 0x11A00000, "count": 0},
-             {"target": 0x11A00000, "payload": p(0x40, 6)},
-             {"target": 0x11900000, "payload": p(0x20, 7), "dmacode": code},
-             {"target": 0x08002000, "payload": p(0x10, 8)}] + list(extra)
-        return L.build_ldr(b + [{"flags": F, "target": 0x11A00000, "count": 0}])
 
     good = slot()
     badsig = bytearray(good); badsig[3] = 0xAC
@@ -2057,20 +2015,11 @@ def bootable_cases():
         ("small_slot", "slot", small_images()[0], True, None,
          "a small stream: a code block, the INIT block and FINAL (SC-UPG-SIZE pads it)"),
         ("one_byte", "slot", b"\x00", False, "parse", "a 1-byte image cannot hold a block header"),
-        ("fs_good", "first_stage", fs(), True, None, "on-chip only, every rule met"),
-        ("fs_small", "first_stage", small_images()[1], True, None,
-         "a small first stage: a code block and FINAL (SC-FS-UPG and first_stage_ops pad it)"),
-        ("fs_one_byte", "first_stage", b"\xff", False, "parse", "a 1-byte first stage"),
-        ("fs_ddr", "first_stage", fs([{"target": 0x80000000, "payload": p(8, 15)}]), False, "on_chip_only",
-         "a first stage with a DDR destination"),
-        ("fs_bcode_2", "first_stage", fs(code=2), False, "bcode", "a first stage with a block's BCODE 0x2"),
-        ("fs_no_final", "first_stage", fs()[:-16], False, "parse", "a first stage with no FINAL block"),
     ]
     return {
         "boot_call_stack": ["0x%08x" % BOOT_CALL_STACK[0], "0x%08x" % BOOT_CALL_STACK[1]],
         "padding": {"byte": "0xff",
-                    "slot_lengths": ["0x2345", "0x78000", "0x78001"],
-                    "first_stage_lengths": ["0x86c0", "0xb000", "0xb001", "0xc000"]},
+                    "slot_lengths": ["0x2345", "0x78000", "0x78001"]},
         "cases": [{"name": nm, "kind": k, "accepted": ok, "refused_by": rule, "note": note,
                    "length": len(img), "image": img.hex()} for nm, k, img, ok, rule, note in cases],
     }
@@ -2376,7 +2325,6 @@ def settings_sector():
     checks = [{"slot": k, "check": c, "range": r} for k in (0, 1) for c, r in (
         ("the slot's CRC and trial mark", ["0x%05x" % SLOT[k], "0x%05x + length" % SLOT[k]]),
         ("the start log", ["0x%05x" % (SLOT[k] + LOG_SECTOR), "0x%05x" % (SLOT[k] + SLOT_MAX)]),
-        ("first-stage read-back", ["0x0", "0xb000"]),
         ("mirror and metadata", ["0xb000", "0xd000"]),
         ("selector and records", ["0xd000", "0x10000"]))]
     return {

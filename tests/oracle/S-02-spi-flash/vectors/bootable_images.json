@@ -9,12 +9,6 @@
    "0x2345",
    "0x78000",
    "0x78001"
-  ],
-  "first_stage_lengths": [
-   "0x86c0",
-   "0xb000",
-   "0xb001",
-   "0xc000"
   ]
  },
  "cases": [
@@ -197,60 +191,6 @@
    "note": "a 1-byte image cannot hold a block header",
    "length": 1,
    "image": "00"
-  },
-  {
-   "name": "fs_good",
-   "kind": "first_stage",
-   "accepted": true,
-   "refused_by": null,
-   "note": "on-chip only, every rule met",
-   "length": 192,
-   "image": "045048ad0000a0110000000000000000040058ad0000a0114000000000000000060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bf040008ad000090112000000000000000070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0040091ad002000081000000000000000080f161d242b323940474e555c636a71048098ad0000a0110000000000000000"
-  },
-  {
-   "name": "fs_small",
-   "kind": "first_stage",
-   "accepted": true,
-   "refused_by": null,
-   "note": "a small first stage: a code block and FINAL (SC-FS-UPG and first_stage_ops pad it)",
-   "length": 36,
-   "image": "04001cad0000a011040000000000000010171e25048098ad0000a0110000000000000000"
-  },
-  {
-   "name": "fs_one_byte",
-   "kind": "first_stage",
-   "accepted": false,
-   "refused_by": "parse",
-   "note": "a 1-byte first stage",
-   "length": 1,
-   "image": "ff"
-  },
-  {
-   "name": "fs_ddr",
-   "kind": "first_stage",
-   "accepted": false,
-   "refused_by": "on_chip_only",
-   "note": "a first stage with a DDR destination",
-   "length": 216,
-   "image": "045048ad0000a0110000000000000000040058ad0000a0114000000000000000060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bf040008ad000090112000000000000000070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0040091ad002000081000000000000000080f161d242b323940474e555c636a71040021ad0000008008000000000000000f161d242b323940048098ad0000a0110000000000000000"
-  },
-  {
-   "name": "fs_bcode_2",
-   "kind": "first_stage",
-   "accepted": false,
-   "refused_by": "bcode",
-   "note": "a first stage with a block's BCODE 0x2",
-   "length": 192,
-   "image": "045048ad0000a0110000000000000000040058ad0000a0114000000000000000060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bf02000ead000090112000000000000000070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0040091ad002000081000000000000000080f161d242b323940474e555c636a71048098ad0000a0110000000000000000"
-  },
-  {
-   "name": "fs_no_final",
-   "kind": "first_stage",
-   "accepted": false,
-   "refused_by": "parse",
-   "note": "a first stage with no FINAL block",
-   "length": 176,
-   "image": "045048ad0000a0110000000000000000040058ad0000a0114000000000000000060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bf040008ad000090112000000000000000070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0040091ad002000081000000000000000080f161d242b323940474e555c636a71"
   }
  ]
 }

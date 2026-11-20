@@ -33,14 +33,15 @@ OK, FAILURE, NOT_FOUND, BAD_FILE, INTERNAL, CRC_ERROR, ALREADY, DOWNGRADE, SKIPP
 RESULT_NAMES = ['OK', 'Failure', 'Not found', 'Bad file', 'Internal error', 'CRC error', 'Already installed',
                 'Downgrade rejected', 'Skipped']
 CONTINUE = {OK, NOT_FOUND, ALREADY, DOWNGRADE, SKIPPED}
-STEPS = ['content', 'os', 'bootloader', 'ble', 'ble bootloader', 'keyboard', 'spiboot']
-PROTECTED = {2, 6}
-SWITCHABLE = (3, 4, 5, 6)    # S-11.073: the steps that can be switched off
-STEPS_OFF = (3, 4, 5, 6)     # S-11.073: the steps this version has switched off
+STEPS = ['content', 'os', 'bootloader', 'ble', 'ble bootloader', 'keyboard', 'reserved']
+RESERVED = 6                 # S-11.057: step 6 does nothing and reports Not found
+PROTECTED = {2}
+SWITCHABLE = (3, 4, 5)       # S-11.073: the steps that can be switched off
+STEPS_OFF = (3, 4, 5)        # S-11.073: the steps this version has switched off
 NORDIC_STEPS = (3, 4)
 DONE = 7
 # S-11.096: the protected components, in the order they are asked for, with their steps
-CONFIRM_ORDER = (('bootloader', 2), ('spiboot', 6))
+CONFIRM_ORDER = (('bootloader', 2),)
 # Why a step whose component is present reports Skipped (S-11.058); the host's words (S-10c.106)
 SKIP_OPTION_OFF, SKIP_NOT_CONFIRMED, SKIP_SWITCHED_OFF = 'option off', 'not confirmed', 'switched off'
 SKIP_ALREADY_WRITTEN = 'already written'    # S-11.068 item 5
@@ -50,7 +51,6 @@ UPGRADING = 0xAB0D   # the metadata state of an install in progress (S-04.040)
 COMPONENTS = {
     'os': ('firmware/blackfin/bin/os.ldr', 'firmware/blackfin/bin/os.version', 0x800000),
     'bootloader': ('firmware/blackfin/bin/bootloader.ldr', 'firmware/blackfin/bin/bootloader.version', 0x78000),
-    'spiboot': ('firmware/blackfin/bin/spiboot.ldr', 'firmware/blackfin/bin/spiboot.version', 0xB000),
     'ble': ('firmware/ble/bin/ble.bin', 'firmware/ble/bin/ble.version', 0x6FFFF),
     'nordic_bl0': ('firmware/ble/bin/nordic_bootloader_0.bin', 'firmware/ble/bin/nordic_bootloader.version', 0x3000),
     'nordic_bl1': ('firmware/ble/bin/nordic_bootloader_1.bin', 'firmware/ble/bin/nordic_bootloader.version', 0x3000),
@@ -322,8 +322,7 @@ def _kernel_model():
 
 
 def stream_verdict(name, data):
-    """True when the bootloader or first-stage image meets S-02.091, or the OS image S-05.024 (other
-    components: True)."""
+    """True when the bootloader image meets S-02.091, or the OS image S-05.024 (other components: True)."""
     cs = _check_stream()
     if name == 'os':
         km = _kernel_model()
@@ -334,17 +333,15 @@ def stream_verdict(name, data):
         return True
     if name == 'bootloader':
         res = cs.check('bootloader', data, FACTORY_FS_STACK)
-    elif name == 'spiboot':
-        res = cs.check('first_stage', data)
     else:
         return True
     return all(ok for _, ok, _ in res)
 
 
 def check_streams(staged):
-    """Check 18 (S-11.035): 'STREAM' when a present bootloader or first-stage image is not a bootable stream
-    of its kind, or a present OS image fails S-05.024, whether or not the run would install it; else None."""
-    for name in ('os', 'bootloader', 'spiboot'):
+    """Check 18 (S-11.035): 'STREAM' when a present bootloader image is not a bootable slot stream, or a
+    present OS image fails S-05.024, whether or not the run would install it; else None."""
+    for name in ('os', 'bootloader'):
         img = COMPONENTS[name][0]
         if staged.get(img) and not stream_verdict(name, staged[img]):
             return 'STREAM'
@@ -456,7 +453,7 @@ def _staged_result(c):
     return {'ok': None, 'bad': BAD_FILE, 'read_error': INTERNAL}[c.get('staged', 'ok')]
 
 
-# ---- S-11.066-S-11.072: step results
+# ---- S-11.066-S-11.071: step results
 
 def switched_on(step, c):
     """S-11.073: c's `switched_on`, else this version's state."""
@@ -506,13 +503,13 @@ def step_result(step, c):
         if staged is not None:
             return staged
         return OK if c.get('write_ok', True) else INTERNAL
-    if step in (2, 6):
+    if step == 2:
         if not c.get('present'):
             return NOT_FOUND
         # S-11.068: with the option on there is no version test; rel, forced and dev change nothing.
         if staged is not None:
             return staged
-        if step == 2 and c.get('start', 'ok') != 'ok':
+        if c.get('start', 'ok') != 'ok':
             return FAILURE                          # S-02.090 refused the start (item 5 aside)
         return OK if c.get('write_ok', True) else FAILURE
     if step == 3:
@@ -548,6 +545,8 @@ def step_result(step, c):
         if staged is not None:
             return staged
         return OK if c.get('write_ok', True) else FAILURE
+    if step == RESERVED:
+        return NOT_FOUND                            # S-11.057: nothing is looked for
     raise ValueError(step)
 
 
@@ -689,7 +688,7 @@ def os_form(stock):
 # ---- S-11.061-S-11.065, S-11.080 across boots: a unit model
 
 _STEP_COMPONENTS = {1: ('os',), 2: ('bootloader',), 3: ('ble',), 4: ('nordic_bl0', 'nordic_bl1'),
-                    5: ('backplane',), 6: ('spiboot',)}
+                    5: ('backplane',), 6: ()}
 
 
 class Device:
@@ -722,7 +721,7 @@ class Device:
             self.staged = ctx['staged']
 
 
-def _step_results(dev, option, faults, confirmed=frozenset((2, 6)), steps_off=()):
+def _step_results(dev, option, faults, confirmed=frozenset((2,)), steps_off=()):
     """Results the steps would give from the staged files; faults: {step: code} overrides; confirmed: the
     protected steps confirmed (S-11.096); steps_off: the switched-off steps (S-11.073). Returns
     (results, content effect) where the effect is the tree and staging after the content step."""

@@ -12,10 +12,9 @@
  * (S-11.058, S-11.068) and nothing reaches the S-02 flash; a read that
  * fails (the slave gone mid-read, S-09.013) is Internal error; an intact
  * one is written by S-02.042-S-02.053 with S-02.047's read-back, from the
- * bytes that were checked with no further read. The OS and first-stage steps
- * (S-11.067, S-11.072) take the same check.
+ * bytes that were checked with no further read. The OS step (S-11.067)
+ * takes the same check; a staged first-stage file is never read.
  */
-#include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -315,7 +314,6 @@ static unsigned flash_ops_n;		/* reads, erases and programs */
 static unsigned flash_writes;		/* erases and programs */
 static unsigned flash_one_try;		/* operations made with one try */
 static unsigned flash_fs_ops;		/* any of them in the first stage's area */
-static bool flash_fs_fails;		/* every program there fails */
 
 static void fl_area(uint32_t off)
 {
@@ -359,8 +357,6 @@ static int fl_program(void *ctx, uint32_t off, const uint8_t *buf,
 	fl_area(off);
 	flash_ops_n++;
 	flash_writes++;
-	if (flash_fs_fails && off < S02_FIRST_STAGE_MAX)
-		return -1;
 	for (uint32_t i = 0; i < len; i++)
 		flash_mem[off + i] &= buf[i];
 	return 0;
@@ -495,12 +491,10 @@ static void fresh(void)
 	m.emmc.scratch = emmc_scratch;
 	m.emmc.scratch_len = sizeof emmc_scratch;
 	opxy_install_ops(&m, &run, &step);
-	/* The run's values with the option on and both protected steps
-	 * confirmed, so that they write (S-11.090, S-11.096); the stated
-	 * values come with extracted(). */
-	opxy_install_begin(&m, true, false,
-			   S11_STEP_BIT(S11_STEP_BOOTLOADER) |
-			   S11_STEP_BIT(S11_STEP_SPIBOOT));
+	/* The run's values with the option on and the bootloader confirmed,
+	 * so that it writes (S-11.090, S-11.096); the stated values come with
+	 * extracted(). */
+	opxy_install_begin(&m, true, false, S11_STEP_BIT(S11_STEP_BOOTLOADER));
 	m.sv.extracted = false;
 }
 
@@ -560,8 +554,7 @@ static enum s11_result result_of(unsigned which)
 	memset(&env, 0, sizeof env);
 	env.staged = &st;
 	env.option = true;
-	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER) |
-			S11_STEP_BIT(S11_STEP_SPIBOOT);
+	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER);
 	env.copro = &copro;
 	return s11_step_result(which, &env, &step);
 }
@@ -769,27 +762,22 @@ static void test_read_fails(void)
 	CHECK_EQ(flash_ops_n, 0u);
 }
 
-/* The first-stage step (S-11.072): the same check, before any erase. */
-static void test_spiboot_step(void)
+/* S-11.057: the reserved step 6 does nothing, with a first-stage file
+ * staged: no read of it, no flash access. */
+static void test_reserved_step(void)
 {
 	static uint8_t before[S02_FLASH_SIZE];
 
-	t_case = "first-stage step";
+	t_case = "reserved step";
 	fresh();
 	stage_all();
 	extracted();
-	m.sv.extracted_sizes.size[S11_C_SPIBOOT] = sizeof v_boot_good;
-	m.sv.extracted_sizes.crc32[S11_C_SPIBOOT] =
-		wire_crc32(0u, v_boot_good, sizeof v_boot_good);
 	memcpy(before, flash_mem, sizeof before);
 	lb.corrupt_read = 1u;
-	CHECK(!step.spiboot_write(step.ctx));
-	CHECK_EQ(lb.corrupted, 1u);
-	CHECK(step.write_failure(step.ctx) == S11_BAD_FILE);
+	CHECK(result_of(S11_STEP_RESERVED) == S11_NOT_FOUND);
+	CHECK_EQ(lb.corrupted, 0u);
 	CHECK_EQ(flash_ops_n, 0u);
 	CHECK(memcmp(before, flash_mem, sizeof before) == 0);
-	CHECK(result_of(S11_STEP_SPIBOOT) == S11_BAD_FILE);
-	CHECK_EQ(flash_ops_n, 0u);
 }
 
 /* S-09.075: the link is brought up to speed before an extraction; the
@@ -1349,10 +1337,12 @@ static void test_loop_pass_alone(void)
 /*
  * A package of the body form (as a host transfer gives it, S-11.050): the
  * TE header, a manifest with a plaintext payload (key 0xFE), the name
- * block and a stored zip of the bootloader, the first stage and the three
- * images whose steps are switched off. No OS image and no content, so the
- * run's other steps find nothing.
+ * block and a stored zip of the bootloader, a first-stage file (no
+ * component: never checked, read or written) and the three images whose
+ * steps are switched off. No OS image and no content, so the run's other
+ * steps find nothing.
  */
+static const uint8_t fs_file[48] = { 0x5A };
 static const uint8_t ble_image[64] = { 0x42 };
 static const uint8_t nordic_bl_image[32] = { 0x4E };
 static const char backplane_text[] = ":0000000000\n";
@@ -1448,8 +1438,7 @@ static void package_make(void)
 	const struct zmember mb[] = {
 		{ "firmware/blackfin/bin/bootloader.ldr", v_boot_good,
 		  sizeof v_boot_good },
-		{ "firmware/blackfin/bin/spiboot.ldr", v_boot_fs_good,
-		  sizeof v_boot_fs_good },
+		{ "firmware/blackfin/bin/spiboot.ldr", fs_file, sizeof fs_file },
 		{ "firmware/ble/bin/ble.bin", ble_image, sizeof ble_image },
 		{ "firmware/ble/bin/nordic_bootloader_0.bin", nordic_bl_image,
 		  sizeof nordic_bl_image },
@@ -1663,15 +1652,10 @@ static bool frame_on(const uint8_t *w, size_t n, uint8_t id, int first)
 	return false;
 }
 
-static bool first_stage_is(const uint8_t *img, size_t len)
-{
-	return memcmp(flash_mem + S02_FIRST_STAGE_OFF, img, len) == 0;
-}
-
 static uint8_t flash_before[S02_FLASH_SIZE];
 
 /* The flash's protected regions as before the install: both slots, their
- * records and the selector, and the first stage. */
+ * records and the selector. */
 static bool slots_untouched(void)
 {
 	return memcmp(flash_mem + S02_SELECTOR_OFF,
@@ -1710,9 +1694,10 @@ static const struct kev nothing[] = { { 0, 0, false } };
  * Nordic or the PSoC (no DFU entry is asked, S-11.061 item 2; the PSoC's
  * bootloader is never asked for), and the run completes; the host gets a
  * `[skipped]` label after each step's report (S-10c.106), and the screen
- * names them before the outcome. S-11.096: both protected components
- * confirmed by a 5 s hold of digit 1, each asked once, the bootloader
- * first, and each written only then.
+ * names them before the outcome. S-11.096: the bootloader confirmed by a
+ * 5 s hold of digit 1, asked once and written only then. The package's
+ * first-stage file is not asked for, and the first stage's area is never
+ * read, erased or programmed; step 6 reports nothing to the host.
  */
 static void test_whole_hold(void)
 {
@@ -1724,39 +1709,32 @@ static void test_whole_hold(void)
 					     S11_STEP_BIT(S11_STEP_KEYBOARD)));
 	whole_setup();
 	ks.ev[0] = hold_5s;
-	ks.ev[1] = rehold_5s;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
+	flash_fs_ops = 0;
 	whole_install(true, false, &res);
 	CHECK(res.reason == S11_REASON_NONE);
-	CHECK_EQ(ks.asks, 2u);
+	CHECK_EQ(ks.asks, 1u);
 	CHECK(res.run.end == S11_RUN_DONE);
 	/* S-09.075: the board's ceiling, single I/O at 50 MHz; no quad
 	 * request session in the whole install */
 	CHECK(cdc_has("bridge: requests run in single I/O at 50 MHz, checked"));
 	CHECK_EQ(lb.quad_sends, 0u);
-	CHECK(slot1_holds_image());
-	CHECK(first_stage_is(v_boot_fs_good, sizeof v_boot_fs_good));
-	/* each confirmed when its hold reached 5 s, not before; the key
-	 * still down from the first acted for the second only after its up
-	 * and a down (S-07.031) */
+	CHECK(slot1_holds_image() && first_stage_untouched());
+	CHECK_EQ(flash_fs_ops, 0u);
+	/* confirmed when its hold reached 5 s, not before */
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 6000u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 6500u);
-	CHECK(ks.end_ms[1] - ks.start_ms[1] >= 6000u &&
-	      ks.end_ms[1] - ks.start_ms[1] < 6500u);
-	CHECK(cdc_has("Install the bootloader?") &&
-	      cdc_has("Install the first stage?"));
-	CHECK(cdc_at("Install the bootloader?") < cdc_at("Install the first stage?"));
-	CHECK(cdc_has("install: bootloader confirmed by a 5 s hold") &&
-	      cdc_has("install: first stage confirmed by a 5 s hold"));
+	CHECK(cdc_has("Install the bootloader?"));
+	CHECK(cdc_has("install: bootloader confirmed by a 5 s hold"));
 	/* the switched-off steps: Skipped, each after its own report */
 	CHECK(cdc_has("[skipped] ble: switched off") &&
 	      cdc_has("[skipped] ble bootloader: switched off") &&
 	      cdc_has("[skipped] backplane: switched off"));
 	CHECK(cdc_at("[ble]") < cdc_at("[skipped] ble: switched off") &&
 	      cdc_at("[skipped] ble: switched off") < cdc_at("[ble bootloader]") &&
-	      cdc_at("[backplane]") < cdc_at("[skipped] backplane: switched off") &&
-	      cdc_at("[skipped] backplane: switched off") < cdc_at("[spiboot]"));
-	CHECK(!cdc_has("[skipped] bootloader") && !cdc_has("[skipped] spiboot"));
+	      cdc_at("[backplane]") < cdc_at("[skipped] backplane: switched off"));
+	CHECK(!cdc_has("[skipped] bootloader") && !cdc_has("spiboot") &&
+	      !cdc_has("install: first stage") && !cdc_has("First stage"));
 	CHECK(!cdc_has("no PSoC unlock") && !cdc_has("not in update mode"));
 	CHECK(cdc_has("Not updated: BLE, BLE bootloader, Backplane"));
 	CHECK(cdc_has("Done!"));
@@ -1768,8 +1746,7 @@ static void test_whole_hold(void)
 }
 
 /* An early release empties the bar and does not confirm; the 60 s run out
- * and the bootloader is skipped, while the first stage, held in full, is
- * written: each protected step writes after its own confirmation alone. */
+ * and the bootloader is skipped. */
 static void test_whole_release_timeout(void)
 {
 	struct s11_install_result res;
@@ -1777,50 +1754,43 @@ static void test_whole_release_timeout(void)
 	t_case = "whole: release, then the time runs out";
 	whole_setup();
 	ks.ev[0] = release_early;
-	ks.ev[1] = hold_5s;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, false, &res);
-	CHECK_EQ(ks.asks, 2u);
+	CHECK_EQ(ks.asks, 1u);
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 61000u);
 	CHECK(cdc_has("install: bootloader not confirmed in 60 s"));
 	CHECK(slots_untouched());
-	CHECK(first_stage_is(v_boot_fs_good, sizeof v_boot_fs_good));
-	CHECK(res.run.end == S11_RUN_DONE);
+	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
 	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
 	CHECK(cdc_at("[bootloader]") < cdc_at("[skipped] bootloader: not confirmed"));
-	CHECK(!cdc_has("[skipped] spiboot"));
 	CHECK(cdc_has("Not updated: Bootloader, BLE, BLE bootloader,") &&
 	      cdc_has("   Backplane"));
 	whole_end();
 }
 
-/* Key 8 skips at once: here the first stage, after the bootloader was
- * confirmed and written. */
+/* Key 8 skips at once. */
 static void test_whole_key8(void)
 {
 	struct s11_install_result res;
 
 	t_case = "whole: key 8";
 	whole_setup();
-	ks.ev[0] = hold_5s;
-	ks.ev[1] = key8;
+	ks.ev[0] = key8;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, false, &res);
-	CHECK_EQ(ks.asks, 2u);
-	CHECK(ks.end_ms[1] - ks.start_ms[1] < 1000u);
-	CHECK(cdc_has("install: first stage skipped with key 8"));
-	CHECK(slot1_holds_image());
-	CHECK(first_stage_untouched());
-	CHECK(res.run.end == S11_RUN_DONE);
-	CHECK(cdc_has("[skipped] spiboot: not confirmed"));
-	CHECK(!cdc_has("[skipped] bootloader"));
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(ks.end_ms[0] - ks.start_ms[0] < 1000u);
+	CHECK(cdc_has("install: bootloader skipped with key 8"));
+	CHECK(slots_untouched());
+	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
+	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
 	whole_end();
 }
 
-/* A key down when the confirmation is shown (still held from the last)
- * does not count: held through the whole 60 s, the first stage is not
- * confirmed. */
+/* A key down when the confirmation is shown (still held from the last
+ * install, whose hold ended the wait before its key came up) does not
+ * count: held through the whole 60 s, the bootloader is not confirmed. */
 static void test_whole_stale(void)
 {
 	struct s11_install_result res;
@@ -1828,19 +1798,22 @@ static void test_whole_stale(void)
 	t_case = "whole: a key held from before";
 	whole_setup();
 	ks.ev[0] = hold_5s;
-	ks.ev[1] = nothing;
+	whole_install(true, false, &res);
+	CHECK(slot1_holds_image());
+	cdc_n = 0;
+	ks.ev[0] = nothing;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, false, &res);
-	CHECK_EQ(ks.asks, 2u);
+	CHECK_EQ(ks.asks, 1u);
 	CHECK((m.psoc.keys[K_DIGIT1 / 8u] & (1u << (K_DIGIT1 % 8u))) != 0u);
-	CHECK(ks.end_ms[1] - ks.start_ms[1] >= 59900u);
-	CHECK(slot1_holds_image() && first_stage_untouched());
-	CHECK(cdc_has("install: first stage not confirmed in 60 s"));
+	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u);
+	CHECK(memcmp(flash_mem, flash_before, sizeof flash_before) == 0);
+	CHECK(cdc_has("install: bootloader not confirmed in 60 s"));
 	whole_end();
 }
 
-/* No key: each times out after 60 s, nothing protected is written, and
- * with every other step skipped or not found nothing was installed. */
+/* No key: it times out after 60 s, nothing protected is written, and with
+ * every other step skipped or not found nothing was installed. */
 static void test_whole_timeout(void)
 {
 	struct s11_install_result res;
@@ -1848,23 +1821,20 @@ static void test_whole_timeout(void)
 	t_case = "whole: no key";
 	whole_setup();
 	ks.ev[0] = nothing;
-	ks.ev[1] = nothing;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, false, &res);
-	CHECK_EQ(ks.asks, 2u);
-	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u &&
-	      ks.end_ms[1] - ks.start_ms[1] >= 59900u);
-	CHECK(slots_untouched() && first_stage_untouched());
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u);
+	CHECK(slots_untouched());
 	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
-	CHECK(cdc_has("[skipped] bootloader: not confirmed") &&
-	      cdc_has("[skipped] spiboot: not confirmed"));
+	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
 	CHECK(cdc_has("Nothing was installed."));
 	CHECK(!res.stock);
 	whole_end();
 }
 
-/* Keys that cannot be read (S-07.032 had no reply): both skipped at once,
- * with no wait. */
+/* Keys that cannot be read (S-07.032 had no reply): skipped at once, with
+ * no wait. */
 static void test_whole_unreadable(void)
 {
 	struct s11_install_result res;
@@ -1874,21 +1844,18 @@ static void test_whole_unreadable(void)
 	whole_setup();
 	m.key_status.replied = false;
 	ks.ev[0] = hold_5s;
-	ks.ev[1] = hold_5s;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	t0 = now_ms();
 	whole_install(true, false, &res);
-	CHECK(cdc_has("install: bootloader not confirmed: keys not readable") &&
-	      cdc_has("install: first stage not confirmed: keys not readable"));
-	CHECK(slots_untouched() && first_stage_untouched());
-	CHECK(cdc_has("[skipped] bootloader: not confirmed") &&
-	      cdc_has("[skipped] spiboot: not confirmed"));
+	CHECK(cdc_has("install: bootloader not confirmed: keys not readable"));
+	CHECK(slots_untouched());
+	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
 	CHECK(ks.asks == 0u);		/* no key was read for it */
 	CHECK(now_ms() - t0 < 30000u);	/* the run's own waits, no 60 s */
 	whole_end();
 }
 
-/* The option off: nothing is asked, and both protected steps report the
+/* The option off: nothing is asked, and the bootloader step reports the
  * option's reason. */
 static void test_whole_option_off(void)
 {
@@ -1900,164 +1867,37 @@ static void test_whole_option_off(void)
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(false, false, &res);
 	CHECK_EQ(ks.asks, 0u);
-	CHECK(!cdc_has("Install the bootloader?") &&
-	      !cdc_has("Install the first stage?"));
-	CHECK(slots_untouched() && first_stage_untouched());
-	CHECK(cdc_has("[skipped] bootloader: option off") &&
-	      cdc_has("[skipped] spiboot: option off"));
+	CHECK(!cdc_has("Install the bootloader?"));
+	CHECK(slots_untouched());
+	CHECK(cdc_has("[skipped] bootloader: option off"));
 	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
 	whole_end();
 }
 
 /*
- * S-11.073: the first-stage step switched off, as in every board build. With
- * the option on and the package carrying both protected images, only the
- * bootloader is asked for and written; the first stage is not asked for,
- * reports Skipped on the screen and to the host, and the SPI flash's
- * first-stage area is not read, erased or programmed.
+ * S-11.068 item 5 (SC-11-CONFIRM's repeat): the same package again in this
+ * power-on, confirmed again: the bootloader step reports Skipped, already
+ * written, with no erase or program of the slots, and the run is done.
  */
-static void test_whole_first_stage_off(void)
-{
-	struct s11_install_result res;
-
-	t_case = "whole: first stage switched off";
-	opxy_first_stage_step = false;
-	CHECK((opxy_steps_off() & S11_STEP_BIT(S11_STEP_SPIBOOT)) != 0u);
-	whole_setup();
-	ks.ev[0] = hold_5s;
-	memcpy(flash_before, flash_mem, sizeof flash_before);
-	flash_fs_ops = 0;
-	whole_install(true, false, &res);
-	CHECK(res.reason == S11_REASON_NONE);
-	CHECK_EQ(ks.asks, 1u);
-	CHECK(cdc_has("Install the bootloader?") &&
-	      !cdc_has("Install the first stage?"));
-	CHECK(slot1_holds_image() && first_stage_untouched());
-	CHECK_EQ(flash_fs_ops, 0u);
-	CHECK(cdc_has("[skipped] spiboot: switched off"));
-	CHECK(cdc_has("Not updated: BLE, BLE bootloader, Backplane,") &&
-	      cdc_has("First stage"));
-	CHECK(res.run.end == S11_RUN_DONE);
-	whole_end();
-	opxy_first_stage_step = true;
-}
-
-/*
- * S-11.068 item 5 (SC-11-CONFIRM's rerun-after-first-stage): a package with
- * both protected images, both confirmed; its first-stage write fails after
- * its bootloader step wrote {1, 0}. The same package again in this
- * power-on: the bootloader step reports Skipped, already written, with no
- * erase or program of the slots, and the run reaches the first-stage step,
- * which writes it.
- */
-static void test_whole_rerun_after_first_stage(void)
+static void test_whole_rerun(void)
 {
 	struct s11_install_result res;
 	static uint8_t slots[S02_FLASH_SIZE];
 
-	t_case = "whole: re-run after a failed first stage";
+	t_case = "whole: the same package again";
 	whole_setup();
 	ks.ev[0] = hold_5s;
-	ks.ev[1] = rehold_5s;
-	flash_fs_fails = true;
 	whole_install(true, false, &res);
-	flash_fs_fails = false;
-	CHECK(res.run.end == S11_RUN_FAILED && res.run.step == S11_STEP_SPIBOOT);
+	CHECK(res.run.end == S11_RUN_DONE);
 	CHECK(slot1_holds_image());
 	memcpy(slots, flash_mem, sizeof slots);
 	cdc_n = 0;
 	ks.ev[0] = rehold_5s;
-	ks.ev[1] = rehold_5s;
 	whole_install(true, false, &res);
-	CHECK_EQ(ks.asks, 2u);
-	CHECK(res.run.end == S11_RUN_DONE);
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
 	CHECK(cdc_has("[skipped] bootloader: already written"));
-	CHECK(memcmp(flash_mem + S02_SELECTOR_OFF, slots + S02_SELECTOR_OFF,
-		     S02_FLASH_SIZE - S02_SELECTOR_OFF) == 0);
-	CHECK(first_stage_is(v_boot_fs_good, sizeof v_boot_fs_good));
-	whole_end();
-}
-
-/* The power-off's wait for the PSoC (opxy_powered_off()) left by a jump. */
-static jmp_buf off_jmp;
-
-static void off_idle(void *ctx)
-{
-	(void)ctx;
-	if (m.psoc.off)
-		longjmp(off_jmp, 1);
-}
-
-/*
- * S-07.051, S-02.071 and the refusals while the first-stage window is open
- * (PS-FS-HOLD). A first-stage write that fails leaves the window open: S-15's
- * fs held in the frame, and every reset and hand-over refused, whichever way
- * it is asked: S-04's writers W1 to W4, W7, W10 and W11 (a host's reboot
- * requests, a disk's cdc-please file, the developer menu's restart, the
- * developer request's restart, Continue to the OS), Continue to the OS from
- * the menu and from a host. A PSoC power-off in the window is kept, nothing
- * sent; it runs when a re-run's read-back matches, inside that step.
- */
-static void test_whole_fs_window(void)
-{
-	static const enum s04_writer writers[] = {
-		S04_W1, S04_W2, S04_W3, S04_W4, S04_W7, S04_W10, S04_W11,
-	};
-	struct s11_install_result res;
-	struct s06_frame off;
-
-	t_case = "whole: the first-stage window";
-	whole_setup();
-	ks.ev[0] = hold_5s;
-	ks.ev[1] = rehold_5s;
-	flash_fs_fails = true;
-	whole_install(true, false, &res);
-	flash_fs_fails = false;
-	CHECK(res.run.end == S11_RUN_FAILED && res.run.step == S11_STEP_SPIBOOT);
-	CHECK(s07_fs_window(&m.psoc) && !s07_fs_kept(&m.psoc));
-	CHECK(cdc_has("install: first stage not written; no reset or power-off"));
-	opxy_menu_show(&m);
-	CHECK(m.sv.menu.fs_held && !m.sv.menu.fs_kept);
-
-	/* every reset refused, the caller going on */
-	for (size_t i = 0; i < sizeof writers / sizeof writers[0]; i++) {
-		cdc_n = 0;
-		opxy_reboot(&m, writers[i], 0u);
-		CHECK(cdc_has("restart refused: the first stage is not written"));
-	}
-	CHECK(s15_menu_continue_check(&m.sv.menu) == S15_CONT_BUSY);
-	CHECK(s15_menu_continue(&m.sv.menu) == S15_CONT_BUSY);
-	if (m.sv.host_ops.continue_check != NULL)
-		CHECK(m.sv.host_ops.continue_check(&m) == S10C_CONT_BUSY);
-
-	/* the switch off: recorded and kept, nothing sent */
-	memset(&off, 0, sizeof off);
-	off.id = 0x31u;
-	off.route = s06_route(S06_ADDR_PSOC, S06_ADDR_MASTER);
-	off.payload[0] = 0x14u;
-	off.len = 1u;
-	wire_n = 0;
-	CHECK(s07_power_message(&m.psoc, &off) == S07_OK);
-	CHECK(s07_fs_kept(&m.psoc) && !m.psoc.off && !frame_on(wire, wire_n, 0x32u, -1));
-	opxy_menu_show(&m);
-	CHECK(m.sv.menu.fs_held && m.sv.menu.fs_kept);
-
-	/* the same package again: its read-back matches, the window ends and
-	 * the kept power-off runs inside the step */
-	cdc_n = 0;
-	wire_n = 0;
-	ks.ev[0] = rehold_5s;
-	ks.ev[1] = rehold_5s;
-	fake_core_set_idle_hook(off_idle, NULL);
-	if (setjmp(off_jmp) == 0) {
-		whole_install(true, false, &res);
-		CHECK(false);			/* the power-off does not return */
-	}
-	fake_core_set_idle_hook(NULL, NULL);
-	CHECK(m.psoc.off && !s07_fs_window(&m.psoc));
-	CHECK(first_stage_is(v_boot_fs_good, sizeof v_boot_fs_good));
-	CHECK(cdc_has("[skipped] bootloader: already written"));
-	CHECK(frame_on(wire, wire_n, 0x32u, 0x14));
+	CHECK(memcmp(flash_mem, slots, sizeof slots) == 0);
 	whole_end();
 }
 
@@ -2075,28 +1915,24 @@ static void test_whole_host_and_again(void)
 	t_case = "whole: from a host link, then again";
 	whole_setup();
 	ks.ev[0] = nothing;
-	ks.ev[1] = hold_5s;
 	ks.host_sent = true;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, true, &res);
 	CHECK(res.reason == S11_REASON_NONE && res.forced);
-	CHECK_EQ(ks.asks, 2u);
+	CHECK_EQ(ks.asks, 1u);
 	CHECK(host_rx_n != 0u && host_rx_r == 0u);	/* sent, never read */
 	CHECK(slots_untouched());
-	CHECK(first_stage_is(v_boot_fs_good, sizeof v_boot_fs_good));
 	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
 
-	/* the same package again: asked again, both this time */
+	/* the same package again: asked again, confirmed this time */
 	cdc_n = 0;
-	ks.ev[0] = rehold_5s;
-	ks.ev[1] = key8;
+	ks.ev[0] = hold_5s;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, true, &res);
-	CHECK_EQ(ks.asks, 2u);
-	CHECK(cdc_has("Install the bootloader?") &&
-	      cdc_has("Install the first stage?"));
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(cdc_has("Install the bootloader?"));
 	CHECK(slot1_holds_image());
-	CHECK(cdc_has("[skipped] spiboot: not confirmed"));
+	CHECK(!cdc_has("[skipped] bootloader"));
 	whole_end();
 }
 
@@ -2113,7 +1949,7 @@ int main(void)
 	test_os_step();
 	test_bridge_flush();
 	test_read_fails();
-	test_spiboot_step();
+	test_reserved_step();
 	test_link_fast();
 	test_link_log();
 	test_link_log_end();
@@ -2128,10 +1964,8 @@ int main(void)
 	test_whole_timeout();
 	test_whole_unreadable();
 	test_whole_option_off();
-	test_whole_first_stage_off();
-	test_whole_rerun_after_first_stage();
+	test_whole_rerun();
 	test_whole_host_and_again();
-	test_whole_fs_window();		/* last: it leaves by the power-off */
 	wire_s09_release(&S);
 	wire_yaffs_detach(&Y);
 	free(vol);

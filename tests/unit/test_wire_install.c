@@ -143,7 +143,7 @@ static int s_slot(void *ctx)
 }
 
 static const struct s11_step_ops step_ops = {
-	s_content, r_true, s_sw, r_true, r_true, NULL, s_send, s_slot, r_true, NULL,
+	s_content, r_true, s_sw, r_true, NULL, s_send, s_slot, r_true, NULL,
 };
 
 /* The files staged under `dir`, each in wirev_files[first .. first+count)

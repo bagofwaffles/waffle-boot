@@ -25,7 +25,6 @@ extern const char s15_confirm_title[];
 
 /* What the screen says of the component. */
 struct s15_confirm_info {
-	enum s15_step step;	/* S15_STEP_BOOTLOADER or S15_STEP_SPIBOOT */
 	const char *package;	/* the image's version in the package */
 	const char *installed;	/* the running bootloader's; NULL: not known */
 	int slot;		/* the slot index a bootloader replaces, or -1 */

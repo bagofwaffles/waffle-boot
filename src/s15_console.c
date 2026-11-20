@@ -739,12 +739,10 @@ void s15_render_console(const struct s15_console *con,
 		d = s15_gray_ops(&gd, d);
 	d->fill(d->ctx, 0, 0, g->width, g->height, S15_BLACK);
 	frame(f, g, d);
-	/* the rows under the body: the console's newest rows above them */
+	/* the console's newest rows */
 	{
-		const unsigned held = f->under == NULL ? 0u :
-				      f->under_n < S15_ROWS ? f->under_n : S15_ROWS;
-		const unsigned room = S15_ROWS - held;
-		const unsigned skip = con->count > room ? con->count - room : 0u;
+		const unsigned skip = con->count > S15_ROWS ?
+				      con->count - S15_ROWS : 0u;
 
 		for (unsigned i = skip; i < con->count; i++) {
 			size_t n;
@@ -753,14 +751,6 @@ void s15_render_console(const struct s15_console *con,
 			if (n != 0u)
 				s15_render_row(g, d, i - skip,
 					       s15_console_row_style(con, i), s, n);
-		}
-		for (unsigned i = 0; i < held; i++) {
-			const char *s = f->under[i];
-			size_t n = 0;
-
-			while (s[n] != '\0')
-				n++;
-			s15_render_row(g, d, room + i, S15_ST_ERROR, s, n);
 		}
 	}
 }

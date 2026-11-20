@@ -2189,7 +2189,6 @@ static void test_install_ops(void)
 	CHECK(!run.record_write(run.ctx, 1u));	/* no slave */
 	CHECK(!step.os_write(step.ctx));
 	CHECK(!step.bootloader_write(step.ctx));
-	CHECK(!step.spiboot_write(step.ctx));
 	/* The board supplies no PSoC unlock (S-07.081), and its backplane
 	 * step is switched off (S-11.073; test_board_install runs it Skipped
 	 * with its image staged). The programmer itself, were the step on,

@@ -87,11 +87,6 @@ struct s07_psoc {
 	bool shut;			/* S-07.072: the shutdown ran */
 	bool first_pass_done;		/* S-07.043 */
 	unsigned state;			/* S-07.050, S07_POWER_NONE at first */
-	/* S-07.051: the first-stage window is open, and a power-off reported
-	 * in it is kept, with its state */
-	bool fs_window;
-	bool kept;
-	uint8_t kept_s;
 	struct s07_battery batt;
 	uint32_t applied_ma;		/* S-07.055 */
 	uint32_t target_ma;		/* S-07.057 */
@@ -202,18 +197,6 @@ void s07_shutdown_reports(struct s07_psoc *p);
 
 /* S-07.070: 0x97 {DE AD BE EF} before a soft reboot. */
 void s07_reset_request(struct s07_psoc *p);
-
-/*
- * S-07.051's first-stage window: from the first erase of the first-stage
- * area until an image there has passed its read-back, or the area already
- * held it. In the window a power-off is recorded and kept, sending nothing,
- * and a later 0x10 drops it. Closing it runs a kept power-off with its kept
- * state: S07_POWEROFF, and nothing more on the link; S07_OK otherwise.
- */
-void s07_fs_window_open(struct s07_psoc *p);
-int s07_fs_window_close(struct s07_psoc *p);
-bool s07_fs_window(const struct s07_psoc *p);
-bool s07_fs_kept(const struct s07_psoc *p);
 
 /* S-07.078: 0x48 {01}. */
 void s07_volcal(struct s07_psoc *p);

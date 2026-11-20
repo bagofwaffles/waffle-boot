@@ -415,28 +415,8 @@ void opxy_copro_held(struct opxy_master *m, const uint8_t *psoc,
 				     (size_t)psoc_len);
 }
 
-/*
- * S-07.051, S-02.071: while the first-stage window is open no reset and no
- * hand-over is made, whoever asks; S-15's fs held says why. The refusal is
- * logged and the caller goes on.
- */
-bool opxy_fs_refuses(struct opxy_master *m, const char *what)
-{
-	struct s14_text t;
-
-	if (!s07_fs_window(&m->psoc))
-		return false;
-	s14_text_init(&t);
-	s14_text_str(&t, what);
-	s14_text_str(&t, " refused: the first stage is not written");
-	s14_log_text(&m->sv.log, S14_WARNING, S14_NO_TAG, &t);
-	return true;
-}
-
 void opxy_reboot(struct opxy_master *m, enum s04_writer w, uint16_t arg)
 {
-	if (opxy_fs_refuses(m, "restart"))
-		return;
 	s04_reboot(&m->sv.reboot, w, arg);
 }
 
@@ -802,9 +782,6 @@ void opxy_menu_show(struct opxy_master *m)
 	struct opxy_services *sv = &m->sv;
 	const struct s15_geometry *g = opxy_display_geometry();
 
-	/* S-15's fs held: the window open, no first-stage write running */
-	s15_up_fs_held(&sv->menu, s07_fs_window(&m->psoc) && !m->fs_writing,
-		       s07_fs_kept(&m->psoc));
 	/* cppcheck-suppress knownConditionTrueFalse ; a weak default */
 	if (g != NULL && s15_menu_changes(&sv->menu) != sv->menu_shown) {
 		sv->menu_shown = s15_menu_changes(&sv->menu);

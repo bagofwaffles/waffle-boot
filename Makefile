@@ -201,12 +201,8 @@ endif
 FRONT_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -g -fdebug-prefix-map=$(CURDIR)=. \
 	-mcpu=bf703-none -mlong-calls -Os -ffreestanding -fno-common \
 	-ffunction-sections -fdata-sections -fno-tree-loop-distribute-patterns
-# S-11.073: the first-stage step (OPXY_FIRST_STAGE_STEP, waffle/board/opxy_services.h)
-# is off in every board build, with no variable to turn it on. The host build
-# has it on, so that its code is built, analyzed and tested there.
-HOST_LIB_CFLAGS  := $(COMMON) -O2 -ffreestanding -fno-common -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1 \
-	-DOPXY_FIRST_STAGE_STEP=1
-HOST_TEST_CFLAGS := $(COMMON) -O2 -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1 -DOPXY_FIRST_STAGE_STEP=1
+HOST_LIB_CFLAGS  := $(COMMON) -O2 -ffreestanding -fno-common -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
+HOST_TEST_CFLAGS := $(COMMON) -O2 -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
 
 # lcd_gpio.c is the test OS's gpio variant alone (TESTOS_LCD_GPIO below).
 # HOOK_SRCS hold strong definitions of the board's weak hooks; they come
@@ -783,7 +779,7 @@ $(addprefix analyze/,$(TESTS)): | $(VEC_HEADERS)
 $(ANALYZE): analyze/%:
 	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \
 		-Xanalyzer -analyzer-output=text \
-		$(COMMON) $(TP_CPPFLAGS) -I$(GEN) -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1 -DOPXY_FIRST_STAGE_STEP=1 $* -o /dev/null 2>&1); s=$$?; \
+		$(COMMON) $(TP_CPPFLAGS) -I$(GEN) -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1 $* -o /dev/null 2>&1); s=$$?; \
 	printf '  ANALYZE %s\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
 
 $(ANALYZE_TESTOS): analyze-testos/%:

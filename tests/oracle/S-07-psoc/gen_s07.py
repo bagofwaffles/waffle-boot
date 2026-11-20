@@ -446,38 +446,6 @@ def transcripts():
                 {'end_ms': 1000}, held(inject=[{'t_ms': HELD_T, 'id': '0x31', 'payload': '14'},
                                               {'t_ms': HELD_T + 50, 'id': '0x31', 'payload': '14'},
                                               {'t_ms': HELD_T + 60, 'id': '0x01', 'payload': 'dd'}])))
-    def no_power_off(ev):
-        assert not fall(ev, 0x32), 'S-07.051: no power-off while the first-stage window stays open'
-        return []
-    fs = [{'t_ms': HELD_T, 'do': 'fs_window_open'}]
-    fs_close = [{'t_ms': HELD_T + 200, 'do': 'fs_window_close'}]
-    ts.append(T('fs_hold_off', ['S-07.051', 'S-02.071', 'S-02.072'],
-                'Held mode; a first-stage write: the PSoC reports 0x14 after its first erase; the power-off is '
-                'kept and runs, with s 14, once the read-back has matched.',
-                {'end_ms': 1000, 'actions': fs + fs_close},
-                held(inject=[{'t_ms': HELD_T + 20, 'id': '0x31', 'payload': '14'}]),
-                lambda ev: chk(fm(ev, 0x31, '14', d='P'), fm(ev, 0x32, '14'), 170, 200,
-                               'S-07.051: the kept power-off runs when the window ends')))
-    ts.append(T('fs_hold_dropped', ['S-07.051'],
-                'Held mode; a first-stage write: 0x14, then 0x10 within the window: the kept power-off is '
-                'dropped, and nothing follows the read-back.',
-                {'end_ms': 800, 'actions': fs + fs_close},
-                held(inject=[{'t_ms': HELD_T + 20, 'id': '0x31', 'payload': '14'},
-                             {'t_ms': HELD_T + 60, 'id': '0x31', 'payload': '10'}]), no_power_off))
-    ts.append(T('fs_hold_failed', ['S-07.051', 'S-02.071'],
-                'Held mode; a first-stage write that fails: 0x14 after its first erase; the window stays open '
-                'after the failure, so no power-off follows.',
-                {'end_ms': 1000, 'actions': fs},
-                held(inject=[{'t_ms': HELD_T + 20, 'id': '0x31', 'payload': '14'}]), no_power_off))
-    ts.append(T('fs_hold_rekept', ['S-07.051'],
-                'Held mode; a first-stage write: 0x14, 0x10, then 0x16 within the window: the last one is '
-                'kept, and the power-off runs with s 16 when the window ends.',
-                {'end_ms': 1000, 'actions': fs + fs_close},
-                held(inject=[{'t_ms': HELD_T + 20, 'id': '0x31', 'payload': '14'},
-                             {'t_ms': HELD_T + 60, 'id': '0x31', 'payload': '10'},
-                             {'t_ms': HELD_T + 100, 'id': '0x31', 'payload': '16'}]),
-                lambda ev: chk(fm(ev, 0x31, '16', d='P'), fm(ev, 0x32, '16'), 90, 120,
-                               'S-07.051: the kept power-off runs when the window ends')))
     ts.append(T('power_16_from_other', ['S-07.042', 'S-07.051'], '0x12 then 0x16: no power-off; the charge LED.',
                 {'end_ms': 600}, held(inject=[{'t_ms': HELD_T, 'id': '0x31', 'payload': '12'},
                                               {'t_ms': HELD_T + 50, 'id': '0x31', 'payload': '16'}])))

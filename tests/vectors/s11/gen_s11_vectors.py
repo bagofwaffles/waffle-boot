@@ -173,8 +173,7 @@ def main():
 
     # ---- zips.json: S-11.030-S-11.035 (checks 16 and 17)
     zp = load('zips.json')
-    comp_bit = {'os': 0, 'bootloader': 1, 'spiboot': 2, 'ble': 3, 'nordic_bl0': 4, 'nordic_bl1': 5,
-                'backplane': 6}
+    comp_bit = {'os': 0, 'bootloader': 1, 'ble': 2, 'nordic_bl0': 3, 'nordic_bl1': 4, 'backplane': 5}
     members, cases = [], []
     for c in zp['cases']:
         z = bytes.fromhex(c['zip_hex'])
@@ -253,7 +252,7 @@ def main():
             c_str(writes), r['notice'], r['state_after'], r['steps'], r['nordic_dfu'], r['record_access']))
     table('s11v_interrupted', 'struct s11v_interrupted', rows)
 
-    # ---- steps.tsv: S-11.066-S-11.072, S-11.090, S-11.095
+    # ---- steps.tsv: S-11.057, S-11.066-S-11.071, S-11.090, S-11.095
     step_no = {n: i for i, n in enumerate(s11_model.STEPS)}
     rel_no = {'older': -1, 'equal': 0, 'newer': 1}
     staged_no = {'ok': 0, 'bad': 1, 'read_error': 2}

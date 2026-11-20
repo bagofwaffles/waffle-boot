@@ -397,16 +397,13 @@ static void lines_fit(const char *what, const struct s15_confirm_info *info)
 
 static void test_lines(void)
 {
-	struct s15_confirm_info boot = { S15_STEP_BOOTLOADER, "1.0.12", "1.0.10", 1 };
-	const struct s15_confirm_info fs = { S15_STEP_SPIBOOT, "1.0.3", NULL, -1 };
+	struct s15_confirm_info boot = { "1.0.12", "1.0.10", 1 };
 	/* the longest versions S-11 writes (S11_VERSION_TEXT_MAX) */
-	const struct s15_confirm_info wide = { S15_STEP_BOOTLOADER,
-					       "65535.65535.65535", "255.255.255", 0 };
+	const struct s15_confirm_info wide = { "65535.65535.65535", "255.255.255", 0 };
 	struct s15_buf b[S15_CONFIRM_LINES], bar;
 	enum s15_style st[S15_CONFIRM_LINES];
 
 	lines_fit("bootloader", &boot);
-	lines_fit("first stage", &fs);
 	lines_fit("wide versions", &wide);
 	s15_confirm_lines(&boot, b, st);
 	CHECK(strcmp(b[0].s, "Install the bootloader?") == 0 &&
@@ -429,11 +426,6 @@ static void test_lines(void)
 	s15_confirm_lines(&boot, b, st);
 	CHECK(strcmp(b[2].s, "The other slot is replaced. Recovery remains.") == 0 &&
 	      strcmp(b[1].s, "Package\t1.0.12") == 0, "slot not known: '%s'", b[2].s);
-	s15_confirm_lines(&fs, b, st);
-	CHECK(strcmp(b[0].s, "Install the first stage?") == 0 &&
-	      strcmp(b[1].s, "Package\t1.0.3") == 0 &&
-	      strcmp(b[2].s, "Nothing on the unit can repair a failed write.") == 0,
-	      "the first stage's lines");
 
 	/* the bar's row: the label, the percent for the bar, the seconds */
 	s15_confirm_bar(&bar, 40, 52);

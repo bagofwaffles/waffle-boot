@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-02 writers: the bootloader-slot upgrade, the first-stage upgrade, the
- * metadata write and the boot-time restore.
+ * S-02 writers: the bootloader-slot upgrade, the metadata write and the
+ * boot-time restore.
  */
 #include "waffle/s02_flash.h"
 
@@ -9,7 +9,6 @@
 #include "waffle/s01_memmap.h"
 
 #define META_RETRIES 3u	/* attempts at steps 4-6 of S-02.064 */
-#define FS_TRIES 3u	/* attempts at steps 3-5 of S-02.071 */
 
 static bool same(const uint8_t *a, const uint8_t *b, uint32_t n)
 {
@@ -73,8 +72,8 @@ static int verify_range(const struct s02_env *env, uint32_t off,
 
 /*
  * Erase every sector that [off, off + n) overlaps, each just before the
- * programs of that sector, and program the bytes (S-02.045, S-02.071 steps
- * 3 and 4).  Sectors wholly beyond the image are left as they are.
+ * programs of that sector, and program the bytes (S-02.045).  Sectors
+ * wholly beyond the image are left as they are.
  */
 static int write_extent(const struct s02_env *env, uint32_t off,
 			const uint8_t *image, uint32_t n)
@@ -230,45 +229,6 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
 	if (sel.index != raw[0] || sel.verified != raw[1])
 		return S02_ERR_VERIFY;
 	return S02_OK;
-}
-
-/* S-02.070, S-02.071, S-02.072, S-02.091. */
-int s02_first_stage_upgrade(const struct s02_env *env, bool option_on,
-			    const uint8_t *image, uint32_t n,
-			    s02_announce_fn announce, void *announce_ctx)
-{
-	uint32_t attempt;
-	int rc = S02_ERR_IO;
-
-	/* Step 1: every check that can refuse the step. */
-	if (!option_on)
-		return S02_SKIPPED;
-	if (n == 0u || n > S02_FIRST_STAGE_MAX)
-		return S02_ERR_SIZE;
-	if (!s01_bootable(S01_FIRST_STAGE, image, n))
-		return S02_ERR_STREAM;
-	/* The flash holds the image already: no erase, so no window. */
-	if (verify_range(env, S02_FIRST_STAGE_OFF, image, n) == S02_OK)
-		return S02_OK;
-
-	/* Step 2: the announcement stays until the read-back or the failure. */
-	if (announce != NULL)
-		announce(announce_ctx, true);
-	/*
-	 * Steps 3 and 4: only [0, n), never the mirror sector at 0xB000; step 5,
-	 * a read-back after the last program.  A cut cannot be recovered from
-	 * here, so a failed attempt is made again from the first erase.
-	 */
-	for (attempt = 0; attempt < FS_TRIES; attempt++) {
-		rc = write_extent(env, S02_FIRST_STAGE_OFF, image, n);
-		if (rc == S02_OK)
-			rc = verify_range(env, S02_FIRST_STAGE_OFF, image, n);
-		if (rc == S02_OK)
-			break;
-	}
-	if (announce != NULL)
-		announce(announce_ctx, false);
-	return rc;
 }
 
 /* S-02.063 */

@@ -2,7 +2,7 @@
 /*
  * S-02: the master's SPI NOR flash: layout, selector, slot records, the
  * conforming first stage's decision and the writer's protocols (bootloader
- * slot, first stage, metadata mirror).
+ * slot, metadata mirror).
  *
  * Storage comes in through struct s02_flash_ops; the CRC-32 through an
  * s02_crc32_fn with zlib's calling convention.  Nothing here touches
@@ -22,7 +22,7 @@
 #define S02_ERASED          0xFFu
 
 #define S02_FIRST_STAGE_OFF 0x00000u
-#define S02_FIRST_STAGE_MAX 0x0B000u	/* S-02.002, S-02.070 */
+#define S02_FIRST_STAGE_MAX 0x0B000u	/* S-02.002 */
 #define S02_MIRROR_OFF      0x0B000u	/* S-02.063 */
 #define S02_META_OFF        0x0C000u	/* S-02.018 */
 #define S02_SELECTOR_OFF    0x0D000u	/* S-02.010 */
@@ -44,7 +44,7 @@ enum s02_status {
 	S02_OK = 0,
 	S02_SKIPPED,		/* protected step skipped, option off (S-02.057) */
 	S02_ERR_IO,		/* a read, erase or program failed */
-	S02_ERR_SIZE,		/* image size refused (S-02.044, S-02.070) */
+	S02_ERR_SIZE,		/* image size refused (S-02.044) */
 	S02_ERR_VERIFY,		/* a read-back did not match (S-02.047, .064, .071) */
 	S02_ERR_START,		/* selector not verified, or the selected slot
 				 * bad, at the start (S-02.090) */
@@ -312,14 +312,6 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
  * selector is not touched.  The selector written is {slot, verified}.
  */
 int s02_write_selector(const struct s02_env *env, unsigned slot, uint8_t verified);
-
-/* The display announcement of S-02.072; on is false when it may go. */
-typedef void (*s02_announce_fn)(void *ctx, bool on);
-
-/* First-stage upgrade (S-02.070, S-02.071). */
-int s02_first_stage_upgrade(const struct s02_env *env, bool option_on,
-			    const uint8_t *image, uint32_t n,
-			    s02_announce_fn announce, void *announce_ctx);
 
 /* --- The metadata mirror (S-02.060 to S-02.065) --- */
 

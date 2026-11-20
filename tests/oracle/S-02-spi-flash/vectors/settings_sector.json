@@ -3411,14 +3411,6 @@
   },
   {
    "slot": 0,
-   "check": "first-stage read-back",
-   "range": [
-    "0x0",
-    "0xb000"
-   ]
-  },
-  {
-   "slot": 0,
    "check": "mirror and metadata",
    "range": [
     "0xb000",
@@ -3447,14 +3439,6 @@
    "range": [
     "0xff000",
     "0x100000"
-   ]
-  },
-  {
-   "slot": 1,
-   "check": "first-stage read-back",
-   "range": [
-    "0x0",
-    "0xb000"
    ]
   },
   {

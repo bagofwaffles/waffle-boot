@@ -14,7 +14,6 @@ PARTIAL_MARK = 'partial_upgrade'
 COMPONENTS = {
     'os': ('firmware/blackfin/bin/os.ldr', 'firmware/blackfin/bin/os.version', 0x800000),
     'bootloader': ('firmware/blackfin/bin/bootloader.ldr', 'firmware/blackfin/bin/bootloader.version', 0x78000),
-    'spiboot': ('firmware/blackfin/bin/spiboot.ldr', 'firmware/blackfin/bin/spiboot.version', 0xB000),
     'ble': ('firmware/ble/bin/ble.bin', 'firmware/ble/bin/ble.version', 0x6FFFF),
     'backplane': ('firmware/backplane/bin/backplane.cyacd', 'firmware/backplane/bin/backplane.version', 0x30000),
 }

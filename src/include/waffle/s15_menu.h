@@ -278,9 +278,6 @@ struct s15_menu {
 
 	/* the option: S-15.140 */
 	bool option_on;
-	/* S-15's fs held: S-07.051's first-stage window is open after a failed
-	 * first-stage step, and whether a power-off is kept in it */
-	bool fs_held, fs_kept;
 
 	/* Settings: S-15.170, S-15.173 */
 	bool dev_mode;             /* S-15.172: the menu, the serial port */
@@ -419,10 +416,6 @@ void s15_up_acquired(struct s15_menu *m);
 void s15_up_released(struct s15_menu *m, uint32_t now_ms);
 /* S-15.105: the time passes; starts a due scan. */
 void s15_up_tick(struct s15_menu *m, uint32_t now_ms);
-/* S-15's fs held, in every frame while held; kept: a power-off waits for
- * the first stage's write. While held no restart and no start of the OS
- * is made from the menu. */
-void s15_up_fs_held(struct s15_menu *m, bool held, bool kept);
 /* S-15.104: a host transfer's begin, before its product word is
  * checked; len the package length (0 when it has none). It ends the scans
  * for the rest of the boot (S-15.103). */
@@ -456,8 +449,7 @@ void s15_up_confirm_bar(struct s15_menu *m, unsigned fill, unsigned left_s);
 /* A run starts. */
 void s15_up_run_start(struct s15_menu *m, enum s15_run_kind kind,
 		      const char *version, const char *name, bool stock);
-void s15_up_step_start(struct s15_menu *m, enum s15_step step,
-		       bool first_stage_warning);
+void s15_up_step_start(struct s15_menu *m, enum s15_step step);
 void s15_up_step_progress(struct s15_menu *m, enum s15_step step,
 			  uint32_t done, uint32_t total);
 /* Refused_start: S-02.090 refused the bootloader step's start. Cause:

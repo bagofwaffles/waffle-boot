@@ -92,7 +92,7 @@ size_t s10c_progress_s06(uint32_t done, uint32_t total, const char *label,
 size_t s10c_progress_te(uint32_t done, uint32_t total, bool outcome,
 			const char *label, uint8_t *out);
 
-/* The label of a run's step 0-6 (S-10c.104); "" for any other. */
+/* The label of a run's step 0-5 (S-10c.104); "" for any other. */
 const char *s10c_step_label(unsigned step);
 /* The label of the report that follows a step's Skipped (S-10c.106):
  * "[skipped] ", the step's label without its brackets, ": " and why.

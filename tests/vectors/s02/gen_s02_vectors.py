@@ -256,23 +256,6 @@ def main():
     w('};')
     w('')
 
-    # package_steps.json first-stage limits and ops.
-    ps = load_json('package_steps.json')
-    w('/* package_steps.json */')
-    w('#define V_FS_LIMIT %su' % ps['first_stage_size_limit'])
-    w('static const uint32_t v_fs_refused[] = {%s};' % ', '.join(ps['first_stage_refused_sizes']))
-    w('struct v_fsops { uint32_t length; const struct v_op *ops; unsigned nops; };')
-    for i, c in enumerate(ps['first_stage_ops']):
-        w('static const struct v_op v_fs_ops_%d[] = {' % i)
-        for o in c['ops']:
-            w("\t{'%s', %s, %d}," % (o['op'][0], o['offset'], o['length']))
-        w('};')
-    w('static const struct v_fsops v_fs_upgrades[] = {')
-    for i, c in enumerate(ps['first_stage_ops']):
-        w('\t{%s, v_fs_ops_%d, %d},' % (c['length'], i, len(c['ops'])))
-    w('};')
-    w('')
-
     # bootable_images.json (S-02.091): refused is the S01_SRULE_ bit of refused_by.
     bi = load_json('bootable_images.json')
     rules = {'parse': 'PARSE', 'inside_spaces': 'INSIDE_SPACES',
@@ -280,7 +263,7 @@ def main():
              'one_init_block': 'ONE_INIT_BLOCK', 'init_in_l1': 'INIT_IN_L1',
              'init_before_ddr': 'INIT_BEFORE_DDR', 'spares_first_stage_stack': 'SPARES_FS_STACK',
              'rom_boot_reserve': 'ROM_BOOT_RESERVE', 'bcode': 'BCODE'}
-    w('/* bootable_images.json.  slot: the image is a slot image, else a first-stage image;')
+    w('/* bootable_images.json.  slot: the image is a slot image (every case);')
     w(' * refused: the S01_SRULE_ bit of refused_by (0 when accepted). */')
     # S-02.091 rule 4: the factory first stage's stack and the boot-entry call's (S-01.022).
     w('#define V_FACTORY_FS_STACK_START %su' % bi['boot_call_stack'][0])

@@ -175,8 +175,6 @@ static const struct s15_frame *frame(void)
 	f.option_on = false;
 	f.fatal = false;
 	f.gray = ck.gray;
-	f.under = NULL;
-	f.under_n = 0;
 	return &f;
 }
 

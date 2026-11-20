@@ -24,7 +24,6 @@
 enum s11_component {
 	S11_C_OS,
 	S11_C_BOOTLOADER,
-	S11_C_SPIBOOT,
 	S11_C_BLE,
 	S11_C_NORDIC_BL0,
 	S11_C_NORDIC_BL1,
@@ -127,7 +126,7 @@ enum s11_staged_check {
 enum s11_staged_check s11_staged_check(const struct s11_staged_read *stated,
 				       const struct s11_staged_read *read);
 /* The step's result for a check that did not pass: Bad file or Internal
- * error (S-11.058, S-11.067-S-11.072); S11_OK for S11_STAGED_OK. */
+ * error (S-11.058, S-11.067-S-11.071); S11_OK for S11_STAGED_OK. */
 enum s11_result s11_staged_result(enum s11_staged_check c);
 
 /* ---- the staging area as a run reads it ---- */

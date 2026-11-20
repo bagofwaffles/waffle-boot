@@ -777,13 +777,13 @@ def gen_info():
 LABELS = [('[decrypting firmware]', 'reading an encrypted package file'),
           ('[extracting firmware]', 'reading an unencrypted package file; extracting the zip'),
           ('[content]', 'step 0'), ('[main dsp]', 'step 1, the OS'), ('[bootloader]', 'step 2'),
-          ('[ble]', 'step 3'), ('[ble bootloader]', 'step 4'), ('[backplane]', 'step 5'), ('[spiboot]', 'step 6'),
+          ('[ble]', 'step 3'), ('[ble bootloader]', 'step 4'), ('[backplane]', 'step 5'),
           ('[done]', 'outcome'), ('[nothing to do]', 'outcome'), ('[failed] ', 'outcome, followed by an error text'),
           ('[skipped] ', 'a step that reported Skipped, followed by the step and the reason'),
           ('', 'a report with no counts between two phases')]
 # S-10c.106: the steps that can report Skipped and the reason (S-11.058, S-11.068 item 5, S-11.073)
-SKIPS = [(2, 'option off'), (2, 'not confirmed'), (6, 'option off'), (6, 'not confirmed'),
-         (3, 'switched off'), (4, 'switched off'), (5, 'switched off'), (6, 'switched off'),
+SKIPS = [(2, 'option off'), (2, 'not confirmed'),
+         (3, 'switched off'), (4, 'switched off'), (5, 'switched off'),
          (2, 'already written')]
 REASONS = ['SHORT', 'PREAMBLE', 'TYPE', 'MAGIC', 'PRODUCT', 'DEVICE', 'CRC', 'FORMAT', 'SKU',
            'LENGTH', 'HASH', 'KEY', 'NOKEY', 'NAME', 'ZIPLEN', 'ZIP', 'MEMBER', 'SPACE', 'SPACEQUERY', 'SIZE', 'STREAM']
@@ -795,7 +795,7 @@ def gen_progress():
     percent = [{'done': d, 'total': t, 'percent': m.percent(d, t), 'te_percent': m.te_percent(d, t)}
                for d, t in pc]
     ts = [(0, 0, ''), (0, 0, '[done]'), (0, 0, '[nothing to do]'), (50, 100, '[main dsp]'), (1, 8, '[content]'),
-          (7, 0, '[ble]'), (100, 100, '[spiboot]'), (0, 4096, '[decrypting firmware]'),
+          (7, 0, '[ble]'), (100, 100, '[backplane]'), (0, 4096, '[decrypting firmware]'),
           (0, 0, '[failed] step 3 result 2 ble'), (0, 0, '[failed] ' + 'x' * 238)]
     s06 = []
     for d, t, lab in ts:
@@ -816,7 +816,7 @@ def gen_progress():
     labels = [{'label': a, 'phase': b} for a, b in LABELS]
     assert [a for a, b in LABELS if b.startswith('step ')] == m.STEP_LABELS
     skipped = [{'step': st, 'reason': r, 'label': m.skip_label(st, r)} for st, r in SKIPS]
-    assert skipped[4]['label'] == '[skipped] ble: switched off'
+    assert skipped[2]['label'] == '[skipped] ble: switched off'
     errors = [
         {'kind': 'refused', 'reason': 'MAGIC', 'text': 'MAGIC', 'valid': True},
         {'kind': 'refused', 'reason': 'HASH', 'text': 'HASH: payload digest differs', 'valid': True},

@@ -2554,41 +2554,6 @@ static void test_factory(void)
 	press(0x13);
 	expect_screen("factory_restarting");
 	CHECK(F.reset_w7 == 1u && F.restart_line, "S-15.095 Restarting, then the reset");
-	/* S-02.071, S-07.051: fs held refuses the restart, with no line */
-	reset_fake(); default_boot(); start();
-	s15_up_fs_held(&M, true, false);
-	press(0x08);
-	press(0x13);
-	CHECK(F.reset_w7 == 0u && !F.restart_line, "fs held: no restart");
-}
-
-/* S-15's fs held: in every frame under the console's newest rows, two of
- * them, three while a power-off is kept; Continue to the OS refused, by
- * key and by the host, until it ends. */
-static void test_fs_held(void)
-{
-	struct s15_frame f;
-
-	reset_fake(); default_boot(); start();
-	s15_menu_frame(&M, &f);
-	CHECK(f.under == NULL && f.under_n == 0u, "no fs held");
-	s15_up_fs_held(&M, true, false);
-	s15_menu_frame(&M, &f);
-	CHECK(f.under != NULL && f.under_n == 2u &&
-	      strstr(f.under[0], "First stage not written") != NULL &&
-	      strstr(f.under[1], "install the same package again") != NULL,
-	      "fs held: two rows");
-	CHECK(s15_menu_continue_check(&M) == S15_CONT_BUSY &&
-	      s15_menu_continue(&M) == S15_CONT_BUSY && F.cont == 0u,
-	      "fs held: Continue to the OS refused");
-	s15_up_fs_held(&M, true, true);
-	s15_menu_frame(&M, &f);
-	CHECK(f.under_n == 3u && strstr(f.under[2], "switch-off") != NULL,
-	      "a kept power-off: its row");
-	s15_up_fs_held(&M, false, true);
-	s15_menu_frame(&M, &f);
-	CHECK(f.under == NULL && !M.fs_kept, "the window ended");
-	CHECK(s15_menu_continue_check(&M) == S15_CONT_STARTED, "then it is allowed");
 }
 
 /* S-15.105: the host releases the disk and the delay passes. */
@@ -2863,14 +2828,14 @@ static void test_upgrade(void)
 	CHECK(appended("Upgrading to 1.3.0") &&
 	      appended(s15_stock_line) && M.con.count == 4u,
 	      "header");
-	s15_up_step_start(&M, S15_STEP_OS, false);
+	s15_up_step_start(&M, S15_STEP_OS);
 	s15_up_step_progress(&M, S15_STEP_OS, 5, 10);
 	CHECK(strcmp(last_row(row), "step-run:Main DSP\t50%") == 0,
 	      "the step's row: '%s'", row);
 	s15_up_step_result(&M, S15_STEP_OS, S15_RES_OK, "1.3.0", false, NULL);
 	CHECK(strcmp(last_row(row), "step-ok:Main DSP\tInstalled 1.3.0") == 0,
 	      "the row replaced: '%s'", row);
-	s15_up_step_start(&M, S15_STEP_BOOTLOADER, false);
+	s15_up_step_start(&M, S15_STEP_BOOTLOADER);
 	s15_up_step_result(&M, S15_STEP_BOOTLOADER, S15_RES_FAILURE, NULL, true, NULL);
 	CHECK(appended("Operation 10 failed") && appended(s15_reset_needed),
 	      "refused start");
@@ -2886,7 +2851,7 @@ static void test_upgrade(void)
 		unsigned before;
 
 		CHECK(s15_note_lines(note, nst, S15_NOTE_NO_APP) == 2u, "two lines");
-		s15_up_step_start(&M, S15_STEP_BLE, false);
+		s15_up_step_start(&M, S15_STEP_BLE);
 		s15_up_step_result(&M, S15_STEP_BLE, S15_RES_FAILURE, NULL, false,
 				   "chunk 2/3 refused");
 		s15_up_step_note(&M, S15_NOTE_NO_APP);
@@ -2900,13 +2865,6 @@ static void test_upgrade(void)
 		s15_up_step_note(&M, S15_NOTE_NONE);
 		CHECK(M.con.count == before, "no note");
 	}
-	s15_up_step_start(&M, S15_STEP_SPIBOOT, true);
-	CHECK(appended(s15_fs_warning), "warning before the step");
-	s15_up_step_result(&M, S15_STEP_SPIBOOT, S15_RES_OK, NULL, false, NULL);
-	s = s15_console_row(&M.con, M.con.count - 2u, &n);
-	snprintf(row, sizeof row, "%.*s", (int)n, s);
-	CHECK(strcmp(row, s15_fs_warning) == 0,
-	      "the result replaces the step's row, not the warning");
 	s15_up_run_end(&M, S15_OUT_FAILED, 0);
 	CHECK(appended("Upgrade failed."), "failed");
 	press(0x18);
@@ -2985,7 +2943,7 @@ static void test_upgrade(void)
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	s15_up_run_start(&M, S15_RUN_CONTENT, NULL, "Bass", false);
 	n = M.con.count;
-	s15_up_step_start(&M, S15_STEP_OS, false);
+	s15_up_step_start(&M, S15_STEP_OS);
 	s15_up_step_progress(&M, S15_STEP_OS, 1, 2);
 	s15_up_step_result(&M, S15_STEP_OS, S15_RES_NOT_FOUND, NULL, false, NULL);
 	CHECK(M.con.count == n, "content-only: no line for os");
@@ -2996,7 +2954,7 @@ static void test_upgrade(void)
 	/* A step that stops the run says why on its row. */
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
-	s15_up_step_start(&M, S15_STEP_BLE_BOOTLOADER, false);
+	s15_up_step_start(&M, S15_STEP_BLE_BOOTLOADER);
 	s15_up_step_result(&M, S15_STEP_BLE_BOOTLOADER, S15_RES_FAILURE, NULL,
 			   false, "no slot answer");
 	s = s15_console_row(&M.con, M.con.count - 2u, &n);
@@ -3015,9 +2973,9 @@ static void test_upgrade(void)
  */
 static void test_confirm_screen(void)
 {
-	const struct s15_confirm_info boot = { S15_STEP_BOOTLOADER, "1.0.12",
+	const struct s15_confirm_info boot = { "1.0.12",
 						"1.0.10", 1 };
-	const struct s15_confirm_info fs = { S15_STEP_SPIBOOT, "1.0.3", NULL, -1 };
+	const struct s15_confirm_info unknown = { "1.0.3", NULL, -1 };
 	static const unsigned keys[] = { 0x15, 0x06, 0x0d, 0x18, 0x13, 0x0a };
 	char before[S15_ROWS][ROWLEN], after[S15_ROWS][ROWLEN];
 	const char *got[S15_ROWS];
@@ -3052,8 +3010,9 @@ static void test_confirm_screen(void)
 
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
-	s15_up_confirm(&M, &fs);
-	expect_screen("upgrade_confirm_first_stage");
+	s15_up_confirm(&M, &unknown);
+	CHECK(appended("The other slot is replaced. Recovery remains."),
+	      "no selector read: the other slot");
 	/* the run's own header follows on the upgrade screen's title */
 	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
 	expect_title("upgrade");
@@ -3071,11 +3030,11 @@ static void test_run_end_skipped(void)
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
 	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
-	s15_up_step_start(&M, S15_STEP_OS, false);
+	s15_up_step_start(&M, S15_STEP_OS);
 	s15_up_step_result(&M, S15_STEP_OS, S15_RES_OK, "1.3.0", false, NULL);
-	s15_up_step_start(&M, S15_STEP_BLE, false);
+	s15_up_step_start(&M, S15_STEP_BLE);
 	s15_up_step_result(&M, S15_STEP_BLE, S15_RES_SKIPPED_OFF, NULL, false, NULL);
-	s15_up_step_start(&M, S15_STEP_KEYBOARD, false);
+	s15_up_step_start(&M, S15_STEP_KEYBOARD);
 	s15_up_step_result(&M, S15_STEP_KEYBOARD, S15_RES_SKIPPED_OFF, NULL,
 			   false, NULL);
 	s15_up_run_end(&M, S15_OUT_DONE,
@@ -3085,21 +3044,21 @@ static void test_run_end_skipped(void)
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
 	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
-	s15_up_step_start(&M, S15_STEP_BOOTLOADER, false);
+	s15_up_step_start(&M, S15_STEP_BOOTLOADER);
 	s15_up_step_result(&M, S15_STEP_BOOTLOADER, S15_RES_SKIPPED_UNCONFIRMED,
 			   NULL, false, NULL);
 	CHECK(strcmp(last_row(row), "step-skip:Bootloader\tSkipped: not confirmed") == 0,
 	      "the reason on the row: '%s'", row);
 	s15_up_run_end(&M, S15_OUT_NOTHING,
-		       (1u << S15_STEP_BOOTLOADER) | (1u << S15_STEP_SPIBOOT));
+		       1u << S15_STEP_BOOTLOADER);
 	expect_tail("upgrade_nothing_not_updated");
 
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
 	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
-	s15_up_step_start(&M, S15_STEP_BLE, false);
+	s15_up_step_start(&M, S15_STEP_BLE);
 	s15_up_step_result(&M, S15_STEP_BLE, S15_RES_SKIPPED_OFF, NULL, false, NULL);
-	s15_up_step_start(&M, S15_STEP_OS, false);
+	s15_up_step_start(&M, S15_STEP_OS);
 	s15_up_step_result(&M, S15_STEP_OS, S15_RES_FAILURE, NULL, false, NULL);
 	s15_up_run_end(&M, S15_OUT_FAILED, 1u << S15_STEP_BLE);
 	CHECK(appended("Upgrade failed.") && !appended("Not updated: BLE"),
@@ -3180,15 +3139,6 @@ static void test_os_once(void)
 	      "S-15.194 restarts with start in boot menu on, the setting unchanged");
 	CHECK(F.saves == 0u, "S-15.194 no setting saved");
 
-	/* fs held: nothing at all, as the restart (S-02.071). */
-	reset_fake(); default_boot(); start();
-	press(0x08);
-	F.once_rc = S15_ONCE_STARTED;
-	s15_up_fs_held(&M, true, false);
-	clear_records();
-	press(0x08);
-	CHECK(F.once_checks == 0u && F.once == 0u, "S-15.194 fs held: no restart");
-
 	/* MTP on, or an OS write's result shown: digit 3 does nothing. */
 	reset_fake(); default_boot(); start();
 	press(0x08);
@@ -3244,13 +3194,6 @@ static void test_continue(void)
 	clear_records();
 	press(0x14);
 	CHECK(F.cont == 1u && M.screen == S15_SCR_STARTING, "main: digit 7, notice shown");
-	/* fs held: nothing (S-02.071) */
-	reset_fake(); default_boot(); start();
-	s15_up_fs_held(&M, true, false);
-	clear_records();
-	press(0x14);
-	CHECK(F.cont == 0u && F.reset_w7 == 0u && M.screen == S15_SCR_MAIN,
-	      "fs held: digit 7 does nothing");
 	/* back on main after another screen, the item again */
 	reset_fake(); default_boot(); start();
 	press(0x12);
@@ -3802,7 +3745,6 @@ int main(void)
 	test_confirm_screen();
 	test_run_end_skipped();
 	test_continue();
-	test_fs_held();
 	test_done_restart();
 	test_start_menu();
 	test_reset_settings();

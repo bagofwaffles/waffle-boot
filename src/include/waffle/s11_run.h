@@ -26,7 +26,7 @@
 #define S11_STEP_BLE 3u
 #define S11_STEP_BLE_BOOTLOADER 4u
 #define S11_STEP_KEYBOARD 5u
-#define S11_STEP_SPIBOOT 6u
+#define S11_STEP_RESERVED 6u	/* does nothing: Not found */
 #define S11_STEP_DONE 7u		/* every step is done (S-11.057) */
 
 #define S11_STATE_UPGRADING 0xAB0Du	/* the metadata state (S-04.045) */
@@ -56,7 +56,7 @@ struct s11_run_ops {
 	bool (*nordic_read_versions)(void *ctx);
 	/* S-11.064 step 3: takes the Nordic out of DFU if it is in it. */
 	void (*nordic_exit_dfu)(void *ctx);
-	/* One step's result (S-11.066-S-11.072). */
+	/* One step's result (S-11.066-S-11.071). */
 	enum s11_result (*step)(void *ctx, unsigned step);
 	void *ctx;
 };
@@ -100,7 +100,7 @@ bool s11_interrupted(const struct s11_run_ops *ops);
 
 struct s11_step_ops;
 
-/* ---- the steps (S-11.066-S-11.072, S-11.090) ---- */
+/* ---- the steps (S-11.066-S-11.071, S-11.090) ---- */
 
 struct s11_step_ops {
 	/* Step 0 (S-11.066, S-11.075-S-11.079). */
@@ -110,14 +110,13 @@ struct s11_step_ops {
 	bool (*os_write)(void *ctx);
 	/* S-04.045 M2 */
 	void (*meta_sw_version)(void *ctx, const struct s11_version *v);
-	/* S-02.042-S-02.053, S-02.090, S-02.091 and S-02.070-S-02.072 */
+	/* S-02.042-S-02.053, S-02.090, S-02.091 */
 	bool (*bootloader_write)(void *ctx);
-	bool (*spiboot_write)(void *ctx);
-	/* The result of the os_write, bootloader_write, spiboot_write,
-	 * nordic_send or psoc_program that just returned false, when the
-	 * image was refused before any byte of it was written or sent:
-	 * S11_BAD_FILE when its check failed (S-11.095) or S-02.091 refused
-	 * it (S-11.068, S-11.072), S11_INTERNAL when a read of it failed
+	/* The result of the os_write, bootloader_write, nordic_send or
+	 * psoc_program that just returned false, when the image was refused
+	 * before any byte of it was written or sent: S11_BAD_FILE when its
+	 * check failed (S-11.095) or S-02.091 refused it (S-11.068),
+	 * S11_INTERNAL when a read of it failed
 	 * (S-11.095); for bootloader_write alone, S11_SKIPPED when
 	 * S-02.090 refused its start in S-11.068 item 5's case (already
 	 * written); any other value, or NULL, means the write itself
@@ -136,12 +135,11 @@ struct s11_step_ops {
 
 /* A step's bit in s11_step_env's off and confirmed. */
 #define S11_STEP_BIT(step) ((uint8_t)(1u << (step)))
-/* The steps S-11.073 lets a build switch off: the Nordic and PSoC steps
- * and the first-stage step. */
+/* The steps S-11.073 lets a build switch off: the Nordic and PSoC
+ * steps. */
 #define S11_STEPS_SWITCHABLE (S11_STEP_BIT(S11_STEP_BLE) | \
 			      S11_STEP_BIT(S11_STEP_BLE_BOOTLOADER) | \
-			      S11_STEP_BIT(S11_STEP_KEYBOARD) | \
-			      S11_STEP_BIT(S11_STEP_SPIBOOT))
+			      S11_STEP_BIT(S11_STEP_KEYBOARD))
 
 struct s11_step_env {
 	const struct s11_staged *staged;
@@ -173,12 +171,11 @@ enum s11_skip s11_result_skip(unsigned step, const struct s11_step_env *env,
 bool s11_run_nordic(const struct s11_staged *st, uint8_t off);
 
 /*
- * S-11.096: the protected components the package carries, the bootloader
- * first, each asked for on the unit; the bits of those confirmed. With the
- * option off, or ask NULL, nothing is asked and none is confirmed; a step
- * switched off in `off` (S-11.073) is not asked for.
+ * S-11.096: the protected component the package carries, the bootloader,
+ * asked for on the unit; the bit of the step confirmed. With the option
+ * off, or ask NULL, nothing is asked and none is confirmed.
  */
-uint8_t s11_confirm(const struct s11_staged *st, bool option, uint8_t off,
+uint8_t s11_confirm(const struct s11_staged *st, bool option,
 		    bool (*ask)(void *ctx, enum s11_component c), void *ctx);
 
 /* s11_run with each step's result from s11_step_result(); the run's

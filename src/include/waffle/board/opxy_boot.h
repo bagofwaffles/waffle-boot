@@ -339,9 +339,6 @@ struct opxy_master {
 	 * in this image writes the selector. */
 	bool own_selector_set;
 	struct s02_selector own_selector;
-	/* S-02.071: a first-stage write runs (S-15's fs warning in place of
-	 * fs held) */
-	bool fs_writing;
 	/* S-09: the boot link, then the bridge, and the eMMC behind it */
 	struct s09_boot_ops boot_ops;
 	struct s09_bus_ops bus_ops;

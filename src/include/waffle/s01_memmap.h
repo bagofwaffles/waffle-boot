@@ -187,10 +187,9 @@ uint32_t s01_stream_end(const struct s01_stream *s);
 
 /*
  * S-02.091: a bootable stream of its kind. S01_BOOTLOADER: a slot image, by
- * the bootloader profile with the first stage's stack (rule 4);
- * S01_FIRST_STAGE: a first-stage image, by the first-stage profile.
- * s01_bootable_begin() starts the same check for s01_stream_feed(); it is
- * bootable when s01_stream_end() gives 0.
+ * the bootloader profile with the first stage's stack (rule 4); any other
+ * profile by its own rules. s01_bootable_begin() starts the same check for
+ * s01_stream_feed(); it is bootable when s01_stream_end() gives 0.
  */
 void s01_bootable_begin(struct s01_stream *s, enum s01_profile p);
 bool s01_bootable(enum s01_profile p, const uint8_t *img, uint32_t len);

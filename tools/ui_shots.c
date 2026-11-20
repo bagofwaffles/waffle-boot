@@ -307,7 +307,7 @@ static void front_shot(const struct fr_screen *s)
 static int installer_shots(const char *dir)
 {
 	const struct s15_frame fr = { "Installer", ver, 0, S15_SLOT_UNKNOWN,
-				      false, false, true, NULL, 0 };
+				      false, false, true };
 	static const struct {
 		const char *name;
 		uint8_t phase, lock, trial;
@@ -549,17 +549,17 @@ int main(int argc, char **argv)
 
 	setup(); boot.reason = 30; start();
 	s15_up_run_start(&menu, S15_RUN_FIRMWARE, "1.2.0", NULL, false);
-	s15_up_step_start(&menu, S15_STEP_CONTENT, false);
+	s15_up_step_start(&menu, S15_STEP_CONTENT);
 	s15_up_step_result(&menu, S15_STEP_CONTENT, S15_RES_OK, NULL, false, NULL);
-	s15_up_step_start(&menu, S15_STEP_OS, false);
+	s15_up_step_start(&menu, S15_STEP_OS);
 	s15_up_step_progress(&menu, S15_STEP_OS, 64, 100);
 	bad |= shot(d, "upgrade-run");
 	s15_up_step_result(&menu, S15_STEP_OS, S15_RES_OK, "1.2.0", false, NULL);
-	s15_up_step_start(&menu, S15_STEP_BOOTLOADER, false);
+	s15_up_step_start(&menu, S15_STEP_BOOTLOADER);
 	s15_up_step_result(&menu, S15_STEP_BOOTLOADER, S15_RES_SKIPPED, NULL, false, NULL);
-	s15_up_step_start(&menu, S15_STEP_BLE, false);
+	s15_up_step_start(&menu, S15_STEP_BLE);
 	s15_up_step_result(&menu, S15_STEP_BLE, S15_RES_ALREADY, NULL, false, NULL);
-	s15_up_step_start(&menu, S15_STEP_BLE_BOOTLOADER, false);
+	s15_up_step_start(&menu, S15_STEP_BLE_BOOTLOADER);
 	s15_up_step_result(&menu, S15_STEP_BLE_BOOTLOADER, S15_RES_FAILURE, NULL,
 			   false, "no slot answer");
 	s15_up_run_end(&menu, S15_OUT_FAILED, 0);
@@ -574,16 +574,16 @@ int main(int argc, char **argv)
 	 * Nordic's and the PSoC's parts switched off (S-11.073) */
 	setup(); boot.reason = 30; start();
 	s15_up_run_start(&menu, S15_RUN_FIRMWARE, "1.2.0", NULL, false);
-	s15_up_step_start(&menu, S15_STEP_CONTENT, false);
+	s15_up_step_start(&menu, S15_STEP_CONTENT);
 	s15_up_step_result(&menu, S15_STEP_CONTENT, S15_RES_OK, NULL, false, NULL);
-	s15_up_step_start(&menu, S15_STEP_OS, false);
+	s15_up_step_start(&menu, S15_STEP_OS);
 	s15_up_step_result(&menu, S15_STEP_OS, S15_RES_OK, "1.2.0", false, NULL);
-	s15_up_step_start(&menu, S15_STEP_BLE, false);
+	s15_up_step_start(&menu, S15_STEP_BLE);
 	s15_up_step_result(&menu, S15_STEP_BLE, S15_RES_SKIPPED_OFF, NULL, false, NULL);
-	s15_up_step_start(&menu, S15_STEP_BLE_BOOTLOADER, false);
+	s15_up_step_start(&menu, S15_STEP_BLE_BOOTLOADER);
 	s15_up_step_result(&menu, S15_STEP_BLE_BOOTLOADER, S15_RES_SKIPPED_OFF, NULL,
 			   false, NULL);
-	s15_up_step_start(&menu, S15_STEP_KEYBOARD, false);
+	s15_up_step_start(&menu, S15_STEP_KEYBOARD);
 	s15_up_step_result(&menu, S15_STEP_KEYBOARD, S15_RES_SKIPPED_OFF, NULL,
 			   false, NULL);
 	s15_up_run_end(&menu, S15_OUT_DONE,
@@ -599,7 +599,7 @@ int main(int argc, char **argv)
 	s15_up_tick(&menu, 102000);
 	s15_up_phase(&menu, S15_PH_EXTRACT_FIRMWARE);
 	{
-		const struct s15_confirm_info info = { S15_STEP_BOOTLOADER, ver_next,
+		const struct s15_confirm_info info = { ver_next,
 							ver, 0 };
 
 		s15_up_confirm(&menu, &info);

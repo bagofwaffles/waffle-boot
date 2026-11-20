@@ -177,10 +177,6 @@ struct s15_frame {
 	bool option_on;        /* Red bar, "Protected writes on" */
 	bool fatal;            /* Red bar */
 	bool gray;             /* S-15.173: every pixel in its gray */
-	/* Rows kept under the body in every frame (S-15's fs held), in the
-	 * error style; the console's newest rows above them */
-	const char *const *under;
-	uint8_t under_n;
 };
 
 /* S-15.173: the gray an RGB565 color is drawn in while the color is

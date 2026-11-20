@@ -32,7 +32,6 @@ enum s15_step {
 	S15_STEP_BLE,
 	S15_STEP_BLE_BOOTLOADER,
 	S15_STEP_KEYBOARD,
-	S15_STEP_SPIBOOT,
 	S15_STEP_COUNT
 };
 const char *s15_step_label(enum s15_step step);
@@ -277,7 +276,6 @@ extern const char s15_os_ldr_unreadable[];
 extern const char s15_os_write_failed[];
 extern const char s15_reset_needed[];
 extern const char s15_nothing_skipped[];
-extern const char s15_fs_warning[];
 extern const char s15_stock_line[];
 /* S-15.015: the line under items chosen by a hold (S15_ST_DIM). */
 extern const char s15_hold_line[];

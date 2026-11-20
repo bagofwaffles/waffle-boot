@@ -470,7 +470,6 @@ def zip_cases():
     add('space_query_fails', sz, 'SPACEQUERY', free=None, req='S-11.033')
     allc = {n: b'\x5a' * 100 for n in m.COMPONENTS}
     allc['bootloader'] = BOOT_STREAM
-    allc['spiboot'] = FS_STREAM
     allc['os'] = os_image(100)
     files = {img: allc[n] for n, (img, ver, _) in m.COMPONENTS.items()}
     files.update({ver: V1 for n, (img, ver, _) in m.COMPONENTS.items()})
@@ -478,17 +477,19 @@ def zip_cases():
     add('all_components', zipb(files), req='S-11.034', components=sorted(m.COMPONENTS))
     add('empty_image', zipb({'firmware/blackfin/bin/os.ldr': b'', 'firmware/ble/bin/ble.bin': b'b'}),
         req='S-11.034', components=['ble'])
-    head = {'bootloader': BOOT_STREAM, 'spiboot': FS_STREAM, 'os': os_image(32)}
+    head = {'bootloader': BOOT_STREAM, 'os': os_image(32)}
     for n, (img, ver, lim) in m.COMPONENTS.items():
         h = head.get(n, b'')   # a bootable stream padded after FINAL (S-02.091)
         add('limit_%s_at' % n, zipb({img: h + bytes(lim - len(h))}), req='S-11.035', components=[n])
         add('limit_%s_over' % n, zipb({img: h + bytes(lim + 1 - len(h))}), 'SIZE', req='S-11.035')
-    # the first-stage area is 0xC000 bytes; the mirror sector (S-02.063) bounds the image at 0xB000
-    add('limit_spiboot_stock_max', zipb({m.COMPONENTS['spiboot'][0]: FS_STREAM + bytes(0xC000 - len(FS_STREAM))}),
-        'SIZE', req='S-11.035')
-    # check 18 (S-11.035, S-02.091): the protected components must be bootable streams
+    # S-11.034: a first-stage image is no component: staged as a plain member, never checked or limited
+    fs = 'firmware/blackfin/bin/spiboot.ldr'
+    add('first_stage_not_a_component', zipb({fs: b'\x5a' * 0xC001, 'firmware/blackfin/bin/spiboot.version': V1,
+                                            'firmware/blackfin/bin/os.ldr': os_image(32)}),
+        req='S-11.034', components=['os'])
+    # check 18 (S-11.035, S-02.091): the bootloader must be a bootable stream
     V = {'firmware/firmware.version': V1, 'firmware/blackfin/bin/os.ldr': os_image(12000)}
-    bl, fs = m.COMPONENTS['bootloader'][0], m.COMPONENTS['spiboot'][0]
+    bl = m.COMPONENTS['bootloader'][0]
     add('stream_bootloader_ok', zipb(dict(V, **{bl: BOOT_STREAM})), req='S-11.035', components=['bootloader', 'os'])
     add('stream_bootloader_not_ldr', zipb(dict(V, **{bl: b'\x5a' * 100})), 'STREAM', req='S-11.035')
     add('stream_bootloader_no_init', zipb(dict(V, **{bl: boot_stream(inits=0)})), 'STREAM', req='S-11.035')
@@ -498,7 +499,6 @@ def zip_cases():
         req='S-11.035')
     add('stream_bootloader_bcode', zipb(dict(V, **{bl: boot_stream(code=3)})), 'STREAM', req='S-11.035')
     add('stream_bootloader_no_final', zipb(dict(V, **{bl: BOOT_STREAM[:-16]})), 'STREAM', req='S-11.035')
-    add('stream_spiboot_ddr', zipb(dict(V, **{fs: fs_stream(ddr=True)})), 'STREAM', req='S-11.035')
     add('stream_size_first', zipb(dict(V, **{bl: b'\x5a' * 0x78001})), 'SIZE', req='S-11.035')
     # check 18 for the OS image (S-05.024), refused before the run
     os_img = m.COMPONENTS['os'][0]
@@ -531,22 +531,12 @@ def boot_stream(inits=1, pre_ddr=False, reserve=False, code=4):
     return L.build_ldr(b)
 
 
-def fs_stream(ddr=False):
-    L = ldr_mod()
-    b = [{'flags': L.FIRST | L.IGNORE, 'target': 0x11A00000, 'count': 0},
-         {'target': 0x11A00000, 'payload': bytes(range(64))}]
-    if ddr:
-        b.append({'target': 0x80000000, 'payload': bytes(8)})
-    return L.build_ldr(b + [{'flags': L.FINAL, 'target': 0x11A00000, 'count': 0}])
-
-
 def ldr_mod():
     from images import ldr
     return ldr
 
 
 BOOT_STREAM = boot_stream()
-FS_STREAM = fs_stream()
 
 
 def write_zips():
@@ -777,12 +767,9 @@ def step_rows():
         else:
             exp = 'Failure'
         rows.append(['bootloader', json.dumps(c, sort_keys=True), exp])
-    # S-11.072 with the step switched on; S-11.073 with it off: Not found or Skipped, whatever the option and
-    # the answers
-    for on, p, (opt, conf), ok in itertools.product([1, 0], [0, 1], opt_conf, [1, 0]):
-        c = dict(switched_on=on, present=p, option=opt, confirmed=conf, write_ok=ok)
-        exp = 'Not found' if not p else ('Skipped' if not on or not opt or not conf else ('OK' if ok else 'Failure'))
-        rows.append(['spiboot', json.dumps(c, sort_keys=True), exp])
+    # S-11.057: the reserved step 6 reports Not found, whatever the option and the answers
+    for opt, conf in opt_conf:
+        rows.append(['reserved', json.dumps(dict(option=opt, confirmed=conf), sort_keys=True), 'Not found'])
     # S-11.069-S-11.071 with the step switched on; S-11.073 with it off: Not found or Skipped, nothing else
     for on, p, rel, forced, dfu, ok in itertools.product([1, 0], [0, 1], ['equal', 'newer'], [0, 1], [1, 0],
                                                          [1, 0]):
@@ -833,11 +820,8 @@ def step_rows():
                                     start='refused_verified', written_here=1, slot_matches=1), bad),
                 ('bootloader', dict(present=1, option=1, confirmed=1, rel='newer', forced=0, dev=0, write_ok=1,
                                     start='refused_bad', written_here=0, slot_matches=0), bad),
-                ('spiboot', dict(switched_on=1, present=1, option=1, confirmed=1, write_ok=1), bad),
-                ('spiboot', dict(switched_on=1, present=1, option=0, confirmed=0, write_ok=1), 'Skipped'),
-                ('spiboot', dict(switched_on=1, present=1, option=1, confirmed=0, write_ok=1), 'Skipped'),
-                # S-11.073: a switched-off step makes no check
-                ('spiboot', dict(switched_on=0, present=1, option=1, confirmed=1, write_ok=1), 'Skipped'),
+                # S-11.057: the reserved step makes no check
+                ('reserved', dict(option=1, confirmed=1), 'Not found'),
                 ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1), bad),
                 # S-11.069: the check before the step's own DFU-mode queries
                 ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=0, write_ok=1), bad),
@@ -899,10 +883,10 @@ def run_rows():
     # confirmed]; without the last two: every step switched on, and the protected steps confirmed
     on, off = (), m.STEPS_OFF
     cases = [
-        ('all_ok', 0, 1, 1, ['OK'] * 7, 'done', 1, 1),
-        ('normal_install_skips', 0, 1, 0, ['OK', 'OK', 'Skipped', 'OK', 'OK', 'OK', 'Skipped'], 'done', 1, 1),
+        ('all_ok', 0, 1, 1, ['OK'] * 6 + ['Not found'], 'done', 1, 1),
+        ('normal_install_skips', 0, 1, 0, ['OK', 'OK', 'Skipped', 'OK', 'OK', 'OK', 'Not found'], 'done', 1, 1),
         ('only_protected_skipped', 0, 0, 0, ['Not found', 'Not found', 'Skipped', 'Not found', 'Not found',
-                                             'Not found', 'Skipped'], 'nothing to do', 1, 1),
+                                             'Not found', 'Not found'], 'nothing to do', 1, 1),
         ('all_already', 0, 1, 1, ['Not found', 'OK', 'OK', 'Already installed', 'Already installed',
                                   'Already installed', 'Not found'], 'done', 1, 1),
         ('nothing_to_do', 0, 1, 0, ['Not found', 'Not found', 'Skipped', 'Already installed', 'Already installed',
@@ -914,37 +898,28 @@ def run_rows():
         ('os_internal_error_stops', 0, 0, 0, ['OK', 'Internal error'], 'failed', 1, 1),
         ('ble_failure_stops', 0, 1, 1, ['OK', 'OK', 'OK', 'Failure'], 'failed', 1, 1),
         ('bad_file_stops', 0, 0, 0, ['Bad file'], 'failed', 1, 1),
-        ('spiboot_failure_stops', 0, 0, 1, ['OK', 'OK', 'OK', 'Not found', 'Not found', 'Not found', 'Failure'],
-         'failed', 1, 1),
         ('content_only', 1, 0, 0, ['OK', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found',
                                    'Not found'], 'done', 1, 1),
         ('content_only_fails', 1, 0, 0, ['Failure'], 'failed', 1, 1),
         ('nordic_no_dfu', 0, 1, 0, [], 'failed', 0, 1),
-        # S-11.073: this version's steps 3-6 switched off. Nordic images present: no DFU entry, so a Nordic
-        # refusal changes nothing; the first stage is neither asked for nor written, whatever the option
-        ('this_version', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'Skipped'], 'done', 1,
+        # S-11.073: this version's steps 3-5 switched off. Nordic images present: no DFU entry, so a Nordic
+        # refusal changes nothing; step 6 is reserved and reports Not found
+        ('this_version', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'Not found'], 'done', 1,
          1, off, ()),
         ('this_version_nordic_refuses_dfu', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
-                                                       'Skipped'], 'done', 0, 1, off, ()),
-        ('this_version_confirmed', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped'], 'done',
-         1, 1, off, (2,)),
+                                                       'Not found'], 'done', 0, 1, off, ()),
+        ('this_version_confirmed', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Not found'],
+         'done', 1, 1, off, (2,)),
         ('this_version_not_confirmed', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
-                                                  'Skipped'], 'done', 1, 1, off, ()),
-        ('this_version_first_stage_only', 0, 1, 1, ['OK', 'OK', 'Not found', 'Skipped', 'Skipped', 'Skipped',
-                                                     'Skipped'], 'done', 1, 1, off, ()),
+                                                  'Not found'], 'done', 1, 1, off, ()),
         ('this_version_only_switched_off', 0, 1, 0, ['Not found', 'Not found', 'Not found', 'Skipped', 'Skipped',
-                                                      'Skipped', 'Skipped'], 'nothing to do', 1, 1, off, ()),
-        # the first-stage step switched on, as in the host build's tests of its dormant code
-        ('first_stage_on_confirmed', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'OK'], 'done', 1,
-         1, (3, 4, 5), (2, 6)),
-        ('first_stage_on_only', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'OK'], 'done', 1,
-         1, (3, 4, 5), (6,)),
+                                                      'Skipped', 'Not found'], 'nothing to do', 1, 1, off, ()),
         ('this_version_os_fails', 0, 1, 0, ['OK', 'Internal error'], 'failed', 1, 1, off, ()),
     ]
     rows = []
     for row in cases:
         case, co, nordic, opt, results, outcome, dfu, vf = row[:8]
-        steps_off, confirmed = row[8:] if len(row) > 8 else (on, (2, 6))
+        steps_off, confirmed = row[8:] if len(row) > 8 else (on, (2,))
         res = {i: R[r] for i, r in enumerate(results)}
         got = m.run(res, bool(co), bool(nordic), bool(dfu), bool(vf), steps_off=steps_off)
         # S-11.061 item 2, S-11.073: a DFU entry only for a Nordic image whose step is on
@@ -952,7 +927,9 @@ def run_rows():
         assert (['nordic', 'enter_dfu'] in [list(x) for x in got['writes']]) == dfu_entry, case
         for i, r in enumerate(results):       # S-11.058, S-11.073, S-11.090, S-11.096: a step's Skipped
             if r == 'Skipped':
-                assert (i in (2, 6) and (not opt or i not in confirmed)) or i in steps_off, (case, i)
+                assert (i == 2 and (not opt or i not in confirmed)) or i in steps_off, (case, i)
+            if i == m.RESERVED:
+                assert r == 'Not found', (case, i)
             if i in steps_off:
                 assert r in ('Skipped', 'Not found'), (case, i)
         assert got['outcome'] == outcome, (case, got['outcome'])

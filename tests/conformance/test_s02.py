@@ -62,11 +62,11 @@ def bootables():
         return json.load(f)['cases']
 
 
-def bootable(n, seed, kind='slot'):
-    """An n-byte image that S-02.091 accepts: bootable_images.json's good (slot) or fs_good (first stage)
-    stream, then random bytes after its FINAL block. Shorter than the stream it is that stream's first n
-    bytes, which S-02.091 refuses."""
-    good = {c['name']: b(c['image']) for c in bootables()}['good' if kind == 'slot' else 'fs_good']
+def bootable(n, seed):
+    """An n-byte image that S-02.091 accepts: bootable_images.json's good slot stream, then random bytes
+    after its FINAL block. Shorter than the stream it is that stream's first n bytes, which S-02.091
+    refuses."""
+    good = {c['name']: b(c['image']) for c in bootables()}['good']
     return (good + random.Random(seed).randbytes(max(n - len(good), 0)))[:n]
 
 
@@ -402,29 +402,24 @@ class Upgrade(unittest.TestCase):
     @scenario('S-02/SC-UPG-STREAM')
     @requirement('S-02.091')
     def test_SC_UPG_STREAM(self):
-        """Every case of bootable_images.json offered to its writer: a slot case from selector 01 01 with
-        both slots good, a first-stage case from the SC-FS-UPG start; refused with no erase or program and
-        Bad file (S02_ERR_STREAM), or installed."""
+        """Every case of bootable_images.json (each a slot image) offered to the slot writer from selector
+        01 01 with both slots good; refused with no erase or program and Bad file (S02_ERR_STREAM), or
+        installed."""
         slot = save('upg_start.bin', self.start(self.seqs['C-02']))
-        fs = save('fsupg_start.bin', spiflash.build_flash(selector=(1, 1)))
         cases = bootables()
         cmds = []
         for c in cases:
+            self.assertEqual(c['kind'], 'slot', c['name'])
             img = save('boot_%s.bin' % c['name'], b(c['image']))
-            if c['kind'] == 'slot':
-                cmds += ['load ' + slot, 'upgrade 1 ' + img, 'fs 0']
-            else:
-                cmds += ['load ' + fs, 'fsupgrade 1 ' + img, 'fs 0']
+            cmds += ['load ' + slot, 'upgrade 1 ' + img, 'fs 0']
         out = run('s02', cmds)
         for k, c in enumerate(cases):
             res, ops = split(out[3 * k + 1])
             if not c['accepted']:
                 self.assertEqual((res[0], writes(ops)), ('7', []), c['name'])
-            elif c['kind'] == 'slot':
+            else:
                 self.assertEqual(res, ['0', '0'], c['name'])
                 self.assertEqual(split(out[3 * k + 2])[0][0], '0', c['name'])
-            else:
-                self.assertEqual(res[0], '0', c['name'])
 
     @scenario('S-02/SC-UPG-FAULT')
     def test_SC_UPG_FAULT_fail_op(self):
@@ -567,45 +562,6 @@ class Upgrade(unittest.TestCase):
                 self.assertEqual(sel, b(r['selector']), what)
                 if slots[t] == 'badtag':
                     self.assertEqual(' '.join(map(str, boots)), r['conforming_boots'], what)
-
-
-class FirstStageUpgrade(unittest.TestCase):
-    """s02_first_stage_upgrade against package_steps.json's first_stage_ops and SC-FS-UPG's rules."""
-
-    def steps(self):
-        with open(vectors('package_steps.json'), encoding='utf-8') as f:
-            return json.load(f)
-
-    @scenario('S-02/SC-FS-UPG')
-    def test_SC_FS_UPG(self):
-        v = self.steps()
-        start = save('fsupg_start.bin', spiflash.build_flash(selector=(1, 1)))
-        sizes = [int(x['length'], 16) for x in v['first_stage_ops']]
-        refused = [int(x, 16) for x in v['first_stage_refused_sizes']]
-        streams = [int(x['length'], 16) for x in v['first_stage_refused_streams']]
-        cmds = []
-        for n in sizes + refused:
-            cmds += ['load ' + start, 'fsupgrade 1 ' + save('fsupg_%x.bin' % n, padded('fs_small', n))]
-        for n in streams:
-            cmds += ['load ' + start, 'fsupgrade 1 ' + save('fsupg_s%x.bin' % n, padded('fs_one_byte', n))]
-        cmds += ['load ' + start, 'fsupgrade 0 ' + save('fsupg_off.bin', bootable(0x86C0, 0, 'first_stage'))]
-        out = run('s02', cmds)[1::2]
-        for x, line in zip(v['first_stage_ops'], out):
-            n = int(x['length'], 16)
-            res, ops = split(line)
-            self.assertEqual(res, ['0', 'on,off,'], n)                  # S-02.072: on before, off after
-            self.assertEqual(writes(ops), ref_writes(x['ops']), n)
-            last = max(i for i, o in enumerate(ops) if o.startswith('p:'))
-            self.assertTrue(covered(ops[last + 1:], 0, n), n)            # S-02.071: the read-back
-            self.assertFalse([o for o in writes(ops) if int(o.split(':')[1], 16) >= int(v['first_stage_size_limit'], 16)], n)
-        for n, line in zip(refused, out[len(sizes):]):
-            res, ops = split(line)
-            self.assertEqual((res[0], writes(ops)), ('3', []), n)       # S02_ERR_SIZE
-        for x, line in zip(v['first_stage_refused_streams'], out[len(sizes) + len(refused):]):
-            res, ops = split(line)                                      # S-02.091: Bad file
-            self.assertEqual((res[0], writes(ops)), ('7', []), x)       # S02_ERR_STREAM
-        res, ops = split(out[-1])
-        self.assertEqual((res[0], writes(ops)), ('1', []))              # S02_SKIPPED
 
 
 # ---- recovery (S-02.084, S-02.093) ----

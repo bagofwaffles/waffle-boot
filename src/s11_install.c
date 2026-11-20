@@ -45,7 +45,7 @@ void s11_install(const struct s11_install_ops *ops,
 	out->reason = S11_REASON_NONE;
 	s11_staged_scan(ops->fs, &st);
 	/* S-11.096: asked before the run's first write */
-	env.confirmed = s11_confirm(&st, in->option, ops->off, ops->confirm,
+	env.confirmed = s11_confirm(&st, in->option, ops->confirm,
 				    ops->confirm_ctx);
 	env.off = ops->off;
 	out->stock = s11_return_to_stock(in->option, checked.te_signed,

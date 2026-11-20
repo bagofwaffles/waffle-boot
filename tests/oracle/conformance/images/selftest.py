@@ -362,18 +362,21 @@ def _():
 @group('firmware zip')
 def _():
     os_img = emmc.synthetic_os(4)
-    z = fwzip.build({'os': os_img, 'spiboot': (b'S' * 64, (2, 0, 1))}, version=(1, 2, 0), githash='abc123',
+    z = fwzip.build({'os': os_img, 'bootloader': (b'B' * 64, (2, 0, 1))}, version=(1, 2, 0), githash='abc123',
                     dlc={'pack_a': {'name': 'Pack A'}}, nordic_bootloaders=(b'n0', b'n1'))
     p = fwzip.parse(z)
     assert p['version'] == {'version': (1, 2, 0), 'build': 0, 'hash': 'abc123'}
-    assert p['components']['os']['data'] == os_img and p['components']['spiboot']['version']['version'] == (2, 0, 1)
+    assert p['components']['os']['data'] == os_img and p['components']['bootloader']['version']['version'] == (2, 0, 1)
     assert p['dlc'] == {'pack_a': {'name': 'Pack A'}} and p['nordic_bootloaders'] == (b'n0', b'n1')
     assert not p['problems'] and not p['outside_root'] and not p['partial']
     assert all(n.startswith('firmware/') for n in zipfile.ZipFile(__import__('io').BytesIO(z)).namelist())
     assert fwzip.extract_path('firmware/blackfin/bin/os.ldr') == 'upgrade/blackfin/bin/os.ldr'
     assert fwzip.version_from_text('1000.0.20+0@deadbeef\n')['version'] == (1000, 0, 20)
-    p = fwzip.parse(fwzip.build({'spiboot': b'x' * 0xB001}, extra={'firmware/partial_upgrade': b''}))
-    assert p['partial'] and not p['components']['spiboot']['size_ok']
+    p = fwzip.parse(fwzip.build({'bootloader': b'x' * 0x78001}, extra={'firmware/partial_upgrade': b''}))
+    assert p['partial'] and not p['components']['bootloader']['size_ok']
+    # a first-stage file is no component: not parsed as one, not limited
+    p = fwzip.parse(fwzip.build(extra={'firmware/blackfin/bin/spiboot.ldr': b'x' * 0xC001}))
+    assert 'spiboot' not in p['components'] and not p['problems']
 
 
 @group('tfw')

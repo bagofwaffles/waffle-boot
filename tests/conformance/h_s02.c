@@ -26,7 +26,6 @@
  *   restore                        -> STATUS RESTORED
  *   writesel SLOT VERIFIED         -> STATUS
  *   upgrade OPTION PATH            -> STATUS TARGET    (the image from a file)
- *   fsupgrade OPTION PATH          -> STATUS ANNOUNCE  (on/off events, in order)
  *   recover RUNNING PATH [eager] [during] [leave] [leaverx] [swap AT FLASH]
  *                                  -> REPLIES PHASE RESTART HOLD ACCEPT FIRST  (S-02.084, S-02.093:
  *                                                  recovery's protocol, src/front/, fed the
@@ -536,17 +535,6 @@ static void cmd_fault(const struct h_cmd *c)
 	h_put("ok");
 }
 
-static char announce_log[64];
-
-static void on_announce(void *ctx, bool on)
-{
-	size_t n = strlen(announce_log);
-
-	(void)ctx;
-	if (n + 5u < sizeof announce_log)
-		strcpy(announce_log + n, on ? "on," : "off,");
-}
-
 /* The commands that touch the flash; run under the cut's setjmp. */
 static void flash_command(const struct h_cmd *c)
 {
@@ -583,24 +571,16 @@ static void flash_command(const struct h_cmd *c)
 	} else if (strcmp(k, "writesel") == 0) {
 		h_putu((unsigned long)s02_write_selector(&env, (unsigned)h_num(c, 1),
 							 (uint8_t)h_num(c, 2)));
-	} else if (strcmp(k, "upgrade") == 0 || strcmp(k, "fsupgrade") == 0) {
+	} else if (strcmp(k, "upgrade") == 0) {
 		size_t n;
 		uint8_t *img = load_file(c, 2, &n);
 		unsigned target = 2;
 
 		if (!img)
 			return;
-		if (k[0] == 'u') {
-			h_putu((unsigned long)s02_slot_upgrade(&env, h_num(c, 1) != 0, img,
-							       (uint32_t)n, &target));
-			h_putu(target);
-		} else {
-			announce_log[0] = '\0';
-			h_putu((unsigned long)s02_first_stage_upgrade(&env, h_num(c, 1) != 0, img,
-								      (uint32_t)n, on_announce,
-								      NULL));
-			h_put(announce_log[0] ? announce_log : "-");
-		}
+		h_putu((unsigned long)s02_slot_upgrade(&env, h_num(c, 1) != 0, img,
+						       (uint32_t)n, &target));
+		h_putu(target);
 		free(img);
 	} else if (strcmp(k, "recover") == 0) {
 		cmd_recover(c);

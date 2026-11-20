@@ -106,11 +106,11 @@ class Texts(unittest.TestCase):
         steps = [(int(m.group(1)), c['label']) for c in vectors('progress.json')['labels']
                  if (m := re.match(r'step (\d+)', c['phase']))]
         self.assertTrue(steps)
-        out = run('s10c', ['label %d' % s for s, _ in steps] + ['label 7'])
+        out = run('s10c', ['label %d' % s for s, _ in steps] + ['label 6', 'label 7'])
         for (s, label), o in zip(steps, out):
             with self.subTest(step=s):
                 self.assertEqual(unhex(o).decode(), label)
-        self.assertEqual(out[-1], '-')
+        self.assertEqual(out[-2:], ['-', '-'])    # the reserved step 6 has no label
 
     @requirement('S-10c.106')
     def test_S10c_106_skip_labels(self):

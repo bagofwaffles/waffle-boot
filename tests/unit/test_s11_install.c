@@ -5,8 +5,8 @@
  * S-11.055 (forcing reaches the steps), S-11.090 (the option of the checks
  * holds for the run), S-11.091 (return to the factory bootloader decided before step 1), S-11.073
  * (switched-off steps: no DFU entry, nothing sent), S-11.096 (the
- * confirmations: their order, before the run's first write, each protected
- * step writing only after its own); S-17.021 (the start-of-run version read
+ * confirmation: before the run's first write, the bootloader written only
+ * after it); S-11.034 (a first-stage file is never looked for); S-17.021 (the start-of-run version read
  * is reported). The package is built here with the reference CRC-16 and
  * SHA-256; the P-224 verifier is a fake.
  */
@@ -162,7 +162,7 @@ static const struct s11_package_ops pkg_ops = {
 
 struct world {
 	enum s11_reason zip_reason;
-	unsigned zip_calls, run_calls, writes_bl, writes_fs, sends, enters;
+	unsigned zip_calls, run_calls, writes_bl, fs_looked, sends, enters;
 	bool staged_ble, staged_bl, staged_fs;
 	/* S-11.096: the answer for each component, a bit each; what was
 	 * asked, in order, and the run's calls before each ask */
@@ -250,8 +250,10 @@ static bool f_stat(void *ctx, const char *path, bool *dir, uint32_t *size)
 	}
 	if (strstr(path, "bootloader.ldr") != NULL)
 		return W.staged_bl;
-	if (strstr(path, "spiboot.ldr") != NULL)
+	if (strstr(path, "spiboot") != NULL) {
+		W.fs_looked++;
 		return W.staged_fs;
+	}
 	if (strstr(path, "ble.bin") != NULL)
 		return W.staged_ble;
 	return strstr(path, ".version") != NULL;
@@ -349,13 +351,6 @@ static bool s_bootloader(void *ctx)
 	return true;
 }
 
-static bool s_spiboot(void *ctx)
-{
-	(void)ctx;
-	W.writes_fs++;
-	return true;
-}
-
 static void s_sw(void *ctx, const struct s11_version *v)
 {
 	(void)ctx;
@@ -377,7 +372,7 @@ static int s_slot(void *ctx)
 }
 
 static const struct s11_step_ops step_ops = {
-	s_content, s_write, s_sw, s_bootloader, s_spiboot, NULL, s_send, s_slot,
+	s_content, s_write, s_sw, s_bootloader, NULL, s_send, s_slot,
 	s_write, NULL,
 };
 
@@ -397,7 +392,7 @@ static struct s11_install_ops ops = {
 	&pkg_ops, &zip_ops, &fs_ops, &run_ops, &step_ops, u_confirm, NULL, 0,
 };
 
-#define YES_ALL ((1u << S11_C_BOOTLOADER) | (1u << S11_C_SPIBOOT))
+#define YES_ALL (1u << S11_C_BOOTLOADER)
 
 static void reset(bool ble, bool bl, struct s17_copro *c)
 {
@@ -416,41 +411,24 @@ static void test_confirm_order(void)
 {
 	memset(&W, 0, sizeof(W));
 	memset(&confirm_st, 0, sizeof(confirm_st));
-	confirm_st.size[S11_C_BOOTLOADER] = confirm_st.size[S11_C_SPIBOOT] = 1u;
+	confirm_st.size[S11_C_BOOTLOADER] = 1u;
 	confirm_st.size[S11_C_OS] = 1u;
 	W.answers = YES_ALL;
-	CHECK(s11_confirm(&confirm_st, true, 0u, u_confirm, NULL) ==
-		      (S11_STEP_BIT(S11_STEP_BOOTLOADER) |
-		       S11_STEP_BIT(S11_STEP_SPIBOOT)) &&
-	      W.n_asked == 2 && W.asked[0] == S11_C_BOOTLOADER &&
-	      W.asked[1] == S11_C_SPIBOOT,
-	      "the bootloader first, then the first stage");
-	memset(&W, 0, sizeof(W));
-	W.answers = 1u << S11_C_SPIBOOT;
-	CHECK(s11_confirm(&confirm_st, true, 0u, u_confirm, NULL) ==
-		      S11_STEP_BIT(S11_STEP_SPIBOOT) && W.n_asked == 2,
-	      "each answer for its own component");
-	/* S-11.073: a switched-off first stage is not asked for */
-	memset(&W, 0, sizeof(W));
-	W.answers = YES_ALL;
-	CHECK(s11_confirm(&confirm_st, true, S11_STEPS_SWITCHABLE, u_confirm,
-			  NULL) == S11_STEP_BIT(S11_STEP_BOOTLOADER) &&
+	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) ==
+		      S11_STEP_BIT(S11_STEP_BOOTLOADER) &&
 	      W.n_asked == 1 && W.asked[0] == S11_C_BOOTLOADER,
-	      "first stage switched off: only the bootloader asked");
+	      "the bootloader asked for and confirmed");
+	memset(&W, 0, sizeof(W));
+	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) == 0u &&
+	      W.n_asked == 1, "not confirmed: nothing confirmed");
 	memset(&W, 0, sizeof(W));
 	W.answers = YES_ALL;
-	CHECK(s11_confirm(&confirm_st, false, 0u, u_confirm, NULL) == 0u &&
+	CHECK(s11_confirm(&confirm_st, false, u_confirm, NULL) == 0u &&
 	      W.n_asked == 0, "option off: nothing asked, nothing confirmed");
-	CHECK(s11_confirm(&confirm_st, true, 0u, NULL, NULL) == 0u,
+	CHECK(s11_confirm(&confirm_st, true, NULL, NULL) == 0u,
 	      "no way to ask: nothing confirmed");
 	confirm_st.size[S11_C_BOOTLOADER] = 0;
-	CHECK(s11_confirm(&confirm_st, true, 0u, u_confirm, NULL) ==
-		      S11_STEP_BIT(S11_STEP_SPIBOOT) &&
-	      W.n_asked == 1 && W.asked[0] == S11_C_SPIBOOT,
-	      "only what the package carries is asked");
-	confirm_st.size[S11_C_SPIBOOT] = 0;
-	W.n_asked = 0;
-	CHECK(s11_confirm(&confirm_st, true, 0u, u_confirm, NULL) == 0u &&
+	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) == 0u &&
 	      W.n_asked == 0, "no protected component: nothing asked");
 }
 
@@ -460,39 +438,31 @@ static void test_install_confirm(struct s11_check_in *in,
 {
 	struct s11_install_result out;
 
-	/* both carried, both confirmed: asked before the run's first write,
-	 * the bootloader first; both written */
+	/* carried and confirmed: asked before the run's first write, then
+	 * written */
 	in->option = true;
 	reset(false, true, copro);
-	W.staged_fs = true;
 	s11_install(&ops, in, copro, &out);
-	CHECK(W.n_asked == 2 && W.asked[0] == S11_C_BOOTLOADER &&
-	      W.asked[1] == S11_C_SPIBOOT && W.calls_at_ask == 0,
-	      "asked in order, before any write of the run");
-	CHECK(W.writes_bl == 1 && W.writes_fs == 1 &&
-	      out.outcome.kind == S11_OUTCOME_DONE, "both confirmed: both written");
+	CHECK(W.n_asked == 1 && W.asked[0] == S11_C_BOOTLOADER &&
+	      W.calls_at_ask == 0,
+	      "asked before any write of the run");
+	CHECK(W.writes_bl == 1 && out.outcome.kind == S11_OUTCOME_DONE,
+	      "confirmed: written");
 
-	/* each step writes only after its own confirmation */
-	for (unsigned a = 0; a < 4u; a++) {
+	/* written only after its confirmation */
+	for (unsigned a = 0; a < 2u; a++) {
 		reset(false, true, copro);
-		W.staged_fs = true;
-		W.answers = ((a & 1u) != 0u ? 1u << S11_C_BOOTLOADER : 0u) |
-			    ((a & 2u) != 0u ? 1u << S11_C_SPIBOOT : 0u);
+		W.answers = a != 0u ? YES_ALL : 0u;
 		s11_install(&ops, in, copro, &out);
-		CHECK(W.writes_bl == ((a & 1u) != 0u ? 1u : 0u) &&
-		      W.writes_fs == ((a & 2u) != 0u ? 1u : 0u) &&
-		      out.run.end != S11_RUN_FAILED,
-		      "answers %u: bootloader %u, first stage %u written", a,
-		      W.writes_bl, W.writes_fs);
+		CHECK(W.writes_bl == a && out.run.end != S11_RUN_FAILED,
+		      "answer %u: bootloader %u written", a, W.writes_bl);
 	}
 
 	/* the option off: nothing asked, nothing written */
 	in->option = false;
 	reset(false, true, copro);
-	W.staged_fs = true;
 	s11_install(&ops, in, copro, &out);
-	CHECK(W.n_asked == 0 && W.writes_bl == 0 && W.writes_fs == 0,
-	      "option off: nothing asked");
+	CHECK(W.n_asked == 0 && W.writes_bl == 0, "option off: nothing asked");
 
 	/* a repeated install asks again: nothing is stored */
 	in->option = true;
@@ -536,19 +506,18 @@ static void test_install_confirm(struct s11_check_in *in,
 	s11_install(&ops, in, copro, &out);
 	CHECK(W.enters == 1 && W.sends == 1, "switched on: entered and sent");
 
-	/* S-11.073: the first-stage step switched off, as in every board
-	 * build: with the option on and every answer yes, only the bootloader
-	 * is asked for, and the first stage is neither checked nor written */
+	/* S-11.034: a package carrying a first-stage file: with the option on
+	 * and every answer yes, only the bootloader is asked for, and the
+	 * file is never looked for */
 	in->option = true;
-	ops.off = S11_STEPS_SWITCHABLE;
 	reset(false, true, copro);
 	W.staged_fs = true;
 	s11_install(&ops, in, copro, &out);
 	CHECK(W.n_asked == 1 && W.asked[0] == S11_C_BOOTLOADER &&
-	      W.writes_bl == 1 && W.writes_fs == 0 &&
-	      out.outcome.kind == S11_OUTCOME_DONE,
-	      "first stage switched off: not asked, not written, the run done");
-	ops.off = 0;
+	      W.writes_bl == 1 && W.fs_looked == 0 &&
+	      out.outcome.kind == S11_OUTCOME_DONE &&
+	      out.run.step == 0xFF,
+	      "first-stage file: not looked for, not asked, the run done");
 	in->option = false;
 }
 
