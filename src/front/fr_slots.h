@@ -67,8 +67,9 @@ int fr_running_slot(const struct fr_flash *f, const struct fr_mem *mem,
 int fr_running_slots(const struct fr_flash *f, const struct fr_mem *mem,
 		     unsigned *slot, bool *established, bool *both);
 /* The same answer, only after fr_image_check() has passed: one slot whose
- * descriptor is the loaded one, the other's differing, is that slot with no
- * stream compared; anything else is the whole compare above. */
+ * descriptor is the loaded one, the other's differing or a whole stream
+ * that loads none of it, is that slot with no stream compared; anything else
+ * is the whole compare above. */
 int fr_running_slots_checked(const struct fr_flash *f, const struct fr_mem *mem,
 			     unsigned *slot, bool *established, bool *both);
 /* The flash holds the same image in both slots: each record has the tag

@@ -32,7 +32,7 @@
 #include "fr_slots.h"
 
 #define FR_PROTO_VERSION  2u
-#define FR_FRONT_VERSION  18u	/* the front's own version, bumped with its pin */
+#define FR_FRONT_VERSION  19u	/* the front's own version, bumped with its pin */
 #define FR_PROTO_MAX_DATA 1024u	/* image bytes in one DATA, after its offset */
 #define FR_PROTO_MAX      (FR_PROTO_MAX_DATA + 8u)	/* a frame's payload */
 #define FR_PROTO_HEAD     6u	/* "WR", type, seq, len */

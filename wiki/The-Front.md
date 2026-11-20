@@ -61,7 +61,8 @@ image bytes, every setting reads at its default and a save is refused. Over `0x7
   front. It starts no second processor, does not touch the eMMC and reads no settings (S-02.084).
 - **The running slot, quickly.** Once the main image's check has passed, the front first reads only each
   slot's image descriptor. When one slot's is the loaded one and the other's differs, as with two builds,
-  that slot is the running one and no stream is read. Otherwise, as when both slots hold the same file, the
+  or the other slot's whole stream carries no descriptor, as with another bootloader, that slot is the
+  running one and no stream is read. Otherwise, as when both slots hold the same file, the
   front compares memory with each slot's whole stream, as below, which adds about 2.7 s to that start.
   Recovery always compares the whole streams.
 - **Both slots may hold the same image.** The front tells its slot by comparing memory with each slot's
