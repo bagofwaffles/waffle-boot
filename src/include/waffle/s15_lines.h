@@ -18,6 +18,9 @@
 #define S15_KEY_WHITE 0x0du
 #define S15_KEY_SHIFT 0x37u
 
+/* S-15.015: how long a hold lasts before its action runs. */
+#define S15_HOLD_MS 5000u
+
 /* S-15.011: the menu digit of a key, 0 when it is none. */
 unsigned s15_digit(unsigned key);
 
@@ -47,7 +50,7 @@ enum s15_result {
 	S15_RES_FAILURE,
 	S15_RES_BAD_FILE,
 	S15_RES_INTERNAL,
-	S15_RES_SKIPPED_UNCONFIRMED,	/* a protected step, not confirmed (S-11.096) */
+	S15_RES_SKIPPED_UNSELECTED,	/* a step not selected (S-11.096) */
 	S15_RES_SKIPPED_OFF,	/* a switched-off step (S-11.073) */
 	S15_RES_SKIPPED_WRITTEN	/* the bootloader, already written (S-11.068 item 5) */
 };
@@ -111,7 +114,8 @@ enum s15_outcome {
 	S15_OUT_FAILED
 };
 /* The parts a completed run skipped, by name: skipped has bit n set for
- * step n. One or two lines with their styles; 0 for no bit. */
+ * step n (the board leaves out the steps not selected). One or two lines
+ * with their styles; 0 for no bit. */
 size_t s15_not_updated(struct s15_buf out[2], enum s15_style style[2],
 		       unsigned skipped);
 /* One or two lines into out[], with their styles; returns the count.

@@ -14,7 +14,6 @@
 #include "waffle/bytes.h"
 #include "waffle/s02_flash.h"
 #include "waffle/s05_handoff.h"
-#include "waffle/s15_confirm.h"
 #include "waffle/s15_keytest.h"
 #include "waffle/s15_lines.h"
 
@@ -214,7 +213,7 @@ void inst_hold_key(struct inst_hold *h, unsigned key, unsigned digit, bool down,
 
 unsigned inst_hold_tick(struct inst_hold *h, uint32_t now_ms)
 {
-	if (!h->holding || now_ms - h->t0 < S15_CONFIRM_HOLD_MS)
+	if (!h->holding || now_ms - h->t0 < S15_HOLD_MS)
 		return 0;
 	h->holding = false;
 	/* its release does nothing more */
@@ -229,7 +228,7 @@ unsigned inst_hold_fill(const struct inst_hold *h, uint32_t now_ms)
 
 	if (!h->holding)
 		return 0;
-	return held >= S15_CONFIRM_HOLD_MS ? 1000u : (unsigned)(held * 1000u / S15_CONFIRM_HOLD_MS);
+	return held >= S15_HOLD_MS ? 1000u : (unsigned)(held * 1000u / S15_HOLD_MS);
 }
 
 /* --- the carried image --- */

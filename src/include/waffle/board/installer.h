@@ -106,7 +106,7 @@ const char *inst_lock_words(enum inst_lock l);
 /*
  * A digit allowed by mask (bit d) starts a hold on its key down, with no
  * other key down. Released early, or any other key down, cancels it. Held
- * S15_CONFIRM_HOLD_MS it fires once, and the key's release does nothing more.
+ * S15_HOLD_MS it fires once, and the key's release does nothing more.
  * A key that was down when the hold was offered acts only after an up.
  */
 struct inst_hold {

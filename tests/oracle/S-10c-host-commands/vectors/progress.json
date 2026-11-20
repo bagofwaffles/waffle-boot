@@ -458,8 +458,8 @@
    "step": 2
   },
   {
-   "label": "[skipped] bootloader: not confirmed",
-   "reason": "not confirmed",
+   "label": "[skipped] bootloader: not selected",
+   "reason": "not selected",
    "step": 2
   },
   {
@@ -481,6 +481,31 @@
    "label": "[skipped] bootloader: already written",
    "reason": "already written",
    "step": 2
+  },
+  {
+   "label": "[skipped] content: not selected",
+   "reason": "not selected",
+   "step": 0
+  },
+  {
+   "label": "[skipped] main dsp: not selected",
+   "reason": "not selected",
+   "step": 1
+  },
+  {
+   "label": "[skipped] ble: not selected",
+   "reason": "not selected",
+   "step": 3
+  },
+  {
+   "label": "[skipped] ble bootloader: not selected",
+   "reason": "not selected",
+   "step": 4
+  },
+  {
+   "label": "[skipped] backplane: not selected",
+   "reason": "not selected",
+   "step": 5
   }
  ]
 }

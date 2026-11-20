@@ -109,9 +109,9 @@ enum s11_reason s11_payload_key_rule(uint8_t index, bool k0_ok, bool k1_ok,
 /* Forced by a RAM-disk file name (S-11.047): it contains "force". */
 bool s11_name_forces(const char *name);
 
-/* The run is a return to the factory bootloader (S-11.091); the bootloader's write is
- * confirmed (S-11.096) only when its image is present. */
+/* The run is a return to the factory bootloader (S-11.091); the bootloader
+ * step is selected (S-11.096) only when its image is present. */
 bool s11_return_to_stock(bool option, bool te_signed,
-			 bool bootloader_confirmed);
+			 bool bootloader_selected);
 
 #endif /* WAFFLE_S11_PACKAGE_H */

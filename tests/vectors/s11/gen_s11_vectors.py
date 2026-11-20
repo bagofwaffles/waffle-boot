@@ -237,8 +237,9 @@ def main():
         res = [result_code[x] for x in r['results'].split(',')] if r['results'] else []
         writes = ';'.join(write_text(w) for w in json.loads(r['writes']))
         off = sum(1 << int(x) for x in r['steps_off'].split(',') if x)
-        rows.append('{ %s, %s, %s, 0x%02x, %s, %s, %s, { %s }, %d, %s, %s }' % (
-            c_str(r['case']), r['content_only'], r['nordic_images'], off, r['dfu_entry'], r['nordic_dfu_ok'],
+        sel = sum(1 << int(x) for x in r['selected'].split(',') if x)
+        rows.append('{ %s, %s, %s, 0x%02x, 0x%02x, %s, %s, %s, { %s }, %d, %s, %s }' % (
+            c_str(r['case']), r['content_only'], r['nordic_images'], off, sel, r['dfu_entry'], r['nordic_dfu_ok'],
             r['version_file'], ', '.join(map(str, res)) or '0', len(res),
             c_str(r['outcome']), c_str(writes)))
     table('s11v_runs', 'struct s11v_run', rows)
@@ -265,9 +266,21 @@ def main():
             c.get('present', 0), c.get('present0', 0), c.get('present1', 0), c.get('option', 0),
             c.get('write_ok', 1), rel_no[c.get('rel', 'newer')], c.get('forced', 0), c.get('dev', 0),
             c.get('in_dfu', 1), c.get('slot', 0), result_code[r['result']], staged_no[c.get('staged', 'ok')],
-            c.get('confirmed', 0), c.get('switched_on', 1), start_no[c.get('start', 'ok')],
+            c.get('selected', 1), c.get('switched_on', 1), start_no[c.get('start', 'ok')],
             c.get('written_here', 0), c.get('slot_matches', 0)))
     table('s11v_steps', 'struct s11v_step', rows)
+
+    # ---- picks.tsv: S-11.096
+    pick_no = {'absent': 'S11_PICK_ABSENT', 'open': 'S11_PICK_OPEN', 'switched off': 'S11_PICK_SWITCHED_OFF',
+               'option off': 'S11_PICK_OPTION_OFF', 'up to date': 'S11_PICK_UP_TO_DATE'}
+    rows = []
+    for r in tsv('picks.tsv'):
+        c = json.loads(r['conditions'])
+        rows.append('{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %s }' % (
+            step_no[r['step']], c.get('content_dir', 0), c.get('present', 0), c.get('present0', 0),
+            c.get('present1', 0), c.get('option', 0), c.get('switched_on', 1), rel_no[c.get('rel', 'newer')],
+            c.get('forced', 0), c.get('known', 1), pick_no[r['pick']]))
+    table('s11v_picks', 'struct s11v_pick', rows)
 
     # ---- staged_check.json: S-11.095
     rows = []
@@ -282,7 +295,7 @@ def main():
     # ---- stock.tsv: S-11.091, S-11.092; progress.json: S-11.062
     table('s11v_stock', 'struct s11v_stock',
           ['{ %s, %s, %s, %s, %s }' % (r['option'], r['te_signed'], r['bootloader_present'],
-                                      r['bootloader_confirmed'], r['return_to_stock'])
+                                      r['bootloader_selected'], r['return_to_stock'])
            for r in tsv('stock.tsv') if r['os_form'] == 'plaintext'])
     table('s11v_records', 'struct s11v_record',
           ['{ %d, %d, 0x%s }' % (p['step'], p['count'], p['file_hex']) for p in load('progress.json')])
@@ -328,7 +341,7 @@ def main():
              ' * tests/oracle/S-11-packages/. Do not edit. */',
              '#ifndef S11_VECTORS_H', '#define S11_VECTORS_H', '',
              '#include <stddef.h>', '#include <stdint.h>', '',
-             '#include "waffle/s11_common.h"', '',
+             '#include "waffle/s11_common.h"', '#include "waffle/s11_run.h"', '',
              '/* present (0 for null), offset into s11v_blob, length */',
              'struct s11v_ref { int present; size_t off, len; };',
              '/* sig: digest (32), r (28), s (28) the verifier must be given; verdict */',
@@ -353,8 +366,9 @@ def main():
              'struct s11v_space { uint64_t total; int known; uint64_t free; enum s11_reason reason; };',
              '/* results: the codes of the steps that run, in order; writes: ";"-separated; nordic: the',
              ' * package carries Nordic images; steps_off: the switched-off steps, bit n for step n (S-11.073);',
+             ' * selected: the steps selected, bit n for step n (S-11.096);',
              ' * dfu_entry: the run asks the Nordic to enter DFU (S-11.061 item 2) */',
-             'struct s11v_run { const char *name; int content_only, nordic; unsigned steps_off;',
+             'struct s11v_run { const char *name; int content_only, nordic; unsigned steps_off, selected;',
              '\tint dfu_entry, nordic_dfu_ok, version_file;',
              '\tunsigned results[7]; unsigned nresults; const char *outcome, *writes; };',
              '/* S-11.080: a boot by its state; write_fails: the state-0 write fails; writes as a run\'s */',
@@ -362,18 +376,22 @@ def main():
              '\tconst char *writes; int notice; unsigned state_after; int steps, nordic_dfu, record_access; };',
              '/* rel: the package version against the installed one: -1 older, 0 equal, 1 newer;',
              ' * staged: S-11.095\'s check of the image, 0 passes, 1 fails, 2 a read fails;',
-             ' * confirmed: the protected component confirmed on the unit (S-11.096); switched_on: the',
+             ' * selected: the step selected on the unit (S-11.096); switched_on: the',
              ' * step is switched on (S-11.073); start: S-02.090\'s start, 0 allowed, 1 refused for verified',
              ' * alone, 2 refused for a bad selected slot; written_here: this power-on\'s bootloader step',
              ' * wrote the selector read; slot_matches: the selected slot\'s record is the image\'s (S-11.068) */',
              'struct s11v_step { unsigned step; int content_dir, files, move_fails, present, present0,',
              '\tpresent1, option, write_ok, rel, forced, dev, in_dfu, slot; unsigned result; int staged;',
-             '\tint confirmed, switched_on, start, written_here, slot_matches; };',
+             '\tint selected, switched_on, start, written_here, slot_matches; };',
+             '/* S-11.096: what the selection offers a step; known: the installed version of a Nordic or',
+             ' * PSoC step is known (not 0.0.0), rel the package\'s against it */',
+             'struct s11v_pick { unsigned step; int content_dir, present, present0, present1, option,',
+             '\tswitched_on, rel, forced, known; enum s11_pick pick; };',
              '/* S-11.095: the read against the stated values; a read that fails is absent;',
              ' * expect 0 ok, 1 bad, 2 read_error; the bytes a step may write are the read\'s, on ok */',
              'struct s11v_staged_check { const char *name; uint32_t stated_len, stated_crc;',
              '\tstruct s11v_ref read; int expect; };',
-             'struct s11v_stock { int option, te_signed, bootloader, confirmed, stock; };',
+             'struct s11v_stock { int option, te_signed, bootloader, selected, stock; };',
              'struct s11v_record { unsigned step, count, bytes; };',
              '/* a file of tree `set`, path relative to /yaffs2/ (staged files under upgrade/) */',
              'struct s11v_file { int set; const char *path; struct s11v_ref data; };',

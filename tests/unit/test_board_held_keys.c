@@ -166,7 +166,7 @@ static void hold_long(int key)
 	long_key = key;
 	bitmap(key, -1);
 	pass();
-	later(S15_CONFIRM_HOLD_MS);
+	later(S15_HOLD_MS);
 	pass();
 }
 
@@ -492,18 +492,18 @@ static void test_host_keys_reset(void)
 	CHECK(rows_shown(rows));
 	CHECK(keys(white, 1) == OPXY_DEV_OK);
 	run_keys();
-	later(S15_CONFIRM_HOLD_MS);
+	later(S15_HOLD_MS);
 	screen(name, rows, &flags);
 	CHECK((flags & OPXY_SCREEN_ARMED) == 0u && removes == 0u);
 	CHECK(queue(up, 1) == OPXY_DEV_OK && queue(down, 1) == OPXY_DEV_OK);
 	run_keys();
-	later(S15_CONFIRM_HOLD_MS - 1u);
+	later(S15_HOLD_MS - 1u);
 	CHECK(removes == 0u);
 	later(1u);
 	CHECK(removes == 3u);
 	CHECK(queue(up, 1) == OPXY_DEV_OK);
 	run_keys();
-	later(S15_CONFIRM_HOLD_MS);
+	later(S15_HOLD_MS);
 	CHECK(removes == 3u && m.sv.menu.screen == S15_SCR_RESULT);
 }
 
@@ -522,7 +522,7 @@ static void test_host_keys_after_long(void)
 	run_keys();
 	CHECK(formats == 0u && m.sv.menu.armed == S15_ARM_FORMAT);
 	CHECK(queue(rest, 2) == OPXY_DEV_OK);
-	clock_ahead(S15_CONFIRM_HOLD_MS);
+	clock_ahead(S15_HOLD_MS);
 	mains = 0;
 	run_keys();
 	CHECK(formats == 1u && mains == 1u);
@@ -717,7 +717,7 @@ static void test_held_key_arms_nothing(void)
 	bitmap(0x14, -1);
 	pass();
 	CHECK(m.sv.menu.screen == S15_SCR_SYSTEM);
-	later(S15_CONFIRM_HOLD_MS);
+	later(S15_HOLD_MS);
 	pass();
 	CHECK(removes == 0u && m.sv.menu.armed == S15_ARM_NONE);
 	bitmap(-1, -1);

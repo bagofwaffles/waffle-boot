@@ -24,6 +24,10 @@
 #define S15_STEP_LABEL_MAX 18u
 #define S15_STEP_COL (3u + S15_STEP_LABEL_MAX + 1u)
 #define S15_LINE 80u     /* characters a line keeps, tabs included */
+/* A pick row's digit column, its label's and its detail's. */
+#define S15_PICK_INDENT 4u
+#define S15_PICK_LABEL_COL (S15_PICK_INDENT + 3u)
+#define S15_PICK_DETAIL_COL (S15_PICK_LABEL_COL + S15_STEP_LABEL_MAX - 2u)
 
 /* RGB565 colors (wiki/Screen-Style-Guide.md) */
 #define S15_BLACK 0x0000u
@@ -79,6 +83,13 @@ enum s15_style {
 	S15_ST_STEP_OK,
 	S15_ST_STEP_SKIP,
 	S15_ST_STEP_FAIL,
+	/* S-15.116's rows, indented S15_PICK_INDENT columns:
+	 * "D Label\tDetail\tState" with the digit's key badge, the state at
+	 * the right (PICK_ON: on a solid block), and "D Label\tWhy" dim, the
+	 * digit with no badge */
+	S15_ST_PICK,
+	S15_ST_PICK_ON,
+	S15_ST_PICK_OFF,
 	S15_ST_COUNT
 };
 extern const char *const s15_style_names[S15_ST_COUNT];
@@ -106,6 +117,9 @@ void s15_console_append_raw(struct s15_console *con, const uint8_t *text,
 /* Replace the last line and its style, not logged; appends on an empty
  * console. */
 void s15_console_set(struct s15_console *con, enum s15_style style,
+		     const char *text);
+/* Replace shown row i and its style, not logged; nothing past the last. */
+void s15_console_put(struct s15_console *con, unsigned i, enum s15_style style,
 		     const char *text);
 /* Shown row i (0: top): its text, tabs and backquotes included. */
 const char *s15_console_row(const struct s15_console *con, unsigned i,

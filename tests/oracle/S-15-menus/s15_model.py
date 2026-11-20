@@ -43,34 +43,38 @@ def boot_prompt_choice(events, down_at_open=()):
     return None
 
 
-# ---------- S-15.116 the confirmation of a protected component ----------
-CONFIRM_HOLD_MS = 5000
-CONFIRM_TIMEOUT_MS = 60000
+# ---------- S-15.116 the selection of the steps before a run ----------
+HOLD_MS = 5000
+SELECT_TIMEOUT_MS = 60000
 KNOB_CLICKS = (0x0A, 0x0B, 0x0C, 0x0D)
-KEY_SKIP = 0x15
+KEY_CANCEL = 0x15
 KEY_PRECOMP = 0x17                              # S-07.032, S-07.033: ignored
+# The rows' digits and their steps (S-11.057): 2 Main DSP, 3 Content, 4 BLE, 5 BLE bootloader, 6 Backplane,
+# 7 Bootloader
+ROW_STEPS = {2: 1, 3: 0, 4: 3, 5: 4, 6: 5, 7: 2}
 
 
-def confirm_choice(events, down_at_open=(), readable=True, end_ms=None):
-    """S-15.116: events after the confirmation is shown at time 0, as (ms, key, down) in time order. Returns
-    (choice, ms): 'install' or 'skip' and when it was made, or (None, None) while it goes on waiting at end_ms
-    (the last event's time when None)."""
-    if not readable:
-        return 'skip', 0
+def select_choice(events, pickable, down_at_open=(), end_ms=None):
+    """S-15.116: events after the selection is shown at time 0 with every row at No, as (ms, key, down) in time
+    order; pickable: the steps whose rows can be picked. Returns (choice, ms, selected): 'install' or 'cancel'
+    and when it was made, with the steps at Yes then, or (None, None, selected) while it goes on waiting at
+    end_ms (the last event's time when None). Every key event restarts the 60 s, which never end a hold."""
     stale, hold = set(down_at_open), None        # hold: (key, the time of its key down)
     held = set(down_at_open)                      # every key down now (S-07.031)
+    selected, last = set(), 0
 
     def due(t):
         """The choice the time makes by t, if any."""
-        if hold is not None and hold[1] + CONFIRM_HOLD_MS <= CONFIRM_TIMEOUT_MS and hold[1] + CONFIRM_HOLD_MS <= t:
-            return 'install', hold[1] + CONFIRM_HOLD_MS
-        if t >= CONFIRM_TIMEOUT_MS:
-            return 'skip', CONFIRM_TIMEOUT_MS
+        if hold is not None:
+            return ('install', hold[1] + HOLD_MS) if hold[1] + HOLD_MS <= t else None
+        if t >= last + SELECT_TIMEOUT_MS:
+            return 'cancel', last + SELECT_TIMEOUT_MS
         return None
     for t, key, down in events:
         d = due(t)
         if d:
-            return d
+            return d + (sorted(selected),)
+        last = t
         if down:
             held.add(key)
         else:
@@ -83,16 +87,22 @@ def confirm_choice(events, down_at_open=(), readable=True, end_ms=None):
             if hold is not None and hold[0] == key:
                 hold = None
             continue
-        if digit(key) == 8:
-            return 'skip', t
-        if hold is not None:                      # any other key down ends the hold (S-07.033)
+        if hold is not None:                      # any other key down only ends the hold (S-07.033)
             if key != KEY_PRECOMP:
                 hold = None
             continue
-        if digit(key) == 1 and key not in KNOB_CLICKS and held - {key, KEY_PRECOMP} == set():
+        if digit(key) == 8:
+            return 'cancel', t, sorted(selected)
+        step = ROW_STEPS.get(digit(key))
+        if step is not None:
+            if step in pickable:
+                selected ^= {step}
+        elif (digit(key) == 1 and key not in KNOB_CLICKS and selected
+              and held - {key, KEY_PRECOMP} == set()):
             hold = (key, t)
     end = end_ms if end_ms is not None else (events[-1][0] if events else 0)
-    return due(end) or (None, None)
+    d = due(end)
+    return (d + (sorted(selected),)) if d else (None, None, sorted(selected))
 
 
 # ---------- S-15.172 the settings ----------

@@ -732,8 +732,8 @@ static void test_labels_and_cdc(void)
 		const struct s10cv_skip *v = &s10cv_skips[i];
 		const enum s11_skip why =
 			strcmp(v->reason, "option off") == 0 ? S11_SKIP_OPTION_OFF :
-			strcmp(v->reason, "not confirmed") == 0 ?
-						S11_SKIP_NOT_CONFIRMED :
+			strcmp(v->reason, "not selected") == 0 ?
+						S11_SKIP_NOT_SELECTED :
 			strcmp(v->reason, "already written") == 0 ?
 						S11_SKIP_ALREADY_WRITTEN :
 						S11_SKIP_SWITCHED_OFF;

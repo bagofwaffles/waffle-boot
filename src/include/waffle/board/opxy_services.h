@@ -367,10 +367,9 @@ void opxy_install_ops(struct opxy_master *m, struct s11_run_ops *run,
 		      struct s11_step_ops *step);
 /* The run's step values (S-11.055, S-11.073, S-11.090, S-11.096) and the
  * staging area as the run finds it, before the run's first step;
- * confirmed has S11_STEP_BIT() of each protected step confirmed on the
- * unit. */
+ * selected has S11_STEP_BIT() of each step selected on the unit. */
 void opxy_install_begin(struct opxy_master *m, bool option, bool forced,
-			uint8_t confirmed);
+			uint8_t selected);
 /* S-11.073: the steps this build has switched off, S11_STEP_BIT() each. */
 uint8_t opxy_steps_off(void);
 /*

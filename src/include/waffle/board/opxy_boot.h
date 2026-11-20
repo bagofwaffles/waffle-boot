@@ -362,7 +362,7 @@ struct opxy_master {
 	/* S-14, S-15, S-04's reboots, S-10c, S-17 (opxy_services.c) */
 	struct opxy_services sv;
 	/* S-07.032: the one key-status reply psoc_start() read or was given;
-	 * the install's confirmation (S-15.116) asks whether it was read */
+	 * the install's selection (S-15.116) asks whether it was read */
 	struct s07_key_status key_status;
 	/* S-05 */
 	struct s05_master_ops handoff;

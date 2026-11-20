@@ -17,7 +17,7 @@
 #include <stdint.h>
 
 #include "waffle/s14_log.h"
-#include "waffle/s15_confirm.h"
+#include "waffle/s15_select.h"
 #include "waffle/s15_console.h"
 #include "waffle/s15_keytest.h"
 #include "waffle/s15_lines.h"
@@ -41,7 +41,7 @@ enum s15_screen {
 };
 
 /* S-15.015: what a hold runs. The item's own key down starts the hold;
- * held for S15_CONFIRM_HOLD_MS it runs the action once; its early release,
+ * held for S15_HOLD_MS it runs the action once; its early release,
  * or any other key down, only cancels. */
 enum s15_arm {
 	S15_ARM_NONE,
@@ -371,7 +371,7 @@ void s15_menu_event(struct s15_menu *m, unsigned key, bool down);
 void s15_menu_host_event(struct s15_menu *m, unsigned key, bool down);
 /*
  * The time passes (ms since any fixed point; only differences matter): a
- * hold's bar follows it, and a hold of S15_CONFIRM_HOLD_MS runs its action.
+ * hold's bar follows it, and a hold of S15_HOLD_MS runs its action.
  * The board gives the time before each key event and on every pass, so a
  * key event is timed by the last call.
  */
@@ -442,11 +442,16 @@ void s15_up_progress(struct s15_menu *m, uint32_t done, uint32_t total);
 /* The extraction refused (S-11.020 checks 16 - 17). */
 void s15_up_extract_refused(struct s15_menu *m, const char *reason,
 			    bool content_only);
-/* S-15.116: a protected component's confirmation is shown, before the
- * run; then its bar and the seconds left as they change. The keys are
- * s15_confirm's, not the menus'. */
-void s15_up_confirm(struct s15_menu *m, const struct s15_confirm_info *info);
-void s15_up_confirm_bar(struct s15_menu *m, unsigned fill, unsigned left_s);
+/* S-15.116: the selection is shown before the run, each line logged, at
+ * every change of its rows or its hold; s15_up_select_time() then
+ * replaces, not logged, the rows the time changes. The keys are
+ * s15_select's, not the menus'. */
+void s15_up_select(struct s15_menu *m, const struct s15_select_info *info,
+		   const struct s15_select *s, uint32_t now_ms);
+void s15_up_select_time(struct s15_menu *m, const struct s15_select_info *info,
+			const struct s15_select *s, uint32_t now_ms);
+/* The selection canceled: no run, nothing installed (S-11.096). */
+void s15_up_canceled(struct s15_menu *m);
 /* A run starts. */
 void s15_up_run_start(struct s15_menu *m, enum s15_run_kind kind,
 		      const char *version, const char *name, bool stock);

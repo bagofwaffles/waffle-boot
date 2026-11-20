@@ -26,6 +26,9 @@ const char *const s15_style_names[S15_ST_COUNT] = {
 	[S15_ST_STEP_OK] = "step-ok",
 	[S15_ST_STEP_SKIP] = "step-skip",
 	[S15_ST_STEP_FAIL] = "step-fail",
+	[S15_ST_PICK] = "pick",
+	[S15_ST_PICK_ON] = "pick-on",
+	[S15_ST_PICK_OFF] = "pick-off",
 };
 
 void s15_console_init(struct s15_console *con, struct s14_log *log)
@@ -57,6 +60,9 @@ static bool splits(enum s15_style style)
 	case S15_ST_STEP_OK:
 	case S15_ST_STEP_SKIP:
 	case S15_ST_STEP_FAIL:
+	case S15_ST_PICK:
+	case S15_ST_PICK_ON:
+	case S15_ST_PICK_OFF:
 		return true;
 	case S15_ST_TEXT:
 	case S15_ST_DIM:
@@ -170,6 +176,17 @@ void s15_console_set(struct s15_console *con, enum s15_style style,
 	}
 	store(con, ((unsigned)con->first + con->count - 1u) % S15_ROWS, style,
 	      (const uint8_t *)text, n);
+}
+
+void s15_console_put(struct s15_console *con, unsigned i, enum s15_style style,
+		     const char *text)
+{
+	if (i >= con->count)
+		return;
+	if ((unsigned)style >= S15_ST_COUNT)
+		style = S15_ST_TEXT;
+	store(con, (con->first + i) % S15_ROWS, style, (const uint8_t *)text,
+	      wb_strlen(text));
 }
 
 const char *s15_console_row(const struct s15_console *con, unsigned i,
@@ -403,6 +420,59 @@ static void put_item(const struct s15_geometry *g,
 		put(g, d, 0, y, pt.p[0], 1, digit);
 }
 
+/*
+ * S-15.116's rows: in column S15_PICK_INDENT an amber key badge, or for
+ * a dim row the digit plain; the label from S15_PICK_LABEL_COL, the
+ * detail from S15_PICK_DETAIL_COL, each clipped a column short of what
+ * follows; the state right-aligned, and in PICK_ON black on a solid red
+ * block, so that Yes differs from No by more than its color.
+ */
+static void put_pick(const struct s15_geometry *g,
+		     const struct s15_draw_ops *d, uint16_t y, const char *s,
+		     size_t n, enum s15_style style)
+{
+	const bool dim = style == S15_ST_PICK_OFF;
+	const uint16_t text = dim ? S15_DIM : S15_TEXT;
+	struct parts pt;
+	size_t sn = 0, room = S15_COLS - S15_PICK_DETAIL_COL;
+	unsigned sc = S15_COLS;
+
+	split(s, n, &pt);
+	if (pt.n[0] == 0u)
+		return;
+	if (!dim && pt.count > 2u) {
+		sn = pt.n[2] < S15_COLS - S15_PICK_DETAIL_COL ? pt.n[2] : 0u;
+		sc = (unsigned)(S15_COLS - sn);
+		room = sc > S15_PICK_DETAIL_COL + 1u ?
+		       sc - S15_PICK_DETAIL_COL - 1u : 0u;
+	}
+	if (pt.n[0] > 2u)
+		put(g, d, S15_PICK_LABEL_COL, y, pt.p[0] + 2, pt.n[0] - 2u <
+		    S15_PICK_DETAIL_COL - S15_PICK_LABEL_COL - 1u ? pt.n[0] - 2u :
+		    S15_PICK_DETAIL_COL - S15_PICK_LABEL_COL - 1u, text);
+	if (pt.count > 1u)
+		put(g, d, S15_PICK_DETAIL_COL, y, pt.p[1],
+		    pt.n[1] < room ? pt.n[1] : room, text);
+	if (sn != 0u && style == S15_ST_PICK_ON) {
+		uint16_t x = col_x(g, sc);
+		uint16_t w = (uint16_t)(sn * g->glyph_w + 2u * BADGE_L);
+
+		d->fill(d->ctx, (uint16_t)(x - BADGE_L + 1u), (uint16_t)(y - 1u),
+			(uint16_t)(w - 2u), 1, S15_RED);
+		d->fill(d->ctx, (uint16_t)(x - BADGE_L), y, w, BADGE_H - 2u,
+			S15_RED);
+		d->fill(d->ctx, (uint16_t)(x - BADGE_L + 1u),
+			(uint16_t)(y + BADGE_H - 2u), (uint16_t)(w - 2u), 1, S15_RED);
+		d->text(d->ctx, x, y, pt.p[2], sn, S15_BLACK, S15_RED);
+	} else if (sn != 0u) {
+		put(g, d, sc, y, pt.p[2], sn, S15_DIM);
+	}
+	if (dim || !is_digit(pt.p[0][0]))
+		put(g, d, S15_PICK_INDENT, y, pt.p[0], 1, S15_DIM);
+	else
+		put_badge(g, d, S15_PICK_INDENT, y, pt.p[0][0], S15_AMBER);
+}
+
 /* A mark in column 0 and a sentence from column 3. */
 static void put_marked(const struct s15_geometry *g,
 		       const struct s15_draw_ops *d, uint16_t y, char mark,
@@ -541,6 +611,11 @@ void s15_render_row(const struct s15_geometry *g,
 	case S15_ST_STEP_SKIP:
 	case S15_ST_STEP_FAIL:
 		put_step(g, d, y, style, s, n);
+		break;
+	case S15_ST_PICK:
+	case S15_ST_PICK_ON:
+	case S15_ST_PICK_OFF:
+		put_pick(g, d, y, s, n, style);
 		break;
 	case S15_ST_TEXT:
 	case S15_ST_COUNT:

@@ -3,7 +3,6 @@
  * S-15 values and lines that do not depend on the menu's state.
  */
 #include "waffle/s15_lines.h"
-#include "waffle/s15_confirm.h"
 #include "waffle/s15_menu.h"
 
 /* ---- keys ------------------------------------------------------------ */
@@ -156,7 +155,7 @@ enum s15_op s15_result_line(struct s15_buf *out, enum s15_style *style,
 		s15_buf_str(out, "Already installed");
 		return S15_OP_REPLACE;
 	case S15_RES_SKIPPED:
-	case S15_RES_SKIPPED_UNCONFIRMED:
+	case S15_RES_SKIPPED_UNSELECTED:
 	case S15_RES_SKIPPED_OFF:
 	case S15_RES_SKIPPED_WRITTEN:
 		*style = S15_ST_STEP_SKIP;
@@ -167,7 +166,7 @@ enum s15_op s15_result_line(struct s15_buf *out, enum s15_style *style,
 				 "Skipped: not in this version" :
 				 result == S15_RES_SKIPPED_WRITTEN ?
 				 "Skipped: written, runs on restart" :
-				 "Skipped: not confirmed");
+				 "Skipped: not selected");
 		return S15_OP_REPLACE;
 	case S15_RES_FAILURE:
 	case S15_RES_BAD_FILE:
@@ -506,11 +505,11 @@ void s15_hold_hint(struct s15_buf *out, unsigned digit)
 	s15_buf_str(out, "Hold `");
 	s15_buf_dec(out, digit);
 	s15_buf_str(out, "` for ");
-	s15_buf_dec(out, S15_CONFIRM_HOLD_MS / 1000u);
+	s15_buf_dec(out, S15_HOLD_MS / 1000u);
 	s15_buf_str(out, " s");
 }
 
-/* S-15.015: the hold's last row, as s15_confirm_bar()'s. */
+/* S-15.015: the hold's last row. */
 void s15_hold_bar(struct s15_buf *out, unsigned fill, unsigned left_s)
 {
 	s15_buf_init(out);

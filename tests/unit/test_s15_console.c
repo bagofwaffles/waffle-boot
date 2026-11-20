@@ -208,6 +208,7 @@ static void test_style_names(void)
 		"text", "dim", "head", "keys", "item", "item-on", "armed",
 		"back", "ok", "warn", "error", "kv",
 		"step-run", "step-ok", "step-skip", "step-fail",
+		"pick", "pick-on", "pick-off",
 	};
 
 	for (unsigned i = 0; i < S15_ST_COUNT; i++)
@@ -334,6 +335,19 @@ static void test_styled(void)
 	      "styles scroll with their lines");
 	CHECK(s15_console_row_style(&con, S15_ROWS) == S15_ST_TEXT,
 	      "a row past the last is text");
+	/* put replaces any shown row and its style, after a scroll too, and
+	 * nothing past the last */
+	s15_console_put(&con, 4, S15_ST_PICK_ON, "2 Main DSP\t1.1.5\tYes");
+	s = s15_console_row(&con, 4, &n);
+	CHECK(mem_eq(s, n, "2 Main DSP\t1.1.5\tYes", 20) &&
+	      s15_console_row_style(&con, 4) == S15_ST_PICK_ON &&
+	      s15_console_row_style(&con, 3) == S15_ST_OK &&
+	      s15_console_row_style(&con, 5) == S15_ST_OK, "put row 4");
+	s15_console_init(&con, NULL);
+	s15_console_add(&con, S15_ST_OK, "a");
+	s15_console_put(&con, 1, S15_ST_WARN, "b");
+	CHECK(con.count == 1u && s15_console_row_style(&con, 0) == S15_ST_OK,
+	      "put past the last row: nothing");
 }
 
 /* S-15.004: appended lines are logged with their full text, backquotes
@@ -753,6 +767,45 @@ static void test_render_row(void)
 	CHECK(n_texts == 3u && badge(col(0), y, "8", S15_AMBER) &&
 	      drawn(col(3), y, "Back to Main Menu", S15_DIM, B),
 	      "back: the label gray");
+
+	/* S-15.116's rows: indented, the badge in column 4, the label from
+	 * 7, the detail from 23, the state right-aligned; Yes black on a red
+	 * block, No gray; a row that cannot be picked dim, its digit plain in
+	 * the badge's column */
+	row(3, S15_ST_PICK, "2 Main DSP\t1.1.4 > 1.1.5\tNo");
+	CHECK(n_texts == 5u && badge(col(4), y, "2", S15_AMBER) &&
+	      drawn(col(7), y, "Main DSP", S15_TEXT, B) &&
+	      drawn(col(23), y, "1.1.4 > 1.1.5", S15_TEXT, B) &&
+	      drawn(col(S15_COLS - 2u), y, "No", S15_DIM, B), "pick");
+	{
+		bool block = true;
+
+		row(3, S15_ST_PICK_ON, "7 Bootloader\t0.9.40 > 0.9.41\tYes");
+		for (unsigned x = col(S15_COLS - 3u) - 4u; x < col(S15_COLS) + 4u; x++)
+			block = block && (fb[y][x] == S15_RED || fb[y][x] == S15_BLACK);
+		CHECK(n_texts == 5u && badge(col(4), y, "7", S15_AMBER) &&
+		      drawn(col(7), y, "Bootloader", S15_TEXT, B) &&
+		      drawn(col(23), y, "0.9.40 > 0.9.41", S15_TEXT, B) &&
+		      drawn(col(S15_COLS - 3u), y, "Yes", S15_BLACK, S15_RED) &&
+		      fb[y][col(S15_COLS - 3u) - 4u] == S15_RED &&
+		      fb[y][col(S15_COLS) + 3u] == S15_RED &&
+		      fb[y][col(S15_COLS - 3u) - 5u] != S15_RED &&
+		      fb[y + 6u][col(S15_COLS) + 3u] == S15_RED && block,
+		      "pick-on: Yes on a red block");
+	}
+	row(3, S15_ST_PICK_OFF, "4 BLE\tNot in this version");
+	CHECK(n_texts == 3u && drawn(col(4), y, "4", S15_DIM, B) &&
+	      drawn(col(7), y, "BLE", S15_DIM, B) &&
+	      drawn(col(23), y, "Not in this version", S15_DIM, B),
+	      "pick-off: dim, a plain digit in the badge's column");
+	row(3, S15_ST_PICK, "3 Content\t\tNo");
+	CHECK(n_texts == 4u && badge(col(4), y, "3", S15_AMBER) &&
+	      drawn(col(7), y, "Content", S15_TEXT, B) &&
+	      drawn(col(S15_COLS - 2u), y, "No", S15_DIM, B), "pick, no detail");
+	row(3, S15_ST_PICK, "3 Content\tA pack name long enough to reach the state\tNo");
+	CHECK(drawn(col(23), y, "A pack name long enough to rea", S15_TEXT, B) &&
+	      drawn(col(S15_COLS - 2u), y, "No", S15_DIM, B),
+	      "pick: the detail stops a column short of the state");
 
 	/* marked sentences */
 	row(3, S15_ST_OK, "Done!");

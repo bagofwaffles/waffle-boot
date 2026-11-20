@@ -5,8 +5,9 @@
  * S-11.055 (forcing reaches the steps), S-11.090 (the option of the checks
  * holds for the run), S-11.091 (return to the factory bootloader decided before step 1), S-11.073
  * (switched-off steps: no DFU entry, nothing sent), S-11.096 (the
- * confirmation: before the run's first write, the bootloader written only
- * after it); S-11.034 (a first-stage file is never looked for); S-17.021 (the start-of-run version read
+ * selection: before the run's first write, only the steps selected run,
+ * a cancel starts no run); S-11.064 (the package version only with the
+ * OS); S-11.034 (a first-stage file is never looked for); S-17.021 (the start-of-run version read
  * is reported). The package is built here with the reference CRC-16 and
  * SHA-256; the P-224 verifier is a fake.
  */
@@ -163,11 +164,13 @@ static const struct s11_package_ops pkg_ops = {
 struct world {
 	enum s11_reason zip_reason;
 	unsigned zip_calls, run_calls, writes_bl, fs_looked, sends, enters;
-	bool staged_ble, staged_bl, staged_fs;
-	/* S-11.096: the answer for each component, a bit each; what was
-	 * asked, in order, and the run's calls before each ask */
-	unsigned answers, n_asked, calls_at_ask;
-	enum s11_component asked[4];
+	bool staged_ble, staged_bl, staged_fs, staged_os;
+	unsigned writes_os;
+	/* S-11.096: the answer and the steps given, a bit each; how often
+	 * it was asked, the run's calls before each ask, what was offered */
+	enum s11_answer answer;
+	unsigned answers, n_asked, calls_at_ask, offered;
+	unsigned meta_versions;		/* meta_complete calls */
 };
 
 static struct world W;
@@ -256,6 +259,8 @@ static bool f_stat(void *ctx, const char *path, bool *dir, uint32_t *size)
 	}
 	if (strstr(path, "ble.bin") != NULL)
 		return W.staged_ble;
+	if (strstr(path, "os.ldr") != NULL)
+		return W.staged_os;
 	return strstr(path, ".version") != NULL;
 }
 
@@ -290,6 +295,8 @@ static bool r_complete(void *ctx, const struct s11_version *v)
 {
 	(void)ctx;
 	(void)v;
+	W.run_calls++;
+	W.meta_versions++;
 	return true;
 }
 
@@ -341,6 +348,7 @@ static enum s11_result s_content(void *ctx)
 static bool s_write(void *ctx)
 {
 	(void)ctx;
+	W.writes_os++;
 	return true;
 }
 
@@ -377,92 +385,70 @@ static const struct s11_step_ops step_ops = {
 };
 
 /* S-11.096: the user's answer on the unit */
-static bool u_confirm(void *ctx, enum s11_component c)
+static enum s11_answer u_select(void *ctx, const struct s11_step_env *env,
+				uint8_t *selected)
 {
 	(void)ctx;
-	if (W.n_asked < N(W.asked))
-		W.asked[W.n_asked] = c;
 	W.n_asked++;
 	W.calls_at_ask += W.run_calls;
-	return ((W.answers >> c) & 1u) != 0u;
+	W.offered = s11_pickable(env);
+	*selected = (uint8_t)W.answers;
+	return W.answer;
 }
 
 /* Every step switched on, unless a test says otherwise. */
 static struct s11_install_ops ops = {
-	&pkg_ops, &zip_ops, &fs_ops, &run_ops, &step_ops, u_confirm, NULL, 0,
+	&pkg_ops, &zip_ops, &fs_ops, &run_ops, &step_ops, u_select, NULL, 0,
 };
 
-#define YES_ALL (1u << S11_C_BOOTLOADER)
+#define YES_ALL 0x3Fu
 
 static void reset(bool ble, bool bl, struct s17_copro *c)
 {
 	memset(&W, 0, sizeof(W));
 	W.staged_ble = ble;
 	W.staged_bl = bl;
+	W.answer = S11_ANSWER_INSTALL;
 	W.answers = YES_ALL;
 	s17_copro_init(c);
 	c->nordic_app = (struct s11_version){ 1, 0, 1, 0 };	/* = staged */
 }
 
-/* S-11.096: s11_confirm() alone */
-static struct s11_staged confirm_st;
-
-static void test_confirm_order(void)
-{
-	memset(&W, 0, sizeof(W));
-	memset(&confirm_st, 0, sizeof(confirm_st));
-	confirm_st.size[S11_C_BOOTLOADER] = 1u;
-	confirm_st.size[S11_C_OS] = 1u;
-	W.answers = YES_ALL;
-	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) ==
-		      S11_STEP_BIT(S11_STEP_BOOTLOADER) &&
-	      W.n_asked == 1 && W.asked[0] == S11_C_BOOTLOADER,
-	      "the bootloader asked for and confirmed");
-	memset(&W, 0, sizeof(W));
-	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) == 0u &&
-	      W.n_asked == 1, "not confirmed: nothing confirmed");
-	memset(&W, 0, sizeof(W));
-	W.answers = YES_ALL;
-	CHECK(s11_confirm(&confirm_st, false, u_confirm, NULL) == 0u &&
-	      W.n_asked == 0, "option off: nothing asked, nothing confirmed");
-	CHECK(s11_confirm(&confirm_st, true, NULL, NULL) == 0u,
-	      "no way to ask: nothing confirmed");
-	confirm_st.size[S11_C_BOOTLOADER] = 0;
-	CHECK(s11_confirm(&confirm_st, true, u_confirm, NULL) == 0u &&
-	      W.n_asked == 0, "no protected component: nothing asked");
-}
-
-/* S-11.096, S-11.073 through s11_install() */
-static void test_install_confirm(struct s11_check_in *in,
-				 struct s17_copro *copro)
+/* S-11.096, S-11.073, S-11.064 through s11_install() */
+static void test_install_select(struct s11_check_in *in,
+				struct s17_copro *copro)
 {
 	struct s11_install_result out;
 
-	/* carried and confirmed: asked before the run's first write, then
-	 * written */
+	/* asked before the run's first write, the bootloader offered with
+	 * the option on, then written */
 	in->option = true;
 	reset(false, true, copro);
 	s11_install(&ops, in, copro, &out);
-	CHECK(W.n_asked == 1 && W.asked[0] == S11_C_BOOTLOADER &&
-	      W.calls_at_ask == 0,
-	      "asked before any write of the run");
-	CHECK(W.writes_bl == 1 && out.outcome.kind == S11_OUTCOME_DONE,
-	      "confirmed: written");
+	CHECK(W.n_asked == 1 && W.calls_at_ask == 0 &&
+	      (W.offered & S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u,
+	      "asked before any write of the run, the bootloader offered");
+	CHECK(W.writes_bl == 1 && out.outcome.kind == S11_OUTCOME_DONE &&
+	      !out.canceled && (out.selected & S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u,
+	      "selected: written");
 
-	/* written only after its confirmation */
+	/* written only when selected */
 	for (unsigned a = 0; a < 2u; a++) {
 		reset(false, true, copro);
-		W.answers = a != 0u ? YES_ALL : 0u;
+		W.answers = a != 0u ? S11_STEP_BIT(S11_STEP_BOOTLOADER) : 0u;
 		s11_install(&ops, in, copro, &out);
 		CHECK(W.writes_bl == a && out.run.end != S11_RUN_FAILED,
 		      "answer %u: bootloader %u written", a, W.writes_bl);
 	}
 
-	/* the option off: nothing asked, nothing written */
+	/* the option off: the bootloader cannot be selected, whatever is given */
 	in->option = false;
 	reset(false, true, copro);
 	s11_install(&ops, in, copro, &out);
-	CHECK(W.n_asked == 0 && W.writes_bl == 0, "option off: nothing asked");
+	CHECK(W.n_asked == 1 && W.writes_bl == 0 &&
+	      (W.offered & S11_STEP_BIT(S11_STEP_BOOTLOADER)) == 0u &&
+	      (out.selected & S11_STEP_BIT(S11_STEP_BOOTLOADER)) == 0u,
+	      "option off: not offered, not written");
 
 	/* a repeated install asks again: nothing is stored */
 	in->option = true;
@@ -474,20 +460,73 @@ static void test_install_confirm(struct s11_check_in *in,
 	W.n_asked = 0;
 	s11_install(&ops, in, copro, &out);
 	CHECK(W.n_asked == 1 && W.writes_bl == 0,
-	      "the same package again: asked again, not written unconfirmed");
+	      "the same package again: asked again, not written unselected");
+
+	/* a cancel: no run, nothing written; reported as nothing to do */
+	reset(true, true, copro);
+	copro->nordic_app = (struct s11_version){ 0, 0, 0, 0 };
+	W.answer = S11_ANSWER_CANCEL;
+	s11_install(&ops, in, copro, &out);
+	CHECK(out.canceled && out.reason == S11_REASON_NONE && W.run_calls == 0 &&
+	      W.writes_bl == 0 && W.sends == 0 && W.enters == 0 &&
+	      !out.run.versions_read && out.selected == 0u &&
+	      out.run.end == S11_RUN_NOTHING_TO_DO &&
+	      out.outcome.kind == S11_OUTCOME_NOTHING_TO_DO && !out.stock,
+	      "canceled: no run, nothing written, nothing to do");
+
+	/* the keys cannot be read: nothing asked, every step but the
+	 * bootloader runs */
+	reset(true, true, copro);
+	copro->nordic_app = (struct s11_version){ 0, 0, 0, 0 };
+	W.answer = S11_ANSWER_UNASKED;
+	s11_install(&ops, in, copro, &out);
+	CHECK(!out.canceled && W.writes_bl == 0 && W.sends == 1 &&
+	      (out.selected & S11_STEP_BIT(S11_STEP_BLE)) != 0u &&
+	      (out.selected & S11_STEP_BIT(S11_STEP_BOOTLOADER)) == 0u &&
+	      out.outcome.kind == S11_OUTCOME_DONE,
+	      "unasked: the Nordic step runs, the bootloader is not written");
+	ops.select = NULL;
+	reset(true, true, copro);
+	copro->nordic_app = (struct s11_version){ 0, 0, 0, 0 };
+	s11_install(&ops, in, copro, &out);
+	CHECK(W.n_asked == 0 && W.writes_bl == 0 && W.sends == 1,
+	      "no way to ask: as unasked");
+	ops.select = u_select;
+
+	/* S-11.064: the package version only with the OS installed */
+	reset(false, true, copro);
+	W.staged_os = true;
+	s11_install(&ops, in, copro, &out);
+	CHECK(W.writes_os == 1 && W.meta_versions == 1,
+	      "the OS selected and written: the package version recorded");
+	reset(false, true, copro);
+	W.staged_os = true;
+	W.answers = S11_STEP_BIT(S11_STEP_BOOTLOADER);
+	s11_install(&ops, in, copro, &out);
+	CHECK(W.writes_os == 0 && W.writes_bl == 1 && W.meta_versions == 0 &&
+	      out.outcome.kind == S11_OUTCOME_DONE,
+	      "the OS not selected: written nothing of it, no version recorded");
+
+	/* S-11.061: a Nordic step not selected: no DFU entry, nothing sent */
+	reset(true, false, copro);
+	copro->nordic_app = (struct s11_version){ 0, 0, 0, 0 };
+	W.answers = (unsigned)~S11_STEP_BIT(S11_STEP_BLE) & 0x3Fu;
+	s11_install(&ops, in, copro, &out);
+	CHECK(W.enters == 0 && W.sends == 0 && out.run.end != S11_RUN_FAILED,
+	      "BLE not selected: no DFU entry, nothing sent");
 
 	/* S-11.091: TE-signed, option on, the bootloader present: a return to
-	 * the factory bootloader only when it is confirmed */
+	 * the factory bootloader only when it is selected */
 	build(0x01, 0x00);
 	reset(false, true, copro);
 	W.answers = 0;
 	s11_install(&ops, in, copro, &out);
 	CHECK(out.te_signed && !out.stock && W.writes_bl == 0,
-	      "not confirmed: no return to the factory bootloader");
+	      "not selected: no return to the factory bootloader");
 	reset(false, true, copro);
 	s11_install(&ops, in, copro, &out);
 	CHECK(out.te_signed && out.stock && W.writes_bl == 1,
-	      "confirmed: a return to the factory bootloader");
+	      "selected: a return to the factory bootloader");
 	build(0x01, 0xFF);
 
 	/* S-11.073: steps 3-5 switched off; a Nordic image carried: no DFU
@@ -507,14 +546,12 @@ static void test_install_confirm(struct s11_check_in *in,
 	CHECK(W.enters == 1 && W.sends == 1, "switched on: entered and sent");
 
 	/* S-11.034: a package carrying a first-stage file: with the option on
-	 * and every answer yes, only the bootloader is asked for, and the
-	 * file is never looked for */
+	 * and every step selected, the file is never looked for */
 	in->option = true;
 	reset(false, true, copro);
 	W.staged_fs = true;
 	s11_install(&ops, in, copro, &out);
-	CHECK(W.n_asked == 1 && W.asked[0] == S11_C_BOOTLOADER &&
-	      W.writes_bl == 1 && W.fs_looked == 0 &&
+	CHECK(W.n_asked == 1 && W.writes_bl == 1 && W.fs_looked == 0 &&
 	      out.outcome.kind == S11_OUTCOME_DONE &&
 	      out.run.step == 0xFF,
 	      "first-stage file: not looked for, not asked, the run done");
@@ -586,7 +623,6 @@ int main(void)
 	CHECK(W.writes_bl == 0 && out.outcome.kind == S11_OUTCOME_NOTHING_TO_DO,
 	      "option off: Skipped, nothing to do");
 
-	test_confirm_order();
-	test_install_confirm(&in, &copro);
+	test_install_select(&in, &copro);
 	return s11_check_report("test_s11_install");
 }

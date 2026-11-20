@@ -131,12 +131,12 @@ def put(path, data):
 
 
 BOOT = 'boot 0 0 1'                         # a boot: reason 0, keys not held, the slave present
-# The log's notes, which are no change (no cut falls on them): the content step's result, S-11.096's answers,
-# the reason of each Skipped (S-11.058)
-NOTES = ('content=', 'confirm:', 'skip:')
-# setup()'s steps and answers: every step switched on (S-11.073) and every protected component confirmed
+# The log's notes, which are no change (no cut falls on them): the content step's result, S-11.096's
+# selection, the reason of each Skipped (S-11.058)
+NOTES = ('content=', 'select:', 'skip:')
+# setup()'s steps and answers: every step switched on (S-11.073) and every step that can be picked selected
 # (S-11.096), so that the scenarios written for the Nordic and PSoC steps run them
-ALL_ON = dict(steps_off=(), answer=lambda c: True)
+ALL_ON = dict(steps_off=(), answer=lambda pickable: ('install', pickable))
 
 
 WRITES = ('meta', 'meta_fails', 'progress', 'progress_fails', 'nordic')
@@ -187,7 +187,7 @@ def setup(meta='0 ' + OLD, tree_files=None):
         cmds.append('set %s 1' % k)
     cmds += ['set slot 0', 'set space real', 'set readfail -', 'set stagefail 0', 'set removefail 0',
              'set movefail 0', 'set metafail 0', 'set recordfail 0', 'set cut -', 'set cutat -', 'set staged -',
-             'set off -', 'set confirm 1']
+             'set off -', 'set select install all']
     for p, b in (tree_files or {}).items():
         cmds.append(put(p, b))
     return cmds
@@ -665,7 +665,12 @@ class Runs(unittest.TestCase):
         for step, code in want['ran']:
             ran = eff.get(step, [])
             if step == 0:
-                self.assertIn(content_code(code), lg)
+                # S-11.096: a content step not selected moves nothing and reports no result of its own
+                if code == m.SKIPPED:
+                    self.assertFalse([t for t in lg if t.startswith('content=')], tag)
+                    self.assertEqual(ran, [], tag)
+                else:
+                    self.assertIn(content_code(code), lg)
                 continue
             if code == m.OK:
                 self.assertTrue(ran, (tag, step))
@@ -674,20 +679,28 @@ class Runs(unittest.TestCase):
                 self.assertEqual(writes_, [], (tag, step, m.RESULT_NAMES[code]))
         r = Result(out[tag])
         self.assertEqual(r.outcome, {'nothing to do': 'nothing'}.get(want['outcome'], want['outcome']), tag)
-        # S-11.096: the components asked for, in order
-        self.assertEqual([t.split(':')[1].split('=')[0] for t in lg if t.startswith('confirm:')], want['asked'], tag)
+        # S-11.096: asked once, offered the steps that can be picked; the run given the selection, or none
+        def steps(x):
+            return ','.join(map(str, x)) or '-'
+        self.assertEqual([t for t in lg if t.startswith('select:offered=')],
+                         ['select:offered=' + steps(want['pickable'])], tag)
+        if want['canceled']:
+            self.assertIn('select:canceled', lg, tag)
+        else:
+            self.assertIn('select:selected=' + steps(want['selected']), lg, tag)
         # S-11.058: each Skipped with its reason
-        reasons = {m.SKIP_OPTION_OFF: 'option_off', m.SKIP_NOT_CONFIRMED: 'not_confirmed',
+        reasons = {m.SKIP_OPTION_OFF: 'option_off', m.SKIP_NOT_SELECTED: 'not_selected',
                    m.SKIP_SWITCHED_OFF: 'switched_off'}
-        confirmed = {s_ for c, s_ in m.CONFIRM_ORDER if option and c in want['asked'] and answer and answer(c)}
         skips = []
         for step, code in want['ran']:
             if code == m.SKIPPED:
-                if step in m.PROTECTED and step not in steps_off:
-                    why = m.SKIP_OPTION_OFF if not option else m.SKIP_NOT_CONFIRMED
-                    self.assertNotIn(step, confirmed, tag)
-                else:
+                if step in m.SWITCHABLE and step in steps_off:
                     why = m.SKIP_SWITCHED_OFF
+                elif step in m.PROTECTED and not option:
+                    why = m.SKIP_OPTION_OFF
+                else:
+                    why = m.SKIP_NOT_SELECTED
+                    self.assertNotIn(step, want['selected'], tag)
                 skips.append('skip:%d=%s' % (step, reasons[why]))
         self.assertEqual([t for t in lg if t.startswith('skip:')], skips, tag)
         st, ver = out[tag + '/meta'].split()
@@ -720,7 +733,7 @@ class Runs(unittest.TestCase):
                           'firmware/backplane/bin/backplane.version': b'1.2.0+0\n',
                           'firmware/firmware.version': b'1.2.0+0\n'})
         os_only = fwzip.build({'os': os_img(300, 1)}, version=(1, 2, 0))
-        off = ['set off 3,4,5', 'set confirm 0']
+        off = ['set off 3,4,5', 'set select unasked']
         s = Session()
         for tag, zz, extra in (('off', z, off), ('nodfu', z, off + ['set dfu 0']), ('only', only, off),
                                ('os_only', os_only, off)):
@@ -749,63 +762,95 @@ class Runs(unittest.TestCase):
 
     @scenario('S-11/SC-11-CONFIRM')
     def test_SC_11_CONFIRM(self):
-        """S-11.096 with this version's steps 3-5 switched on, as the host build tests its dormant code. The
-        SC-11-RUN-OK package (TE-signed, a first-stage file carried), option on: the bootloader asked for
-        before the run's first write and written only when confirmed; not confirmed: Skipped, not confirmed,
-        and no return to the factory bootloader. The first-stage file is never asked for and nothing writes
-        it. The option off: nothing asked. A package without the bootloader: nothing asked. The same package
-        over the CDC firmware command and the MIDI transfer: the same ask. The same package installed again:
-        asked again. Leg `this_version`, steps 3-5 switched off (S-11.073): the bootloader asked and
-        written."""
+        """S-11.096, the selection, with this version's steps 3-5 switched off. The SC-11-RUN-OK package
+        (TE-signed, a first-stage file carried), option on: asked once before the run's first write, offered
+        content, the OS and the bootloader (never a first-stage file, nothing writes it); every step offered
+        selected: all written, a return to the factory bootloader; the bootloader left out: Skipped, not
+        selected, no return to the factory bootloader; the bootloader alone: the OS Skipped, not selected,
+        and no package version recorded (S-11.064); a cancel: no run, nothing written (no metadata state, no
+        progress record, no Nordic exchange), nothing to do; the keys unreadable: every step offered but the
+        bootloader. The option off: the bootloader not offered, Skipped, option off. A package without the
+        bootloader: not offered. The same package over the CDC firmware command and the MIDI transfer: the
+        same ask. The same package installed again: asked again."""
         z = full_zip(version=(1, 2, 0))
         os_only = fwzip.build({'os': os_img(300, 1)}, version=(1, 2, 0))
         body = package('confirm_body', z, pre=False)
         s = Session()
-        legs = [('yes', z, 1, 1), ('no', z, 1, 0), ('option_off', z, 0, 1), ('no_protected', os_only, 1, 1)]
-        for tag, zz, opt, bl in legs:
-            self.install(s, tag, zz, option=opt, extra=['set off 3,4,5', 'set confirm %d' % bl])
-        self.install(s, 'this_version', z, option=1, extra=['set off 3,4,5', 'set confirm 1'])
+        every = ('install', None)
+        legs = [('all', z, 1, every), ('no_bl', z, 1, ('install', (0, 1))), ('only_bl', z, 1, ('install', (2,))),
+                ('cancel', z, 1, ('cancel',)), ('unasked', z, 1, None), ('option_off', z, 0, every),
+                ('no_protected', os_only, 1, every)]
+
+        def cmd(a):
+            if a is None:
+                return 'set select unasked'
+            if a[0] == 'cancel':
+                return 'set select cancel'
+            return 'set select install ' + ('all' if a[1] is None else ','.join(map(str, a[1])))
+
+        def answer(a):
+            if a is None:
+                return None
+            if a[0] == 'cancel':
+                return lambda p: 'cancel'
+            return lambda p: ('install', p if a[1] is None else a[1])
+        for tag, zz, opt, a in legs:
+            self.install(s, tag, zz, option=opt, extra=['set off 3,4,5', cmd(a)])
         for tag, fwcmd in (('cdc', 1), ('midi', 0)):
-            s.add(*setup(), 'set off 3,4,5', 'set confirm 1', 'load ' + body)
+            s.add(*setup(), 'set off 3,4,5', 'set select install all', 'load ' + body)
             s.add('install body %d 1 -' % fwcmd, name=tag)
             s.add('log', name=tag + '/log')
-        s.add('set confirm 0', 'install body 0 1 -', name='again')
+        s.add('set select install 0,1', 'install body 0 1 -', name='again')
         s.add('log', name='again/log')
         out = s.run()
         m = model()
-        for tag, zz, opt, bl in legs:
+        self.assertEqual(m.STEPS_OFF, (3, 4, 5))
+        for tag, zz, opt, a in legs:
             with self.subTest(leg=tag):
-                answer = {'bootloader': bl}.get
-                lg, r = self.check_run(out, tag, staged_of(zz), bool(opt), steps_off=(3, 4, 5), answer=answer)
-                asks = [i for i, t in enumerate(lg) if t.startswith('confirm:')]
-                if asks:
-                    first_write = min(i for i, t in enumerate(lg) if t.split(':')[0] in WRITES or t in STEP_OF)
-                    self.assertLess(max(asks), first_write, 'asked before the run\'s first write')
-                self.assertEqual('bootloader_write' in lg, bool(opt and bl and zz is z))
+                lg, r = self.check_run(out, tag, staged_of(zz), bool(opt), steps_off=(3, 4, 5), answer=answer(a))
+                asks = [i for i, t in enumerate(lg) if t.startswith('select:offered=')]
+                self.assertEqual(len(asks), 1, tag)
+                written = [i for i, t in enumerate(lg) if t.split(':')[0] in WRITES or t in STEP_OF]
+                if written:
+                    self.assertLess(asks[0], min(written), 'asked before the run\'s first write')
+                bl = a is not None and a[0] == 'install' and (a[1] is None or 2 in a[1])
+                self.assertEqual('bootloader_write' in lg, bool(opt and bl and zz is z), tag)
                 self.assertFalse([t for t in lg if 'spiboot' in t], tag)
-                self.assertEqual(r.outcome, 'done')
                 if zz is z:
                     self.assertTrue(r.te)
                     self.assertEqual(r.stock, bool(opt and bl),
-                                     'S-11.091: a return to the factory bootloader only when confirmed')
-        self.assertEqual([t for t in log(out['yes/log']) if t.startswith('confirm:')], ['confirm:bootloader=1'])
-        self.assertEqual(m.STEPS_OFF, (3, 4, 5))
-        lg, r = self.check_run(out, 'this_version', staged_of(z), True, steps_off=m.STEPS_OFF,
-                               answer=lambda c: True)
-        self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=1'])
-        self.assertNotIn('skip:6', ' '.join(lg))
+                                     'S-11.091: a return to the factory bootloader only when selected')
+        self.assertEqual([t for t in log(out['all/log']) if t.startswith('select:')],
+                         ['select:offered=0,1,2', 'select:selected=0,1,2'])
+        self.assertEqual(Result(out['all']).outcome, 'done')
+        self.assertEqual([t for t in log(out['no_bl/log']) if t.startswith('skip:')],
+                         ['skip:2=not_selected', 'skip:3=switched_off', 'skip:4=switched_off', 'skip:5=switched_off'])
+        lg = log(out['only_bl/log'])
+        self.assertIn('skip:1=not_selected', lg)
+        self.assertNotIn('os_write', lg)
         self.assertIn('bootloader_write', lg)
-        self.assertEqual(r.outcome, 'done')
-        self.assertEqual([t for t in log(out['no/log']) if t.startswith('skip:')],
-                         ['skip:2=not_confirmed', 'skip:3=switched_off', 'skip:4=switched_off', 'skip:5=switched_off'])
-        self.assertEqual([t for t in log(out['option_off/log']) if t.startswith('confirm:')], [])
-        self.assertEqual([t for t in log(out['no_protected/log']) if t.startswith('confirm:')], [])
+        self.assertEqual([t for t in lg if t.startswith('meta:')], ['meta:state=AB0D', 'meta:state=0'])
+        self.assertEqual(out['only_bl/meta'], '0x0 ' + OLD)
+        lg = log(out['cancel/log'])
+        self.assertEqual([t for t in lg if t.startswith('select:')], ['select:offered=0,1,2', 'select:canceled'])
+        self.assertEqual(writes(lg), [])
+        self.assertEqual([t for t in lg if t in STEP_OF or t.split(':')[0] in STEP_OF], [])
+        self.assertEqual(Result(out['cancel']).outcome, 'nothing')
+        self.assertEqual(out['cancel/record'], 'absent')
+        self.assertEqual([t for t in log(out['unasked/log']) if t.startswith('select:')],
+                         ['select:offered=0,1,2', 'select:selected=0,1'])
+        self.assertEqual([t for t in log(out['option_off/log']) if t.startswith('select:offered=')],
+                         ['select:offered=0,1'])
+        self.assertIn('skip:2=option_off', log(out['option_off/log']))
+        self.assertEqual([t for t in log(out['no_protected/log']) if t.startswith('select:offered=')],
+                         ['select:offered=1'])
         for tag in ('cdc', 'midi'):
             lg = log(out[tag + '/log'])
-            self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=1'], tag)
+            self.assertEqual([t for t in lg if t.startswith('select:')],
+                             ['select:offered=0,1,2', 'select:selected=0,1,2'], tag)
             self.assertIn('bootloader_write', lg, tag)
         lg = log(out['again/log'])
-        self.assertEqual([t for t in lg if t.startswith('confirm:')], ['confirm:bootloader=0'])
+        self.assertEqual([t for t in lg if t.startswith('select:')], ['select:offered=0,1,2', 'select:selected=0,1'])
         self.assertNotIn('bootloader_write', lg)
 
     @scenario('S-11/SC-11-STAGED')
@@ -912,7 +957,8 @@ class Runs(unittest.TestCase):
         s.add('log', name='boot/log')
         out = s.run()
         lg, r = self.check_run(out, 'nodfu', staged_of(z), True, dfu=False)
-        self.assertEqual(lg, ['meta:state=AB0D', 'nordic:enter_dfu', 'meta:state=0'])
+        self.assertEqual([t for t in lg if not t.startswith('select:')],
+                         ['meta:state=AB0D', 'nordic:enter_dfu', 'meta:state=0'])
         self.assertEqual(out['nodfu/record'], 'absent')
         self.assertEqual(out['boot'], 'os 0x0')
         self.assertEqual(log(out['boot/log']), [])

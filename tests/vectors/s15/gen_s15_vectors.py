@@ -143,30 +143,36 @@ def keys(o):
     o.w('};')
     o.w('#endif')
     o.w()
-    v = load('confirm_keys.json')
-    o.w('#ifdef S15V_CONFIRM_KEYS')
-    o.w('/* S-15.116 confirm_keys.json: the confirmation shown at 0 ms with the keys down_at_open down; the events')
-    o.w('   (ms, key, down) after it; the choice by end_ms: "install", "skip" or NULL (it goes on waiting), and')
-    o.w('   at_ms when it was made (-1: none). readable false: the key state cannot be read. */')
-    o.w('#define S15V_CONFIRM_HOLD_MS %du' % v['hold_ms'])
-    o.w('#define S15V_CONFIRM_TIMEOUT_MS %du' % v['timeout_ms'])
-    o.w('struct s15v_confirm_event { uint32_t ms; uint8_t key; bool down; };')
-    o.w('struct s15v_confirm { const char *name; bool readable; const uint8_t *down_at_open; size_t n_down;'
-        ' const struct s15v_confirm_event *events; size_t n; uint32_t end_ms; const char *expect; long at_ms; };')
+    v = load('select_keys.json')
+    o.w('#ifdef S15V_SELECT_KEYS')
+    o.w('/* S-15.116 select_keys.json: the selection shown at 0 ms, every row at No, the rows of the steps in')
+    o.w('   pickable (bit n for step n) able to be picked and the keys down_at_open down; the events (ms, key, down)')
+    o.w('   after it; the choice by end_ms: "install", "cancel" or NULL (it goes on waiting), at_ms when it was')
+    o.w('   made (-1: none), and selected, the steps at Yes then (bit n for step n). */')
+    o.w('#define S15V_SELECT_HOLD_MS %du' % v['hold_ms'])
+    o.w('#define S15V_SELECT_TIMEOUT_MS %du' % v['timeout_ms'])
+    o.w('/* the step of digit d\'s row, 99 for none */')
+    o.w('static const unsigned s15v_select_row_step[9] = { %s };' % ', '.join(
+        '%du' % v['row_steps'].get(str(d), 99) for d in range(9)))
+    o.w('struct s15v_select_event { uint32_t ms; uint8_t key; bool down; };')
+    o.w('struct s15v_select { const char *name; unsigned pickable; const uint8_t *down_at_open; size_t n_down;'
+        ' const struct s15v_select_event *events; size_t n; uint32_t end_ms; const char *expect; long at_ms;'
+        ' unsigned selected; };')
     cases = []
     for c in v['cases']:
-        dn = o.uid('s15v_cf_down')
-        ev = o.uid('s15v_cf_events')
+        dn = o.uid('s15v_sel_down')
+        ev = o.uid('s15v_sel_events')
         o.w('static const uint8_t %s[] = { %s };' % (dn, ', '.join(str(int(k, 16)) for k in c['down_at_open']) or '0'))
-        o.w('static const struct s15v_confirm_event %s[] = { %s };' % (ev, ', '.join(
+        o.w('static const struct s15v_select_event %s[] = { %s };' % (ev, ', '.join(
             '{ %du, 0x%02x, %s }' % (t, int(k, 16), cbool(e == 'down')) for t, k, e in c['events'])
             or '{ 0u, 0, false }'))
         cases.append((c, dn, ev))
-    o.w('static const struct s15v_confirm s15v_confirm[] = {')
+    o.w('static const struct s15v_select s15v_select[] = {')
     for c, dn, ev in cases:
-        o.w('\t{ %s, %s, %s, %du, %s, %du, %du, %s, %d },' % (
-            cstr(c['case']), cbool(c['readable']), dn, len(c['down_at_open']), ev, len(c['events']), c['end_ms'],
-            cstr(c['expect']), -1 if c['at_ms'] is None else c['at_ms']))
+        o.w('\t{ %s, 0x%02xu, %s, %du, %s, %du, %du, %s, %d, 0x%02xu },' % (
+            cstr(c['case']), sum(1 << x for x in c['pickable']), dn, len(c['down_at_open']), ev, len(c['events']),
+            c['end_ms'], cstr(c['expect']), -1 if c['at_ms'] is None else c['at_ms'],
+            sum(1 << x for x in c['selected'])))
     o.w('};')
     o.w('#endif')
     o.w()

@@ -491,7 +491,7 @@ static void fresh(void)
 	m.emmc.scratch = emmc_scratch;
 	m.emmc.scratch_len = sizeof emmc_scratch;
 	opxy_install_ops(&m, &run, &step);
-	/* The run's values with the option on and the bootloader confirmed,
+	/* The run's values with the option on and the bootloader selected,
 	 * so that it writes (S-11.090, S-11.096); the stated values come with
 	 * extracted(). */
 	opxy_install_begin(&m, true, false, S11_STEP_BIT(S11_STEP_BOOTLOADER));
@@ -554,7 +554,7 @@ static enum s11_result result_of(unsigned which)
 	memset(&env, 0, sizeof env);
 	env.staged = &st;
 	env.option = true;
-	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER);
+	env.selected = 0x3Fu;		/* every step selected */
 	env.copro = &copro;
 	return s11_step_result(which, &env, &step);
 }
@@ -627,7 +627,7 @@ static void test_already_written(void)
 	memset(&env, 0, sizeof env);
 	env.staged = &st;
 	env.option = true;
-	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER);
+	env.selected = S11_STEP_BIT(S11_STEP_BOOTLOADER);
 	CHECK(s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_SKIPPED) ==
 	      S11_SKIP_ALREADY_WRITTEN);
 	/* a selector this power-on did not write (a new power-on): Failure */
@@ -1488,12 +1488,13 @@ static bool pkg_src_write(void *ctx, uint32_t off, const uint8_t *buf, size_t n)
 }
 
 /*
- * The PSoC's key events, by script: each confirmation's own, in ms from
- * when its keys are taken (the board's key hook is the confirmation's
- * then: the menus' is NULL in these tests). One frame per poll of the
- * link, as the board's ring gives them.
+ * The PSoC's key events, by script: each selection's own, in ms from when
+ * its keys are taken (the board's key hook is the selection's then: the
+ * menus' is NULL in these tests). One frame per poll of the link, as the
+ * board's ring gives them.
  */
 #define K_DIGIT1 0x06u
+#define K_DIGIT7 0x14u	/* the Bootloader's row */
 #define K_DIGIT8 0x15u
 struct kev {
 	uint32_t ms;
@@ -1502,8 +1503,8 @@ struct kev {
 };
 
 static struct {
-	const struct kev *ev[4];	/* per confirmation, ending at ms 0 */
-	unsigned asks;			/* confirmations seen */
+	const struct kev *ev[4];	/* per selection, ending at ms 0 */
+	unsigned asks;			/* selections seen */
 	bool in_ask;
 	uint64_t start_ms[4], end_ms[4];
 	size_t next;
@@ -1512,8 +1513,9 @@ static struct {
 	bool host_sent;		/* the host sends during the next one */
 } ks;
 
-/* The board's ms; the confirmation's 60 s count from its screen, a
- * little before the first poll these tests see (so 59900, not 60000). */
+/* The board's ms; the selection's 60 s count from its screen or its last
+ * key event, a little before the first poll these tests see (so 59900, not
+ * 60000). */
 static uint64_t now_ms(void)
 {
 	return wb_time_ms(&m.hw.time);
@@ -1541,7 +1543,7 @@ static size_t psoc_read(void *ctx, uint8_t *buf, size_t max)
 	}
 	if (ks.host_sent) {
 		/* a host that sends a key bitmap as if from the PSoC, and a
-		 * ping, during the confirmation: never read (S-10a.049) */
+		 * ping, during the selection: never read (S-10a.049) */
 		const uint8_t forged[S07_BITMAP] = { 0x40 };
 		const uint8_t ping = 7;
 
@@ -1587,6 +1589,7 @@ static void whole_setup(void)
 	s08_init(&m.nordic, &m.node, S06_LINK_NORDIC, &m.nordic_ops,
 		 S08_STATE_IDLE);
 	m.key_status.replied = true;
+	m.sv.boot.version = "0.9.40";
 	memset(&ks, 0, sizeof ks);
 	memcpy(ks.bits, no_keys, sizeof ks.bits);
 	wire_n = 0;
@@ -1620,7 +1623,7 @@ static void whole_install(bool option, bool fw_command,
 	memset(ks.end_ms, 0, sizeof ks.end_ms);
 	opxy_install_source(&m, &src, &in, res);
 	opxy_crc_off = crc_off;
-	/* the end of the last confirmation, if the run never polled after */
+	/* the end of the last selection, if the run never polled after */
 	if (ks.in_ask) {
 		ks.end_ms[ks.asks - 1u] = now_ms();
 		ks.in_ask = false;
@@ -1672,32 +1675,63 @@ static bool first_stage_untouched(void)
 		      flash_before + S02_FIRST_STAGE_OFF, S02_FIRST_STAGE_MAX) == 0;
 }
 
+/* the Bootloader's row to Yes, then key 1 held */
 static const struct kev hold_5s[] = {
+	{ 500, K_DIGIT7, true }, { 600, K_DIGIT7, false },
 	{ 1000, K_DIGIT1, true }, { 6500, K_DIGIT1, false }, { 0, 0, false },
 };
-/* the same, the key still down from the last confirmation: its up first */
+/* the same, key 1 still down from the last selection: its up first */
 static const struct kev rehold_5s[] = {
-	{ 200, K_DIGIT1, false }, { 1000, K_DIGIT1, true },
+	{ 200, K_DIGIT1, false }, { 500, K_DIGIT7, true },
+	{ 600, K_DIGIT7, false }, { 1000, K_DIGIT1, true },
 	{ 6500, K_DIGIT1, false }, { 0, 0, false },
 };
 static const struct kev release_early[] = {
+	{ 500, K_DIGIT7, true }, { 600, K_DIGIT7, false },
 	{ 1000, K_DIGIT1, true }, { 3000, K_DIGIT1, false }, { 0, 0, false },
+};
+/* key 1 alone, nothing selected: no hold */
+static const struct kev hold_unselected[] = {
+	{ 1000, K_DIGIT1, true }, { 6500, K_DIGIT1, false }, { 0, 0, false },
+};
+static const struct kev select_only[] = {
+	{ 500, K_DIGIT7, true }, { 600, K_DIGIT7, false }, { 0, 0, false },
 };
 static const struct kev key8[] = {
 	{ 500, K_DIGIT8, true }, { 600, K_DIGIT8, false }, { 0, 0, false },
 };
+/* the option off: 7 and a hold of 1 do nothing, then 8 */
+static const struct kev off_then_8[] = {
+	{ 500, K_DIGIT7, true }, { 600, K_DIGIT7, false },
+	{ 1000, K_DIGIT1, true }, { 6500, K_DIGIT1, false },
+	{ 7000, K_DIGIT8, true }, { 7100, K_DIGIT8, false }, { 0, 0, false },
+};
 static const struct kev nothing[] = { { 0, 0, false } };
 
+/* A canceled selection: no run, nothing written, no step reported. */
+static void canceled(const struct s11_install_result *res)
+{
+	CHECK(res->canceled && res->run.end == S11_RUN_NOTHING_TO_DO &&
+	      res->outcome.kind == S11_OUTCOME_NOTHING_TO_DO && !res->stock &&
+	      !res->run.versions_read);
+	CHECK(memcmp(flash_mem, flash_before, sizeof flash_before) == 0);
+	CHECK(!cdc_has("[bootloader]") && !cdc_has("[skipped]") &&
+	      !cdc_has("Upgrading to"));
+	CHECK(cdc_has("Nothing was installed."));
+	CHECK(cdc_has("[nothing to do]") || !cdc_has("[failed]"));
+}
+
 /*
- * S-11.073: steps 3, 4 and 5 are this build's switched-off steps. With
- * their images in the package each reports Skipped, sends nothing to the
- * Nordic or the PSoC (no DFU entry is asked, S-11.061 item 2; the PSoC's
- * bootloader is never asked for), and the run completes; the host gets a
- * `[skipped]` label after each step's report (S-10c.106), and the screen
- * names them before the outcome. S-11.096: the bootloader confirmed by a
- * 5 s hold of digit 1, asked once and written only then. The package's
- * first-stage file is not asked for, and the first stage's area is never
- * read, erased or programmed; step 6 reports nothing to the host.
+ * S-11.073: steps 3, 4 and 5 are this build's switched-off steps: their
+ * rows on the selection say so and cannot be picked. With their images in
+ * the package each reports Skipped, sends nothing to the Nordic or the PSoC
+ * (no DFU entry is asked, S-11.061 item 2; the PSoC's bootloader is never
+ * asked for), and the run completes; the host gets a `[skipped]` label after
+ * each step's report (S-10c.106), and the screen names them before the
+ * outcome. S-11.096: the Bootloader's row set to Yes, then digit 1 held for
+ * 5 s: asked once, and written only then. The package's first-stage file is
+ * no row, and the first stage's area is never read, erased or programmed;
+ * step 6 reports nothing to the host.
  */
 static void test_whole_hold(void)
 {
@@ -1712,20 +1746,29 @@ static void test_whole_hold(void)
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	flash_fs_ops = 0;
 	whole_install(true, false, &res);
-	CHECK(res.reason == S11_REASON_NONE);
+	CHECK(res.reason == S11_REASON_NONE && !res.canceled);
 	CHECK_EQ(ks.asks, 1u);
 	CHECK(res.run.end == S11_RUN_DONE);
+	CHECK_EQ(res.selected, S11_STEP_BIT(S11_STEP_BOOTLOADER));
 	/* S-09.075: the board's ceiling, single I/O at 50 MHz; no quad
 	 * request session in the whole install */
 	CHECK(cdc_has("bridge: requests run in single I/O at 50 MHz, checked"));
 	CHECK_EQ(lb.quad_sends, 0u);
 	CHECK(slot1_holds_image() && first_stage_untouched());
 	CHECK_EQ(flash_fs_ops, 0u);
-	/* confirmed when its hold reached 5 s, not before */
+	/* installing when its hold reached 5 s, not before */
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 6000u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 6500u);
-	CHECK(cdc_has("Install the bootloader?"));
-	CHECK(cdc_has("install: bootloader confirmed by a 5 s hold"));
+	CHECK(cdc_has("1 Install selected  Nothing selected"));
+	CHECK(cdc_has("4 BLE  Not in this version") &&
+	      cdc_has("5 BLE bootloader  Not in this version") &&
+	      cdc_has("6 Backplane  Not in this version"));
+	/* the running bootloader's version, then the package's (no version
+	 * file: S-11.036's) */
+	CHECK(cdc_has("7 Bootloader  0.9.40 > 1234.0.0  No") &&
+	      cdc_has("7 Bootloader  0.9.40 > 1234.0.0  Yes"));
+	CHECK(cdc_has("Slot 2 is replaced. Recovery remains."));
+	CHECK(cdc_has("install: installing by a 5 s hold, steps selected 0x04"));
 	/* the switched-off steps: Skipped, each after its own report */
 	CHECK(cdc_has("[skipped] ble: switched off") &&
 	      cdc_has("[skipped] ble bootloader: switched off") &&
@@ -1745,8 +1788,8 @@ static void test_whole_hold(void)
 	whole_end();
 }
 
-/* An early release empties the bar and does not confirm; the 60 s run out
- * and the bootloader is skipped. */
+/* An early release ends the hold and keeps the selection; the 60 s,
+ * counted again from that release, run out: canceled. */
 static void test_whole_release_timeout(void)
 {
 	struct s11_install_result res;
@@ -1757,19 +1800,14 @@ static void test_whole_release_timeout(void)
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, false, &res);
 	CHECK_EQ(ks.asks, 1u);
-	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u &&
-	      ks.end_ms[0] - ks.start_ms[0] < 61000u);
-	CHECK(cdc_has("install: bootloader not confirmed in 60 s"));
-	CHECK(slots_untouched());
-	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
-	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
-	CHECK(cdc_at("[bootloader]") < cdc_at("[skipped] bootloader: not confirmed"));
-	CHECK(cdc_has("Not updated: Bootloader, BLE, BLE bootloader,") &&
-	      cdc_has("   Backplane"));
+	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 62900u &&
+	      ks.end_ms[0] - ks.start_ms[0] < 64000u);
+	CHECK(cdc_has("install: canceled after 60 s, steps selected 0x04"));
+	canceled(&res);
 	whole_end();
 }
 
-/* Key 8 skips at once. */
+/* Key 8 cancels at once; key 1 with nothing selected holds nothing. */
 static void test_whole_key8(void)
 {
 	struct s11_install_result res;
@@ -1781,16 +1819,25 @@ static void test_whole_key8(void)
 	whole_install(true, false, &res);
 	CHECK_EQ(ks.asks, 1u);
 	CHECK(ks.end_ms[0] - ks.start_ms[0] < 1000u);
-	CHECK(cdc_has("install: bootloader skipped with key 8"));
-	CHECK(slots_untouched());
-	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
-	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
+	CHECK(cdc_has("install: canceled with key 8, steps selected 0x00"));
+	canceled(&res);
+	whole_end();
+
+	t_case = "whole: key 1 with nothing selected";
+	whole_setup();
+	ks.ev[0] = hold_unselected;
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	whole_install(true, false, &res);
+	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 66000u);
+	CHECK(cdc_has("install: canceled after 60 s, steps selected 0x00"));
+	canceled(&res);
 	whole_end();
 }
 
-/* A key down when the confirmation is shown (still held from the last
+/* A key down when the selection is shown (still held from the last
  * install, whose hold ended the wait before its key came up) does not
- * count: held through the whole 60 s, the bootloader is not confirmed. */
+ * count: with the Bootloader at Yes, it holds nothing, and 60 s after the
+ * last key event the selection is canceled. */
 static void test_whole_stale(void)
 {
 	struct s11_install_result res;
@@ -1801,19 +1848,18 @@ static void test_whole_stale(void)
 	whole_install(true, false, &res);
 	CHECK(slot1_holds_image());
 	cdc_n = 0;
-	ks.ev[0] = nothing;
+	ks.ev[0] = select_only;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, false, &res);
 	CHECK_EQ(ks.asks, 1u);
 	CHECK((m.psoc.keys[K_DIGIT1 / 8u] & (1u << (K_DIGIT1 % 8u))) != 0u);
-	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u);
-	CHECK(memcmp(flash_mem, flash_before, sizeof flash_before) == 0);
-	CHECK(cdc_has("install: bootloader not confirmed in 60 s"));
+	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 60500u);
+	CHECK(cdc_has("install: canceled after 60 s, steps selected 0x04"));
+	canceled(&res);
 	whole_end();
 }
 
-/* No key: it times out after 60 s, nothing protected is written, and with
- * every other step skipped or not found nothing was installed. */
+/* No key: canceled after 60 s, nothing written, nothing installed. */
 static void test_whole_timeout(void)
 {
 	struct s11_install_result res;
@@ -1824,17 +1870,16 @@ static void test_whole_timeout(void)
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, false, &res);
 	CHECK_EQ(ks.asks, 1u);
-	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u);
-	CHECK(slots_untouched());
-	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
-	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
-	CHECK(cdc_has("Nothing was installed."));
-	CHECK(!res.stock);
+	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u &&
+	      ks.end_ms[0] - ks.start_ms[0] < 61000u);
+	canceled(&res);
+	CHECK(cdc_has("8 Cancel (cancels in 60 s)") && cdc_has("6 Restart"));
 	whole_end();
 }
 
-/* Keys that cannot be read (S-07.032 had no reply): skipped at once, with
- * no wait. */
+/* Keys that cannot be read (S-07.032 had no reply): no screen, no wait;
+ * the run as with nobody to ask: every step but the bootloader, which is
+ * Skipped, not selected. */
 static void test_whole_unreadable(void)
 {
 	struct s11_install_result res;
@@ -1847,36 +1892,44 @@ static void test_whole_unreadable(void)
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	t0 = now_ms();
 	whole_install(true, false, &res);
-	CHECK(cdc_has("install: bootloader not confirmed: keys not readable"));
+	CHECK(cdc_has("install: keys not readable, nothing asked"));
+	CHECK(!cdc_has("1 Install selected"));
+	CHECK(!res.canceled && res.selected == 0u);
 	CHECK(slots_untouched());
-	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
+	CHECK(cdc_has("[skipped] bootloader: not selected"));
+	/* S-15.115: the step left out is not named among the parts not
+	 * updated */
+	CHECK(cdc_has("Not updated: BLE, BLE bootloader, Backplane"));
+	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
 	CHECK(ks.asks == 0u);		/* no key was read for it */
 	CHECK(now_ms() - t0 < 30000u);	/* the run's own waits, no 60 s */
 	whole_end();
 }
 
-/* The option off: nothing is asked, and the bootloader step reports the
- * option's reason. */
+/* The option off: the Bootloader's row cannot be picked; its digit and
+ * key 1 do nothing; 8 cancels. */
 static void test_whole_option_off(void)
 {
 	struct s11_install_result res;
 
 	t_case = "whole: option off";
 	whole_setup();
-	ks.ev[0] = hold_5s;
+	ks.ev[0] = off_then_8;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(false, false, &res);
-	CHECK_EQ(ks.asks, 0u);
-	CHECK(!cdc_has("Install the bootloader?"));
-	CHECK(slots_untouched());
-	CHECK(cdc_has("[skipped] bootloader: option off"));
-	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO);
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(cdc_has("7 Bootloader  Protected writes off"));
+	CHECK(!cdc_has("Slot 2 is replaced"));
+	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 7000u &&
+	      ks.end_ms[0] - ks.start_ms[0] < 8000u);
+	CHECK(cdc_has("install: canceled with key 8, steps selected 0x00"));
+	canceled(&res);
 	whole_end();
 }
 
 /*
  * S-11.068 item 5 (SC-11-CONFIRM's repeat): the same package again in this
- * power-on, confirmed again: the bootloader step reports Skipped, already
+ * power-on, selected again: the bootloader step reports Skipped, already
  * written, with no erase or program of the slots, and the run is done.
  */
 static void test_whole_rerun(void)
@@ -1905,8 +1958,8 @@ static void test_whole_rerun(void)
  * An install submitted over a host link (the firmware command's form,
  * forced) asks the same: nothing the host sends during it is read, a key
  * bitmap forged as the PSoC's included, so the host cannot answer; the
- * bootloader's time runs out. Then a second install of the same package
- * asks again: nothing of the first's answers is kept.
+ * time runs out and nothing is installed. Then a second install of the
+ * same package asks again: nothing of the first's answers is kept.
  */
 static void test_whole_host_and_again(void)
 {
@@ -1921,16 +1974,16 @@ static void test_whole_host_and_again(void)
 	CHECK(res.reason == S11_REASON_NONE && res.forced);
 	CHECK_EQ(ks.asks, 1u);
 	CHECK(host_rx_n != 0u && host_rx_r == 0u);	/* sent, never read */
-	CHECK(slots_untouched());
-	CHECK(cdc_has("[skipped] bootloader: not confirmed"));
+	canceled(&res);
 
-	/* the same package again: asked again, confirmed this time */
+	/* the same package again: asked again, every row at No, selected
+	 * this time */
 	cdc_n = 0;
 	ks.ev[0] = hold_5s;
 	memcpy(flash_before, flash_mem, sizeof flash_before);
 	whole_install(true, true, &res);
 	CHECK_EQ(ks.asks, 1u);
-	CHECK(cdc_has("Install the bootloader?"));
+	CHECK(cdc_has("1 Install selected  Nothing selected"));
 	CHECK(slot1_holds_image());
 	CHECK(!cdc_has("[skipped] bootloader"));
 	whole_end();

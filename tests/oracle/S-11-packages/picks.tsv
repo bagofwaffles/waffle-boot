@@ -1,0 +1,139 @@
+# S-11.096, S-11.073, S-11.090
+step	conditions	pick
+content	"{""content_dir"": 0}"	absent
+content	"{""content_dir"": 1}"	open
+os	"{""present"": 0}"	absent
+os	"{""present"": 1}"	open
+bootloader	"{""option"": 0, ""present"": 0}"	absent
+bootloader	"{""option"": 1, ""present"": 0}"	absent
+bootloader	"{""option"": 0, ""present"": 1}"	option off
+bootloader	"{""option"": 1, ""present"": 1}"	open
+ble	"{""forced"": 0, ""known"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+ble	"{""forced"": 0, ""known"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+ble	"{""forced"": 1, ""known"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+ble	"{""forced"": 1, ""known"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+ble	"{""forced"": 0, ""known"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+ble	"{""forced"": 0, ""known"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+ble	"{""forced"": 1, ""known"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+ble	"{""forced"": 1, ""known"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+ble	"{""forced"": 0, ""known"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+ble	"{""forced"": 0, ""known"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+ble	"{""forced"": 1, ""known"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+ble	"{""forced"": 1, ""known"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+ble	"{""forced"": 0, ""known"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+ble	"{""forced"": 0, ""known"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+ble	"{""forced"": 1, ""known"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+ble	"{""forced"": 1, ""known"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+ble	"{""forced"": 0, ""known"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	up to date
+ble	"{""forced"": 0, ""known"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble	"{""forced"": 1, ""known"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble	"{""forced"": 1, ""known"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble	"{""forced"": 0, ""known"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble	"{""forced"": 0, ""known"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble	"{""forced"": 1, ""known"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble	"{""forced"": 1, ""known"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble	"{""forced"": 0, ""known"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble	"{""forced"": 0, ""known"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble	"{""forced"": 1, ""known"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble	"{""forced"": 1, ""known"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble	"{""forced"": 0, ""known"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble	"{""forced"": 0, ""known"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble	"{""forced"": 1, ""known"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble	"{""forced"": 1, ""known"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+keyboard	"{""forced"": 0, ""known"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+keyboard	"{""forced"": 0, ""known"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+keyboard	"{""forced"": 1, ""known"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+keyboard	"{""forced"": 1, ""known"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+keyboard	"{""forced"": 0, ""known"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+keyboard	"{""forced"": 0, ""known"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+keyboard	"{""forced"": 1, ""known"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+keyboard	"{""forced"": 1, ""known"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+keyboard	"{""forced"": 0, ""known"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+keyboard	"{""forced"": 0, ""known"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+keyboard	"{""forced"": 1, ""known"": 1, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+keyboard	"{""forced"": 1, ""known"": 0, ""present"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+keyboard	"{""forced"": 0, ""known"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+keyboard	"{""forced"": 0, ""known"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+keyboard	"{""forced"": 1, ""known"": 1, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+keyboard	"{""forced"": 1, ""known"": 0, ""present"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+keyboard	"{""forced"": 0, ""known"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	up to date
+keyboard	"{""forced"": 0, ""known"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+keyboard	"{""forced"": 1, ""known"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+keyboard	"{""forced"": 1, ""known"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+keyboard	"{""forced"": 0, ""known"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+keyboard	"{""forced"": 0, ""known"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+keyboard	"{""forced"": 1, ""known"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+keyboard	"{""forced"": 1, ""known"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+keyboard	"{""forced"": 0, ""known"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+keyboard	"{""forced"": 0, ""known"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+keyboard	"{""forced"": 1, ""known"": 1, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+keyboard	"{""forced"": 1, ""known"": 0, ""present"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+keyboard	"{""forced"": 0, ""known"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+keyboard	"{""forced"": 0, ""known"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+keyboard	"{""forced"": 1, ""known"": 1, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+keyboard	"{""forced"": 1, ""known"": 0, ""present"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	absent
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	absent
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	absent
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 0, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	absent
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	up to date
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 1, ""present1"": 0, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	up to date
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 0, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	up to date
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 1}"	open
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""equal"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 0, ""known"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 1, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+ble bootloader	"{""forced"": 1, ""known"": 0, ""present0"": 1, ""present1"": 1, ""rel"": ""newer"", ""switched_on"": 0}"	switched off
+reserved	"{""option"": 1}"	absent

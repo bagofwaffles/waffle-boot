@@ -37,7 +37,7 @@ static enum s15_result result_of(const char *s)
 {
 	static const char *const names[] = {
 		"OK", "Not found", "Already installed", "Skipped", "Failure",
-		"Bad file", "Internal error", "Skipped (not confirmed)",
+		"Bad file", "Internal error", "Skipped (not selected)",
 		"Skipped (switched off)", "Skipped (already written)",
 	};
 
@@ -127,6 +127,13 @@ static bool fits(enum s15_style style, const char *text)
 		return tabs == 0u && ticks % 2u == 0u && n - ticks <= S15_COLS;
 	case S15_ST_KV:
 		return tabs <= 3u;
+	case S15_ST_PICK:
+	case S15_ST_PICK_ON:	/* label, detail, state (test_s15_select) */
+		return tabs == 2u && text[1] == ' ' &&
+		       S15_PICK_LABEL_COL + part_len(text, 0) - 2u < S15_PICK_DETAIL_COL;
+	case S15_ST_PICK_OFF:
+		return tabs == 1u && text[1] == ' ' &&
+		       S15_PICK_DETAIL_COL + part_len(text, 1) <= S15_COLS;
 	case S15_ST_TEXT:
 	case S15_ST_DIM:
 	case S15_ST_HEAD:
@@ -323,7 +330,14 @@ static void test_results(void)
 			CHECK(row_matches("skipped:written", b.s, values),
 			      "already written: '%s'", b.s);
 		}
-		if (res == S15_RES_SKIPPED_UNCONFIRMED || res == S15_RES_SKIPPED_OFF ||
+		if (res == S15_RES_SKIPPED_UNSELECTED) {
+			/* S-11.096, by its token */
+			const char *values[] = { "label", s15_step_label(step), NULL };
+
+			CHECK(row_matches("skipped:unselected", b.s, values),
+			      "not selected: '%s'", b.s);
+		}
+		if (res == S15_RES_SKIPPED_UNSELECTED || res == S15_RES_SKIPPED_OFF ||
 		    res == S15_RES_SKIPPED_WRITTEN) {
 			/* not the option's reason: S-11.096, S-11.073 */
 			const char *values[] = { "label", s15_step_label(step), NULL };

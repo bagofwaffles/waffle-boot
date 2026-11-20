@@ -40,10 +40,10 @@ SWITCHABLE = (3, 4, 5)       # S-11.073: the steps that can be switched off
 STEPS_OFF = (3, 4, 5)        # S-11.073: the steps this version has switched off
 NORDIC_STEPS = (3, 4)
 DONE = 7
-# S-11.096: the protected components, in the order they are asked for, with their steps
-CONFIRM_ORDER = (('bootloader', 2),)
+# S-11.096: the steps a selection can hold, and the protected ones it holds only when asked
+SELECTABLE = (0, 1, 2, 3, 4, 5)
 # Why a step whose component is present reports Skipped (S-11.058); the host's words (S-10c.106)
-SKIP_OPTION_OFF, SKIP_NOT_CONFIRMED, SKIP_SWITCHED_OFF = 'option off', 'not confirmed', 'switched off'
+SKIP_OPTION_OFF, SKIP_NOT_SELECTED, SKIP_SWITCHED_OFF = 'option off', 'not selected', 'switched off'
 SKIP_ALREADY_WRITTEN = 'already written'    # S-11.068 item 5
 UPGRADING = 0xAB0D   # the metadata state of an install in progress (S-04.040)
 
@@ -460,17 +460,28 @@ def switched_on(step, c):
     return bool(c.get('switched_on', step not in STEPS_OFF))
 
 
+def _already(step, c):
+    """S-11.069-S-11.071: the installed version is the package's and the package is not forced."""
+    return step in SWITCHABLE and c.get('rel') == 'equal' and not c.get('forced', False)
+
+
 def skip_reason(step, c):
-    """S-11.058, S-11.073, S-11.090, S-11.096: why the step reports Skipped, or None when it does not."""
+    """S-11.058, S-11.073, S-11.090, S-11.096: why the step reports Skipped, or None when it does not.
+    c's `selected`: the step selected on the unit (S-11.096), selected when not given."""
+    selected = c.get('selected', 1)
+    if step == 0:
+        return SKIP_NOT_SELECTED if c.get('content_dir') and not selected else None
+    if step == 1:
+        return SKIP_NOT_SELECTED if c.get('present') and not selected else None
     if step in PROTECTED:
         if not c.get('present'):
             return None
         if step in SWITCHABLE and not switched_on(step, c):
-            return SKIP_SWITCHED_OFF        # S-11.073: before the option and the confirmation
+            return SKIP_SWITCHED_OFF        # S-11.073: before the option and the selection
         if not c.get('option'):
             return SKIP_OPTION_OFF
-        if not c.get('confirmed'):
-            return SKIP_NOT_CONFIRMED
+        if not selected:
+            return SKIP_NOT_SELECTED
         # S-11.068 item 5: after the image check, a start refused only for `verified`, the selector being
         # the one this power-on's own bootloader step wrote, and the selected slot's record that of the
         # checked image
@@ -480,13 +491,19 @@ def skip_reason(step, c):
         return None
     if step in SWITCHABLE:
         carried = c.get('present0') or c.get('present1') if step == 4 else c.get('present')
-        return SKIP_SWITCHED_OFF if carried and not switched_on(step, c) else None
+        if not carried:
+            return None
+        if not switched_on(step, c):
+            return SKIP_SWITCHED_OFF
+        if _already(step, c):
+            return None                     # Already installed, before the selection
+        return None if selected else SKIP_NOT_SELECTED
     return None
 
 
 def step_result(step, c):
-    """c: a dict of conditions (see steps.tsv). Returns a result code. `confirmed` (S-11.096) and
-    `switched_on` (S-11.073) default to what nobody answered and to this version's state."""
+    """c: a dict of conditions (see steps.tsv). Returns a result code. `selected` (S-11.096) and
+    `switched_on` (S-11.073) default to selected and to this version's state."""
     forced = c.get('forced', False)
     staged = _staged_result(c)
     if skip_reason(step, c) is not None:
@@ -562,28 +579,31 @@ def end_nordic(step, c):
 
 # ---- S-11.057-S-11.065: the run
 
-def dfu_entry(nordic_steps, steps_off=STEPS_OFF):
+def dfu_entry(nordic_steps, steps_off=STEPS_OFF, selected=None):
     """S-11.061 item 2: the DFU entry is asked when the package carries a Nordic image (nordic_steps: the
-    Nordic steps, 3 and 4, whose images it carries; True for both) whose step is switched on."""
+    Nordic steps, 3 and 4, whose images it carries; True for both) whose step is switched on and selected
+    (S-11.096; selected None: every step)."""
     if nordic_steps is True:
         nordic_steps = NORDIC_STEPS
-    return any(s not in steps_off for s in (nordic_steps or ()))
+    return any(s not in steps_off and (selected is None or s in selected) for s in (nordic_steps or ()))
 
 
 def run(results, content_only=False, nordic_images=False, nordic_dfu_ok=True, version_file=True,
-        steps_off=()):
+        steps_off=(), selected=None):
     """results: {step: code} for the steps that would run. Every run starts at step 0 and its records
     carry count 0 (S-11.061, S-11.062). Returns a dict: outcome, ran (list of (step, code)), writes (ordered
     list of ('meta', what) / ('progress', (step, 0)) / ('nordic', what)).
     nordic_images: the Nordic steps whose images the package carries (True: both); with steps_off, the
-    switched-off steps (S-11.073), they decide the DFU entry (dfu_entry).
-    version_file: the staging area holds firmware/firmware.version (S-11.038); without it a completed run
-    that is not content-only sets the state to 0 only. A failed run that is not content-only sets the
-    state to 0 (S-11.064, S-04.045 M4)."""
+    switched-off steps (S-11.073), and selected, the steps selected (S-11.096; None: every step), they
+    decide the DFU entry (dfu_entry).
+    version_file: the staging area holds firmware/firmware.version (S-11.038). A completed run that is not
+    content-only records the package version with state 0 only when its step 1 installed the OS (S-11.064);
+    otherwise, and without the file, it sets the state to 0 only. A failed run that is not content-only
+    sets the state to 0 (S-11.064, S-04.045 M4)."""
     w = []
     if not content_only:
         w.append(('meta', 'state=AB0D'))
-    if dfu_entry(nordic_images, steps_off):
+    if dfu_entry(nordic_images, steps_off, selected):
         w.append(('nordic', 'enter_dfu'))
         if not nordic_dfu_ok:
             if not content_only:
@@ -601,7 +621,8 @@ def run(results, content_only=False, nordic_images=False, nordic_dfu_ok=True, ve
         w.append(('progress', (step, 0)))
     if step == DONE:
         if not content_only:
-            w.append(('meta', 'os_version=package,state=0' if version_file else 'state=0'))
+            os_ok = (1, OK) in ran
+            w.append(('meta', 'os_version=package,state=0' if version_file and os_ok else 'state=0'))
         w.append(('progress', (0, 0)))
         nothing = all(r in (NOT_FOUND, ALREADY, SKIPPED) for _, r in ran)
         outcome = 'nothing to do' if nothing else 'done'
@@ -657,27 +678,48 @@ def install_content(tree, staged, content_only_install):
 
 # ---- S-11.091, S-11.092
 
-def return_to_stock(option, te_signed, has_bootloader, bootloader_confirmed=True):
-    """S-11.091: the bootloader image present and confirmed on the unit (S-11.096)."""
-    return bool(option and te_signed and has_bootloader and bootloader_confirmed)
+def return_to_stock(option, te_signed, has_bootloader, bootloader_selected=True):
+    """S-11.091: the bootloader image present and selected on the unit (S-11.096)."""
+    return bool(option and te_signed and has_bootloader and bootloader_selected)
 
 
-# ---- S-11.096
+# ---- S-11.096: the selection
 
-def confirm(components_carried, option, answer, steps_off=()):
-    """The confirmations before a run: components_carried, the package's components; answer(component) the
-    user's answer on the unit; steps_off: the switched-off steps (S-11.073). Returns (asked, confirmed): the
-    components asked for, in order, and the protected steps confirmed. With the option off nothing is asked,
-    nor for a switched-off step."""
-    asked, confirmed = [], set()
-    if not option:
-        return asked, confirmed
-    for comp, step in CONFIRM_ORDER:
-        if comp in components_carried and step not in steps_off:
-            asked.append(comp)
-            if answer(comp):
-                confirmed.add(step)
-    return asked, confirmed
+PICK_ABSENT, PICK_OPEN, PICK_SWITCHED_OFF, PICK_OPTION_OFF, PICK_UP_TO_DATE = (
+    'absent', 'open', 'switched off', 'option off', 'up to date')
+
+
+def pick(step, c):
+    """What the selection offers for a step under steps.tsv's conditions, with `known`: the installed
+    version of a Nordic or PSoC step is known (not 0.0.0). A row for each step carried; one that would
+    report Already installed, its installed version known, is up to date."""
+    if step == 0:
+        return PICK_OPEN if c.get('content_dir') else PICK_ABSENT
+    if step == 1:
+        return PICK_OPEN if c.get('present') else PICK_ABSENT
+    carried = c.get('present0') or c.get('present1') if step == 4 else c.get('present')
+    if step == RESERVED or not carried:
+        return PICK_ABSENT
+    if step in SWITCHABLE and not switched_on(step, c):
+        return PICK_SWITCHED_OFF
+    if step in PROTECTED and not c.get('option'):
+        return PICK_OPTION_OFF
+    if _already(step, c) and c.get('known', 1):
+        return PICK_UP_TO_DATE
+    return PICK_OPEN
+
+
+def select(pickable, answer):
+    """The selection before a run: pickable, the steps that can be picked; answer(pickable) the user's answer
+    on the unit: ('install', steps), 'cancel', or None when the keys cannot be read and nothing is asked.
+    Returns the steps selected, or None when canceled. Unasked: every step that can be picked but the
+    protected ones."""
+    a = answer(frozenset(pickable)) if answer else None
+    if a is None:
+        return frozenset(s for s in pickable if s not in PROTECTED)
+    if a == 'cancel':
+        return None
+    return frozenset(a[1]) & frozenset(pickable)
 
 
 def os_form(stock):
@@ -721,16 +763,18 @@ class Device:
             self.staged = ctx['staged']
 
 
-def _step_results(dev, option, faults, confirmed=frozenset((2,)), steps_off=()):
-    """Results the steps would give from the staged files; faults: {step: code} overrides; confirmed: the
-    protected steps confirmed (S-11.096); steps_off: the switched-off steps (S-11.073). Returns
-    (results, content effect) where the effect is the tree and staging after the content step."""
+def _step_results(dev, option, faults, selected=frozenset(SELECTABLE), steps_off=()):
+    """Results the steps would give from the staged files; faults: {step: code} overrides; selected: the
+    steps selected (S-11.096); steps_off: the switched-off steps (S-11.073). Returns (results, content
+    effect) where the effect is the tree and staging after the content step (None when it does not run)."""
     staged = dev.staged or {}
     comps = components(staged)
     res, effect = {}, None
     co = content_only(staged)
     for s in range(DONE):
-        if s == 0:
+        if s == 0 and has_content(staged) and s not in selected:
+            r = SKIPPED
+        elif s == 0:
             r, tree = install_content(dev.tree, staged, co)
             moved = {p for p, b in staged.items() if p.startswith(CONTENT_DIR) and b is not None}
             left = {p: b for p, b in staged.items() if p not in moved}
@@ -741,7 +785,9 @@ def _step_results(dev, option, faults, confirmed=frozenset((2,)), steps_off=()):
             r = NOT_FOUND
         elif s in SWITCHABLE and s in steps_off:
             r = SKIPPED
-        elif s in PROTECTED and (not option or s not in confirmed):
+        elif s in PROTECTED and not option:
+            r = SKIPPED
+        elif s not in selected:
             r = SKIPPED
         else:
             r = OK
@@ -770,16 +816,32 @@ def extract(dev, staged):
 def install(dev, staged, option=False, faults=None, nordic_dfu_ok=True, cut=None, steps_off=STEPS_OFF,
             answer=None):
     """A run, after its package and zip passed every check. steps_off: the switched-off steps (S-11.073),
-    this version's by default; answer(component): the user's answer to S-11.096's confirmation (None: no
-    component is confirmed). Returns the run dict, with `asked`, or None when cut."""
+    this version's by default; answer(pickable): the user's answer to S-11.096's selection (see select();
+    None: the keys cannot be read). Returns the run dict, with `pickable` and `selected`, or None when cut.
+    A canceled selection starts no run and writes nothing: outcome 'nothing to do', `canceled` true."""
     extract(dev, staged)
     comps = components(dev.staged)
-    asked, confirmed = confirm(comps, option, answer or (lambda c: False), tuple(steps_off))
-    res, effect = _step_results(dev, option, faults or {}, confirmed, tuple(steps_off))
+    pickable = set()
+    if has_content(dev.staged):
+        pickable.add(0)
+    for st, names in _STEP_COMPONENTS.items():
+        if st == RESERVED or not any(c in comps for c in names):
+            continue
+        if st in SWITCHABLE and st in steps_off:
+            continue
+        if st in PROTECTED and not option:
+            continue
+        pickable.add(st)
+    selected = select(pickable, answer)
+    if selected is None:
+        return dict(outcome='nothing to do', ran=[], writes=[], canceled=True, pickable=sorted(pickable),
+                    selected=[])
+    res, effect = _step_results(dev, option, faults or {}, selected, tuple(steps_off))
     co = content_only(dev.staged)
     nordic = [s for s in NORDIC_STEPS if any(c in comps for c in _STEP_COMPONENTS[s])]
-    r = run(res, co, nordic, nordic_dfu_ok, version_file=has_version_file(dev.staged), steps_off=tuple(steps_off))
-    r['asked'] = asked
+    r = run(res, co, nordic, nordic_dfu_ok, version_file=has_version_file(dev.staged), steps_off=tuple(steps_off),
+            selected=selected)
+    r.update(canceled=False, pickable=sorted(pickable), selected=sorted(selected))
     return r if _execute(dev, r, effect, cut) else None
 
 

@@ -59,11 +59,14 @@
  *                            bootloader_write, psoc_program,
  *                            fs_remove | fs_move | fs_copy (the content step's
  *                            volume changes) and content=RESULT (its code,
- *                            S-11.058), confirm:bootloader=A (S-11.096:
- *                            asked for and answered A, 1 or 0) and
- *                            skip:STEP=WHY (s11_step_skip()
- *                            of each step that reported Skipped, after the
- *                            run: option_off | not_confirmed | switched_off);
+ *                            S-11.058), select:offered=STEPS (S-11.096: the
+ *                            steps that could be picked when asked), then
+ *                            select:canceled or select:selected=STEPS (the
+ *                            steps the run was given; STEPS comma-separated,
+ *                            "-" for none), and skip:STEP=WHY
+ *                            (s11_step_skip() of each step that reported
+ *                            Skipped, after the run: option_off |
+ *                            not_selected | switched_off | already_written);
  *                            or "-"
  *   disk SECTORS          -> ok | fail: a RAM disk, formatted (S-12.003)
  *   diskput NAME FILE     -> ok | fail: a file on the RAM disk's root
@@ -81,8 +84,10 @@
  * set KEY VALUE (each 0 or 1 unless stated; the default first):
  *   off 3,4,5 | STEPS | -  the switched-off steps (S-11.073), comma-separated;
  *                         "-" for none. The default is this version's
- *   confirm 0 | BL        S-11.096: the answer on the unit for the
- *                         bootloader; 0 for none, as when nobody answers
+ *   select unasked | install STEPS | cancel  S-11.096: the answer on the
+ *                         unit: none (the keys cannot be read), the steps
+ *                         given (comma-separated, "all" or "-"), or a
+ *                         cancel
  *   dfu 1 | indfu 1       the Nordic enters DFU; reports bootloader mode
  *   send 1 | sendbl 1     the Nordic application and bootloader transfers
  *                         succeed
@@ -487,9 +492,11 @@ static struct {
 	char cut_at[LOG_TOKEN];		/* "": none */
 	int staged;			/* S-11.095: 0 passes, 1 bad, 2 read error */
 	uint8_t off;			/* S-11.073: S11_STEP_BIT() each */
-	bool confirm_bl;		/* S-11.096: the answer */
+	enum s11_answer answer;		/* S-11.096 */
+	uint8_t give;			/* the steps given with an install */
 } cfg = { true, true, true, true, true, true, true, 0, -1, 0, false, 0,
-	  0, 0, 0, 0, 0, 0, -1, "", 0, S11_STEPS_SWITCHABLE, false };
+	  0, 0, 0, 0, 0, 0, -1, "", 0, S11_STEPS_SWITCHABLE,
+	  S11_ANSWER_UNASKED, 0 };
 
 static struct {
 	unsigned stage, remove, move, meta, record;
@@ -764,16 +771,39 @@ static const struct s11_step_ops step_ops = {
 	s_psoc, NULL,
 };
 
+/* Steps as "0,1,2", or "-". */
+static void steps_text(uint8_t bits, char *out, size_t cap)
+{
+	size_t n = 0;
+
+	out[0] = '\0';
+	for (unsigned step = 0; step < S11_STEP_DONE; step++) {
+		if ((bits & S11_STEP_BIT(step)) == 0u || n + 3u > cap)
+			continue;
+		if (n != 0u)
+			out[n++] = ',';
+		out[n++] = (char)('0' + step);
+		out[n] = '\0';
+	}
+	if (n == 0u && cap > 1u) {
+		out[0] = '-';
+		out[1] = '\0';
+	}
+}
+
 /* S-11.096: the answer on the unit, logged; not a change, so no cut falls
  * on it */
-static bool u_confirm(void *ctx, enum s11_component c)
+static enum s11_answer u_select(void *ctx, const struct s11_step_env *env,
+				uint8_t *selected)
 {
-	const bool yes = c == S11_C_BOOTLOADER && cfg.confirm_bl;
+	char t[LOG_TOKEN], st[24];
 
 	(void)ctx;
-	note(c == S11_C_BOOTLOADER ? (yes ? "confirm:bootloader=1" :
-					    "confirm:bootloader=0") : "confirm:?");
-	return yes;
+	steps_text(s11_pickable(env), st, sizeof(st));
+	snprintf(t, sizeof(t), "select:offered=%s", st);
+	note(t);
+	*selected = cfg.give;
+	return cfg.answer;
 }
 
 /* ---- the package's source and the zip's staging, with faults ---- */
@@ -925,7 +955,7 @@ static void note_skips(const struct s11_fs_ops *fs, bool option)
 	static const char *const why[] = {
 		[S11_SKIP_NONE] = NULL,
 		[S11_SKIP_OPTION_OFF] = "option_off",
-		[S11_SKIP_NOT_CONFIRMED] = "not_confirmed",
+		[S11_SKIP_NOT_SELECTED] = "not_selected",
 		[S11_SKIP_SWITCHED_OFF] = "switched_off",
 		[S11_SKIP_ALREADY_WRITTEN] = "already_written",
 	};
@@ -940,8 +970,20 @@ static void note_skips(const struct s11_fs_ops *fs, bool option)
 	env.staged = &st;
 	env.option = option;
 	env.off = cfg.off;
-	env.confirmed = (uint8_t)(option && cfg.confirm_bl ?
-				  S11_STEP_BIT(S11_STEP_BOOTLOADER) : 0u);
+	env.copro = &copro;	/* as the run left it */
+	env.forced = R.forced;
+	env.selected = R.selected;
+	if (R.canceled) {
+		note("select:canceled");
+		return;
+	}
+	{
+		char sel[24];
+
+		steps_text(R.selected, sel, sizeof(sel));
+		snprintf(t, sizeof(t), "select:selected=%s", sel);
+		note(t);
+	}
 	/* the steps that ran: all of a completed run, those before the step
 	 * that stopped a failed one */
 	for (unsigned step = 0; step < S11_STEP_DONE; step++) {
@@ -985,8 +1027,8 @@ static void install(const struct wire_source *src, uint32_t size,
 	ops.fs = &fs;
 	ops.run = &run_ops;
 	ops.steps = &step_ops;
-	ops.confirm = u_confirm;
-	ops.confirm_ctx = NULL;
+	ops.select = u_select;
+	ops.select_ctx = NULL;
 	ops.off = cfg.off;
 	in.form = form;
 	in.size = size;
@@ -1115,8 +1157,18 @@ static bool set(const struct h_cmd *c)
 				cfg.off = (uint8_t)(cfg.off |
 						    S11_STEP_BIT((unsigned)(*p - '0')));
 		}
-	} else if (strcmp(k, "confirm") == 0) {
-		cfg.confirm_bl = b;
+	} else if (strcmp(k, "select") == 0) {
+		cfg.answer = strcmp(v, "install") == 0 ? S11_ANSWER_INSTALL :
+			     strcmp(v, "cancel") == 0 ? S11_ANSWER_CANCEL :
+							S11_ANSWER_UNASKED;
+		cfg.give = 0;
+		if (c->n == 4 && strcmp(c->tok[3], "all") == 0)
+			cfg.give = 0x3Fu;
+		else if (c->n == 4)
+			for (const char *p = c->tok[3]; *p != '\0'; p++)
+				if (*p >= '0' && *p <= '5')
+					cfg.give = (uint8_t)(cfg.give |
+							     S11_STEP_BIT((unsigned)(*p - '0')));
 	}
 	else if (strcmp(k, "staged") == 0)
 		cfg.staged = strcmp(v, "bad") == 0 ? 1 :

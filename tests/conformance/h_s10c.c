@@ -352,7 +352,7 @@ int main(void)
 			char label[S10C_SKIP_LABEL_MAX + 1];
 			size_t n = s10c_skip_label((unsigned)h_num(&c, 1),
 				strcmp(w, "option_off") == 0 ? S11_SKIP_OPTION_OFF :
-				strcmp(w, "not_confirmed") == 0 ? S11_SKIP_NOT_CONFIRMED :
+				strcmp(w, "not_selected") == 0 ? S11_SKIP_NOT_SELECTED :
 				strcmp(w, "already_written") == 0 ?
 				S11_SKIP_ALREADY_WRITTEN : S11_SKIP_SWITCHED_OFF, label);
 

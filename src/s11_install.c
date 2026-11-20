@@ -12,8 +12,9 @@ static void refused(struct s11_install_result *out, enum s11_reason r)
 }
 
 /* S-11.020: a refused package starts no run; S-11.055, S-11.090,
- * S-11.091, S-11.096: forcing, the option, the confirmations and the
- * return to the factory bootloader are fixed before step 1 and hold for the whole run. */
+ * S-11.091, S-11.096: forcing, the option, the selection and the return
+ * to the factory bootloader are fixed before the run's first write and
+ * hold for the whole run. */
 void s11_install(const struct s11_install_ops *ops,
 		 const struct s11_check_in *in, struct s17_copro *copro,
 		 struct s11_install_result *out)
@@ -25,7 +26,8 @@ void s11_install(const struct s11_install_ops *ops,
 	struct s11_run_cfg cfg;
 	enum s11_reason r;
 
-	out->te_signed = out->forced = out->stock = false;
+	out->te_signed = out->forced = out->stock = out->canceled = false;
+	out->selected = 0;
 	out->run.end = S11_RUN_FAILED;
 	out->run.step = 0xFF;
 	out->run.result = S11_OK;
@@ -44,20 +46,26 @@ void s11_install(const struct s11_install_ops *ops,
 	}
 	out->reason = S11_REASON_NONE;
 	s11_staged_scan(ops->fs, &st);
-	/* S-11.096: asked before the run's first write */
-	env.confirmed = s11_confirm(&st, in->option, ops->confirm,
-				    ops->confirm_ctx);
-	env.off = ops->off;
-	out->stock = s11_return_to_stock(in->option, checked.te_signed,
-					 (env.confirmed &
-					  S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u);
 	env.staged = &st;
 	env.option = in->option;
 	env.forced = checked.forced;
 	env.nordic_in_dfu = false;
 	env.copro = copro;
+	env.off = ops->off;
+	env.selected = 0;
+	/* S-11.096: asked before the run's first write */
+	if (!s11_select(&env, ops->select, ops->select_ctx)) {
+		out->canceled = true;
+		out->run.end = S11_RUN_NOTHING_TO_DO;
+		s11_run_outcome(&out->run, &out->outcome);
+		return;
+	}
+	out->selected = env.selected;
+	out->stock = s11_return_to_stock(in->option, checked.te_signed,
+					 (env.selected &
+					  S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u);
 	cfg.content_only = s11_staged_content_only(&st);	/* S-11.056 */
-	cfg.nordic = s11_run_nordic(&st, env.off);
+	cfg.nordic = s11_run_nordic(&env);
 	cfg.has_version = st.has_fw_version;			/* S-11.038 */
 	cfg.version = st.fw_version;
 	s11_run_steps(ops->run, ops->steps, &env, &cfg, &out->run);

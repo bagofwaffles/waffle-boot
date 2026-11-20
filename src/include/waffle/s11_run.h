@@ -4,8 +4,8 @@
 
 /*
  * S-11 sections 5, 7 and 8: the run (its start, steps, progress record and
- * end), the step results, an install a reset interrupted, and the protected
- * steps.
+ * end), the step results, an install a reset interrupted, the protected
+ * steps and the selection of the steps before a run.
  * The metadata record (S-04), the progress record's file, the Nordic and
  * PSoC exchanges (S-07, S-08) and the image writers (S-02, S-03) come in
  * through ops.
@@ -63,7 +63,7 @@ struct s11_run_ops {
 
 struct s11_run_cfg {
 	bool content_only;		/* S-11.056, from the staging area */
-	bool nordic;			/* a Nordic image is present (S-11.061) */
+	bool nordic;			/* a selected Nordic step runs (S-11.061) */
 	bool has_version;		/* S-11.038: firmware/firmware.version */
 	struct s11_version version;
 };
@@ -133,7 +133,7 @@ struct s11_step_ops {
 	void *ctx;
 };
 
-/* A step's bit in s11_step_env's off and confirmed. */
+/* A step's bit in s11_step_env's off and selected. */
 #define S11_STEP_BIT(step) ((uint8_t)(1u << (step)))
 /* The steps S-11.073 lets a build switch off: the Nordic and PSoC
  * steps. */
@@ -150,8 +150,9 @@ struct s11_step_env {
 	/* S-11.073: the switched-off steps, a bit each; only those of
 	 * S11_STEPS_SWITCHABLE count. */
 	uint8_t off;
-	/* S-11.096: the protected steps confirmed on the unit, a bit each. */
-	uint8_t confirmed;
+	/* S-11.096: the steps selected on the unit, a bit each, fixed before
+	 * the run's first write. */
+	uint8_t selected;
 };
 
 enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
@@ -162,21 +163,55 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 enum s11_skip s11_step_skip(unsigned step, const struct s11_step_env *env);
 
 /* Why a step that reported r reports Skipped: S11_SKIP_NONE unless r is
- * S11_SKIPPED; the bootloader step with the option on and confirmed was
+ * S11_SKIPPED; the bootloader step with the option on and selected was
  * skipped in S-11.068 item 5's case. */
 enum s11_skip s11_result_skip(unsigned step, const struct s11_step_env *env,
 			      enum s11_result r);
 
-/* S-11.061 item 2: a Nordic image is present whose step is switched on. */
-bool s11_run_nordic(const struct s11_staged *st, uint8_t off);
+/* S-11.061 item 2: a Nordic image is present whose step is switched on
+ * and selected. */
+bool s11_run_nordic(const struct s11_step_env *env);
+
+/* ---- the selection (S-11.096) ---- */
+
+/* What the selection offers for a step, from env's staged, off, option,
+ * forced and copro (selected is not read). */
+enum s11_pick {
+	S11_PICK_ABSENT,	/* its component is not carried: no row */
+	S11_PICK_OPEN,		/* it can be selected */
+	S11_PICK_SWITCHED_OFF,	/* S-11.073 */
+	S11_PICK_OPTION_OFF,	/* a protected step, the option off (S-11.090) */
+	/* A Nordic or PSoC step whose installed version is known (not
+	 * 0.0.0) and the package's, the package not forced: it would
+	 * report Already installed. */
+	S11_PICK_UP_TO_DATE
+};
+
+enum s11_pick s11_step_pick(unsigned step, const struct s11_step_env *env);
+/* The steps S11_PICK_OPEN, a bit each. */
+uint8_t s11_pickable(const struct s11_step_env *env);
+/* Those that run when nobody can be asked: every open step but the
+ * protected one. */
+uint8_t s11_unasked(const struct s11_step_env *env);
+
+enum s11_answer {
+	S11_ANSWER_INSTALL,	/* run the steps given */
+	S11_ANSWER_CANCEL,	/* no run */
+	S11_ANSWER_UNASKED	/* the keys cannot be read: nothing was asked */
+};
+
+/* The user's answer on the unit; *selected: the steps chosen, a bit each,
+ * for S11_ANSWER_INSTALL. */
+typedef enum s11_answer (*s11_ask_fn)(void *ctx, const struct s11_step_env *env,
+				      uint8_t *selected);
 
 /*
- * S-11.096: the protected component the package carries, the bootloader,
- * asked for on the unit; the bit of the step confirmed. With the option
- * off, or ask NULL, nothing is asked and none is confirmed.
+ * S-11.096: the steps to run, asked for on the unit before the run's first
+ * write, into env->selected: an answer's selection as far as the steps are
+ * open, or s11_unasked() when nothing was asked (ask NULL included). False:
+ * the answer canceled, and env->selected is 0.
  */
-uint8_t s11_confirm(const struct s11_staged *st, bool option,
-		    bool (*ask)(void *ctx, enum s11_component c), void *ctx);
+bool s11_select(struct s11_step_env *env, s11_ask_fn ask, void *ctx);
 
 /* s11_run with each step's result from s11_step_result(); the run's
  * Nordic read fills env->nordic_in_dfu. */
@@ -197,10 +232,9 @@ struct s11_install_ops {
 	const struct s11_fs_ops *fs;		/* the staging area */
 	const struct s11_run_ops *run;
 	const struct s11_step_ops *steps;
-	/* S-11.096: the user's answer on the unit for one protected
-	 * component; NULL: none is confirmed. */
-	bool (*confirm)(void *ctx, enum s11_component c);
-	void *confirm_ctx;
+	/* S-11.096: the selection on the unit; NULL: nothing is asked. */
+	s11_ask_fn select;
+	void *select_ctx;
 	uint8_t off;				/* S-11.073 */
 };
 
@@ -208,14 +242,18 @@ struct s11_install_result {
 	enum s11_reason reason;		/* NONE: the package was accepted */
 	bool te_signed, forced;
 	bool stock;			/* a return to the factory bootloader (S-11.091) */
+	bool canceled;			/* the selection canceled: no run (S-11.096) */
+	uint8_t selected;		/* the steps selected, a bit each */
 	struct s11_run_result run;
 	struct s11_outcome outcome;	/* for S-10c and S-15 (S-11.051) */
 };
 
 /*
  * One package: checks 1-15, then 16-18 (a refusal at any of them starts
- * nothing after it), then the confirmations of S-11.096, then the run. The option in `in` is the one when the
- * checks began, and holds for the whole run (S-11.090).
+ * nothing after it), then the selection of S-11.096, then the run. A
+ * canceled selection starts no run and writes nothing; its outcome is
+ * Nothing to do. The option in `in` is the one when the checks began, and
+ * holds for the whole run (S-11.090).
  */
 void s11_install(const struct s11_install_ops *ops,
 		 const struct s11_check_in *in, struct s17_copro *copro,

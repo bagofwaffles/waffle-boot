@@ -76,7 +76,7 @@ struct s11_outcome {
 enum s11_skip {
 	S11_SKIP_NONE,			/* it does not */
 	S11_SKIP_OPTION_OFF,		/* a protected step, the option off (S-11.090) */
-	S11_SKIP_NOT_CONFIRMED,		/* a protected step, not confirmed (S-11.096) */
+	S11_SKIP_NOT_SELECTED,		/* a step not selected on the unit (S-11.096) */
 	S11_SKIP_SWITCHED_OFF,		/* a switched-off step (S-11.073) */
 	S11_SKIP_ALREADY_WRITTEN	/* the bootloader step, S-11.068 item 5 */
 };

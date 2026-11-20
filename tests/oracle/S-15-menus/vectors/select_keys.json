@@ -1,0 +1,1738 @@
+{
+ "hold_ms": 5000,
+ "timeout_ms": 60000,
+ "row_steps": {
+  "2": 1,
+  "3": 0,
+  "4": 3,
+  "5": 4,
+  "6": 5,
+  "7": 2
+ },
+ "cases": [
+  {
+   "case": "opens_all_no",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [],
+   "end_ms": 1000,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "nothing_selected_no_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "toggle_each_row",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     100,
+     "0x08",
+     "down"
+    ],
+    [
+     200,
+     "0x09",
+     "down"
+    ],
+    [
+     300,
+     "0x12",
+     "down"
+    ],
+    [
+     400,
+     "0x13",
+     "down"
+    ],
+    [
+     500,
+     "0x14",
+     "down"
+    ]
+   ],
+   "end_ms": 1000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "case": "toggle_twice_back_to_no",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     100,
+     "0x07",
+     "up"
+    ],
+    [
+     200,
+     "0x07",
+     "down"
+    ]
+   ],
+   "end_ms": 1000,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "toggle_by_knob_click",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x0B",
+     "down"
+    ],
+    [
+     100,
+     "0x0C",
+     "down"
+    ],
+    [
+     200,
+     "0x0D",
+     "down"
+    ]
+   ],
+   "end_ms": 1000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    0,
+    1,
+    3
+   ]
+  },
+  {
+   "case": "toggle_by_other_digit_key",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x0F",
+     "down"
+    ],
+    [
+     100,
+     "0x10",
+     "down"
+    ],
+    [
+     200,
+     "0x11",
+     "down"
+    ]
+   ],
+   "end_ms": 1000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    0,
+    1,
+    3
+   ]
+  },
+  {
+   "case": "not_pickable_rows_do_nothing",
+   "pickable": [
+    1
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x08",
+     "down"
+    ],
+    [
+     100,
+     "0x09",
+     "down"
+    ],
+    [
+     200,
+     "0x12",
+     "down"
+    ],
+    [
+     300,
+     "0x13",
+     "down"
+    ],
+    [
+     400,
+     "0x14",
+     "down"
+    ]
+   ],
+   "end_ms": 1000,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "not_pickable_then_hold_nothing",
+   "pickable": [
+    1
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x14",
+     "down"
+    ],
+    [
+     100,
+     "0x14",
+     "up"
+    ],
+    [
+     200,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "hold_m1_5s",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": "install",
+   "at_ms": 6000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "hold_sound1_5s",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     20,
+     "0x0E",
+     "down"
+    ]
+   ],
+   "end_ms": 5020,
+   "expect": "install",
+   "at_ms": 5020,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "hold_4999ms_waits",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 5999,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "released_early",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     5999,
+     "0x06",
+     "up"
+    ]
+   ],
+   "end_ms": 20000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "released_then_again",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     4000,
+     "0x06",
+     "up"
+    ],
+    [
+     5000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": "install",
+   "at_ms": 10000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "released_then_again_short",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     4000,
+     "0x06",
+     "up"
+    ],
+    [
+     5000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 9999,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "released_after_5s",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     6500,
+     "0x06",
+     "up"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": "install",
+   "at_ms": 6000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "knob1_click_no_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x0A",
+     "down"
+    ]
+   ],
+   "end_ms": 20000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "digit8_cancels",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     2500,
+     "0x15",
+     "down"
+    ]
+   ],
+   "end_ms": 3000,
+   "expect": "cancel",
+   "at_ms": 2500,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "digit8_during_hold_ends_it",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x06",
+     "down"
+    ],
+    [
+     4000,
+     "0x15",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "toggle_during_hold_ends_it",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x06",
+     "down"
+    ],
+    [
+     2000,
+     "0x08",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "other_keys_no_effect",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x00",
+     "down"
+    ],
+    [
+     0,
+     "0x18",
+     "down"
+    ],
+    [
+     0,
+     "0x37",
+     "down"
+    ],
+    [
+     0,
+     "0x40",
+     "down"
+    ]
+   ],
+   "end_ms": 59999,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "timeout",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [],
+   "end_ms": 60000,
+   "expect": "cancel",
+   "at_ms": 60000,
+   "selected": []
+  },
+  {
+   "case": "timeout_not_before",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [],
+   "end_ms": 59999,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "timeout_after_selection",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ]
+   ],
+   "end_ms": 60010,
+   "expect": "cancel",
+   "at_ms": 60010,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "key_event_restarts_time",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     50000,
+     "0x40",
+     "down"
+    ],
+    [
+     50500,
+     "0x40",
+     "up"
+    ]
+   ],
+   "end_ms": 110499,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "key_event_restarts_time_then_cancels",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     50000,
+     "0x40",
+     "down"
+    ],
+    [
+     50500,
+     "0x40",
+     "up"
+    ]
+   ],
+   "end_ms": 110500,
+   "expect": "cancel",
+   "at_ms": 110500,
+   "selected": []
+  },
+  {
+   "case": "stale_key_event_restarts_time",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x40"
+   ],
+   "events": [
+    [
+     50000,
+     "0x40",
+     "up"
+    ]
+   ],
+   "end_ms": 109999,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "hold_not_ended_by_time",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     59000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 64000,
+   "expect": "install",
+   "at_ms": 64000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "hold_late_install",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     59000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 90000,
+   "expect": "install",
+   "at_ms": 64000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "release_restarts_time",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     3000,
+     "0x06",
+     "up"
+    ]
+   ],
+   "end_ms": 62999,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "release_restarts_time_then_cancels",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     3000,
+     "0x06",
+     "up"
+    ]
+   ],
+   "end_ms": 63000,
+   "expect": "cancel",
+   "at_ms": 63000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "stale_key_ignored",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x06"
+   ],
+   "events": [],
+   "end_ms": 20000,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "stale_digit_no_toggle",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x07"
+   ],
+   "events": [
+    [
+     1000,
+     "0x07",
+     "up"
+    ]
+   ],
+   "end_ms": 2000,
+   "expect": null,
+   "at_ms": null,
+   "selected": []
+  },
+  {
+   "case": "stale_digit_up_then_down",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x07"
+   ],
+   "events": [
+    [
+     1000,
+     "0x07",
+     "up"
+    ],
+    [
+     2000,
+     "0x07",
+     "down"
+    ]
+   ],
+   "end_ms": 3000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "stale_key1_up_then_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x06"
+   ],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "up"
+    ],
+    [
+     2000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": "install",
+   "at_ms": 7000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "stale_digit8_ignored",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x15"
+   ],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x15",
+     "up"
+    ],
+    [
+     1500,
+     "0x0E",
+     "down"
+    ]
+   ],
+   "end_ms": 6500,
+   "expect": "install",
+   "at_ms": 6500,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "stale_digit8_still_down_blocks_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x15"
+   ],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x0E",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "stale_digit8_up_then_down",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x15"
+   ],
+   "events": [
+    [
+     1000,
+     "0x15",
+     "up"
+    ],
+    [
+     1500,
+     "0x15",
+     "down"
+    ]
+   ],
+   "end_ms": 2000,
+   "expect": "cancel",
+   "at_ms": 1500,
+   "selected": []
+  },
+  {
+   "case": "second_digit1_key_ends_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x06",
+     "down"
+    ],
+    [
+     1000,
+     "0x0E",
+     "down"
+    ],
+    [
+     2000,
+     "0x0E",
+     "up"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "knob_click_ends_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x06",
+     "down"
+    ],
+    [
+     1000,
+     "0x0A",
+     "down"
+    ],
+    [
+     1500,
+     "0x0A",
+     "up"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "step_key_ends_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x06",
+     "down"
+    ],
+    [
+     2000,
+     "0x40",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "step_key_down_blocks_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x47",
+     "down"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "digit_key_down_blocks_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "other_key_released_then_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x40",
+     "down"
+    ],
+    [
+     500,
+     "0x40",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": "install",
+   "at_ms": 6000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "hold_again_after_break",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x06",
+     "down"
+    ],
+    [
+     1000,
+     "0x40",
+     "down"
+    ],
+    [
+     1500,
+     "0x40",
+     "up"
+    ],
+    [
+     2000,
+     "0x06",
+     "up"
+    ],
+    [
+     3000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 8000,
+   "expect": "install",
+   "at_ms": 8000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "stale_other_key_blocks_hold",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [
+    "0x40"
+   ],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": null,
+   "at_ms": null,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "precomp_key_ignored",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x17",
+     "down"
+    ],
+    [
+     1000,
+     "0x06",
+     "down"
+    ],
+    [
+     2000,
+     "0x17",
+     "up"
+    ],
+    [
+     3000,
+     "0x17",
+     "down"
+    ]
+   ],
+   "end_ms": 6000,
+   "expect": "install",
+   "at_ms": 6000,
+   "selected": [
+    1
+   ]
+  },
+  {
+   "case": "selection_kept_after_break",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x07",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "up"
+    ],
+    [
+     100,
+     "0x14",
+     "down"
+    ],
+    [
+     200,
+     "0x14",
+     "up"
+    ],
+    [
+     300,
+     "0x06",
+     "down"
+    ],
+    [
+     1000,
+     "0x06",
+     "up"
+    ],
+    [
+     2000,
+     "0x06",
+     "down"
+    ]
+   ],
+   "end_ms": 7000,
+   "expect": "install",
+   "at_ms": 7000,
+   "selected": [
+    1,
+    2
+   ]
+  },
+  {
+   "case": "after_choice_ignored",
+   "pickable": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "down_at_open": [],
+   "events": [
+    [
+     0,
+     "0x15",
+     "down"
+    ],
+    [
+     10,
+     "0x07",
+     "down"
+    ]
+   ],
+   "end_ms": 10000,
+   "expect": "cancel",
+   "at_ms": 0,
+   "selected": []
+  }
+ ]
+}

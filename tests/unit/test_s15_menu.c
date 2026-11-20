@@ -455,7 +455,7 @@ static void press(unsigned key)
 static void hold(unsigned key)
 {
 	ev(key, true);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(key, false);
 }
 
@@ -1189,7 +1189,7 @@ static void rules_hold(const struct rstate *st)
 	pb = M.armed == S15_ARM_OPTION;
 	fb = M.armed == S15_ARM_FORMAT;
 	kb = M.armed == S15_ARM_PACK;
-	tick(S15_CONFIRM_HOLD_MS - 1u);
+	tick(S15_HOLD_MS - 1u);
 	observe(&got, st, NO_KEY, before, ab, pb, fb, false, kb);
 	rule(R_HOLD, got.n == 0u && M.screen == before && M.armed != S15_ARM_NONE &&
 	     strcmp(last_row(b), "step-run:Release to cancel\t99%\t1 s") == 0,
@@ -1207,7 +1207,7 @@ static void rules_hold(const struct rstate *st)
 	clear_records();
 	n_app = 0;
 	before = M.screen;
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(hk, false);
 	observe(&got, st, hk, before, false, false, false, false, false);
 	rule(R_HOLD, got.n == 0u && M.screen == before, st->name, hk, false, &got);
@@ -1814,19 +1814,19 @@ static void test_screens(void)
 	 * pressed again */
 	ev(0x0f, true);
 	expect_screen("option_prompt");
-	tick(S15_CONFIRM_HOLD_MS * 2u);
+	tick(S15_HOLD_MS * 2u);
 	CHECK(F.option == -1 && M.armed == S15_ARM_NONE,
 	      "S-15.140 the opening key, held on, starts no hold");
 	ev(0x0f, true);        /* a repeated down is no new event */
 	ev(0x0f, false);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	CHECK(F.option == -1 && M.armed == S15_ARM_NONE && M.screen == S15_SCR_OPTION,
 	      "S-15.140 its release does nothing");
 	expect_screen("option_prompt");
 	ev(0x0f, true);        /* a new down: the hold */
 	expect_screen("option_prompt_held");
 	expect_title("option");
-	tick(S15_CONFIRM_HOLD_MS - 1u);
+	tick(S15_HOLD_MS - 1u);
 	CHECK(F.option == -1, "S-15.015 not before 5 s");
 	tick(1u);
 	CHECK(F.option == 1 && F.n_usb == 0u, "S-15.140 on at 5 s, no USB set");
@@ -1857,7 +1857,7 @@ static void test_screens(void)
 	CHECK(F.saves == 0u && M.dev_mode && F.option == -1 &&
 	      M.armed == S15_ARM_NONE, "S-15.140 a cancelling key only cancels");
 	expect_screen("option_prompt");
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x07, false);
 	CHECK(F.option == -1 && M.screen == S15_SCR_OPTION,
 	      "S-15.015 a canceled hold's key runs nothing");
@@ -1872,16 +1872,16 @@ static void test_screens(void)
 	/* an early release turns nothing on, and so does a later time */
 	press(0x07);
 	ev(0x07, true);
-	tick(S15_CONFIRM_HOLD_MS - 1u);
+	tick(S15_HOLD_MS - 1u);
 	ev(0x07, false);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	CHECK(F.option == -1 && !M.option_on && M.armed == S15_ARM_NONE,
 	      "S-15.015 released at 4999 ms: off");
 	expect_screen("option_prompt");
 	/* the white knob turns nothing on */
 	ev(0x07, true);
 	press(0x0d);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	CHECK(F.option == -1 && M.armed == S15_ARM_NONE, "S-15.015 the white knob only cancels");
 	expect_screen("option_prompt");
 	ev(0x07, false);
@@ -2261,19 +2261,19 @@ static void test_keys(void)
 	ev(0x06, false);
 	CHECK(M.armed == S15_ARM_RESET, "S-15.015 another key's up keeps the hold");
 	expect_screen("system_armed");
-	tick(S15_CONFIRM_HOLD_MS - 1u);
+	tick(S15_HOLD_MS - 1u);
 	ev(0x14, false);
 	CHECK(M.armed == S15_ARM_NONE && F.n_removed == 0u,
 	      "S-15.015 released at 4999 ms: canceled");
 	expect_screen("system");
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	CHECK(F.n_removed == 0u, "S-15.015 nothing runs later");
 	ev(0x14, true);
 	press(0x0b);   /* digit 2: the calibration reset, were it not held */
 	CHECK(M.armed == S15_ARM_NONE && F.volcal == 0u && F.n_removed == 0u &&
 	      M.screen == S15_SCR_SYSTEM, "S-15.015 a cancelling key only cancels");
 	expect_screen("system");
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x14, false);
 	CHECK(F.n_removed == 0u, "S-15.015 a canceled hold's key runs nothing");
 	ev(0x14, true);
@@ -2290,7 +2290,7 @@ static void test_keys(void)
 	      "S-15.051 the white knob does nothing");
 	ev(0x14, true);
 	press(0x0d);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	CHECK(M.armed == S15_ARM_NONE && F.n_removed == 0u,
 	      "S-15.015 the white knob only cancels");
 	ev(0x14, false);
@@ -2299,14 +2299,14 @@ static void test_keys(void)
 	ev(0x14, true);
 	ev(0x17, true);
 	ev(0x17, false);
-	tick(S15_CONFIRM_HOLD_MS - 1u);
+	tick(S15_HOLD_MS - 1u);
 	CHECK(F.n_removed == 0u && M.armed == S15_ARM_RESET, "S-15.015 precomp: held on");
 	tick(1u);
 	CHECK(F.n_removed == 3u && M.screen == S15_SCR_RESULT, "S-15.015 at 5 s the reset");
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x14, false);
 	ev(0x14, true);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	CHECK(F.n_removed == 3u && F.erase_fat == 1u && M.screen == S15_SCR_RESULT,
 	      "S-15.015 once: no repeat, the release and the next down do nothing");
 }
@@ -2404,19 +2404,19 @@ static void test_packs(void)
 	press(0x06);
 	CHECK(F.n_removed == 0u && M.armed == S15_ARM_NONE &&
 	      M.screen == S15_SCR_PACKS, "S-15.042 another pack's digit only cancels");
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x07, false);
 	CHECK(F.n_removed == 0u, "S-15.015 nothing after the cancel");
 	ev(0x07, true);
 	press(0x0d);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x07, false);
 	CHECK(F.n_removed == 0u, "S-15.015 the white knob only cancels");
 	ev(0x07, true);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	CHECK(F.n_removed == 1u && removed("/yaffs2/content/dlc/b"),
 	      "S-15.043 held 5 s: removed");
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x07, false);
 	CHECK(F.n_removed == 1u, "S-15.015 once");
 }
@@ -2490,14 +2490,14 @@ static void test_format(void)
 	press(0x12);
 	press(0x12);
 	ev(0x0a, true);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x0a, false);
 	CHECK(F.format == 0u && M.armed == S15_ARM_NONE,
 	      "S-15.071 0x0A held starts no hold");
 	ev(0x06, true);
 	CHECK(F.format == 0u && M.armed == S15_ARM_FORMAT,
 	      "S-15.071 the key starts the hold");
-	tick(S15_CONFIRM_HOLD_MS - 1u);
+	tick(S15_HOLD_MS - 1u);
 	CHECK(F.format == 0u, "S-15.015 not before 5 s");
 	tick(1u);
 	ev(0x06, false);
@@ -2522,7 +2522,7 @@ static void test_format(void)
 	ev(0x06, false);
 	ev(0x06, true);
 	press(0x0d);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x06, false);
 	CHECK(F.format == 0u && M.armed == S15_ARM_NONE,
 	      "S-15.015 the white knob only cancels");
@@ -2544,7 +2544,7 @@ static void test_format(void)
 	CHECK(F.format == 1u && M.armed == S15_ARM_FORMAT,
 	      "S-15.072 the next format asks first");
 	expect_screen("format_refused_pending");
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x06, false);
 	CHECK(F.format == 2u, "S-15.073 then held 5 s: erased");
 
@@ -3070,20 +3070,48 @@ static void test_upgrade(void)
 }
 
 /*
- * S-15.116: a protected component's confirmation on the upgrade screen,
- * under its own title: the component, the package's version and what it
- * risks; the bar's row replaced as the hold goes on, and not logged. The
- * menus' keys do nothing while it is shown (the confirmation's keys are
- * s15_confirm's).
+ * S-15.116: the selection on the upgrade screen, under its title: a row for
+ * each step carried, every row at No as it opens; Yes, the rows that cannot
+ * be picked, the warning for the bootloader and the hold as they change.
+ * Every line is logged when it is drawn; the rows the time changes are
+ * replaced and not logged. The menus' keys do nothing while it is shown
+ * (its keys are s15_select's).
  */
-static void test_confirm_screen(void)
+static struct s15_select_info sel_info;
+
+static void sel_full(void)
 {
-	const struct s15_confirm_info boot = { "1.0.12",
-						"1.0.10", 1 };
-	const struct s15_confirm_info unknown = { "1.0.3", NULL, -1 };
+	static const char *const have[S15_STEP_COUNT] = {
+		[S15_STEP_OS] = "1.1.4", [S15_STEP_BOOTLOADER] = "0.9.40",
+		[S15_STEP_BLE] = "0.9.2", [S15_STEP_KEYBOARD] = "0.4.1",
+	};
+	static const char *const pkg[S15_STEP_COUNT] = {
+		[S15_STEP_CONTENT] = "Bass Essentials", [S15_STEP_OS] = "1.1.5",
+		[S15_STEP_BOOTLOADER] = "0.9.41", [S15_STEP_BLE] = "0.9.3",
+		[S15_STEP_BLE_BOOTLOADER] = "2.0.1", [S15_STEP_KEYBOARD] = "0.4.2",
+	};
+
+	for (unsigned i = 0; i < S15_STEP_COUNT; i++) {
+		sel_info.row[i].kind = S15_ROW_PICK;
+		sel_info.row[i].installed = have[i];
+		sel_info.row[i].package = pkg[i];
+	}
+	sel_info.slot = 1;
+	sel_info.stock = false;
+}
+
+static void sel_press(struct s15_select *sl, unsigned key, uint32_t at)
+{
+	s15_select_key(sl, key, true, at);
+	s15_select_key(sl, key, false, at);
+}
+
+static void test_select_screen(void)
+{
 	static const unsigned keys[] = { 0x15, 0x06, 0x0d, 0x18, 0x13, 0x0a };
 	char before[S15_ROWS][ROWLEN], after[S15_ROWS][ROWLEN];
 	const char *got[S15_ROWS];
+	struct s15_select sl;
 	unsigned nlogged, scans;
 	size_t n;
 
@@ -3091,15 +3119,21 @@ static void test_confirm_screen(void)
 	scan_by_release();
 	s15_up_phase(&M, S15_PH_EXTRACT_FIRMWARE);
 	s15_up_progress(&M, 1, 1);
-	s15_up_confirm(&M, &boot);
-	expect_screen("upgrade_confirm_bootloader");
-	expect_title("confirm");
-	CHECK(appended("Install the bootloader?"), "S-15.004 its lines logged");
+	sel_full();
+	s15_select_open(&sl, 0x3Fu, NULL, 1000u);
+	s15_up_select(&M, &sel_info, &sl, 1000u);
+	expect_screen("upgrade_select_open");
+	expect_title("upgrade");
+	CHECK(appended("1 Install selected  Nothing selected") &&
+	      appended("8 Cancel (cancels in 60 s)"), "S-15.004 its lines logged");
 	nlogged = n_app;
-	s15_up_confirm_bar(&M, 40, 52);
-	expect_screen("upgrade_confirm_bootloader_held");
-	CHECK(n_app == nlogged, "S-15.004 the bar's row not logged");
+	/* the time: the 8 row replaced, not logged */
+	s15_up_select_time(&M, &sel_info, &sl, 9000u);
+	CHECK(n_app == nlogged, "S-15.004 the time's rows not logged");
 	n = rows(got, before);
+	CHECK(n == 8u && strcmp(got[7], "back:8 Cancel (cancels in 52 s)") == 0,
+	      "the seconds left: '%s'", got[7]);
+	/* the menus' keys add or change nothing, leave nothing */
 	clear_records();
 	scans = F.scan;
 	for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
@@ -3109,19 +3143,80 @@ static void test_confirm_screen(void)
 		CHECK(strcmp(before[i], after[i]) == 0,
 		      "S-15.116 the menus' keys change no row: '%s'", after[i]);
 	CHECK(M.screen == S15_SCR_UPGRADE && F.scan == scans && F.n_usb == 0u &&
-	      M.armed != S15_ARM_OPTION && !M.option_on,
-	      "S-15.116 no way back, no scan, no option");
-	expect_title("confirm");
+	      M.armed != S15_ARM_OPTION && !M.option_on && !M.restart_ok,
+	      "S-15.116 no way back, no scan, no option, no restart");
 
-	reset_fake(); default_boot(); BOOT.reason = 30; start();
-	scan_by_release();
-	s15_up_confirm(&M, &unknown);
-	CHECK(appended("The other slot is replaced. Recovery remains."),
-	      "no selector read: the other slot");
+	/* rows picked, the bootloader among them; rows that cannot be */
+	sel_info.row[S15_STEP_BLE].kind = S15_ROW_OFF;
+	sel_info.row[S15_STEP_BLE_BOOTLOADER].kind = S15_ROW_OFF;
+	sel_info.row[S15_STEP_KEYBOARD].kind = S15_ROW_UP_TO_DATE;
+	s15_select_open(&sl, 0x07u, NULL, 1000u);
+	sel_press(&sl, 0x07u, 1000u);
+	sel_press(&sl, 0x14u, 1000u);
+	s15_up_select(&M, &sel_info, &sl, 9000u);
+	expect_screen("upgrade_select_picked");
+	CHECK(appended("Slot 2 is replaced. Recovery remains."), "the warning logged");
+	/* the hold: the bar in the warning's row, its fill not logged */
+	s15_select_key(&sl, 0x06u, true, 10000u);
+	s15_up_select(&M, &sel_info, &sl, 10000u);
+	nlogged = n_app;
+	s15_up_select_time(&M, &sel_info, &sl, 12000u);
+	expect_screen("upgrade_select_held");
+	CHECK(n_app == nlogged, "S-15.004 the bar's fill not logged");
+
+	/* the option off; a return to stock; a content pack alone */
+	sel_full();
+	for (unsigned i = 0; i < S15_STEP_COUNT; i++)
+		if (i != S15_STEP_OS && i != S15_STEP_BOOTLOADER)
+			sel_info.row[i].kind = S15_ROW_NONE;
+	sel_info.row[S15_STEP_OS].installed = NULL;
+	sel_info.row[S15_STEP_BOOTLOADER].kind = S15_ROW_OPTION_OFF;
+	s15_select_open(&sl, 0x02u, NULL, 1000u);
+	s15_up_select(&M, &sel_info, &sl, 1000u);
+	expect_screen("upgrade_select_option_off");
+	sel_info.row[S15_STEP_BOOTLOADER].kind = S15_ROW_PICK;
+	sel_info.stock = true;
+	s15_select_open(&sl, 0x06u, NULL, 1000u);
+	sel_press(&sl, 0x14u, 1000u);
+	s15_up_select(&M, &sel_info, &sl, 1000u);
+	expect_screen("upgrade_select_stock");
+	sel_full();
+	for (unsigned i = 0; i < S15_STEP_COUNT; i++)
+		if (i != S15_STEP_CONTENT)
+			sel_info.row[i].kind = S15_ROW_NONE;
+	s15_select_open(&sl, 0x01u, NULL, 1000u);
+	s15_up_select(&M, &sel_info, &sl, 1000u);
+	expect_screen("upgrade_select_content");
+
 	/* the run's own header follows on the upgrade screen's title */
 	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
 	expect_title("upgrade");
 	CHECK(appended("Upgrading to 1.3.0"), "the run's header after it");
+}
+
+/* S-11.096: a canceled selection: nothing installed, and how to leave as
+ * after a run that did nothing (S-15.115). */
+static void test_select_canceled(void)
+{
+	struct s15_select sl;
+
+	reset_fake(); default_boot(); BOOT.reason = 30; start();
+	scan_by_release();
+	sel_full();
+	s15_select_open(&sl, 0x3Fu, NULL, 1000u);
+	s15_up_select(&M, &sel_info, &sl, 1000u);
+	s15_up_canceled(&M);
+	expect_title("upgrade");
+	expect_tail("upgrade_canceled_tail");
+	CHECK(M.restart_ok && M.activity == S15_ACT_IDLE && !s15_up_disk_offerable(&M),
+	      "the restart offered; the disk read");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_UPGRADE, "8 does not leave: the zip was read");
+
+	reset_fake(); default_boot(); BOOT.reason = 40; start();
+	s15_up_canceled(&M);
+	expect_tail("upgrade_canceled_midi_tail");
+	CHECK(!M.restart_ok, "reason 40: no restart item");
 }
 
 /*
@@ -3149,10 +3244,15 @@ static void test_run_end_skipped(void)
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
 	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
-	s15_up_step_start(&M, S15_STEP_BOOTLOADER);
-	s15_up_step_result(&M, S15_STEP_BOOTLOADER, S15_RES_SKIPPED_UNCONFIRMED,
+	s15_up_step_start(&M, S15_STEP_OS);
+	s15_up_step_result(&M, S15_STEP_OS, S15_RES_SKIPPED_UNSELECTED,
 			   NULL, false, NULL);
-	CHECK(strcmp(last_row(row), "step-skip:Bootloader\tSkipped: not confirmed") == 0,
+	CHECK(strcmp(last_row(row), "step-skip:Main DSP\tSkipped: not selected") == 0,
+	      "the reason on the row: '%s'", row);
+	s15_up_step_start(&M, S15_STEP_BOOTLOADER);
+	s15_up_step_result(&M, S15_STEP_BOOTLOADER, S15_RES_SKIPPED,
+			   NULL, false, NULL);
+	CHECK(strcmp(last_row(row), "step-skip:Bootloader\tSkipped: protected writes off") == 0,
 	      "the reason on the row: '%s'", row);
 	s15_up_run_end(&M, S15_OUT_NOTHING,
 		       1u << S15_STEP_BOOTLOADER);
@@ -3389,7 +3489,7 @@ static void test_continue(void)
 	CHECK(s15_menu_continue(&M) == S15_CONT_STARTED && M.armed == S15_ARM_NONE,
 	      "the hold canceled");
 	CHECK(F.leds_end == 0u, "no key test: no LED message");
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	ev(0x14, false);
 	CHECK(F.n_removed == 0u, "the hold's time runs nothing after");
 
@@ -3769,7 +3869,7 @@ static void test_hold(void)
 	press(0x12);
 	press(0x12);
 	s15_menu_event(&M, 0x06, true);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	s15_menu_event(&M, 0x06, false);
 	CHECK(F.format == 1u && s15_menu_held(&M), "the format holds the keys");
 	raw_press(0x15);
@@ -3781,7 +3881,7 @@ static void test_hold(void)
 	reset_fake(); default_boot(); start();
 	press(0x12);
 	s15_menu_event(&M, 0x14, true);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	s15_menu_event(&M, 0x14, false);
 	CHECK(F.n_removed == 3u && s15_menu_held(&M), "the reset holds them");
 	raw_press(0x15);
@@ -3795,7 +3895,7 @@ static void test_hold(void)
 	press(0x12);
 	press(0x08);
 	s15_menu_event(&M, 0x06, true);
-	tick(S15_CONFIRM_HOLD_MS);
+	tick(S15_HOLD_MS);
 	s15_menu_event(&M, 0x06, false);
 	CHECK(F.n_removed == 2u && s15_menu_held(&M), "a removal holds them");
 	s15_menu_release(&M);
@@ -3852,7 +3952,8 @@ int main(void)
 	test_os_write();
 	test_hold();
 	test_upgrade();
-	test_confirm_screen();
+	test_select_screen();
+	test_select_canceled();
 	test_run_end_skipped();
 	test_continue();
 	test_done_restart();

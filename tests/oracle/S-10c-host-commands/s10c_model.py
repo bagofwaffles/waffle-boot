@@ -362,7 +362,7 @@ def te_percent(done, total, outcome=False):
 
 # S-10c.104: steps 0-5; the reserved step 6 has no label and reports nothing
 STEP_LABELS = ['[content]', '[main dsp]', '[bootloader]', '[ble]', '[ble bootloader]', '[backplane]']
-SKIP_REASONS = ('option off', 'not confirmed', 'switched off', 'already written')
+SKIP_REASONS = ('option off', 'not selected', 'switched off', 'already written')
 
 
 def skip_label(step, reason):

@@ -45,6 +45,7 @@ static enum s11_run_end run(const struct s11_run_ops *ops,
 {
 	uint8_t step = 0;
 	bool nothing = true;
+	bool os_installed = false;
 
 	res->step = 0xFF;
 	res->result = S11_OK;
@@ -79,6 +80,7 @@ static enum s11_run_end run(const struct s11_run_ops *ops,
 			break;
 		}
 		nothing = nothing && quiet(r);
+		os_installed = os_installed || (step == S11_STEP_OS && r == S11_OK);
 		step++;
 		(void)ops->record_write(ops->ctx, step);
 	}
@@ -87,12 +89,14 @@ static enum s11_run_end run(const struct s11_run_ops *ops,
 	 * does (S-11.065, S-11.080). */
 	if (step == S11_STEP_DONE) {
 		if (!cfg->content_only) {
-			/* SPEC-Q: S-11.073 records the package version
-			 * though a run skipped components; their own reported
-			 * versions are kept. */
-			if (cfg->has_version)
+			/* S-11.064: the package version only with the OS
+			 * this run installed; S-11.038: without a version
+			 * file, the state only.
+			 * SPEC-Q: the package version is recorded with the
+			 * OS though the run skipped other components. */
+			if (cfg->has_version && os_installed)
 				(void)ops->meta_complete(ops->ctx, &cfg->version);
-			else	/* S-11.038: the state only */
+			else
 				(void)ops->meta_state(ops->ctx, 0);
 		}
 		(void)ops->record_write(ops->ctx, 0);
@@ -181,6 +185,12 @@ static bool off(const struct s11_step_env *env, unsigned step)
 	return (env->off & S11_STEPS_SWITCHABLE & S11_STEP_BIT(step)) != 0u;
 }
 
+/* S-11.096: a step not selected does nothing more. */
+static bool unselected(const struct s11_step_env *env, unsigned step)
+{
+	return (env->selected & S11_STEP_BIT(step)) == 0u;
+}
+
 /* S-11.068, S-11.090: no version test, so a return to the factory
  * bootloader writes any version (S-11.093) */
 static enum s11_result protected_step(const struct s11_step_env *env,
@@ -194,7 +204,7 @@ static enum s11_result protected_step(const struct s11_step_env *env,
 		return S11_SKIPPED;	/* S-11.073: no SPI flash access */
 	if (!env->option)
 		return S11_SKIPPED;	/* no SPI flash access (S-02.057) */
-	if ((env->confirmed & S11_STEP_BIT(step)) == 0u)
+	if (unselected(env, step))
 		return S11_SKIPPED;	/* S-11.096: as with the option off */
 	if (write(ops->ctx))
 		return S11_OK;
@@ -210,10 +220,14 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 
 	switch (step) {
 	case S11_STEP_CONTENT:			/* S-11.066 */
+		if (st->content_dir && unselected(env, step))
+			return S11_SKIPPED;	/* S-11.096: nothing is moved */
 		return ops->content(ops->ctx);
 	case S11_STEP_OS:			/* S-11.067: no version test */
 		if (!s11_staged_present(st, S11_C_OS))
 			return S11_NOT_FOUND;
+		if (unselected(env, step))
+			return S11_SKIPPED;	/* S-11.096 */
 		if (!ops->os_write(ops->ctx))
 			return failed(ops, S11_INTERNAL, false);
 		ops->meta_sw_version(ops->ctx, &st->version[S11_C_OS]);
@@ -229,6 +243,8 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 			return S11_SKIPPED;
 		if (!env->forced && same(v, &env->copro->nordic_app))
 			return S11_ALREADY;
+		if (unselected(env, step))
+			return S11_SKIPPED;	/* S-11.096: no exchange */
 		/* S-11.069 items 4-6: the image's check, then the step's own
 		 * DFU-mode queries (S-08.042), both inside the send; the
 		 * run-start answer decides nothing here */
@@ -245,6 +261,8 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 			return S11_SKIPPED;
 		if (!env->forced && same(v, &env->copro->nordic_bl))
 			return S11_ALREADY;
+		if (unselected(env, step))
+			return S11_SKIPPED;	/* S-11.096: no slot query */
 		slot = ops->nordic_boot_slot(ops->ctx);	/* S-16.124 */
 		if (slot != 0 && slot != 1)
 			return S11_FAILURE;
@@ -264,6 +282,8 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 			return S11_SKIPPED;
 		if (!env->forced && same(v, &env->copro->psoc))
 			return S11_ALREADY;
+		if (unselected(env, step))
+			return S11_SKIPPED;	/* S-11.096: no exchange */
 		return ops->psoc_program(ops->ctx) ? S11_OK :
 						     failed(ops, S11_FAILURE, false);
 	case S11_STEP_RESERVED:		/* S-11.057: nothing is looked for */
@@ -278,6 +298,10 @@ enum s11_result s11_step_result(unsigned step, const struct s11_step_env *env,
 static bool carried(unsigned step, const struct s11_staged *st)
 {
 	switch (step) {
+	case S11_STEP_CONTENT:
+		return st->content_dir;
+	case S11_STEP_OS:
+		return s11_staged_present(st, S11_C_OS);
 	case S11_STEP_BOOTLOADER:
 		return s11_staged_present(st, S11_C_BOOTLOADER);
 	case S11_STEP_BLE:
@@ -292,20 +316,53 @@ static bool carried(unsigned step, const struct s11_staged *st)
 	}
 }
 
+/* The installed version a Nordic or PSoC step compares with, and the
+ * package's; NULL for the other steps, and with no versions known. */
+static const struct s11_version *installed(unsigned step,
+					   const struct s11_step_env *env,
+					   const struct s11_version **pkg)
+{
+	const struct s11_staged *st = env->staged;
+
+	*pkg = NULL;
+	if (env->copro == NULL)
+		return NULL;
+	switch (step) {
+	case S11_STEP_BLE:
+		*pkg = &st->version[S11_C_BLE];
+		return &env->copro->nordic_app;
+	case S11_STEP_BLE_BOOTLOADER:
+		*pkg = &st->version[S11_C_NORDIC_BL0];	/* one version file */
+		return &env->copro->nordic_bl;
+	case S11_STEP_KEYBOARD:
+		*pkg = &st->version[S11_C_BACKPLANE];
+		return &env->copro->psoc;
+	default:
+		*pkg = NULL;
+		return NULL;
+	}
+}
+
+/* S-11.069-S-11.071: the step reports Already installed. */
+static bool already(unsigned step, const struct s11_step_env *env)
+{
+	const struct s11_version *pkg;
+	const struct s11_version *have = installed(step, env, &pkg);
+
+	return have != NULL && !env->forced && same(pkg, have);
+}
+
 enum s11_skip s11_step_skip(unsigned step, const struct s11_step_env *env)
 {
 	if (!carried(step, env->staged))
 		return S11_SKIP_NONE;
-	if (step == S11_STEP_BOOTLOADER) {
-		if (off(env, step))
-			return S11_SKIP_SWITCHED_OFF;
-		if (!env->option)
-			return S11_SKIP_OPTION_OFF;
-		if ((env->confirmed & S11_STEP_BIT(step)) == 0u)
-			return S11_SKIP_NOT_CONFIRMED;
+	if (off(env, step))
+		return S11_SKIP_SWITCHED_OFF;
+	if (step == S11_STEP_BOOTLOADER && !env->option)
+		return S11_SKIP_OPTION_OFF;
+	if (already(step, env))
 		return S11_SKIP_NONE;
-	}
-	return off(env, step) ? S11_SKIP_SWITCHED_OFF : S11_SKIP_NONE;
+	return unselected(env, step) ? S11_SKIP_NOT_SELECTED : S11_SKIP_NONE;
 }
 
 enum s11_skip s11_result_skip(unsigned step, const struct s11_step_env *env,
@@ -320,23 +377,76 @@ enum s11_skip s11_result_skip(unsigned step, const struct s11_step_env *env,
 	return why;
 }
 
-bool s11_run_nordic(const struct s11_staged *st, uint8_t off_steps)
+bool s11_run_nordic(const struct s11_step_env *env)
 {
-	const uint8_t on = (uint8_t)~(off_steps & S11_STEPS_SWITCHABLE);
+	static const unsigned nordic[] = { S11_STEP_BLE, S11_STEP_BLE_BOOTLOADER };
 
-	return ((on & S11_STEP_BIT(S11_STEP_BLE)) != 0u &&
-		carried(S11_STEP_BLE, st)) ||
-	       ((on & S11_STEP_BIT(S11_STEP_BLE_BOOTLOADER)) != 0u &&
-		carried(S11_STEP_BLE_BOOTLOADER, st));
+	for (size_t i = 0; i < sizeof(nordic) / sizeof(nordic[0]); i++) {
+		if (carried(nordic[i], env->staged) && !off(env, nordic[i]) &&
+		    !unselected(env, nordic[i]))
+			return true;
+	}
+	return false;
 }
 
-uint8_t s11_confirm(const struct s11_staged *st, bool option,
-		    bool (*ask)(void *ctx, enum s11_component c), void *ctx)
+/* ---- the selection (S-11.096) ---- */
+
+static bool known(const struct s11_version *v)
 {
-	if (!option || ask == NULL)
-		return 0;
-	if (s11_staged_present(st, S11_C_BOOTLOADER) &&
-	    ask(ctx, S11_C_BOOTLOADER))
-		return S11_STEP_BIT(S11_STEP_BOOTLOADER);
-	return 0;
+	return v->major != 0u || v->minor != 0u || v->patch != 0u ||
+	       v->build != 0u;
+}
+
+enum s11_pick s11_step_pick(unsigned step, const struct s11_step_env *env)
+{
+	const struct s11_version *pkg;
+	const struct s11_version *have;
+
+	if (step >= S11_STEP_RESERVED || !carried(step, env->staged))
+		return S11_PICK_ABSENT;
+	if (off(env, step))
+		return S11_PICK_SWITCHED_OFF;
+	if (step == S11_STEP_BOOTLOADER && !env->option)
+		return S11_PICK_OPTION_OFF;
+	have = installed(step, env, &pkg);
+	if (have != NULL && known(have) && already(step, env))
+		return S11_PICK_UP_TO_DATE;
+	return S11_PICK_OPEN;
+}
+
+uint8_t s11_pickable(const struct s11_step_env *env)
+{
+	uint8_t bits = 0;
+
+	for (unsigned step = 0; step < S11_STEP_RESERVED; step++) {
+		if (s11_step_pick(step, env) == S11_PICK_OPEN)
+			bits |= S11_STEP_BIT(step);
+	}
+	return bits;
+}
+
+uint8_t s11_unasked(const struct s11_step_env *env)
+{
+	return (uint8_t)(s11_pickable(env) &
+			 ~S11_STEP_BIT(S11_STEP_BOOTLOADER));
+}
+
+bool s11_select(struct s11_step_env *env, s11_ask_fn ask, void *ctx)
+{
+	uint8_t chosen = 0;
+	const enum s11_answer a = ask != NULL ? ask(ctx, env, &chosen) :
+						S11_ANSWER_UNASKED;
+
+	switch (a) {
+	case S11_ANSWER_INSTALL:
+		env->selected = (uint8_t)(chosen & s11_pickable(env));
+		return true;
+	case S11_ANSWER_CANCEL:
+		env->selected = 0;
+		return false;
+	case S11_ANSWER_UNASKED:
+	default:
+		env->selected = s11_unasked(env);
+		return true;
+	}
 }

@@ -292,7 +292,8 @@ static void test_removal_fails(void)
 	}
 }
 
-/* steps.tsv's content rows (S-11.066) */
+/* steps.tsv's content rows (S-11.066); those not selected (S-11.096)
+ * never reach s11_install_content(): test_s11_run */
 static void test_content_rows(void)
 {
 	static const uint8_t one[1] = { '1' };
@@ -301,7 +302,7 @@ static void test_content_rows(void)
 		const struct s11v_step *v = &s11v_steps[i];
 		enum s11_result r;
 
-		if (v->step != 0)
+		if (v->step != 0 || !v->selected)
 			continue;
 		memset(&T, 0, sizeof(T));
 		if (v->content_dir) {

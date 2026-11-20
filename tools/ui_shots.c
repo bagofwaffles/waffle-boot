@@ -169,7 +169,7 @@ static void hold_for(unsigned key, uint32_t ms)
 /* Held for the whole time, then released: the hold's action. */
 static void hold(unsigned key)
 {
-	hold_for(key, S15_CONFIRM_HOLD_MS);
+	hold_for(key, S15_HOLD_MS);
 	s15_menu_key(&menu, key, false);
 }
 
@@ -593,21 +593,57 @@ int main(int argc, char **argv)
 		       (1u << S15_STEP_KEYBOARD));
 	bad |= shot(d, "upgrade-done");
 
-	/* S-15.116: the bootloader's confirmation, protected writes on
-	 * (Settings, 2, then 2 held for 5 s), digit 1 held for 2 s */
-	setup(); start();
-	press(0x07); press(0x07); hold(0x07); press(0x15); press(0x06);
-	s15_up_released(&menu, 100000);
-	s15_up_tick(&menu, 102000);
-	s15_up_phase(&menu, S15_PH_EXTRACT_FIRMWARE);
+	/* S-15.116: the selection, protected writes on (Settings, 2, then 2
+	 * held for 5 s): as it opens; two rows picked, the bootloader among
+	 * them; then key 1 held for 2 s */
 	{
-		const struct s15_confirm_info info = { ver_next,
-							ver, 0 };
+		static struct s15_select_info info;
+		struct s15_select sel;
+		static const char *const have[S15_STEP_COUNT] = {
+			[S15_STEP_OS] = "1.1.4", [S15_STEP_BLE] = "0.9.2",
+			[S15_STEP_KEYBOARD] = "0.4.1",
+		};
+		static const char *const pkg[S15_STEP_COUNT] = {
+			[S15_STEP_CONTENT] = "Bass Essentials", [S15_STEP_OS] = "1.1.5",
+			[S15_STEP_BLE] = "0.9.3", [S15_STEP_BLE_BOOTLOADER] = "2.0.1",
+			[S15_STEP_KEYBOARD] = "0.4.2",
+		};
 
-		s15_up_confirm(&menu, &info);
-		s15_up_confirm_bar(&menu, 40, 52);
+		for (unsigned i = 0; i < S15_STEP_COUNT; i++) {
+			info.row[i].kind = S15_ROW_PICK;
+			info.row[i].installed = have[i];
+			info.row[i].package = pkg[i];
+		}
+		info.row[S15_STEP_BOOTLOADER].installed = ver;
+		info.row[S15_STEP_BOOTLOADER].package = ver_next;
+		info.slot = 1;
+		info.stock = false;
+		setup(); start();
+		press(0x07); press(0x07); hold(0x07); press(0x15); press(0x06);
+		s15_up_released(&menu, 100000);
+		s15_up_tick(&menu, 102000);
+		s15_up_phase(&menu, S15_PH_EXTRACT_FIRMWARE);
+		s15_select_open(&sel, 0x3Fu, NULL, 0);
+		s15_up_select(&menu, &info, &sel, 0);
+		bad |= shot(d, "upgrade-select");
+
+		info.row[S15_STEP_BLE].kind = S15_ROW_OFF;
+		info.row[S15_STEP_BLE_BOOTLOADER].kind = S15_ROW_OFF;
+		info.row[S15_STEP_KEYBOARD].kind = S15_ROW_UP_TO_DATE;
+		s15_select_open(&sel, (uint8_t)(S15_SELECT_BIT(S15_STEP_OS) |
+						S15_SELECT_BIT(S15_STEP_CONTENT) |
+						S15_SELECT_BIT(S15_STEP_BOOTLOADER)), NULL, 0);
+		s15_select_key(&sel, 0x07, true, 0);
+		s15_select_key(&sel, 0x07, false, 0);
+		s15_select_key(&sel, 0x14, true, 0);
+		s15_select_key(&sel, 0x14, false, 0);
+		s15_up_select(&menu, &info, &sel, 8000);
+		bad |= shot(d, "upgrade-picked");
+
+		s15_select_key(&sel, 0x06, true, 10000);
+		s15_up_select(&menu, &info, &sel, 12000);
+		bad |= shot(d, "upgrade-held");
 	}
-	bad |= shot(d, "upgrade-confirm");
 
 	bad |= installer_shots(d);
 	return bad;

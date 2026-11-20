@@ -24,7 +24,6 @@
 #include "waffle/s02_flash.h"
 #include "waffle/s06_link.h"
 #include "waffle/s10a_usb.h"
-#include "waffle/s15_confirm.h"
 #include "waffle/s15_lines.h"
 #include "waffle/wire_crc.h"
 
@@ -269,8 +268,8 @@ static void draw(const struct opxy_installer_ctx *c, uint32_t now)
 	s.hold_digit = in.hold.holding ? in.hold.digit : 0u;
 	s.hold_fill = inst_hold_fill(&in.hold, now);
 	s.hold_left_s = in.hold.holding ?
-		(S15_CONFIRM_HOLD_MS - (now - in.hold.t0 < S15_CONFIRM_HOLD_MS ?
-					now - in.hold.t0 : S15_CONFIRM_HOLD_MS) + 999u) / 1000u : 0u;
+		(S15_HOLD_MS - (now - in.hold.t0 < S15_HOLD_MS ?
+					now - in.hold.t0 : S15_HOLD_MS) + 999u) / 1000u : 0u;
 	in.st.hold_fill = (uint16_t)s.hold_fill;
 	in.st.hold_digit = (uint8_t)s.hold_digit;
 	n = inst_screen_lines(&s, l);

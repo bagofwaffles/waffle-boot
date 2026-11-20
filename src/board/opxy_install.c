@@ -28,7 +28,7 @@
 #include "waffle/s07_program.h"
 #include "waffle/s11_content.h"
 #include "waffle/s11_package.h"
-#include "waffle/s15_confirm.h"
+#include "waffle/s15_select.h"
 #include "waffle/wire_crc.h"
 
 #define STAGE "upgrade/"
@@ -319,8 +319,8 @@ static enum s15_result shown(enum s11_result r, enum s11_skip why)
 		return S15_RES_ALREADY;
 	case S11_SKIPPED:
 		return why == S11_SKIP_SWITCHED_OFF ? S15_RES_SKIPPED_OFF :
-		       why == S11_SKIP_NOT_CONFIRMED ?
-		       S15_RES_SKIPPED_UNCONFIRMED :
+		       why == S11_SKIP_NOT_SELECTED ?
+		       S15_RES_SKIPPED_UNSELECTED :
 		       why == S11_SKIP_ALREADY_WRITTEN ?
 		       S15_RES_SKIPPED_WRITTEN : S15_RES_SKIPPED;
 	case S11_BAD_FILE:
@@ -422,10 +422,14 @@ static enum s11_result run_step(void *ctx, unsigned step)
 	host_progress(m, 1u, 1u, s10c_step_label(step));
 	if (r == S11_SKIPPED) {
 		char label[S10C_SKIP_LABEL_MAX + 1];
+		const enum s11_skip why = s11_result_skip(step, &cur.env, r);
 
+		/* S-15.115: the summary names what was skipped but for the
+		 * steps the person left out on the selection */
+		if (why != S11_SKIP_NOT_SELECTED)
+			cur.skipped |= 1u << step;
 		/* S-10c.106: which part was skipped, and why */
-		cur.skipped |= 1u << step;
-		s10c_skip_label(step, s11_result_skip(step, &cur.env, r), label);
+		s10c_skip_label(step, why, label);
 		s10c_host_progress(&m->sv.host, 0u, 0u, label);
 		sent.label = NULL;
 	}
@@ -809,7 +813,7 @@ void opxy_install_ops(struct opxy_master *m, struct s11_run_ops *run,
 /* --- a run's start and end --- */
 
 void opxy_install_begin(struct opxy_master *m, bool option, bool forced,
-			uint8_t confirmed)
+			uint8_t selected)
 {
 	s11_staged_scan(&m->sv.staging, &cur.st);
 	cur.env.staged = &cur.st;
@@ -818,7 +822,7 @@ void opxy_install_begin(struct opxy_master *m, bool option, bool forced,
 	cur.env.nordic_in_dfu = false;
 	cur.env.copro = &m->sv.copro;
 	cur.env.off = opxy_steps_off();
-	cur.env.confirmed = confirmed;
+	cur.env.selected = selected;
 	cur.skipped = 0;
 	cur.refusal = S11_OK;
 	cur.cause[0] = '\0';
@@ -836,11 +840,15 @@ static void run_end(struct opxy_master *m, enum s11_run_end end)
 	show(m);
 }
 
-/* --- S-11.096, S-15.116: a protected component's confirmation --- */
+/* --- S-11.096, S-15.116: the selection of the steps --- */
 
-static struct s15_confirm confirm;
-/* The board's key hook (the menus'), kept while the confirmation's stands
- * in for it. */
+static struct s15_select sel;
+static struct s15_select_info sel_info;
+/* The texts sel_info points to. */
+static char sel_text[S15_STEP_COUNT][2][S11_VERSION_TEXT_MAX + 1];
+static char sel_pack[S11_PATH_MAX];
+/* The board's key hook (the menus'), kept while the selection's stands in
+ * for it. */
 static void (*menu_key)(void *ctx, uint8_t key, bool down);
 
 static uint32_t now_ms(struct opxy_master *m)
@@ -848,32 +856,27 @@ static uint32_t now_ms(struct opxy_master *m)
 	return (uint32_t)wb_time_ms(&m->hw.time);
 }
 
-/* S-07.031's events while the confirmation is shown: the menus keep their
- * key state, and the confirmation reads the event. No other source of
- * keys reaches it, so a host cannot answer. */
-static void confirm_key(void *ctx, uint8_t key, bool down)
+/* S-07.031's events while the selection is shown: the menus keep their
+ * key state, and the selection reads the event. No other source of keys
+ * reaches it, so a host cannot answer. */
+static void select_key(void *ctx, uint8_t key, bool down)
 {
 	struct opxy_master *m = ctx;
 
 	if (menu_key != NULL)
 		menu_key(ctx, key, down);
-	s15_confirm_key(&confirm, key, down, now_ms(m));
+	s15_select_key(&sel, key, down, now_ms(m));
 }
 
-static void confirm_log(struct opxy_master *m)
+static void select_log(struct opxy_master *m, const char *how)
 {
-	static const char *const how[] = {
-		[S15_CONFIRM_END_NONE] = "not confirmed",
-		[S15_CONFIRM_END_HELD] = "confirmed by a 5 s hold",
-		[S15_CONFIRM_END_KEY] = "skipped with key 8",
-		[S15_CONFIRM_END_TIMEOUT] = "not confirmed in 60 s",
-		[S15_CONFIRM_END_UNREADABLE] = "not confirmed: keys not readable",
-	};
 	struct s14_text t;
 
 	s14_text_init(&t);
-	s14_text_str(&t, "install: bootloader ");
-	s14_text_str(&t, how[confirm.end]);
+	s14_text_str(&t, "install: ");
+	s14_text_str(&t, how);
+	s14_text_str(&t, ", steps selected 0x");
+	s14_text_hex(&t, sel.selected, 2);
 	s14_log_text(&m->sv.log, S14_INFO, S14_NO_TAG, &t);
 }
 
@@ -895,47 +898,126 @@ static int psoc_drain(struct opxy_master *m)
 	return S07_OK;
 }
 
+static bool known(const struct s11_version *v)
+{
+	return v->major != 0u || v->minor != 0u || v->patch != 0u ||
+	       v->build != 0u;
+}
+
+/* A row's version texts: the installed one when it is known (have NULL:
+ * none), then the package's. */
+static void row_versions(struct s15_select_row *r, unsigned step,
+			 const struct s11_version *have,
+			 const struct s11_version *pkg)
+{
+	r->installed = NULL;
+	if (have != NULL && known(have)) {
+		version_str(have, sel_text[step][0]);
+		r->installed = sel_text[step][0];
+	}
+	version_str(pkg, sel_text[step][1]);
+	r->package = sel_text[step][1];
+}
+
+/* What the rows show (S-15.116), from S-11's view of each step. */
+static void select_info(struct opxy_master *m, const struct s11_step_env *env,
+			bool te_signed)
+{
+	static const enum s15_row kind[] = {
+		[S11_PICK_ABSENT] = S15_ROW_NONE,
+		[S11_PICK_OPEN] = S15_ROW_PICK,
+		[S11_PICK_SWITCHED_OFF] = S15_ROW_OFF,
+		[S11_PICK_OPTION_OFF] = S15_ROW_OPTION_OFF,
+		[S11_PICK_UP_TO_DATE] = S15_ROW_UP_TO_DATE,
+	};
+	const struct s11_staged *st = env->staged;
+	const struct s17_copro *c = env->copro;
+	struct s11_version os;
+	struct s02_selector selector;
+
+	for (unsigned step = 0; step < S15_STEP_COUNT; step++) {
+		sel_info.row[step].kind = kind[s11_step_pick(step, env)];
+		sel_info.row[step].installed = sel_info.row[step].package = NULL;
+	}
+	/* the unit's metadata, as Device Info shows it */
+	os.major = m->meta.sw_version[0];
+	os.minor = m->meta.sw_version[1];
+	os.patch = m->meta.sw_version[2];
+	os.build = m->meta.sw_version[3];
+	row_versions(&sel_info.row[S11_STEP_OS], S11_STEP_OS,
+		     m->meta_failed ? NULL : &os, &st->version[S11_C_OS]);
+	row_versions(&sel_info.row[S11_STEP_BOOTLOADER], S11_STEP_BOOTLOADER,
+		     NULL, &st->version[S11_C_BOOTLOADER]);
+	sel_info.row[S11_STEP_BOOTLOADER].installed = m->sv.boot.version;
+	/* S-17.034: the coprocessors' as they reported them */
+	row_versions(&sel_info.row[S11_STEP_BLE], S11_STEP_BLE, &c->nordic_app,
+		     &st->version[S11_C_BLE]);
+	row_versions(&sel_info.row[S11_STEP_BLE_BOOTLOADER],
+		     S11_STEP_BLE_BOOTLOADER, &c->nordic_bl,
+		     &st->version[S11_C_NORDIC_BL0]);
+	row_versions(&sel_info.row[S11_STEP_KEYBOARD], S11_STEP_KEYBOARD,
+		     &c->psoc, &st->version[S11_C_BACKPLANE]);
+	s11_pack_name(&m->sv.staging, sel_pack, sizeof(sel_pack)); /* S-11.039 */
+	sel_info.row[S11_STEP_CONTENT].package = sel_pack[0] != '\0' ? sel_pack
+								       : NULL;
+	/* S-02.043: the slot the bootloader step would replace */
+	sel_info.slot = -1;
+	if (s02_read_selector(&m->flash, &selector) == S02_OK)
+		sel_info.slot = (int)s02_other_slot(selector.index);
+	sel_info.stock = s11_return_to_stock(env->option, te_signed, true);
+}
+
+/* The package's TE signature, for the return to stock on the screen. */
+static bool sel_te_signed;
+
 /*
- * S-11.096: the bootloader, asked for on the unit before the run's first
- * write. The start-up key read tells whether the keys can be
- * read (S-07.032); the keys down when the screen is shown, once every
- * event that arrived before it is taken, act only after an up and a down.
- * The PSoC's messages, the Nordic's greetings and the bus are served
- * while it waits.
+ * S-11.096: the steps to run, chosen on the unit before the run's first
+ * write. The start-up key read tells whether the keys can be read
+ * (S-07.032); when they cannot, nothing is shown or asked. The keys down
+ * when the screen is shown, once every event that arrived before it is
+ * taken, act only after an up and a down. The PSoC's messages, the
+ * Nordic's greetings and the bus are served while it waits.
  */
-static bool confirm_ask(void *ctx, enum s11_component c)
+static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
+				  uint8_t *selected)
 {
 	struct opxy_master *m = ctx;
 	struct s15_menu *menu = &m->sv.menu;
-	struct s15_confirm_info info;
-	struct s02_selector sel;
-	char v[S11_VERSION_TEXT_MAX + 1];
-	unsigned fill = 0, left = S15_CONFIRM_TIMEOUT_MS / 1000u;
+	const uint8_t pickable = s11_pickable(env);
+	uint8_t drawn_sel;
+	bool drawn_hold;
+	uint32_t drawn;
 
-	version_str(&cur.st.version[c], v);
-	info.package = v;
-	info.installed = m->sv.boot.version;
-	info.slot = -1;
-	/* S-02.043: the slot the step would replace */
-	if (s02_read_selector(&m->flash, &sel) == S02_OK)
-		info.slot = (int)s02_other_slot(sel.index);
-	s15_up_confirm(menu, &info);
+	if (!m->key_status.replied) {
+		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
+			    "install: keys not readable, nothing asked");
+		return S11_ANSWER_UNASKED;
+	}
+	select_info(m, env, sel_te_signed);
+	s15_select_open(&sel, pickable, NULL, now_ms(m));
+	s15_up_select(menu, &sel_info, &sel, now_ms(m));
 	show(m);
 	/* What arrived before the screen was shown chooses nothing. */
 	if (psoc_drain(m) == S07_POWEROFF)
 		goto off;
-	s15_confirm_open(&confirm, m->psoc.keys, m->key_status.replied,
-			 now_ms(m));
+	s15_select_open(&sel, pickable, m->psoc.keys, now_ms(m));
+	drawn_sel = sel.selected;
+	drawn_hold = sel.holding;
+	drawn = s15_menu_changes(menu);
 	menu_key = m->psoc_ops.key_event;
-	m->psoc_ops.key_event = confirm_key;
-	while (s15_confirm_tick(&confirm, now_ms(m)) == S15_CONFIRM_WAIT) {
-		const unsigned f = s15_confirm_fill(&confirm, now_ms(m));
-		const unsigned l = s15_confirm_left(&confirm, now_ms(m));
+	m->psoc_ops.key_event = select_key;
+	while (s15_select_tick(&sel, now_ms(m)) == S15_SELECT_WAIT) {
+		const uint32_t t = now_ms(m);
 
-		if (f != fill || l != left) {
-			fill = f;
-			left = l;
-			s15_up_confirm_bar(menu, fill, left);
+		if (sel.selected != drawn_sel || sel.holding != drawn_hold) {
+			drawn_sel = sel.selected;
+			drawn_hold = sel.holding;
+			s15_up_select(menu, &sel_info, &sel, t);
+		} else {
+			s15_up_select_time(menu, &sel_info, &sel, t);
+		}
+		if (s15_menu_changes(menu) != drawn) {
+			drawn = s15_menu_changes(menu);
 			show(m);
 		}
 		if (s07_poll(&m->psoc) == S07_POWEROFF)
@@ -945,8 +1027,12 @@ static bool confirm_ask(void *ctx, enum s11_component c)
 		s06_idle(&m->clock, s06_now(&m->clock) + 1000u);
 	}
 	m->psoc_ops.key_event = menu_key;
-	confirm_log(m);
-	return confirm.choice == S15_CONFIRM_INSTALL;
+	*selected = sel.selected;
+	select_log(m, sel.end == S15_SELECT_END_HELD ? "installing by a 5 s hold" :
+		      sel.end == S15_SELECT_END_KEY ? "canceled with key 8" :
+						      "canceled after 60 s");
+	return sel.choice == S15_SELECT_INSTALL ? S11_ANSWER_INSTALL :
+						  S11_ANSWER_CANCEL;
 off:
 	/* S-07.051: the PSoC removes the power. */
 	opxy_powered_off(m);
@@ -1034,7 +1120,7 @@ static void refused(struct s11_install_result *out, enum s11_reason r)
 
 /*
  * s11_install()'s order, with S-15's lines between: the checks, the
- * extraction, the confirmations of S-11.096, the run's header before its
+ * extraction, the selection of S-11.096, the run's header before its
  * first write, each step, the outcome. The steps run through run_step().
  */
 static void install(struct opxy_master *m, const struct s11_package_ops *pkg,
@@ -1117,13 +1203,27 @@ static void install(struct opxy_master *m, const struct s11_package_ops *pkg,
 	sv->extracted_sizes = sizes;	/* S-11.095: kept for this run */
 	sv->extracted = true;
 	opxy_install_begin(m, in->option, checked.forced, 0);
-	cur.env.confirmed = s11_confirm(&cur.st, in->option, confirm_ask, m);
+	sel_te_signed = checked.te_signed;
+	if (!s11_select(&cur.env, select_ask, m)) {
+		/* S-11.096: no run, nothing written; reported as a run that
+		 * had nothing to do */
+		out->canceled = true;
+		out->run.end = S11_RUN_NOTHING_TO_DO;
+		s11_run_outcome(&out->run, &out->outcome);
+		opxy_bridge_report(m);
+		opxy_bridge_plain(m);	/* S-09.078: no run */
+		usb_gap_log(m);
+		s15_up_canceled(&sv->menu);
+		show(m);
+		return;
+	}
+	out->selected = cur.env.selected;
 	out->stock = s11_return_to_stock(in->option, checked.te_signed,
-					 (cur.env.confirmed &
+					 (cur.env.selected &
 					  S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u);
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.content_only = s11_staged_content_only(&cur.st);	/* S-11.056 */
-	cfg.nordic = s11_run_nordic(&cur.st, cur.env.off);
+	cfg.nordic = s11_run_nordic(&cur.env);
 	cfg.has_version = cur.st.has_fw_version;		/* S-11.038 */
 	cfg.version = cur.st.fw_version;
 	version_str(&cur.st.fw_version, v);

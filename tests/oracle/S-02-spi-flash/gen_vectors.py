@@ -624,24 +624,30 @@ UPGRADE_STATE_AREAS = ["metadata", "metadata_mirror"]   # S-02.049, .057, .064
 SWITCHED_OFF = ["nordic_application", "nordic_bootloader", "psoc_backplane"]   # S-11.073
 
 
-def install_case(case, package, option, confirmed=("bootloader",)):
-    """One package case's steps. confirmed: the protected components confirmed on the unit (S-11.096)."""
-    confirmed = list(confirmed) if option else []
+def install_case(case, package, option, selected=None):
+    """One package case's steps. selected: the components selected on the unit (S-11.096); None: every
+    one. A protected component is selected only with the option on."""
+    selected = [n for n, _, _ in COMPONENTS] if selected is None else list(selected)
+    if not option:
+        selected = [n for n in selected if n != "bootloader"]
     steps = []
     areas = set(UPGRADE_STATE_AREAS)
     for name, protected, comp_areas in COMPONENTS:
-        if protected and (not option or name not in confirmed):
-            steps.append({"component": name, "action": "skip", "report": "skipped",
-                          "reason": "option_off" if not option else "not_confirmed", "flash_ops": 0})
+        if protected and not option:
+            steps.append({"component": name, "action": "skip", "report": "skipped", "reason": "option_off",
+                          "flash_ops": 0})
         elif name in SWITCHED_OFF:
             steps.append({"component": name, "action": "skip", "report": "skipped", "reason": "switched_off",
+                          "flash_ops": 0})
+        elif name not in selected:
+            steps.append({"component": name, "action": "skip", "report": "skipped", "reason": "not_selected",
                           "flash_ops": 0})
         else:
             steps.append({"component": name, "action": "install",
                           "report": ("written_with_option" if protected else "step_result"),
                           "flash_ops": "per S-02.042-.049" if name == "bootloader" else 0})
             areas.update(comp_areas)
-    return {"case": case, "package": package, "option": "on" if option else "off", "confirmed": confirmed,
+    return {"case": case, "package": package, "option": "on" if option else "off", "selected": selected,
             "steps": steps, "spi_flash_areas": sorted(areas)}
 
 
@@ -652,10 +658,11 @@ def package_steps():
         "cases": [
             install_case("option_off", "waffle-boot", False),
             install_case("option_on", "waffle-boot", True),
-            install_case("option_on_unconfirmed", "waffle-boot", True, ()),
+            install_case("option_on_bootloader_not_selected", "waffle-boot", True, ("os", "content")),
+            install_case("option_on_only_bootloader", "waffle-boot", True, ("bootloader",)),
             install_case("option_off_te", "factory", False),
             install_case("option_on_te", "factory", True),
-            install_case("option_on_te_unconfirmed", "factory", True, ()),
+            install_case("option_on_te_bootloader_not_selected", "factory", True, ("os", "content")),
         ],
     }
 

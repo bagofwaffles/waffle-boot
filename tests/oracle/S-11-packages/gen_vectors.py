@@ -731,23 +731,26 @@ def check_acceptance(rows):
 def step_rows():
     R = m.RESULT_NAMES
     rows = []
-    # content
-    for cd, files, fail in [(0, 0, 0), (1, 0, 0), (1, 3, 0), (1, 3, 1)]:
-        c = dict(content_dir=cd, files=files, move_fails=fail)
-        exp = 'Not found' if not cd else ('Failure' if fail else ('OK' if files else 'Not found'))
+    # content; S-11.096: a step not selected does nothing (here and below)
+    for cd, files, fail, sel in itertools.product([0, 1], [0, 3], [0, 1], [1, 0]):
+        if fail and not files:
+            continue
+        c = dict(content_dir=cd, files=files, move_fails=fail, selected=sel)
+        exp = ('Not found' if not cd else 'Skipped' if not sel else
+               'Failure' if fail else ('OK' if files else 'Not found'))
         rows.append(['content', json.dumps(c, sort_keys=True), exp])
-    for p, ok, opt in itertools.product([0, 1], [1, 0], [0, 1]):
-        c = dict(present=p, write_ok=ok, option=opt)
-        exp = 'Not found' if not p else ('OK' if ok else 'Internal error')
+    for p, ok, opt, sel in itertools.product([0, 1], [1, 0], [0, 1], [1, 0]):
+        c = dict(present=p, write_ok=ok, option=opt, selected=sel)
+        exp = 'Not found' if not p else 'Skipped' if not sel else ('OK' if ok else 'Internal error')
         rows.append(['os', json.dumps(c, sort_keys=True), exp])
-    # S-11.096: with the option off nothing is asked, so nothing is confirmed
-    opt_conf = [(0, 0), (1, 0), (1, 1)]
-    for p, (opt, conf), rel, forced, dev, ok in itertools.product([0, 1], opt_conf, ['older', 'equal', 'newer'],
-                                                                  [0, 1], [0, 1], [1, 0]):
-        c = dict(present=p, option=opt, confirmed=conf, rel=rel, forced=forced, dev=dev, write_ok=ok)
+    # S-11.090, S-11.096: the bootloader is written only with the option on and the step selected
+    opt_sel = [(0, 0), (0, 1), (1, 0), (1, 1)]
+    for p, (opt, sel), rel, forced, dev, ok in itertools.product([0, 1], opt_sel, ['older', 'equal', 'newer'],
+                                                                 [0, 1], [0, 1], [1, 0]):
+        c = dict(present=p, option=opt, selected=sel, rel=rel, forced=forced, dev=dev, write_ok=ok)
         if not p:
             exp = 'Not found'
-        elif not opt or not conf:
+        elif not opt or not sel:
             exp = 'Skipped'
         else:
             # S-11.068: no version test under the option
@@ -756,37 +759,41 @@ def step_rows():
     # S-11.068 items 4 and 5: a start S-02.090 refuses, for `verified` alone or for a bad selected slot,
     # whether this power-on's own bootloader step wrote the selector read, and whether the selected slot's
     # record has the checked image's length and CRC-32
-    for (opt, conf), start, here, match in itertools.product(opt_conf, ['refused_verified', 'refused_bad'], [0, 1],
-                                                             [0, 1]):
-        c = dict(present=1, option=opt, confirmed=conf, rel='newer', forced=0, dev=0, write_ok=1, start=start,
+    for (opt, sel), start, here, match in itertools.product(opt_sel, ['refused_verified', 'refused_bad'], [0, 1],
+                                                            [0, 1]):
+        c = dict(present=1, option=opt, selected=sel, rel='newer', forced=0, dev=0, write_ok=1, start=start,
                  written_here=here, slot_matches=match)
-        if not opt or not conf:
+        if not opt or not sel:
             exp = 'Skipped'
         elif start == 'refused_verified' and here and match:
             exp = 'Skipped'
         else:
             exp = 'Failure'
         rows.append(['bootloader', json.dumps(c, sort_keys=True), exp])
-    # S-11.057: the reserved step 6 reports Not found, whatever the option and the answers
-    for opt, conf in opt_conf:
-        rows.append(['reserved', json.dumps(dict(option=opt, confirmed=conf), sort_keys=True), 'Not found'])
-    # S-11.069-S-11.071 with the step switched on; S-11.073 with it off: Not found or Skipped, nothing else
-    for on, p, rel, forced, dfu, ok in itertools.product([1, 0], [0, 1], ['equal', 'newer'], [0, 1], [1, 0],
-                                                         [1, 0]):
-        c = dict(switched_on=on, present=p, rel=rel, forced=forced, in_dfu=dfu, write_ok=ok)
+    # S-11.057: the reserved step 6 reports Not found, whatever the option and the selection
+    for opt, sel in opt_sel:
+        rows.append(['reserved', json.dumps(dict(option=opt, selected=sel), sort_keys=True), 'Not found'])
+    # S-11.069-S-11.071 with the step switched on; S-11.073 with it off: Not found or Skipped, nothing else;
+    # Already installed comes before the selection
+    for on, p, rel, forced, dfu, ok, sel in itertools.product([1, 0], [0, 1], ['equal', 'newer'], [0, 1], [1, 0],
+                                                              [1, 0], [1, 0]):
+        c = dict(switched_on=on, present=p, rel=rel, forced=forced, in_dfu=dfu, write_ok=ok, selected=sel)
         exp = ('Not found' if not p else 'Skipped' if not on else
-               'Already installed' if rel == 'equal' and not forced else
+               'Already installed' if rel == 'equal' and not forced else 'Skipped' if not sel else
                'Failure' if not dfu else 'OK' if ok else 'Failure')
         rows.append(['ble', json.dumps(c, sort_keys=True), exp])
-    for on, p0, p1, rel, forced, slot, ok in itertools.product([1, 0], [0, 1], [0, 1], ['equal', 'newer'], [0, 1],
-                                                              [0, 1, 255], [1, 0]):
-        c = dict(switched_on=on, present0=p0, present1=p1, rel=rel, forced=forced, slot=slot, write_ok=ok)
+    for on, p0, p1, rel, forced, slot, ok, sel in itertools.product([1, 0], [0, 1], [0, 1], ['equal', 'newer'],
+                                                                   [0, 1], [0, 1, 255], [1, 0], [1, 0]):
+        c = dict(switched_on=on, present0=p0, present1=p1, rel=rel, forced=forced, slot=slot, write_ok=ok,
+                 selected=sel)
         if not p0 and not p1:
             exp = 'Not found'
         elif not on:
             exp = 'Skipped'
         elif rel == 'equal' and not forced:
             exp = 'Already installed'
+        elif not sel:
+            exp = 'Skipped'                     # no slot query
         elif slot not in (0, 1):
             exp = 'Failure'
         elif not (p0, p1)[slot]:
@@ -796,51 +803,66 @@ def step_rows():
         rows.append(['ble bootloader', json.dumps(c, sort_keys=True), exp])
     # S-11.070 item 7: the step's own DFU-mode queries, after the slot and the check
     for slot, ok in itertools.product([0, 1, 255], [1, 0]):
-        c = dict(switched_on=1, present0=1, present1=1, rel='newer', forced=0, slot=slot, in_dfu=0, write_ok=ok)
+        c = dict(switched_on=1, present0=1, present1=1, rel='newer', forced=0, slot=slot, in_dfu=0, write_ok=ok,
+                 selected=1)
         rows.append(['ble bootloader', json.dumps(c, sort_keys=True), 'Failure'])
-    for on, p, rel, forced, ok in itertools.product([1, 0], [0, 1], ['equal', 'newer'], [0, 1], [1, 0]):
-        c = dict(switched_on=on, present=p, rel=rel, forced=forced, write_ok=ok)
+    for on, p, rel, forced, ok, sel in itertools.product([1, 0], [0, 1], ['equal', 'newer'], [0, 1], [1, 0],
+                                                         [1, 0]):
+        c = dict(switched_on=on, present=p, rel=rel, forced=forced, write_ok=ok, selected=sel)
         exp = ('Not found' if not p else 'Skipped' if not on else
-               'Already installed' if rel == 'equal' and not forced else 'OK' if ok else 'Failure')
+               'Already installed' if rel == 'equal' and not forced else 'Skipped' if not sel else
+               'OK' if ok else 'Failure')
         rows.append(['keyboard', json.dumps(c, sort_keys=True), exp])
     # S-11.095: the check of a staged image, where the step would write, and not where it ends earlier
     for staged, bad in (('bad', 'Bad file'), ('read_error', 'Internal error')):
         for step, c, exp in [
-                ('os', dict(present=1, option=0, write_ok=1), bad),
-                ('os', dict(present=1, option=0, write_ok=0), bad),
-                ('os', dict(present=0, option=0, write_ok=1), 'Not found'),
-                ('bootloader', dict(present=1, option=1, confirmed=1, rel='newer', forced=0, dev=0, write_ok=1),
+                ('os', dict(present=1, option=0, write_ok=1, selected=1), bad),
+                ('os', dict(present=1, option=0, write_ok=0, selected=1), bad),
+                ('os', dict(present=0, option=0, write_ok=1, selected=1), 'Not found'),
+                ('os', dict(present=1, option=0, write_ok=1, selected=0), 'Skipped'),
+                ('bootloader', dict(present=1, option=1, selected=1, rel='newer', forced=0, dev=0, write_ok=1),
                  bad),
-                ('bootloader', dict(present=1, option=0, confirmed=0, rel='newer', forced=0, dev=0, write_ok=1),
+                ('bootloader', dict(present=1, option=0, selected=0, rel='newer', forced=0, dev=0, write_ok=1),
                  'Skipped'),
-                ('bootloader', dict(present=1, option=1, confirmed=0, rel='newer', forced=0, dev=0, write_ok=1),
+                ('bootloader', dict(present=1, option=1, selected=0, rel='newer', forced=0, dev=0, write_ok=1),
                  'Skipped'),
                 # S-11.095, S-11.068: the check comes before a refused start, item 5's case included
-                ('bootloader', dict(present=1, option=1, confirmed=1, rel='newer', forced=0, dev=0, write_ok=1,
+                ('bootloader', dict(present=1, option=1, selected=1, rel='newer', forced=0, dev=0, write_ok=1,
                                     start='refused_verified', written_here=1, slot_matches=1), bad),
-                ('bootloader', dict(present=1, option=1, confirmed=1, rel='newer', forced=0, dev=0, write_ok=1,
+                ('bootloader', dict(present=1, option=1, selected=1, rel='newer', forced=0, dev=0, write_ok=1,
                                     start='refused_bad', written_here=0, slot_matches=0), bad),
                 # S-11.057: the reserved step makes no check
-                ('reserved', dict(option=1, confirmed=1), 'Not found'),
-                ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1), bad),
+                ('reserved', dict(option=1, selected=1), 'Not found'),
+                ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1, selected=1),
+                 bad),
                 # S-11.069: the check before the step's own DFU-mode queries
-                ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=0, write_ok=1), bad),
+                ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=0, write_ok=1, selected=1),
+                 bad),
+                ('ble', dict(switched_on=1, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1, selected=0),
+                 'Skipped'),
                 ('ble bootloader', dict(switched_on=1, present0=1, present1=0, rel='newer', forced=0, slot=0,
-                                        in_dfu=0, write_ok=1), bad),
-                ('ble', dict(switched_on=1, present=1, rel='equal', forced=0, in_dfu=1, write_ok=1),
+                                        in_dfu=0, write_ok=1, selected=1), bad),
+                ('ble', dict(switched_on=1, present=1, rel='equal', forced=0, in_dfu=1, write_ok=1, selected=1),
                  'Already installed'),
-                ('ble', dict(switched_on=0, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1), 'Skipped'),
+                ('ble', dict(switched_on=0, present=1, rel='newer', forced=0, in_dfu=1, write_ok=1, selected=1),
+                 'Skipped'),
                 ('ble bootloader', dict(switched_on=1, present0=1, present1=0, rel='newer', forced=0, slot=0,
-                                        write_ok=1), bad),
+                                        write_ok=1, selected=1), bad),
                 ('ble bootloader', dict(switched_on=1, present0=1, present1=0, rel='newer', forced=0, slot=1,
-                                        write_ok=1), 'Not found'),
+                                        write_ok=1, selected=1), 'Not found'),
                 ('ble bootloader', dict(switched_on=1, present0=1, present1=0, rel='newer', forced=0, slot=255,
-                                        write_ok=1), 'Failure'),
+                                        write_ok=1, selected=1), 'Failure'),
                 ('ble bootloader', dict(switched_on=0, present0=1, present1=0, rel='newer', forced=0, slot=0,
-                                        write_ok=1), 'Skipped'),
-                ('keyboard', dict(switched_on=1, present=1, rel='newer', forced=0, write_ok=1), bad),
-                ('keyboard', dict(switched_on=1, present=1, rel='equal', forced=0, write_ok=1), 'Already installed'),
-                ('keyboard', dict(switched_on=0, present=1, rel='newer', forced=0, write_ok=1), 'Skipped')]:
+                                        write_ok=1, selected=1), 'Skipped'),
+                ('ble bootloader', dict(switched_on=1, present0=1, present1=0, rel='newer', forced=0, slot=0,
+                                        write_ok=1, selected=0), 'Skipped'),
+                ('keyboard', dict(switched_on=1, present=1, rel='newer', forced=0, write_ok=1, selected=1), bad),
+                ('keyboard', dict(switched_on=1, present=1, rel='equal', forced=0, write_ok=1, selected=1),
+                 'Already installed'),
+                ('keyboard', dict(switched_on=0, present=1, rel='newer', forced=0, write_ok=1, selected=1),
+                 'Skipped'),
+                ('keyboard', dict(switched_on=1, present=1, rel='newer', forced=0, write_ok=1, selected=0),
+                 'Skipped')]:
             c['staged'] = staged
             rows.append([step, json.dumps(c, sort_keys=True), exp])
     for step, c, exp in rows:
@@ -854,6 +876,35 @@ def step_rows():
         end = 'no_exit' if step == 'ble' and exp == 'Failure' and d.get('in_dfu', 1) else 'exit'
         assert m.end_nordic(m.STEPS.index(step), d) == end, (step, c, end)
         out.append([step, c, exp, end])
+    return out
+
+
+def pick_rows():
+    """S-11.096: what the selection offers each step: a row for each step carried; dim when it is switched
+    off, protected with the option off, or would report Already installed with its installed version known."""
+    rows = []
+    for cd in (0, 1):
+        rows.append(['content', dict(content_dir=cd), 'open' if cd else 'absent'])
+    for p in (0, 1):
+        rows.append(['os', dict(present=p), 'open' if p else 'absent'])
+    for p, opt in itertools.product((0, 1), (0, 1)):
+        rows.append(['bootloader', dict(present=p, option=opt),
+                     'absent' if not p else 'open' if opt else 'option off'])
+    for step in ('ble', 'keyboard', 'ble bootloader'):
+        carried = ([dict(present0=a, present1=b) for a, b in ((0, 0), (1, 0), (0, 1), (1, 1))]
+                   if step == 'ble bootloader' else [dict(present=0), dict(present=1)])
+        for car, on, rel, forced, known in itertools.product(carried, (1, 0), ('equal', 'newer'), (0, 1), (1, 0)):
+            c = dict(car, switched_on=on, rel=rel, forced=forced, known=known)
+            present = any(car.values())
+            exp = ('absent' if not present else 'switched off' if not on else
+                   'up to date' if rel == 'equal' and not forced and known else 'open')
+            rows.append([step, c, exp])
+    rows.append(['reserved', dict(option=1), 'absent'])
+    out = []
+    for step, c, exp in rows:
+        got = m.pick(m.STEPS.index(step), c)
+        assert got == exp, (step, c, got, exp)
+        out.append([step, json.dumps(c, sort_keys=True), exp])
     return out
 
 
@@ -880,8 +931,8 @@ def staged_check_vector():
 def run_rows():
     R = {n: i for i, n in enumerate(m.RESULT_NAMES)}
     # case, content_only, nordic_images, option, results, outcome, nordic_dfu_ok, version_file[, steps_off,
-    # confirmed]; without the last two: every step switched on, and the protected steps confirmed
-    on, off = (), m.STEPS_OFF
+    # selected]; without the last two: every step switched on and selected (S-11.073, S-11.096)
+    on, off, every = (), m.STEPS_OFF, m.SELECTABLE
     cases = [
         ('all_ok', 0, 1, 1, ['OK'] * 6 + ['Not found'], 'done', 1, 1),
         ('normal_install_skips', 0, 1, 0, ['OK', 'OK', 'Skipped', 'OK', 'OK', 'OK', 'Not found'], 'done', 1, 1),
@@ -905,29 +956,44 @@ def run_rows():
         # S-11.073: this version's steps 3-5 switched off. Nordic images present: no DFU entry, so a Nordic
         # refusal changes nothing; step 6 is reserved and reports Not found
         ('this_version', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'Not found'], 'done', 1,
-         1, off, ()),
+         1, off, (0, 1)),
         ('this_version_nordic_refuses_dfu', 0, 1, 0, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
-                                                       'Not found'], 'done', 0, 1, off, ()),
-        ('this_version_confirmed', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Not found'],
-         'done', 1, 1, off, (2,)),
-        ('this_version_not_confirmed', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
-                                                  'Not found'], 'done', 1, 1, off, ()),
+                                                       'Not found'], 'done', 0, 1, off, (0, 1)),
+        ('this_version_selected', 0, 1, 1, ['OK', 'OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Not found'],
+         'done', 1, 1, off, (0, 1, 2)),
+        ('this_version_bootloader_not_selected', 0, 1, 1, ['OK', 'OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
+                                                            'Not found'], 'done', 1, 1, off, (0, 1)),
         ('this_version_only_switched_off', 0, 1, 0, ['Not found', 'Not found', 'Not found', 'Skipped', 'Skipped',
                                                       'Skipped', 'Not found'], 'nothing to do', 1, 1, off, ()),
-        ('this_version_os_fails', 0, 1, 0, ['OK', 'Internal error'], 'failed', 1, 1, off, ()),
+        ('this_version_os_fails', 0, 1, 0, ['OK', 'Internal error'], 'failed', 1, 1, off, (0, 1)),
+        # S-11.096: a step not selected reports Skipped; S-11.064: the package version only with the OS
+        # installed in this run; S-11.061: the DFU entry only for a selected Nordic step
+        ('os_not_selected', 0, 0, 1, ['OK', 'Skipped', 'OK', 'Not found', 'Not found', 'Not found', 'Not found'],
+         'done', 1, 1, on, (0, 2)),
+        ('only_content_selected', 0, 1, 0, ['OK', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
+                                            'Not found'], 'done', 0, 1, on, (0,)),
+        ('ble_selected', 0, 1, 0, ['Not found', 'Skipped', 'Skipped', 'OK', 'Skipped', 'Skipped', 'Not found'],
+         'done', 1, 1, on, (3,)),
+        ('ble_selected_no_dfu', 0, 1, 0, [], 'failed', 0, 1, on, (3,)),
+        ('ble_bootloader_selected', 0, 1, 0, ['Not found', 'Skipped', 'Skipped', 'Skipped', 'OK', 'Skipped',
+                                              'Not found'], 'done', 1, 1, on, (4,)),
+        ('nothing_selected', 0, 1, 1, ['Not found', 'Skipped', 'Skipped', 'Skipped', 'Skipped', 'Skipped',
+                                       'Not found'], 'nothing to do', 1, 1, on, ()),
+        ('content_only_selected', 1, 0, 0, ['OK', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found',
+                                            'Not found'], 'done', 1, 1, on, (0,)),
     ]
     rows = []
     for row in cases:
         case, co, nordic, opt, results, outcome, dfu, vf = row[:8]
-        steps_off, confirmed = row[8:] if len(row) > 8 else (on, (2,))
+        steps_off, selected = row[8:] if len(row) > 8 else (on, every)
         res = {i: R[r] for i, r in enumerate(results)}
-        got = m.run(res, bool(co), bool(nordic), bool(dfu), bool(vf), steps_off=steps_off)
-        # S-11.061 item 2, S-11.073: a DFU entry only for a Nordic image whose step is on
-        dfu_entry = bool(nordic) and not {3, 4} <= set(steps_off)
+        got = m.run(res, bool(co), bool(nordic), bool(dfu), bool(vf), steps_off=steps_off, selected=set(selected))
+        # S-11.061 item 2, S-11.073, S-11.096: a DFU entry only for a Nordic image whose step is on and selected
+        dfu_entry = bool(nordic) and any(s not in steps_off and s in selected for s in m.NORDIC_STEPS)
         assert (['nordic', 'enter_dfu'] in [list(x) for x in got['writes']]) == dfu_entry, case
         for i, r in enumerate(results):       # S-11.058, S-11.073, S-11.090, S-11.096: a step's Skipped
             if r == 'Skipped':
-                assert (i == 2 and (not opt or i not in confirmed)) or i in steps_off, (case, i)
+                assert (i == 2 and not opt) or i in steps_off or i not in selected, (case, i)
             if i == m.RESERVED:
                 assert r == 'Not found', (case, i)
             if i in steps_off:
@@ -937,12 +1003,13 @@ def run_rows():
         prog = [list(x[1]) for x in got['writes'] if x[0] == 'progress']
         meta = [x[1] for x in got['writes'] if x[0] == 'meta']
         # S-11.061, S-11.064: state 0xAB0D first unless content-only, and state 0 at the end of every run
-        # that is not content-only, completed or failed
-        want_meta = [] if co else ['state=AB0D', ('state=0' if outcome == 'failed' or not vf
+        # that is not content-only, completed or failed; the package version only with the OS installed
+        os_ok = len(results) > 1 and results[1] == 'OK'
+        want_meta = [] if co else ['state=AB0D', ('state=0' if outcome == 'failed' or not vf or not os_ok
                                                   else 'os_version=package,state=0')]
         assert meta == want_meta, (case, meta)
         rows.append([case, co, nordic, ','.join(map(str, steps_off)), int(dfu_entry), opt,
-                     ','.join(map(str, sorted(confirmed))) if opt else '', dfu, vf, ','.join(results), outcome,
+                     ','.join(map(str, sorted(selected))), dfu, vf, ','.join(results), outcome,
                      json.dumps(prog), json.dumps(meta),
                      json.dumps([list(x) if isinstance(x, tuple) else x for x in got['writes']])])
     return rows
@@ -970,14 +1037,14 @@ def interrupted_rows():
 
 
 def stock_rows():
-    """S-11.091: each condition varied alone. The bootloader is confirmed only when it is present and the
-    option is on (S-11.096: nothing is asked otherwise)."""
+    """S-11.091: each condition varied alone. The bootloader can be selected only when it is present and the
+    option is on (S-11.096: its row cannot be picked otherwise)."""
     rows = []
     for opt, te, bl in itertools.product([0, 1], repeat=3):
-        for conf in ([0, 1] if opt and bl else [0]):
-            st = m.return_to_stock(opt, te, bl, conf)
-            assert st == (opt == 1 and te == 1 and bl == 1 and conf == 1)
-            rows.append([opt, te, bl, conf, int(st), m.os_form(st)])
+        for sel in ([0, 1] if opt and bl else [0]):
+            st = m.return_to_stock(opt, te, bl, sel)
+            assert st == (opt == 1 and te == 1 and bl == 1 and sel == 1)
+            rows.append([opt, te, bl, sel, int(st), m.os_form(st)])
     return rows
 
 
@@ -1045,15 +1112,16 @@ def main():
     write_tsv('steps.tsv', ['step', 'conditions', 'result', 'end_nordic'], step_rows(),
               'S-11.066-S-11.073, S-11.096; end_nordic: S-11.064 item 3 after the result (exit: the query and '
               'the exit when in DFU; no_exit: no exit command, S-08.048)')
+    write_tsv('picks.tsv', ['step', 'conditions', 'pick'], pick_rows(), 'S-11.096, S-11.073, S-11.090')
     write_tsv('runs.tsv', ['case', 'content_only', 'nordic_images', 'steps_off', 'dfu_entry', 'option',
-                           'confirmed', 'nordic_dfu_ok', 'version_file', 'results', 'outcome', 'progress_after',
+                           'selected', 'nordic_dfu_ok', 'version_file', 'results', 'outcome', 'progress_after',
                            'metadata_writes', 'writes'], run_rows(),
               'S-11.057-S-11.065, S-11.073, S-11.096, S-11.061')
     write_tsv('interrupted.tsv', ['state', 'keys', 'slave', 'meta_write_ok', 'decision', 'metadata_writes',
                                   'notice', 'state_after', 'steps', 'nordic_dfu', 'record_access'],
               interrupted_rows(),
               'S-11.080')
-    write_tsv('stock.tsv', ['option', 'te_signed', 'bootloader_present', 'bootloader_confirmed', 'return_to_stock',
+    write_tsv('stock.tsv', ['option', 'te_signed', 'bootloader_present', 'bootloader_selected', 'return_to_stock',
                             'os_form'],
               stock_rows(), 'S-11.091, S-11.092, S-11.096')
     write_tsv('disk_search.tsv', ['case', 'entries_in_directory_order', 'package', 'forced', 'cdc_reset',

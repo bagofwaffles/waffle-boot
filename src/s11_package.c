@@ -61,9 +61,9 @@ enum s11_reason s11_payload_key_rule(uint8_t index, bool k0_ok, bool k1_ok,
 
 /* S-11.091 */
 bool s11_return_to_stock(bool option, bool te_signed,
-			 bool bootloader_confirmed)
+			 bool bootloader_selected)
 {
-	return option && te_signed && bootloader_confirmed;
+	return option && te_signed && bootloader_selected;
 }
 
 /* S-11.012: SHA-256 of the manifest with +0x010-+0x04F zeroed, then the

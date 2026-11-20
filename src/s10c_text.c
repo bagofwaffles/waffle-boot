@@ -284,7 +284,7 @@ size_t s10c_skip_label(unsigned step, enum s11_skip why, char *out)
 	static const char *const reasons[] = {
 		[S11_SKIP_NONE] = "",
 		[S11_SKIP_OPTION_OFF] = "option off",
-		[S11_SKIP_NOT_CONFIRMED] = "not confirmed",
+		[S11_SKIP_NOT_SELECTED] = "not selected",
 		[S11_SKIP_SWITCHED_OFF] = "switched off",
 		[S11_SKIP_ALREADY_WRITTEN] = "already written",
 	};

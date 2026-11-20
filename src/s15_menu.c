@@ -4,6 +4,8 @@
  */
 #include "waffle/s15_menu.h"
 
+#include "waffle/bytes.h"
+
 #define DLC "/yaffs2/content/dlc"
 
 static void open_main(struct s15_menu *m);
@@ -158,7 +160,7 @@ static bool path_join(char *out, size_t cap, const char *a, const char *b)
 
 /* ---- holds: S-15.015 ----------------------------------------------- */
 
-#define HOLD_MS S15_CONFIRM_HOLD_MS
+#define HOLD_MS S15_HOLD_MS
 #define KEY_PRECOMP 0x17u	/* S-07.032: not acted on */
 
 /* A knob click (0x0A - 0x0D) starts no hold: it is the easiest key to
@@ -1464,30 +1466,57 @@ void s15_up_step_note(struct s15_menu *m, enum s15_note note)
 		sline(m, st[i], out[i]);
 }
 
-/* S-15.116: the screen, with the bar empty and the whole time left. */
-void s15_up_confirm(struct s15_menu *m, const struct s15_confirm_info *info)
+/* S-15.116: the selection's rows. */
+void s15_up_select(struct s15_menu *m, const struct s15_select_info *info,
+		   const struct s15_select *s, uint32_t now_ms)
 {
-	struct s15_buf b[S15_CONFIRM_LINES], bar;
-	enum s15_style st[S15_CONFIRM_LINES];
+	struct s15_buf b[S15_ROWS];
+	enum s15_style st[S15_ROWS];
+	const size_t n = s15_select_lines(info, s, now_ms, b, st);
 
-	enter(m, S15_SCR_UPGRADE, s15_confirm_title);
-	m->row_step = -1;
-	m->prog_key = -1;
-	m->restart_ok = false;	/* S-15.116: no key but the confirmation's */
-	s15_confirm_lines(info, b, st);
-	for (size_t i = 0; i < S15_CONFIRM_LINES; i++)
+	make_upgrade_current(m);
+	m->prog_key = -1;	/* S-15.116: no key but the selection's */
+	for (size_t i = 0; i < n; i++)
 		sline(m, st[i], b[i].s);
-	s15_confirm_bar(&bar, 0, S15_CONFIRM_TIMEOUT_MS / 1000u);
-	sline(m, S15_ST_STEP_RUN, bar.s);
 }
 
-/* Its last row again; not logged (S-15.004). */
-void s15_up_confirm_bar(struct s15_menu *m, unsigned fill, unsigned left_s)
+/* The rows whose text the time changed; not logged (S-15.004). */
+void s15_up_select_time(struct s15_menu *m, const struct s15_select_info *info,
+			const struct s15_select *s, uint32_t now_ms)
 {
-	struct s15_buf bar;
+	struct s15_buf b[S15_ROWS];
+	enum s15_style st[S15_ROWS];
+	const size_t n = s15_select_lines(info, s, now_ms, b, st);
 
-	s15_confirm_bar(&bar, fill, left_s);
-	s15_console_set(&m->con, S15_ST_STEP_RUN, bar.s);
+	for (size_t i = 0; i < n; i++) {
+		size_t len;
+		const char *row = s15_console_row(&m->con, (unsigned)i, &len);
+
+		if (len != b[i].n || s15_console_row_style(&m->con, (unsigned)i) !=
+		    st[i] || !wb_equal((const uint8_t *)row,
+				       (const uint8_t *)b[i].s, len))
+			s15_console_put(&m->con, (unsigned)i, st[i], b[i].s);
+	}
+}
+
+/* S-15.115: as a run that did nothing; the zip was read. */
+void s15_up_canceled(struct s15_menu *m)
+{
+	const char *out[2];
+	enum s15_style st[2];
+	size_t n;
+
+	make_upgrade_current(m);
+	m->prog_key = -1;
+	m->restart_ok = m->boot->reason != 40u;
+	n = s15_outcome_lines(out, st, S15_OUT_NOTHING, true, false, false,
+			      m->restart_ok);
+	for (size_t i = 0; i < n; i++)
+		sline(m, st[i], out[i]);
+	if (m->restart_ok)
+		sline(m, S15_ST_ITEM, s15_restart_item);
+	zip_read(m);
+	ended(m);
 }
 
 /* S-15.115 */

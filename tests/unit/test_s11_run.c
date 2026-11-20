@@ -4,8 +4,8 @@
  * S-11.055, S-11.056, S-11.057, S-11.058, S-11.059, S-11.060, S-11.061,
  * S-11.062, S-11.063, S-11.064, S-11.065, S-11.067, S-11.068, S-11.069,
  * S-11.070, S-11.071, S-11.073, S-11.080, S-11.090, S-11.091,
- * S-11.093, S-11.094, S-11.095, S-11.096 (a step's use of the
- * confirmation). Power cuts are made by the fakes, which longjmp out of the
+ * S-11.093, S-11.094, S-11.095, S-11.096 (what the selection offers, its
+ * answers, and a step's use of it). Power cuts are made by the fakes, which longjmp out of the
  * run after a given number of writes.
  */
 #include <setjmp.h>
@@ -127,17 +127,22 @@ static void test_runs(void)
 		};
 		struct s11_run_result res;
 		struct s11_staged st;
+		struct s11_step_env env;
 		const char *outcome;
 
-		/* S-11.061 item 2, S-11.073: the DFU entry from the package's
-		 * Nordic images and the switched-off steps */
+		/* S-11.061 item 2, S-11.073, S-11.096: the DFU entry from the
+		 * package's Nordic images, the switched-off steps and the
+		 * selection */
 		memset(&st, 0, sizeof(st));
 		if (v->nordic) {
 			st.size[S11_C_BLE] = st.size[S11_C_NORDIC_BL0] = 1u;
 			st.size[S11_C_NORDIC_BL1] = 1u;
 		}
-		CHECK(s11_run_nordic(&st, (uint8_t)v->steps_off) ==
-			      (v->dfu_entry != 0),
+		memset(&env, 0, sizeof(env));
+		env.staged = &st;
+		env.off = (uint8_t)v->steps_off;
+		env.selected = (uint8_t)v->selected;
+		CHECK(s11_run_nordic(&env) == (v->dfu_entry != 0),
 		      "%s: the DFU entry", v->name);
 		memset(&L, 0, sizeof(L));
 		L.v = v;
@@ -171,11 +176,11 @@ static void test_interrupted(void)
 	for (size_t i = 0; i < N(s11v_stock); i++) {
 		const struct s11v_stock *v = &s11v_stock[i];
 
-		CHECK(s11_return_to_stock(v->option, v->te_signed, v->confirmed) ==
+		CHECK(s11_return_to_stock(v->option, v->te_signed, v->selected) ==
 			      (v->stock != 0),
 		      "stock row %zu", i);
-		CHECK(!v->confirmed || (v->option && v->bootloader),
-		      "stock row %zu: confirmed only when asked (S-11.096)", i);
+		CHECK(!v->selected || (v->option && v->bootloader),
+		      "stock row %zu: selected only when it can be (S-11.096)", i);
 	}
 }
 
@@ -183,16 +188,22 @@ static void test_interrupted(void)
 
 struct step_fake {
 	const struct s11v_step *v;
-	unsigned writes, sends, slots;
+	unsigned writes, sends, slots, contents;
 	int sent_slot;
 };
 
 static struct step_fake S;
 
+/* Step 0 as S-11.066 has it for the row's staging area. */
 static enum s11_result s_content(void *ctx)
 {
 	(void)ctx;
-	return S11_NOT_FOUND;
+	S.contents++;
+	if (!S.v->content_dir)
+		return S11_NOT_FOUND;
+	if (S.v->move_fails)
+		return S11_FAILURE;
+	return S.v->files > 0 ? S11_OK : S11_NOT_FOUND;
 }
 
 /* S-11.095: an image whose check or read fails is neither written nor
@@ -265,17 +276,17 @@ static void test_steps(void)
 		struct s11_version installed = pkg;
 		enum s11_result r;
 
-		if (v->step == S11_STEP_CONTENT)
-			continue;	/* the content step: test_s11_content */
 		memset(&st, 0, sizeof(st));
 		memset(&S, 0, sizeof(S));
 		S.v = v;
+		st.content_dir = v->content_dir != 0;	/* its files: s_content */
 		for (unsigned c = 0; c < S11_COMPONENTS; c++)
 			st.version[c] = pkg;
 		if (v->step == S11_STEP_BLE_BOOTLOADER) {
 			st.size[S11_C_NORDIC_BL0] = v->present0 ? 1u : 0u;
 			st.size[S11_C_NORDIC_BL1] = v->present1 ? 1u : 0u;
-		} else if (v->step != S11_STEP_RESERVED) {
+		} else if (v->step != S11_STEP_RESERVED &&
+			   v->step != S11_STEP_CONTENT) {
 			st.size[comp[v->step]] = v->present ? 1u : 0u;
 		}
 		/* rel: the package against what is installed */
@@ -289,15 +300,19 @@ static void test_steps(void)
 		env.copro = &copro;
 		/* S-11.073: only this row's step is switched on or off */
 		env.off = v->switched_on ? 0u : S11_STEP_BIT(v->step);
-		/* S-11.096: only this row's component is confirmed or not */
-		env.confirmed = v->confirmed ? S11_STEP_BIT(v->step) : 0u;
+		/* S-11.096: only this row's step is selected or not */
+		env.selected = v->selected ? S11_STEP_BIT(v->step) : 0u;
 		r = s11_step_result(v->step, &env, &step_ops);
 		CHECK(r == (enum s11_result)v->result,
 		      "step row %zu (step %u): %d, want %u", i, v->step, (int)r,
 		      v->result);
 		if (v->step == S11_STEP_BOOTLOADER &&
-		    (!v->option || !v->confirmed))
+		    (!v->option || !v->selected))
 			CHECK(S.writes == 0, "row %zu: no flash access", i);
+		if (!v->selected)	/* S-11.096: nothing written, sent or moved */
+			CHECK(S.writes == 0 && S.sends == 0 && S.slots == 0 &&
+			      (S.contents == 0 || !v->content_dir),
+			      "row %zu: a step not selected reaches nothing", i);
 		if (v->step == S11_STEP_RESERVED)	/* S-11.057: nothing */
 			CHECK(S.writes == 0 && S.sends == 0 && S.slots == 0,
 			      "row %zu: the reserved step reaches nothing", i);
@@ -310,8 +325,9 @@ static void test_steps(void)
 
 			if (r == S11_SKIPPED)
 				want = !v->switched_on ? S11_SKIP_SWITCHED_OFF :
+				       v->step == S11_STEP_BOOTLOADER &&
 				       !v->option ? S11_SKIP_OPTION_OFF :
-				       !v->confirmed ? S11_SKIP_NOT_CONFIRMED :
+				       !v->selected ? S11_SKIP_NOT_SELECTED :
 						       S11_SKIP_ALREADY_WRITTEN;
 			CHECK(s11_result_skip(v->step, &env, r) == want,
 			      "row %zu: skip reason %d, want %d", i,
@@ -367,7 +383,7 @@ static void test_protected_results(void)
 	memset(&env, 0, sizeof(env));
 	env.staged = &st;
 	env.option = true;
-	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER);
+	env.selected = 0x3Fu;	/* every step selected */
 	env.copro = &copro;	/* env.off 0: every step switched on */
 	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &ops) == S11_FAILURE,
 	      "no write_failure: Failure");
@@ -429,13 +445,14 @@ static void test_protected_results(void)
 /* ---- S-11.073: the switched-off steps; S-11.058: why a step skipped ---- */
 
 static struct {
-	unsigned os, bootloader, sends, slots, psoc;
+	unsigned os, bootloader, sends, slots, psoc, contents;
 } C;
 
 static enum s11_result c_content(void *ctx)
 {
 	(void)ctx;
-	return S11_NOT_FOUND;
+	C.contents++;
+	return S11_OK;
 }
 
 static bool c_os(void *ctx)
@@ -510,6 +527,7 @@ static void test_switched_off(void)
 	env.nordic_in_dfu = true;
 	env.forced = true;
 	env.option = true;
+	env.selected = 0x3Fu;
 
 	/* each switched-off step alone: Skipped, none of its ops called */
 	for (size_t i = 0; i < N(switchable); i++) {
@@ -534,7 +552,6 @@ static void test_switched_off(void)
 	/* only steps 3-5 can be switched off; step 6 is reserved */
 	env.off = 0xFFu;
 	env.option = true;
-	env.confirmed = S11_STEP_BIT(S11_STEP_BOOTLOADER);
 	memset(&C, 0, sizeof(C));
 	CHECK(s11_step_result(S11_STEP_OS, &env, &count_ops) == S11_OK &&
 	      s11_step_result(S11_STEP_BOOTLOADER, &env, &count_ops) == S11_OK &&
@@ -560,40 +577,87 @@ static void test_switched_off(void)
 
 	/* the protected steps' reasons (S-11.090, S-11.096) */
 	all_staged(&st, &copro);
+	st.content_dir = true;
 	env.off = 0;
 	env.option = false;
-	env.confirmed = 0;
+	env.selected = 0x3Fu;
 	CHECK(s11_step_skip(S11_STEP_BOOTLOADER, &env) == S11_SKIP_OPTION_OFF,
-	      "option off");
-	env.option = true;
-	CHECK(s11_step_skip(S11_STEP_BOOTLOADER, &env) == S11_SKIP_NOT_CONFIRMED,
-	      "the bootloader not confirmed");
+	      "option off, though selected");
 	memset(&C, 0, sizeof(C));
 	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &count_ops) ==
 		      S11_SKIPPED && C.bootloader == 0,
-	      "the bootloader writes only after its confirmation");
-	CHECK(s11_step_skip(S11_STEP_OS, &env) == S11_SKIP_NONE &&
-	      s11_step_skip(S11_STEP_CONTENT, &env) == S11_SKIP_NONE,
-	      "content and OS never skip");
+	      "option off: no write, though selected");
+	env.option = true;
+	env.selected = 0;
+	CHECK(s11_step_skip(S11_STEP_BOOTLOADER, &env) == S11_SKIP_NOT_SELECTED,
+	      "the bootloader not selected");
+	memset(&C, 0, sizeof(C));
+	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &count_ops) ==
+		      S11_SKIPPED && C.bootloader == 0,
+	      "the bootloader writes only when selected");
+	/* every other step not selected: Skipped, nothing reached */
+	{
+		static const unsigned each[] = {
+			S11_STEP_CONTENT, S11_STEP_OS, S11_STEP_BLE,
+			S11_STEP_BLE_BOOTLOADER, S11_STEP_KEYBOARD,
+		};
+
+		for (size_t i = 0; i < N(each); i++) {
+			memset(&C, 0, sizeof(C));
+			CHECK(s11_step_result(each[i], &env, &count_ops) ==
+				      S11_SKIPPED &&
+			      s11_step_skip(each[i], &env) == S11_SKIP_NOT_SELECTED &&
+			      s11_result_skip(each[i], &env, S11_SKIPPED) ==
+				      S11_SKIP_NOT_SELECTED,
+			      "step %u not selected: Skipped, not selected", each[i]);
+			CHECK(C.os == 0 && C.sends == 0 && C.slots == 0 &&
+			      C.psoc == 0 && C.contents == 0,
+			      "step %u not selected: nothing reached", each[i]);
+			env.selected = S11_STEP_BIT(each[i]);
+			CHECK(s11_step_skip(each[i], &env) == S11_SKIP_NONE &&
+			      s11_step_result(each[i], &env, &count_ops) != S11_SKIPPED,
+			      "step %u selected: it runs", each[i]);
+			env.selected = 0;
+		}
+	}
+	/* a Nordic or PSoC step already installed reports so, selected or not */
+	env.forced = false;
+	copro.nordic_app = copro.nordic_bl = copro.psoc = st.version[S11_C_BLE];
+	CHECK(s11_step_result(S11_STEP_BLE, &env, &count_ops) == S11_ALREADY &&
+	      s11_step_result(S11_STEP_KEYBOARD, &env, &count_ops) == S11_ALREADY &&
+	      s11_step_skip(S11_STEP_BLE, &env) == S11_SKIP_NONE,
+	      "Already installed comes before the selection");
+	env.forced = true;
 
 	/* S-11.061 item 2: the DFU entry only for a Nordic image whose step
-	 * is switched on */
-	for (unsigned m = 0; m < 16u; m++) {
+	 * is switched on and selected */
+	for (unsigned m = 0; m < 64u; m++) {
 		const bool app = (m & 1u) != 0u, bl = (m & 2u) != 0u;
 		const uint8_t off = (uint8_t)(((m & 4u) != 0u ?
 					       S11_STEP_BIT(S11_STEP_BLE) : 0u) |
 					      ((m & 8u) != 0u ?
 					       S11_STEP_BIT(S11_STEP_BLE_BOOTLOADER) : 0u));
-		const bool want = (app && (m & 4u) == 0u) || (bl && (m & 8u) == 0u);
+		const uint8_t sel = (uint8_t)(((m & 16u) != 0u ?
+					       S11_STEP_BIT(S11_STEP_BLE) : 0u) |
+					      ((m & 32u) != 0u ?
+					       S11_STEP_BIT(S11_STEP_BLE_BOOTLOADER) : 0u));
+		const bool want = (app && (m & 4u) == 0u && (m & 16u) != 0u) ||
+				  (bl && (m & 8u) == 0u && (m & 32u) != 0u);
+		struct s11_step_env e;
 
 		memset(&st, 0, sizeof(st));
+		memset(&e, 0, sizeof(e));
 		st.size[S11_C_BLE] = app ? 1u : 0u;
 		st.size[S11_C_NORDIC_BL1] = bl ? 1u : 0u;
-		CHECK(s11_run_nordic(&st, off) == want, "DFU entry case %u", m);
-		CHECK(s11_run_nordic(&st, (uint8_t)(off |
-						     S11_STEP_BIT(S11_STEP_KEYBOARD))) ==
-			      want,
-		      "DFU entry case %u: step 5 has no say", m);
+		e.staged = &st;
+		e.off = off;
+		e.selected = sel;
+		CHECK(s11_run_nordic(&e) == want, "DFU entry case %u", m);
+		e.off = (uint8_t)(off | S11_STEP_BIT(S11_STEP_KEYBOARD));
+		e.selected = (uint8_t)(sel | S11_STEP_BIT(S11_STEP_KEYBOARD) |
+				       S11_STEP_BIT(S11_STEP_OS));
+		CHECK(s11_run_nordic(&e) == want,
+		      "DFU entry case %u: the other steps have no say", m);
 	}
 
 	/* this version's run of a package with every component: steps 3-5
@@ -603,15 +667,16 @@ static void test_switched_off(void)
 	env.staged = &st;
 	env.copro = &copro;
 	env.off = S11_STEPS_SWITCHABLE;
+	env.selected = 0x3Fu;
 	memset(&cfg, 0, sizeof(cfg));
-	cfg.nordic = s11_run_nordic(&st, env.off);
+	cfg.nordic = s11_run_nordic(&env);
 	cfg.has_version = true;
 	cfg.version = st.fw_version;
 	memset(&C, 0, sizeof(C));
 	memset(&L, 0, sizeof(L));
 	{
 		static const struct s11v_run any = { "this_version", 0, 1, 0, 0,
-						     0, 1, { 0 }, 0, "", "" };
+						     0, 0, 1, { 0 }, 0, "", "" };
 
 		L.v = &any;	/* l_enter's answer, never asked */
 		CHECK(s11_run_steps(&log_ops, &count_ops, &env, &cfg, &res) ==
@@ -627,7 +692,141 @@ static void test_switched_off(void)
 	      C.bootloader == 0,
 	      "this version: only the OS written");
 	CHECK(strstr(L.text, "meta os_version=package,state=0") != NULL,
-	      "this version: the package version recorded (S-11.073)");
+	      "this version: the package version recorded with the OS (S-11.064)");
+
+	/* S-11.064: the OS not selected: the state alone, no version */
+	memset(&C, 0, sizeof(C));
+	memset(&L, 0, sizeof(L));
+	env.selected = (uint8_t)~S11_STEP_BIT(S11_STEP_OS);
+	{
+		static const struct s11v_run any = { "no_os", 0, 1, 0, 0,
+						     0, 0, 1, { 0 }, 0, "", "" };
+
+		L.v = &any;
+		CHECK(s11_run_steps(&log_ops, &count_ops, &env, &cfg, &res) ==
+			      S11_RUN_DONE && C.os == 0 && C.bootloader == 0,
+		      "OS not selected: done, the OS not written");
+	}
+	CHECK(strstr(L.text, "os_version") == NULL &&
+	      strstr(L.text, "meta state=0") != NULL,
+	      "OS not selected: the state cleared, no version recorded: %s",
+	      L.text);
+}
+
+/* ---- picks.tsv: what the selection offers (S-11.096) ---- */
+
+static void test_picks(void)
+{
+	static const enum s11_component comp[7] = {
+		S11_COMPONENTS, S11_C_OS, S11_C_BOOTLOADER, S11_C_BLE,
+		S11_C_NORDIC_BL0, S11_C_BACKPLANE, S11_COMPONENTS,
+	};
+	const struct s11_version pkg = { 1, 2, 0, 0 };
+
+	for (size_t i = 0; i < N(s11v_picks); i++) {
+		const struct s11v_pick *v = &s11v_picks[i];
+		struct s11_staged st;
+		struct s17_copro copro;
+		struct s11_step_env env;
+		struct s11_version installed = pkg;
+		enum s11_pick got;
+
+		memset(&st, 0, sizeof(st));
+		for (unsigned c = 0; c < S11_COMPONENTS; c++)
+			st.version[c] = pkg;
+		st.content_dir = v->content_dir != 0;
+		if (v->step == S11_STEP_BLE_BOOTLOADER) {
+			st.size[S11_C_NORDIC_BL0] = v->present0 ? 1u : 0u;
+			st.size[S11_C_NORDIC_BL1] = v->present1 ? 1u : 0u;
+		} else if (comp[v->step] != S11_COMPONENTS) {
+			st.size[comp[v->step]] = v->present ? 1u : 0u;
+		}
+		installed.minor = (uint16_t)(installed.minor - v->rel);
+		s17_copro_init(&copro);	/* 0.0.0: not known */
+		if (v->known)
+			copro.nordic_app = copro.nordic_bl = copro.psoc = installed;
+		memset(&env, 0, sizeof(env));
+		env.staged = &st;
+		env.option = v->option != 0;
+		env.forced = v->forced != 0;
+		env.copro = &copro;
+		env.off = v->switched_on ? 0u : S11_STEP_BIT(v->step);
+		env.selected = 0xFFu;	/* the selection is not read */
+		got = s11_step_pick(v->step, &env);
+		CHECK(got == v->pick, "pick row %zu (step %u): %d, want %d", i,
+		      v->step, (int)got, (int)v->pick);
+		CHECK(((s11_pickable(&env) & S11_STEP_BIT(v->step)) != 0u) ==
+			      (v->pick == S11_PICK_OPEN),
+		      "pick row %zu: pickable", i);
+	}
+}
+
+/* ---- the answers (S-11.096) ---- */
+
+static struct {
+	enum s11_answer answer;
+	uint8_t give, offered;
+	unsigned asked;
+} A;
+
+static enum s11_answer ask(void *ctx, const struct s11_step_env *env,
+			   uint8_t *selected)
+{
+	(void)ctx;
+	A.asked++;
+	A.offered = s11_pickable(env);
+	*selected = A.give;
+	return A.answer;
+}
+
+static void test_select(void)
+{
+	struct s11_staged st;
+	struct s17_copro copro;
+	struct s11_step_env env;
+
+	all_staged(&st, &copro);
+	st.content_dir = true;
+	memset(&env, 0, sizeof(env));
+	env.staged = &st;
+	env.copro = &copro;
+	env.option = true;
+	env.off = S11_STEPS_SWITCHABLE;
+	CHECK(s11_pickable(&env) == (S11_STEP_BIT(S11_STEP_CONTENT) |
+				     S11_STEP_BIT(S11_STEP_OS) |
+				     S11_STEP_BIT(S11_STEP_BOOTLOADER)),
+	      "this version: content, OS and the bootloader");
+	CHECK(s11_unasked(&env) == (S11_STEP_BIT(S11_STEP_CONTENT) |
+				    S11_STEP_BIT(S11_STEP_OS)),
+	      "unasked: all but the bootloader");
+	/* an answer: as far as the rows can be picked */
+	memset(&A, 0, sizeof(A));
+	A.answer = S11_ANSWER_INSTALL;
+	A.give = 0xFFu;
+	env.selected = 0;
+	CHECK(s11_select(&env, ask, NULL) && A.asked == 1 &&
+	      env.selected == s11_pickable(&env) && A.offered == env.selected,
+	      "install: the steps given that can be picked");
+	A.give = S11_STEP_BIT(S11_STEP_BOOTLOADER);
+	CHECK(s11_select(&env, ask, NULL) &&
+	      env.selected == S11_STEP_BIT(S11_STEP_BOOTLOADER),
+	      "the bootloader alone");
+	A.answer = S11_ANSWER_CANCEL;
+	CHECK(!s11_select(&env, ask, NULL) && env.selected == 0,
+	      "cancel: false, nothing selected");
+	/* the keys cannot be read: the old run, the bootloader not selected */
+	A.answer = S11_ANSWER_UNASKED;
+	CHECK(s11_select(&env, ask, NULL) && env.selected == s11_unasked(&env),
+	      "unasked: every step but the bootloader");
+	CHECK(s11_select(&env, NULL, NULL) && env.selected == s11_unasked(&env),
+	      "no ask: as unasked");
+	/* the option off: the bootloader cannot be picked, whatever is given */
+	env.option = false;
+	A.answer = S11_ANSWER_INSTALL;
+	A.give = 0xFFu;
+	CHECK(s11_select(&env, ask, NULL) &&
+	      (env.selected & S11_STEP_BIT(S11_STEP_BOOTLOADER)) == 0u,
+	      "option off: the bootloader never selected");
 }
 
 /* ---- staged_check.json: S-11.095 ---- */
@@ -860,6 +1059,8 @@ int main(void)
 	test_steps();
 	test_protected_results();
 	test_switched_off();
+	test_picks();
+	test_select();
 	test_staged_check();
 	test_multiboot();
 	for (size_t i = 0; i < N(s11v_records); i++) {	/* S-11.062 */
