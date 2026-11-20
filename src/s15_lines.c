@@ -467,6 +467,7 @@ const char *const s15_interrupted[S15_INTERRUPTED_LINES] = {
 };
 const char s15_restarting[] = "Restarting...";
 const char s15_restart_item[] = "6 Restart";
+const char s15_continue_item[] = "7 Continue to OS";
 const char s15_format_unreadable[] =
 	"The drive can't be read; formatting erases it";
 const char s15_reset_unreadable[] =

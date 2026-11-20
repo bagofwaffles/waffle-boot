@@ -38,6 +38,7 @@ key, cancels. A knob click never starts it.
 | 3 Developer menu | Shown only while developer mode is on |
 | 4 Device info | Serial numbers, versions, the second processor's state, and why the OS did not start. The help key opens it too. Its `1 More` opens a second page: the selected slot's start log, with the starts it holds, the unfinished ones at its end and the count it is erased at, read again each time the page opens |
 | 5 System | Key test, volume calibration, content packs, format, factory reset |
+| 7 Continue to OS | At the bottom, apart from the others. Restarts the unit into the OS from the eMMC's boot partition, also with Start in boot menu on. Nothing is written. With DSP2 not answering, the restart is the one that restarts DSP2 too, after which Start in boot menu applies |
 
 The status bar shows the running slot (`SLOT1` or `SLOT2`) and `USB`, lit while a disk is offered. Under
 the items, the screen says when the OS could not be started, and why.

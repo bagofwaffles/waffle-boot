@@ -261,6 +261,7 @@ extern const char s15_os_reinstall[];         /* exact text, S-15.161 */
 extern const char *const s15_interrupted[S15_INTERRUPTED_LINES];  /* S-11.080 */
 extern const char s15_restarting[];
 extern const char s15_restart_item[];	/* S15_ST_ITEM, digit 6 */
+extern const char s15_continue_item[];	/* S15_ST_ITEM, the main screen's digit 7 */
 extern const char s15_format_unreadable[];
 extern const char s15_reset_unreadable[];
 extern const char s15_reset_incomplete[];

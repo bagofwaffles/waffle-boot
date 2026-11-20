@@ -207,7 +207,9 @@ These rules are fixed: only the maintainer changes them.
   reads them, not in the status bar.
 - The main screen: 1 Install firmware, 2 Settings, 3 Developer menu (while
   developer mode is on), 4 and the help key Device Info, 5 System, right
-  under the others. Digit 6 is no item there.
+  under the others; then 7 Continue to OS at the bottom, set apart from
+  them by a blank row, or by the failed-start notice when it shows. Digit
+  6 is no item there.
 - Settings: 1 Developer mode, 2 Protected writes, 3 Color, 5 MTP target,
   6 Start in boot menu; never a digit the white knob also gives.
 - Start in boot menu is off by default. On, every start that would boot
@@ -221,8 +223,8 @@ These rules are fixed: only the maintainer changes them.
   succeeded is Continue to the OS; elsewhere on the developer menu it is
   the plain restart, which repeats this boot's reason.
 - Continue to the OS restarts the unit, and that one start boots the OS
-  even with Start in boot menu on (S-15.190). Those two keys and a host's
-  request (`continue-os`, S-10c.076) start it. Its screen says that the
+  even with Start in boot menu on (S-15.190). Those two keys, the main
+  screen's 7 and a host's request (`continue-os`, S-10c.076) start it. Its screen says that the
   unit is restarting to start the OS.
 - 3 Start /os.ldr once (does not write) on the developer menu restarts the
   unit, and that one start boots the OS from the drive's `/os.ldr` even
@@ -258,8 +260,8 @@ These rules are fixed: only the maintainer changes them.
   when the slot's settings sector holds no valid record for the image it
   runs (S-15.172).
 - The main screen shows the failed-start notice only when this boot's start
-  of the OS failed (S-15.163): under the items, `The OS could not be
-  started.` and a `   Reason: …` line; for an image marked encrypted the
+  of the OS failed (S-15.163): under items 1 to 5 and above 7, `The OS
+  could not be started.` and a `   Reason: …` line; for an image marked encrypted the
   OS-reinstall line is its reason (S-15.161). Device Info then gives the
   failed step on its `OS start` row, in place of the blank row above
   `8 Back to Main Menu`.

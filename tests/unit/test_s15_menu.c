@@ -1091,7 +1091,7 @@ enum rule {
 	R_CANCEL_ONLY,        /* S-15.015: during a hold another key only cancels */
 	R_PACK_KEYS,          /* S-15.042 */
 	R_RESULT_BACK,        /* a result's view: digit 8 alone */
-	R_CONTINUE,           /* S-15.190: digit 6 on a written OS's result alone */
+	R_CONTINUE,           /* S-15.190: digit 6 on a written OS's result, the main screen's 7 */
 	R_START_MENU,         /* S-15.175: Settings' digit 6 alone */
 	R_HOLD,               /* S-15.015: the hold's time runs the action once */
 	R_OS_ONCE,            /* S-15.194: the developer menu's digit 3 alone */
@@ -1400,6 +1400,11 @@ static void test_rules(void)
 					if (down && d == 6u)
 						rule(R_CONTINUE, next == S15_SCR_MAIN &&
 						     got.n == 0u, n, key, down, &got);
+					/* S-15.031: digit 7 continues to the OS */
+					if (down && d == 7u)
+						rule(R_CONTINUE, next == S15_SCR_STARTING &&
+						     tok(&got, "continue") && !tok_has(&got, "usb"),
+						     n, key, down, &got);
 					if (down && d == 3u)
 						rule(R_DEV_MODE, next == (st->devmode ?
 						     S15_SCR_FACTORY : S15_SCR_MAIN),
@@ -1496,8 +1501,9 @@ static void test_rules(void)
 					     !st->osw_done && !st->osw_written,
 					     n, key, down, &got);
 				if (tok(&got, "continue"))
-					rule(R_CONTINUE, down && d == 6u &&
-					     before == S15_SCR_FACTORY && st->osw_written,
+					rule(R_CONTINUE, down && ((d == 6u &&
+					     before == S15_SCR_FACTORY && st->osw_written) ||
+					     (d == 7u && before == S15_SCR_MAIN)),
 					     n, key, down, &got);
 
 				if (down && key == 0x0du) {
@@ -1621,9 +1627,11 @@ static void test_start_screens(void)
 		F.lost = c->start.lost;
 		start();
 		n = rows(got, buf);
-		CHECK(n == items + 2u && strcmp(got[0], "") == 0,
+		/* the notice in place of the blank row above digit 7 */
+		CHECK(n == items + 3u && strcmp(got[0], "") == 0 &&
+		      strcmp(got[items + 2u], "item:7 Continue to OS") == 0,
 		      "S-15.163 %s: two lines under the items", c->name);
-		if (n != items + 2u)
+		if (n != items + 3u)
 			continue;
 		CHECK(strcmp(got[items], c->first) == 0,
 		      "S-15.163 %s: %s", c->name, got[items]);
@@ -1643,7 +1651,7 @@ static void test_start_screens(void)
 		      "S-15.163 %s: the back line last", c->name);
 		press(0x15);
 		n = rows(got, buf);
-		CHECK(n == items + 2u && strcmp(got[items + 1u], c->main) == 0,
+		CHECK(n == items + 3u && strcmp(got[items + 1u], c->main) == 0,
 		      "S-15.163 %s: again on main", c->name);
 	}
 	/* The sample screens of screens.json, whole. */
@@ -2110,15 +2118,17 @@ static void test_keys(void)
 	ev(0x0d, true);
 	CHECK(M.screen == S15_SCR_INFO, "S-15.013 released, then pressed: it acts");
 
-	/* S-15.012, S-15.031: shift held opens nothing from the main
-	 * screen. */
+	/* S-15.012, S-15.031: shift held changes nothing on the main
+	 * screen: 8 does nothing, 7 continues to the OS as without it. */
 	reset_fake(); default_boot(); start();
 	ev(0x37, true);
-	press(0x14);
 	press(0x15);
-	CHECK(M.screen == S15_SCR_MAIN && F.n_removed == 0u,
-	      "S-15.031 shift + 7, 8: nothing");
+	CHECK(M.screen == S15_SCR_MAIN, "S-15.031 shift + 8: nothing");
+	press(0x14);
+	CHECK(M.screen == S15_SCR_STARTING && F.cont == 1u && F.n_removed == 0u,
+	      "S-15.031 shift + 7: continues, nothing removed");
 	ev(0x37, false);
+	reset_fake(); default_boot(); start();
 
 	/* S-15.014, S-16.012: keys out of range do nothing. */
 	press(200);
@@ -3199,6 +3209,35 @@ static void test_continue(void)
 	press(0x13);
 	CHECK(F.cont == 0u && F.reset_w7 == 0u && M.screen == S15_SCR_MAIN &&
 	      s15_menu_changes(&M) == before, "main: digit 6 does nothing");
+	/* S-15.031: the main screen's digit 7 continues to the OS */
+	reset_fake(); default_boot(); start();
+	clear_records();
+	press(0x14);
+	CHECK(F.cont == 1u && F.cont_view && F.reset_w7 == 0u && M.screen == S15_SCR_STARTING,
+	      "S-15.190 main: digit 7 continues to the OS");
+	expect_screen("continue_restarting");
+	/* also with the developer menu hidden, and with a failed start shown */
+	reset_fake(); default_boot(); BOOT.settings.dev_mode = false;
+	BOOT.start.why = S15_START_NO_ACTIVE; start();
+	clear_records();
+	press(0x14);
+	CHECK(F.cont == 1u && M.screen == S15_SCR_STARTING, "main: digit 7, notice shown");
+	/* fs held: nothing (S-02.071) */
+	reset_fake(); default_boot(); start();
+	s15_up_fs_held(&M, true, false);
+	clear_records();
+	press(0x14);
+	CHECK(F.cont == 0u && F.reset_w7 == 0u && M.screen == S15_SCR_MAIN,
+	      "fs held: digit 7 does nothing");
+	/* back on main after another screen, the item again */
+	reset_fake(); default_boot(); start();
+	press(0x12);
+	press(0x15);
+	expect_screen("main_plain");
+	clear_records();
+	press(0x14);
+	CHECK(F.cont == 1u, "main again: digit 7 continues");
+	reset_fake(); default_boot(); start();
 	/* The host's request: the restarting view, then the board. */
 	CHECK(s15_menu_continue(&M) == S15_CONT_STARTED && F.cont == 1u &&
 	      F.cont_view && M.screen == S15_SCR_STARTING, "S-15.190 the host continues");
@@ -3242,6 +3281,11 @@ static void test_continue(void)
 	CHECK(M.screen == S15_SCR_MAIN && s15_menu_continue(&M) == S15_CONT_BUSY &&
 	      F.cont == 0u && F.n_usb == 0u, "no continue_os: refused, digit 6 does nothing");
 	expect_screen("main_bare");
+	/* ... and digit 7 restarts with W7, as a build without Continue's
+	 * other keys do (S-15.190) */
+	press(0x14);
+	CHECK(F.reset_w7 == 1u && F.restart_line && F.cont == 0u,
+	      "no continue_os: digit 7 restarts with W7");
 
 	/* Busy: a scan, host transfer, run or OS write under way. */
 	reset_fake(); default_boot(); start();
@@ -3465,8 +3509,8 @@ static void test_indicator(void)
 	CHECK(M.option_on && M.screen == S15_SCR_SETTINGS,
 	      "S-15.140 on from Settings");
 	press(0x15);
-	press(0x14);
-	CHECK(M.option_on, "S-15.140 0x14 on the main screen does nothing");
+	press(0x13);
+	CHECK(M.option_on, "S-15.140 0x13 on the main screen does nothing");
 	press(0x12);
 	press(0x06);
 	ind_seen = 0;

@@ -271,9 +271,12 @@ static void start_lines(struct s15_menu *m, const struct s15_start *s)
 	sline(m, S15_ST_DIM, b.s);
 }
 
-static void start_failed(struct s15_menu *m)
+/* A notice under the items, the failed start's or the interrupted
+ * install's (they never meet); false when there is none. */
+static bool start_failed(struct s15_menu *m)
 {
 	start_lines(m, &m->boot->start);
+	return m->boot->start.why != S15_START_OK;
 }
 
 /* ---- the main screen: S-15.031 - S-15.032 --------------------------- */
@@ -289,8 +292,12 @@ static void draw_main(struct s15_menu *m)
 		sline(m, S15_ST_ITEM, "3 Developer menu");
 	sline(m, S15_ST_ITEM, "4 Device info");
 	sline(m, S15_ST_ITEM, "5 System");
-	start_failed(m);
+	/* S-15.031: digit 7 set apart at the bottom, by a notice when there
+	 * is one, else by a blank row; nine rows either way */
+	if (!start_failed(m) && !m->boot->interrupted)
+		blank(m);
 	interrupted(m);
+	sline(m, S15_ST_ITEM, s15_continue_item);
 }
 
 /* S-15.032: opening starts the main screen's USB set. */
@@ -1517,6 +1524,8 @@ static void main_key(struct s15_menu *m, unsigned key)
 		open_factory(m);
 	else if (d == 5u)
 		open_system(m);
+	else if (d == 7u)
+		restart_to_os(m);	/* S-15.031, S-15.190 */
 }
 
 /* S-15.015: a hold ended early: the screen as it was. */
