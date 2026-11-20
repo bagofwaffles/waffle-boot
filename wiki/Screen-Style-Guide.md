@@ -224,8 +224,8 @@ These rules are fixed: only the maintainer changes them.
   other settings in the running slot's settings sector in the SPI flash;
   when it cannot be saved, Settings says
   so and the item shows what the next start will read.
-- 6 Restart after an install that completed and after an OS write that
-  succeeded is Continue to the OS; elsewhere on the developer menu it is
+- 6 Restart after an install that completed, after a canceled selection
+  and after an OS write that succeeded is Continue to the OS; elsewhere on the developer menu it is
   the plain restart, which repeats this boot's reason.
 - Continue to the OS restarts the unit, and that one start boots the OS
   even with Start in boot menu on (S-15.190). Those two keys, the main
@@ -324,8 +324,8 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | two parts at `Yes`, the bootloader among them; rows that cannot be picked | 1 held for 2 of the 5 s |
 | <img src="../docs/ui/main-failed.png" width="480" alt="The OS not started"> | <img src="../docs/ui/info-failed.png" width="480" alt="Device Info after it"> |
 | Main Menu: the start failed when the second processor stopped answering | Device Info: the step, the request and where it broke |
-| <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | |
-| System while the second processor does not answer | |
+| <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | <img src="../docs/ui/upgrade-canceled.png" width="480" alt="Nothing installed"> |
+| System while the second processor does not answer | the selection canceled: nothing installed, 6 restarts, 8 goes back |
 | <img src="../docs/ui/oswrite-run.png" width="480" alt="Write OS"> | <img src="../docs/ui/continue-restarting.png" width="480" alt="Restarting to start the OS"> |
 | Write OS (developer menu, 5), the write running | Continue to the OS |
 | <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |

@@ -21,7 +21,8 @@ You need a USB cable, a computer, and the firmware package file (its name contai
 2. A disk appears on the computer. Copy the package file to the disk's top folder.
 3. Eject the disk. After a short wait the unit checks and unpacks the package, then lists its parts.
 4. Choose the parts to install: each part's digit switches it between `No` and `Yes`. Every part starts at
-   `No`. Then hold **1** for 5 s. **8**, or 60 s with no key, cancels: nothing is installed.
+   `No`. Then hold **1** for 5 s. **8**, or 60 s with no key, cancels: nothing is installed. Then **8** goes
+   back to the boot menu and **6** restarts; you can also copy the package to the disk again.
 5. Do not switch off while it runs. Steps show as `Installed`, `Not included` or `Skipped`.
 6. At `Done!`, press **6** to restart into the OS, or switch off and on.
 
@@ -56,7 +57,7 @@ the OS only, and never touches the bootloader or the first stage.
 | Message | Meaning |
 | --- | --- |
 | `No valid package found` | No file with `tfw` in its name in the disk's top folder, or the package was refused. The reason line says why ([the reasons](Building-Custom-OS-Updates#refusal-reasons)) |
-| `Nothing was installed.` after the list | The list was canceled with 8 or ran out of time. Press **6** to restart, then copy the package again |
+| `Nothing was installed.` after the list | The list was canceled with 8 or ran out of time. Copy the package to the disk again, press **8** to go back, or **6** to restart |
 | `Upgrade failed.` or `Installation failed.` | A step failed; its row says which. Switch off and on, then install again |
 | `The last install did not finish.` | The unit stopped mid-install. Install the same package again |
 | `Bootloader  Skipped: written, runs on restart` | The same package was installed again before a restart: its bootloader is already in the other slot and starts after the next restart |

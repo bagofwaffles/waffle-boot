@@ -113,7 +113,7 @@
  "upgrade_select_option_off": ["item:1 Install selected\tNothing selected", "pick:2 Main DSP\t1.1.5\tNo", "pick-off:7 Bootloader\tProtected writes off", "back:8 Cancel (cancels in 60 s)"],
  "upgrade_select_content": ["item:1 Install selected\tNothing selected", "pick:3 Content\tBass Essentials\tNo", "back:8 Cancel (cancels in 60 s)"],
  "upgrade_select_stock": ["item:1 Install selected (hold for 5 s)", "pick:2 Main DSP\t1.1.5\tNo", "pick-on:7 Bootloader\t0.9.40 > 0.9.41\tYes", "back:8 Cancel (cancels in 60 s)", "warn:This run replaces waffle-boot: back to stock"],
- "upgrade_canceled_tail": ["warn:Nothing was installed.", "item:6 Restart"],
+ "upgrade_canceled_tail": ["warn:Nothing was installed.", "item:6 Restart", "", "back:8 Back to Main Menu"],
  "upgrade_canceled_midi_tail": ["warn:Nothing was installed.", "Please restart your OP-XY."],
  "upgrade_done_not_updated": ["step-skip:BLE\tSkipped: not in this version", "step-skip:Backplane\tSkipped: not in this version", "warn:Not updated: BLE, Backplane", "ok:Done!", "item:6 Restart"],
  "upgrade_nothing_not_updated": ["warn:Not updated: Bootloader", "warn:Nothing was installed.", "item:6 Restart"],

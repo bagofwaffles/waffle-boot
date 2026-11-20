@@ -643,6 +643,10 @@ int main(int argc, char **argv)
 		s15_select_key(&sel, 0x06, true, 10000);
 		s15_up_select(&menu, &info, &sel, 12000);
 		bad |= shot(d, "upgrade-held");
+
+		/* canceled: nothing installed, 6 and 8 */
+		s15_up_canceled(&menu);
+		bad |= shot(d, "upgrade-canceled");
 	}
 
 	bad |= installer_shots(d);

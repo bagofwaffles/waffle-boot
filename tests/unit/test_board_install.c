@@ -1708,8 +1708,9 @@ static const struct kev off_then_8[] = {
 };
 static const struct kev nothing[] = { { 0, 0, false } };
 
-/* A canceled selection: no run, nothing written, no step reported. */
-static void canceled(const struct s11_install_result *res)
+/* A canceled selection: no run, nothing written, no step reported; back
+ * with 8 unless an earlier run in this boot read a zip (S-15.103). */
+static void canceled(const struct s11_install_result *res, bool back)
 {
 	CHECK(res->canceled && res->run.end == S11_RUN_NOTHING_TO_DO &&
 	      res->outcome.kind == S11_OUTCOME_NOTHING_TO_DO && !res->stock &&
@@ -1719,6 +1720,9 @@ static void canceled(const struct s11_install_result *res)
 	      !cdc_has("Upgrading to"));
 	CHECK(cdc_has("Nothing was installed."));
 	CHECK(cdc_has("[nothing to do]") || !cdc_has("[failed]"));
+	/* S-15.103: nothing written, so the screen goes back with 8, and the
+	 * zip does not count as read */
+	CHECK(cdc_has("8 Back to Main Menu") == back);
 }
 
 /*
@@ -1803,7 +1807,7 @@ static void test_whole_release_timeout(void)
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 62900u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 64000u);
 	CHECK(cdc_has("install: canceled after 60 s, steps selected 0x04"));
-	canceled(&res);
+	canceled(&res, true);
 	whole_end();
 }
 
@@ -1820,7 +1824,7 @@ static void test_whole_key8(void)
 	CHECK_EQ(ks.asks, 1u);
 	CHECK(ks.end_ms[0] - ks.start_ms[0] < 1000u);
 	CHECK(cdc_has("install: canceled with key 8, steps selected 0x00"));
-	canceled(&res);
+	canceled(&res, true);
 	whole_end();
 
 	t_case = "whole: key 1 with nothing selected";
@@ -1830,7 +1834,7 @@ static void test_whole_key8(void)
 	whole_install(true, false, &res);
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 66000u);
 	CHECK(cdc_has("install: canceled after 60 s, steps selected 0x00"));
-	canceled(&res);
+	canceled(&res, true);
 	whole_end();
 }
 
@@ -1855,7 +1859,7 @@ static void test_whole_stale(void)
 	CHECK((m.psoc.keys[K_DIGIT1 / 8u] & (1u << (K_DIGIT1 % 8u))) != 0u);
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 60500u);
 	CHECK(cdc_has("install: canceled after 60 s, steps selected 0x04"));
-	canceled(&res);
+	canceled(&res, false);
 	whole_end();
 }
 
@@ -1872,7 +1876,7 @@ static void test_whole_timeout(void)
 	CHECK_EQ(ks.asks, 1u);
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 61000u);
-	canceled(&res);
+	canceled(&res, true);
 	CHECK(cdc_has("8 Cancel (cancels in 60 s)") && cdc_has("6 Restart"));
 	whole_end();
 }
@@ -1923,7 +1927,7 @@ static void test_whole_option_off(void)
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 7000u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 8000u);
 	CHECK(cdc_has("install: canceled with key 8, steps selected 0x00"));
-	canceled(&res);
+	canceled(&res, true);
 	whole_end();
 }
 
@@ -1974,7 +1978,7 @@ static void test_whole_host_and_again(void)
 	CHECK(res.reason == S11_REASON_NONE && res.forced);
 	CHECK_EQ(ks.asks, 1u);
 	CHECK(host_rx_n != 0u && host_rx_r == 0u);	/* sent, never read */
-	canceled(&res);
+	canceled(&res, true);
 
 	/* the same package again: asked again, every row at No, selected
 	 * this time */

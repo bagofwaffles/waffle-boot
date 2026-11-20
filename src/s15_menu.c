@@ -1499,7 +1499,10 @@ void s15_up_select_time(struct s15_menu *m, const struct s15_select_info *info,
 	}
 }
 
-/* S-15.115: as a run that did nothing; the zip was read. */
+/* S-11.096: nothing was written, so the zip does not count as read
+ * (S-15.103): the screen is idle again, 8 goes back as ended() offers it,
+ * the disk may be offered again and a new package taken; 6 restarts as
+ * after a run that did nothing (S-15.115). */
 void s15_up_canceled(struct s15_menu *m)
 {
 	const char *out[2];
@@ -1515,7 +1518,6 @@ void s15_up_canceled(struct s15_menu *m)
 		sline(m, st[i], out[i]);
 	if (m->restart_ok)
 		sline(m, S15_ST_ITEM, s15_restart_item);
-	zip_read(m);
 	ended(m);
 }
 

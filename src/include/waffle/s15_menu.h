@@ -450,7 +450,8 @@ void s15_up_select(struct s15_menu *m, const struct s15_select_info *info,
 		   const struct s15_select *s, uint32_t now_ms);
 void s15_up_select_time(struct s15_menu *m, const struct s15_select_info *info,
 			const struct s15_select *s, uint32_t now_ms);
-/* The selection canceled: no run, nothing installed (S-11.096). */
+/* The selection canceled: no run, nothing installed (S-11.096); the zip
+ * does not count as read, so the screen is idle again (S-15.103). */
 void s15_up_canceled(struct s15_menu *m);
 /* A run starts. */
 void s15_up_run_start(struct s15_menu *m, enum s15_run_kind kind,

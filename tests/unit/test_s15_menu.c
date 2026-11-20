@@ -826,6 +826,8 @@ static const struct rstate rstates[] = {
 	{ "form=midi,idle=0,opt=on,screen=upgrade", S15_SCR_UPGRADE, false, false, false, OPT_ON, true, 0u, false, false, MTP_OFF, false, false, true, true, false, false },
 	{ "form=midi,idle=1,opt=off,screen=upgrade", S15_SCR_UPGRADE, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, true, true, false },
 	{ "form=midi,idle=1,opt=on,screen=upgrade", S15_SCR_UPGRADE, false, false, false, OPT_ON, true, 0u, false, false, MTP_OFF, false, false, true, true, true, false },
+	{ "canceled=1,form=disk,opt=off,screen=upgrade", S15_SCR_UPGRADE, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, true, false },
+	{ "canceled=1,form=midi,opt=off,screen=upgrade", S15_SCR_UPGRADE, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, true, true, false },
 	{ "screen=boot_prompt", SCR_PROMPT, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 };
 
@@ -921,6 +923,11 @@ static void setup_state(const struct rstate *st)
 		if (!st->idle)
 			M.activity = S15_ACT_RUN;
 		M.begun = st->begun;
+		if (strstr(st->name, "canceled=1") != NULL) {
+			/* S-11.096: a selection canceled after a scan */
+			M.activity = S15_ACT_SCAN;
+			s15_up_canceled(&M);
+		}
 		break;
 	case S15_SCR_MAIN:
 	case S15_SCR_NONE:
@@ -1537,6 +1544,8 @@ static void test_rules(void)
 				if (tok(&got, "continue"))
 					rule(R_CONTINUE, down && ((d == 6u &&
 					     before == S15_SCR_FACTORY && st->osw_written) ||
+					     (d == 6u && before == S15_SCR_UPGRADE && !st->midi &&
+					      strstr(st->name, "canceled=1") != NULL) ||
 					     (d == 7u && before == S15_SCR_MAIN)),
 					     n, key, down, &got);
 
@@ -1568,10 +1577,16 @@ static void test_rules(void)
 				if (before == S15_SCR_UPGRADE) {
 					bool can = !st->midi && st->idle &&
 						   down && key == 0x15u;
+					/* S-15.190: 6 after a canceled selection */
+					bool cont = !st->midi && down && key == 0x13u &&
+						    strstr(st->name, "canceled=1") != NULL;
 
 					rule(R_UPGRADE_EXIT, next == (can ? S15_SCR_MAIN :
-					     S15_SCR_UPGRADE), n, key, down, &got);
-					if (key == 0x18u || key == 0x13u)
+					     cont ? S15_SCR_STARTING : S15_SCR_UPGRADE),
+					     n, key, down, &got);
+					/* digit 6 continues to the OS after a cancel */
+					if (key == 0x18u || (key == 0x13u &&
+					    (strstr(st->name, "canceled=1") == NULL || st->midi)))
 						rule(R_UPGRADE_GATE, next == S15_SCR_UPGRADE &&
 						     got.n == 0u, n, key, down, &got);
 				}
@@ -3199,6 +3214,7 @@ static void test_select_screen(void)
 static void test_select_canceled(void)
 {
 	struct s15_select sl;
+	unsigned scans;
 
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
@@ -3208,15 +3224,54 @@ static void test_select_canceled(void)
 	s15_up_canceled(&M);
 	expect_title("upgrade");
 	expect_tail("upgrade_canceled_tail");
-	CHECK(M.restart_ok && M.activity == S15_ACT_IDLE && !s15_up_disk_offerable(&M),
-	      "the restart offered; the disk read");
+	CHECK(M.restart_ok && M.activity == S15_ACT_IDLE && s15_up_disk_offerable(&M),
+	      "the restart offered; the zip not counted as read: the disk offerable");
+	/* idle again: a release scans again, its package asked for again */
+	scans = F.scan;
+	scan_by_release();
+	CHECK(F.scan == scans + 1u, "S-15.103 a new scan after a cancel");
+	s15_select_open(&sl, 0x3Fu, NULL, 2000u);
+	s15_up_select(&M, &sel_info, &sl, 2000u);
+	expect_screen("upgrade_select_open");
+	s15_up_canceled(&M);
+	/* 8 goes back, withdrawing the disk with the main screen's set */
+	clear_records();
 	press(0x15);
-	CHECK(M.screen == S15_SCR_UPGRADE, "8 does not leave: the zip was read");
+	CHECK(M.screen == S15_SCR_MAIN && F.n_usb == 1u && F.usb[0] == S15_USB_MAIN,
+	      "S-15.103 8 goes back after a cancel");
+	/* Install firmware again: the disk form, offered again, and a scan */
+	press(0x06);
+	CHECK(M.screen == S15_SCR_UPGRADE && F.usb[F.n_usb - 1u] == S15_USB_DISK &&
+	      s15_up_disk_offerable(&M), "the disk form again");
+	scans = F.scan;
+	scan_by_release();
+	CHECK(F.scan == scans + 1u, "and a scan of a new copy");
 
+	/* 6 still continues to the OS from the canceled ending */
+	reset_fake(); default_boot(); BOOT.reason = 30; start();
+	scan_by_release();
+	s15_up_canceled(&M);
+	press(0x13);
+	CHECK(F.cont == 1u && M.screen == S15_SCR_STARTING, "6 after a cancel");
+
+	/* a host transfer canceled: back too; no scan follows (S-15.103) */
+	reset_fake(); default_boot(); BOOT.reason = 30; start();
+	s15_up_transfer_begin(&M, 1000u);
+	s15_up_canceled(&M);
+	expect_tail("upgrade_canceled_tail");
+	scans = F.scan;
+	scan_by_release();
+	CHECK(F.scan == scans, "S-15.103 no scan after a host transfer's begin");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_MAIN, "8 goes back after a host's package");
+
+	/* reason 40: no way back, the restart line */
 	reset_fake(); default_boot(); BOOT.reason = 40; start();
 	s15_up_canceled(&M);
 	expect_tail("upgrade_canceled_midi_tail");
 	CHECK(!M.restart_ok, "reason 40: no restart item");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_UPGRADE, "reason 40: 8 does not leave");
 }
 
 /*
