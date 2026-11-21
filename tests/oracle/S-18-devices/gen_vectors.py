@@ -160,7 +160,7 @@ def supported():
             {'part': 'Nordic application', 'version': '1.3.3'},
             {'part': 'Nordic bootloader', 'version': '1000.0.9'},
         ],
-        'claimed_by_a_release': False,
+        'claimed_by_a_release': True,
     }
 
 

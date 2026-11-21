@@ -86,7 +86,7 @@ label number; files without a number are shared (the boot flow, drawing, library
 | --- | --- |
 | `src/*.c`, `src/include/waffle/*.h` | Hardware-independent logic behind operation structs. It includes no board or driver header, and no driver includes its headers; `tools/layering.py` checks this in `make check` and lists the crossings that remain |
 | `src/wire_*.c` | Adapters from those structs to the vendored libraries (crypto, zip, filesystems, CRCs) |
-| `src/board/`, `src/include/waffle/board/` | The OP-XY: wiring the logic to the drivers, held mode, the test OS's hooks |
+| `src/board/`, `src/include/waffle/board/` | The board, for the OP-XY and the OP-1 Field: wiring the logic to the drivers, held mode, the test OS's hooks |
 | `src/drivers/bf70x/`, `src/include/waffle/drivers/` | ADSP-BF70x drivers: start-up, CPLBs, interrupts, timers, clocks and DDR, pins, DMA, SPI and serial flash, UART, eMMC, OTP; the BF703 linker script |
 | `src/front/` | The frozen front and recovery ([The Front](The-Front)) |
 | `src/testos/` | The test OS's board files, linker script, and the SPI driver's test-OS parts, which `spi.c` includes in that build only, and the installer ([Test OS](Test-OS), [Installer Reference](Installer-Reference)) |

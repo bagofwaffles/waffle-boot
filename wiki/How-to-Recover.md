@@ -12,6 +12,9 @@ rest is damaged. Opening it changes nothing.
    first), then let go of every key. Nothing acts until all
    keys are up.
 
+On an OP-1 Field, hold the recovery key the installer's key check asks for in place of M4. That key is
+provisional there.
+
 <img src="../docs/ui/recovery.png" width="480" alt="Recovery">
 
 It also opens by itself:
@@ -111,7 +114,8 @@ You need Chrome or Edge on a computer, a USB cable, and a waffle-boot image, `wa
 
 1. Open [the page](https://bagofwaffles.github.io/waffle-boot/) and choose **Upgrade / Recover**.
 2. Open the recovery menu on the unit, and connect it with the USB cable.
-3. Press **Connect to my OP-XY**, and pick **OP-XY Recovery**. The page shows what the unit reports.
+3. Press **Connect to my OP-XY**, and pick **OP-XY Recovery** (**OP-1 Recovery** on an OP-1 Field). The page
+   shows what the unit reports.
 4. Choose the image. The page checks it before anything is sent.
 5. Tick `Replace Slot N with this image`, and press **Write the image**.
 6. The unit counts down 15 s. Switching it off in that time stops the write with nothing written.
@@ -160,7 +164,7 @@ Every command is in [Recovery Reference](Recovery-Reference#the-host-tool).
 - **`Slot N holds nothing the unit can start`.** Write an image to it first, from a computer.
 - **`No write: the unit cannot tell which slot is running`.** Recovery can neither write nor choose: the
   image in memory matches neither slot whole, or the flash could not be read. Restart and try again.
-- **`no serial port named "OP-XY Recovery" found`, or no such port on the page.** Is the red Recovery
+- **`no serial port named "OP-XY Recovery" found` (or `OP-1 Recovery`), or no such port on the page.** Is the red Recovery
   screen up, and USB connected? Try another cable or port; a cable may carry power only. With the tool, or
   more than one unit, give `--port PORT`.
 - **`the selector is not settled`**, or the screen says `No write yet: restart the unit once first`.

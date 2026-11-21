@@ -1,4 +1,5 @@
-The parts of the OP-XY the bootloader drives.
+The parts of the OP-XY the bootloader drives. The OP-1 Field has one ADSP-BF703, with the eMMC on it (four
+data lines), and no second processor or SPI bridge.
 
 | Part | What it does | [Labels](Specification) |
 | --- | --- | --- |

@@ -52,8 +52,9 @@ marks, which `tools/testos_mon.py crumbs` decodes.
 
 ## On an OP-1F
 
-> **Status:** the OP-1F is not supported by any release, and nothing here has been run on a unit yet
-> (S-18.050). Run the survey first, and save its `check.txt`.
+> **Status:** initial support, from 0.9.48 (S-18.050). On one OP-1F the survey and the installer have run,
+> each put on as below, with the trial and the commit, then recovery and a start to the OS. Save the
+> survey's `check.txt` if you run it.
 
 Two images, written as the OS by the unit's own means (the page does not send them):
 
@@ -113,7 +114,7 @@ The tool:
 
 The arrangement is checked against two writes that landed and one that was refused, all with bootloader
 1000.2.0. Treat it as provisional: the unit's log grows while it runs, so go from READY TO WRITE to the
-write without a pause. A refused write leaves the OS that was active, and that OS still starts. The OP-1F is not supported by any release.
+write without a pause. A refused write leaves the OS that was active, and that OS still starts.
 
 ## Sending it from the page
 

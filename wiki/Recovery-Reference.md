@@ -103,8 +103,8 @@ developer notes are in [`docs/web/README.md`](../blob/main/docs/web/README.md).
 
 ## The host tool
 
-`tools/wbrecover.py` (Python 3 only, no other packages) finds the port named `OP-XY Recovery` on macOS and
-Linux; elsewhere, or with more than one unit, pass `--port PORT` before the command. It does everything the
+`tools/wbrecover.py` (Python 3 only, no other packages) finds the port named `OP-XY Recovery` (`OP-1 Recovery`
+on an OP-1 Field) on macOS and Linux; elsewhere, or with more than one unit, pass `--port PORT` before the command. It does everything the
 keys do. It needs a git clone of this repository: it checks images against the repository's own files and
 history.
 
@@ -204,7 +204,8 @@ write of Slot 1 in the same recovery, while the selector is not settled: restart
 ## Protocol
 
 `tools/wbrecover.py` is the reference host; `src/front/fr_proto.h` gives every offset. Recovery is a
-USB serial (CDC) port with the product string `OP-XY Recovery` (vendor `0x2367`, product `0x0021`).
+USB serial (CDC) port with the product string `OP-XY Recovery` (vendor `0x2367`, product `0x0021`), or on an
+OP-1 Field `OP-1 Recovery` (product `0x0102`).
 
 A frame is `"WR"`, a type byte, a sequence byte, a little-endian u16 payload length (at most 1032), the
 payload, and a little-endian CRC-32 (zlib's) over type, sequence, length and payload. Integers are

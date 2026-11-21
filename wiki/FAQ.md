@@ -3,6 +3,11 @@ Yes, with the installer: follow [How to Install](How-to-Install). waffle-boot is
 but not widely: use it with caution. A failed install can leave a unit that needs a flash programmer. See
 [Status and Roadmap](Status-and-Roadmap).
 
+**And on an OP-1 Field?**
+Yes, with initial support from 0.9.48: its installer goes on by the unit's own OS write, as in
+[How to Install](How-to-Install). It has run on one unit; the Bluetooth and backplane updates and package
+installs have not yet run on one.
+
 **Does this contain Teenage Engineering's firmware?**
 No. waffle-boot is a clean-room implementation, not a decompilation. See
 [Clean-Room Rules and Contributing](Clean-Room-Rules-and-Contributing).

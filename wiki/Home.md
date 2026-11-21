@@ -1,15 +1,16 @@
 # waffle-boot
 
-An open-source, clean-room bootloader for the Teenage Engineering OP-XY. It starts the device's two
-processors, loads the OS, and offers menus for installs and repairs. waffle-boot is independent: not
+An open-source, clean-room bootloader for the Teenage Engineering OP-XY and OP-1 Field. It starts the
+device's processors, loads the OS, and offers menus for installs and repairs. Support for the OP-1 Field is
+initial: see [Status and Roadmap](Status-and-Roadmap). waffle-boot is independent: not
 affiliated with or endorsed by Teenage Engineering, and it contains no code or data from the device's
 firmware. License: GPL-2.0-or-later.
 
 > **Status:** tested on real hardware, but not widely: use it with caution. A broken bootloader can leave a
 > unit that only an external flash programmer brings back.
 
-**The page:** <https://bagofwaffles.github.io/waffle-boot/> installs waffle-boot and recovers a unit, in
-Chrome or Edge over USB.
+**The page:** <https://bagofwaffles.github.io/waffle-boot/> installs waffle-boot on an OP-XY and recovers a
+unit, in Chrome or Edge over USB.
 
 <img src="../docs/ui/main.png" width="480" alt="The boot menu's main screen">
 
