@@ -64,7 +64,7 @@ int main(void)
 
 	clock_us = 50000u;
 	te_edge = true;
-	s13c_begin(&p, &fake_bus, 0, 0, 1);
+	s13c_begin(&p, &fake_bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_start(&p, false) == S13C_OK);
 	timeouts = 0;
 	CHECK(s13c_frame(&p, fb, true) == S13C_OK);

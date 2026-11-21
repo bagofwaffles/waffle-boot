@@ -3,6 +3,7 @@
  * S-09, the master's side: the slave boot stream and the bridge client.
  */
 #include "waffle/s09_master.h"
+#include "waffle/s09_slave.h"
 
 #include <string.h>
 
@@ -1238,6 +1239,12 @@ void s09_master_init(struct s09_master *m, const struct s09_bus_ops *bus,
 	m->t_quiet_us = S09_T_QUIET_US;
 }
 
+void s09_master_local(struct s09_master *m, const struct s09_store_ops *ops)
+{
+	m->local = ops;
+	m->linked = ops != NULL;
+}
+
 void s09_master_quad_recv(struct s09_master *m, s09_quad_recv_fn fn, void *ctx)
 {
 	m->quad_recv = fn;
@@ -1499,6 +1506,20 @@ int32_t s09_master_call(struct s09_master *m, const struct s09_req *req,
 
 	if (got)
 		*got = 0;
+	if (m->local != NULL) {
+		uint32_t n = 0;
+		int32_t v;
+
+		if (m->released) {
+			*err = S09_ENODEV;
+			return -1;
+		}
+		serving(m, r.cmd, r.arg0);
+		v = s09_store_call(m->local, &r, payload, plen, data, max, &n, err);
+		if (got)
+			*got = n;
+		return v;
+	}
 	if (!m->absent)
 		serving(m, r.cmd, r.arg0);
 	if (call_slot(m, &r, data, max, err) < 0)
@@ -1522,6 +1543,15 @@ bool s09_master_write_begin(struct s09_master *m, uint32_t fd,
 	if (n == 0u || n > s09_master_write_max(m)) {
 		*err = S09_EINVAL;
 		return false;
+	}
+	if (m->local != NULL) {
+		/* the store's own CPU: written now, collected by write_end */
+		uint32_t got;
+
+		m->bg.req = r;
+		m->bg.result = s09_store_call(m->local, &r, p, n, NULL, 0, &got, &m->bg.err);
+		*err = 0;
+		return true;
 	}
 	if (!m->absent)
 		serving(m, r.cmd, r.arg0);
@@ -1561,7 +1591,7 @@ uint32_t s09_master_fell(const struct s09_master *m)
 
 uint32_t s09_master_write_max(const struct s09_master *m)
 {
-	return m->rung != S09_RUNG_PLAIN ? S09_WRITE_MAX : S09_TUNNEL_MAX;
+	return m->local != NULL || m->rung != S09_RUNG_PLAIN ? S09_WRITE_MAX : S09_TUNNEL_MAX;
 }
 
 /*
@@ -1936,6 +1966,8 @@ static bool rung_one(struct s09_master *m, unsigned tries)
 
 bool s09_master_link_fast(struct s09_master *m, unsigned ceiling)
 {
+	if (m->local != NULL)
+		return true;
 	if (m->absent || m->released || !m->linked || m->busy)
 		return false;
 	bg_settle(m);
@@ -1984,6 +2016,8 @@ bool s09_master_check_bad(const struct s09_master *m)
 
 bool s09_master_link_plain(struct s09_master *m)
 {
+	if (m->local != NULL)
+		return true;
 	if (m->absent || m->released || !m->linked || m->busy)
 		return !m->absent;
 	bg_settle(m);
@@ -2173,6 +2207,9 @@ bool s09_master_link_bench(struct s09_master *m, struct s09_bench *b)
 	const bool check_bad = m->check_bad;
 	struct s09_link_status st;
 	bool on = true;
+
+	if (m->local != NULL)
+		return false;		/* no link to test */
 
 	if (m->absent || m->released || !m->linked || m->busy)
 		return false;
@@ -2387,6 +2424,8 @@ bool s09_master_quad_test(struct s09_master *m, struct s09_qt_cell *c)
 	const bool check_bad = m->check_bad;
 	uint32_t t0;
 
+	if (m->local != NULL)
+		return false;		/* no link to test */
 	c->dmin = S09_QT_NONE;
 	c->dmax = S09_QT_NONE;
 	c->m_stat_and = S09_QT_NONE;
@@ -2505,6 +2544,8 @@ bool s09_master_link_qdata(struct s09_master *m, unsigned ceiling)
 	uint32_t v;
 	bool passed;
 
+	if (m->local != NULL)
+		return true;
 	if (m->absent || m->released || !m->linked || m->busy)
 		return !m->absent;
 	if (m->qdata)
@@ -2552,6 +2593,8 @@ bool s09_master_qdata_off(struct s09_master *m, unsigned ceiling)
 	struct s09_req r = { S09_LINK_MODE, 0, 0, S09_MODE_CHECKED, S09_LINK_KEEP };
 	uint32_t v;
 
+	if (m->local != NULL)
+		return true;
 	if (m->absent || !m->qdata || m->released || m->busy)
 		return !m->absent;
 	serving(m, S09_LINK_MODE, S09_MODE_CHECKED);
@@ -2587,6 +2630,8 @@ bool s09_master_start(struct s09_master *m)
 	struct xreq x;
 	uint32_t err;
 
+	if (m->local != NULL)
+		return true;
 	if (m->absent)
 		return false;
 	m->bus->configure(m->bus->ctx, 0);		/* step 1 */
@@ -2629,7 +2674,7 @@ void s09_master_service(struct s09_master *m)
 {
 	bool got;
 
-	if (m->absent || m->released || !m->linked || m->busy)
+	if (m->local != NULL || m->absent || m->released || !m->linked || m->busy)
 		return;
 	m->busy = true;
 	bg_settle(m);
@@ -2665,6 +2710,9 @@ static int release(struct s09_master *m, uint32_t len, uint32_t crc)
 	struct s09_req r = { S09_RELEASE, 0, 0, len, crc };
 	uint32_t err;
 	int32_t v;
+
+	if (m->local != NULL)
+		return -1;			/* S-05.036: no other CPU */
 
 	(void)s09_master_link_plain(m);			/* S-09.078 */
 	v = s09_master_call(m, &r, 0, 0, 0, 0, 0, &err);
@@ -2708,7 +2756,7 @@ static size_t tun_room(void *ctx)
 {
 	const struct s09_master *m = ctx;
 
-	return m->absent || m->released ? 0 : S09_TUNNEL_TX - m->tx_n;
+	return m->local != NULL || m->absent || m->released ? 0 : S09_TUNNEL_TX - m->tx_n;
 }
 
 static void tun_write(void *ctx, const uint8_t *d, size_t n)
@@ -2762,7 +2810,7 @@ bool s09_power_off(struct s09_master *m, struct s06_node *node, unsigned link)
 	uint32_t end_t;
 	struct s06_frame f;
 
-	if (m->absent)
+	if (m->absent || m->local != NULL)
 		return false;		/* S-09.008: no power-off request */
 	(void)s06_send(node, link, 0, 0x31, v, 1);
 	end_t = now(m->clock) + S09_T_POWER_US;

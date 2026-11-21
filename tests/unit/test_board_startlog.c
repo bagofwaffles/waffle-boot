@@ -248,7 +248,7 @@ static void board(bool front)
 	opxy_log_start(&m);
 	m.psoc_ops.ctx = &m;
 	m.psoc_ops.usb_msc = opxy_battery_usb;	/* as psoc_link_init() sets it */
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 }
 
 /*
@@ -430,7 +430,7 @@ static void boot_path(bool front, bool good, enum s05_fail result)
 {
 	static struct s09_bus_ops bus;
 	struct s05_master_ops ops;
-	const struct s05_master sm = { staged, 0u, false, false };
+	const struct s05_master sm = { staged, 0u, false, false, &wb_device_opxy };
 
 	reset(front, FR_HO_START_LOGGED, 1, 7);
 	opxy_master_handoff(&m);

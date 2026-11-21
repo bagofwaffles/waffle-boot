@@ -2,6 +2,8 @@
 #include "waffle/s11_package.h"
 
 #include "waffle/bytes.h"
+#include "waffle/device.h"
+#include "waffle/s02_flash.h"
 #include "waffle/s11_engine.h"
 
 #define CHUNK 0x8000u	/* a multiple of the AES block */
@@ -35,10 +37,13 @@ bool s11_name_forces(const char *name)
 	return false;
 }
 
-/* S-11.021: a signature decides only whether the package is TE-signed. */
-bool s11_te_signed(uint8_t sig_key_index, bool sig_ok)
+/* S-11.021: a blank signature is none; a present one is valid only when it
+ * verifies. */
+enum s11_sig s11_signature_state(bool present, bool verified)
 {
-	return sig_key_index == 0x00 && sig_ok;
+	if (!present)
+		return S11_SIG_NONE;
+	return verified ? S11_SIG_VALID : S11_SIG_INVALID;
 }
 
 /* S-11.023 */
@@ -59,11 +64,12 @@ enum s11_reason s11_payload_key_rule(uint8_t index, bool k0_ok, bool k1_ok,
 	}
 }
 
-/* S-11.091 */
-bool s11_return_to_stock(bool option, bool te_signed,
+/* S-11.091: only a valid package; a waffle-boot bootloader is an ordinary
+ * update. */
+bool s11_return_to_stock(bool option, bool valid, bool bootloader_waffle,
 			 bool bootloader_selected)
 {
-	return option && te_signed && bootloader_selected;
+	return option && valid && !bootloader_waffle && bootloader_selected;
 }
 
 /* S-11.012: SHA-256 of the manifest with +0x010-+0x04F zeroed, then the
@@ -71,18 +77,65 @@ bool s11_return_to_stock(bool option, bool te_signed,
 static bool signature_ok(const struct s11_package_ops *ops,
 			 const uint8_t *man)
 {
-	static const uint8_t zeros[0x40];
+	static const uint8_t zeros[0x10];
 	uint8_t q[56], digest[32];
 
 	if (!ops->unit->read_q0(ops->ctx, q))
 		return false;
 	ops->crypto->sha256_init(ops->ctx);
 	ops->crypto->sha256_update(ops->ctx, man, 0x10);
-	ops->crypto->sha256_update(ops->ctx, zeros, sizeof(zeros));
+	for (unsigned i = 0; i < 4u; i++)		/* +0x010-+0x04F */
+		ops->crypto->sha256_update(ops->ctx, zeros, sizeof(zeros));
 	ops->crypto->sha256_update(ops->ctx, man + 0x50, S11_MANIFEST_LEN - 0x50);
 	ops->crypto->sha256_final(ops->ctx, digest);
 	return ops->crypto->p224_verify(ops->ctx, q, digest, man + 0x14,
 					man + 0x34);
+}
+
+/* S-11.012: present unless sig_r (+0x10) and sig_s (+0x30) are all zero. */
+static bool signature_present(const uint8_t *man)
+{
+	for (unsigned i = 0x10; i < 0x50; i++) {
+		if (man[i] != 0u)
+			return true;
+	}
+	return false;
+}
+
+/* Check 8 (S-11.021, S-11.022): a plain package has no signature; the key
+ * index selects Q0 alone. */
+static enum s11_sig signature(const struct s11_package_ops *ops,
+			      const uint8_t *man, bool plain)
+{
+	const bool present = !plain && signature_present(man);
+
+	return s11_signature_state(present, present && man[0x89] == 0x00 &&
+					    signature_ok(ops, man));
+}
+
+struct mem_image {
+	const uint8_t *p;
+	uint32_t len;
+};
+
+static int mem_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
+{
+	const struct mem_image *m = ctx;
+
+	if (off > m->len || len > m->len - off)
+		return -1;
+	for (uint32_t i = 0; i < len; i++)
+		buf[i] = m->p[off + i];
+	return 0;
+}
+
+bool s11_bootloader_is_waffle(const uint8_t *img, uint32_t len,
+			      uint32_t (*crc32)(uint32_t crc, const uint8_t *p,
+						size_t n))
+{
+	struct mem_image m = { img, len };
+
+	return img != NULL && s02_stream_is_waffle(mem_read, &m, 0u, len, crc32);
 }
 
 static bool same(const uint8_t *a, const uint8_t *b, size_t n)
@@ -198,8 +251,8 @@ static enum s11_reason check(const struct s11_package_ops *ops,
 	uint8_t cipher[S11_NAME_BLOCK_LEN];
 	uint8_t digest[32];
 	uint32_t o = 0, m, payload = 0, n;
-	bool encrypted = false;
-	struct s11_check_out named = { false, false, 0, 0, { 0 } };
+	bool encrypted = false, plain = false;
+	struct s11_check_out named = { S11_SIG_NONE, false, 0, 0, { 0 } };
 	struct pass p = { .ops = ops };
 	struct s11_version v;
 	enum s11_reason r, early = S11_REASON_NONE;
@@ -231,9 +284,10 @@ static enum s11_reason check(const struct s11_package_ops *ops,
 		return S11_REASON_SHORT;
 	if (wb_get_be32(hdr) != HEADER_MAGIC)
 		return S11_REASON_MAGIC;
-	if (!s11_product_ok(wb_get_be32(hdr + 0x17)))
+	if (!s11_product_ok(in->dev, wb_get_be32(hdr + 0x17)))
 		return S11_REASON_PRODUCT;
-	if (hdr[4] != 0x01 && hdr[4] != 0x06)	/* S-11.006 */
+	/* S-11.006; S-11.026: on the OP-1F 0x01 alone */
+	if (hdr[4] != 0x01 && (hdr[4] != 0x06 || in->dev->id == WB_DEV_OP1F))
 		return S11_REASON_DEVICE;
 	/* S-11.009: the length and address fields, the reserved bytes and the
 	 * preamble's crc16 are never read */
@@ -244,8 +298,13 @@ static enum s11_reason check(const struct s11_package_ops *ops,
 	m = o + S11_HEADER_LEN;
 	p.zip = m + S11_MANIFEST_LEN + S11_NAME_BLOCK_LEN;
 
-	/* The manifest: checks 7, 9 and 10 (S-11.010, S-11.011, S-11.013,
-	 * S-11.014) */
+	/* The manifest: checks 7 and 10 (S-11.010, S-11.011, S-11.014);
+	 * check 8 follows check 6, and check 9 is not made: no manifest
+	 * product word is read (S-11.013 withdrawn). S-11.027: the tag tells
+	 * the format; on the OP-1F a block without TESG is the plain format's
+	 * crypto header, which has no fields for checks 8, 10 and 11; its zip
+	 * length is tested by check 14. A TESG block's version must be
+	 * 0x01. */
 	n = in->size - m < S11_MANIFEST_LEN ? in->size - m : S11_MANIFEST_LEN;
 	if (n != 0 && !ops->read(ops->ctx, m, man, n))
 		return S11_REASON_SHORT;
@@ -253,21 +312,20 @@ static enum s11_reason check(const struct s11_package_ops *ops,
 	if (n < S11_MANIFEST_LEN) {
 		early = S11_REASON_SHORT;
 		early_at = 7;
-	} else if (man[0x84] != 'T' || man[0x85] != 'E' || man[0x86] != 'S' ||
-		   man[0x87] != 'G' || man[0x88] != 0x01) {
-		early = S11_REASON_FORMAT;
-		early_at = 7;
+	} else {
+		plain = man[0x84] != 'T' || man[0x85] != 'E' ||
+			man[0x86] != 'S' || man[0x87] != 'G';
+		if (plain ? in->dev->id != WB_DEV_OP1F : man[0x88] != 0x01) {
+			early = S11_REASON_FORMAT;
+			early_at = 7;
+		}
 	}
 	m += S11_MANIFEST_LEN;			/* the payload */
-	if (early_at == 0) {
+	if (early_at == 0)
 		payload = in->size - m;
-		if (!s11_product_ok(wb_get_le32(man + 0x8C))) {
-			early = S11_REASON_SKU;
-			early_at = 9;
-		} else if (wb_get_le32(man + 0x98) != payload) {
-			early = S11_REASON_LENGTH;
-			early_at = 10;
-		}
+	if (early_at == 0 && !plain && wb_get_le32(man + 0x98) != payload) {
+		early = S11_REASON_LENGTH;		/* check 10 */
+		early_at = 10;
 	}
 
 	/* The name block, the first bytes of check 11's digest */
@@ -278,7 +336,7 @@ static enum s11_reason check(const struct s11_package_ops *ops,
 	if (n != 0 && !ops->read(ops->ctx, m, cipher, n))
 		return S11_REASON_SHORT;
 	p.crc = ops->crypto->crc16(ops->ctx, p.crc, cipher, n);
-	p.sha = early_at == 0;
+	p.sha = early_at == 0 && !plain;
 	if (p.sha) {
 		ops->crypto->sha256_init(ops->ctx);
 		ops->crypto->sha256_update(ops->ctx, cipher, n);
@@ -350,11 +408,11 @@ static enum s11_reason check(const struct s11_package_ops *ops,
 	if (early_at == 7)
 		return early;
 	/* check 8 (S-11.012, S-11.021, S-11.022): it refuses nothing */
-	out->te_signed = s11_te_signed(man[0x89],
-				       man[0x89] == 0x00 && signature_ok(ops, man));
-	if (early_at == 9 || early_at == 10)
+	out->sig = signature(ops, man, plain);
+	if (early_at == 10)
 		return early;
-	if (!same(digest, man + 0x9C, 32))			/* check 11 */
+	/* check 11: an integrity check only (S-11.014) */
+	if (!plain && !same(digest, man + 0x9C, 32))
 		return S11_REASON_HASH;
 	if (early_at == 12)
 		return early;
@@ -382,7 +440,7 @@ enum s11_reason s11_check_package(const struct s11_package_ops *ops,
 	uint8_t key[32], man[S11_MANIFEST_LEN];
 	enum s11_reason r;
 
-	out->te_signed = false;
+	out->sig = S11_SIG_NONE;
 	out->forced = false;
 	out->zip_len = 0;
 	out->name_len = 0;

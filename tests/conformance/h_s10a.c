@@ -69,6 +69,7 @@
 #include <string.h>
 
 #include "hlib.h"
+#include "waffle/device.h"
 #include "waffle/s10a_ch9.h"
 #include "waffle/s10a_desc.h"
 #include "waffle/s10a_msc.h"
@@ -320,7 +321,7 @@ static void forward(const uint8_t s[8])
 	case 6:		/* GET_DESCRIPTOR: the s10a_usb.c callbacks */
 		switch (value >> 8) {
 		case 1:
-			s10a_desc_device(ch9.set, serial[0] != '\0', d);
+			s10a_desc_device(&wb_device_opxy, ch9.set, serial[0] != '\0', d);
 			n = 18;
 			break;
 		case 2:
@@ -330,7 +331,7 @@ static void forward(const uint8_t s[8])
 					     (value >> 8) == 7, d);
 			break;
 		case 3:
-			n = s10a_desc_string(ch9.set, serial, value & 0xFFu, d);
+			n = s10a_desc_string(&wb_device_opxy, ch9.set, serial, value & 0xFFu, d);
 			break;
 		case 6:
 			s10a_desc_qualifier(ch9.set, d);
@@ -664,7 +665,7 @@ int main(void)
 {
 	struct h_cmd c;
 
-	s10a_lu_init(&lu, &dev, "");
+	s10a_lu_init(&lu, &dev, "", &wb_device_opxy);
 	s10a_bot_init(&bot, &lu, &port);
 	s10a_ch9_start(&ch9, S10A_SET_DISK);
 	while (h_next(&c)) {
@@ -676,7 +677,7 @@ int main(void)
 
 			if (!get_set(&c, 1, &set))
 				continue;
-			s10a_desc_device(set, h_num(&c, 2) != 0, d);
+			s10a_desc_device(&wb_device_opxy, set, h_num(&c, 2) != 0, d);
 			h_puthex(d, sizeof(d));
 		} else if (strcmp(k, "qualifier") == 0 && c.n == 2) {
 			uint8_t d[10];
@@ -704,7 +705,7 @@ int main(void)
 			if (!get_set(&c, 1, &set))
 				continue;
 			get_serial(&c, 2, text);
-			n = s10a_desc_string(set, text, (unsigned)h_num(&c, 3), d);
+			n = s10a_desc_string(&wb_device_opxy, set, text, (unsigned)h_num(&c, 3), d);
 			h_puthex(d, n);
 		} else if (strcmp(k, "shape") == 0 && c.n == 2) {
 			if (!get_set(&c, 1, &set))
@@ -757,7 +758,7 @@ int main(void)
 		} else if (strcmp(k, "lu") == 0 && c.n == 3) {
 			get_serial(&c, 1, serial);
 			memset(&disk, 0, sizeof(disk));
-			s10a_lu_init(&lu, &dev, serial);
+			s10a_lu_init(&lu, &dev, serial, &wb_device_opxy);
 			if (h_num(&c, 2))
 				s10a_lu_offer(&lu);
 			s10a_bot_init(&bot, &lu, &port);

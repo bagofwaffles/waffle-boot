@@ -4,6 +4,7 @@
 #include "wb_fatfs.h"
 
 #include "waffle/bytes.h"
+#include "waffle/device.h"
 #include "waffle/wire_fat.h"
 
 #define LOGS "logs"
@@ -30,11 +31,14 @@ void wire_fat_unmount(struct wire_fat *f)
 	wb_fatfs_attach(NULL);
 }
 
-bool wire_fat_format(struct wire_fat *f, const struct wb_blockdev *bd)
+bool wire_fat_format(struct wire_fat *f, const struct wb_blockdev *bd,
+		     const struct wb_device *dev)
 {
 	memset(f, 0, sizeof(*f));
 	wb_fatfs_attach(bd);
-	if (wb_fatfs_format(f->buf, (unsigned int)sizeof(f->buf)) != FR_OK)
+	/* S-12.006: the label is device.product_text */
+	if (wb_fatfs_format(f->buf, (unsigned int)sizeof(f->buf),
+			    dev->ident.product_text) != FR_OK)
 		return false;
 	return wire_fat_mount(f, bd);
 }
@@ -119,7 +123,7 @@ static bool path_ok(const char *path)
 bool wire_fat_stamp(uint64_t utc, uint16_t *date, uint16_t *time)
 {
 	uint64_t days = utc / 86400u;
-	uint32_t sec = (uint32_t)(utc % 86400u);
+	uint32_t sec = (uint32_t)(utc - days * 86400u);	/* no 64-bit remainder */
 	/* the civil date of a day count (proleptic Gregorian, from 0000-03-01) */
 	uint64_t z = days + 719468u;
 	uint64_t era = z / 146097u;

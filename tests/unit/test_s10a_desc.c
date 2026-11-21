@@ -4,11 +4,13 @@
  * S-10a.012 to S-10a.021 byte for byte against tests/oracle/S-10a-usb-msc's
  * descriptors.json and serial.json: every set, both speeds, with and
  * without a serial, every configuration and its other-speed form, and every
- * string index.
+ * string index; on the OP-1F against descriptors_1f.json (S-18.030's
+ * idProduct and product strings).
  */
 #include <stdint.h>
 #include <string.h>
 
+#include "waffle/device.h"
 #include "waffle/s10a_desc.h"
 
 #include "support/check.h"
@@ -35,18 +37,19 @@ static void test_serial(void)
 	}
 }
 
-static void test_sets(void)
+static void check_sets(const struct wb_device *d, const struct s10av_set *sets,
+		       size_t count)
 {
 	size_t i;
 
-	for (i = 0; i < ARRAY_LEN(s10av_sets); i++) {
-		const struct s10av_set *v = &s10av_sets[i];
+	for (i = 0; i < count; i++) {
+		const struct s10av_set *v = &sets[i];
 		const char *serial = v->serial ? "XY0A12BC" : "";
 		const unsigned before = check_failures;
 		uint8_t buf[S10A_CONFIG_MAX], dev[18], qual[10];
 		unsigned c;
 
-		s10a_desc_device(v->set, v->serial, dev);
+		s10a_desc_device(d, v->set, v->serial, dev);
 		CHECK(same(dev, sizeof(dev), v->device));
 		s10a_desc_qualifier(v->set, qual);
 		CHECK(same(qual, sizeof(qual), v->qualifier));
@@ -65,12 +68,13 @@ static void test_sets(void)
 				       buf) == 0);
 		for (c = 0; c < ARRAY_LEN(v->strings); c++) {
 			uint8_t s[S10A_STRING_MAX];
-			const size_t n = s10a_desc_string(v->set, serial, c, s);
+			const size_t n = s10a_desc_string(d, v->set, serial, c, s);
 			/* The same text, for S-10b's DeviceInfo. */
-			const char *t = s10a_desc_text(v->set, serial, c);
+			char t[S10A_TEXT_MAX];
+			const bool has = s10a_desc_text(d, v->set, serial, c, t);
 
-			CHECK(c == 0 ? t == NULL : (t != NULL) == (n != 0));
-			if (c && t && n)
+			CHECK(c == 0 ? !has : has == (n != 0));
+			if (c && has && n)
 				CHECK(n == 2u + 2u * strlen(t) && s[2] == t[0]);
 			if (v->strings[c].present)
 				CHECK(same(s, n, v->strings[c]));
@@ -78,8 +82,14 @@ static void test_sets(void)
 				CHECK(n == 0);	/* S-10a.005: STALL */
 		}
 		if (check_failures != before)
-			printf("  set %s\n", v->name);
+			printf("  %s set %s\n", d->name, v->name);
 	}
+}
+
+static void test_sets(void)
+{
+	check_sets(&wb_device_opxy, s10av_sets, ARRAY_LEN(s10av_sets));
+	check_sets(&wb_device_op1f, s10av_sets_1f, ARRAY_LEN(s10av_sets_1f));
 }
 
 /* The facts the chapter 9 answers are drawn from (S-10a.013, S-10a.020). */

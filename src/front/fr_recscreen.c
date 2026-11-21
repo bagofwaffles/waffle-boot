@@ -6,8 +6,9 @@
  * recovery runs when no key asked for it. The slot menu and the confirm
  * screen (fr_recui.c), and the countdown before a host's write. Every line
  * says what to do where there is something to do, and every key's digit is
- * a key badge. Wording and layout are free; the lines carry fr_draw.h's
- * control bytes.
+ * a key badge. A device the first stage did not identify is named on the
+ * main screen with its fingerprint (S-18.004). Wording and layout are
+ * free; the lines carry fr_draw.h's control bytes.
  */
 #include "fr_start.h"
 
@@ -98,6 +99,35 @@ static void slot_line(struct fr_screen *scr, unsigned row, const struct fr_rec_s
 	if (st->selector_ok && fr_selected_slot(st->sel.index) == k)
 		part(line, &at, " " FR_C_RING FR_A_TEXT, "boot slot", FR_C_END);
 	fr_screen_line(scr, row, FR_INK_TEXT, line);
+}
+
+/* S-18.004: "Device not identified: n 34304, c 49267EB8" on the first of
+ * rows 2 and 8 that is empty, if either is. */
+static void unknown_row(struct fr_screen *scr, const struct fr_rec_status *st)
+{
+	static const char hex[] = "0123456789ABCDEF";
+	char line[FR_LINE_MAX + 1], n[12], c[9];
+	size_t at = 0;
+	unsigned row;
+
+	if (st->dev_how != FR_HO_HOW_UNKNOWN)
+		return;
+	if (scr->line[2][0] == '\0')
+		row = 2;
+	else if (scr->line[8][0] == '\0' && scr->bar_line != 8)
+		row = 8;
+	else
+		return;
+	n[fr_text_dec(n, st->fs_n)] = '\0';
+	for (unsigned i = 0; i < 8u; i++)
+		c[i] = hex[(st->fs_c >> (28u - 4u * i)) & 0xFu];
+	c[8] = '\0';
+	line[0] = '\0';
+	put(line, &at, "Device not identified: n ");
+	put(line, &at, n);
+	put(line, &at, ", c ");
+	put(line, &at, c);
+	fr_screen_line(scr, row, FR_INK_WARN, line);
 }
 
 /* A refusal, as what to do next. after: this recovery has made a write. */
@@ -640,4 +670,5 @@ void fr_rec_screen(struct fr_screen *scr, const struct fr_rec_status *st,
 		fr_screen_line(scr, k, FR_INK_DIM, "This image failed its check");
 	else if (st->why == FR_WHY_COUNT)
 		fr_screen_line(scr, k, FR_INK_DIM, "Three starts in a row did not finish");
+	unknown_row(scr, st);
 }

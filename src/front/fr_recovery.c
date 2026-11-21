@@ -121,7 +121,7 @@ static int keys(struct fr_start *s)
 	s->keys_at = now(s);
 	s->keys_gap = s->psoc.keys_replied ? FR_KEYS_GAP_US : FR_KEYS_MISS_US;
 	if (s->psoc.keys_replied)
-		key = fr_keys_one(s->psoc.keys, s->psoc.keys_len);
+		key = fr_keys_one(s->dev, s->psoc.keys, s->psoc.keys_len);
 	if (fr_ui_key(&s->ui, &s->rec, key, s->keys_at, &act))
 		s->ui.refusal = fr_proto_local(&s->proto, act);
 	if (s->ui.screen != was.screen || s->ui.hold_pct != was.hold_pct ||
@@ -137,6 +137,13 @@ enum fr_next fr_recovery_run(struct fr_start *s)
 
 	fr_fill(&s->rec, 0, sizeof s->rec);
 	s->rec.why = s->why;
+	s->rec.dev_id = fr_dev_or_default(s->dev)->id;
+	if (hw->ident != NULL) {
+		/* S-18.004: shown when the device was not identified */
+		s->rec.dev_how = hw->ident->how;
+		s->rec.fs_n = hw->ident->n;
+		s->rec.fs_c = hw->ident->c;
+	}
 	survey(s);
 	fr_proto_init(&s->proto, hw->serial, &s->rec, hw->flash, hw->staging);
 	s->proto.battery = battery_ask;
@@ -145,6 +152,7 @@ enum fr_next fr_recovery_run(struct fr_start *s)
 	s->proto.idle_ctx = s;
 	hw->usb_start(hw->clock);
 	s->usb_was = false;
+	s->ui.dev = s->dev;
 	fr_ui_reset(&s->ui);
 	s->keys_at = now(s);
 	s->keys_gap = FR_KEYS_GAP_US;

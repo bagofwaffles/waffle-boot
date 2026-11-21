@@ -1,10 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 #include "waffle/s11_common.h"
 
-/* S-11.007 */
-bool s11_product_ok(uint32_t word)
+#include "waffle/device.h"
+
+/* S-11.007: the number is device.product_number */
+bool s11_product_ok(const struct wb_device *dev, uint32_t word)
 {
-	return ((word >> 14) & 0x3FFu) == 0x21u && ((word >> 10) & 0xFu) == 0;
+	return ((word >> 14) & 0x3FFu) == dev->ident.product_number &&
+	       ((word >> 10) & 0xFu) == 0;
 }
 
 /* S-11.020 */
@@ -19,7 +22,6 @@ const char *s11_reason_name(enum s11_reason r)
 	case S11_REASON_DEVICE: return "DEVICE";
 	case S11_REASON_CRC: return "CRC";
 	case S11_REASON_FORMAT: return "FORMAT";
-	case S11_REASON_SKU: return "SKU";
 	case S11_REASON_LENGTH: return "LENGTH";
 	case S11_REASON_HASH: return "HASH";
 	case S11_REASON_KEY: return "KEY";
@@ -53,7 +55,6 @@ enum s11_result s11_reason_result(enum s11_reason r)
 	case S11_REASON_DEVICE:
 	case S11_REASON_CRC:
 	case S11_REASON_FORMAT:
-	case S11_REASON_SKU:
 	case S11_REASON_LENGTH:
 	case S11_REASON_HASH:
 	case S11_REASON_KEY:

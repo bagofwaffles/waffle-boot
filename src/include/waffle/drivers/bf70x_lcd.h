@@ -79,6 +79,8 @@ struct wb_lcd_config {
 
 /* The board pins of S-13c.001 and the timing above. */
 extern const struct wb_lcd_config wb_lcd_opxy;
+/* The same with the OP-1F's D/C pin, PA11 (S-18.030 device.panel_dc). */
+extern const struct wb_lcd_config wb_lcd_op1f;
 
 struct wb_lcd {
 	const struct wb_lcd_config *cfg;

@@ -160,9 +160,9 @@ int main(void)
 			struct s07_key_status ks;
 
 			if (strcmp(c.tok[1], "none") == 0)
-				s07_key_status_decode(NULL, 0, &ks);
+				s07_key_status_decode(&wb_device_opxy, NULL, 0, &ks);
 			else
-				s07_key_status_decode(buf, h_hex(&c, 1, buf, sizeof buf), &ks);
+				s07_key_status_decode(&wb_device_opxy, buf, h_hex(&c, 1, buf, sizeof buf), &ks);
 			h_putu(ks.replied);
 			h_putu(ks.hold);
 			h_putu(ks.debug);

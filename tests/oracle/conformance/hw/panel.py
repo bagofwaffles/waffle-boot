@@ -12,6 +12,8 @@ Events:
                                                                      held, recovery, fatal, prompt, poweroff;
                                                                      others are kept and not judged)
     CHANGE             a change of what held mode shows (a menu change, a key's effect)
+    DMA9 X Y           DMA9_XMOD and DMA9_YMOD as the bootloader reads them for its reset decision
+                       (S-01.006's handshake; numbers in C notation), the time the check's
     HANDOVER now_ms=N record=HEX                          the kernel call, with the persistent record
 An event name ending in `!` was latched with CS high or RESET low. `end=T` as the last argument gives the
 time of the last byte of a DATA or RUN event.
@@ -93,6 +95,7 @@ class Trace:
         self.greetings = []       # t of each PSoC greeting after the start-up hello
         self.changes = []         # t of each CHANGE
         self.handover = None      # (t, now_ms, record bytes)
+        self.dma9 = None          # (t, DMA9_XMOD, DMA9_YMOD) of the first DMA9 event
         self.bus_errors = []
         self.read_errors = []
         reset, cs = 1, 1
@@ -163,6 +166,9 @@ class Trace:
                 self.mark_txn.setdefault(args[0], len(self.txns))
             elif ev == 'CHANGE':
                 self.changes.append(t)
+            elif ev == 'DMA9':
+                if self.dma9 is None:
+                    self.dma9 = (t, int(args[0], 0), int(args[1], 0))
             elif ev == 'HANDOVER':
                 kv = dict(a.split('=', 1) for a in args)
                 self.handover = (t, int(kv['now_ms']), hexbytes(kv['record']))

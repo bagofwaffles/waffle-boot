@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "waffle/bytes.h"
+#include "waffle/device.h"
 
 #define VID		0x2367u		/* S-10a.001 */
 #define BCD_USB		0x0200u
@@ -23,9 +24,17 @@ struct fn_at {
 	bool iad;		/* led by an interface association */
 };
 
+/* A string: device.product_text and a suffix, or a fixed text. */
+struct text {
+	bool product;		/* led by device.product_text */
+	const char *s;
+};
+#define PROD(suffix) { true, suffix }
+#define FIXED(t) { false, t }
+
 struct set_info {
-	uint16_t pid;
-	const char *product;
+	bool midi_pid;		/* device.midi_pid, else device.usb_pid */
+	struct text product;
 	uint8_t cls[3];
 	const char *config_str;
 	uint8_t powers[S10A_MAX_CONFIGS];
@@ -34,39 +43,40 @@ struct set_info {
 	struct fn_at fns[2];
 };
 
-/* S-10a.014 to S-10a.020 */
+/* S-10a.001, S-10a.014 to S-10a.020: idProduct and the product string follow
+ * the device's profile */
 static const struct set_info sets[S10A_SET_COUNT] = {
-	[S10A_SET_MIDI] = { 0x8021, "OP-XY", { 0, 0, 0 }, "Audio Config",
+	[S10A_SET_MIDI] = { true, PROD(""), { 0, 0, 0 }, "Audio Config",
 		{ 250, 50, 1 }, 3, 1, { { S10A_FN_MIDI, 0, false } } },
-	[S10A_SET_MIDI_CDC] = { 0x0021, "OP-XY Boot", { 0xEF, 0x02, 0x01 },
+	[S10A_SET_MIDI_CDC] = { false, PROD(" Boot"), { 0xEF, 0x02, 0x01 },
 		"Composite Config", { 250 }, 1, 2,
 		{ { S10A_FN_MIDI, 0, true }, { S10A_FN_CDC, 2, true } } },
-	[S10A_SET_DISK] = { 0x0021, "OP-XY Disk", { 0, 0, 0 }, "MS Config",
+	[S10A_SET_DISK] = { false, PROD(" Disk"), { 0, 0, 0 }, "MS Config",
 		{ 250, 50 }, 2, 1, { { S10A_FN_MSC, 0, false } } },
-	[S10A_SET_DISK_CDC] = { 0x0021, "OP-XY Boot", { 0xEF, 0x02, 0x01 },
+	[S10A_SET_DISK_CDC] = { false, PROD(" Boot"), { 0xEF, 0x02, 0x01 },
 		"Composite Config", { 250 }, 1, 2,
 		{ { S10A_FN_CDC, 0, true }, { S10A_FN_MSC, 2, false } } },
-	[S10A_SET_MTP] = { 0x0021, "OP-XY", { 0, 0, 0 }, "MTP Config",
+	[S10A_SET_MTP] = { false, PROD(""), { 0, 0, 0 }, "MTP Config",
 		{ 250 }, 1, 1, { { S10A_FN_MTP, 0, false } } },
-	[S10A_SET_MTP_VENDOR] = { 0x0021, "OP-XY", { 0, 0, 0 }, "MTP Config",
+	[S10A_SET_MTP_VENDOR] = { false, PROD(""), { 0, 0, 0 }, "MTP Config",
 		{ 250 }, 1, 1, { { S10A_FN_MTP_VENDOR, 0, false } } },
-	[S10A_SET_SERIAL] = { 0x0021, "OP-XY Boot", { 0x02, 0x00, 0x00 },
+	[S10A_SET_SERIAL] = { false, PROD(" Boot"), { 0x02, 0x00, 0x00 },
 		"Serial Config", { 250 }, 1, 1, { { S10A_FN_CDC, 0, false } } },
-	[S10A_SET_MTP_CDC] = { 0x0021, "OP-XY Boot", { 0xEF, 0x02, 0x01 },
+	[S10A_SET_MTP_CDC] = { false, PROD(" Boot"), { 0xEF, 0x02, 0x01 },
 		"Composite Config", { 250 }, 1, 2,
 		{ { S10A_FN_CDC, 0, true }, { S10A_FN_MTP, 2, false } } },
-	[S10A_SET_MTP_VENDOR_CDC] = { 0x0021, "OP-XY Boot", { 0xEF, 0x02, 0x01 },
+	[S10A_SET_MTP_VENDOR_CDC] = { false, PROD(" Boot"), { 0xEF, 0x02, 0x01 },
 		"Composite Config", { 250 }, 1, 2,
 		{ { S10A_FN_CDC, 0, true }, { S10A_FN_MTP_VENDOR, 2, false } } },
 };
 
 /* S-10a.013: interface strings, in interface order, per function. */
-static const char *const fn_strings[][2] = {
-	[S10A_FN_MIDI] = { "OP-XY", "OP-XY Midi" },
-	[S10A_FN_CDC] = { "PORT0", "PORT0" },
-	[S10A_FN_MSC] = { "MS Data Intf BulkOnly", NULL },
-	[S10A_FN_MTP] = { "MTP Data Intf", NULL },
-	[S10A_FN_MTP_VENDOR] = { "MTP TETP interface", NULL },
+static const struct text fn_strings[][2] = {
+	[S10A_FN_MIDI] = { PROD(""), PROD(" Midi") },
+	[S10A_FN_CDC] = { FIXED("PORT0"), FIXED("PORT0") },
+	[S10A_FN_MSC] = { FIXED("MS Data Intf BulkOnly"), FIXED(NULL) },
+	[S10A_FN_MTP] = { FIXED("MTP Data Intf"), FIXED(NULL) },
+	[S10A_FN_MTP_VENDOR] = { FIXED("MTP TETP interface"), FIXED(NULL) },
 };
 
 /* S-10a.015, S-10a.017: the function class and string of each IAD. */
@@ -74,9 +84,9 @@ static const uint8_t iad_cls[][3] = {
 	[S10A_FN_MIDI] = { 0x01, 0x02, 0x00 },
 	[S10A_FN_CDC] = { 0x02, 0x02, 0x01 },
 };
-static const char *const iad_strings[] = {
-	[S10A_FN_MIDI] = "OP-XY (Composite)",
-	[S10A_FN_CDC] = "OP-XY Boot",
+static const struct text iad_strings[] = {
+	[S10A_FN_MIDI] = PROD(" (Composite)"),
+	[S10A_FN_CDC] = PROD(" Boot"),
 };
 
 static unsigned fn_interfaces(unsigned fn)
@@ -195,7 +205,8 @@ unsigned s10a_desc_max_power(enum s10a_set set, unsigned value)
 	return s->powers[value - 1u];
 }
 
-void s10a_desc_device(enum s10a_set set, bool has_serial, uint8_t out[18])
+void s10a_desc_device(const struct wb_device *dev, enum s10a_set set,
+		      bool has_serial, uint8_t out[18])
 {
 	const struct set_info *s = info(set);
 
@@ -205,7 +216,7 @@ void s10a_desc_device(enum s10a_set set, bool has_serial, uint8_t out[18])
 	memcpy(out + 4, s->cls, 3);
 	out[7] = EP0_SIZE;
 	wb_put_le16(out + 8, VID);
-	wb_put_le16(out + 10, s->pid);
+	wb_put_le16(out + 10, s->midi_pid ? dev->ident.midi_pid : dev->ident.usb_pid);
 	wb_put_le16(out + 12, BCD_DEVICE);
 	out[14] = 1;			/* manufacturer */
 	out[15] = 2;			/* product */
@@ -241,26 +252,33 @@ static unsigned first_config_string(bool has_serial)
 	return has_serial ? 4u : 3u;
 }
 
-/* The text of string `index` (1-based), NULL when it is not named. */
-static const char *string_text(const struct set_info *s, const char *serial,
+/* String `index` (1-based); its s is NULL when the set names none. */
+static struct text string_text(const struct set_info *s, const char *serial,
 			       unsigned index)
 {
 	const bool has_serial = serial && serial[0];
 	const unsigned base = first_config_string(has_serial);
 	const unsigned per = strings_per_config(s);
+	struct text t = FIXED(NULL);
 	unsigned i, k;
 
-	if (index == 1)
-		return manufacturer;
+	if (index == 1) {
+		t.s = manufacturer;
+		return t;
+	}
 	if (index == 2)
 		return s->product;
-	if (index == 3 && has_serial)
-		return serial;
+	if (index == 3 && has_serial) {
+		t.s = serial;
+		return t;
+	}
 	if (index < base || index >= base + per * s->n_configs)
-		return NULL;
+		return t;
 	k = (index - base) % per;
-	if (k-- == 0)
-		return s->config_str;
+	if (k-- == 0) {
+		t.s = s->config_str;
+		return t;
+	}
 	for (i = 0; i < s->n_fns; i++) {
 		if (!s->fns[i].iad)
 			continue;
@@ -274,13 +292,32 @@ static const char *string_text(const struct set_info *s, const char *serial,
 			return fn_strings[s->fns[i].fn][k];
 		k -= n;
 	}
-	return NULL;
+	return t;
 }
 
-size_t s10a_desc_string(enum s10a_set set, const char *serial,
-			unsigned index, uint8_t out[S10A_STRING_MAX])
+/* The text of t on dev, cut to S10A_TEXT_MAX - 1 characters; false when t
+ * names none. */
+static bool compose(const struct wb_device *dev, struct text t,
+		    char out[S10A_TEXT_MAX])
 {
-	const char *t;
+	size_t n = 0, i;
+
+	if (!t.s)
+		return false;
+	if (t.product)
+		for (i = 0; dev->ident.product_text[i] && n < S10A_TEXT_MAX - 1u; i++)
+			out[n++] = dev->ident.product_text[i];
+	for (i = 0; t.s[i] && n < S10A_TEXT_MAX - 1u; i++)
+		out[n++] = t.s[i];
+	out[n] = '\0';
+	return true;
+}
+
+size_t s10a_desc_string(const struct wb_device *dev, enum s10a_set set,
+			const char *serial, unsigned index,
+			uint8_t out[S10A_STRING_MAX])
+{
+	char t[S10A_TEXT_MAX];
 	size_t i, n;
 
 	if (index == 0) {
@@ -289,8 +326,7 @@ size_t s10a_desc_string(enum s10a_set set, const char *serial,
 		wb_put_le16(out + 2, 0x0409);
 		return 4;
 	}
-	t = string_text(info(set), serial, index);
-	if (!t)
+	if (!compose(dev, string_text(info(set), serial, index), t))
 		return 0;
 	n = strlen(t);
 	if (n > (S10A_STRING_MAX - 2u) / 2u)
@@ -302,10 +338,10 @@ size_t s10a_desc_string(enum s10a_set set, const char *serial,
 	return out[0];
 }
 
-const char *s10a_desc_text(enum s10a_set set, const char *serial,
-			   unsigned index)
+bool s10a_desc_text(const struct wb_device *dev, enum s10a_set set,
+		    const char *serial, unsigned index, char out[S10A_TEXT_MAX])
 {
-	return index ? string_text(info(set), serial, index) : NULL;
+	return index && compose(dev, string_text(info(set), serial, index), out);
 }
 
 /* --- Configurations ------------------------------------------------------ */

@@ -555,6 +555,132 @@
    ]
   }
  ],
+ "no_strap_sequences": [
+  {
+   "name": "no_strap_no_greeting",
+   "events": [
+    [
+     "power_on"
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:0"
+   ],
+   "requirements": [
+    "S-17.016",
+    "S-17.013"
+   ]
+  },
+  {
+   "name": "no_strap_one_greeting",
+   "events": [
+    [
+     "power_on"
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      3
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:0",
+    "hw_rev:3"
+   ],
+   "requirements": [
+    "S-17.016",
+    "S-17.011"
+   ]
+  },
+  {
+   "name": "no_strap_reset_after_greeting",
+   "events": [
+    [
+     "power_on"
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      3
+     ]
+    ],
+    [
+     "info"
+    ],
+    [
+     "power_on"
+    ],
+    [
+     "metadata_read"
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:3",
+    "hw_rev:0"
+   ],
+   "requirements": [
+    "S-17.016",
+    "S-17.012"
+   ]
+  },
+  {
+   "name": "no_strap_record_read_failed",
+   "events": [
+    [
+     "power_on"
+    ],
+    [
+     "metadata_read_failed",
+     "record"
+    ],
+    [
+     "info"
+    ],
+    [
+     "greeting",
+     [
+      187,
+      2
+     ]
+    ],
+    [
+     "info"
+    ]
+   ],
+   "info_entries": [
+    "hw_rev:0",
+    "hw_rev:0"
+   ],
+   "requirements": [
+    "S-17.016",
+    "S-17.015"
+   ]
+  }
+ ],
  "backplane_log": [
   [
    0,

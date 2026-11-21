@@ -20,6 +20,16 @@ int wb_gpio_output(uint8_t pin, bool high)
 	return WB_PORT_OK;
 }
 
+int wb_gpio_output_keep(uint8_t pin)
+{
+	uint32_t p = WB_PIN_PORT(pin), b = WB_PIN_BIT(pin);
+
+	if (!pin_ok(pin))
+		return WB_PORT_ERR_ARG;
+	wb_mmr_write32(PORT_DIR_SET(p), b);
+	return WB_PORT_OK;
+}
+
 int wb_gpio_input(uint8_t pin)
 {
 	uint32_t p = WB_PIN_PORT(pin), b = WB_PIN_BIT(pin);
@@ -76,6 +86,18 @@ int wb_strap_read(const struct wb_strap *s, const struct wb_time *t,
 	wb_delay_us(t, s->inen_us);
 	*value = (uint16_t)(wb_mmr_read32(PORT_DATA(s->port)) & s->pins);
 	wb_mmr_write32(PORT_INEN_CLR(s->port), s->pins);
+	return WB_PORT_OK;
+}
+
+int wb_strap_inen_read(const struct wb_strap *s, const struct wb_time *t,
+		       uint16_t *value)
+{
+	if (s->port >= WB_PORTS || s->pins == 0)
+		return WB_PORT_ERR_ARG;
+	wb_mmr_write32(PORT_INEN_SET(s->port), s->pins);
+	wb_mmr_sync();
+	wb_delay_us(t, s->settle_us);
+	*value = (uint16_t)(wb_mmr_read32(PORT_DATA(s->port)) & s->pins);
 	return WB_PORT_OK;
 }
 

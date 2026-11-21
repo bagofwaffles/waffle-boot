@@ -3,10 +3,12 @@
  * S-04 persistent records.
  * Requirements: S-04.001-.011, S-04.020-.029 (the rules and the reset
  * sequence), S-04.024, S-04.040-.046, S-04.060-.065 (payloads),
- * S-04.070, S-04.071.
+ * S-04.066, S-04.070, S-04.071; on the OP-1F, S-04.040, S-04.043, S-04.046
+ * and S-04.066.
  * Vectors: tests/oracle/S-04-records reboot_record.json, reason_table.tsv,
- * host_modes.tsv, writers.tsv, metadata.json, rtc.json, psoc_status.json
- * (vectors/s04_vectors.h); the name cases of R-W4.
+ * host_modes.tsv, writers.tsv, metadata.json, rtc.json, psoc_status.json,
+ * metadata_1f.json, psoc_status_1f.json (vectors/s04_vectors.h); the name
+ * cases of R-W4.
  */
 #include <string.h>
 
@@ -254,18 +256,21 @@ static void test_metadata(void)
 	unsigned i;
 
 	/* encode: the reader's view of the sample, and the CV words. */
-	s04_meta_read(v_meta_encode_bytes, &m);
+	const struct wb_device *dev = &wb_device_opxy;
+
+	CHECK_EQ(s04_meta_size(dev), S04_META_SIZE);
+	s04_meta_read(dev, v_meta_encode_bytes, &m);
 	check_fields(&m, &v_meta_encode_fields);
 	CHECK_EQ(m.cv_gain, V_META_ENCODE_CV_GAIN);
 	CHECK_EQ(m.cv_zero, V_META_ENCODE_CV_ZERO);
 	CHECK_EQ(m.cv_pair2[0], V_META_ENCODE_CV_P0);
 	CHECK_EQ(m.cv_pair2[1], V_META_ENCODE_CV_P1);
 	/* Built from itself in factory mode, the record is unchanged. */
-	s04_meta_build(v_meta_encode_bytes, &m, true, out);
+	s04_meta_build(dev, v_meta_encode_bytes, &m, true, out);
 	CHECK(memcmp(out, v_meta_encode_bytes, S04_META_SIZE) == 0);
 
 	for (i = 0; i < N(v_meta_reads); i++) {
-		s04_meta_read(v_meta_reads[i].bytes, &m);
+		s04_meta_read(dev, v_meta_reads[i].bytes, &m);
 		check_fields(&m, &v_meta_reads[i].f);
 		CHECK(strlen(m.serial) <= 8u);
 	}
@@ -273,7 +278,7 @@ static void test_metadata(void)
 		const struct v_meta_write *v = &v_meta_writes[i];
 
 		fields_to_meta(&v->cur, &m);
-		s04_meta_build(v->before, &m, v->factory_mode != 0, out);
+		s04_meta_build(dev, v->before, &m, v->factory_mode != 0, out);
 		CHECK(memcmp(out, v->after, S04_META_SIZE) == 0);
 	}
 	for (i = 0; i < N(v_setmetas); i++) {
@@ -290,7 +295,7 @@ static void test_metadata(void)
 		req.serial = v->serial;
 		req.sku_variant = v->sku;
 		req.factory = v->factory;
-		writes = s04_set_metadata(&m, v->factory_mode != 0, v->option != 0, &req);
+		writes = s04_set_metadata(dev, &m, v->factory_mode != 0, v->option != 0, &req);
 		CHECK_EQ(writes, (unsigned)v->writes);
 		if (!writes)
 			CHECK(memcmp(&m, &before, sizeof m) == 0);
@@ -300,6 +305,123 @@ static void test_metadata(void)
 	}
 	for (i = 0; i < N(v_m6); i++)
 		CHECK_EQ(s04_m6_needed(v_m6[i].sw), (unsigned)v_m6[i].writes);
+}
+
+/*
+ * S-04.040, S-04.043, S-04.046 on the OP-1F: 0x28 bytes, no factory or CV
+ * field, +0x10..+0x11 kept by every write, the factory key passed over.
+ */
+static void test_metadata_1f(void)
+{
+	const struct wb_device *dev = &wb_device_op1f;
+	struct s04_meta m;
+	uint8_t out[S04_META_SIZE];
+	unsigned i;
+
+	CHECK_EQ(s04_meta_size(dev), V_META1F_SIZE);
+	s04_meta_read(dev, v_meta1f_encode_bytes, &m);
+	check_fields(&m, &v_meta1f_encode_fields);
+	CHECK_EQ(m.factory, 0u);
+	CHECK_EQ(m.cv_gain, 0u);
+	CHECK_EQ(m.cv_zero, 0u);
+	/* the build writes 0x28 bytes and nothing past them */
+	memset(out, 0xA5, sizeof out);
+	s04_meta_build(dev, v_meta1f_encode_bytes, &m, true, out);
+	CHECK(memcmp(out, v_meta1f_encode_bytes, V_META1F_SIZE) == 0);
+	for (i = V_META1F_SIZE; i < S04_META_SIZE; i++)
+		CHECK_EQ(out[i], 0xA5u);
+	for (i = 0; i < N(v_meta1f_reads); i++) {
+		s04_meta_read(dev, v_meta1f_reads[i].bytes, &m);
+		check_fields(&m, &v_meta1f_reads[i].f);
+		CHECK_EQ(m.factory, 0u);
+	}
+	for (i = 0; i < N(v_meta1f_writes); i++) {
+		const struct v_meta1f_write *v = &v_meta1f_writes[i];
+
+		fields_to_meta(&v->cur, &m);
+		s04_meta_build(dev, v->before, &m, v->factory_mode != 0, out);
+		CHECK(memcmp(out, v->after, V_META1F_SIZE) == 0);
+		CHECK(memcmp(out + 0x10, v->before + 0x10, 2) == 0);
+	}
+	for (i = 0; i < N(v_meta1f_setmetas); i++) {
+		const struct v_setmeta *v = &v_meta1f_setmetas[i];
+		struct s04_setmeta req;
+		struct s04_meta before;
+		bool writes;
+
+		memset(&m, 0, sizeof m);
+		strcpy(m.serial, "OLD00000");
+		m.sku = 77;
+		before = m;
+		req.serial = v->serial;
+		req.sku_variant = v->sku;
+		req.factory = v->factory;
+		writes = s04_set_metadata(dev, &m, v->factory_mode != 0, v->option != 0, &req);
+		CHECK_EQ(writes, (unsigned)v->writes);
+		CHECK_EQ(m.factory, 0u);
+		if (!writes)
+			CHECK(memcmp(&m, &before, sizeof m) == 0);
+		check_fields(&m, &v->result);
+	}
+}
+
+static void check_msg_1f(const struct s04_psoc_msg *m, const struct v_msg *v)
+{
+	CHECK_EQ(m->id, v->id);
+	CHECK_EQ(m->len, v->len);
+	CHECK(memcmp(m->payload, v->payload, v->len) == 0);
+}
+
+/* S-04.066 */
+struct shut_rig {
+	bool mounted;
+	int fail;
+	char log[8];
+	unsigned n;
+};
+
+static bool shut_mounted(void *ctx)
+{
+	return ((struct shut_rig *)ctx)->mounted;
+}
+
+static int shut_emmc(void *ctx)
+{
+	struct shut_rig *r = ctx;
+
+	r->log[r->n++] = 'e';
+	return r->fail;
+}
+
+static void shut_reports(void *ctx)
+{
+	struct shut_rig *r = ctx;
+
+	r->log[r->n++] = 'r';
+}
+
+static void test_shutdown_one_cpu(void)
+{
+	static const struct { bool mounted; int fail; const char *want; } cases[] = {
+		{true, 0, "er"}, {true, -1, "er"}, {false, 0, "r"},
+	};
+	unsigned i;
+
+	for (i = 0; i < N(cases); i++) {
+		struct shut_rig r = { cases[i].mounted, cases[i].fail, {0}, 0 };
+		const struct s04_shutdown_ops ops = { &r, shut_mounted, shut_emmc, shut_reports };
+
+		s04_shutdown_one_cpu(&ops);
+		CHECK(strcmp(r.log, cases[i].want) == 0);
+	}
+	/* the reports: 0x51 {00 00 02} alone (no 0x40 {01}, S-07.046) */
+	CHECK_EQ(N(v_psoc1f_shutdown), 1u);
+	check_msg_1f(&s04_msg_shutdown, &v_psoc1f_shutdown[0]);
+	check_msg_1f(&s04_msg_held, &v_psoc1f_held[0]);
+	CHECK_EQ(N(v_psoc1f_held), 1u);
+	check_msg_1f(&s04_msg_handover, &v_psoc1f_handover[0]);
+	check_msg_1f(&s04_msg_reset_request, &v_psoc1f_reset_request[0]);
+	check_msg_1f(&s04_msg_shutdown, &v_psoc1f_reset_request[1]);
 }
 
 /* S-04.060-.065: the payloads */
@@ -407,6 +529,8 @@ int main(void)
 	test_writers();
 	test_cdc_file();
 	test_metadata();
+	test_metadata_1f();
+	test_shutdown_one_cpu();
 	test_psoc_reports();
 	test_rtc();
 	test_fatal_record();

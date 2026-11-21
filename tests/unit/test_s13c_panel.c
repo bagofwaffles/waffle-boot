@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "support/check.h"
+#include "waffle/device.h"
 #include "waffle/s13c_panel.h"
 
 struct fake {
@@ -203,27 +204,27 @@ static void test_begin(void)
 	struct s13c_panel p;
 
 	fresh(50000);
-	s13c_begin(&p, &bus, S13C_HANDSHAKE_MAGIC, 2, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, S13C_HANDSHAKE_MAGIC, 2, 1);
 	CHECK(strcmp(g.log, "R1 ") == 0);
 	CHECK(p.path == S13C_RESET_HANDSHAKE && p.reset_ms == 2);
 	CHECK(p.ready_us == 3000u + 120000u);
 	CHECK(p.state == S13C_RESET);
 
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(strcmp(g.log, "R1 R0 R1 ") == 0);
 	CHECK(g.t == 50000u + S13C_RESET_LOW_US);
 	CHECK(p.reset_ms == 50 && p.ready_us == g.t + 120000u);
 
 	fresh(50000);
-	s13c_begin(&p, &bus, S13C_HANDSHAKE_MAGIC, 2, 0);
+	s13c_begin(&p, &bus, &wb_device_opxy, S13C_HANDSHAKE_MAGIC, 2, 0);
 	CHECK(strcmp(g.log, "R1 ") == 0);
 	CHECK(p.path == S13C_RESET_STRAP && p.reset_ms == 50);
 	CHECK(p.ready_us == 50000u + 120000u);
 
 	/* a release in the first ms has time 1 */
 	fresh(200);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(p.reset_ms == 1);
 }
 
@@ -235,7 +236,7 @@ static void test_start(void)
 	const char *init;
 
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	g.len = 0;
 	g.log[0] = '\0';
 	CHECK(s13c_start(&p, false) == S13C_OK);
@@ -255,7 +256,7 @@ static void test_start(void)
 
 	/* the gamma tables inside one more window before the black fill */
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	g.read_rc = -1;
 	CHECK(s13c_start(&p, true) == S13C_OK);
 	CHECK(!p.id_valid);
@@ -274,7 +275,7 @@ static void test_frames(void)
 	struct s13c_panel p;
 
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_frame(&p, fb, true) == S13C_ERR_STATE);
 	CHECK(s13c_start(&p, false) == S13C_OK);
 	g.len = 0;
@@ -315,7 +316,7 @@ static void test_handover(void)
 	unsigned rows = 0, cmds;
 
 	fresh(50000);
-	s13c_begin(&p, &bus, S13C_HANDSHAKE_MAGIC, 7, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, S13C_HANDSHAKE_MAGIC, 7, 1);
 	CHECK(s13c_start(&p, false) == S13C_OK);
 	CHECK(s13c_handover(&p, rec) == S13C_ERR_STATE);	/* no boot frame */
 	g.len = 0;
@@ -332,7 +333,7 @@ static void test_handover(void)
 
 	/* a frame after the boot frame (the failed load's held mode) */
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_start(&p, true) == S13C_OK);
 	rows = 0;
 	g.len = 0;
@@ -365,7 +366,7 @@ static void test_logo_line(void)
 	unsigned rows = 0, h = 16;
 
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_ERR_STATE);	/* not on */
 	CHECK(s13c_start(&p, true) == S13C_OK);
 	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_ERR_STATE);	/* no logo yet */
@@ -388,7 +389,7 @@ static void test_logo_line(void)
 
 	/* outside the visible window, or taller than a line */
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_start(&p, true) == S13C_OK);
 	rows = 0;
 	CHECK(s13c_boot_frame(&p, black_row, &rows) == S13C_OK);
@@ -406,7 +407,7 @@ static void test_logo_line(void)
 
 	/* the front's logo taken on: the panel selected first */
 	fresh(900000);
-	s13c_adopt(&p, &bus, 40);
+	s13c_adopt(&p, &bus, &wb_device_opxy, 40);
 	line_rows = 0;
 	CHECK(s13c_logo_line(&p, 140, h, line_row, &h) == S13C_OK);
 	CHECK(strcmp(g.log, "S 2A 2B 2C 2A ") == 0);
@@ -422,7 +423,7 @@ static void test_adopt(void)
 	unsigned rows = 0;
 
 	fresh(900000);
-	s13c_adopt(&p, &bus, 40);
+	s13c_adopt(&p, &bus, &wb_device_opxy, 40);
 	CHECK(g.len == 0);			/* nothing on the bus yet */
 	CHECK(s13c_gamma(&p, true) == S13C_OK);
 	CHECK(strcmp(g.log, "S F0 F0 E2 E3 B9 F0 F0 ") == 0);
@@ -434,7 +435,7 @@ static void test_adopt(void)
 
 	/* Without the board's load the hand-over frame loads it first. */
 	fresh(900000);
-	s13c_adopt(&p, &bus, 40);
+	s13c_adopt(&p, &bus, &wb_device_opxy, 40);
 	rows = 0;
 	CHECK(s13c_boot_frame(&p, black_row, &rows) == S13C_OK);
 	CHECK(strcmp(g.log, "S F0 F0 E2 E3 B9 F0 F0 2C ") == 0);
@@ -443,7 +444,7 @@ static void test_adopt(void)
 
 	/* held mode after the front: frames, a gamma change, power-off */
 	fresh(900000);
-	s13c_adopt(&p, &bus, 40);
+	s13c_adopt(&p, &bus, &wb_device_opxy, 40);
 	CHECK(s13c_frame(&p, fb, false) == S13C_OK);
 	CHECK(s13c_frame(&p, fb, false) == S13C_OK);
 	CHECK(strcmp(g.log, "S 2C dma 2C dma ") == 0);
@@ -451,12 +452,12 @@ static void test_adopt(void)
 	CHECK(strncmp(g.log, "S ", 2) == 0 && strstr(g.log + 2, "S ") == NULL);
 
 	fresh(900000);
-	s13c_adopt(&p, &bus, 40);
+	s13c_adopt(&p, &bus, &wb_device_opxy, 40);
 	CHECK(s13c_gamma(&p, false) == S13C_OK);
 	CHECK(strncmp(g.log, "S F0 ", 5) == 0);
 
 	fresh(900000);
-	s13c_adopt(&p, &bus, 40);
+	s13c_adopt(&p, &bus, &wb_device_opxy, 40);
 	CHECK(s13c_poweroff(&p) == S13C_OK);
 	CHECK(g.len == 0);			/* nothing sent (S-13c.022) */
 }
@@ -469,7 +470,7 @@ static void test_poweroff(void)
 	struct s13c_panel p;
 
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	g.len = 0;
 	g.log[0] = '\0';
 	CHECK(s13c_poweroff(&p) == S13C_OK);	/* never on: nothing sent */
@@ -477,7 +478,7 @@ static void test_poweroff(void)
 	CHECK(s13c_start(&p, false) == S13C_ERR_STATE);
 
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_start(&p, false) == S13C_OK);
 	CHECK(s13c_frame(&p, fb, true) == S13C_OK);
 	g.len = 0;
@@ -494,7 +495,7 @@ static void test_poweroff(void)
 	 * edge, at most 20 ms on), has run out; still nothing sent */
 	CHECK(S13C_POWEROFF_FRAME_US >= 3u * 20000u);
 	fresh(50000);
-	s13c_begin(&p, &bus_stop, 0, 0, 1);
+	s13c_begin(&p, &bus_stop, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_start(&p, false) == S13C_OK);
 	CHECK(s13c_frame(&p, fb, true) == S13C_OK);
 	g.busy = true;
@@ -513,7 +514,7 @@ static void test_poweroff(void)
 
 	/* a frame that ends within the bound is not stopped */
 	fresh(50000);
-	s13c_begin(&p, &bus_stop, 0, 0, 1);
+	s13c_begin(&p, &bus_stop, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_start(&p, false) == S13C_OK);
 	CHECK(s13c_frame(&p, fb, true) == S13C_OK);
 	g.len = 0;
@@ -523,7 +524,7 @@ static void test_poweroff(void)
 	/* a bus that cannot stop one: the power-off still goes on after the
 	 * bound, nothing sent */
 	fresh(50000);
-	s13c_begin(&p, &bus, 0, 0, 1);
+	s13c_begin(&p, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(s13c_start(&p, false) == S13C_OK);
 	CHECK(s13c_frame(&p, fb, true) == S13C_OK);
 	g.busy = true;
@@ -540,6 +541,50 @@ static void test_poweroff(void)
 	g.busy = false;
 }
 
+/* S-13c.026 on the OP-1F: no E2, E3 or B9 42 E0 on any path, the
+ * initialization's B9 02 E0 the last; the hand-over with no gamma load; the
+ * panel taken on from the front gets no table and no B9. */
+static void test_no_gamma_1f(void)
+{
+	static const char init[] = "S 11 28 F0 F0 36 3A B4 B6 B7 B9 C0 C1 C2 C5 E8 E0 E1 "
+				   "F0 F0 35 21 2A 2B 2C fill 2A 2B 29 ";
+	struct s13c_panel p;
+	uint8_t rec[S13C_RECORD_SIZE];
+	unsigned rows = 0;
+
+	/* the boot path: the start asked for the gamma load, the hand-over frame */
+	fresh(50000);
+	s13c_begin(&p, &bus, &wb_device_op1f, 0, 0, 1);
+	g.len = 0;
+	g.log[0] = '\0';
+	CHECK(s13c_start(&p, true) == S13C_OK);
+	CHECK(strcmp(g.log, init) == 0);
+	if (strcmp(g.log, init) != 0)
+		printf("  log: %s\n", g.log);
+	CHECK(s13c_boot_frame(&p, black_row, &rows) == S13C_OK);
+	CHECK(strstr(g.log, "E2") == NULL && strstr(g.log, "E3") == NULL);
+	CHECK(strcmp(g.log + strlen(init), "2C ") == 0);
+	CHECK(s13c_handover(&p, rec) == S13C_OK && rec[0] == 1);
+
+	/* held mode: a gamma change sends nothing */
+	fresh(50000);
+	s13c_begin(&p, &bus, &wb_device_op1f, 0, 0, 1);
+	CHECK(s13c_start(&p, false) == S13C_OK);
+	g.len = 0;
+	g.log[0] = '\0';
+	CHECK(s13c_gamma(&p, true) == S13C_OK && s13c_gamma(&p, false) == S13C_OK);
+	CHECK(g.len == 0 && !p.gamma_loaded);
+
+	/* the front's panel taken on: no table and no B9, then the frame */
+	fresh(900000);
+	s13c_adopt(&p, &bus, &wb_device_op1f, 40);
+	CHECK(s13c_gamma(&p, true) == S13C_OK && g.len == 0);
+	rows = 0;
+	CHECK(s13c_boot_frame(&p, black_row, &rows) == S13C_OK);
+	CHECK(strcmp(g.log, "S 2C ") == 0);
+	CHECK(s13c_handover(&p, rec) == S13C_OK && rec[4] == 40);
+}
+
 int main(void)
 {
 	RUN(test_decide);
@@ -551,5 +596,6 @@ int main(void)
 	RUN(test_logo_line);
 	RUN(test_adopt);
 	RUN(test_poweroff);
+	RUN(test_no_gamma_1f);
 	return check_summary("test_s13c_panel");
 }

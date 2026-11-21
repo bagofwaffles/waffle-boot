@@ -135,17 +135,24 @@ def _image(n):
     return bytes((i * 7 + 3) & 0xFF for i in range(n))
 
 
-def transfers():
-    prepare = [
-        {'version': [1, 2, 3, 4], 'type': '0xb0', 'product_word': '0x00084005',
-         'payload': '02' '0001' '0002' '0003' '0004' 'b0' '00084005'},
-        {'version': [1000, 0, 10, 0], 'type': '0xb1', 'product_word': '0x00084000',
-         'payload': '02' '03e8' '0000' '000a' '0000' 'b1' '00084000'},
-        {'version': [65535, 1, 0, 65535], 'type': '0xb0', 'product_word': '0x000843e7',
-         'payload': '02' 'ffff' '0001' '0000' 'ffff' 'b0' '000843e7'},
-    ]
+BASE_XY = 0x00084000    # device.product_base (S-18.030)
+BASE_1F = 0x00008000
+
+
+def _prep(ver, typ, pw):
+    return (bytes([0x02]) + struct.pack('>4HBI', *ver, typ, pw)).hex()
+
+
+def transfers(base=BASE_XY):
+    """S-08.043-S-08.046 with the product word's base, device.product_base (S-08.045)."""
+    prepare = []
+    for ver, typ, sku in (([1, 2, 3, 4], 0xB0, 5), ([1000, 0, 10, 0], 0xB1, 0), ([65535, 1, 0, 65535], 0xB0, 999)):
+        pw = base | sku
+        prepare.append({'version': ver, 'type': '0x%02x' % typ, 'product_word': '0x%08x' % pw,
+                        'payload': _prep(ver, typ, pw)})
     headers = []
-    for n, ver, pw in ((500, (2, 0, 0, 0), 0x00084000), (1, (1, 0, 1, 0), 0x000843E7), (248, (1, 1, 0, 7), 0x00084001)):
+    for n, ver, sku in ((500, (2, 0, 0, 0), 0), (1, (1, 0, 1, 0), 999), (248, (1, 1, 0, 7), 1)):
+        pw = base | sku
         img = _image(n)
         crc = binascii.crc_hqx(img, 0)
         h = (bytes.fromhex('beefcafe') + b'\x03' + struct.pack('>I', n) + struct.pack('>H', crc)
@@ -155,19 +162,19 @@ def transfers():
         headers.append({'image_len': n, 'version': list(ver), 'product_word': '0x%08x' % pw,
                         'crc16': '0x%04x' % crc, 'header': h.hex()})
     product = [
-        {'sku': 0, 'read_ok': True, 'word': '0x00084000'},
-        {'sku': 1, 'read_ok': True, 'word': '0x00084001'},
-        {'sku': 999, 'read_ok': True, 'word': '0x000843e7'},
-        {'sku': 1000, 'read_ok': True, 'word': '0x00084000'},
-        {'sku': 0xFFFF, 'read_ok': True, 'word': '0x00084000'},
+        {'sku': 0, 'read_ok': True, 'word': '0x%08x' % base},
+        {'sku': 1, 'read_ok': True, 'word': '0x%08x' % (base | 1)},
+        {'sku': 999, 'read_ok': True, 'word': '0x%08x' % (base | 999)},
+        {'sku': 1000, 'read_ok': True, 'word': '0x%08x' % base},
+        {'sku': 0xFFFF, 'read_ok': True, 'word': '0x%08x' % base},
         {'sku': 5, 'read_ok': False, 'failure': 'record', 'word': '0x00000000'},
         {'sku': 5, 'read_ok': False, 'failure': 'chip_serial', 'word': '0x00000000'},
     ]
     power_ons = [  # S-08.045: the sku is read once, at start-up
-        {'power_on': 1, 'boot_sku': 3, 'set_sku_during': 7, 'word': '0x%08x' % 0x00084003,
-         'prepare': (bytes([0x02]) + struct.pack('>4HBI', 1, 1, 0, 0, 0xB0, 0x00084003)).hex()},
-        {'power_on': 2, 'boot_sku': 7, 'set_sku_during': None, 'word': '0x%08x' % 0x00084007,
-         'prepare': (bytes([0x02]) + struct.pack('>4HBI', 1, 1, 0, 0, 0xB0, 0x00084007)).hex()},
+        {'power_on': 1, 'boot_sku': 3, 'set_sku_during': 7, 'word': '0x%08x' % (base | 3),
+         'prepare': _prep((1, 1, 0, 0), 0xB0, base | 3)},
+        {'power_on': 2, 'boot_sku': 7, 'set_sku_during': None, 'word': '0x%08x' % (base | 7),
+         'prepare': _prep((1, 1, 0, 0), 0xB0, base | 7)},
     ]
     chunks = [  # S-08.046: payload lengths of the image chunks (each is 1 + data)
         {'image_len': 1, 'chunk_payload_lens': [2]},
@@ -178,10 +185,17 @@ def transfers():
         {'image_len': 500, 'chunk_payload_lens': [249, 249, 5]},
         {'image_len': 1000, 'chunk_payload_lens': [249, 249, 249, 249, 9]},
     ]
-    return {
+    out = {
             'crc16_check': {'input': '123456789', 'crc16': '0x31c3'},
             'prepare': prepare, 'header': headers, 'product_word': product,
             'product_word_power_ons': power_ons, 'chunks': chunks}
+    if base != BASE_XY:
+        out = {'device': 'OP-1F', 'product_base': '0x%08x' % base, **out}
+    return out
+
+
+def transfers_1f():
+    return transfers(BASE_1F)
 
 
 def messages():
@@ -197,7 +211,7 @@ def messages():
 
 
 ALL = {'greeting': greeting, 'queries': queries, 'dfu_replies': dfu_replies, 'transfers': transfers,
-       'messages': messages}
+       'messages': messages, 'transfers-1f': transfers_1f}
 
 
 # ---- SC-08-NO-APP (S-08.048) ----------------------------------------------------------------------

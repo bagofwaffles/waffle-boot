@@ -49,6 +49,7 @@ void opxy_clock_to_slave(struct opxy_master *m)
 {
 	uint32_t clk;
 
-	if (m->slave_present && opxy_rtc_peek(&clk))
+	/* S-10b.063, S-09.046: second-cpu's alone */
+	if (m->slave_present && wb_has(opxy_dev(m), WB_F_SECOND_CPU) && opxy_rtc_peek(&clk))
 		s09_clock_rtc(&m->clock_msg, &m->node, S06_LINK_CPU, clk);
 }

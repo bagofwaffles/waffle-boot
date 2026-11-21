@@ -49,8 +49,11 @@ struct stream {
 static struct {
 	const struct s10a_usb_board *board;
 	struct s10c_host *host;
+	const struct wb_device *dev;
 	enum s10a_set set;
 	char serial[S10A_SERIAL_LEN + 1];
+	/* the MTP responder's Manufacturer and Model (S-10b.020) */
+	char maker[S10A_TEXT_MAX], model[S10A_TEXT_MAX];
 	struct s10a_ch9 ch9;
 	struct s10a_lu lu;
 	struct s10a_bot bot;
@@ -421,9 +424,11 @@ static bool mtp_request(uint8_t rhport, uint8_t stage,
 
 static void mtp_identity(void)
 {
-	if (u.mtp)
-		s10b_identity(u.mtp, s10a_desc_text(u.set, NULL, 1),
-			      s10a_desc_text(u.set, NULL, 2), u.serial);
+	if (!u.mtp)
+		return;
+	(void)s10a_desc_text(u.dev, u.set, NULL, 1, u.maker);
+	(void)s10a_desc_text(u.dev, u.set, NULL, 2, u.model);
+	s10b_identity(u.mtp, u.maker, u.model, u.serial);
 }
 
 /* --- The class driver --------------------------------------------------- */
@@ -856,7 +861,7 @@ uint8_t const *tud_descriptor_device_cb(void)
 {
 	static uint8_t d[18];
 
-	s10a_desc_device(u.set, has_serial(), d);
+	s10a_desc_device(u.dev, u.set, has_serial(), d);
 	return d;
 }
 
@@ -892,17 +897,18 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 	} d;
 
 	(void)langid;
-	return s10a_desc_string(u.set, u.serial, index, d.b) ? d.u16 : NULL;
+	return s10a_desc_string(u.dev, u.set, u.serial, index, d.b) ? d.u16 : NULL;
 }
 
 /* --- The board's side --------------------------------------------------- */
 
 void s10a_usb_init(const struct s10a_usb_board *board,
-		   struct s10c_host *host)
+		   struct s10c_host *host, const struct wb_device *dev)
 {
 	memset(&u, 0, sizeof(u));
 	u.board = board;
 	u.host = host;
+	u.dev = dev;
 	ring_init(&u.cdc_s.rx, cdc_rx_buf, sizeof(cdc_rx_buf));
 	ring_init(&u.cdc_s.tx, cdc_tx_buf, sizeof(cdc_tx_buf));
 	ring_init(&u.midi_s.rx, midi_rx_buf, sizeof(midi_rx_buf));
@@ -925,7 +931,7 @@ void s10a_usb_select(enum s10a_set set, const char *serial,
 		n++;
 	}
 	s10a_ch9_start(&u.ch9, set);
-	s10a_lu_init(&u.lu, disk, u.serial);
+	s10a_lu_init(&u.lu, disk, u.serial, u.dev);
 	u.lu.on_release = disk_released;
 	s10a_bot_init(&u.bot, &u.lu, &bot_port);
 	for (i = 0; s10a_desc_interface(set, i, &fn, &first); i++)

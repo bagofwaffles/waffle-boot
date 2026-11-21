@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The RAM disk's format (S-12.003 to S-12.007).
+ * The RAM disk's format (S-12.003 to S-12.008).
  *
  * FatFs R0.16's f_mkfs, asked for these parameters, writes every byte
  * S-12.003 to S-12.006 give except two fields, in which it differs from
@@ -33,20 +33,40 @@ static int patch_sector(LBA_t lba, BYTE *buf, unsigned int offset,
 	return disk_write(0, buf, lba, 1) == RES_OK ? 0 : -1;
 }
 
-int wb_fatfs_format(void *work, unsigned int work_len)
+/*
+ * S-12.004, S-12.008: sectors per cluster by FatFs's FAT16 rule for a volume
+ * of n sectors, which gives 16 on the OP-XY's disk and 8 on the OP-1F's.
+ */
+static unsigned int cluster_sectors(LBA_t n)
 {
-	/* S-12.004: one FAT, 512 root entries, clusters of 16 sectors. */
-	const MKFS_PARM opt = { FM_FAT, 1, 1, 512, 16 * 512 };
+	static const DWORD bound[] = { 1, 4, 16, 64, 256, 512 };	/* x 4096 */
+	unsigned int i, au = 1;
+
+	for (i = 0; i < sizeof(bound) / sizeof(bound[0]) && bound[i] <= n / 0x1000u; i++)
+		au <<= 1;
+	return au;
+}
+
+int wb_fatfs_format(void *work, unsigned int work_len, const char *label)
+{
 	BYTE *buf = work;
 	LBA_t n_sectors;
 	unsigned int cyl;
 	uint8_t end_chs[3], vol_id[4];
+	MKFS_PARM opt;
 	FATFS fs;
 	FRESULT fr;
 
 	if (work_len < FF_MAX_SS ||
-	    disk_ioctl(0, GET_SECTOR_COUNT, &n_sectors) != RES_OK)
+	    disk_ioctl(0, GET_SECTOR_COUNT, &n_sectors) != RES_OK ||
+	    n_sectors <= PART_START)
 		return (int)FR_NOT_READY;
+	/* S-12.004: one FAT, 512 root entries */
+	opt.fmt = FM_FAT;
+	opt.n_fat = 1;
+	opt.align = 1;
+	opt.n_root = 512;
+	opt.au_size = cluster_sectors(n_sectors - PART_START) * 512u;
 	fr = f_mkfs("", &opt, work, work_len);
 	if (fr != FR_OK)
 		return (int)fr;
@@ -70,7 +90,7 @@ int wb_fatfs_format(void *work, unsigned int work_len)
 	/* S-12.006: the label entry; the boot sector keeps NO NAME. */
 	fr = f_mount(&fs, "", 1);
 	if (fr == FR_OK)
-		fr = f_setlabel("OP-XY");
+		fr = f_setlabel(label);
 	f_mount(NULL, "", 0);
 	return (int)fr;
 }

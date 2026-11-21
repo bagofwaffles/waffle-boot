@@ -53,6 +53,7 @@ enum s15_prompt_choice {
 };
 
 struct s15_prompt {
+	const struct wb_device *dev;
 	uint8_t stale[(S15_NKEYS + 7u) / 8u];	/* down when shown */
 	enum s15_prompt_choice choice;
 };
@@ -62,7 +63,8 @@ struct s15_prompt {
  * key k bit k & 7 of byte k >> 3), after every bitmap waiting on the link
  * has been taken into account; NULL: no key down.
  */
-void s15_prompt_open(struct s15_prompt *p, const uint8_t *down_now);
+void s15_prompt_open(struct s15_prompt *p, const struct wb_device *dev,
+		     const uint8_t *down_now);
 /* A key event after the screen was shown (S-07.031). */
 void s15_prompt_key(struct s15_prompt *p, unsigned key, bool down);
 enum s15_prompt_choice s15_prompt_choice(const struct s15_prompt *p);

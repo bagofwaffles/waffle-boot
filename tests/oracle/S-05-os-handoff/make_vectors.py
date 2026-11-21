@@ -14,6 +14,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import ldr  # noqa: E402
+import kernel_model  # noqa: E402
 
 ENTRY = 0x11A00000
 HEADER_BUFFER = 0x88A34D5C     # a header buffer address inside the DDR handover reserve (S-01.013)
@@ -168,11 +169,98 @@ def main():
         json.dump({
                    'cases': cases}, f, indent=1)
 
+    one_cpu_vectors()
+
     # S-05.027-.029 cases: fixed payloads, no use of the shared rng. Written: factory_good.ldr, factory_ddr_at_reserve_end.ldr, factory_ddr_stack_top.ldr,
     # factory_ddr_just_clear.ldr, factory_l2_above_reserve.ldr, factory_l2_just_clear.ldr,
     # factory_too_short.ldr, factory_first_not_final.ldr, factory_final_argument.ldr,
     # factory_l1_code_not_by_8.ldr, factory_entry_in_ddr.ldr, factory_cases.json.
     factory_cases(fixed)
+
+
+# ---- the OP-1F (S-05.036-S-05.040) ----
+
+# S-05.040: OS 1.7.3's destinations, start included and end excluded, and the FILL range among them
+OS_1F_RANGES = [
+    ('l1_code', 0x11A00000, 0x11A0C000, False),
+    ('l1_data_a', 0x11800000, 0x11803000, False),
+    ('l1_data_b', 0x11900000, 0x11908000, False),
+    ('l1_scratch', 0x11B00000, 0x11B01F00, False),
+    ('l2', 0x08002000, 0x08002480, False),
+    ('l2', 0x08011480, 0x08030000, True),
+    ('l2', 0x0803F000, 0x08040000, False),
+    ('ddr', 0x84000000, 0x84D262A0, False),
+    ('ddr', 0x8C03D002, 0x8FCCDD38, False),
+]
+
+
+def os_1f_stream():
+    """A stream with OS 1.7.3's shape (S-05.040): FIRST|IGNORE and FINAL at 0x11A00000 with argument 0, and
+    one FILL block over each destination, so that S-05.024's model judges exactly those ranges."""
+    body = bytearray()
+    for _, s, e, _fill in OS_1F_RANGES:
+        body += ldr.header(ldr.FILL, s, e - s, 0)
+    body += ldr.header(ldr.FINAL, ENTRY, 0, 0)
+    return ldr.header(ldr.FIRST | ldr.IGNORE, ENTRY, 0, len(body)) + bytes(body)
+
+
+def one_cpu_vectors():
+    """os_destinations_1f.json (S-05.040), teardown_1f.json (S-05.037), entry_state_1f.json (S-05.038)."""
+    image = os_1f_stream()
+    try:
+        kernel_model.compatibility_check(image)
+        verdict = {'accepted': True}
+    except kernel_model.Refused as e:
+        verdict = {'accepted': False, 'reason': str(e)}
+    assert verdict['accepted'], verdict
+    dest = {'document': 'S-05', 'requirement': 'S-05.040',
+            'os': 'OP-1F OS 1.7.3', 'blocks': 313, 'bytes': 2079016,
+            'flags': ['FIRST', 'IGNORE', 'FILL', 'FINAL'], 'first_target': '0x%08X' % ENTRY,
+            'final_target': '0x%08X' % ENTRY, 'final_argument': 0,
+            'ranges': [{'memory': m, 'start': '0x%08X' % s, 'end': '0x%08X' % e, 'fill': f}
+                       for m, s, e, f in OS_1F_RANGES],
+            'display_rows_end': '0x8C03C000',
+            'stream': image.hex(),
+            'note': 'stream: one FILL block per range in the shape of S-05.040, for S-05.024\'s check',
+            'verdict': verdict}
+    with open(os.path.join(OUT, 'os_destinations_1f.json'), 'w') as f:
+        json.dump(dest, f, indent=1)
+        f.write('\n')
+    teardown = {
+        'document': 'S-05', 'requirement': 'S-05.037',
+        'at': 'the kernel call, after the last eMMC command',
+        'msi': [{'register': 'MSI_CTL', 'mask': '0x00000010', 'value': '0x00000000',
+                 'note': 'bit 4, the interrupt enable, clear'},
+                {'register': 'MSI_IMSK', 'mask': '0xFFFFFFFF', 'value': '0x00000000'},
+                {'register': 'MSI_ISTAT', 'mask': '0xFFFFFFFF', 'value': '0x00000000',
+                 'note': 'the close writes 0xFFFFFFFF (W1C)'},
+                {'register': 'MSI_CMD', 'field': 'START', 'value': 0},
+                {'item': 'data transfer', 'value': 'none in progress'}],
+        'emmc': {'selected': True, 'last_command_complete': True, 'partition': 'user',
+                 'bus_width': 'device.emmc_width (4 on the OP-1F)'},
+        'sec': {'source_72_msi0': {'pending': False, 'ien': False, 'sen': False, 'provisional': True},
+                'enabled_sources': [1], 'enabled_provisional': True,
+                'others': {'ien': False, 'sen': False}, 'pending': 'none'},
+        'other_registers': 'not fixed',
+    }
+    with open(os.path.join(OUT, 'teardown_1f.json'), 'w') as f:
+        json.dump(teardown, f, indent=1)
+        f.write('\n')
+    evt = {'EVT2': 0x11A00C18, 'EVT3': 0x11A00B78, 'EVT11': 0x11A01438, 'EVT15': 0x11A000CA}
+    for n in list(range(4, 11)) + [12, 13, 14]:
+        evt['EVT%d' % n] = 0x11A00664
+    entry = {
+        'document': 'S-05', 'requirement': 'S-05.038',
+        'evt': {k: '0x%08X' % evt[k] for k in sorted(evt, key=lambda x: int(x[3:]))},
+        'ipend': '0x8000', 'imask': '0x8800', 'imask_read': '0x881F',
+        'ilat_clear_bits': '5-14', 'l1im_ictl': '0x00000207', 'l1dm_dctl': '0x00000207',
+        'sp': None, 'fp': None, 'note': 'SP and FP are not fixed (S-05.038, open question 15): recorded, '
+                                       'not checked; the rest is S-05.014\'s',
+        'entry': 'RCU0_SVECT0 as the kernel left it (S-05.013)',
+    }
+    with open(os.path.join(OUT, 'entry_state_1f.json'), 'w') as f:
+        json.dump(entry, f, indent=1)
+        f.write('\n')
 
 
 FACTORY_PAD = bytes(0x2800)                           # past the OS write's minimum (S-05.029)

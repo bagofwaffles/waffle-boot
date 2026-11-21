@@ -2,6 +2,7 @@
 /* The slave's boot steps on the OP-XY (see waffle/board/opxy_boot.h). */
 #include "waffle/board/opxy_boot.h"
 
+#include <stddef.h>
 #include <string.h>
 
 #include "waffle/board/opxy_bridge.h"
@@ -23,18 +24,12 @@
 
 struct opxy_slave opxy_slave;
 
-/* Each descriptor is four words the eMMC controller fetches as one burst:
- * aligned to its own size, so its place does not move with the link. */
-static _Alignas(16) struct wb_msi_desc msi_desc[OPXY_MSI_DESC];
-static _Alignas(32) uint8_t emmc_scratch[S03_SECTOR];	/* to the eMMC driver (S-13b.054) */
-static struct wb_blockdev user_bd;
-/* The eMMC commands of S-09.040 that s03_emmc_ops does not carry; the
- * yaffs2 volume's chunks take the reliable write too (S-12.060). */
-static const struct opxy_emmc_more emmc_more = {
-	wb_msi_emmc_erase_arg, wb_msi_emmc_write_reliable,
-};
-static struct wire_yaffs yaffs;
-static struct wire_s09 files;
+/* The slave whose storage is a store op's ctx. */
+static struct opxy_slave *slave_of(void *st)
+{
+	return (struct opxy_slave *)(void *)((uintptr_t)st - offsetof(struct opxy_slave, st));
+}
+
 /* One request session, header and payload (S-09.021). Write payloads go to
  * the eMMC driver's DMA from rxbuf + 12, a 32-byte boundary in every build
  * (S09_DMA_ALIGN); S-09.072: a request's check after them. */
@@ -87,7 +82,7 @@ static uint32_t testos_row(void *ctx, uint8_t cmd, uint32_t row, uint32_t start)
 	if (start != 0u)
 		testos_emmc_due = true;
 	if (row == OPXY_TESTOS_STEP_QUEUE) {
-		const struct opxy_slave *s = ctx;
+		const struct opxy_slave *s = slave_of(ctx);
 
 		return OPXY_TESTOS_ROW(row, s->server.nqueue, 0u);
 	}
@@ -242,345 +237,6 @@ static bool master_ready(void)
 	return wb_gpio_get(OPXY_PB15);
 }
 
-/* --- The eMMC's geometry (S-03.001, S-03.002) --- */
-
-/* EXT_CSD bytes, JESD84-B51. */
-#define EXT_CSD_ERASED_MEM_CONT    181u	/* bit 0: an erased byte reads 0xFF */
-#define EXT_CSD_SEC_COUNT          212u	/* 4 bytes, little-endian */
-#define EXT_CSD_CACHE_SIZE         249u	/* 4 bytes, little-endian; 0: no cache */
-#define EXT_CSD_OPTIMAL_WRITE_SIZE 265u
-
-/*
- * S-03.001, from the bring-up's EXT_CSD and CSD: SEC_COUNT; the CSD's
- * erase group, since ERASE_GROUP_DEF is never written and EXT_CSD[224] is
- * not in force; and EXT_CSD[265] as the number the byte holds, which must
- * divide 8.
- */
-static bool geometry_ok(const struct opxy_slave *s)
-{
-	const uint8_t *c = s->ext_csd + EXT_CSD_SEC_COUNT;
-	const uint32_t sectors = (uint32_t)c[0] | (uint32_t)c[1] << 8 |
-				 (uint32_t)c[2] << 16 | (uint32_t)c[3] << 24;
-
-	return s03_emmc_supported(sectors, wb_msi_csd_erase_group(&s->hw.msi),
-				  s->ext_csd[EXT_CSD_OPTIMAL_WRITE_SIZE]);
-}
-
-/* S-03.007, S-03.002: the user area's sectors only while it is selected,
- * and never another eMMC's. */
-static bool user_area(const struct opxy_slave *s)
-{
-	return s->part == S03_PART_USER && !s->emmc_other;
-}
-
-/* --- The user area as a block device, for yaffs2 (S-12) --- */
-
-/* file() refuses every request first, so these failures are a last guard. */
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static int bd_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
-{
-	const struct opxy_slave *s = ctx;
-	int rc;
-
-	if (!user_area(s))
-		return -1;
-	OPXY_TIMING_CHUNK(true, true, count);
-	rc = s->emmc_ops.read(s->emmc_ops.ctx, lba, count, buf);
-	OPXY_TIMING_CHUNK(false, rc == 0, count);
-	return rc;
-}
-
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static int bd_write(void *ctx, uint32_t lba, const void *buf, uint32_t count)
-{
-	const struct opxy_slave *s = ctx;
-
-	if (!user_area(s))
-		return -1;
-	return s->emmc_ops.write(s->emmc_ops.ctx, lba, count, buf);
-}
-
-/* S-12.060: whole chunks at a chunk's first sector, as one reliable write
- * (CMD23 with the count and bit 31, then CMD25; S-13b.054). */
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static int bd_write_reliable(void *ctx, uint32_t lba, const void *buf,
-			     uint32_t count)
-{
-	const struct opxy_slave *s = ctx;
-
-	if (!user_area(s) || s->emmc_more == NULL || count == 0u ||
-	    lba % WB_YAFFS_SECTORS_PER_CHUNK != 0u ||
-	    count % WB_YAFFS_SECTORS_PER_CHUNK != 0u)
-		return -1;
-	return s->emmc_more->write_reliable(s->emmc_ops.ctx, lba, count, buf);
-}
-
-/* S-03.003: what an erased group reads as, from the bring-up's EXT_CSD,
- * before anything relies on it: zeros unless ERASED_MEM_CONT says 0xFF. */
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static bool erase_zeroes(void *ctx)
-{
-	const struct opxy_slave *s = ctx;
-
-	return (s->ext_csd[EXT_CSD_ERASED_MEM_CONT] & 1u) == 0u;
-}
-
-/* S-03.068: the eMMC has a volatile cache to flush (CACHE_SIZE not 0). */
-static bool cache_present(const struct opxy_slave *s)
-{
-	const uint8_t *c = s->ext_csd + EXT_CSD_CACHE_SIZE;
-
-	return (c[0] | c[1] | c[2] | c[3]) != 0u;
-}
-
-#if !defined(OPXY_YAFFS_ZERO_ERASE)
-/* S-12.042: a block is one erase group, emptied by one eMMC erase of it
- * (CMD35 and CMD36 at its first sector, CMD38; S-03.004), tried at most
- * S03_RETRIES times (S-03.010), each try within the driver's bounds
- * (S-13b.057). */
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static int bd_erase(void *ctx, uint32_t lba, uint32_t count)
-{
-	const struct opxy_slave *s = ctx;
-	unsigned i;
-
-	if (!user_area(s) || count != S03_GROUP_SECTORS ||
-	    lba % S03_GROUP_SECTORS != 0u)
-		return -1;
-	for (i = 0; i < S03_RETRIES; i++)
-		if (s->emmc_ops.erase(s->emmc_ops.ctx, lba) == 0)
-			return 0;
-	return -1;
-}
-#define BD_ERASE bd_erase
-#else
-/* make YAFFS_ZERO_ERASE=1: no erase operation, so the glue writes zeros
- * over the block, should an erased group not read 0x00 (S-03.003). */
-#define BD_ERASE NULL
-#endif
-
-void opxy_slave_user_bd(struct opxy_slave *s, struct wb_blockdev *bd)
-{
-	bd->ctx = s;
-	bd->n_sectors = S03_USER_SECTORS;
-	bd->read = bd_read;
-	bd->write = bd_write;
-	bd->erase = BD_ERASE;
-	bd->erase_zeroes = erase_zeroes;
-	bd->write_reliable = bd_write_reliable;
-}
-
-/* --- s09_store_ops --- */
-
-static void emmc_wake(struct opxy_slave *s);
-
-/*
- * S-03.009: the three feature switches, before the first request that
- * uses the eMMC: an eMMC request, the 0x08 mount, the release's load. Not
- * at start-up (S-09.018). They run on the bring-up's waits, so the worst,
- * every switch tried S03_RETRIES times with each wait running out, is
- * 3 * 3 * (CMD6, DAT0, CMD13, one more CMD13) = 9 * (2 * 0.25 + 2 * 0.1)
- * = 6.3 s, inside the request's T_EXEC (S-09.060, at least 10 s). If a
- * switch still fails, that request fails (S-03.010) and the next one
- * tries again. Once they are on, only the shutdown of S-03.011 writes
- * these bytes again, and after it a request makes them again first
- * (emmc_wake()); the hand-off finds them on (S-13b.058).
- */
-static bool features_ready(struct opxy_slave *s)
-{
-	emmc_wake(s);
-	if (!s->emmc_up)
-		return false;
-	if (!s->features) {
-		s->hw.msi.c = &opxy_msi_bringup;
-		s->features = STEP_NOTE(s, OPXY_TESTOS_STEP_FEATURES,
-				       s03_emmc_features_on(&s->emmc)) == 0;
-		s->hw.msi.c = &opxy_msi;
-	}
-	return s->features;
-}
-
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static uint32_t erase_group(void *ctx)
-{
-	const struct opxy_slave *s = ctx;
-
-	/* S-09.030 0x03: S-03.001's erase group, the CSD's, in sectors; none
-	 * from an eMMC that failed its bring-up (S-13b.059). */
-	if (!s->emmc_up)
-		return 0u;
-	return wb_msi_csd_erase_group(&s->hw.msi);
-}
-
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static uint32_t boot_size(void *ctx)
-{
-	const struct opxy_slave *s = ctx;
-
-	return s->emmc.boot_size;
-}
-
-/* The requests S-03.002 refuses on another eMMC: every write and erase, and
- * a read of the user area. Selects, the flush and boot-partition reads go
- * on: whether such an eMMC's OS is loaded is not specified. */
-static bool other_refuses(uint8_t cmd, unsigned part)
-{
-	switch (cmd) {
-	case S09_WRITE_SECTOR:
-	case S09_WRITE_SECTORS:
-	case S09_WRITE_RELIABLE:
-	case S09_ERASE:
-		return true;
-	case S09_READ_SECTOR:
-	case S09_READ_SECTORS:
-		return part == S03_PART_USER;
-	default:
-		return false;
-	}
-}
-
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static int32_t emmc_command(void *ctx, uint8_t cmd, uint32_t arg0,
-			    uint32_t arg1, uint8_t *data, uint32_t n)
-{
-	struct opxy_slave *s = ctx;
-	int32_t rc;
-
-	emmc_wake(s);	/* S-03.011 */
-	/* S-03.002: another eMMC's user area is not read or written, and
-	 * neither boot partition written; no command reaches the eMMC. */
-	if (s->emmc_other && other_refuses(cmd, s->part))
-		return -1;
-	/* S-13b.059: an error at once; emmc_more would reach the driver. */
-	if (!features_ready(s) || s->emmc_more == NULL)
-		return -1;
-	/* S-03.063: after a select that failed, no read, write or erase
-	 * until a select succeeds. */
-	if (s->part == OPXY_PART_UNKNOWN && cmd != S09_SELECT && cmd != S09_FLUSH)
-		return -1;
-	/* S-03.068: a flush where EXT_CSD shows a cache; with none there is
-	 * nothing to commit, and no command is sent */
-	if (cmd == S09_FLUSH && !cache_present(s))
-		return 0;
-	rc = opxy_slave_emmc(&s->emmc_ops, s->emmc_more, cmd, arg0, arg1, data,
-			     n);
-	if (cmd == S09_SELECT && arg0 <= S03_PART_BP2)
-		s->part = rc == 0 ? arg0 : OPXY_PART_UNKNOWN;
-	return rc;
-}
-
-/* S-03.007: the volume is the user area's, and is used only while the user
- * area is selected; until then every file request fails with ENODEV
- * (S-09.041), its unmount included, which could write. */
-static bool volume_usable(const struct opxy_slave *s, uint32_t *err)
-{
-	if (s->part == S03_PART_USER)
-		return true;
-	*err = S09_ENODEV;
-	return false;
-}
-
-/* --- S-03.011: the eMMC shut down at the unmount --- */
-
-/* The sequence's third step. yaffs2 writes the chunks it holds to the
- * eMMC as it unmounts. */
-static int unmount_volume(void *ctx)
-{
-	(void)ctx;
-	wire_s09_release(&files);
-	wire_yaffs_unmount(&yaffs);
-	return 0;
-}
-
-/*
- * S-03.011 at every 0x09 that finds the volume mounted, the shutdown's
- * (S-04.063) and a format's (S-12.057) alike: the flush, the cache off,
- * the unmount, background operations off, the power-off notification,
- * each step made whatever the one before gave. The driver sends nothing
- * after Switch(34, 3) and waits for its busy end on DAT0 alone, up to the
- * eMMC's POWER_OFF_LONG_TIME (S-13b.056). The reply follows.
- */
-static void emmc_shutdown(struct opxy_slave *s)
-{
-	(void)s03_emmc_shutdown(&s->emmc, unmount_volume, s);
-	s->emmc_notified = true;
-	s->features = false;
-}
-
-/* S-09.041, S-09.035 on S-12's volume. The store's ctx is the slave;
- * wire_s09's is its own state. Only the mount and the unmount reach the
- * eMMC first: every other command needs the volume mounted. */
-static int32_t file(void *ctx, const struct s09_req *r, const char *path,
-		    const char *path2, const uint8_t *data, uint32_t n,
-		    uint8_t *out, uint32_t *err)
-{
-	struct opxy_slave *s = ctx;
-
-	/* S-03.011: a mount after the notification brings the eMMC up
-	 * first. S-03.002: no mount of another eMMC's user area; 0x08
-	 * answers as any failed mount does (S-09.041). */
-	if (r->cmd == S09_MOUNT)
-		emmc_wake(s);
-	if (r->cmd == S09_MOUNT && (s->emmc_other || !features_ready(s))) {
-		*err = 0;
-		return -1;
-	}
-	if (!volume_usable(s, err))	/* S-09.041's failure result */
-		return r->cmd == S09_OPENDIR || r->cmd == S09_READDIR ||
-		       r->cmd == S09_FREE_SPACE || r->cmd == S09_TOTAL_SPACE ? 0 : -1;
-	if (r->cmd == S09_UNMOUNT && yaffs.mounted) {
-		emmc_shutdown(s);
-		*err = 0;
-		return 1;		/* S-09.041 */
-	}
-#if defined(OPXY_TEST_OS)
-	if (r->cmd == S09_MOUNT) {
-		const int32_t v = wire_s09_file(&files, r, path, path2, data, n,
-						out, err);
-
-		(void)testos_note(ctx, OPXY_TESTOS_STEP_MOUNT,
-				  v >= 0 ? 0 : *err != 0u ? (int)*err : 1);
-		return v;
-	}
-#endif
-	return wire_s09_file(&files, r, path, path2, data, n, out, err);
-}
-
-#if OPXY_BOOT_TIMING
-/* A timing build: the mount's handling timed, with its chunk reads. */
-static int32_t file_timed(void *ctx, const struct s09_req *r, const char *path,
-			  const char *path2, const uint8_t *data, uint32_t n,
-			  uint8_t *out, uint32_t *err)
-{
-	/* the boot's mount; the scan before a write (S-12.062) apart */
-	const bool mount = r->cmd == S09_MOUNT && r->arg0 != S09_MOUNT_FOR_WRITE;
-	int32_t v;
-
-	if (mount)
-		OPXY_TIMING_MOUNT_SLAVE(true);
-	v = file(ctx, r, path, path2, data, n, out, err);
-	if (mount)
-		opxy_timing_mount_files(&yaffs.rep);
-	else if (r->cmd == S09_MOUNT)
-		opxy_timing_write_scan_slave(&yaffs.rep);
-	if (mount)
-		OPXY_TIMING_MOUNT_SLAVE(false);
-	return v;
-}
-#define FILE_OP file_timed
-#else
-#define FILE_OP file
-#endif
-
-/* cppcheck-suppress constParameterCallback ; the ops struct fixes the type */
-static int32_t read_file(void *ctx, uint32_t fd, uint8_t *buf, uint32_t n,
-			 uint32_t *err)
-{
-	if (!volume_usable(ctx, err))
-		return -1;
-	return wire_s09_read(&files, fd, buf, n, err);
-}
-
 /* Not in the test OS (waffle/testos.h): it stages nothing and reports
  * "no OS" to every release, so neither CPU ever hands over from it. */
 static OPXY_TESTOS_UNUSED enum s05_fail stage_os(struct opxy_slave *s,
@@ -588,9 +244,9 @@ static OPXY_TESTOS_UNUSED enum s05_fail stage_os(struct opxy_slave *s,
 {
 	struct s03_load ld;
 
-	s03_load_os(&s->emmc, (uint8_t *)(uintptr_t)OPXY_STAGING, S03_OS_MAX,
+	s03_load_os(&s->st.emmc, (uint8_t *)(uintptr_t)OPXY_STAGING, S03_OS_MAX,
 		    &ld);
-	s->part = ld.select0_failed ? OPXY_PART_UNKNOWN : S03_PART_USER;
+	s->st.part = ld.select0_failed ? OPXY_PART_UNKNOWN : S03_PART_USER;
 	*length = ld.length;
 	switch (ld.result) {
 	case S03_LOAD_OK:
@@ -629,8 +285,8 @@ static OPXY_TESTOS_UNUSED enum s05_fail stage_file(struct opxy_slave *s,
 	uint32_t err;
 
 	*length = 0;
-	if (!volume_usable(s, &err) ||
-	    wire_s09_os_file(&files, s->emmc.crc32, s->emmc.crc32_fast, staging,
+	if (!opxy_storage_volume_usable(&s->st, &err) ||
+	    wire_s09_os_file(opxy_storage_files(), s->st.emmc.crc32, s->st.emmc.crc32_fast, staging,
 			     S03_OS_MAX, len, crc) != WIRE_OS_FILE_OK)
 		return S05_FAIL_NO_OS;
 	*length = len;
@@ -646,12 +302,12 @@ static OPXY_TESTOS_UNUSED enum s05_fail stage_file(struct opxy_slave *s,
  */
 static uint32_t os_status(void *ctx, uint32_t len, uint32_t crc)
 {
-	struct opxy_slave *s = ctx;
+	struct opxy_slave *s = slave_of(ctx);
 
 	(void)len;	/* the test OS stages nothing */
 	(void)crc;
 	s->staged = OPXY_TESTOS_OR(S05_FAIL_NO_OS,
-				   !features_ready(s) ? S05_FAIL_SELECT :
+				   !opxy_storage_features(&s->st) ? S05_FAIL_SELECT :
 				   len != 0u ? stage_file(s, len, crc, &s->staged_len) :
 					       stage_os(s, &s->staged_len));
 	/* cppcheck-suppress knownConditionTrueFalse ; true of the test OS's build only (waffle/testos.h) */
@@ -1113,84 +769,6 @@ static void bringup(void *ctx)
 #endif
 }
 
-/*
- * S-13b.051, S-13b.057: the whole bring-up, at most OPXY_EMMC_TRIES times.
- * Every step's failure ends a try, CMD8's included (its transfer did not
- * end with DTO and no data or IDMAC error). After the last failed try
- * EXT_CSD is cleared: no field of a partly received one is used
- * (S-13b.059). S-09.018: the bring-up's waits are opxy_msi_bringup's and
- * a repeat starts only within OPXY_EMMC_REPEAT_US, so the whole ends
- * within 4.5 s; the eMMC's later operations wait as opxy_msi says.
- */
-static bool emmc_up(struct opxy_slave *s)
-{
-	uint64_t start = wb_time_us(&s->hw.time);
-	unsigned i;
-
-	for (i = 0; i < OPXY_EMMC_TRIES; i++) {
-		if (i > 0u &&
-		    wb_time_us(&s->hw.time) - start >= OPXY_EMMC_REPEAT_US)
-			break;
-		if (STEP_NOTE(s, OPXY_TESTOS_STEP_MSI,
-			      wb_msi_init(&s->hw.msi, &opxy_msi_bringup,
-					  &s->hw.time, msi_desc,
-					  OPXY_MSI_DESC)) == WB_MSI_OK &&
-		    STEP_NOTE(s, OPXY_TESTOS_STEP_EMMC,
-			      wb_msi_emmc_init(&s->hw.msi,
-					       s->ext_csd)) == WB_MSI_OK) {
-			s->hw.msi.c = &opxy_msi;
-			return true;
-		}
-	}
-	memset(s->ext_csd, 0, sizeof(s->ext_csd));
-	return false;
-}
-
-/* The eMMC as a bring-up left it; S-03.009's switches come with the first
- * request that uses it. */
-static void emmc_start(struct opxy_slave *s, bool up)
-{
-	s->emmc_up = up;
-	/*
-	 * S-13b.059: after a failed bring-up no S-03 operation reaches the
-	 * eMMC: each fails at once, so the load fails (S-03.046), the
-	 * writer erases and writes nothing and the master's eMMC requests
-	 * get an error. No feature switch, and no volume: nothing of the
-	 * user area is read at an unknown bus width and clock.
-	 */
-	s->emmc_ops = up ? opxy_emmc_ops(&s->hw) : opxy_emmc_down_ops;
-	s->emmc_more = up ? &emmc_more : NULL;
-	/*
-	 * S-03.001, S-03.002: before any user-area access. Another eMMC gets
-	 * no volume and none of its user area is read or written, but the
-	 * slave serves on. S-03.002's log line is not observable from the
-	 * slave (S-14.026), which logs nothing; the master sees the 0x08 fail.
-	 */
-	s->emmc_other = up && !geometry_ok(s);
-	s->emmc.boot_size = up ? (uint32_t)s->ext_csd[226] * 0x20000u : 0u;
-	s->features = false;
-}
-
-/*
- * S-03.011, S-13b.050: after the power-off notification, the next request
- * that needs the eMMC (a mount, an eMMC request 0x04 or 0x11-0x18, the
- * release's load) first wakes it: the bring-up of S-13b.051 again from
- * CMD0, the geometry check (S-03.001) and, in features_ready(), the
- * switches of S-03.009 (S-03.009: a format's unmount then a start of the
- * OS hands the eMMC over with them on). Until then no command reaches the
- * eMMC (S-13b.056). A wake that fails is a failed bring-up (S-13b.059).
- * The selected partition is the user area, as the 0x09 found it. A repeat
- * of S-13b.057's bounds and the switches' can pass T_EXEC's floor of 10 s
- * (S-09.060).
- */
-static void emmc_wake(struct opxy_slave *s)
-{
-	if (!s->emmc_notified)
-		return;
-	s->emmc_notified = false;
-	emmc_start(s, emmc_up(s));
-}
-
 #if defined(OPXY_TEST_OS)
 /* opxy_slave_storage()'s eMMC half, on the master's word: every wait in it
  * is opxy_msi_bringup's. A failure leaves the server's down eMMC ops, so
@@ -1200,29 +778,24 @@ static void testos_emmc_start(struct opxy_slave *s)
 	testos_emmc_done = true;	/* PB2 is the attention line from here */
 #if defined(OPXY_TESTOS_BENCH) && OPXY_TESTOS_BENCH == 2
 	/* A test build whose eMMC never comes up. */
-	(void)emmc_up;
 	(void)testos_note(s, OPXY_TESTOS_STEP_EMMC, WB_MSI_TIMEOUT);
-	s->emmc_up = false;
+	s->st.emmc_up = false;
 #else
-	s->emmc_up = emmc_up(s);
+	s->st.emmc_up = opxy_storage_up(&s->st);
 #endif
-	if (!s->emmc_up)
+	if (!s->st.emmc_up)
 		return;
-	s->emmc_ops = opxy_emmc_ops(&s->hw);
-	s->emmc_more = &emmc_more;
-	s->part = S03_PART_USER;	/* S-09.040: until the first select */
-	s->emmc.boot_size = (uint32_t)s->ext_csd[226] * 0x20000u;
-	(void)testos_note(s, OPXY_TESTOS_STEP_VOLUME,
-			  wire_yaffs_add(&yaffs, "/yaffs2", &user_bd, 0u,
-					 WB_YAFFS_LAST_BLOCK) ? 0 : 1);
-	wire_s09_init(&files, &yaffs);
+	opxy_storage_start(&s->st, true);
+	opxy_storage_testos_volume(&s->st);
+}
+
+/* cppcheck-suppress constParameterCallback ; the storage's note fixes the type */
+static int testos_note_cb(void *ctx, unsigned step, int rc)
+{
+	return testos_note(ctx, step, rc);
 }
 #endif
 
-/* S-13b.050-.059, S-03.008, then S-12's volume; S-03.009 comes later. Runs on DDR,
- * so after the DDR check. S-09.018: the volume is added here and mounted
- * only by the master's 0x08 (wire_s09_file()); until then every file
- * command fails with ENODEV. */
 #if !defined(OPXY_TEST_OS)
 /* S-10c.110: the developer requests' reach into the slave, a word read
  * (0x0E) or written (0x0D), inside opxy_dev_mem_ok(). The master gates them
@@ -1241,15 +814,8 @@ static uint32_t dev_cmd(void *ctx, uint8_t cmd, uint32_t addr, uint32_t val)
 }
 #endif
 
-#if !defined(OPXY_TEST_OS)
-static const struct opxy_slave *clock_of;
-
-static uint64_t volume_us(void)
-{
-	return wb_time_us(&clock_of->hw.time);
-}
-#endif
-
+/* S-13b.050-.059, S-03.008, then S-12's volume (opxy_storage_init()),
+ * and the S-09 server over its store. */
 void opxy_slave_storage(struct opxy_slave *s)
 {
 #if defined(OPXY_TEST_OS)
@@ -1258,48 +824,29 @@ void opxy_slave_storage(struct opxy_slave *s)
 	testos_t0 = wb_time_us(&s->hw.time);
 	for (step = 0; step < OPXY_TESTOS_STEP_COUNT; step++)
 		testos_rows[step] = OPXY_TESTOS_ROW(step, OPXY_TESTOS_ROW_NOT_RUN, 0u);
-	s->store.testos_row = testos_row;
+	s->st.note = testos_note_cb;
+	s->st.note_ctx = s;
+#endif
+	opxy_storage_init(&s->st, &s->hw, &wb_device_opxy, OPXY_TESTOS_OR(false, true));	/* S-18.002: the slave is the OP-XY's */
+#if defined(OPXY_TEST_OS)
+	s->st.store.testos_row = testos_row;
 #else
-	s->store.dev_cmd = dev_cmd;
+	s->st.store.dev_cmd = dev_cmd;
 #endif
-	emmc_start(s, OPXY_TESTOS_OR(false, emmc_up(s)));
-	s->emmc_notified = false;
-	s->emmc.ops = &s->emmc_ops;
-	s->emmc.crc32 = wire_crc32;
-	s->emmc.crc32_fast = opxy_crc32_check_quiet;	/* S-03.044, at the release */
-	s->emmc.scratch = emmc_scratch;
-	s->emmc.scratch_len = sizeof(emmc_scratch);
-	s->emmc.max_xfer = 128u;
-
-	opxy_slave_user_bd(s, &user_bd);
-	s->part = S03_PART_USER;	/* S-09.040: until the first select */
-	if (s->emmc_up && !s->emmc_other)
-		(void)wire_yaffs_add(&yaffs, "/yaffs2", &user_bd, 0u,
-				     WB_YAFFS_LAST_BLOCK);
-#if !defined(OPXY_TEST_OS)
-	/* S-12.061: the boot menu's mount restores the OS's checkpoint; the
-	 * test OS scans, as before */
-	clock_of = s;
-	yaffs.may_restore = true;
-	yaffs.now_us = volume_us;
-#endif
-	wire_s09_init(&files, &yaffs);
-
-	s->store.ctx = s;
-	s->store.erase_group = erase_group;
-	s->store.boot_size = boot_size;
-	s->store.emmc = emmc_command;
-	s->store.file = FILE_OP;
-	s->store.read = read_file;
-	s->store.os_status = os_status;
-	s->store.cycles = cycles;
-	s->store.adjust = adjust;
-	s09_slave_init(&s->server, &s->store);
+	s->st.store.os_status = os_status;
+	s->st.store.cycles = cycles;
+	s->st.store.adjust = adjust;
+	s09_slave_init(&s->server, &s->st.store);
 	/* S-09.079: a failed receive's own account, for 0x1B */
 	s09_slave_fault_source(&s->server, receive_fault, &s->hw.link_slave);
 	OPXY_TESTOS_OR((void)0, s09_slave_qtest_source(&s->server, qtest, s));	/* S-09.080 */
 	OPXY_TESTOS_OR((void)0, s09_slave_qdata_able(&s->server, true));	/* S-09.081 */
 	OPXY_TESTOS((void)testos_note(s, OPXY_TESTOS_STEP_SERVER, 0);)
+}
+
+void opxy_slave_user_bd(struct opxy_slave *s, struct wb_blockdev *bd)
+{
+	opxy_storage_user_bd(&s->st, bd);
 }
 
 static bool ddr_check(void *ctx)

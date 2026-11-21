@@ -4,8 +4,6 @@
  */
 #include "waffle/s15_keytest.h"
 
-#define KEY_SHIFT 0x37u
-#define KEY_BACK  0x15u   /* digit 8 */
 /* S-15.062: the device's front as a grid. */
 #define GRID_COLS 17u
 #define GRID_ROWS 6u
@@ -28,7 +26,7 @@ static const struct cell cells[S15_NKEYS] = {
 	/* sound 1 to 8 */
 	{ 8, 2, 1, 1 }, { 9, 2, 1, 1 }, { 10, 2, 1, 1 }, { 11, 2, 1, 1 },
 	{ 12, 2, 1, 1 }, { 13, 2, 1, 1 }, { 14, 2, 1, 1 }, { 15, 2, 1, 1 },
-	/* seq, mic, usb, bar */
+	/* seq, mic, com, bar */
 	{ 16, 2, 1, 1 }, { 16, 0, 1, 1 }, { 16, 1, 1, 1 }, { 16, 3, 1, 1 },
 	/* the piano, F3 to E5: naturals in row 5, sharps in row 4 */
 	{ 3, 5, 1, 1 }, { 4, 4, 1, 1 }, { 4, 5, 1, 1 }, { 5, 4, 1, 1 },
@@ -81,8 +79,9 @@ static bool any_down(const struct s15_keytest *kt)
 }
 
 /* S-15.062 */
-void s15_keytest_start(struct s15_keytest *kt)
+void s15_keytest_start(struct s15_keytest *kt, const struct wb_device *dev)
 {
+	kt->dev = dev;
 	for (unsigned i = 0; i < sizeof kt->tested; i++) {
 		kt->tested[i] = 0;
 		kt->down[i] = 0;
@@ -91,19 +90,21 @@ void s15_keytest_start(struct s15_keytest *kt)
 	kt->n_tested = 0;
 }
 
-/* S-15.065: all 72 tested, or shift (0x37) and digit 8 (0x15) down
- * together. No other key ends it. */
+/* S-15.065, S-15.016: all the device's keys tested, or shift and digit 8
+ * (0x37 and 0x15 on the OP-XY) down together. No other key ends it. */
 static bool ended(const struct s15_keytest *kt)
 {
-	return kt->n_tested == S15_NKEYS ||
-	       (bit(kt->down, KEY_SHIFT) && bit(kt->down, KEY_BACK));
+	const struct wb_dev_keys *k = &kt->dev->keys;
+
+	return kt->n_tested == k->count ||
+	       (bit(kt->down, k->shift) && bit(kt->down, k->digit[7][0]));
 }
 
 /* S-15.064: a key is tested at its up when no other key went down from its
  * down to that up. Shift counts like every key. */
 bool s15_keytest_event(struct s15_keytest *kt, unsigned key, bool down)
 {
-	if (key >= S15_NKEYS)
+	if (key >= kt->dev->keys.count)
 		return ended(kt);
 	if (down) {
 		kt->lone = any_down(kt) ? -1 : (int)key;
@@ -123,7 +124,7 @@ bool s15_keytest_event(struct s15_keytest *kt, unsigned key, bool down)
 
 bool s15_keytest_tested(const struct s15_keytest *kt, unsigned key)
 {
-	return key < S15_NKEYS && bit(kt->tested, key);
+	return key < kt->dev->keys.count && bit(kt->tested, key);
 }
 
 /* Down, else tested, else untested; an up that did not test
@@ -211,7 +212,7 @@ void s15_render_keytest(const struct s15_keytest *kt,
 		d->fill(d->ctx, r.x, r.y, 1, r.h, S15_RULE);
 		d->fill(d->ctx, (uint16_t)(r.x + (r.w - 1u)), r.y, 1, r.h, S15_RULE);
 	}
-	for (i = 0; i < S15_NKEYS; i++) {
+	for (i = 0; i < kt->dev->keys.count; i++) {
 		struct s15_rect r;
 		uint16_t c = s15_keytest_color(kt, i);
 

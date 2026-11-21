@@ -2,7 +2,7 @@
 #
 # Build rules for the vendored libraries (src/third_party/) and their glue
 # (src/glue/). Included by the top-level Makefile, which defines BUILD, CC,
-# CROSS_CC, CROSS_AR, WARNINGS and COMMON.
+# CROSS_CC, CROSS_AR, WARNINGS, COMMON, TARGET_SIZE and TARGET_SPEED.
 #
 # Each component <c> is built into $(BUILD)/host/lib<c>.a and
 # $(BUILD)/bf703/lib<c>.a from:
@@ -80,8 +80,11 @@ TP_yaffs2_WARN := -Wno-sign-compare -Wno-unused-but-set-variable
 TP_zlib_SRCS := $(addprefix src/third_party/zlib/, adler32.c crc32.c inffast.c \
 	inflate.c inftrees.c zutil.c)
 # Every byte a package extracts goes through inflate and CRC-32: built for
-# speed on the target.
-TP_zlib_FLAGS := -O2
+# speed on the target. BUILDFIXED: inflate builds its fixed-code tables in
+# RAM on first use instead of carrying them (the same tables). Z_TESTW empty:
+# crc32() byte by byte from its one 1 KiB table, without the 4 KiB braid
+# tables; the bulk CRC-32s run on the CRC peripheral (opxy_crc.c).
+TP_zlib_FLAGS := -O2 -DBUILDFIXED -DZ_TESTW=
 
 TP_minizip_SRCS := src/third_party/minizip/unzip.c src/third_party/minizip/ioapi.c
 TP_minizip_GLUE := src/glue/minizip/unzip_mem.c
@@ -110,7 +113,7 @@ TP_COMMON := -g -fdebug-prefix-map=$(CURDIR)=. $(TP_CPPFLAGS)
 TP_HOST_CFLAGS := -std=gnu11 -O2 $(TP_COMMON)
 TP_HOST_GLUE_CFLAGS := $(COMMON) -O2 $(TP_CPPFLAGS)
 
-TP_TARGET_ARCH := -mcpu=bf703-none -Os -fno-common -ffunction-sections \
+TP_TARGET_ARCH := -mcpu=bf703-none -Os $(TARGET_SIZE) -fno-common -ffunction-sections \
 	-fdata-sections
 TP_TARGET_CFLAGS := -std=gnu11 $(TP_TARGET_ARCH) $(TP_COMMON) $(LIBC_INCLUDES)
 TP_TARGET_GLUE_CFLAGS := $(COMMON) $(TP_TARGET_ARCH) $(TP_CPPFLAGS) \
@@ -153,10 +156,13 @@ endef
 
 $(foreach c,$(TP_COMPONENTS),$(eval $(call TP_COMPONENT,$(c))))
 
+# The CRCs and zlib are built for speed on the target (their -O2 above).
+$(TP_crc_TARGET_OBJS) $(TP_zlib_TARGET_OBJS): TP_CFLAGS += $(TARGET_SPEED)
+
 # memcpy and memset move every sector, chunk and window: they copy by words
 # (src/glue/libc/picolibc.h), on the host too, where their test runs.
 TP_LIBC_FAST := $(PL)/string/memcpy.c $(PL)/string/memset.c
-$(call tp_obj,bf703,$(TP_LIBC_FAST)): TP_CFLAGS += -O2 -DWB_LIBC_FAST_COPY
+$(call tp_obj,bf703,$(TP_LIBC_FAST)): TP_CFLAGS += $(TARGET_SPEED) -DWB_LIBC_FAST_COPY
 
 # The host picolibc build differs from the generic one.
 $(TP_picolibc_HOST_OBJS): TP_CFLAGS := $(TP_HOST_LIBC_CFLAGS) $(TP_picolibc_FLAGS) $(TP_WARN) $(TP_picolibc_WARN)

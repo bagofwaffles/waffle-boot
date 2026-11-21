@@ -136,6 +136,8 @@ def init_sequence(b, gamma, fill=b'\xff\xff', opts=None):
             p = hx(row['params'])
         if c == 0xE8 and o.get('missing_e8'):
             continue
+        if c == 0xB9 and o.get('b9_42'):
+            p = b'\x42\xe0'                   # digital gamma on with no table (S-13c.026's negative)
         if c == 0xF0 and row['step'] == '3' and o.get('set2_before_unlock'):
             b.cmd(0xC5, b'\x18')
         if c == 0xC5 and o.get('set2_before_unlock'):
@@ -229,8 +231,12 @@ def record(reset_ms):
 
 def build(path='boot', handshake=True, reads=True, **o):
     """path: boot | held | fail | off (a power-off during the start) | recovery (the front's, S-02.084: way
-    is chord, check or count, MARK recovery_<way> when the front decides). Returns (trace text, expect list)."""
+    is chord, check or count, MARK recovery_<way> when the front decides). device '1f': a device without
+    digital-gamma and straps (S-13c.026, S-13c.027): no MARK strap, no gamma load, and MARK no_handshake when
+    the bootloader finds no valid handshake (`future`: the first stage pulsed, its time not before the
+    bootloader's clock). Returns (trace text, expect list)."""
     b = Builder()
+    dev = o.get('device', 'xy')
     # first stage (S-01.006): its pulse at 2 ms, handshake left for the bootloader
     b.at(2 * MS)
     if handshake:
@@ -239,7 +245,15 @@ def build(path='boot', handshake=True, reads=True, **o):
     b.at(40 * MS)
     b.ev('MARK', 'bootloader')
     b.wait(100 * US)
-    b.ev('MARK', 'strap')                      # PA8 an input for the strap sample (S-13b.001)
+    if dev == 'xy' or o.get('strap_mark'):
+        b.ev('MARK', 'strap')                  # PA8 an input for the strap sample (S-13b.001)
+    if dev == '1f':
+        # S-13c.027: the values the reset decision reads (S-01.006); a time not before the clock is no
+        # valid handshake
+        b.ev('DMA9', '0x12345678' if handshake else '0x00000000',
+             0x7FFFFFFF if o.get('future') else (2 if handshake else 0))
+    if dev == '1f' and (not handshake or o.get('future')) and not o.get('no_mark'):
+        b.ev('MARK', 'no_handshake')           # S-13c.027: DMA9_XMOD/YMOD give no valid handshake
     if o.get('strap_low'):
         b.wait(1 * US)
         b.ev('RESET', 0)                       # the RESET level follows PA8's strap level
@@ -299,6 +313,8 @@ def build(path='boot', handshake=True, reads=True, **o):
     # S-05.004: the run's one initialization loads the gamma tables on every path
     early = o.get('early', 'lit')
     gamma = early != 'none' or path in ('boot', 'fail')
+    if dev == '1f':
+        gamma = o.get('gamma_load', False)     # S-13c.026: no gamma load on any path
     init_sequence(b, gamma, fill=o.get('fill', b'\xff\xff'), opts=o)
     if o.get('reset_after_init'):
         b.cs(1)
@@ -768,18 +784,45 @@ def orientation_vector():
     }
 
 
+# The OP-1F's (no digital-gamma, no straps), checked with --device 1f: vectors/index_1f.json.
+VECTORS_1F = {
+    'good_boot_1f':            (dict(path='boot', device='1f'), None, 'S-13c.026, S-13c.027'),
+    'good_held_1f':            (dict(path='held', device='1f'), None, 'S-13c.026, S-13c.013'),
+    'good_boot_logo_kept_1f':  (dict(path='boot', kept=True, device='1f'), None, 'S-13c.026, S-13c.020'),
+    'bad_gamma_load_1f':       (dict(path='boot', gamma_load=True, device='1f'), 'no_gamma_bytes', 'S-13c.026'),
+    'bad_b9_42_1f':            (dict(path='boot', b9_42=True, device='1f'), 'no_gamma_bytes', 'S-13c.026'),
+    'bad_gamma_window_after_frame_1f': (dict(path='boot', kept='gamma', device='1f'), 'no_gamma_bytes',
+                                        'S-13c.026'),
+    'good_handshake_1f':       (dict(path='boot', device='1f'), None, 'S-13c.027, S-13c.006, S-13c.021'),
+    'good_own_reset_1f':       (dict(path='boot', handshake=False, device='1f'), None,
+                                'S-13c.027, S-13c.005, S-13c.006'),
+    'bad_future_handshake_1f': (dict(path='boot', future=True, device='1f'), 'reset', 'S-13c.027'),
+    'bad_strap_mark_1f':       (dict(path='boot', strap_mark=True, device='1f'), 'reset', 'S-13c.027'),
+    'bad_two_pulses_1f':       (dict(path='boot', handshake=False, second_reset=True, device='1f'), 'reset',
+                                'S-13c.027, S-13c.005'),
+    # judged on the DMA9 values alone: a pulse with a valid handshake, none behind a future one
+    'bad_pulse_with_handshake_1f': (dict(path='boot', reset_width=10 * US + 500, device='1f'), 'reset',
+                                    'S-13c.027'),
+    'bad_future_handshake_dma9_1f': (dict(path='boot', future=True, no_mark=True, device='1f'), 'reset',
+                                     'S-13c.027'),
+}
+
+
 def main():
     os.makedirs(V, exist_ok=True)
-    index = {}
-    for name, (kw, rule, req) in VECTORS.items():
-        text, expect = build(**kw)
-        with open(os.path.join(V, name + '.tsv'), 'w') as f:
-            f.write('# %s\n' % req)
-            f.write(text)
-        index[name] = {'expect': expect, 'fails_rule': rule, 'requirement': req}
-    with open(os.path.join(V, 'index.json'), 'w') as f:
-        json.dump(index, f, indent=1, sort_keys=True)
-        f.write('\n')
+    for vectors, index_name in ((VECTORS, 'index.json'), (VECTORS_1F, 'index_1f.json')):
+        index = {}
+        for name, (kw, rule, req) in vectors.items():
+            text, expect = build(**kw)
+            with open(os.path.join(V, name + '.tsv'), 'w') as f:
+                f.write('# %s\n' % req)
+                f.write(text)
+            index[name] = {'expect': expect, 'fails_rule': rule, 'requirement': req}
+            if vectors is VECTORS_1F:
+                index[name]['device'] = '1f'
+        with open(os.path.join(V, index_name), 'w') as f:
+            json.dump(index, f, indent=1, sort_keys=True)
+            f.write('\n')
     p = pattern_bytes()
     fp = {
         'requirement': 'S-13c.015, S-13c.016',
@@ -801,7 +844,7 @@ def main():
     with open(os.path.join(V, 'orientation.json'), 'w') as f:
         json.dump(ov, f, indent=1)
         f.write('\n')
-    print('%d traces, frame pattern %s' % (len(index), fp['sha256'][:16]))
+    print('%d traces, frame pattern %s' % (len(VECTORS) + len(VECTORS_1F), fp['sha256'][:16]))
 
 
 if __name__ == '__main__':

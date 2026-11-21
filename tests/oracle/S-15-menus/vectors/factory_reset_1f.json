@@ -1,0 +1,65 @@
+{
+ "device": "OP-1F",
+ "requirement": "S-15.052",
+ "removes": [
+  "/yaffs2/user",
+  "/yaffs2/logs"
+ ],
+ "cases": [
+  {
+   "case": "readable",
+   "refused": false,
+   "tree_before": {
+    "content/dlc/A/manifest.json": "7b7d",
+    "content/op1.json": "63",
+    "logs/boot.log": "6c",
+    "os.ldr": "6f",
+    "user/a.op1": "75",
+    "user/sub/b": "62"
+   },
+   "tree_after": {
+    "content/dlc/A/manifest.json": "7b7d",
+    "content/op1.json": "63",
+    "os.ldr": "6f"
+   },
+   "operations": [
+    [
+     "remove",
+     "/yaffs2/user"
+    ],
+    [
+     "remove",
+     "/yaffs2/logs"
+    ],
+    [
+     "clear_settings"
+    ]
+   ]
+  },
+  {
+   "case": "refused",
+   "refused": true,
+   "tree_before": {
+    "content/dlc/A/manifest.json": "7b7d",
+    "content/op1.json": "63",
+    "logs/boot.log": "6c",
+    "os.ldr": "6f",
+    "user/a.op1": "75",
+    "user/sub/b": "62"
+   },
+   "tree_after": {
+    "content/dlc/A/manifest.json": "7b7d",
+    "content/op1.json": "63",
+    "logs/boot.log": "6c",
+    "os.ldr": "6f",
+    "user/a.op1": "75",
+    "user/sub/b": "62"
+   },
+   "operations": [
+    [
+     "clear_settings"
+    ]
+   ]
+  }
+ ]
+}

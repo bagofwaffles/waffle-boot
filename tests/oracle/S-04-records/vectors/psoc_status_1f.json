@@ -1,0 +1,44 @@
+{
+ "reports": {
+  "held": {
+   "messages": [
+    {
+     "id": "0x51",
+     "payload": "3cff02"
+    }
+   ],
+   "note": "no 0x40 01 and no bar message on the first service-loop pass (S-04.061, S-07.046)"
+  },
+  "handover": {
+   "messages": [
+    {
+     "id": "0x51",
+     "payload": "3cff32"
+    }
+   ],
+   "note": "no PMIC sequence before it (S-07.071)"
+  },
+  "shutdown": {
+   "messages": [
+    {
+     "id": "0x51",
+     "payload": "000002"
+    }
+   ],
+   "note": "S-04.066: one 0x51 00 00 02, no 0x40 01, no power-off request; with the volume mounted the eMMC shutdown of S-03.013 comes first"
+  },
+  "reset_request": {
+   "messages": [
+    {
+     "id": "0x97",
+     "payload": "deadbeef"
+    },
+    {
+     "id": "0x51",
+     "payload": "000002"
+    }
+   ],
+   "before": "the reason-20 write of W2"
+  }
+ }
+}

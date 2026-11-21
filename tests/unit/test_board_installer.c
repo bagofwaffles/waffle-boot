@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "waffle/device.h"
+#include "waffle/s02_flash.h"
 #include "waffle/wire_crc.h"
 #include "s15_sha256.h"
 #include "support/check.h"
@@ -31,6 +33,7 @@ static void test_screens(void)
 {
 	for (size_t k = 0; k < S15V_N(s15v_insts); k++) {
 		const struct s15v_inst *v = &s15v_insts[k];
+		struct inst_survey sv;
 		struct inst_screen s;
 		struct tchk_line l[S15_ROWS];
 		unsigned n;
@@ -47,6 +50,28 @@ static void test_screens(void)
 		s.hold_fill = v->hold_fill;
 		s.hold_left_s = v->hold_left_s;
 		s.keys_seen = (uint8_t)v->keys_seen;
+		s.device = (uint8_t)v->device;
+		s.last_key = (uint8_t)v->last_key;
+		s.fs_n = (uint32_t)v->fs_n;
+		s.fs_c = (uint32_t)v->fs_c;
+		if (v->survey != NULL) {
+			const struct s15v_inst_survey *x = v->survey;
+
+			memset(&sv, 0, sizeof sv);
+			sv.device = (uint8_t)x->device;
+			sv.how = (uint8_t)x->how;
+			sv.fs_n = (uint32_t)x->fs_n;
+			sv.fs_c = (uint32_t)x->fs_c;
+			sv.sel_read = x->sel_read != 0;
+			sv.sel_index = (uint8_t)x->sel_index;
+			sv.sel_verified = (uint8_t)x->sel_verified;
+			sv.slot[0].bits = (uint8_t)x->slot_bits[0];
+			sv.slot[1].bits = (uint8_t)x->slot_bits[1];
+			sv.ext_read = x->ext_read != 0;
+			sv.part_config = (uint8_t)x->part_config;
+			sv.boot_kib = x->boot_kib;
+			s.survey = &sv;
+		}
 		n = inst_screen_lines(&s, l);
 		CHECK(n == v->n);
 		for (unsigned i = 0; i < n && i < v->n; i++) {
@@ -79,44 +104,182 @@ static void all_pass(struct tchk_table *t, struct tchk_switch *sw)
 	sw->result = TCHK_SW_READY;
 }
 
+/* The lock with the device known, the image its own, nothing else in the way. */
+static enum inst_lock lock(const struct tchk_table *t, const struct tchk_switch *sw, bool image_ok,
+			   bool selected_ok)
+{
+	const struct inst_lock_in in = { image_ok, selected_ok, WB_DEV_BY_TABLE, true, true, false };
+
+	return inst_lock_of(t, sw, &in);
+}
+
 static void test_lock(void)
 {
 	static struct tchk_table t;
 	static struct tchk_switch sw;
+	struct inst_lock_in in = { true, true, WB_DEV_BY_TABLE, true, true, false };
 
 	all_pass(&t, &sw);
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_NONE);
-	CHECK(inst_lock_of(&t, &sw, false, true) == INST_LOCK_IMAGE);
-	CHECK(inst_lock_of(&t, &sw, true, false) == INST_LOCK_SELECTED);
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_NONE);
+	CHECK(lock(&t, &sw, false, true) == INST_LOCK_IMAGE);
+	CHECK(lock(&t, &sw, true, false) == INST_LOCK_SELECTED);
 	t.r[TCHK_FLASH_LAYOUT].state = TCHK_FAIL;
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_FAILED);
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_FAILED);
 	all_pass(&t, &sw);
 	t.r[TCHK_RTC].state = TCHK_NOT_TESTED;
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_NOT_TESTED);
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_NOT_TESTED);
 	all_pass(&t, &sw);
 	t.r[TCHK_KEYS].state = TCHK_NOT_TESTED;		/* skipped */
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_GUIDED);
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_GUIDED);
 	all_pass(&t, &sw);
 	t.r[TCHK_KEYS].state = TCHK_FAIL;
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_GUIDED);
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_GUIDED);
 	/* whatever the other boot partition holds, the install is offered */
 	all_pass(&t, &sw);
 	for (sw.result = TCHK_SW_NOT_RUN; sw.result <= TCHK_SW_READY; sw.result++)
 		CHECK(sw.result == TCHK_SW_NO_SLAVE ||
-		      inst_lock_of(&t, &sw, true, true) == INST_LOCK_NONE);
+		      lock(&t, &sw, true, true) == INST_LOCK_NONE);
 	sw.unverified = true;
 	sw.result = TCHK_SW_READY;
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_NONE);
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_NONE);
 	sw.unverified = false;
 	/* an eMMC out of reach still locks */
 	sw.result = TCHK_SW_NO_SLAVE;
-	CHECK(inst_lock_of(&t, &sw, true, true) == INST_LOCK_EMMC);
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_EMMC);
 	/* a failed check outranks a missing image */
 	all_pass(&t, &sw);
 	t.r[TCHK_DDR].state = TCHK_FAIL;
-	CHECK(inst_lock_of(&t, &sw, false, false) == INST_LOCK_FAILED);
-	for (unsigned l = 0; l <= INST_LOCK_EMMC; l++)
+	CHECK(lock(&t, &sw, false, false) == INST_LOCK_FAILED);
+	for (unsigned l = 0; l <= INST_LOCK_SURVEY; l++)
 		CHECK(strlen(inst_lock_words((enum inst_lock)l)) <= S15_COLS - 3u);
+
+	/* S-18: only a first stage of the table installs, and it comes first */
+	all_pass(&t, &sw);
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_NONE);
+	in.how = WB_DEV_UNKNOWN;
+	t.r[TCHK_DDR].state = TCHK_FAIL;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_DEVICE);
+	in.how = WB_DEV_SECOND_CPU;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_DEVICE);
+	in.how = WB_DEV_BY_TABLE;
+	in.device_mine = false;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_OTHER_DEVICE);
+	in.device_mine = true;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_FAILED);
+	/* a test not on this device counts as passed */
+	all_pass(&t, &sw);
+	t.r[TCHK_SLAVE].state = TCHK_NOT_ON_DEVICE;
+	t.r[TCHK_BRIDGE].state = TCHK_NOT_ON_DEVICE;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_NONE);
+	CHECK(tchk_verdict(&t) == TCHK_VERDICT_PASS);
+	/* the OP-1F's own bootloader kept, after the selector */
+	in.keeps_factory = false;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_FACTORY);
+	in.selected_ok = false;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_SELECTED);
+	in.selected_ok = true;
+	/* the survey last: it says whether an install would be offered */
+	in.survey = true;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_FACTORY);
+	in.keeps_factory = true;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_SURVEY);
+	in.image_ok = false;
+	CHECK(inst_lock_of(&t, &sw, &in) == INST_LOCK_IMAGE);
+}
+
+/* S-02.108: on the OP-1F a trial keeps a slot that is not waffle-boot's. */
+static void test_keeps_factory(void)
+{
+	unsigned t;
+
+	for (t = 0; t < 2u; t++) {
+		const uint8_t mine = (uint8_t)(1u << t), other = (uint8_t)(1u << (t ^ 1u));
+
+		/* the OP-XY keeps its rule: any target */
+		CHECK(inst_keeps_factory(&wb_device_opxy, t, other));
+		CHECK(inst_keeps_factory(NULL, t, 0u));
+		/* the OP-1F: two of the unit's own, one stays */
+		CHECK(inst_keeps_factory(&wb_device_op1f, t, 0u));
+		/* the target waffle-boot already: nothing of the unit's own goes */
+		CHECK(inst_keeps_factory(&wb_device_op1f, t, mine));
+		CHECK(inst_keeps_factory(&wb_device_op1f, t, (uint8_t)(mine | other)));
+		/* the target the last of the unit's own: refused */
+		CHECK(!inst_keeps_factory(&wb_device_op1f, t, other));
+	}
+	CHECK(!inst_keeps_factory(&wb_device_op1f, 0xFFu, 0u));
+}
+
+/* --- whether a slot holds a waffle-boot stream --- */
+
+static uint8_t ram[0x2000];
+
+static int ram_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
+{
+	(void)ctx;
+	if ((uint64_t)off + len > sizeof ram)
+		return -1;
+	memcpy(buf, ram + off, len);
+	return 0;
+}
+
+static size_t put_block(uint8_t *p, uint32_t flags, uint32_t target, const uint8_t *pl, uint32_t n)
+{
+	uint8_t x = 0;
+
+	wb_put_le32(p, 0xAD000004u | flags);
+	wb_put_le32(p + 4, target);
+	wb_put_le32(p + 8, n);
+	wb_put_le32(p + 12, 0u);
+	for (unsigned i = 0; i < 16u; i++)
+		x ^= p[i];
+	p[2] = x;
+	if (pl != NULL && (flags & S05_FLAG_FILL) == 0u)
+		memcpy(p + 16, pl, n);
+	return 16u + ((flags & S05_FLAG_FILL) == 0u ? n : 0u);
+}
+
+/* A stream with a descriptor of one region at FR_DESC_ADDR, or none. */
+static void stream(bool desc, bool bad_crc)
+{
+	uint8_t d[FR_DESC_HEAD + 8u + 4u], pl[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+	size_t at = 0;
+
+	memset(ram, 0xFF, sizeof ram);
+	memset(d, 0, sizeof d);
+	wb_put_le32(d + FR_DESC_O_MAGIC, FR_DESC_MAGIC);
+	wb_put_le16(d + FR_DESC_O_VERSION, FR_DESC_VERSION);
+	wb_put_le16(d + FR_DESC_O_SIZE, (uint16_t)sizeof d);
+	wb_put_le32(d + FR_DESC_O_NREGIONS, 1u);
+	wb_put_le32(d + sizeof d - 4u, wire_crc32(0u, d, (uint32_t)sizeof d - 4u) ^ (bad_crc ? 1u : 0u));
+	at += put_block(ram + at, S05_FLAG_FIRST | S05_FLAG_IGNORE, 0x11A00000u, NULL, 0u);
+	at += put_block(ram + at, 0u, 0x11A04000u, pl, sizeof pl);
+	at += put_block(ram + at, S05_FLAG_FILL, 0x08002000u, NULL, 0x100u);
+	if (desc)
+		at += put_block(ram + at, 0u, FR_DESC_ADDR, d, sizeof d);
+	at += put_block(ram + at, 0u, 0x8803D000u, pl, sizeof pl);
+	(void)put_block(ram + at, S05_FLAG_FINAL, 0x11A00000u, NULL, 0u);
+}
+
+static void test_stream_is_waffle(void)
+{
+	stream(true, false);
+	CHECK(s02_stream_is_waffle(ram_read, NULL, 0u, sizeof ram, crc_of));
+	/* its descriptor's CRC wrong, none, or past what may be read */
+	stream(true, true);
+	CHECK(!s02_stream_is_waffle(ram_read, NULL, 0u, sizeof ram, crc_of));
+	stream(false, false);
+	CHECK(!s02_stream_is_waffle(ram_read, NULL, 0u, sizeof ram, crc_of));
+	stream(true, false);
+	CHECK(!s02_stream_is_waffle(ram_read, NULL, 0u, 64u, crc_of));
+	/* an erased slot, a header that is no LDR header */
+	memset(ram, 0xFF, sizeof ram);
+	CHECK(!s02_stream_is_waffle(ram_read, NULL, 0u, sizeof ram, crc_of));
+	stream(true, false);
+	ram[5] ^= 1u;
+	CHECK(!s02_stream_is_waffle(ram_read, NULL, 0u, sizeof ram, crc_of));
+	/* a read that fails */
+	stream(true, false);
+	CHECK(!s02_stream_is_waffle(ram_read, NULL, sizeof ram - 8u, 0x100u, crc_of));
 }
 
 static void test_os_and_trial(void)
@@ -154,14 +317,14 @@ static void test_os_and_trial(void)
 
 static void key(struct inst_hold *h, unsigned k, bool down, uint32_t t)
 {
-	inst_hold_key(h, k, s15_digit(k), down, t);
+	inst_hold_key(h, k, s15_digit(&wb_device_opxy, k), down, t);
 }
 
 static void test_hold(void)
 {
 	struct inst_hold h;
 
-	CHECK(s15_digit(KEY_1) == 1u && s15_digit(KEY_8) == 8u && s15_digit(KNOB_1) == 1u);
+	CHECK(s15_digit(&wb_device_opxy, KEY_1) == 1u && s15_digit(&wb_device_opxy, KEY_8) == 8u && s15_digit(&wb_device_opxy, KNOB_1) == 1u);
 	memset(&h, 0, sizeof h);
 	inst_hold_offer(&h, 1u << 1 | 1u << 8);
 	key(&h, KEY_1, true, 1000u);
@@ -344,9 +507,11 @@ static struct inst_hello he;
 static struct tchk_table tab;
 static const char rep[] = "waffle-boot check\nverdict: PASS\n";
 
+static const struct inst_survey *survey_p;
+
 static struct inst_view view(void)
 {
-	const struct inst_view v = { &he, &st, &tab, rep, sizeof rep - 1u };
+	const struct inst_view v = { &he, &st, &tab, rep, sizeof rep - 1u, survey_p };
 
 	return v;
 }
@@ -535,7 +700,8 @@ static void test_report(void)
 	strcpy(buf, "head\n");
 	n = inst_report_append(buf, 5u, sizeof buf, &he, &st, &img_r, eng);
 	CHECK(n == strlen(buf));
-	CHECK(strstr(buf, "\ninstall\nimage: waffle-boot v1.0.3, 74565 bytes, crc32 cafef00d\n") != NULL);
+	CHECK(strstr(buf, "\ninstall\ndevice: OP-XY, identified by its first stage\n"
+		     "image built for: OP-XY\nimage: waffle-boot v1.0.3, 74565 bytes, crc32 cafef00d\n") != NULL);
 	CHECK(strstr(buf, "front pin: 000102") != NULL);
 	CHECK(strstr(buf, "image check: pass\n") != NULL);
 	CHECK(strstr(buf, "phase: commit ready\n") != NULL);
@@ -565,14 +731,215 @@ static void test_report(void)
 	CHECK(n == 39u && buf[39] == '\0');
 }
 
+/* S-18 in the protocol: HELLO's device bytes, STATE's streams, SURVEY. */
+static void test_proto_device(void)
+{
+	static struct inst_survey sv;
+	uint8_t req[16], out[INST_FRAME_MAX];
+	size_t n;
+
+	inst_proto_init(&pr, crc_of);
+	memset(&he, 0, sizeof he);
+	memset(&st, 0, sizeof st);
+	he.device = WB_DEV_OP1F;
+	he.how = WB_DEV_BY_TABLE;
+	he.image_device = WB_DEV_OP1F;
+	he.survey = 1u;
+	st.streams = 0x02u;
+	n = inst_frame(req, INST_T_HELLO, 1u, NULL, 0u, crc_of);
+	n = ask(req, n, out);
+	CHECK(n == INST_FRAME_HEAD + INST_HELLO_LEN + 4u);
+	CHECK(out[6 + 56] == WB_DEV_OP1F && out[6 + 57] == WB_DEV_BY_TABLE);
+	CHECK(out[6 + 58] == WB_DEV_OP1F && out[6 + 59] == 1u);
+	CHECK(out[6 + 60] == 0u && out[6 + 63] == 0u);
+	n = inst_frame(req, INST_T_STATE, 2u, NULL, 0u, crc_of);
+	n = ask(req, n, out);
+	CHECK(n == INST_FRAME_HEAD + INST_STATE_HEAD + TCHK_COUNT + 4u && out[6 + 17] == 0x02u);
+	/* SURVEY outside a survey build: not a request it knows */
+	survey_p = NULL;
+	n = inst_frame(req, INST_T_SURVEY, 3u, NULL, 0u, crc_of);
+	n = ask(req, n, out);
+	CHECK(n == INST_FRAME_HEAD + 1u + 4u && out[2] == (INST_T_SURVEY | 0x80u) &&
+	      wb_get_le16(out + 4) == 1u && out[6] == INST_ST_UNKNOWN);
+	memset(&sv, 0, sizeof sv);
+	sv.device = WB_DEV_OP1F;
+	sv.fs_n = 0x8600u;
+	sv.fs_c = 0x49267EB8u;
+	sv.slot[1].bits = INST_SV_RECORD | INST_SV_WAFFLE;
+	sv.slot[1].log[7] = 0xC3u;
+	survey_p = &sv;
+	n = inst_frame(req, INST_T_SURVEY, 4u, NULL, 0u, crc_of);
+	n = ask(req, n, out);
+	CHECK(n == INST_FRAME_HEAD + INST_SURVEY_LEN + 4u);
+	CHECK(out[6] == INST_ST_OK && out[7] == WB_DEV_OP1F);
+	CHECK(wb_get_le32(out + 6 + 4) == 0x8600u && wb_get_le32(out + 6 + 8) == 0x49267EB8u);
+	CHECK(out[6 + 52] == (INST_SV_RECORD | INST_SV_WAFFLE) && out[6 + 52 + 23] == 0xC3u);
+	survey_p = NULL;
+	memset(&he, 0, sizeof he);
+	memset(&st, 0, sizeof st);
+}
+
+/* The hold on the OP-1F: no precomp key, its own knob clicks and digits. */
+static void test_hold_op1f(void)
+{
+	const struct wb_device *d = &wb_device_op1f;
+	struct inst_hold h;
+
+	memset(&h, 0, sizeof h);
+	h.dev = d;
+	inst_hold_offer(&h, 1u << 1 | 1u << 8);
+	/* 0x17 is an ordinary key there: down during a hold, it ends it */
+	inst_hold_key(&h, 0x06u, s15_digit(d, 0x06u), true, 1000u);
+	CHECK(h.holding && h.digit == 1u);
+	inst_hold_key(&h, 0x17u, s15_digit(d, 0x17u), true, 2000u);
+	CHECK(!h.holding);
+	inst_hold_key(&h, 0x17u, s15_digit(d, 0x17u), false, 2100u);
+	inst_hold_key(&h, 0x06u, s15_digit(d, 0x06u), false, 2200u);
+	/* the knob's click of digit 1 starts no hold; digit 8 is 0x14 */
+	CHECK(s15_digit(d, 0x36u) == 1u && s15_digit(d, 0x14u) == 8u);
+	inst_hold_key(&h, 0x36u, 1u, true, 3000u);
+	CHECK(!h.holding);
+	inst_hold_key(&h, 0x36u, 1u, false, 3100u);
+	inst_hold_key(&h, 0x14u, s15_digit(d, 0x14u), true, 4000u);
+	CHECK(h.holding && h.digit == 8u);
+	CHECK(inst_hold_tick(&h, 4000u + S15_HOLD_MS) == 8u);
+}
+
+/* check.txt names the device, and a device not identified by n and c. */
+static void test_report_device(void)
+{
+	static char buf[2048];
+	struct inst_image img_r;
+	struct inst_hello h;
+	struct inst_state s;
+
+	memset(&img_r, 0, sizeof img_r);
+	memset(&h, 0, sizeof h);
+	memset(&s, 0, sizeof s);
+	s.last_rc = 0xFFu;
+	h.how = WB_DEV_UNKNOWN;
+	h.fs_n = 34000u;
+	h.fs_c = 0x12345678u;
+	s.lock = INST_LOCK_DEVICE;
+	(void)inst_report_append(buf, 0u, sizeof buf, &h, &s, &img_r, NULL);
+	CHECK(strstr(buf, "\ninstall\ndevice: not identified, first stage n 34000, c 12345678\n"
+		     "image built for: OP-XY\n") != NULL);
+	CHECK(strstr(buf, "locked: The device is not identified by its first stage.\n") != NULL);
+	h.how = WB_DEV_BY_TABLE;
+	h.device = WB_DEV_OP1F;
+	h.image_device = WB_DEV_OP1F;
+	h.survey = 1u;
+	(void)inst_report_append(buf, 0u, sizeof buf, &h, &s, &img_r, NULL);
+	CHECK(strstr(buf, "device: OP-1F, identified by its first stage\nimage built for: OP-1F, a "
+		     "survey build: no SPI-flash write\n") != NULL);
+	CHECK(strstr(buf, "34000") == NULL);
+	CHECK(strstr(inst_rc_words(OPXY_INSTALL_REFUSED_FACTORY), "own bootloader") != NULL);
+}
+
+/* --- the test OS's decision at its entry (S-18.001 to S-18.004, as fr_decide()) --- */
+
+static uint8_t fs_img[0x8600];
+static unsigned fs_reads, fs_fail_tries, fs_busy;
+static uint32_t fs_tries_seen;
+
+/* The first stage; the first fs_fail_tries whole tries fail at their
+ * second read, with WB_FS_READ_BUSY when fs_busy. */
+static int fs_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
+{
+	(void)ctx;
+	fs_reads++;
+	if (off == 0u)
+		fs_tries_seen++;
+	if (off != 0u && fs_tries_seen <= fs_fail_tries)
+		return fs_busy ? WB_FS_READ_BUSY : -1;
+	if ((uint64_t)off + len > sizeof fs_img)
+		return -1;
+	memcpy(buf, fs_img + off, len);
+	return 0;
+}
+
+static uint16_t strap_val;
+static unsigned strap_calls;
+
+static uint16_t fs_strap(void *ctx)
+{
+	(void)ctx;
+	strap_calls++;
+	return strap_val;
+}
+
+/* One decision, the counts cleared first. */
+static void decide(unsigned bmode, struct wb_dev_role *r)
+{
+	fs_reads = 0;
+	fs_tries_seen = 0;
+	strap_calls = 0;
+	wb_device_decide_role(bmode, fs_strap, NULL, fs_read, NULL, r);
+}
+
+static void test_device_role(void)
+{
+	struct wb_dev_role r;
+	uint32_t n, c;
+
+	memset(fs_img, 0x5A, sizeof fs_img);
+	wb_put_le32(fs_img + WB_FS_ARG_OFF, (uint32_t)sizeof fs_img - WB_FS_HEAD);
+	/* boot mode 1: a main CPU, no sample; a first stage in no row is
+	 * read three times (S-18.003) */
+	fs_fail_tries = 0;
+	decide(WB_BOOT_MODE_MAIN, &r);
+	CHECK(r.main && !r.fallback && strap_calls == 0u);
+	CHECK(r.n == sizeof fs_img && r.c == wire_crc32(0u, fs_img, sizeof fs_img));
+	CHECK(r.d.how == WB_DEV_UNKNOWN && r.d.id == WB_DEV_DEFAULT);	/* in no row */
+	CHECK(fs_tries_seen == WB_FS_TRIES);
+	/* another boot mode: the fallback sample; PA2 = 0 the second CPU, no
+	 * flash read */
+	strap_val = 0x0001u;
+	decide(0u, &r);
+	CHECK(!r.main && strap_calls == 1u && r.d.how == WB_DEV_SECOND_CPU && fs_reads == 0u && r.n == 0u);
+	/* PA2 = 1: a main CPU all the same, flagged */
+	strap_val = WB_STRAP_PA2;
+	decide(2u, &r);
+	CHECK(r.main && r.fallback && strap_calls == 1u && fs_tries_seen == WB_FS_TRIES);
+	/* a read error: the whole read again, up to three tries */
+	fs_fail_tries = 2u;
+	fs_busy = 0u;
+	decide(WB_BOOT_MODE_MAIN, &r);
+	CHECK(fs_tries_seen == 3u && r.c == wire_crc32(0u, fs_img, sizeof fs_img));
+	fs_fail_tries = 3u;
+	decide(WB_BOOT_MODE_MAIN, &r);
+	CHECK(fs_tries_seen == 3u && r.d.how == WB_DEV_UNKNOWN && r.c == 0u && r.n == sizeof fs_img);
+	/* a busy flash is not read again */
+	fs_busy = 1u;
+	decide(WB_BOOT_MODE_MAIN, &r);
+	CHECK(fs_tries_seen == 1u && r.d.how == WB_DEV_UNKNOWN && r.c == 0u);
+	fs_busy = 0u;
+	fs_fail_tries = 0u;
+	/* the one-try form keeps its one try */
+	fs_fail_tries = 1u;
+	fs_tries_seen = 0u;
+	(void)wb_first_stage_identify(fs_read, NULL, &n, &c);
+	CHECK(fs_tries_seen == 1u && c == 0u);
+	fs_fail_tries = 0u;
+	/* the table's rows name their devices through the tries too */
+	CHECK(wb_first_stage_lookup(wb_device_op1f.first_stage_n, wb_device_op1f.first_stage_crc, &r.d.id) &&
+	      r.d.id == WB_DEV_OP1F);
+}
+
 int main(void)
 {
 	RUN(test_screens);
 	RUN(test_lock);
+	RUN(test_keeps_factory);
+	RUN(test_stream_is_waffle);
 	RUN(test_os_and_trial);
 	RUN(test_hold);
 	RUN(test_image_check);
 	RUN(test_proto);
 	RUN(test_report);
+	RUN(test_proto_device);
+	RUN(test_hold_op1f);
+	RUN(test_report_device);
+	RUN(test_device_role);
 	return check_summary("test_board_installer");
 }

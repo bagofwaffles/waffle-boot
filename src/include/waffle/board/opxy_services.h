@@ -48,7 +48,7 @@ struct opxy_master;
 #ifndef OPXY_BL_VERSION_MAJOR
 #define OPXY_BL_VERSION_MAJOR 0u
 #define OPXY_BL_VERSION_MINOR 9u
-#define OPXY_BL_VERSION_PATCH 43u
+#define OPXY_BL_VERSION_PATCH 45u
 #endif
 /* A test build may give slot 0 another build number, so that the
  * two slots differ and S-01.002 finds the running one (Makefile
@@ -289,6 +289,10 @@ void opxy_usb_battery(struct opxy_master *m, bool on);
 void opxy_disk_init(struct opxy_disk *d,
 		    const struct opxy_disk_part part[OPXY_DISK_PARTS]);
 void opxy_disk_ddr(struct opxy_disk_part part[OPXY_DISK_PARTS]);
+/* The device's (device.ramdisk_regions, S-18.030): opxy_disk_ddr() on the
+ * OP-XY, the one OPXY_1F_DISK region on the OP-1F. */
+void opxy_disk_ddr_dev(const struct wb_device *dev,
+		       struct opxy_disk_part part[OPXY_DISK_PARTS]);
 /* S-12.002: formats the volume if this boot has not (FatFs is unmounted
  * again); false when the format fails. Write it only while the disk is not
  * offered (S-12.018): S-12.017's files call it first, since S-15 asks for
@@ -365,11 +369,12 @@ void opxy_settings_read(struct opxy_master *m, struct s15_settings *s);
 bool opxy_serial_flag(const struct opxy_master *m);
 void opxy_install_ops(struct opxy_master *m, struct s11_run_ops *run,
 		      struct s11_step_ops *step);
-/* The run's step values (S-11.055, S-11.073, S-11.090, S-11.096) and the
- * staging area as the run finds it, before the run's first step;
- * selected has S11_STEP_BIT() of each step selected on the unit. */
-void opxy_install_begin(struct opxy_master *m, bool option, bool forced,
-			uint8_t selected);
+/* The run's step values (S-11.021, S-11.055, S-11.073, S-11.090,
+ * S-11.096) and the staging area as the run finds it, before the run's
+ * first step; selected has S11_STEP_BIT() of each step selected on the
+ * unit. */
+void opxy_install_begin(struct opxy_master *m, bool option, enum s11_sig sig,
+			bool forced, uint8_t selected);
 /* S-11.073: the steps this build has switched off, S11_STEP_BIT() each. */
 uint8_t opxy_steps_off(void);
 /*

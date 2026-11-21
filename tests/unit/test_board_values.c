@@ -14,6 +14,8 @@
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/board/opxy_ops.h"
+#include "waffle/board/opxy_services.h"
+#include "waffle/drivers/bf70x_lcd.h"
 #include "waffle/s09_bridge.h"
 
 static void test_clocks(void)
@@ -462,6 +464,194 @@ static void test_slave_emmc(void)
 	CHECK(emmc_op == 0);
 }
 
+/* S-18.030's pins of the OP-1F's main CPU, the board's tables against the
+ * profile (S-13b.003, S-13b.004, S-13b.006, S-13c.001). */
+static void test_op1f_pins(void)
+{
+	const struct wb_device *d = &wb_device_op1f;
+	const struct wb_pinmux *pm = opxy_pinmux_main(d);
+	const struct opxy_gpio *g;
+	unsigned n, i, p;
+
+	CHECK(pm == &opxy_pinmux_op1f && opxy_pinmux_main(&wb_device_opxy) == &opxy_pinmux_master);
+	for (p = 0; p < 3u; p++)
+		CHECK(pm->port[p].mux == d->pins.mux[p] && pm->port[p].fer == d->pins.fer[p]);
+	CHECK(pm->n_inputs_first == 0u);	/* no DIR or INEN before the MUX */
+	g = opxy_gpio_main(d, &n);
+	CHECK(g == opxy_gpio_op1f && n == d->pins.gpio_n);
+	for (i = 0; i < n && i < d->pins.gpio_n; i++) {
+		CHECK(g[i].pin == d->pins.gpio[i].pin);
+		CHECK((g[i].dir == OPXY_IN && d->pins.gpio[i].kind == WB_GPIO_IN) ||
+		      (g[i].dir == OPXY_OUT_KEEP && d->pins.gpio[i].kind == WB_GPIO_OUT_KEEP));
+		CHECK(g[i].pin != OPXY_PA8);	/* PA8 is never an input */
+	}
+	/* the OP-XY master's values are the profile's too */
+	pm = opxy_pinmux_main(&wb_device_opxy);
+	for (p = 0; p < 3u; p++)
+		CHECK(pm->port[p].mux == wb_device_opxy.pins.mux[p] &&
+		      pm->port[p].fer == wb_device_opxy.pins.fer[p]);
+	CHECK(wb_lcd_op1f.dc == d->pins.panel_dc && wb_lcd_opxy.dc == wb_device_opxy.pins.panel_dc);
+	CHECK(wb_lcd_op1f.reset == wb_lcd_opxy.reset && wb_lcd_op1f.te == wb_lcd_opxy.te);
+}
+
+/* S-13b.061, S-05.038, S-12.008: the OP-1F's other board values. */
+static void test_op1f_values(void)
+{
+	static const uint32_t evt[OPXY_OS_EVTS] = {
+		0x11A00C18u, 0x11A00B78u, 0x11A00664u, 0x11A00664u, 0x11A00664u,
+		0x11A00664u, 0x11A00664u, 0x11A00664u, 0x11A00664u, 0x11A01438u,
+		0x11A00664u, 0x11A00664u, 0x11A00664u, 0x11A000CAu,
+	};
+	struct opxy_disk_part part[OPXY_DISK_PARTS];
+	unsigned i;
+
+	CHECK(opxy_msi_1f.emmc_width == wb_device_op1f.mem.emmc_width &&
+	      opxy_msi_bringup_1f.emmc_width == 4u);
+	CHECK(opxy_msi.emmc_width == 0u && opxy_msi_bringup.emmc_width == 0u);	/* 8 */
+	CHECK(opxy_msi_1f.cmd1_timeout_us == opxy_msi.cmd1_timeout_us &&
+	      opxy_msi_bringup_1f.busy_timeout_us == opxy_msi_bringup.busy_timeout_us);
+	for (i = 0; i < OPXY_OS_EVTS; i++)
+		CHECK(opxy_os_entry_op1f.evt[i] == evt[i]);
+	CHECK(opxy_os_entry_op1f.sp == opxy_os_entry_master.sp &&
+	      opxy_os_entry_op1f.fp == opxy_os_entry_master.fp);
+	opxy_disk_ddr_dev(&wb_device_op1f, part);
+	CHECK((uintptr_t)part[0].mem == wb_device_op1f.mem.ramdisk_base &&
+	      part[0].sectors == wb_device_op1f.mem.ramdisk_blocks &&
+	      (uint64_t)part[0].sectors * 512u == wb_device_op1f.mem.ramdisk_len);
+	CHECK(part[0].sectors == OPXY_1F_DISK_SECTORS && part[1].sectors == 0u);
+	opxy_disk_ddr_dev(&wb_device_opxy, part);
+	CHECK(part[0].sectors + part[1].sectors == wb_device_opxy.mem.ramdisk_blocks);
+}
+
+/* S-18.001 to S-18.005 on the main image: the record's device, or the
+ * boot mode and the first stage when there is none. */
+static uint8_t stage[0x9000];
+
+static int stage_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
+{
+	unsigned *reads = ctx;
+
+	(*reads)++;
+	if (off + len > sizeof stage)
+		memset(buf, 0xFF, len);
+	else
+		memcpy(buf, stage + off, len);
+	return 0;
+}
+
+/* The strap sample the decision asks for: its level, and how often. */
+struct strap_fake {
+	uint16_t level;
+	unsigned samples;
+};
+
+static uint16_t strap_sample(void *ctx)
+{
+	struct strap_fake *f = ctx;
+
+	f->samples++;
+	return f->level;
+}
+
+/* A first stage whose reads fail a number of times, then succeed. */
+struct flaky {
+	unsigned reads, fail, busy;
+};
+
+static int flaky_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
+{
+	struct flaky *f = ctx;
+
+	f->reads++;
+	if (f->busy != 0u)
+		return WB_FS_READ_BUSY;
+	if (f->fail != 0u) {
+		f->fail--;
+		return -1;
+	}
+	memset(buf, 0xFF, len);
+	(void)off;
+	return 0;
+}
+
+static void test_device_pick(void)
+{
+	struct fr_handoff ho;
+	struct opxy_device_pick p;
+	struct strap_fake sf = { 0u, 0u };
+	struct flaky fl = { 0u, 0u, 0u };
+	unsigned reads = 0;
+
+	memset(&ho, 0, sizeof ho);
+	ho.role_master = 1u;
+	ho.device = FR_HO_DEV_OP1F;
+	ho.device_how = FR_HO_HOW_TABLE;
+	opxy_device_pick(&ho, 0u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.dev == &wb_device_op1f && p.how == WB_DEV_BY_TABLE && p.master &&
+	      !p.decided && reads == 0u && sf.samples == 0u && !p.fallback);
+	/* the record's flags bit 12: the front's fallback */
+	ho.flags = FR_HO_ROLE_BY_STRAP;
+	opxy_device_pick(&ho, 0u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.fallback && p.master && !p.decided && sf.samples == 0u);
+	ho.flags = 0u;
+	ho.role_master = 0u;
+	ho.device = FR_HO_DEV_OPXY;
+	ho.device_how = FR_HO_HOW_SECOND;
+	opxy_device_pick(&ho, 1u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.dev == &wb_device_opxy && !p.master && reads == 0u && sf.samples == 0u);
+	/* S-18.005: a code that names nothing: the role the record's; its
+	 * slave decides as without a record, PA2 = 0 the second CPU, no read */
+	ho.device = 7u;
+	opxy_device_pick(&ho, 2u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.decided && !p.master && p.dev == &wb_device_opxy && p.how == WB_DEV_SECOND_CPU);
+	CHECK(reads == 0u && sf.samples == 1u);
+	sf.samples = 0u;
+	/* its master: the device from the first stage, whatever the boot mode */
+	ho.role_master = 1u;
+	memset(stage, 0xFF, sizeof stage);
+	opxy_device_pick(&ho, 2u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.decided && p.master && reads != 0u && sf.samples == 0u && p.how == WB_DEV_UNKNOWN);
+	CHECK(p.n == 0xFFFFFFFFu);
+	ho.device_how = 9u;
+	ho.device = FR_HO_DEV_OP1F;
+	opxy_device_pick(&ho, 1u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.decided && p.master && p.dev == &wb_device_opxy && p.how == WB_DEV_UNKNOWN);
+	/* no record: boot mode 2 with PA2 = 0 is the OP-XY's second CPU, the
+	 * fallback sampled once and nothing read */
+	sf.samples = 0u;
+	reads = 0u;
+	opxy_device_pick(NULL, 2u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(!p.master && p.how == WB_DEV_SECOND_CPU && reads == 0u && p.n == 0u);
+	CHECK(sf.samples == 1u && !p.fallback);
+	/* boot mode 2 with PA2 = 1: a main CPU all the same, the first stage
+	 * read after the sample */
+	sf.samples = 0u;
+	sf.level = WB_STRAP_PA2;
+	opxy_device_pick(NULL, 2u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.master && p.decided && reads != 0u && sf.samples == 1u);
+	CHECK(p.fallback && p.how == WB_DEV_UNKNOWN);
+	/* a main CPU with an unlisted (erased) first stage: the default, no
+	 * sample */
+	sf.samples = 0u;
+	reads = 0u;
+	opxy_device_pick(NULL, WB_BOOT_MODE_MAIN, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.master && p.decided && p.dev == &wb_device_opxy && p.how == WB_DEV_UNKNOWN);
+	CHECK(reads == WB_FS_TRIES && p.n == 0xFFFFFFFFu && p.c == 0u);
+	CHECK(sf.samples == 0u && !p.fallback);
+	/* S-18.003's tries: a failed read is made again, up to three times */
+	fl.fail = 2u;
+	opxy_device_pick(NULL, WB_BOOT_MODE_MAIN, strap_sample, &sf, flaky_read, &fl, &p);
+	CHECK(p.n == 0xFFFFFFFFu && fl.fail == 0u);
+	fl.fail = 5u;
+	opxy_device_pick(NULL, WB_BOOT_MODE_MAIN, strap_sample, &sf, flaky_read, &fl, &p);
+	CHECK(fl.fail == 2u && p.how == WB_DEV_UNKNOWN && p.c == 0u);
+	/* a busy timeout is not tried again */
+	fl.reads = 0u;
+	fl.busy = 1u;
+	opxy_device_pick(NULL, WB_BOOT_MODE_MAIN, strap_sample, &sf, flaky_read, &fl, &p);
+	CHECK(fl.reads == 1u && p.how == WB_DEV_UNKNOWN);
+}
+
 int main(void)
 {
 	RUN(test_clocks);
@@ -472,5 +662,8 @@ int main(void)
 	RUN(test_strap);
 	RUN(test_otp);
 	RUN(test_slave_emmc);
+	RUN(test_op1f_pins);
+	RUN(test_op1f_values);
+	RUN(test_device_pick);
 	return check_summary("test_board_values");
 }

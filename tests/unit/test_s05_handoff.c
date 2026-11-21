@@ -2,11 +2,12 @@
 /*
  * S-05 OS hand-off.
  * Requirements: S-05.001, .002, .005-.009, .012, .013, .018-.021, .024
- * (and S-01.017 through it).
+ * (and S-01.017 through it); S-05.023, and on the OP-1F .036, .039, .040.
  * Vectors: tests/oracle/S-05-os-handoff boot_decision.tsv, vectors/compatibility_cases.json
  * and its .ldr streams (read at run time), synthetic_os_a/b.json,
  * boot_config.json (vectors/s05_vectors.h); scenarios H-DEC,
- * H-CFG, H-CALLS, H-ENTRY, H-ORDER, F-NOOS, F-ENC, F-REFUSE, F-SELECT, SL-LOAD, SL-NOOS.
+ * H-CFG, H-CALLS, H-ENTRY, H-ORDER, F-NOOS, F-ENC, F-REFUSE, F-SELECT, SL-LOAD, SL-NOOS;
+ * os_destinations_1f.json, entry_state_1f.json; H-ORDER-1F, H-NOOS-1F.
  */
 #include <stdio.h>
 #include <string.h>
@@ -255,8 +256,15 @@ static void m_held(void *c, enum s05_fail f) { (void)c; g_held_cause = f; ev('H'
 static void s_reply(void *c, uint8_t v) { (void)c; ev(v == 0u ? '0' : '1'); }
 static void s_stop(void *c) { (void)c; ev('X'); }
 
+static void m_accepted(void *c) { (void)c; ev('A'); }
+
 static const struct s05_master_ops g_mops = {
 	NULL, m_pre, m_stage, m_release, m_teardown, m_kernel, m_svect, m_jump, m_clear, m_held,
+	m_accepted,
+};
+static const struct s05_master_ops g_mops_bare = {
+	NULL, m_pre, m_stage, m_release, m_teardown, m_kernel, m_svect, m_jump, m_clear, m_held,
+	NULL,
 };
 static const struct s05_slave_ops g_sops = {
 	NULL, m_stage, s_reply, s_stop, m_teardown, m_kernel, m_svect, m_jump,
@@ -310,6 +318,7 @@ static void test_sequences(void)
 		m.config_addr = 0x0803D000u;
 		m.sw_version_nonzero = cases[i].sw_nonzero;
 		m.file = cases[i].from_file;
+		m.dev = &wb_device_opxy;
 		s05_master_handoff(&g_mops, &m);
 		CHECK(strcmp(g_ev, cases[i].seq) == 0);
 		CHECK_EQ(g_held_cause, cases[i].cause);
@@ -336,11 +345,102 @@ static void test_sequences(void)
 	CHECK(strcmp(g_ev, "S1") == 0);
 }
 
+/*
+ * S-05.036 on the OP-1F: no release, no wait; the accepted op, the
+ * teardown, the kernel call; a failed load as on the OP-XY (H-ORDER-1F,
+ * H-NOOS-1F).
+ */
+static void test_sequences_1f(void)
+{
+	static const struct {
+		enum s05_fail stage;
+		const char *file;
+		bool sw_nonzero, from_file, bare;
+		const char *seq;
+		enum s05_fail cause;
+	} cases[] = {
+		{S05_FAIL_NONE, "synthetic_os_b.ldr", true, false, false, "PSATKVJ", S05_FAIL_NONE},
+		{S05_FAIL_NONE, "synthetic_os_b.ldr", true, false, true, "PSTKVJ", S05_FAIL_NONE},
+		{S05_FAIL_NO_OS, NULL, true, false, false, "PSCH", S05_FAIL_NO_OS},
+		{S05_FAIL_SELECT, NULL, true, false, false, "PSH", S05_FAIL_SELECT},
+		{S05_FAIL_NONE, "refuse_ddr_reserve.ldr", true, false, false, "PSCH", S05_FAIL_REFUSED},
+		{S05_FAIL_FILE, NULL, true, true, false, "PSH", S05_FAIL_FILE},
+		{S05_FAIL_NONE, "synthetic_os_b.ldr", true, true, false, "PSATKVJ", S05_FAIL_NONE},
+	};
+	unsigned i;
+
+	for (i = 0; i < N(cases); i++) {
+		struct s05_master m;
+
+		g_nev = 0;
+		g_ev[0] = '\0';
+		g_stage_result = cases[i].stage;
+		g_len = cases[i].file != NULL ? read_ldr(cases[i].file) : 0u;
+		g_release_rc = 0;
+		g_reply_value = 1;	/* a release would hold: none is made */
+		g_held_cause = S05_FAIL_NONE;
+		m.staging = g_img;
+		m.config_addr = 0x0803D000u;
+		m.sw_version_nonzero = cases[i].sw_nonzero;
+		m.file = cases[i].from_file;
+		m.dev = &wb_device_op1f;
+		s05_master_handoff(cases[i].bare ? &g_mops_bare : &g_mops, &m);
+		CHECK(strcmp(g_ev, cases[i].seq) == 0);
+		CHECK(strchr(g_ev, 'R') == NULL);
+		CHECK_EQ(g_held_cause, cases[i].cause);
+	}
+}
+
+/* S-05.023, S-05.039: the contract per device */
+static void test_contract(void)
+{
+	CHECK(strcmp(S05_CONTRACT_VERSION, "XY-HANDOFF-2") == 0);
+	CHECK(strcmp(s05_contract(&wb_device_opxy), S05_CONTRACT_VERSION) == 0);
+	CHECK(strcmp(s05_contract(&wb_device_op1f), "1F-HANDOFF-1") == 0);
+}
+
+/* S-05.040: OS 1.7.3's destinations pass S-05.024's check (vectors:
+ * os_destinations_1f.json); the second DDR range starts above the display
+ * frame memory's 480 rows. */
+static void test_os_destinations_1f(void)
+{
+	uint32_t off = 0;
+	unsigned n = 0, i;
+	struct s05_block b;
+
+	CHECK_EQ(s05_check_image(v_os1f_stream, sizeof v_os1f_stream),
+		 V_OS1F_ACCEPTED ? S05_ACCEPT : S05_REFUSE_SPACE);
+	CHECK_EQ(s05_check_image(v_os1f_stream, sizeof v_os1f_stream), S05_ACCEPT);
+	while (s05_ldr_next(v_os1f_stream, sizeof v_os1f_stream, &off, &b) == 0) {
+		if (s05_block_has_destination(&b)) {
+			CHECK(n < N(v_os1f_ranges));
+			if (n < N(v_os1f_ranges)) {
+				CHECK_EQ(b.target, v_os1f_ranges[n].start);
+				CHECK_EQ(b.target + b.count, v_os1f_ranges[n].end);
+			}
+			n++;
+		}
+		if (b.flags & S05_FLAG_FINAL)
+			break;
+	}
+	CHECK_EQ(n, N(v_os1f_ranges));
+	for (i = 0; i < N(v_os1f_ranges); i++)
+		CHECK_EQ(s01_os_destination(v_os1f_ranges[i].start,
+					    v_os1f_ranges[i].end - v_os1f_ranges[i].start), S01_OS_OK);
+	CHECK(v_os1f_ranges[N(v_os1f_ranges) - 1u].start > 0x8C03C000u);
+	/* S-05.038: the vectors' table, for the board's entry */
+	CHECK_EQ(v_entry1f_evt[2], 0x11A00C18u);
+	CHECK_EQ(v_entry1f_evt[15], 0x11A000CAu);
+}
+
 int main(void)
 {
 	test_decision();
 	test_compatibility();
 	test_kernel_and_load_function();
 	test_sequences();
+	test_sequences_1f();
+	test_contract();
+	test_os_destinations_1f();
 	return finish("test_s05_handoff");
 }

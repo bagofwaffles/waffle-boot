@@ -80,15 +80,17 @@ static int request(struct s07_psoc *p, uint8_t id, const uint8_t *pl,
 	return s06_transact(p->node, p->link, id, pl, n, REQUEST_US, reply) == 1;
 }
 
-void s07_init(struct s07_psoc *p, struct s06_node *node, unsigned link,
-	      const struct s07_ops *ops)
+void s07_init(struct s07_psoc *p, const struct wb_device *dev, struct s06_node *node,
+	      unsigned link, const struct s07_ops *ops)
 {
 	wb_fill((uint8_t *)p, 0, sizeof *p);
+	p->dev = dev;
 	p->node = node;
 	p->link = link;
 	p->ops = ops;
 	p->state = S07_POWER_NONE;
-	p->led_bar = -1;		/* S-07.041: the first bar is sent */
+	/* S-07.041: the first bar is sent; S-07.046: n = 0 counts as sent */
+	p->led_bar = wb_has(dev, WB_F_KEY_LEDS) ? -1 : 0;
 	p->charge_led_on = true;
 	p->kt_lone = S07_KEYS;
 }
@@ -119,13 +121,31 @@ static bool raw_put(struct s07_psoc *p, const uint8_t *d, size_t n)
 	return true;
 }
 
-/* ---- LEDs (S-07.040-S-07.045) ---- */
+/* ---- LEDs (S-07.040-S-07.049) ---- */
+
+#define BAR_LEDS 14u			/* S-07.046 */
+
+static bool key_leds(const struct s07_psoc *p)
+{
+	return wb_has(p->dev, WB_F_KEY_LEDS);
+}
+
+/* S-07.046: {02 l0 .. l13}, the first n FF */
+static void send_bar_levels(struct s07_psoc *p, unsigned n)
+{
+	uint8_t m[1u + BAR_LEDS];
+
+	m[0] = 0x02;
+	for (unsigned i = 0; i < BAR_LEDS; i++)
+		m[1u + i] = i < n ? 0xFFu : 0x00u;
+	send(p, ID_LED, m, sizeof m);
+}
 
 void s07_led_key(struct s07_psoc *p, uint8_t key, uint8_t a, uint8_t b)
 {
 	const uint8_t m[4] = { 0x00, key, a, b };
 
-	if (key >= S07_KEYS)
+	if (key >= S07_KEYS || !key_leds(p))
 		return;
 	if (p->led_key[key][0] == a && p->led_key[key][1] == b)
 		return;			/* S-07.041 */
@@ -138,16 +158,37 @@ void s07_led_bar(struct s07_psoc *p, uint8_t n)
 {
 	const uint8_t m[2] = { 0x02, n };
 
+	if (!key_leds(p) && n > BAR_LEDS)
+		n = BAR_LEDS;
 	if (p->led_bar == n)
-		return;			/* S-07.041 */
+		return;			/* S-07.041, S-07.046 */
 	p->led_bar = n;
-	send(p, ID_LED, m, 2);
+	if (!key_leds(p))
+		send_bar_levels(p, n);
+	else
+		send(p, ID_LED, m, 2);
+}
+
+void s07_led_bar_clear(struct s07_psoc *p)
+{
+	p->led_bar = 0;
+	send_bar_levels(p, 0);
 }
 
 void s07_led_rgb(struct s07_psoc *p, const uint8_t rgb[3], bool forced)
 {
 	const uint8_t m[4] = { 0x03, rgb[0], rgb[1], rgb[2] };
 
+	if (!key_leds(p)) {
+		/* S-07.046: the three 48 bytes as written; no forced message */
+		const uint8_t f[7] = { 0x06, rgb[0], 0x48, rgb[1], 0x48, rgb[2], 0x48 };
+
+		if (wb_equal(p->led_rgb, rgb, 3))
+			return;
+		wb_copy(p->led_rgb, rgb, 3);
+		send(p, ID_LED, f, sizeof f);
+		return;
+	}
 	if (!forced) {
 		if (wb_equal(p->led_rgb, rgb, 3))
 			return;		/* S-07.041 */
@@ -161,10 +202,24 @@ void s07_led_all_off(struct s07_psoc *p)
 {
 	static const uint8_t m[1] = { 0x01 };
 
-	send(p, ID_LED, m, 1);
+	if (key_leds(p))
+		send(p, ID_LED, m, 1);
 }
 
-/* S-07.042, S-07.045: not while the key test runs */
+/* S-07.047: the phase after this update in state 0x16 */
+static void breathe(struct s07_psoc *p, uint8_t rgb[3])
+{
+	const uint32_t t = now(p);
+
+	if (p->breathe_seen)
+		p->breathe_phase = s07_breathe_step(p->breathe_phase, t - p->breathe_us);
+	p->breathe_seen = true;
+	p->breathe_us = t;
+	for (unsigned i = 0; i < 3u; i++)
+		rgb[i] = s07_breathe_level(rgb[i], p->breathe_phase);
+}
+
+/* S-07.042, S-07.045, S-07.047, S-07.049: not while the key test runs */
 void s07_update_charge_led(struct s07_psoc *p)
 {
 	uint8_t rgb[3];
@@ -174,6 +229,8 @@ void s07_update_charge_led(struct s07_psoc *p)
 		return;
 	s07_charge_led(p->state, (uint8_t)(p->batt.present ? p->batt.charge : 0), rgb,
 		       &forced);
+	if (!key_leds(p) && p->state == S07_POWER_CHARGE)
+		breathe(p, rgb);
 	s07_led_rgb(p, rgb, forced);
 }
 
@@ -192,7 +249,8 @@ static bool kt_tested(const struct s07_psoc *p, unsigned k)
 
 /* S-07.045: a key shown FE 00, seen 00 FF, shown but not seen 00 00. Only a
  * press that is alone advances the RGB value, and its key is seen when it
- * is released with no other key gone down in between. */
+ * is released with no other key gone down in between. Without key-leds the
+ * key LED messages are not sent (S-07.049). */
 static void key_test_event(struct s07_psoc *p, uint8_t key, bool down)
 {
 	if (down) {
@@ -278,10 +336,10 @@ static int power_state(struct s07_psoc *p, uint8_t s)
 	return power_off(p, s);
 }
 
-/* S-07.031 */
+/* S-07.031: device.key.count keys */
 static void bitmap(struct s07_psoc *p, const uint8_t *bm)
 {
-	for (unsigned k = 0; k < S07_KEYS; k++) {
+	for (unsigned k = 0; k < p->dev->keys.count && k < S07_KEYS; k++) {
 		bool down = s07_key_down(bm, k);
 
 		if (down == s07_key_down(p->keys, k))
@@ -360,9 +418,9 @@ static int handle(struct s07_psoc *p, const struct s06_frame *f)
 		s07_update_charge_led(p);
 		break;
 	case ID_BITMAP:
-		/* S-07.079: fewer than 9 bytes: ignored; bytes past the
-		 * ninth are not read */
-		if (f->len >= S07_BITMAP)
+		/* S-07.079: fewer than device.key.bitmap_bytes: ignored;
+		 * bytes past them are not read */
+		if (f->len >= p->dev->keys.bitmap_bytes)
 			bitmap(p, f->payload);
 		break;
 	case ID_KEY_EVENT:				/* S-07.075: ignored */
@@ -636,6 +694,8 @@ static int battery_loop(struct s07_psoc *p)
 		if (p->ops->usb_msc)
 			p->ops->usb_msc(p->ops->ctx, false);
 		p->applied_ma = 0;
+		if (!key_leds(p))
+			s07_led_bar_clear(p);		/* S-07.048 */
 	}
 	s07_update_charge_led(p);
 	return S07_OK;
@@ -686,21 +746,25 @@ int s07_battery_rest(struct s07_psoc *p)
  * a byte it does not carry reads 00 (S-07.079). No event is made. */
 static void keys_known(struct s07_psoc *p, const uint8_t *pl, size_t n)
 {
+	const size_t max = p->dev->keys.bitmap_bytes < sizeof p->keys ? p->dev->keys.bitmap_bytes
+								      : sizeof p->keys;
+
 	wb_fill(p->keys, 0, sizeof p->keys);
-	wb_copy(p->keys, pl, n < sizeof p->keys ? n : sizeof p->keys);
+	wb_copy(p->keys, pl, n < max ? n : max);
+	s07_keys_mask(p->dev, p->keys);
 }
 
 void s07_key_status_given(struct s07_psoc *p, const uint8_t *pl, size_t n,
 			  struct s07_key_status *ks)
 {
 	if (pl != NULL) {
-		s07_key_status_decode(pl, n, ks);
+		s07_key_status_decode(p->dev, pl, n, ks);
 		keys_known(p, pl, n);
 		log_ev(p, S07_LOG_KEY_STATUS,
 		       (uint32_t)ks->hold | (uint32_t)ks->debug << 1 |
 			       (uint32_t)ks->precomp << 2, 0);
 	} else {
-		s07_key_status_decode(0, 0, ks);	/* S-16.008: held */
+		s07_key_status_decode(p->dev, 0, 0, ks);	/* S-16.008: held */
 		log_ev(p, S07_LOG_KEYS_NO_REPLY, 0, 0);
 	}
 }
@@ -712,13 +776,13 @@ int s07_key_status(struct s07_psoc *p, struct s07_key_status *ks)
 
 	if (request(p, ID_KEY_STATUS, 0, 0, &r)) {
 		OPXY_TESTOS(opxy_testos_key_raw(r.payload, r.len);)
-		s07_key_status_decode(r.payload, r.len, ks);
+		s07_key_status_decode(p->dev, r.payload, r.len, ks);
 		keys_known(p, r.payload, r.len);
 		log_ev(p, S07_LOG_KEY_STATUS,
 		       (uint32_t)ks->hold | (uint32_t)ks->debug << 1 |
 			       (uint32_t)ks->precomp << 2, 0);
 	} else {
-		s07_key_status_decode(0, 0, ks);	/* S-16.008: held */
+		s07_key_status_decode(p->dev, 0, 0, ks);	/* S-16.008: held */
 		log_ev(p, S07_LOG_KEYS_NO_REPLY, 0, 0);
 	}
 	return S07_OK;
@@ -752,6 +816,9 @@ int s07_pmic(struct s07_psoc *p)
 	struct s06_frame r;
 	uint8_t wr[3] = { 0x03, 0x10, 0 };
 
+	/* S-07.062: no 0x70, 0x71, 0x73 and no ping without the feature */
+	if (!wb_has(p->dev, WB_F_PMIC_PASS_THROUGH))
+		return S07_OK;
 	send(p, ID_PMIC_PASS, on, 1);
 	/* no reply within 100 ms: nothing more, pass-through left on */
 	if (!request(p, ID_PMIC_READ, rd, 2, &r))
@@ -803,10 +870,12 @@ int s07_service_pass(struct s07_psoc *p)
 {
 	int rc;
 
-	if (!p->first_pass_done) {		/* S-07.043 */
+	if (!p->first_pass_done) {		/* S-07.043; S-07.046: none */
 		p->first_pass_done = true;
-		s07_led_all_off(p);
-		s07_led_bar(p, 0);
+		if (key_leds(p)) {
+			s07_led_all_off(p);
+			s07_led_bar(p, 0);
+		}
 	}
 	rc = s07_poll(p);
 	if (rc)

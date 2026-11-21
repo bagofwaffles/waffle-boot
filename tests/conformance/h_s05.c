@@ -356,6 +356,7 @@ static void do_master(const struct h_cmd *c)
 	m.config_addr = CONFIG_ADDR;
 	m.sw_version_nonzero = h_num(c, 4) != 0u;
 	m.file = false;
+	m.dev = &wb_device_opxy;
 	h_put("begin");
 	s05_master_handoff(&ops, &m);
 	h_end();
@@ -509,6 +510,7 @@ static void do_boot(const struct h_cmd *c)
 	boot_ops.reboot_reason = b_reason;
 	boot_ops.psoc_start = b_psoc_start;
 	boot_ops.slave_start = b_slave_start;
+	boot_ops.dev = &wb_device_opxy;
 	boot_ops.handoff = &boot_handoff;
 	boot_ops.staging = staging;
 	boot_ops.config_addr = CONFIG_ADDR;

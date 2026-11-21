@@ -59,6 +59,7 @@
 #include "bearssl_hash.h"
 
 #include "hlib.h"
+#include "waffle/device.h"
 #include "waffle/s04_records.h"
 #include "waffle/s11_content.h"
 #include "waffle/s14_export.h"
@@ -473,7 +474,7 @@ int main(void)
 			dwrites = 0;
 			h_end();
 		} else if (strcmp(k, "diskformat") == 0 && c.n == 1) {
-			bit(dmem != NULL && wire_fat_format(&F, &dbd));
+			bit(dmem != NULL && wire_fat_format(&F, &dbd, &wb_device_opxy));
 		} else if (strcmp(k, "diskmount") == 0 && c.n == 1) {
 			bit(dmem != NULL && wire_fat_mount(&F, &dbd));
 		} else if (strcmp(k, "diskls") == 0 && c.n == 1) {

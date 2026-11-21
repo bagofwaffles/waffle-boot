@@ -11,7 +11,10 @@
  * answers through libwaffle's own S-06 codec; the flash is a RAM model with
  * an op log. Recovery's loop runs end to end with a host on its USB serial
  * port: the order of the erases, the frames, the replies and the PSoC's
- * messages around an in-place write (S-02.084, S-07.051).
+ * messages around an in-place write (S-02.084, S-07.051). The devices
+ * (S-18): the record's device and how, the OP-1F's start (no strap, no
+ * gamma, its LED form) and chord, and recovery's line for a device not
+ * identified (S-18.004).
  */
 #include <setjmp.h>
 #include <string.h>
@@ -302,6 +305,9 @@ static struct {
 } onoff[8];
 static unsigned n_onoff;
 static uint64_t panel_last;
+/* The gamma tables' commands (E2, E3) and the B9s sent (S-13c.012,
+ * S-13c.026), counted by run_dev(). */
+static unsigned n_gamma, n_b9;
 
 static void b_cmd(void *ctx, uint8_t c)
 {
@@ -318,6 +324,10 @@ static void b_cmd(void *ctx, uint8_t c)
 					    screen_says(g_screen, "Writing slot 1 in place");
 		n_frames++;
 	}
+	if (c == 0xE2u || c == 0xE3u)
+		n_gamma++;
+	if (c == 0xB9u)
+		n_b9++;
 	if (first_cmd_us == 0u)
 		first_cmd_us = t_us;
 	panel_bytes++;
@@ -2090,6 +2100,9 @@ static void rec_setup(bool slot1_good)
 	}
 }
 
+/* The device the board decided for rec_go(); NULL as before the devices. */
+static const struct fr_ident *rec_ident;
+
 static enum fr_next rec_go(const struct hstep *steps, const uint8_t *img, size_t n, bool silent36)
 {
 	static struct fr_start_hw hw;
@@ -2117,6 +2130,7 @@ static enum fr_next rec_go(const struct hstep *steps, const uint8_t *img, size_t
 	hw.usb_ma = u_ma;
 	hw.serial = &serial;
 	hw.staging = staging;
+	hw.ident = rec_ident;
 	memset(&ho, 0, sizeof ho);
 	ho.strap = 0x0104u;
 	t_us = 1000u;
@@ -2385,6 +2399,34 @@ static void test_rec_other_ways_poweroff(void)
 			CHECK(fr_check_slot(&flash, 0, &good, NULL) == FR_FLASH_OK && good);
 		}
 	}
+}
+
+/* S-18.004: recovery's INFO names the device the board decided and how,
+ * with the fingerprint as read. */
+static void test_rec_info_device(void)
+{
+	static const struct fr_ident unk = { &fr_dev_opxy, FR_HO_HOW_UNKNOWN, 0x86C0u, 0xB151F65Du };
+	static const struct fr_ident xy = { &fr_dev_opxy, FR_HO_HOW_TABLE, 0x86C0u, 0xF3C93780u };
+	static const struct hstep ask[] = {
+		{ H_INFO, 0, 0 }, { H_OFF, 0, 0 }, { H_STOP, 0, 0 },
+	};
+	const size_t n = rec_image(img_w, 0x5A, 2, 0x100, NULL);
+
+	rec_setup(false);
+	rec_ident = &unk;
+	CHECK(rec_go(ask, img_w, n, false) == FR_NEXT_HALT);
+	CHECK(host.infos >= 1u);
+	CHECK(host.info[FR_INFO_O_DEVICE] == FR_HO_DEV_OPXY &&
+	      host.info[FR_INFO_O_DEV_HOW] == FR_HO_HOW_UNKNOWN);
+	CHECK(fr_le32(host.info + FR_INFO_O_FS_N) == 0x86C0u &&
+	      fr_le32(host.info + FR_INFO_O_FS_C) == 0xB151F65Du);
+	rec_setup(false);
+	rec_ident = &xy;
+	CHECK(rec_go(ask, img_w, n, false) == FR_NEXT_HALT);
+	CHECK(host.info[FR_INFO_O_DEVICE] == FR_HO_DEV_OPXY &&
+	      host.info[FR_INFO_O_DEV_HOW] == FR_HO_HOW_TABLE);
+	CHECK(fr_le32(host.info + FR_INFO_O_FS_C) == 0xF3C93780u);
+	rec_ident = NULL;
 }
 
 /* (g) The battery request: none for a refused in-place BEGIN or another
@@ -3021,7 +3063,7 @@ static void test_rec_trial(void)
 		CHECK(!wrote_in(FR_RECORD_OFF(0), FR_RECORD_OFF(0) + FR_SECTOR));
 		CHECK(screen_says(&st.screen, "Done: slot 2 is written for one trial start"));
 		CHECK(screen_says(&st.screen, "If it does not start, switch off and on: slot 1 boots"));
-		CHECK(strcmp(st.screen.status_right, "v1.0.0 F18") == 0);
+		CHECK(strcmp(st.screen.status_right, "v1.0.0 F20") == 0);
 
 		/* the trial start */
 		CHECK(first_stage() == 1u);
@@ -3257,6 +3299,204 @@ static void test_rec_keys_quiet(void)
 	CHECK(keys_between(host.end_out, UINT64_MAX) > 0u);
 }
 
+/* ---- the devices (S-18.001 to S-18.005) ---- */
+
+/* One start on the device the board decided: ident NULL as the board
+ * before the devices, else ident's; strap as the board sampled it (0 on a
+ * device without straps). */
+static enum fr_next run_dev(const struct fr_ident *ident, uint16_t strap, struct fr_handoff *ho)
+{
+	static struct fr_start_hw hw;
+
+	memset(&hw, 0, sizeof hw);
+	hw.clock = &clock;
+	hw.psoc = &link;
+	hw.panel = &bus;
+	hw.frame = panel_fb;
+	hw.flash = &flash;
+	hw.mem = &mem;
+	hw.ident = ident;
+	memset(ho, 0, sizeof *ho);
+	ho->strap = strap;
+	t_us = 1000u;
+	panel_bytes = 0;
+	first_cmd_us = 0;
+	n_gamma = 0;
+	n_b9 = 0;
+	return fr_start_run(&st, &hw, ho);
+}
+
+/* The logged 0x40 messages: how many in all, and how many of len bytes
+ * starting p0. */
+static unsigned leds_of(unsigned len, uint8_t p0, unsigned *all)
+{
+	unsigned n = 0;
+
+	*all = 0;
+	for (unsigned i = 0; i < psoc.n_log; i++) {
+		if (psoc.log[i].id != 0x40u)
+			continue;
+		(*all)++;
+		if (psoc.log[i].len == len && psoc.log[i].p0 == p0)
+			n++;
+	}
+	return n;
+}
+
+/* S-18.005: the device and how it was decided, in the record; the
+ * default device with no ident. The rest of a normal start as before. */
+static void test_dev_record(void)
+{
+	static const struct fr_ident xy = { &fr_dev_opxy, FR_HO_HOW_TABLE, 0x86C0u, 0xF3C93780u },
+				     f = { &fr_dev_op1f, FR_HO_HOW_TABLE, 0x8600u, 0x49267EB8u },
+				     unk = { &fr_dev_opxy, FR_HO_HOW_UNKNOWN, 0x8600u, 0x12345678u };
+	static const struct { const struct fr_ident *id; uint16_t strap; uint8_t dev, how; } c[] = {
+		{ NULL, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_TABLE },
+		{ &xy, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_TABLE },
+		{ &f, 0u, FR_HO_DEV_OP1F, FR_HO_HOW_TABLE },
+		{ &unk, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_UNKNOWN },
+	};
+
+	for (unsigned i = 0; i < ARRAY_LEN(c); i++) {
+		struct fr_handoff ho;
+
+		model_reset();
+		psoc.answers = true;
+		psoc.answer_keys = true;
+		image(true);
+		CHECK(run_dev(c[i].id, c[i].strap, &ho) == FR_NEXT_MAIN);
+		CHECK(ho.device == c[i].dev && ho.device_how == c[i].how && ho.zero == 0u);
+		CHECK(st.dev == fr_dev_of(c[i].dev));
+		CHECK(ho.strap == c[i].strap);
+		CHECK((ho.flags & (FR_HO_GREETED | FR_HO_PANEL_UP | FR_HO_PANEL_LIT |
+				   FR_HO_SUBSCRIBED | FR_HO_KEYS_REPLIED | FR_HO_RUNNING)) ==
+		      (FR_HO_GREETED | FR_HO_PANEL_UP | FR_HO_PANEL_LIT | FR_HO_SUBSCRIBED |
+		       FR_HO_KEYS_REPLIED | FR_HO_RUNNING));
+		CHECK(count_fops('e') == 0u && count_fops('p') == 1u);
+	}
+}
+
+/*
+ * The OP-1F's start: no strap (0 in the record), so the panel's reset is
+ * the handshake's or one pulse, never the strap path (S-13c.027); no
+ * gamma load (S-13c.026); the charge LED in S-07.046's form, once; the
+ * OP-XY's start on the same model for comparison.
+ */
+static void test_1f_start(void)
+{
+	static const struct fr_ident f = { &fr_dev_op1f, FR_HO_HOW_TABLE, 0x8600u, 0x49267EB8u };
+	struct fr_handoff ho;
+	unsigned all;
+
+	model_reset();
+	psoc.answers = true;
+	psoc.answer_keys = true;
+	psoc.state = 0x10u;
+	image(true);
+	CHECK(run_dev(&f, 0u, &ho) == FR_NEXT_MAIN);
+	CHECK(st.panel.path == FR_PANEL_PULSE && !st.panel.gamma);
+	CHECK(n_gamma == 0u && n_b9 == 1u);
+	/* charge 80 in state 0x10: green, {06 00 48 C8 48 00 48}, alone */
+	CHECK(leds_of(7u, 0x06u, &all) == 1u && all == 1u);
+	CHECK((ho.flags & FR_HO_PANEL_LIT) != 0u && ho.key_len == 9u);
+	/* the same start with the first stage's handshake: no pulse */
+	model_reset();
+	psoc.answers = true;
+	psoc.answer_keys = true;
+	image(true);
+	{
+		static struct fr_start_hw hw;
+
+		memset(&hw, 0, sizeof hw);
+		hw.clock = &clock;
+		hw.psoc = &link;
+		hw.panel = &bus;
+		hw.frame = panel_fb;
+		hw.flash = &flash;
+		hw.mem = &mem;
+		hw.ident = &f;
+		memset(&ho, 0, sizeof ho);
+		ho.dma9_xmod = 0x12345678u;
+		ho.dma9_ymod = 1u;
+		t_us = 50000u;
+		CHECK(fr_start_run(&st, &hw, &ho) == FR_NEXT_MAIN);
+		CHECK(st.panel.path == FR_PANEL_HANDSHAKE && ho.panel_reset_ms == 1u);
+	}
+	/* the OP-XY on the same model: the gamma load, its {03 ..} form */
+	model_reset();
+	psoc.answers = true;
+	psoc.answer_keys = true;
+	psoc.state = 0x10u;
+	image(true);
+	CHECK(run_dev(NULL, 0x0104u, &ho) == FR_NEXT_MAIN);
+	CHECK(st.panel.gamma && n_gamma == 2u && n_b9 == 2u);
+	CHECK(leds_of(4u, 0x03u, &all) == 1u && all == 1u);
+	/* the OP-XY strapped low: the strap path, as before */
+	model_reset();
+	psoc.answers = true;
+	psoc.answer_keys = true;
+	image(true);
+	CHECK(run_dev(NULL, 0x0004u, &ho) == FR_NEXT_MAIN);
+	CHECK(st.panel.path == FR_PANEL_STRAP);
+}
+
+/* Power + M4 on the OP-1F (S-02 §9, provisional 0x09): its 58 keys in 8
+ * bytes, byte 8 not read; another key, a hold key included, is no chord. */
+static void test_1f_chord(void)
+{
+	static const struct fr_ident f = { &fr_dev_op1f, FR_HO_HOW_TABLE, 0x8600u, 0x49267EB8u };
+	static const struct { uint8_t byte, bit; bool chord; } c[] = {
+		{ 0xFFu, 0, true },	/* the key alone */
+		{ 8u, 0x01u, true },	/* byte 8: not the OP-1F's */
+		{ 7u, 0x04u, true },	/* key 0x3A: none of the 58 */
+		{ 7u, 0x02u, false },	/* 0x39, a hold key */
+		{ 5u, 0x10u, false },	/* 0x2C, the other */
+		{ 2u, 0x80u, false },	/* 0x17: no precomp on the OP-1F */
+		{ 0u, 0x40u, false },	/* key 1 */
+	};
+	struct fr_handoff ho;
+
+	for (unsigned i = 0; i < ARRAY_LEN(c); i++) {
+		model_reset();
+		psoc.answers = true;
+		psoc.answer_keys = true;
+		psoc.keys[1] = 0x02u;
+		if (c[i].byte != 0xFFu)
+			psoc.keys[c[i].byte] |= c[i].bit;
+		image(true);
+		CHECK(run_dev(&f, 0u, &ho) == (c[i].chord ? FR_NEXT_RECOVERY : FR_NEXT_MAIN));
+		if (c[i].chord)
+			CHECK(st.why == FR_WHY_KEYS);
+	}
+}
+
+/* S-18.004 on recovery's screen: the fingerprint, n in decimal and c in
+ * hex, on the main screen only when the device was not identified. */
+static void test_unknown_screen(void)
+{
+	static struct fr_rec_status rs;
+	static struct fr_proto rp;
+	static struct fr_screen scr;
+
+	memset(&rs, 0, sizeof rs);
+	memset(&rp, 0, sizeof rp);
+	rs.dev_how = FR_HO_HOW_UNKNOWN;
+	rs.fs_n = 0x8600u;
+	rs.fs_c = 0x0049ABCDu;
+	fr_rec_screen(&scr, &rs, &rp, false, NULL);
+	CHECK(screen_says(&scr, "Device not identified: n 34304, c 0049ABCD"));
+	rs.dev_how = FR_HO_HOW_TABLE;
+	fr_rec_screen(&scr, &rs, &rp, false, NULL);
+	CHECK(!screen_says(&scr, "not identified"));
+	rs.dev_how = FR_HO_HOW_UNKNOWN;
+	rs.fs_n = 0xFFFFFFFFu;
+	rs.fs_c = 0;
+	rs.why = FR_WHY_CHECK;
+	fr_rec_screen(&scr, &rs, &rp, true, NULL);
+	CHECK(screen_says(&scr, "Device not identified: n 4294967295, c 00000000"));
+	CHECK(screen_says(&scr, "This image failed its check"));
+}
+
 int main(void)
 {
 	RUN(test_rec_trial);
@@ -3272,6 +3512,7 @@ int main(void)
 	RUN(test_rec_in_place_done);
 	RUN(test_rec_other_ways_poweroff);
 	RUN(test_rec_battery);
+	RUN(test_rec_info_device);
 	RUN(test_normal_order);
 	RUN(test_inbox_before_jump);
 	RUN(test_record_running);
@@ -3297,5 +3538,9 @@ int main(void)
 	RUN(test_recovery_line);
 	RUN(test_no_slot_chords);
 	RUN(test_no_blink);
+	RUN(test_dev_record);
+	RUN(test_1f_start);
+	RUN(test_1f_chord);
+	RUN(test_unknown_screen);
 	return check_summary("test_front_start");
 }

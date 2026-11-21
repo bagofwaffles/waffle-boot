@@ -67,7 +67,7 @@ static void slave_ready(void)
 	s.hw.time.cycles_per_us = 400u;
 	s.hw.msi.c = &opxy_msi;
 	s.hw.msi.t = &s.hw.time;
-	s.emmc_up = true;
+	s.st.emmc_up = true;
 }
 
 /* Every DMA channel stopped (S-05.016), and the DDR controller read. */
@@ -986,6 +986,31 @@ static void test_cal_start(void)
 	CHECK(strcmp(cal_ops, "shutdown write:70 reset") == 0);
 }
 
+/* S-10c.110 without second-cpu: a memory request naming the slave is
+ * refused (0x01) and reaches no bridge; the main CPU's own are served. */
+static void test_no_slave(void)
+{
+	const uint8_t a[8] = { 0x00, 0x40, 0x00, 0x20, 0x77, 0, 0, 0 };	/* 0x20004000 */
+	size_t plen;
+
+	fake_mmr_reset();
+	fake_core_reset();
+	memset(&m, 0, sizeof(m));
+	m.dev = &wb_device_op1f;
+	s06_node_init(&m.node, crc8, NULL);
+	s06_link_init(&m.link[S06_LINK_CDC], &port, NULL, S06_ADDR_MASTER,
+		      S06_ADDR_HOST);
+	m.node.link[S06_LINK_CDC] = &m.link[S06_LINK_CDC];
+	m.sv.menu.dev_mode = true;
+	dev_frame(OPXY_DEV_SREAD, a, 4);
+	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED && plen == 1u);
+	dev_frame(OPXY_DEV_SWRITE, a, 8);
+	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED && plen == 1u);
+	dev_frame(OPXY_DEV_WRITE, a, 8);
+	CHECK(reply_status(&plen) == OPXY_DEV_OK);
+	CHECK(fake_mmr_get(0x20004000u) == 0x77u);
+}
+
 int main(void)
 {
 	RUN(test_normal);
@@ -1007,5 +1032,6 @@ int main(void)
 	RUN(test_boot_start);
 	RUN(test_quad_reply_gate);
 	RUN(test_cal_start);
+	RUN(test_no_slave);
 	return check_summary("test_board_devhost");
 }

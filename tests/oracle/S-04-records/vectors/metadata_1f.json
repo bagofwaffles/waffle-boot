@@ -1,0 +1,301 @@
+{
+ "size": "0x28",
+ "magic": "0xDEADBABE",
+ "note": "S-04.040: no factory or CV field; +0x10..+0x11 kept by every write, and the sector bytes from 0xC028 on are outside the record",
+ "encode": [
+  {
+   "fields": {
+    "serial": "XY000123",
+    "sku": 7,
+    "factory": 0,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     1,
+     2,
+     1,
+     42
+    ],
+    "state": "0xAB0D"
+   },
+   "bytes": "bebaadde585930303031323300000700c33c01000200010000000100020001002a0000000dab0000"
+  }
+ ],
+ "read": [
+  {
+   "name": "sample",
+   "bytes": "bebaadde585930303031323300000700c33c01000200010000000100020001002a0000000dab0000",
+   "fields": {
+    "serial": "XY000123",
+    "sku": 7,
+    "factory": 0,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     1,
+     2,
+     1,
+     42
+    ],
+    "state": "0xAB0D"
+   }
+  },
+  {
+   "name": "bad_magic",
+   "bytes": "bfbaadde585930303031323300000700c33c01000200010000000100020001002a0000000dab0000",
+   "fields": {
+    "serial": "",
+    "sku": 0,
+    "factory": 0,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0x0"
+   }
+  },
+  {
+   "name": "erased",
+   "bytes": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+   "fields": {
+    "serial": "",
+    "sku": 0,
+    "factory": 0,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0x0"
+   }
+  },
+  {
+   "name": "factory_bytes_ffff",
+   "bytes": "bebaadde585930303031323300000700ffff01000200010000000100020001002a0000000dab0000",
+   "fields": {
+    "serial": "XY000123",
+    "sku": 7,
+    "factory": 0,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     1,
+     2,
+     1,
+     42
+    ],
+    "state": "0xAB0D"
+   }
+  }
+ ],
+ "write": [
+  {
+   "name": "clear_state",
+   "before": "bebaadde585930303031323300000700c33c01000200010000000100020001002a0000000dab0000",
+   "factory_mode": false,
+   "current": {
+    "serial": "ZZ999999",
+    "sku": 9,
+    "factory": 5,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     1,
+     2,
+     1,
+     42
+    ],
+    "state": "0x0"
+   },
+   "after": "bebaadde585930303031323300000700c33c01000200010000000100020001002a00000000000000",
+   "note": "outside factory mode serial and sku are not stored"
+  },
+  {
+   "name": "factory_fields",
+   "before": "bebaadde5859303030313233005a0700c33c01000200010000000100020001002a0077880dab0000",
+   "factory_mode": true,
+   "current": {
+    "serial": "AB123456",
+    "sku": 12,
+    "factory": 3,
+    "os_version": [
+     2,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     2,
+     0,
+     0,
+     7
+    ],
+    "state": "0x0"
+   },
+   "after": "bebaadde4142313233343536005a0c00c33c02000000000000000200000000000700778800000000",
+   "note": "serial and sku stored; +0x0D, +0x10..+0x11 and +0x22..+0x23 kept"
+  },
+  {
+   "name": "erased_before",
+   "before": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+   "factory_mode": false,
+   "current": {
+    "serial": "",
+    "sku": 0,
+    "factory": 0,
+    "os_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0xAB0D"
+   },
+   "after": "bebaaddeffffffffffffffffffffffffffff00000000000000000000000000000000ffff0dab0000",
+   "note": "raw bytes kept under an invalid magic"
+  },
+  {
+   "name": "pads_kept",
+   "before": "bebaadde5859303030313233005a0700c33c01000200010000000100020001002a0077880dab0000",
+   "factory_mode": false,
+   "current": {
+    "serial": "AB123456",
+    "sku": 12,
+    "factory": 3,
+    "os_version": [
+     1,
+     2,
+     1,
+     0
+    ],
+    "sw_version": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "state": "0xAB0D"
+   },
+   "after": "bebaadde5859303030313233005a0700c33c0100020001000000000000000000000077880dab0000"
+  }
+ ],
+ "set_metadata": [
+  {
+   "name": "factory_alone",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "factory": "2"
+   },
+   "writes": true,
+   "result": {}
+  },
+  {
+   "name": "factory_and_serial",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "serial": "QW000001",
+    "factory": "2"
+   },
+   "writes": true,
+   "result": {
+    "serial": "QW000001"
+   }
+  },
+  {
+   "name": "all",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "serial": "QW000001",
+    "sku_variant": "42",
+    "factory": "2"
+   },
+   "writes": true,
+   "result": {
+    "serial": "QW000001",
+    "sku": 42
+   }
+  },
+  {
+   "name": "sku_1000",
+   "factory_mode": true,
+   "option": true,
+   "request": {
+    "sku_variant": "1000"
+   },
+   "writes": true,
+   "result": {
+    "sku": 0
+   }
+  },
+  {
+   "name": "no_keys",
+   "factory_mode": true,
+   "option": true,
+   "request": {},
+   "writes": true,
+   "result": {}
+  },
+  {
+   "name": "not_factory",
+   "factory_mode": false,
+   "option": true,
+   "request": {
+    "serial": "AB123456",
+    "factory": "2"
+   },
+   "writes": false,
+   "result": {}
+  },
+  {
+   "name": "option_off",
+   "factory_mode": true,
+   "option": false,
+   "request": {
+    "serial": "AB123456",
+    "factory": "2"
+   },
+   "writes": false,
+   "result": {}
+  }
+ ]
+}

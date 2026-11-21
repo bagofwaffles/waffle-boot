@@ -1,5 +1,5 @@
 {
- "_doc": "The installer's screens (src/testos/installer_logic.c, inst_screen_lines()), hand-checked; lines as screens.json writes them. Each case gives the phase, the version shown, the target slot index (0 Slot 1, 1 Slot 2), the lock, the last write's code (255 none), the OS state, the trial, a hold under way (digit, fill 0-1000, seconds left; digit 0 none), and the key check's keys pressed (keys_seen: bit 0 com, bit 1 M4; 0 when absent), as waffle/board/installer.h numbers them.",
+ "_doc": "The installer's screens (src/testos/installer_logic.c, inst_screen_lines()), hand-checked; lines as screens.json writes them. Each case gives the phase, the version shown, the target slot index (0 Slot 1, 1 Slot 2), the lock, the last write's code (255 none), the OS state, the trial, a hold under way (digit, fill 0-1000, seconds left; digit 0 none), the key check's keys pressed (keys_seen: bit 0 com, bit 1 the recovery key, M4 on the OP-XY; 0 when absent), the device (0 OP-XY, 1 OP-1F; 0 when absent), the key check's last other key (last_key, 255 none), the first stage's n and c (fs_n, fs_c), and for the survey's screen its facts (survey; slot_bits are INST_SV_*), as waffle/board/installer.h numbers them.",
  "cases": [
   {"name": "checking", "phase": 1, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0,
    "lines": [
@@ -181,6 +181,79 @@
   {"name": "left", "phase": 12, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 6, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0,
    "lines": [
     "head:Left without installing",
-    "Switch off, then on."]}
+    "Switch off, then on."]},
+  {"name": "keys_1f", "phase": 2, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "keys_seen": 0, "device": 1,
+   "lines": [
+    "head:Press com, then the recovery key",
+    "com: held at power-on, it opens the boot menu.",
+    "Recovery key: held with Power, the recovery menu.",
+    "step-run:com\twaiting",
+    "step-run:Recovery key\twaiting",
+    "dim:",
+    "item:8 End: the install is then not offered"]},
+  {"name": "keys_1f_usb_pressed", "phase": 2, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "keys_seen": 1, "device": 1, "last_key": 46,
+   "lines": [
+    "head:Press com, then the recovery key",
+    "com: held at power-on, it opens the boot menu.",
+    "Recovery key: held with Power, the recovery menu.",
+    "step-ok:com\tpressed",
+    "step-run:Recovery key\twaiting",
+    "dim:Last key pressed: 0x2e",
+    "item:8 End: the install is then not offered"]},
+  {"name": "locked_device", "phase": 3, "version": "1.0.3", "target": 1, "lock": 8, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "fs_n": 34000, "fs_c": 305419896,
+   "lines": [
+    "head:The install is not offered",
+    "error:The device is not identified by its first stage.",
+    "kv:First stage\tn 34000, c 12345678",
+    "Nothing was written to the SPI flash.",
+    "Results: check.txt on the USB disk, or the page.",
+    "",
+    "item:8 Leave the installer",
+    "dim:   Hold key to make selection"]},
+  {"name": "locked_other_device", "phase": 3, "version": "1.0.3", "target": 1, "lock": 9, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0,
+   "lines": [
+    "head:The install is not offered",
+    "error:This installer is built for another device.",
+    "Nothing was written to the SPI flash.",
+    "Results: check.txt on the USB disk, or the page.",
+    "",
+    "item:8 Leave the installer",
+    "dim:   Hold key to make selection"]},
+  {"name": "locked_factory", "phase": 3, "version": "1.0.3", "target": 1, "lock": 10, "last_rc": 255, "os": 1, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "device": 1,
+   "lines": [
+    "head:The install is not offered",
+    "error:It would write over the unit's own bootloader.",
+    "Nothing was written to the SPI flash.",
+    "Results: check.txt on the USB disk, or the page.",
+    "",
+    "item:8 Leave the installer",
+    "dim:   Hold key to make selection"]},
+  {"name": "done_1f", "phase": 9, "version": "1.0.3", "target": 0, "lock": 0, "last_rc": 0, "os": 6, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "device": 1,
+   "lines": [
+    "head:Done!",
+    "ok:waffle-boot is the unit's bootloader.",
+    "Switch off, then on.",
+    "dim:Boot menu: hold com while switching on.",
+    "dim:Recovery menu: Power and the recovery key."]},
+  {"name": "surveyed", "phase": 13, "version": "1.0.3", "target": 1, "lock": 11, "last_rc": 255, "os": 6, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "device": 1, "survey": {"device": 1, "how": 0, "fs_n": 34304, "fs_c": 1227259576, "sel_read": true, "sel_index": 0, "sel_verified": 1, "slot_bits": [11, 9], "ext_read": true, "part_config": 72, "boot_kib": 4096},
+   "lines": [
+    "head:Survey: nothing written to the SPI flash",
+    "kv:Device\tOP-1F (n 34304, c 49267eb8)",
+    "kv:Selector\t00 01: Slot 1, verified",
+    "kv:Slot 1\tgood, not waffle-boot",
+    "kv:Slot 2\tnot good, not waffle-boot",
+    "kv:eMMC\tPART_CONFIG 48, boot 4096 KiB",
+    "ok:An install would be offered.",
+    "Your OS is active again: switch off, then on."]},
+  {"name": "surveyed_factory", "phase": 13, "version": "1.0.3", "target": 1, "lock": 10, "last_rc": 255, "os": 3, "trial": 0, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0, "device": 1, "survey": {"device": 1, "how": 0, "fs_n": 34304, "fs_c": 1227259576, "sel_read": true, "sel_index": 1, "sel_verified": 1, "slot_bits": [15, 11], "ext_read": false, "part_config": 72, "boot_kib": 4096},
+   "lines": [
+    "head:Survey: nothing written to the SPI flash",
+    "kv:Device\tOP-1F (n 34304, c 49267eb8)",
+    "kv:Selector\t01 01: Slot 2, verified",
+    "kv:Slot 1\tgood, waffle-boot",
+    "kv:Slot 2\tgood, not waffle-boot",
+    "kv:eMMC\tnot read",
+    "warn:It would write over the unit's own bootloader.",
+    "No OS made active: the survey starts again."]}
  ]
 }

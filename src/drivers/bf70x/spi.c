@@ -1542,7 +1542,8 @@ int wb_spi_slave_request(const struct wb_spi_slave *s, size_t room,
 	*kept = head;
 	/* the master is held by the ready line (S-13b.044) while this runs */
 	total = len(ctx, rx, &tail);
-	if (total < head || total % wb_spi_word_bytes(p) != 0u ||
+	/* a word is a power of two bytes: no 64-bit remainder */
+	if (total < head || (total & (wb_spi_word_bytes(p) - 1u)) != 0u ||
 	    tail % wb_spi_word_bytes(p) != 0u)
 		return slave_fail(s, WB_SPI_ERR_ARG, false, WB_SPI_STAGE_REFUSED,
 				  0u);

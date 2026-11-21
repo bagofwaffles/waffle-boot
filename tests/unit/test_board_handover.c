@@ -248,7 +248,7 @@ static void test_slave(void)
 	s.hw.time.cycles_per_us = 400u;
 	s.hw.msi.c = &opxy_msi;
 	s.hw.msi.t = &s.hw.time;
-	s.emmc_up = true;
+	s.st.emmc_up = true;
 	fake_mmr_set(MSI_CTL, MSI_CTL_INTDMAC);
 	fake_mmr_set(MSI_BUSMODE, MSI_BUSMODE_DE | MSI_BUSMODE_FB);
 	fake_mmr_set(MSI_DBADDR, 0x8813267Cu);
@@ -285,16 +285,77 @@ static void test_slave(void)
 
 	/* A slave whose eMMC never came up leaves the controller alone. */
 	reset();
-	s.emmc_up = false;
+	s.st.emmc_up = false;
 	opxy_teardown_slave(&s);
 	CHECK(!touched(MSI_CTL));
 	check_sec(opxy_sec_keep_slave, OPXY_SEC_KEEP_SLAVE);
+}
+
+/* The writes into a block of registers [base, base + len). */
+static unsigned writes_in(wb_mmr_addr base, uint32_t len)
+{
+	const struct fake_mmr_access *log = fake_mmr_log();
+	unsigned n = 0;
+	size_t i;
+
+	for (i = 0; i < fake_mmr_count(); i++)
+		n += log[i].op == FAKE_MMR_WRITE && log[i].addr >= base &&
+		     log[i].addr < base + len;
+	return n;
+}
+
+/*
+ * The OP-1F (S-05.036 to S-05.038, S-13b.062): the master's rows, with the
+ * MSI controller closed (INTEN clear, IMSK 0, ISTAT clear, no command),
+ * source 72 neither pending nor enabled, the OP-1F's vectors; SPI0 and
+ * the bridge's pin interrupts untouched (no second-cpu).
+ */
+static void test_master_1f(void)
+{
+	static struct opxy_master m;
+
+	reset();
+	memset(&m, 0, sizeof m);
+	m.dev = &wb_device_op1f;
+	m.st.hw = &m.hw;
+	m.hw.msi.c = &opxy_msi_1f;
+	m.hw.msi.t = &m.hw.time;
+	m.hw.time.cycles_per_us = 400u;
+	fake_mmr_set(MSI_CTL, MSI_CTL_INTEN | MSI_CTL_INTDMAC);
+	fake_mmr_set(MSI_IMSK, 0xFFC2u);
+	fake_mmr_set(MSI_ISTAT, 0x21u);
+	fake_mmr_set(MSI_BUSMODE, MSI_BUSMODE_DE | MSI_BUSMODE_FB);
+	usb_on();
+	opxy_teardown_master(&m);
+	CHECK((fake_mmr_get(MSI_CTL) & (MSI_CTL_INTEN | MSI_CTL_INTDMAC)) == 0u);
+	CHECK(fake_mmr_get(MSI_IMSK) == 0u && fake_mmr_get(MSI_ISTAT) == 0u);
+	CHECK((fake_mmr_get(MSI_BUSMODE) & MSI_BUSMODE_DE) == 0u);
+	CHECK(!touched(MSI_CMD));			/* no command */
+	/* S-05.037: source 1 alone kept; 19, 20, 21 and 72 clear */
+	check_sec(opxy_sec_keep_master, OPXY_SEC_KEEP_1F);
+	CHECK(OPXY_SEC_KEEP_1F == 1u && opxy_sec_keep_master[0].sid == 1u);
+	for (uint32_t sid = 19u; sid <= 21u; sid++)
+		CHECK((fake_mmr_get(SEC0_SCTL(sid)) & (SEC_SCTL_IEN | SEC_SCTL_SEN)) == 0u);
+	CHECK((fake_mmr_get(SEC0_SCTL(72)) & (SEC_SCTL_IEN | SEC_SCTL_SEN)) == 0u);
+	CHECK(written(SEC0_SSTAT(72), SEC_SSTAT_PND));
+	CHECK(memcmp(&opxy_handover_os, &opxy_os_entry_op1f, sizeof(opxy_handover_os)) == 0);
+	CHECK(writes_in(SPI_BASE(OPXY_SPI_LINK), 0x1000u) == 0u);	/* no_spi0 */
+	CHECK(fake_mmr_get(SPI_CTL(OPXY_SPI_FLASH)) == 0x00000002u);
+	check_usb_off();
+	CHECK(fake_mmr_errors() == 0);
+
+	/* the OP-XY's master leaves the controller alone, SPI0 disabled */
+	reset();
+	memset(&m, 0, sizeof m);
+	opxy_teardown_master(&m);
+	CHECK(!touched(MSI_CTL) && writes_in(SPI_BASE(OPXY_SPI_LINK), 0x1000u) != 0u);
 }
 
 int main(void)
 {
 	RUN(test_master);
 	RUN(test_master_uart_drain);
+	RUN(test_master_1f);
 	RUN(test_slave);
 	return check_summary("test_board_handover");
 }

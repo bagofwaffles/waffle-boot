@@ -834,7 +834,8 @@ static enum s11_reason check_package(const struct s11_crypto_ops *crypto)
 	static uint8_t zip[64];
 	const struct wire_source src = { wire_mem_read, &mem, NULL };
 	struct s11_package_ops ops;
-	struct s11_check_in in = { .form = S11_FORM_FILE, .size = PKG_LEN };
+	struct s11_check_in in = { .form = S11_FORM_FILE, .size = PKG_LEN,
+				   .dev = &wb_device_opxy };
 	struct s11_check_out out;
 
 	mem.buf = pkg;

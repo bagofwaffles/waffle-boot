@@ -19,6 +19,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
+#include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/board/opxy_services.h"
@@ -95,7 +96,7 @@ static void test_check(void)
 	size_t n;
 
 	/* no package on the disk */
-	CHECK(wire_fat_format(&m.sv.fat, &m.sv.disk.dev), "check: format");
+	CHECK(wire_fat_format(&m.sv.fat, &m.sv.disk.dev, &wb_device_opxy), "check: format");
 	wire_fat_unmount(&m.sv.fat);
 	memset(reply, 0, sizeof(reply));
 	CHECK(opxy_dev_check(&m, reply) == 1u && reply[0] == OPXY_DEV_REFUSED,
@@ -412,7 +413,7 @@ static bool vector(const char *name, struct tl_package *p)
 
 static bool on_disk(const struct tl_package *p)
 {
-	bool ok = wire_fat_format(&m.sv.fat, &m.sv.disk.dev);
+	bool ok = wire_fat_format(&m.sv.fat, &m.sv.disk.dev, &wb_device_opxy);
 
 	wire_fat_unmount(&m.sv.fat);
 	ok = ok && wire_fat_mount(&m.sv.fat, &m.sv.disk.dev) &&
@@ -619,7 +620,7 @@ static void test_extract(void)
 	free(p.file);
 
 	/* no package */
-	CHECK(wire_fat_format(&m.sv.fat, &m.sv.disk.dev), "extract: format");
+	CHECK(wire_fat_format(&m.sv.fat, &m.sv.disk.dev, &wb_device_opxy), "extract: format");
 	wire_fat_unmount(&m.sv.fat);
 	CHECK(opxy_dev_extract(&m, reply) == 1u && reply[0] == OPXY_DEV_REFUSED,
 	      "extract: no package");

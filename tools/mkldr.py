@@ -5,8 +5,9 @@
     mkldr.py IMAGE.elf OUT.ldr --front FRONT.elf
     mkldr.py FRONT.elf OUT.ldr --front-only
     mkldr.py IMAGE.elf OUT.ldr --no-init
+    mkldr.py IMAGE.elf OUT.ldr --os-1f
 
-One of the three modes must be given.
+One of the four modes must be given.
 
 The stream (ADSP-BF70x HRM, "Boot Loader Stream"; S-05 Terms; S-01.010):
   1. a FIRST|IGNORE block of count 0: its target is the ELF entry, its
@@ -33,6 +34,13 @@ gives the same address in all three places and as the ELF entry, the first
 byte of its one DDR block, where bf703_testos.ld puts the entry shim
 (tools/testos_layout.py checks it). The argument of a block without FILL,
 INIT or CALLBACK is not used by the kernel.
+
+With --os-1f, an OS image for the OP-1F's own loader, shaped like the
+OP-1F's OS 1.7.3 (S-05.040): as --no-init, but the FINAL block's argument
+is 0, as that OS's is, and a run longer than S-05.041's block limits
+(0xC000 bytes in L1, 0xACAB8 in DDR) is split into blocks no longer. The
+entry, the FIRST and FINAL blocks' target, is the ELF entry, which
+src/testos/bf703_testos_1f.ld puts at 0x11A00000.
 
 With --front, the bootloader's stream carries the frozen front
 (src/front/fr_handoff.h): the front's blocks join the image's in the same
@@ -71,6 +79,8 @@ import elf32  # noqa: E402
 SIGNATURE = 0xAD
 DMACODE = 4                    # SPEC-Q: the 32-bit DMA code, as the vectors' streams use
 FINAL, FIRST, IGNORE, INIT = 1 << 15, 1 << 14, 1 << 12, 1 << 11
+# S-05.041: the longest block OS 1.7.3's stream shows the ROM to load, in L1 and in DDR
+OS_1F_SPLIT = (0xC000, 0xACAB8)
 GAP = 16
 
 # S-01.012: the L1 spaces (data A, data B, code, scratch).
@@ -117,8 +127,10 @@ def runs(elf):
     return aligned
 
 
-def stream(elf, init_symbol):
-    """The stream; init_symbol None leaves the INIT block out (--no-init)."""
+def stream(elf, init_symbol, final_argument=None, split=None):
+    """The stream; init_symbol None leaves the INIT block out (--no-init). final_argument, when given,
+    is the FINAL block's argument (--os-1f). split, when given, is (L1 limit, DDR limit): a run longer
+    than its limit becomes consecutive blocks of at most that many bytes (--os-1f: S-05.041)."""
     init = None
     if init_symbol is not None:
         init = elf.symbol(init_symbol)
@@ -127,17 +139,29 @@ def stream(elf, init_symbol):
     entry = elf.entry
     rs = runs(elf)
     body = bytearray()
+
+    def block(addr, buf):
+        nonlocal body
+        limit = len(buf) or 1
+        if split is not None:
+            limit = split[0] if in_l1(addr) else split[1]
+        for i in range(0, len(buf), limit):
+            part = buf[i:i + limit]
+            body += header(0, addr + i, len(part), 0) + part
+
     for addr, buf in rs:
         if in_l1(addr):
-            body += header(0, addr, len(buf), 0) + buf
+            block(addr, buf)
     if init is not None:
         body += header(INIT, init, 0, 0)
     for addr, buf in rs:
         if not in_l1(addr):
-            body += header(0, addr, len(buf), 0) + buf
+            block(addr, buf)
     # An OS image's FINAL block carries the entry in its argument as well (see
     # the docstring); the bootloader's keeps 0, so its stream does not change.
-    body += header(FINAL, entry, 0, entry if init is None else 0)
+    if final_argument is None:
+        final_argument = entry if init is None else 0
+    body += header(FINAL, entry, 0, final_argument)
     return header(FIRST | IGNORE, entry, 0, len(body)) + bytes(body)
 
 
@@ -308,8 +332,13 @@ def main(argv):
     args = argv[1:]
     modes = 0
     init_symbol = None
+    final_argument = None
     if '--no-init' in args:
         args.remove('--no-init')
+        modes += 1
+    if '--os-1f' in args:
+        args.remove('--os-1f')
+        final_argument = 0
         modes += 1
     front = None
     if '--front' in args:
@@ -330,7 +359,7 @@ def main(argv):
         elf = elf32.read(args[0])
         if init_symbol is not None:
             spare_frame(runs(elf))
-        data = stream(elf, init_symbol)
+        data = stream(elf, init_symbol, final_argument, OS_1F_SPLIT if final_argument == 0 else None)
     with open(args[1], 'wb') as f:
         f.write(data)
     return 0

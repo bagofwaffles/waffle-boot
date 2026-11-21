@@ -22,6 +22,7 @@
 #include "waffle/drivers/bf70x_spi.h"
 #include "waffle/drivers/bf70x_time.h"
 #include "waffle/drivers/bf70x_uart.h"
+#include "waffle/device.h"
 
 enum opxy_role { OPXY_SLAVE = 0, OPXY_MASTER = 1 };
 
@@ -79,14 +80,23 @@ extern const struct wb_pinmux opxy_pinmux_slave;
  * in order, one pin at a time (PA7 before PA6 on the master). */
 struct opxy_gpio {
 	uint8_t pin;
-	uint8_t dir;		/* OPXY_IN, OPXY_OUT_LOW, OPXY_OUT_HIGH */
+	uint8_t dir;		/* OPXY_IN, OPXY_OUT_LOW, OPXY_OUT_HIGH, OPXY_OUT_KEEP */
 };
 #define OPXY_IN       0u
 #define OPXY_OUT_LOW  1u
 #define OPXY_OUT_HIGH 2u
+#define OPXY_OUT_KEEP 3u	/* an output at the level it had: no level written */
 
 extern const struct opxy_gpio opxy_gpio_master[];
 extern const unsigned opxy_gpio_master_n;
+/* S-13b.003, S-13b.006 on the OP-1F's main CPU (S-18.030). */
+extern const struct wb_pinmux opxy_pinmux_op1f;
+extern const struct opxy_gpio opxy_gpio_op1f[];
+extern const unsigned opxy_gpio_op1f_n;
+/* The main CPU's tables on dev (S-18.030): the OP-XY master's or the
+ * OP-1F's. */
+const struct wb_pinmux *opxy_pinmux_main(const struct wb_device *dev);
+const struct opxy_gpio *opxy_gpio_main(const struct wb_device *dev, unsigned *n);
 extern const struct opxy_gpio opxy_gpio_slave[];
 extern const unsigned opxy_gpio_slave_n;
 
@@ -185,6 +195,9 @@ extern const struct wb_msi_config opxy_msi;
 /* S-09.018: the same for the bring-up alone, with shorter waits (CMD1 still
  * at least 1 s); opxy_msi takes over once the eMMC is up. */
 extern const struct wb_msi_config opxy_msi_bringup;
+/* S-13b.060, S-13b.061: both of them on the OP-1F's four data lines. */
+extern const struct wb_msi_config opxy_msi_1f;
+extern const struct wb_msi_config opxy_msi_bringup_1f;
 /* S-05.016's slave MSI row: the controller in FIFO mode at the hand-off. */
 extern const struct wb_msi_leave opxy_msi_leave;
 
@@ -197,6 +210,7 @@ struct opxy_sec_keep {
 };
 #define OPXY_SEC_KEEP_MASTER 4u
 #define OPXY_SEC_KEEP_SLAVE  5u
+#define OPXY_SEC_KEEP_1F     1u	/* S-05.037: the master's first, source 1 */
 extern const struct opxy_sec_keep opxy_sec_keep_master[OPXY_SEC_KEEP_MASTER];
 extern const struct opxy_sec_keep opxy_sec_keep_slave[OPXY_SEC_KEEP_SLAVE];
 
@@ -210,6 +224,8 @@ struct opxy_os_entry {
 };
 extern const struct opxy_os_entry opxy_os_entry_master;
 extern const struct opxy_os_entry opxy_os_entry_slave;
+/* S-05.038: the OP-1F's. */
+extern const struct opxy_os_entry opxy_os_entry_op1f;
 
 /* --- OTP (S-16.095, S-11, S-10c.057) --- */
 
@@ -285,9 +301,30 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
 #define OPXY_TESTOS_IMAGE_END   0x89300000u
 #define OPXY_TESTOS_HEAP_START  0x89300000u
 #define OPXY_TESTOS_HEAP_END    0x8A000000u
+/*
+ * The OP-1F's installer images (bf703_testos_1f.ld, make installer-1f):
+ * laid out like the OP-1F's OS 1.7.3 (S-05.040), their DDR bytes inside
+ * its second DDR range, above the OS frame (S-05.016) and clear of the
+ * OP-1F's RAM disk, the reserve and the staging area. They lie in the
+ * OP-XY's disk part 1, so they run on an OP-1F alone (waffle/testos.h).
+ */
+#define OPXY_TESTOS_1F_IMAGE_START 0x8D000000u
+#define OPXY_TESTOS_1F_IMAGE_END   0x8D300000u
+#define OPXY_TESTOS_1F_HEAP_START  0x8D300000u
+#define OPXY_TESTOS_1F_HEAP_END    0x8E000000u
+/* The image this build is linked as. */
+#if defined(OPXY_TESTOS_1F)
+#define OPXY_TESTOS_RUN_START      OPXY_TESTOS_1F_IMAGE_START
+#define OPXY_TESTOS_RUN_HEAP_START OPXY_TESTOS_1F_HEAP_START
+#define OPXY_TESTOS_RUN_HEAP_END   OPXY_TESTOS_1F_HEAP_END
+#else
+#define OPXY_TESTOS_RUN_START      OPXY_TESTOS_IMAGE_START
+#define OPXY_TESTOS_RUN_HEAP_START OPXY_TESTOS_HEAP_START
+#define OPXY_TESTOS_RUN_HEAP_END   OPXY_TESTOS_HEAP_END
+#endif
 #if defined(OPXY_TEST_OS)
-#define OPXY_HEAP_START   OPXY_TESTOS_HEAP_START
-#define OPXY_HEAP_END     OPXY_TESTOS_HEAP_END
+#define OPXY_HEAP_START   OPXY_TESTOS_RUN_HEAP_START
+#define OPXY_HEAP_END     OPXY_TESTOS_RUN_HEAP_END
 #else
 #define OPXY_HEAP_START   0x8833D000u
 #define OPXY_HEAP_END     0x8A000000u
@@ -297,6 +334,11 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
 #define OPXY_DISK0_END    0x8803D000u
 #define OPXY_DISK1_START  0x8A000000u
 #define OPXY_DISK1_END    0x8FDC3000u
+/* S-12.008, S-18.030 on the OP-1F: one region of device.ramdisk_blocks
+ * sectors, below the DDR handover reserve. */
+#define OPXY_1F_DISK_START 0x80004000u
+#define OPXY_1F_DISK_END   0x87F04000u
+#define OPXY_1F_DISK_SECTORS 260096u
 #define OPXY_FRAMES_START 0x8FE00000u
 #define OPXY_FRAMES_END   0x8FF00000u
 /* S-05.031: where the display DMA reads a frame from at the hand-over.
@@ -311,15 +353,22 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
 _Static_assert(OPXY_DISK0_END - OPXY_DISK0_START +
 	       (OPXY_DISK1_END - OPXY_DISK1_START) ==
 	       OPXY_DISK_SECTORS * 512u, "the disk parts hold S-12.001's disk");
+_Static_assert(OPXY_1F_DISK_END - OPXY_1F_DISK_START == OPXY_1F_DISK_SECTORS * 512u &&
+	       OPXY_1F_DISK_END <= OPXY_IMAGE_START,
+	       "the OP-1F's disk is one region below the handover reserve");
 _Static_assert((OPXY_DISK0_END - OPXY_DISK0_START) % 512u == 0u &&
 	       (OPXY_DISK1_END - OPXY_DISK1_START) % 512u == 0u,
 	       "each disk part holds whole sectors");
+/* The OP-1F's test OS has its heap in the OP-XY's disk part 1: it runs
+ * on an OP-1F alone (its own assertion below). */
+#if !defined(OPXY_TESTOS_1F)
 _Static_assert(OPXY_DISK0_END <= OPXY_IMAGE_START &&
 	       OPXY_IMAGE_END <= OPXY_HEAP_START &&
 	       OPXY_HEAP_END <= OPXY_DISK1_START &&
 	       OPXY_DISK1_END <= OPXY_FRAMES_START &&
 	       OPXY_FRAMES_END <= 0x8FFFFF00u,
 	       "the DDR ranges are in order and apart");
+#endif
 _Static_assert(OPXY_OS_FRAME_START >= OPXY_DISK1_START &&
 	       OPXY_OS_FRAME_END <= OPXY_DISK1_END,
 	       "the OS's frame lies in held mode's disk");
@@ -327,5 +376,10 @@ _Static_assert(OPXY_TESTOS_IMAGE_START >= 0x88A65000u &&
 	       OPXY_TESTOS_IMAGE_END <= OPXY_TESTOS_HEAP_START &&
 	       OPXY_TESTOS_HEAP_END <= OPXY_DISK1_START,
 	       "the test OS lies between the DDR reserve and the staging area");
+_Static_assert(OPXY_TESTOS_1F_IMAGE_START >= OPXY_OS_FRAME_END &&
+	       OPXY_TESTOS_1F_IMAGE_START >= OPXY_1F_DISK_END &&
+	       OPXY_TESTOS_1F_IMAGE_END <= OPXY_TESTOS_1F_HEAP_START &&
+	       OPXY_TESTOS_1F_HEAP_END <= OPXY_FRAMES_START,
+	       "the OP-1F's test OS lies above the OS frame, below the frame buffers");
 
 #endif /* WAFFLE_BOARD_OPXY_H */

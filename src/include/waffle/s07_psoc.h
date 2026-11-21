@@ -76,6 +76,7 @@ struct s07_ops {
 };
 
 struct s07_psoc {
+	const struct wb_device *dev;	/* S-18: keys, LED forms, PMIC */
 	struct s06_node *node;
 	unsigned link;			/* the node's PSoC link */
 	const struct s07_ops *ops;
@@ -94,11 +95,16 @@ struct s07_psoc {
 	uint32_t last_usb_us;
 	uint8_t keys[S07_BITMAP];	/* S-07.031: known state, from S-07.032's reply on */
 
-	/* S-07.041: last values sent */
+	/* S-07.041, S-07.046: last values sent */
 	uint8_t led_key[S07_KEYS][2];
 	uint8_t led_rgb[3];
-	int led_bar;			/* -1: none sent */
+	int led_bar;			/* -1: none sent (the OP-XY's start) */
 	bool charge_led_on;		/* false while the key test runs */
+	/* S-07.047: the breathing's phase (a turn is 2^32) and its last
+	 * update in state 0x16 */
+	uint32_t breathe_phase;
+	uint32_t breathe_us;
+	bool breathe_seen;
 
 	/* S-07.045 key test */
 	bool key_test;
@@ -108,8 +114,8 @@ struct s07_psoc {
 	uint8_t kt_tested[S07_BITMAP];
 };
 
-void s07_init(struct s07_psoc *p, struct s06_node *node, unsigned link,
-	      const struct s07_ops *ops);
+void s07_init(struct s07_psoc *p, const struct wb_device *dev, struct s06_node *node,
+	      unsigned link, const struct s07_ops *ops);
 
 /* Handle the PSoC messages received so far (table 2). */
 int s07_poll(struct s07_psoc *p);
@@ -165,7 +171,8 @@ void s07_key_status_given(struct s07_psoc *p, const uint8_t *pl, size_t n,
  */
 int s07_startup(struct s07_psoc *p, struct s07_key_status *ks);
 
-/* S-07.061: the PMIC sequence (boot path only). */
+/* S-07.061: the PMIC sequence (boot path only); nothing without
+ * pmic-pass-through (S-07.062). */
 int s07_pmic(struct s07_psoc *p);
 
 /* S-07.065 phase reports. */
@@ -175,7 +182,8 @@ int s07_pmic(struct s07_psoc *p);
 #define S07_REPORT_SHUTDOWN 3	/* {00 00 02} */
 void s07_report(struct s07_psoc *p, int which);
 
-/* S-07.071: the PMIC sequence then {3C FF 32}; then only log lines. */
+/* S-07.071: the PMIC sequence (where there is one) then {3C FF 32}; then
+ * only log lines. */
 int s07_handover(struct s07_psoc *p);
 
 /*
@@ -187,12 +195,12 @@ int s07_info_request(struct s07_psoc *p, uint8_t *buf, size_t max,
 		     int *status);
 
 /*
- * One pass of the service loop: on the first pass 0x40 {01} and the bar
- * (S-07.043); the PSoC's messages; the limit step (S-07.056).
+ * One pass of the service loop: on the first pass, with key-leds, 0x40 {01}
+ * and the bar (S-07.043); the PSoC's messages; the limit step (S-07.056).
  */
 int s07_service_pass(struct s07_psoc *p);
 
-/* S-07.072: {00 00 02} then 0x40 {01}, once. */
+/* S-07.072: {00 00 02} then, with key-leds, 0x40 {01}; once. */
 void s07_shutdown_reports(struct s07_psoc *p);
 
 /* S-07.070: 0x97 {DE AD BE EF} before a soft reboot. */
@@ -206,14 +214,22 @@ void s07_usb_configured(struct s07_psoc *p, uint32_t ma);
 void s07_usb_reset(struct s07_psoc *p);	/* SET_CONFIGURATION(0), reset, VBUS loss */
 void s07_usb_activity(struct s07_psoc *p);
 
-/* S-07.040, S-07.041: LEDs through the change filter. */
+/*
+ * S-07.040, S-07.041: LEDs through the change filter. Without key-leds
+ * (S-07.046): the bar is {02 l0..l13} with the first n FF, the RGB LED
+ * {06 r 48 g 48 b 48}, each sent on a change only (forced is not used); no
+ * key LED and no {01} is sent.
+ */
 void s07_led_key(struct s07_psoc *p, uint8_t key, uint8_t a, uint8_t b);
 void s07_led_bar(struct s07_psoc *p, uint8_t n);
 void s07_led_rgb(struct s07_psoc *p, const uint8_t rgb[3], bool forced);
 void s07_led_all_off(struct s07_psoc *p);
+/* S-07.042; S-07.047 without key-leds, with the breathing in state 0x16. */
 void s07_update_charge_led(struct s07_psoc *p);
+/* S-07.048: the bar with none lit, sent whatever was sent last. */
+void s07_led_bar_clear(struct s07_psoc *p);
 
-/* S-07.045 */
+/* S-07.045; S-07.049 without key-leds */
 void s07_key_test_start(struct s07_psoc *p);
 void s07_key_test_stop(struct s07_psoc *p);
 

@@ -1,0 +1,63 @@
+{
+ "devices": [
+  "OP-XY",
+  "OP-1F"
+ ],
+ "features": [
+  {
+   "name": "second-cpu",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "straps",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "emmc-on-main",
+   "OP-XY": false,
+   "OP-1F": true
+  },
+  {
+   "name": "pmic-pass-through",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "digital-gamma",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "key-leds",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "content-packs",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "fat-region",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "factory-word",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "cv-calibration",
+   "OP-XY": true,
+   "OP-1F": false
+  },
+  {
+   "name": "mtp-two-items",
+   "OP-XY": true,
+   "OP-1F": false
+  }
+ ]
+}

@@ -28,8 +28,15 @@ void boot_master(const struct boot_master_ops *ops)
 	/* S-07.023 steps 1-6a: the keys are the decision's last input. They
 	 * come before the slave's stream (S-09.001, S-02.054, S-16.233). */
 	keys = ops->psoc_start(ops->ctx);
-	/* S-01.001 step 5, S-09.001: the slave before any eMMC access. */
-	present = ops->slave_start(ops->ctx);
+	/* S-01.001 step 5, S-09.001: the slave before any eMMC access. With
+	 * one CPU there is no slave to be absent: the eMMC is its own. */
+	if (wb_has(ops->dev, WB_F_SECOND_CPU)) {
+		present = ops->slave_start(ops->ctx);
+	} else {
+		if (ops->storage_start != NULL)
+			ops->storage_start(ops->ctx);
+		present = true;
+	}
 	s05_boot_decision(reason, state, keys, present, &d);
 
 	master_held.reason = reason;
@@ -66,6 +73,7 @@ void boot_master(const struct boot_master_ops *ops)
 		m.config_addr = ops->config_addr;
 		m.sw_version_nonzero = nonzero;
 		m.file = reason == S04_REASON_OS_FILE;	/* S-05.035 */
+		m.dev = ops->dev;
 		s05_master_handoff(ops->handoff, &m);
 		return;
 	}

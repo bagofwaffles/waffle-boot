@@ -3,13 +3,16 @@
  * S-11 packages, checks 1-15. Checks S-11.001, S-11.002, S-11.003, S-11.004,
  * S-11.005, S-11.006, S-11.007, S-11.008, S-11.009, S-11.010, S-11.011,
  * S-11.012, S-11.013, S-11.014, S-11.015, S-11.016, S-11.017, S-11.018,
- * S-11.020, S-11.021, S-11.022, S-11.023, S-11.024, S-11.025, S-11.036,
- * S-11.037, S-11.047, S-11.048, S-11.055, S-11.091, and SC-11-REFUSE's read
+ * S-11.020, S-11.021, S-11.022, S-11.023, S-11.024, S-11.025, S-11.026,
+ * S-11.027, S-11.036, S-11.037, S-11.047, S-11.048, S-11.055, S-11.091, and
+ * SC-11-REFUSE's read
  * errors (S-11.020). The checks read the package once, in order (S-16.038),
  * and their reason is the first failing check's even when the
  * zip was written out in that pass. S-11.012's curve
  * arithmetic is the vendored library's: the test checks the digest, r and s handed to the
- * verifier. S-11.024: refused and accepted packages run in turn through one
+ * verifier, that it is asked only for a present signature with key index
+ * 0x00 and Q0 read, and the signature state (S-11.021), which refuses
+ * nothing. S-11.024: refused and accepted packages run in turn through one
  * checker. Package files are read from tests/oracle/S-11-packages/vectors/pkg/ at run
  * time: run from the repository root (make check does).
  */
@@ -17,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "waffle/device.h"
 #include "waffle/s11_package.h"
 #include "waffle/s11_version.h"
 
@@ -190,11 +194,14 @@ static uint8_t *load(const char *rel, size_t *size)
 	return buf;
 }
 
-/* S-11.001-S-11.025 */
-static void test_packages(void)
+/* S-11.001-S-11.025; on the OP-1F S-11.026, its product word and its two
+ * formats (S-11.027): a plain package's verifier is never called, since its
+ * case has no signature (has_sig 0), and its state is none */
+static void check_packages(const struct wb_device *dev,
+			   const struct s11v_package *cases, size_t count)
 {
-	for (size_t i = 0; i < N(s11v_packages); i++) {
-		const struct s11v_package *v = &s11v_packages[i];
+	for (size_t i = 0; i < count; i++) {
+		const struct s11v_package *v = &cases[i];
 		struct s11_check_in in;
 		struct s11_check_out out;
 		enum s11_reason r;
@@ -213,12 +220,17 @@ static void test_packages(void)
 		in.option = v->option != 0;
 		in.file_name = v->file_name;
 		in.fw_command = v->cdc != 0;
+		in.dev = dev;
 		r = s11_check_package(&ops, &in, &out);
-		CHECK(r == v->reason, "%s: reason %s, want %s", v->name,
+		CHECK(r == v->reason, "%s %s: reason %s, want %s", dev->name, v->name,
 		      s11_reason_name(r), s11_reason_name(v->reason));
-		if (v->te_signed >= 0)
-			CHECK(out.te_signed == (v->te_signed != 0),
-			      "%s: TE-signed", v->name);
+		if (v->signature >= 0) {
+			CHECK(out.sig == (enum s11_sig)v->signature,
+			      "%s: signature state %d", v->name, (int)out.sig);
+			CHECK(F.verifies == (v->has_sig ? 1u : 0u),
+			      "%s: the verifier asked %u times", v->name,
+			      F.verifies);
+		}
 		if (r == S11_REASON_NONE) {
 			uint8_t sha[32];
 
@@ -234,11 +246,18 @@ static void test_packages(void)
 	}
 }
 
-static enum s11_reason check_with(const struct s11v_package *v)
+static void test_packages(void)
+{
+	check_packages(&wb_device_opxy, s11v_packages, N(s11v_packages));
+	check_packages(&wb_device_op1f, s11v_packages_1f, N(s11v_packages_1f));
+}
+
+static enum s11_reason check_on(const struct wb_device *dev,
+			       const struct s11v_package *v)
 {
 	struct s11_check_in in = { v->file_form ? S11_FORM_FILE : S11_FORM_BODY,
 				   (uint32_t)F.size, v->option != 0, v->file_name,
-				   v->cdc != 0 };
+				   v->cdc != 0, dev };
 	struct s11_check_out out;
 
 	F.v = v;
@@ -248,6 +267,11 @@ static enum s11_reason check_with(const struct s11v_package *v)
 	F.read_bytes = 0;
 	F.went_back = false;
 	return s11_check_package(&ops, &in, &out);
+}
+
+static enum s11_reason check_with(const struct s11v_package *v)
+{
+	return check_on(&wb_device_opxy, v);
 }
 
 /* S-11.020 (SC-11-REFUSE): bytes that cannot be read refuse at the first
@@ -325,6 +349,22 @@ static void test_one_pass(void)
 		if (strcmp(v->name, "form_file_ok") == 0)
 			base = v;
 	}
+	/* the OP-1F's accepted packages, signed and plain (S-11.027) */
+	for (size_t i = 0; i < N(s11v_packages_1f); i++) {
+		const struct s11v_package *v = &s11v_packages_1f[i];
+
+		if (v->reason != S11_REASON_NONE)
+			continue;
+		memset(&F, 0, sizeof(F));
+		F.data = load(v->file, &F.size);
+		if (F.data == NULL)
+			continue;
+		CHECK(check_on(&wb_device_op1f, v) == S11_REASON_NONE &&
+		      !F.went_back && F.read_bytes == F.size,
+		      "%s: one pass, %llu of %zu bytes", v->name,
+		      (unsigned long long)F.read_bytes, F.size);
+		free(F.data);
+	}
 	memset(&F, 0, sizeof(F));
 	F.data = base != NULL ? load(base->file, &F.size) : NULL;
 	if (F.data == NULL || F.size <= zip_off + 8u) {
@@ -344,21 +384,30 @@ static void test_one_pass(void)
 	memset(&F, 0, sizeof(F));
 }
 
-/* S-11.021-S-11.023: 1280 rows of the signature and payload-key rules. */
+/* S-11.023: the payload-key rule, every key index, key read and option;
+ * dev mode has no effect, nor has the signature state (S-11.022). */
 static void test_acceptance(void)
 {
 	for (size_t i = 0; i < N(s11v_acceptance); i++) {
 		const struct s11v_acceptance *v = &s11v_acceptance[i];
-		bool te;
 		enum s11_reason r;
 
-		/* the signature verifies only with Q0 read (S-11.021) */
-		te = s11_te_signed((uint8_t)v->sig_index, v->sig_valid && v->q0);
 		r = s11_payload_key_rule((uint8_t)v->key_index, v->k0 != 0,
 					 v->k1 != 0, v->option != 0);
-		CHECK(te == (v->te_signed != 0) && r == v->verdict,
-		      "acceptance row %zu", i);
+		CHECK(r == v->verdict, "acceptance row %zu", i);
 	}
+	CHECK(N(s11v_acceptance) == 80u, "acceptance rows");
+}
+
+/* S-11.021: a blank signature is none; a present one valid only when it
+ * verifies */
+static void test_signature_state(void)
+{
+	CHECK(s11_signature_state(false, false) == S11_SIG_NONE &&
+	      s11_signature_state(false, true) == S11_SIG_NONE &&
+	      s11_signature_state(true, false) == S11_SIG_INVALID &&
+	      s11_signature_state(true, true) == S11_SIG_VALID,
+	      "signature states");
 }
 
 /* S-11.036, S-11.037, S-11.007, S-11.008 */
@@ -387,9 +436,13 @@ static void test_leaves(void)
 		CHECK(ref_crc16(0, B(s11v_crc16[i].data), s11v_crc16[i].data.len) ==
 		      s11v_crc16[i].crc, "reference CRC-16 %zu", i);
 	for (size_t i = 0; i < N(s11v_product); i++)
-		CHECK(s11_product_ok(s11v_product[i].word) ==
+		CHECK(s11_product_ok(&wb_device_opxy, s11v_product[i].word) ==
 		      (s11v_product[i].passes != 0), "product %08x",
 		      (unsigned)s11v_product[i].word);
+	for (size_t i = 0; i < N(s11v_product_1f); i++)
+		CHECK(s11_product_ok(&wb_device_op1f, s11v_product_1f[i].word) ==
+		      (s11v_product_1f[i].passes != 0), "OP-1F product %08x",
+		      (unsigned)s11v_product_1f[i].word);
 }
 
 /* S-10c.075: the firmware command forces on the MIDI carrier too */
@@ -397,7 +450,8 @@ static void test_fw_command_on_midi(void)
 {
 	for (size_t i = 0; i < N(s11v_packages); i++) {
 		const struct s11v_package *v = &s11v_packages[i];
-		struct s11_check_in in = { S11_FORM_BODY, 0, false, NULL, true };
+		struct s11_check_in in = { S11_FORM_BODY, 0, false, NULL, true,
+					   &wb_device_opxy };
 		struct s11_check_out out;
 
 		if (strcmp(v->name, "midi_not_forced") != 0)
@@ -422,19 +476,37 @@ static void test_small_rules(void)
 {
 	CHECK(s11_name_forces("op-xy_force.tfw") && !s11_name_forces("FORCE.tfw") &&
 	      !s11_name_forces("forc.tfw"), "force in the file name");
-	for (unsigned m = 0; m < 8; m++) {
-		/* option, TE-signed, the bootloader confirmed (S-11.096) */
-		bool want = m == 0x7;
+	for (unsigned m = 0; m < 16; m++) {
+		/* option, valid (S-11.021), a waffle-boot bootloader, the
+		 * bootloader selected (S-11.096) */
+		bool want = m == 0xB;
 
-		CHECK(s11_return_to_stock(m & 1, m & 2, m & 4) == want,
+		CHECK(s11_return_to_stock(m & 1, m & 2, m & 4, m & 8) == want,
 		      "return to the factory bootloader %u", m);
 	}
+}
+
+/* S-11.091: a bootloader image is a waffle-boot build by its descriptor
+ * (S-01.023), as recovery's WB kind reads it */
+static void test_bootloader_kinds(void)
+{
+	for (size_t i = 0; i < N(s11v_bootloader_kinds); i++) {
+		const struct s11v_bootloader_kind *v = &s11v_bootloader_kinds[i];
+
+		CHECK(s11_bootloader_is_waffle(B(v->stream), (uint32_t)v->stream.len,
+					       ref_crc32) == (v->waffle != 0),
+		      "bootloader kind %s", v->name);
+	}
+	CHECK(!s11_bootloader_is_waffle(NULL, 0u, ref_crc32), "no image");
+	CHECK(N(s11v_bootloader_kinds) >= 10u, "bootloader kinds");
 }
 
 int main(void)
 {
 	test_leaves();
 	test_acceptance();
+	test_signature_state();
+	test_bootloader_kinds();
 	test_packages();
 	test_fw_command_on_midi();
 	test_read_errors();

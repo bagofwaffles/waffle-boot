@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 #include "waffle/s10c_sysex.h"
 
+#include "waffle/device.h"
+
 /* ---- packing ---- */
 
 size_t s10c_packed_len(size_t n)
@@ -117,13 +119,36 @@ size_t s10c_midi_rx_packet(struct s10c_midi_rx *rx, const uint8_t packet[4])
 
 /* ---- classification ---- */
 
-const uint8_t s10c_identity_reply[S10C_IDENTITY_REPLY_LEN] = {	/* S-10c.011 */
-	0xF0, 0x7E, 0x21, 0x06, 0x02, 0x00, 0x20, 0x76, 0x21,
-	0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7,
-};
+/* S-10c.011 */
+void s10c_identity_reply(const struct wb_device *dev, uint16_t sku,
+			 uint8_t out[S10C_IDENTITY_REPLY_LEN])
+{
+	static const uint8_t head[8] = { 0xF0, 0x7E, 0x00, 0x06, 0x02, 0x00,
+					 0x20, 0x76 };
+	unsigned i;
+
+	for (i = 0; i < sizeof(head); i++)
+		out[i] = head[i];
+	out[2] = dev->ident.midi_byte;
+	out[8] = dev->ident.midi_family[0];
+	out[9] = dev->ident.midi_family[1];
+	wb_midi_member(dev, sku, out + 10);
+	for (i = 12; i < 16u; i++)
+		out[i] = 0x00;		/* software revision */
+	out[16] = 0xF7;
+}
 
 static const uint8_t te_head[4] = { 0xF0, 0x00, 0x20, 0x76 };
-static const uint8_t carrier_head[6] = { 0xF0, 0x00, 0x20, 0x76, 0x21, 0x66 };
+#define CARRIER_HEAD 6u
+#define CARRIER_ID 0x66u
+
+/* S-10c.020: F0 00 20 76, device.midi_byte, 66 */
+static bool carrier_head(const struct wb_device *dev, const uint8_t *m, size_t n)
+{
+	return n >= CARRIER_HEAD && m[0] == 0xF0 && m[1] == 0x00 &&
+	       m[2] == 0x20 && m[3] == 0x76 && m[4] == dev->ident.midi_byte &&
+	       m[5] == CARRIER_ID;
+}
 
 static bool starts(const uint8_t *m, size_t n, const uint8_t *h, size_t hn)
 {
@@ -147,15 +172,16 @@ static bool is_te(const uint8_t *m, size_t n)
 }
 
 /* S-10c.007 */
-enum s10c_msg_class s10c_classify(const uint8_t *m, size_t n)
+enum s10c_msg_class s10c_classify(const struct wb_device *dev,
+				  const uint8_t *m, size_t n)
 {
 	if (is_te(m, n))
 		return S10C_MSG_TE;
 	if (n == 6 && m[0] == 0xF0 && m[1] == 0x7E &&
-	    (m[2] == 0x21 || m[2] == 0x7F) && m[3] == 0x06 && m[4] == 0x01 &&
-	    m[5] == 0xF7)
+	    (m[2] == dev->ident.midi_byte || m[2] == 0x7F) && m[3] == 0x06 &&
+	    m[4] == 0x01 && m[5] == 0xF7)
 		return S10C_MSG_IDENTITY;	/* S-10c.010 */
-	if (n >= 7 && starts(m, n, carrier_head, 6) && m[n - 1] == 0xF7)
+	if (n >= 7 && carrier_head(dev, m, n) && m[n - 1] == 0xF7)
 		return S10C_MSG_CARRIER;
 	return S10C_MSG_IGNORED;
 }
@@ -163,19 +189,23 @@ enum s10c_msg_class s10c_classify(const uint8_t *m, size_t n)
 /* ---- the carrier ---- */
 
 /* S-10c.020 */
-size_t s10c_carrier_build(const uint8_t *stream, size_t n, uint8_t *out)
+size_t s10c_carrier_build(const struct wb_device *dev, const uint8_t *stream,
+			  size_t n, uint8_t *out)
 {
-	size_t o = sizeof(carrier_head);
+	size_t o = CARRIER_HEAD;
 
-	for (size_t i = 0; i < o; i++)
-		out[i] = carrier_head[i];
+	for (size_t i = 0; i < sizeof(te_head); i++)
+		out[i] = te_head[i];
+	out[4] = dev->ident.midi_byte;
+	out[5] = CARRIER_ID;
 	o += s10c_pack7(stream, n, out + o);
 	out[o++] = 0xF7;
 	return o;
 }
 
 /* S-10c.022 (S-16.021, quirk Q-C1) */
-void s10c_carrier_send_frame(const uint8_t *encoded, size_t n,
+void s10c_carrier_send_frame(const struct wb_device *dev,
+			     const uint8_t *encoded, size_t n,
 			     s10c_sysex_fn emit, void *ctx)
 {
 	uint8_t msg[S10C_SYSEX_MAX_SENT];
@@ -185,7 +215,7 @@ void s10c_carrier_send_frame(const uint8_t *encoded, size_t n,
 
 		if (k > S10C_CARRIER_MAX_STREAM)
 			k = S10C_CARRIER_MAX_STREAM;
-		emit(ctx, msg, s10c_carrier_build(encoded + i, k, msg));
+		emit(ctx, msg, s10c_carrier_build(dev, encoded + i, k, msg));
 	}
 }
 
@@ -219,14 +249,15 @@ void s10c_te_parse(const uint8_t *m, size_t n, struct s10c_te_req *r)
 }
 
 /* S-10c.080 */
-size_t s10c_te_reply_build(const struct s10c_te_req *req, uint8_t status,
+size_t s10c_te_reply_build(const struct wb_device *dev,
+			   const struct s10c_te_req *req, uint8_t status,
 			   const uint8_t *payload, size_t n, uint8_t *out)
 {
 	size_t o = 0;
 
 	for (size_t i = 0; i < sizeof(te_head); i++)
 		out[o++] = te_head[i];
-	out[o++] = 0x21;
+	out[o++] = dev->ident.midi_byte;
 	out[o++] = 0x40;
 	out[o++] = req->has_id ?
 		   (uint8_t)(0x20u | (((unsigned)req->id >> 7) & 0x1Fu)) : 0x00;

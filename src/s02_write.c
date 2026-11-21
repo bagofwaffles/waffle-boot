@@ -231,30 +231,48 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
 	return S02_OK;
 }
 
-/* S-02.063 */
-void s02_mirror_build(const uint8_t rec[S02_META_SIZE], uint8_t mirror[S02_MIRROR_SIZE])
+uint32_t s02_meta_size(const struct s02_env *env)
+{
+	return env->meta_size == 0u || env->meta_size > S02_META_SIZE ? S02_META_SIZE
+								       : env->meta_size;
+}
+
+/* S-02.063: s bytes of the record, then their complements at 0xB000 + s. */
+void s02_mirror_build_n(const uint8_t *rec, uint32_t size, uint8_t *mirror)
 {
 	uint32_t i;
 
-	for (i = 0; i < S02_META_SIZE; i++) {
+	for (i = 0; i < size; i++) {
 		mirror[i] = rec[i];
-		mirror[S02_META_SIZE + i] = (uint8_t)(rec[i] ^ 0xFFu);
+		mirror[size + i] = (uint8_t)(rec[i] ^ 0xFFu);
 	}
 }
 
-/* S-02.063: the magic, and every byte paired with its complement. */
-bool s02_mirror_valid(const uint8_t mirror[S02_MIRROR_SIZE])
+/* S-02.063: the magic, and each of the s bytes paired with its complement. */
+bool s02_mirror_valid_n(const uint8_t *mirror, uint32_t size)
 {
 	uint8_t magic[4];
 	uint32_t i;
 
+	if (size < 4u)
+		return false;
 	wb_put_le32(magic, S02_META_MAGIC);
 	if (!same(mirror, magic, 4u))
 		return false;
-	for (i = 0; i < S02_META_SIZE; i++)
-		if ((uint8_t)(mirror[i] ^ mirror[S02_META_SIZE + i]) != 0xFFu)
+	for (i = 0; i < size; i++)
+		if ((uint8_t)(mirror[i] ^ mirror[size + i]) != 0xFFu)
 			return false;
 	return true;
+}
+
+void s02_mirror_build(const uint8_t rec[S02_META_SIZE], uint8_t mirror[S02_MIRROR_SIZE])
+{
+	s02_mirror_build_n(rec, S02_META_SIZE, mirror);
+}
+
+bool s02_mirror_valid(const uint8_t mirror[S02_MIRROR_SIZE])
+{
+	return s02_mirror_valid_n(mirror, S02_META_SIZE);
 }
 
 /*
@@ -325,28 +343,31 @@ static int meta_sector_read(const struct s02_env *env)
 }
 
 /* S-02.060, S-02.061, S-02.064 */
-int s02_meta_write(const struct s02_env *env, const uint8_t rec[S02_META_SIZE])
+int s02_meta_write(const struct s02_env *env, const uint8_t *rec)
 {
+	const uint32_t size = s02_meta_size(env);
 	uint8_t mirror[S02_MIRROR_SIZE], back[S02_MIRROR_SIZE];
 	int rc;
 
 	if (env->scratch_len < S02_SECTOR_SIZE)
 		return S02_ERR_IO;
-	/* The sector as it is now: every byte not meant to change survives. */
+	/* The sector as it is now: every byte not meant to change survives,
+	 * those past a record of size bytes included (S-02.061). */
 	rc = meta_sector_read(env);
 	if (rc != S02_OK)
 		return rc;
-	wb_copy(env->scratch, rec, S02_META_SIZE);
+	wb_copy(env->scratch, rec, size);
 
-	/* Steps 1-3: the mirror, read back before 0xC000 is touched. */
-	s02_mirror_build(rec, mirror);
+	/* Steps 1-3: the mirror, 2 x size bytes and the sector erased past
+	 * them, read back before 0xC000 is touched. */
+	s02_mirror_build_n(rec, size, mirror);
 	if (env->flash->erase(env->flash->ctx, S02_MIRROR_OFF) != 0)
 		return S02_ERR_IO;
-	if (program_range(env, S02_MIRROR_OFF, mirror, S02_MIRROR_SIZE, false) != S02_OK)
+	if (program_range(env, S02_MIRROR_OFF, mirror, 2u * size, false) != S02_OK)
 		return S02_ERR_IO;
-	if (env->flash->read(env->flash->ctx, S02_MIRROR_OFF, back, S02_MIRROR_SIZE) != 0)
+	if (env->flash->read(env->flash->ctx, S02_MIRROR_OFF, back, 2u * size) != 0)
 		return S02_ERR_IO;
-	if (!same(back, mirror, S02_MIRROR_SIZE))
+	if (!same(back, mirror, 2u * size))
 		return S02_ERR_VERIFY;
 
 	/* Steps 4-6. */
@@ -367,22 +388,23 @@ int s02_meta_write(const struct s02_env *env, const uint8_t rec[S02_META_SIZE])
 /* S-02.065 */
 int s02_meta_restore(const struct s02_env *env, bool *restored)
 {
+	const uint32_t size = s02_meta_size(env);
 	uint8_t mirror[S02_MIRROR_SIZE];
 
 	*restored = false;
 	if (env->scratch_len < S02_SECTOR_SIZE)
 		return S02_ERR_IO;
-	if (env->flash->read(env->flash->ctx, S02_MIRROR_OFF, mirror, S02_MIRROR_SIZE) != 0)
+	if (env->flash->read(env->flash->ctx, S02_MIRROR_OFF, mirror, 2u * size) != 0)
 		return S02_ERR_IO;
-	if (!s02_mirror_valid(mirror))
+	if (!s02_mirror_valid_n(mirror, size))
 		return S02_OK;		/* use 0xC000 as it is */
 	if (env->flash->read(env->flash->ctx, S02_META_OFF, env->scratch,
 			     S02_SECTOR_SIZE) != 0)
 		return S02_ERR_IO;
-	if (same(env->scratch, mirror, S02_META_SIZE))
+	if (same(env->scratch, mirror, size))
 		return S02_OK;
 	/* The mirror wins; the rest of the sector is kept as read. */
-	wb_copy(env->scratch, mirror, S02_META_SIZE);
+	wb_copy(env->scratch, mirror, size);
 	*restored = true;
 	return meta_sector_store(env);
 }

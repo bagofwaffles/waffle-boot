@@ -5,8 +5,10 @@
 /*
  * S-11 sections 1-2: the firmware package container and checks 1-15 of
  * S-11.020. The cryptography (CRC-16, SHA-256, AES-256-CBC, ECDSA P-224,
- * the vendored libraries), the unit's OTP keys and the bytes of the package come in
- * through struct s11_package_ops; the recovered zip goes out through it.
+ * the vendored libraries), the unit's OTP keys and the bytes of the package
+ * come in through struct s11_package_ops; the recovered zip goes out
+ * through it. The signature is checked but never refuses a package
+ * (S-11.012, S-11.022): it sets the signature state (S-11.021).
  */
 
 #include <stdbool.h>
@@ -73,6 +75,8 @@ enum s11_form {
 	S11_FORM_BODY,		/* body only: the host links (S-11.050) */
 };
 
+struct wb_device;
+
 struct s11_check_in {
 	enum s11_form form;
 	uint32_t size;			/* the package's length in bytes */
@@ -81,10 +85,12 @@ struct s11_check_in {
 	/* came over the firmware command 0D, on CDC or on the MIDI carrier
 	 * (S-10c.075): forced. The MIDI firmware transfer is not. */
 	bool fw_command;
+	/* the device the package must be made for (S-11.007, S-11.026) */
+	const struct wb_device *dev;
 };
 
 struct s11_check_out {
-	bool te_signed;			/* S-11.021 (when check 8 was reached) */
+	enum s11_sig sig;		/* S-11.021 (NONE until check 8) */
 	bool forced;			/* S-11.055 (markers seen so far) */
 	uint32_t zip_len;		/* the recovered zip's length */
 	uint8_t name_len;
@@ -98,9 +104,10 @@ enum s11_reason s11_check_package(const struct s11_package_ops *ops,
 				  const struct s11_check_in *in,
 				  struct s11_check_out *out);
 
-/* Check 8 (S-11.021, S-11.022) refuses nothing: whether the package is
- * TE-signed; `sig_ok` is whether the signature verifies with a readable Q0. */
-bool s11_te_signed(uint8_t sig_key_index, bool sig_ok);
+/* Check 8 (S-11.021, S-11.022) refuses nothing: the state of a signature
+ * that is `present` (sig_r and sig_s not both zero) and `verified` (with
+ * signature key index 0x00, against a readable Q0, S-11.012). */
+enum s11_sig s11_signature_state(bool present, bool verified);
 
 /* Check 12's rule (S-11.023): the reason, or S11_REASON_NONE. */
 enum s11_reason s11_payload_key_rule(uint8_t index, bool k0_ok, bool k1_ok,
@@ -109,9 +116,19 @@ enum s11_reason s11_payload_key_rule(uint8_t index, bool k0_ok, bool k1_ok,
 /* Forced by a RAM-disk file name (S-11.047): it contains "force". */
 bool s11_name_forces(const char *name);
 
-/* The run is a return to the factory bootloader (S-11.091); the bootloader
- * step is selected (S-11.096) only when its image is present. */
-bool s11_return_to_stock(bool option, bool te_signed,
+/* The run is a return to the factory bootloader (S-11.091): the option on,
+ * the package valid (S-11.021), the bootloader step selected (S-11.096,
+ * only when its image is present) and that image not a waffle-boot build
+ * (s11_bootloader_is_waffle()). */
+bool s11_return_to_stock(bool option, bool valid, bool bootloader_waffle,
 			 bool bootloader_selected);
+
+/* S-11.091: the staged bootloader image, len bytes, is a waffle-boot build:
+ * its stream carries a valid image descriptor (s02_stream_is_waffle(),
+ * S-01.023), as recovery's WB kind (S-02.106 rule 1) and the installer
+ * read it. crc32 is S-02.015's CRC-32. */
+bool s11_bootloader_is_waffle(const uint8_t *img, uint32_t len,
+			      uint32_t (*crc32)(uint32_t crc, const uint8_t *p,
+						size_t n));
 
 #endif /* WAFFLE_S11_PACKAGE_H */

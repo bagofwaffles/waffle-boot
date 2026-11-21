@@ -25,6 +25,8 @@
 #include "waffle/wire_package.h"
 #include "waffle/wire_yaffs.h"
 
+struct wb_device;
+
 #define WIRE_FAT_NAME_MAX 255u		/* UTF-16 units of a long name */
 /* "logs/" and a name of S14_EXPORT_NAME_MAX bytes */
 #define WIRE_FAT_PATH_MAX (5u + S14_EXPORT_NAME_MAX + 1u)
@@ -51,8 +53,9 @@ struct wire_fat {
 bool wire_fat_mount(struct wire_fat *f, const struct wb_blockdev *bd);
 void wire_fat_unmount(struct wire_fat *f);
 
-/* Formats bd as the RAM disk (S-12.003-S-12.007) and mounts it. */
-bool wire_fat_format(struct wire_fat *f, const struct wb_blockdev *bd);
+/* Formats bd as the RAM disk of dev (S-12.003-S-12.008) and mounts it. */
+bool wire_fat_format(struct wire_fat *f, const struct wb_blockdev *bd,
+		     const struct wb_device *dev);
 
 /* A name S-12.012 lets the bootloader create: not empty, at most 255
  * UTF-16 units of valid UTF-8, none of U+0000-U+001F "*:<>?\|/ U+007F,

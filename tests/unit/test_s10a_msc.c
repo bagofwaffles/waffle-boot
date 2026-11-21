@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "waffle/device.h"
 #include "waffle/s10a_msc.h"
 
 #include "support/check.h"
@@ -79,13 +80,19 @@ static int disk_write(void *ctx, uint32_t lba, const void *buf,
 static const struct wb_blockdev dev = {
 	.n_sectors = BLOCKS, .read = disk_read, .write = disk_write,
 };
+/* S-10a.039: the OP-1F's disk, device.ramdisk_blocks */
+static const struct wb_blockdev dev_1f = {
+	.n_sectors = S10AV_BLOCKS_1F, .read = disk_read, .write = disk_write,
+};
 
 static struct s10a_lu lu;
+static const struct wb_device *unit_dev = &wb_device_opxy;
 
 static void new_unit(const char *serial, bool offered)
 {
 	memset(&disk, 0, sizeof(disk));
-	s10a_lu_init(&lu, &dev, serial);
+	s10a_lu_init(&lu, unit_dev == &wb_device_op1f ? &dev_1f : &dev, serial,
+		     unit_dev);
 	if (offered)
 		s10a_lu_offer(&lu);
 }
@@ -161,12 +168,12 @@ static void command_step(const struct s10av_step *s)
 	}
 }
 
-static void test_vectors(void)
+static void run_steps(const struct s10av_step *steps, size_t count)
 {
 	size_t i;
 
-	for (i = 0; i < ARRAY_LEN(s10av_steps); i++) {
-		const struct s10av_step *s = &s10av_steps[i];
+	for (i = 0; i < count; i++) {
+		const struct s10av_step *s = &steps[i];
 		const unsigned before = check_failures;
 
 		switch (s->event) {
@@ -203,8 +210,18 @@ static void test_vectors(void)
 			break;
 		}
 		if (check_failures != before)
-			printf("  step %s: %s\n", s->seq, s->name);
+			printf("  %s step %s: %s\n", unit_dev->name, s->seq, s->name);
 	}
+}
+
+/* Both devices: the OP-1F's product strings and capacity (scsi_1f.json). */
+static void test_vectors(void)
+{
+	unit_dev = &wb_device_opxy;
+	run_steps(s10av_steps, ARRAY_LEN(s10av_steps));
+	unit_dev = &wb_device_op1f;
+	run_steps(s10av_steps_1f, ARRAY_LEN(s10av_steps_1f));
+	unit_dev = &wb_device_opxy;
 }
 
 /* S-10a.046: every operation code not listed fails 20h/00h. */

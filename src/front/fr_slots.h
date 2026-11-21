@@ -29,6 +29,9 @@
 /* Results of the flash calls. */
 #define FR_FLASH_OK  0
 #define FR_FLASH_IO  (-1)
+/* A read whose busy wait ran its whole bound (S-13b.017) and gave up; any
+ * caller may take it as FR_FLASH_IO. */
+#define FR_FLASH_BUSY (-2)
 
 struct fr_selector {
 	uint8_t index, verified;

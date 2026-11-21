@@ -30,7 +30,7 @@ Run them from the repository root. The Python tools need only the standard libra
 | **On a unit** | | |
 | `wbrecover.py` | Recovery's host tool, for a unit started with Power + M4 | [Recovery Reference](https://github.com/bagofwaffles/waffle-boot/wiki/Recovery-Reference) |
 | `testos_mon.py` | The host end of the test OS's monitor and of the developer requests | [Test OS](https://github.com/bagofwaffles/waffle-boot/wiki/Test-OS), [Developer Host Link](https://github.com/bagofwaffles/waffle-boot/wiki/Developer-Host-Link) |
-| `mtpcp.py` | Copies a file to the unit's `/yaffs2` volume over MTP and reads it back | [Test OS](https://github.com/bagofwaffles/waffle-boot/wiki/Test-OS) |
+| `mtpcp.py` | Copies a file to the unit's `/yaffs2` volume over MTP and reads it back; `prepare-1f` readies an OP-1F's volume for its own OS write | [Test OS](https://github.com/bagofwaffles/waffle-boot/wiki/Test-OS) |
 | `crc_probe.py` | Probes the CRC peripheral and memory DMA through the developer requests | by hand |
 | `pkte_probe.py` | Probes the security packet engine through the developer requests | by hand |
 | **Screenshots** | | |

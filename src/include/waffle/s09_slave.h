@@ -65,6 +65,21 @@ struct s09_store_ops {
 };
 
 /*
+ * One request of S-09.030 to S-09.041 carried out on a store the client
+ * reaches on its own CPU (S-13b.060, s09_master_local()): what the slave's
+ * server makes of it, without the link's framing, numbering, polls or
+ * pieces on the wire. pl/plen: the payload. data/max: where the reply's
+ * data goes (S-09.032; a read's pieces, S-09.035), *got its length.
+ * Returns the reply's result (an immediate request's value) and sets *err.
+ * The link's own requests are not sent to it (an echo answers as the
+ * slave's would); a push is taken and dropped (no CPU link); a release
+ * names no OS (1).
+ */
+int32_t s09_store_call(const struct s09_store_ops *ops, const struct s09_req *r,
+		       const uint8_t *pl, uint32_t plen, uint8_t *data, uint32_t max,
+		       uint32_t *got, uint32_t *err);
+
+/*
  * S-09.080: a quad reply test request (0x1C) taken in the plain mode: its
  * reply's bytes in *out and their length; the board sends a SEND's test
  * reply in quad I/O. Without one (s09_slave_qtest_source()) the slave

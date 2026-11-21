@@ -49,7 +49,10 @@ size_t opxy_dev_bench(struct opxy_master *m, const uint8_t *req, size_t n,
 	static struct wire_crypto c;
 	static const uint8_t key[32] = { 0x42 };
 	struct opxy_services *sv = &m->sv;
-	const struct opxy_disk_part *part = &sv->disk.part[OPXY_DISK_PARTS - 1u];
+	/* the last part that holds sectors (one on the OP-1F) */
+	const struct opxy_disk_part *part =
+		&sv->disk.part[sv->disk.part[OPXY_DISK_PARTS - 1u].sectors != 0u ?
+			       OPXY_DISK_PARTS - 1u : 0u];
 	const uint8_t stage = n >= 3u ? req[0] : 0xFFu;
 	const uint32_t kib = n >= 3u ? (uint32_t)req[1] | (uint32_t)req[2] << 8 : 0u;
 	uint32_t bytes = kib * 1024u, done;
@@ -275,6 +278,7 @@ static bool check_disk(struct opxy_master *m, struct wire_source *src,
 	in.option = sv->option;
 	in.file_name = name;
 	in.fw_command = false;
+	in.dev = opxy_dev(m);
 	t0 = wb_core_cycles();
 	*r = s11_check_package(&ops, &in, &checked);
 	took(OPXY_CHECK_TOTAL, t0);

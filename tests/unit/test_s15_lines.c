@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
 #include "waffle/s15_console.h"
 #include "waffle/s15_lines.h"
 #include "s14_check.h"
@@ -174,14 +175,32 @@ static void test_keys(void)
 	unsigned k, n = 0;
 
 	for (size_t i = 0; i < S15V_N(s15v_digits); i++) {
-		CHECK(s15_digit(s15v_digits[i].key) == s15v_digits[i].digit,
+		CHECK(s15_digit(&wb_device_opxy, s15v_digits[i].key) == s15v_digits[i].digit,
 		      "S-15.011 key 0x%02x", s15v_digits[i].key);
 		n++;
 	}
 	for (k = 0; k < 256; k++)
-		if (s15_digit(k) != 0u)
+		if (s15_digit(&wb_device_opxy, k) != 0u)
 			n--;
 	CHECK(n == 0u, "S-15.011 no other key is a digit");
+	/* S-15.016: the OP-1F's digit keys (digits_1f.tsv) and its knob clicks */
+	n = 0;
+	for (size_t i = 0; i < S15V_N(s15v_digits_1f); i++) {
+		CHECK(s15_digit(&wb_device_op1f, s15v_digits_1f[i].key) ==
+		      s15v_digits_1f[i].digit, "S-15.016 key 0x%02x",
+		      s15v_digits_1f[i].key);
+		n++;
+	}
+	for (k = 0; k < 256; k++)
+		if (s15_digit(&wb_device_op1f, k) != 0u)
+			n--;
+	CHECK(n == 0u, "S-15.016 no other key is a digit");
+	for (k = 0; k < 256; k++) {
+		CHECK(s15_knob_click(&wb_device_opxy, k) == (k >= 0x0Au && k <= 0x0Du),
+		      "XY knob click 0x%02x", k);
+		CHECK(s15_knob_click(&wb_device_op1f, k) == (k >= 0x36u && k <= 0x39u),
+		      "1F knob click 0x%02x", k);
+	}
 }
 
 /* ---- the run -------------------------------------------------------- */
@@ -251,8 +270,8 @@ static enum s15_run_kind kind_of(const char *k, const char *name)
 
 static void test_headers(void)
 {
-	struct s15_buf b, rh[4];
-	enum s15_style st[4];
+	struct s15_buf b, rh[S15_RUN_HEADER_MAX];
+	enum s15_style st[S15_RUN_HEADER_MAX];
 
 	for (size_t i = 0; i < S15V_N(s15v_headers); i++) {
 		const struct s15v_header *h = &s15v_headers[i];
@@ -264,10 +283,11 @@ static void test_headers(void)
 	for (size_t i = 0; i < S15V_N(s15v_run_headers); i++) {
 		const struct s15v_run_header *h = &s15v_run_headers[i];
 		size_t n = s15_run_header(rh, st, kind_of(h->kind, h->name),
-					  h->version, h->name, h->stock);
+					  h->version, h->name, h->stock,
+					  h->te_signed);
 		size_t k;
 
-		CHECK(n == (h->stock ? 4u : 3u), "run header %zu: %zu "
+		CHECK(n == 3u + h->stock + h->te_signed, "run header %zu: %zu "
 		      "lines", i, n);
 		for (k = 0; k < n && h->lines[k] != NULL; k++) {
 			enum s15_style want;
@@ -280,6 +300,10 @@ static void test_headers(void)
 				CHECK(row_matches("stock", rh[k].s, NULL) &&
 				      strcmp(rh[k].s, s15_stock_line) == 0,
 				      "stock line: '%s'", rh[k].s);
+			else if (strcmp(t, "{INFO:sig:valid}") == 0)
+				CHECK(row_matches("sig:valid", rh[k].s, NULL) &&
+				      strcmp(rh[k].s, s15_signed_line) == 0,
+				      "signed line: '%s'", rh[k].s);
 			else
 				CHECK(strcmp(rh[k].s, t) == 0,
 				      "run header %zu line %zu: '%s'",
@@ -400,13 +424,14 @@ static void test_outcomes(void)
 {
 	const char *lines[2];
 	enum s15_style st[2];
+	struct s15_buf rb;
 
 	for (size_t i = 0; i < S15V_N(s15v_outcomes); i++) {
 		const struct s15v_outcome *o = &s15v_outcomes[i];
 		enum s15_outcome oc = strcmp(o->outcome, "done") == 0 ? S15_OUT_DONE
 				    : strcmp(o->outcome, "nothing to do") == 0
 					      ? S15_OUT_NOTHING : S15_OUT_FAILED;
-		size_t n = s15_outcome_lines(lines, st, oc, o->skipped,
+		size_t n = s15_outcome_lines(&wb_device_opxy, lines, &rb, st, oc, o->skipped,
 					     o->reason == 40u, o->content_only,
 					     false);
 		size_t k;
@@ -419,7 +444,7 @@ static void test_outcomes(void)
 		CHECK(o->lines[k] == NULL && k == n, "outcome %zu count", i);
 		/* With the Restart item after it, a run with nothing to do
 		 * drops its restart line; the others are as without. */
-		k = s15_outcome_lines(lines, st, oc, o->skipped,
+		k = s15_outcome_lines(&wb_device_opxy, lines, &rb, st, oc, o->skipped,
 				      o->reason == 40u, o->content_only, true);
 		CHECK(k == (oc == S15_OUT_NOTHING ? 1u : n) &&
 		      line_is(st[0], lines[0], o->lines[0]),

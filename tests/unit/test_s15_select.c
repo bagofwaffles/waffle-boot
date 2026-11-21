@@ -5,11 +5,13 @@
  * seconds left, and its lines, which fit their rows
  * (wiki/Screen-Style-Guide.md).
  * Requirements: S-15.116 (with its vectors, select_keys.json), S-11.096,
- * S-07.031, S-07.032.
+ * S-07.031, S-07.032; S-15.197, the signature prompt on the same keys
+ * (sig_prompt.json), its lines, and the valid package's line.
  */
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
 #include "waffle/s15_select.h"
 #include "waffle/s15_console.h"
 #include "s14_check.h"
@@ -33,7 +35,7 @@ static struct s15_select s;
 
 static void open_at(uint32_t now, uint8_t pickable)
 {
-	s15_select_open(&s, pickable, NULL, now);
+	s15_select_open(&s, &wb_device_opxy, pickable, NULL, now);
 }
 
 static void press(unsigned key, uint32_t at)
@@ -61,10 +63,10 @@ static void test_digits(void)
 		CHECK((s15v_select_row_step[d] == 99u && s15_select_step(d) < 0) ||
 		      s15v_select_row_step[d] == (unsigned)s15_select_step(d),
 		      "the vectors' digit %u", d);
-	CHECK(s15_digit(K1) == 1u && s15_digit(K1B) == 1u &&
-	      s15_digit(KNOB1) == 1u && s15_digit(K2) == 2u &&
-	      s15_digit(K3) == 3u && s15_digit(K7) == 7u && s15_digit(K8) == 8u &&
-	      s15_digit(KX) == 0u, "the keys' digits");
+	CHECK(s15_digit(&wb_device_opxy, K1) == 1u && s15_digit(&wb_device_opxy, K1B) == 1u &&
+	      s15_digit(&wb_device_opxy, KNOB1) == 1u && s15_digit(&wb_device_opxy, K2) == 2u &&
+	      s15_digit(&wb_device_opxy, K3) == 3u && s15_digit(&wb_device_opxy, K7) == 7u && s15_digit(&wb_device_opxy, K8) == 8u &&
+	      s15_digit(&wb_device_opxy, KX) == 0u, "the keys' digits");
 }
 
 /* Every row starts at No; a digit toggles its row, a knob click too. */
@@ -84,7 +86,7 @@ static void test_toggle(void)
 	/* a row that cannot be picked: its digit does nothing */
 	open_at(T0, S15_SELECT_BIT(S15_STEP_OS));
 	for (unsigned k = 0; k < S15_NKEYS; k++) {
-		const unsigned d = s15_digit(k);
+		const unsigned d = s15_digit(&wb_device_opxy, k);
 
 		if (d >= 3u && d <= 7u)
 			press(k, T0 + 10u);
@@ -187,7 +189,7 @@ static void test_other_keys(void)
 	CHECK(s15_select_tick(&s, T0 + 200u) == S15_SELECT_CANCEL &&
 	      s.end == S15_SELECT_END_KEY, "8: canceled");
 	for (unsigned k = 0; k < S15_NKEYS; k++) {
-		if (s15_digit(k) != 0u)
+		if (s15_digit(&wb_device_opxy, k) != 0u)
 			continue;
 		open_at(T0, ALL);
 		s15_select_key(&s, k, true, T0);
@@ -250,7 +252,7 @@ static void test_stale(void)
 	down[K1 / 8u] |= (uint8_t)(1u << (K1 % 8u));
 	down[K2 / 8u] |= (uint8_t)(1u << (K2 % 8u));
 	down[K8 / 8u] |= (uint8_t)(1u << (K8 % 8u));
-	s15_select_open(&s, ALL, down, T0);
+	s15_select_open(&s, &wb_device_opxy, ALL, down, T0);
 	s15_select_key(&s, K8, true, T0 + 10u);	/* a repeat of the state */
 	s15_select_key(&s, K2, true, T0 + 10u);
 	CHECK(s15_select_tick(&s, T0 + 6000u) == S15_SELECT_WAIT && s.selected == 0u,
@@ -326,6 +328,9 @@ static void test_left(void)
  * selection, with the time asked every millisecond (as the board's loop
  * does) and, the choice alone, asked only at each event and at end_ms.
  */
+static const struct wb_device *play_dev = &wb_device_opxy;
+static bool play_prompt;	/* S-15.197's prompt in place of the selection */
+
 static enum s15_select_choice play(const struct s15v_select *v, bool dense,
 				   long *at)
 {
@@ -335,7 +340,10 @@ static enum s15_select_choice play(const struct s15v_select *v, bool dense,
 	for (size_t i = 0; i < v->n_down; i++)
 		down[v->down_at_open[i] / 8u] |=
 			(uint8_t)(1u << (v->down_at_open[i] % 8u));
-	s15_select_open(&s, (uint8_t)v->pickable, down, T0);
+	if (play_prompt)
+		s15_select_prompt_open(&s, play_dev, down, T0);
+	else
+		s15_select_open(&s, play_dev, (uint8_t)v->pickable, down, T0);
 	*at = -1;
 	for (uint32_t t = 0; t <= v->end_ms && *at < 0; t++) {
 		const bool event = e < v->n && v->events[e].ms == t;
@@ -358,12 +366,12 @@ static const char *choice_name(enum s15_select_choice ch)
 	       ch == S15_SELECT_CANCEL ? "cancel" : NULL;
 }
 
-static void test_vectors(void)
+static void run_vectors(const struct wb_device *dev, const struct s15v_select *cases,
+			size_t count)
 {
-	CHECK(S15V_SELECT_HOLD_MS == S15_HOLD_MS &&
-	      S15V_SELECT_TIMEOUT_MS == S15_SELECT_TIMEOUT_MS, "the times");
-	for (size_t i = 0; i < sizeof(s15v_select) / sizeof(s15v_select[0]); i++) {
-		const struct s15v_select *v = &s15v_select[i];
+	play_dev = dev;
+	for (size_t i = 0; i < count; i++) {
+		const struct s15v_select *v = &cases[i];
 		long at, at_sparse;
 		const char *got = choice_name(play(v, true, &at));
 		const unsigned sel = s.selected;
@@ -381,6 +389,37 @@ static void test_vectors(void)
 		      (sparse != NULL && got != NULL && strcmp(sparse, got) == 0),
 		      "%s: asked sparsely: %s", v->name, sparse ? sparse : "waiting");
 	}
+	play_dev = &wb_device_opxy;
+}
+
+/* S-15.116; on the OP-1F with S-15.016's keys (select_keys_1f.json) */
+static void test_vectors(void)
+{
+	CHECK(S15V_SELECT_HOLD_MS == S15_HOLD_MS &&
+	      S15V_SELECT_TIMEOUT_MS == S15_SELECT_TIMEOUT_MS, "the times");
+	run_vectors(&wb_device_opxy, s15v_select, sizeof(s15v_select) / sizeof(s15v_select[0]));
+	run_vectors(&wb_device_op1f, s15v_select_1f,
+		    sizeof(s15v_select_1f) / sizeof(s15v_select_1f[0]));
+}
+
+/* S-15.197: the prompt for an invalid package alone; its keys and time */
+static void test_prompt_vectors(void)
+{
+	unsigned shown = 0;
+
+	for (size_t i = 0; i < sizeof(s15v_sig_states) / sizeof(s15v_sig_states[0]); i++) {
+		const struct s15v_sig_state *v = &s15v_sig_states[i];
+
+		CHECK(v->prompt == (strcmp(v->state, "invalid") == 0) &&
+		      v->sig_valid == (strcmp(v->state, "valid") == 0),
+		      "state %s", v->state);
+		shown += v->prompt;
+	}
+	CHECK(shown == 1u, "one state prompts");
+	play_prompt = true;
+	run_vectors(&wb_device_opxy, s15v_sig_prompt,
+		    sizeof(s15v_sig_prompt) / sizeof(s15v_sig_prompt[0]));
+	play_prompt = false;
 }
 
 /* ---- the lines -------------------------------------------------------- */
@@ -415,7 +454,8 @@ static bool fits(enum s15_style st, const char *str)
 
 	for (size_t i = 0; i < n; i++)
 		ticks += str[i] == '`';
-	if (st == S15_ST_WARN)
+	if (st == S15_ST_WARN || st == S15_ST_OK || st == S15_ST_TEXT ||
+	    st == S15_ST_DIM)
 		return tabs(str) == 0u && 3u + n <= S15_COLS;
 	if (st == S15_ST_ITEM || st == S15_ST_ARMED || st == S15_ST_BACK)
 		return tabs(str) <= 1u && str[1] == ' ' &&
@@ -591,6 +631,58 @@ static void test_lines(void)
 	(void)lines(b, st, T0);
 }
 
+/* S-15.197: a valid package's line while a row is free; the prompt's
+ * lines */
+static void test_signature_lines(void)
+{
+	struct s15_buf b[S15_ROWS];
+	enum s15_style st[S15_ROWS];
+	const char *r[S15_ROWS];
+	size_t n;
+
+	full_info();
+	info.valid = true;
+	open_at(T0, ALL);
+	n = lines(b, st, T0);
+	CHECK(n == 9u && strcmp(b[8].s, s15_signed_line) == 0 && st[8] == S15_ST_OK,
+	      "valid: the line after 8: '%s'", b[8].s);
+	r[0] = b[8].s;
+	CHECK(s15t_match_named("sig:valid", r, 1, NULL), "sig:valid");
+	press(K7, T0);
+	n = lines(b, st, T0);
+	CHECK(n == 9u && st[8] == S15_ST_WARN, "the bootloader at Yes: the warning");
+	info.row[S15_STEP_BLE].kind = S15_ROW_NONE;
+	n = lines(b, st, T0);
+	CHECK(n == 9u && st[7] == S15_ST_WARN && st[8] == S15_ST_OK,
+	      "a row free: the warning, then the line");
+	s15_select_key(&s, K1, true, T0 + 1000u);
+	n = lines(b, st, T0 + 2000u);
+	CHECK(n == 9u && st[7] == S15_ST_WARN && st[8] == S15_ST_STEP_RUN,
+	      "held: the bar in the line's row");
+	info.valid = false;
+	full_info();
+
+	/* the prompt: its warning, item 1 named with its hold, 8 with the time */
+	s15_select_prompt_open(&s, &wb_device_opxy, NULL, T0);
+	n = lines(b, st, T0 + 9000u);
+	for (size_t i = 0; i < n; i++)
+		r[i] = b[i].s;
+	CHECK(n == 4u && st[0] == S15_ST_WARN && st[2] == S15_ST_ITEM &&
+	      strcmp(b[2].s, "1 Install anyway (hold for 5 s)") == 0 &&
+	      strcmp(b[3].s, "8 Cancel (cancels in 51 s)") == 0 && st[3] == S15_ST_BACK,
+	      "the prompt: '%s', '%s'", b[2].s, b[3].s);
+	CHECK(s15t_match_named("sig:mismatch", r, n, NULL) &&
+	      s15t_match_named("select:install", r, n, NULL) &&
+	      !s15t_match_named("sig:valid", r, n, NULL), "the prompt's tokens");
+	s15_select_key(&s, K1, true, T0 + 9000u);
+	n = lines(b, st, T0 + 11000u);
+	CHECK(n == 5u && st[2] == S15_ST_ARMED && strcmp(b[3].s, "8 Cancel") == 0 &&
+	      strcmp(b[4].s, "Release to cancel\t40%\t3 s") == 0,
+	      "held: '%s'", b[4].s);
+	CHECK(s15_select_tick(&s, T0 + 14000u) == S15_SELECT_INSTALL,
+	      "held 5 s: on to the selection");
+}
+
 int main(void)
 {
 	test_digits();
@@ -603,6 +695,8 @@ int main(void)
 	test_alone();
 	test_left();
 	test_vectors();
+	test_prompt_vectors();
 	test_lines();
+	test_signature_lines();
 	return check_done("test_s15_select");
 }

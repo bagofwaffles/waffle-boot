@@ -36,6 +36,19 @@ void s17_rev_power_on(struct s17_rev *r, unsigned pa8, unsigned pa0)
 	r->meta = S17_META_UNREAD;
 }
 
+/* S-17.016: no strap, so the decoded value is 0 */
+void s17_rev_power_on_dev(struct s17_rev *r, const struct wb_device *dev, unsigned pa8,
+			  unsigned pa0)
+{
+	if (wb_has(dev, WB_F_STRAPS)) {
+		s17_rev_power_on(r, pa8, pa0);
+		return;
+	}
+	r->decoded = 0;
+	r->reported = 0;
+	r->meta = S17_META_UNREAD;
+}
+
 void s17_rev_metadata(struct s17_rev *r, enum s17_meta_state outcome)
 {
 	r->meta = outcome;

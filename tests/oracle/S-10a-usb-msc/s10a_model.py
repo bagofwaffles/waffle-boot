@@ -2,8 +2,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """S-10a mass-storage model: an extension of tests/oracle/conformance/usb/scsi.py's Target with the further
 commands, the stopped state and the host's acquire and release of the disk (S-10a.050). Synthetic content.
+
+A device's values (S-18.030: device.product_text, device.ramdisk_blocks) come from S-18's
+vectors/profile.json; the module's own constants are the OP-XY's.
 """
 import hashlib
+import json
 import os
 import struct
 import sys
@@ -13,10 +17,35 @@ sys.path.insert(0, os.path.join(HERE, '..', 'conformance'))
 from usb import descriptors as D  # noqa: E402
 from usb import scsi as S  # noqa: E402
 
-BLOCKS = 454656                       # S-12.001
 BLOCK = 512
-VENDOR, PRODUCT, REVISION = 'teenage ', 'OP-XY Disk', ''
 SERIAL = 'XY0A12BC'                   # synthetic
+
+
+def profile_value(name, device):
+    """S-18.030's value of name (`device.product_text`) on device ('OP-XY' or 'OP-1F')."""
+    with open(os.path.join(HERE, '..', 'S-18-devices', 'vectors', 'profile.json'), encoding='utf-8') as f:
+        tables = json.load(f)['tables']
+    for rows in tables.values():
+        for r in rows:
+            if r['name'] == name:
+                return r[device]
+    raise KeyError(name)
+
+
+class Device:
+    """The values this document reads (S-10a.001, S-10a.042, S-10a.044)."""
+    def __init__(self, device='OP-XY'):
+        self.name = device
+        self.product_text = profile_value('device.product_text', device)
+        self.usb_pid = profile_value('device.usb_pid', device)
+        self.midi_pid = profile_value('device.midi_pid', device)
+        self.blocks = profile_value('device.ramdisk_blocks', device)
+
+
+XY = Device('OP-XY')
+F1 = Device('OP-1F')
+BLOCKS = XY.blocks                    # S-12.001
+VENDOR, PRODUCT, REVISION = 'teenage ', XY.product_text + ' Disk', ''
 
 READ12, WRITE12, MODE_SELECT10 = 0xA8, 0xAA, 0x55
 SENSE_INVALID_FIELD_IN_PARAM = (S.ILLEGAL_REQUEST, 0x26, 0x00)
@@ -26,18 +55,21 @@ MEDIA_OPS = {S.TEST_UNIT_READY, S.READ6, S.WRITE6, S.READ10, S.WRITE10, READ12, 
              S.READ_FORMAT_CAPACITIES, S.VERIFY10, S.SYNCHRONIZE_CACHE10, S.MODE_SENSE6, S.MODE_SENSE10}
 
 
-def vpd_pages(serial):
-    """S-10a.042: page 80h is the serial; page 83h one T10 vendor-ID designator."""
-    ident = ('teenage engineering OP-XY Disk ' + serial).encode('ascii')
+def vpd_pages(serial, device=XY):
+    """S-10a.042: page 80h is the serial; page 83h one T10 vendor-ID designator, built on
+    device.product_text."""
+    ident = ('teenage engineering ' + device.product_text + ' Disk ' + serial).encode('ascii')
     return {0x80: serial.encode('ascii'), 0x83: S.designation_descriptor(1, ident, code_set=2)}
 
 
 class Unit(S.Target):
-    def __init__(self, serial=SERIAL, present=True):
-        dev = S.BlockDevice(BLOCKS, BLOCK, present=False, removable=True)
-        super().__init__(dev, vendor=VENDOR, product=PRODUCT, revision=REVISION, peripheral=0x00, rmb=True,
-                         version=0x02, response_format=0x02, vpd=vpd_pages(serial), mode_pages={},
+    def __init__(self, serial=SERIAL, present=True, device=XY):
+        dev = S.BlockDevice(device.blocks, BLOCK, present=False, removable=True)
+        super().__init__(dev, vendor=VENDOR, product=device.product_text + ' Disk', revision=REVISION,
+                         peripheral=0x00, rmb=True, version=0x02, response_format=0x02,
+                         vpd=vpd_pages(serial, device), mode_pages={},
                          block_descriptor=True, sense_valid='auto', unit_attention=True, max_lun=0)
+        self.n_blocks = device.blocks
         self.stopped = False
         self.acquired = False
         self.releases = 0             # count of releases the host made (S-10a.050)
@@ -130,7 +162,7 @@ class Unit(S.Target):
             data = struct.pack('>H', len(body)) + body
             return self._ok(data[:struct.unpack_from('>H', cdb, 7)[0]])
         if op == S.READ_FORMAT_CAPACITIES:
-            data = bytes([0, 0, 0, 8]) + struct.pack('>I', BLOCKS) + bytes([2]) + BLOCK.to_bytes(3, 'big')
+            data = bytes([0, 0, 0, 8]) + struct.pack(">I", self.n_blocks) + bytes([2]) + BLOCK.to_bytes(3, 'big')
             return self._ok(data[:struct.unpack_from('>H', cdb, 7)[0]])
         if op == S.SYNCHRONIZE_CACHE10:
             return self._ok()
@@ -138,7 +170,7 @@ class Unit(S.Target):
             if cdb[1] & 0x02:                               # BYTCHK: no compare offered
                 return self._fail(S.SENSE_INVALID_FIELD_IN_CDB)
             lba, n = struct.unpack_from('>I', cdb, 2)[0], struct.unpack_from('>H', cdb, 7)[0]
-            if lba + n > BLOCKS:
+            if lba + n > self.n_blocks:
                 return self._fail(S.SENSE_LBA_OUT_OF_RANGE, info=lba)
             return self._ok()
         if op in (READ12, WRITE12):
@@ -148,7 +180,7 @@ class Unit(S.Target):
             if n > 0xFFFF:                                  # beyond the 10-byte form: same rules, longer length
                 if cdb[1] & 0xE0:
                     return self._fail(S.SENSE_INVALID_FIELD_IN_CDB)
-                if lba + n > BLOCKS:
+                if lba + n > self.n_blocks:
                     return self._fail(S.SENSE_LBA_OUT_OF_RANGE, info=lba)
                 if op == READ12:
                     return self._ok(self.dev.read(lba, n))
@@ -222,10 +254,12 @@ def _step(unit, name, cdb, data_out=b''):
     return d
 
 
-def scsi_vector():
-    """Command sequences on a unit that is offered, with the first unit attention consumed first."""
+def scsi_vector(device=XY):
+    """Command sequences on a unit that is offered, with the first unit attention consumed first; the
+    last blocks are the device's (device.ramdisk_blocks)."""
     seqs = {}
-    u = Unit()
+    last = device.blocks - 1
+    u = Unit(device=device)
     steps = [_step(u, 'first command after the offer: unit attention', S.cdb_tur()),
              _step(u, 'then ready', S.cdb_tur()),
              _step(u, 'standard INQUIRY 36', S.cdb_inquiry(36)),
@@ -263,9 +297,9 @@ def scsi_vector():
              _step(u, 'READ(10) at 0x10100', S.cdb_read10(0x10100, 1)),
              _step(u, 'READ(6) length 0 = 256 blocks', bytes([S.READ6, 0, 0, 0, 0, 0])),
              _step(u, 'READ(12)', cdb_read12(100, 2)),
-             _step(u, 'WRITE(12)', cdb_write12(454654, 2), pattern(2, 3)),
-             _step(u, 'READ(10) of the last two blocks', S.cdb_read10(454654, 2)),
-             _step(u, 'READ(10) past the end', S.cdb_read10(454655, 2)),
+             _step(u, 'WRITE(12)', cdb_write12(last - 1, 2), pattern(2, 3)),
+             _step(u, 'READ(10) of the last two blocks', S.cdb_read10(last - 1, 2)),
+             _step(u, 'READ(10) past the end', S.cdb_read10(last, 2)),
              _step(u, 'REQUEST SENSE: LBA out of range', S.cdb_request_sense(18)),
              _step(u, 'READ(10) length 0', S.cdb_read10(0, 0)),
              _step(u, 'READ(10) RDPROTECT', bytes([S.READ10, 0x20]) + bytes(8)),
@@ -278,7 +312,7 @@ def scsi_vector():
              _step(u, 'REQUEST SENSE cut to 8', S.cdb_request_sense(8))]
     seqs['offered'] = steps
     # an unprovisioned unit (S-10a.004: no serial): page 80h is empty, page 83h ends with the separator
-    u = Unit(serial='')
+    u = Unit(serial='', device=device)
     seqs['no_serial'] = [_step(u, 'VPD 00h', S.cdb_inquiry(255, True, 0x00)),
                          _step(u, 'VPD 80h, no serial', S.cdb_inquiry(255, True, 0x80)),
                          _step(u, 'VPD 83h, no serial', S.cdb_inquiry(255, True, 0x83)),

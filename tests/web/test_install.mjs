@@ -70,7 +70,8 @@ test('IHELLO: every field, and a reply that is not the installer', () => {
     const h = inst.parseIHello(f.payload);
     assert.deepEqual({ ...h, pin: hexOf(h.pin) }, { magic: 'WBIN', proto: 1, phase: 4, flags: 7,
         tests: 20, version: [1, 0, 3, 7], length: 0x5A3C0, crc: 0x8E1F4C27,
-        pin: 'a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf' });
+        pin: 'a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf', device: 0, how: 0,
+        imageDevice: 0, survey: false });
     assert.equal(inst.parseIHello(Uint8Array.of(0x40)), null, "recovery's status byte");
     assert.equal(inst.parseIHello(Uint8Array.of(0xFF)), null);
     assert.throws(() => inst.parseIHello(f.payload.subarray(0, 40)), core.Failure);
@@ -114,7 +115,8 @@ test('describeInstall: the words for the state above', () => {
     assert.equal(d.tone, 'act');
     assert.deepEqual(d.image, { version: 'v1.0.3', length: 0x5A3C0, crc: '8e1f4c27',
         pin: 'a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf', pinShort: 'a0a1a2a3',
-        verified: true, breadcrumb: false });
+        verified: true, breadcrumb: false, survey: false, device: 'OP-XY' });
+    assert.deepEqual(d.device, { name: 'OP-XY', identified: true, text: 'OP-XY' });
     assert.equal(d.target, 'Slot 2');
     assert.deepEqual(d.hold, { key: 1, progress: 0.64 });
     assert.deepEqual(d.slots[1].words, ['holds this image for a trial', 'trial started',
@@ -124,12 +126,55 @@ test('describeInstall: the words for the state above', () => {
     assert.equal(inst.describeInstall({ ...s, os: 6 }).leave, false, 'leave only while the OS can be made active');
     assert.equal(d.checks[18].stateText, 'FAIL');
     // each lock reason and failure code has words, and unknown ones are named
-    for (const r of [1, 2, 3, 4, 5, 6, 7])
+    for (const r of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
         assert.ok(inst.LOCK[r] && inst.LOCK_ADVICE[r]);
     assert.equal(inst.failureText(0x42), 'failure code 0x42');
     assert.equal(inst.describeInstall({ ...s, phase: 11, trial: 4 }).lines[0],
         'The trial failed: the trial start did not run the new bootloader.');
-    assert.equal(inst.describeInstall({ ...s, phase: 3, lock: 9, os: 6 }).lines[1], 'Why: lock reason 9.');
+    assert.equal(inst.describeInstall({ ...s, phase: 3, lock: 12, os: 6 }).lines[1], 'Why: lock reason 12.');
+});
+
+// S-18: HELLO's device bytes, the survey's reply and its phase, the OP-1F's key check
+test('the device in HELLO, the survey, and the one-CPU words', () => {
+    const p = one(IHELLO_REPLY).payload.slice();
+    p.set([1, 0, 1, 1], inst.IHELLO_O_DEVICE);
+    const h = inst.parseIHello(p);
+    assert.deepEqual([h.device, h.how, h.imageDevice, h.survey], [1, 0, 1, true]);
+    const s = { ...inst.parseState(one(STATE_REPLY).payload, 20), phase: inst.GUIDED, holdKey: 0 };
+    assert.match(inst.describeInstall(s, h).advice[0], /the com key, then the recovery key/);
+    assert.match(inst.describeInstall(s, inst.parseIHello(one(IHELLO_REPLY).payload)).advice[0], /com, then M4/);
+    const sv = inst.describeInstall({ ...s, phase: inst.SURVEYED, lock: 11, os: 6 }, h);
+    assert.equal(sv.tone, 'ok');
+    assert.deepEqual(sv.lines, [inst.SURVEY_DONE, 'An install by the installer would be offered on this unit.',
+        inst.OS_BACK]);
+    assert.match(inst.describeInstall({ ...s, phase: inst.SURVEYED, lock: 10, os: 3 }, h).lines[1],
+        /^An install would not be offered: the trial would write over/);
+    p.set([0, 2], inst.IHELLO_O_DEVICE);
+    const u = inst.describeInstall({ ...s, phase: inst.LOCKED, lock: 8 }, inst.parseIHello(p));
+    assert.deepEqual(u.device, { name: null, identified: false, text: 'not identified' });
+    assert.ok(u.lines.includes(inst.NOT_IDENTIFIED));
+    assert.equal(inst.testState(5), 'n/a');
+    assert.equal(inst.failureText(0x46), "trial refused: it would write over the unit's own bootloader");
+    // the survey's reply: 76 bytes, little-endian
+    const b = new Uint8Array(inst.SURVEY_LEN);
+    const dv = new DataView(b.buffer);
+    b.set([0, 1, 0, 1]);
+    dv.setUint32(4, 34304, true);
+    dv.setUint32(8, 0x49267EB8, true);
+    b.set([1, 0, 1, 0xFF], 12);
+    dv.setUint32(16, 0x1D5A000, true);
+    dv.setUint32(20, 4096, true);
+    b.set([1, 0x48, 6], 24);
+    b[52] = 0x0F;
+    dv.setUint32(52 + 8, 0x5A3C0, true);
+    b[52 + 23] = 0xC3;
+    const r = inst.parseSurvey(b);
+    assert.deepEqual([r.status, r.device, r.how, r.bootMode, r.n, r.c], [0, 1, 0, 1, 34304, 0x49267EB8]);
+    assert.deepEqual([r.selRead, r.selIndex, r.selVerified, r.pa2, r.secCount, r.bootKiB, r.extRead,
+        r.partConfig, r.os], [true, 0, 1, 0xFF, 0x1D5A000, 4096, true, 0x48, 6]);
+    assert.deepEqual([r.slots[1].bits, r.slots[1].length, r.slots[1].log[7]], [0x0F, 0x5A3C0, 0xC3]);
+    assert.deepEqual(inst.parseSurvey(Uint8Array.of(0xFF)), { status: 0xFF });
+    assert.throws(() => inst.parseSurvey(b.subarray(0, 40)), core.Failure);
 });
 
 test('the ferret link is a named constant, empty until the maintainer fills it in', () => {
@@ -422,7 +467,7 @@ test('keys-ended: the key check ended with 8 locks the install (lock 6)', needPy
     const d = r.last;
     assert.equal(d.lock.code, 6);
     assert.equal(d.verdict.text, 'PASS WITH GAPS');
-    assert.equal(d.lines[1], 'Why: the key check (com and M4) was ended with 8.');
+    assert.equal(d.lines[1], 'Why: the key check was ended with 8.');
     assert.equal(d.advice[0], 'Start the installer again and press com, then M4 (4 under the display), on the unit.');
     assert.deepEqual(d.checks.filter((c) => c.kind === 2).map((c) => [c.id, c.stateText]),
         [['keys', 'not tested']]);

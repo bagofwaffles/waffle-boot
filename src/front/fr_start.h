@@ -9,6 +9,7 @@
 #define FR_START_H
 
 #include "fr.h"
+#include "fr_device.h"
 #include "fr_draw.h"
 #include "fr_handoff.h"
 #include "fr_image.h"
@@ -47,6 +48,9 @@ struct fr_start_hw {
 	uint8_t *staging;			/* FR_SLOT_CAP bytes */
 	uint8_t *frame;				/* FR_PANEL_FRAME_BYTES: the panel's
 						 * frame buffer (S-01.023) */
+	/* the device the board decided (S-18.001); NULL: the default
+	 * device, by the table, with no fingerprint to show */
+	const struct fr_ident *ident;
 };
 
 enum fr_next {
@@ -60,6 +64,8 @@ enum fr_next {
 enum fr_ui_screen { FR_UI_MAIN, FR_UI_SLOTS, FR_UI_CONFIRM };
 
 struct fr_ui {
+	const struct fr_dev *dev;	/* its keys; NULL: the default device's.
+					 * fr_ui_reset() keeps it */
 	uint8_t screen;		/* enum fr_ui_screen */
 	uint8_t act;		/* enum fr_act, on the confirm screen */
 	bool armed;		/* every key was read up since this screen came */
@@ -71,6 +77,7 @@ struct fr_ui {
 
 struct fr_start {
 	const struct fr_start_hw *hw;
+	const struct fr_dev *dev;	/* hw->ident's, or the default */
 	struct fr_psoc psoc;
 	struct fr_panel panel;
 	bool panel_up;
@@ -100,7 +107,7 @@ struct fr_start {
  * status. Then Power + M4 is recovery; otherwise the image check and the
  * start log's step (S-02.095), the one flash write of a start that goes on
  * to the main image. ho carries what the board read at entry and gets the
- * rest.
+ * rest, the device and how it was decided among it (S-18.005).
  */
 enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 			  struct fr_handoff *ho);

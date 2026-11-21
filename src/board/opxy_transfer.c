@@ -187,6 +187,7 @@ static void submit(struct opxy_master *m, bool fw_command,
 	in.option = sv->option;		/* S-11.090: as the checks begin */
 	in.file_name = NULL;
 	in.fw_command = fw_command;
+	in.dev = opxy_dev(m);
 	opxy_install_source(m, &src, &in, &res);
 	*out = res.outcome;
 	wire_fat_close_file(&sv->fat);

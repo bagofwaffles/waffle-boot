@@ -63,9 +63,8 @@
 /* --- The hand-off record (written by the front, read by main) --- */
 
 #define FR_HO_MAGIC       0x4F484257u	/* "WBHO" */
-#define FR_HO_VERSION     2u
-#define FR_HO_SIZE        156u	/* version 2's bytes, the CRC included */
-#define FR_HO_SIZE_V1     148u	/* version 1's, from a front before 17 */
+#define FR_HO_VERSION     3u
+#define FR_HO_SIZE        160u	/* version 3's bytes, the CRC included */
 #define FR_HO_KEYS_MAX    16u
 #define FR_HO_BATTERY_MAX 16u
 #define FR_HO_STAMPS      8u
@@ -85,6 +84,17 @@
 #define FR_HO_RUNNING       0x0400u	/* version 2: run_slot is the running slot,
 					 * established (S-01.002, S-02.054) */
 #define FR_HO_TRIAL_MARKED  0x0800u	/* version 2: a trial start the front marked */
+#define FR_HO_ROLE_BY_STRAP 0x1000u	/* version 3: the boot mode was not 1 and PA2
+					 * read 1, so this CPU went on as a main CPU
+					 * (fr_decide()) */
+
+/* device (S-18.005): the device the front decided */
+#define FR_HO_DEV_OPXY      0u
+#define FR_HO_DEV_OP1F      1u
+/* device_how: how it was decided */
+#define FR_HO_HOW_TABLE     0u	/* by the first stage's table (S-18.003) */
+#define FR_HO_HOW_SECOND    1u	/* the second CPU (S-18.002) */
+#define FR_HO_HOW_UNKNOWN   2u	/* not known, the default taken (S-18.004) */
 
 /* The core clock (S-13a.001): the time base of every front wait, and the
  * stamps' unit, FR_CCLK_MHZ cycles a microsecond. */
@@ -123,17 +133,23 @@ struct fr_handoff {
 	uint8_t keys[FR_HO_KEYS_MAX];	/* the 0x41 reply's payload */
 	uint8_t battery[FR_HO_BATTERY_MAX];	/* the last 0x37 payload */
 	uint64_t stamps[FR_HO_STAMPS];	/* enum fr_stamp */
-	/* version 2 (version 1 has its crc32 here, at 144) */
 	uint8_t run_slot;		/* with FR_HO_RUNNING: 0 or 1 */
 	uint8_t te_misses;		/* frames sent without a TE edge, saturating */
 	uint16_t link_overruns;		/* PSoC UART reads with the overrun flag set */
 	uint32_t link_gap_max_us;	/* the longest time between two of them */
+	/* version 3 (S-18.005) */
+	uint8_t device;			/* FR_HO_DEV_* */
+	uint8_t device_how;		/* FR_HO_HOW_* */
+	uint16_t zero;			/* 0 */
 	uint32_t crc32;			/* CRC-32 of the bytes before it */
 };
 
-#if defined(__bfin__)
-/* S-01.023's 156 bytes: the target aligns a u64 to 4, so no tail padding. */
-_Static_assert(sizeof(struct fr_handoff) == FR_HO_SIZE, "S-01.023: the hand-off record is 156 bytes");
-#endif
+/* S-18.005's 160 bytes, the same on the host and the target. */
+_Static_assert(sizeof(struct fr_handoff) == FR_HO_SIZE, "S-18.005: the hand-off record is 160 bytes");
+_Static_assert(__builtin_offsetof(struct fr_handoff, device) == 152u &&
+	       __builtin_offsetof(struct fr_handoff, device_how) == 153u &&
+	       __builtin_offsetof(struct fr_handoff, zero) == 154u &&
+	       __builtin_offsetof(struct fr_handoff, crc32) == 156u,
+	       "S-18.005: the hand-off record's version 3 fields");
 
 #endif /* FR_HANDOFF_H */

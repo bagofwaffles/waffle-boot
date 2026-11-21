@@ -11,6 +11,9 @@
     mtpcp.py rm PATH                  delete the file /yaffs2/PATH (never a folder, never os.ldr)
     mtpcp.py mkdir PATH               make the folder /yaffs2/PATH (its parent must exist)
     mtpcp.py mv FROM TO               rename or move /yaffs2/FROM to /yaffs2/TO, or into the folder TO
+    mtpcp.py prepare-1f IMAGE [--dry-run] [--backup DIR]
+                                      OP-1F: arrange the volume so that the unit's own write of IMAGE
+                                      as os.ldr lands (S-05.042), then check it row for row
 
 PATH, FROM and TO are paths in the volume, `user/a.txt`; put and verify take a name at the top only.
 
@@ -43,7 +46,16 @@ MoveObject and SetObjectPropValue (ObjectFileName). In particular:
 - every change is checked afterwards from a new session's listing.
 
 waffle-boot's developer menu serves level W (S-10b.021): every command works. A level-R responder lists and
-reads, and put, rm, mkdir and mv stop before changing anything.
+reads, and put, rm, mkdir, mv and prepare-1f stop before changing anything.
+
+prepare-1f is for an OP-1F in its bootloader's drive mode, with the computer on the cable throughout. It
+reads the bootloader build from the device information and refuses any build S-05.042 does not name. It
+lists the whole volume, computes the arrangement with tests/oracle/S-05-os-handoff/landing_1f.py (the
+model the vectors are made with), and with --dry-run only prints it. Otherwise it copies every file it
+will remove (those directly in logs/, this tool's earlier pads, the old os.ldr) to DIR and checks each copy
+by SHA-256 (DIR defaults to ~/waffle-op1f-backup/<time>/). Then it removes them, puts IMAGE as os.ldr and
+the pad, lists the volume again, compares it with the plan row for row, and reads both files back. It
+prints READY TO WRITE only when every step matched. S-05.042 is provisional: one landing on 1000.2.0.
 """
 import argparse
 import ctypes
@@ -54,6 +66,8 @@ import json
 import os
 import struct
 import sys
+
+TOP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 VID = 0x2367                # S-10a.001
 PID_BOOT = 0x0021           # the MTP sets, and the serial and disk sets
@@ -173,6 +187,8 @@ def load_libusb():
         lib.libusb_bulk_transfer.argtypes = [ctypes.c_void_p, ctypes.c_ubyte, ctypes.c_char_p,
                                              ctypes.c_int, ctypes.POINTER(ctypes.c_int),
                                              ctypes.c_uint]
+        lib.libusb_get_string_descriptor_ascii.argtypes = [ctypes.c_void_p, ctypes.c_uint8,
+                                                           ctypes.c_char_p, ctypes.c_int]
         lib.libusb_error_name.argtypes = [ctypes.c_int]
         lib.libusb_error_name.restype = ctypes.c_char_p
         return lib
@@ -231,6 +247,7 @@ class UsbTransport:
             raise Failure('libusb_get_device_list: %s' % self.error(n))
         chosen = None
         other = None
+        product_index = 0
         try:
             for i in range(n):
                 dd = DeviceDescriptor()
@@ -244,30 +261,41 @@ class UsbTransport:
                 lib.libusb_free_config_descriptor(cfg)
                 if found is not None:
                     chosen = devices[i]
+                    product_index = dd.iProduct
                     self.number, self.ep_in, self.ep_out, self.mps = found
                     break
             if chosen is None:
                 if other is None:
-                    raise Failure('no OP-XY on USB')
-                raise Failure('the OP-XY on USB (product %04x) is not offering MTP: press digit 2 '
-                              'in its developer menu' % other)
+                    raise Failure('no OP-XY or OP-1F on USB')
+                raise Failure('the unit on USB (product %04x) is not offering MTP: on an OP-XY press digit '
+                              '2 in its developer menu; on an OP-1F start it in drive mode (hold com '
+                              'while powering on, then press 3, then 2)' % other)
             handle = ctypes.c_void_p()
             r = lib.libusb_open(chosen, ctypes.byref(handle))
             if r:
-                raise Failure('cannot open the OP-XY: %s' % self.error(r))
+                raise Failure('cannot open the unit on USB: %s' % self.error(r))
             self.handle = handle
         finally:
             lib.libusb_free_device_list(devices, 1)
+        self.name = self.product(product_index) or 'the unit'
         lib.libusb_set_auto_detach_kernel_driver(self.handle, 1)    # Linux; refused elsewhere, harmlessly
         r = lib.libusb_claim_interface(self.handle, self.number)
         if r in (LIBUSB_ERROR_ACCESS, LIBUSB_ERROR_BUSY):
-            raise Failure('something else holds the unit\'s MTP interface (%s). Quit any MTP client '
+            raise Failure('something else holds the MTP interface of %s (%s). Quit any MTP client '
                           '(Android File Transfer and its agent, OpenMTP, Image Capture); on the Windows target '
                           'macOS\'s ptpcamerad takes it by itself, so set the target to macOS'
-                          % self.error(r))
+                          % (self.name, self.error(r)))
         if r:
             raise Failure('cannot claim the MTP interface: %s' % self.error(r))
         self.claimed = self.number
+
+    def product(self, index):
+        """The device's product string, '' when it has none or it cannot be read."""
+        if not index:
+            return ''
+        buf = ctypes.create_string_buffer(256)
+        n = self.lib.libusb_get_string_descriptor_ascii(self.handle, index, buf, len(buf))
+        return buf.raw[:n].decode('ascii', 'replace').strip() if n > 0 else ''
 
     def write(self, data, timeout_ms=TIMEOUT_MS):
         done = ctypes.c_int()
@@ -592,6 +620,7 @@ def require_writable(mtp, storage):
 def begin(mtp, out):
     mtp.drain()
     manufacturer, model, version = mtp.device_info()
+    mtp.model, mtp.version = model, version
     print('%s %s, bootloader %s' % (manufacturer, model, version), file=out)
     mtp.open_session()
     return mtp.storage()
@@ -794,6 +823,172 @@ def cmd_mv(mtp, src, dst, out):
     mtp.close_session()
 
 
+# ---------------------------------------------------------------- prepare-1f (S-05.042)
+
+IMAGE_MIN, IMAGE_MAX = 10000 - 512, 0x800000     # S-05.041: what the write takes, and what then starts
+
+STEPS = """Now, on the unit, in this same start:
+  1. Keep the computer on the cable, and copy nothing more to the disk: this tool must be the last
+     writer before the OS write. Close any file manager that shows the unit's disk.
+  2. Leave drive mode for the developer menu, without powering off.
+  3. Choose the developer menu's OS write, and let it finish.
+A refused write (its message says the source is not 32-byte aligned) has erased the boot partition it
+was going to write, not the active one: the OS the unit had still starts. Power off, and run prepare-1f
+again."""
+
+
+def landing_model():
+    """tests/oracle/S-05-os-handoff/landing_1f.py, the model the vectors are made with."""
+    path = os.path.join(TOP, 'tests', 'oracle', 'S-05-os-handoff')
+    if not os.path.isfile(os.path.join(path, 'landing_1f.py')):
+        raise Failure('prepare-1f needs %s: run it from a waffle-boot checkout'
+                      % os.path.join(path, 'landing_1f.py'))
+    if path not in sys.path:
+        sys.path.insert(0, path)
+    import landing_1f
+    return landing_1f
+
+
+def default_backup_dir():
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    return os.path.join(os.path.expanduser('~'), 'waffle-op1f-backup', stamp)
+
+
+def check_backup_dir(path):
+    """The backup folder, absolute; never inside this checkout, never one that already holds files."""
+    path = os.path.realpath(os.path.abspath(path))
+    top = os.path.realpath(TOP)
+    if path == top or path.startswith(top + os.sep):
+        raise Failure('the backup folder %s is inside the repository: choose another' % path)
+    if os.path.exists(path) and (not os.path.isdir(path) or os.listdir(path)):
+        raise Failure('the backup folder %s already holds files: choose another' % path)
+    return path
+
+
+def back_up(mtp, storage, paths, folder, out):
+    """Copies each file on the unit to `folder`, keeping its path, and checks each copy's SHA-256 against
+    the bytes read. Writes SHA256SUMS beside them. Nothing on the unit changes."""
+    os.makedirs(folder, exist_ok=True)
+    sums = []
+    for path in paths:
+        obj = resolve(mtp, storage, split_path(path))
+        if obj is None or obj.is_folder:
+            raise Failure('/yaffs2/%s is not a file on the unit any more: nothing was changed' % path)
+        data = mtp.get_object(obj.handle)
+        if len(data) != obj.size:
+            raise Failure('/yaffs2/%s: listed %d bytes, read %d: nothing was changed'
+                          % (path, obj.size, len(data)))
+        want = hashlib.sha256(data).hexdigest()
+        local = os.path.join(folder, *split_path(path))
+        os.makedirs(os.path.dirname(local), exist_ok=True)
+        with open(local, 'wb') as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        with open(local, 'rb') as f:
+            have = hashlib.sha256(f.read()).hexdigest()
+        if have != want:
+            raise Failure('the copy of /yaffs2/%s in %s does not match what was read: nothing was changed'
+                          % (path, folder))
+        sums.append('%s  %s\n' % (want, path))
+        print('backed up /yaffs2/%s (%d bytes, sha256 %s)' % (path, len(data), want), file=out)
+    with open(os.path.join(folder, 'SHA256SUMS'), 'w') as f:
+        f.write(''.join(sums))
+
+
+def listing_rows(entries):
+    return sorted((e['path'], bool(e['folder']), 0 if e['folder'] else e['size']) for e in entries)
+
+
+def row_differences(have, want):
+    """Lines naming each row the unit shows that the plan does not, and the other way round."""
+    a, b = set(have), set(want)
+    return (['on the unit, not in the plan: %s' % (r,) for r in sorted(a - b)]
+            + ['in the plan, not on the unit: %s' % (r,) for r in sorted(b - a)])
+
+
+def cmd_prepare_1f(mtp, image, content, out, dry_run=False, backup=None):
+    """S-05.042's arrangement for an OP-1F: plan, back up, change, list again, compare."""
+    L = landing_model()
+    storage = begin(mtp, out)
+    build = L.build_of(mtp.version)
+    if build is None:
+        raise Failure('%s reports bootloader %r; S-05.042 is stated only for %s, so there is no verdict '
+                      'for it: nothing was changed' % (mtp.model or 'the unit', mtp.version,
+                                                       ', '.join(sorted(L.HEAP_BASE))))
+    access, total, free = mtp.storage_info(storage)
+    if total == 0:
+        raise Failure('the unit reports no volume (S-10b.031)')
+    entries = walk_tree(mtp, storage, False, out)
+    gone = L.removals(entries) + [e for e in entries if e['path'] == L.IMAGE_NAME and not e['folder']]
+    room = free + sum(e['size'] for e in gone) - len(content)
+    if room < 0:
+        raise Failure('%d bytes do not fit in %d free: nothing was changed' % (len(content), free))
+    try:
+        plan = L.plan(build, entries, len(content), pad_limit=room)
+    except L.Refused as e:
+        raise Failure('%s: nothing was changed' % e)
+    for line in L.describe(plan):
+        print(line, file=out)
+    if dry_run:
+        print('dry run: nothing was changed', file=out)
+        mtp.close_session()
+        return plan
+    if access != 0:
+        raise Failure('this responder is read-only (AccessCapability %d, S-10b.021): nothing was changed'
+                      % access)
+
+    folder = None
+    if gone:
+        folder = check_backup_dir(backup or default_backup_dir())
+        back_up(mtp, storage, [e['path'] for e in gone], folder, out)
+    pad = bytes(plan['pad'] or 0)
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S')
+    after = []
+    try:
+        for e in gone:
+            obj = resolve(mtp, storage, split_path(e['path']))
+            if obj is None or obj.is_folder or obj.size != e['size']:
+                raise Failure('/yaffs2/%s changed since the listing' % e['path'])
+            mtp.checked('DeleteObject', OP_DELETE, (obj.handle, 0))
+            print('deleted /yaffs2/%s (%d bytes)' % (e['path'], e['size']), file=out)
+        print('uploading %s as /yaffs2/%s, %d bytes' % (image, L.IMAGE_NAME, len(content)), file=out)
+        mtp.send_file(storage, L.IMAGE_NAME, content, stamp)
+        if plan['pad'] is not None:
+            print('uploading the pad /yaffs2/%s, %d bytes' % (L.PAD_NAME, len(pad)), file=out)
+            mtp.send_file(storage, L.PAD_NAME, pad, stamp)
+
+        # A session of its own, so that the check starts from a new listing.
+        mtp.close_session()
+        mtp.open_session()
+        after = walk_tree(mtp, storage, False, out)
+        diff = row_differences(listing_rows(after), listing_rows(plan['listing']))
+        if diff:
+            raise Failure('the volume does not match the plan row for row:\n  ' + '\n  '.join(diff[:20]))
+        compare(mtp, storage, L.IMAGE_NAME, content, out)
+        if plan['pad'] is not None:
+            compare(mtp, storage, L.PAD_NAME, pad, out)
+        if not L.verdict(build, after, len(content))['lands']:
+            raise Failure('the listing on the unit does not land')
+    except Failure as e:
+        raise Failure('%s\nSTOP: do NOT run the OS write. The volume was changed%s; run prepare-1f again.'
+                      % (e, '' if folder is None else ', and the files removed are in %s' % folder))
+    mtp.close_session()
+    v = plan['verdict']
+    print('the volume matches the plan, %d rows' % len(after), file=out)
+    print('READY TO WRITE: /yaffs2/%s (%d bytes)%s, bootloader %s'
+          % (L.IMAGE_NAME, len(content), '' if plan['pad'] is None else ' with the pad /yaffs2/%s (%d bytes)'
+             % (L.PAD_NAME, plan['pad']), build), file=out)
+    print('margins: %d index nodes and %d records before the next batch moves the block; the unit\'s own '
+          'log grows while it runs, so go on now' % (v['node_headroom'], v['record_headroom']), file=out)
+    for w in plan['warnings']:
+        print('warning: %s' % w, file=out)
+    print(STEPS, file=out)
+    if folder:
+        print('the files removed are in %s (SHA256SUMS lists them)' % folder, file=out)
+    return plan
+
+
 def load(a):
     """The local file, read and checked before the unit is touched; None for ls."""
     if a.command in ('ls', 'tree'):
@@ -810,6 +1005,15 @@ def load(a):
         split_path(a.src)
         split_path(a.dst)
         return None
+    if a.command == 'prepare-1f':
+        with open(a.file, 'rb') as f:
+            content = f.read()
+        if not IMAGE_MIN <= len(content) <= IMAGE_MAX:
+            raise Failure('%s is %d bytes; the unit\'s write takes %d to %d (S-05.041)'
+                          % (a.file, len(content), IMAGE_MIN, IMAGE_MAX))
+        if a.backup and not a.dry_run:
+            check_backup_dir(a.backup)
+        return content
     check_name(a.name)
     with open(a.file, 'rb') as f:
         return f.read()
@@ -826,6 +1030,8 @@ def run(a, content, mtp, out):
         cmd_mkdir(mtp, a.path, out)
     elif a.command == 'mv':
         cmd_mv(mtp, a.src, a.dst, out)
+    elif a.command == 'prepare-1f':
+        cmd_prepare_1f(mtp, a.file, content, out, a.dry_run, a.backup)
     elif a.command == 'verify':
         cmd_verify(mtp, a.name, content, out)
     else:
@@ -849,6 +1055,10 @@ def main(argv=None):
     p = sub.add_parser('mv', help='rename or move a file or folder')
     p.add_argument('src')
     p.add_argument('dst')
+    p = sub.add_parser('prepare-1f', help='OP-1F: arrange the volume so the unit\'s os.ldr write lands')
+    p.add_argument('file')
+    p.add_argument('--dry-run', action='store_true', help='print the plan and change nothing')
+    p.add_argument('--backup', help='the folder for the files removed (default ~/waffle-op1f-backup/<time>/)')
     p = sub.add_parser('compare', help='compare two tree listings (no unit needed)')
     p.add_argument('a')
     p.add_argument('b')

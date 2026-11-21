@@ -7,13 +7,14 @@
  * no screen of ours still tells how far it got. Each paint is also an S-14
  * line, `testos paint <color> <milestone>`, when the log has its sink.
  *
- *   red      the entry shim handed over to C: before wb_start_c(), the SEC,
- *            the clocks check or any driver of ours; on the panel the
- *            loading bootloader initialized, which the display record of
- *            S-13c.021 says (byte +0x28 = 1; 0 skips the paint)
- *   orange   wb_start_c() and the register read-out done, the entry's
- *            strap read said master; nothing else of ours run yet, not
- *            even the full strap read (which may reset the panel, below)
+ *   red      the entry shim handed over to C and the device decided:
+ *            before wb_start_c(), the SEC, the clocks check or any driver
+ *            of ours but the flash read; on the panel the loading
+ *            bootloader initialized, which the display record of S-13c.021
+ *            says (byte +0x28 = 1; 0 skips the paint)
+ *   orange   wb_start_c() and the register read-out done, the boot mode
+ *            said master; nothing else of ours run yet, not even the full
+ *            strap read (which may reset the panel, below)
  *   yellow   our own panel reset and initialization done, before the PSoC
  *            link is touched
  *   green    the S-07 start-up returned (whatever it returned)
@@ -43,13 +44,18 @@
  * (wb_display_logo_line()), until the first frame of held mode replaces
  * the logo.
  *
- * The slave has no panel: a paint on it does nothing, which the strap
- * sample decides (S-13b.001, read before any pin is touched). The entry
- * paint samples PA2 alone: PA8, the revision strap's other bit, is also
- * the panel's RESET (S-13c.004), and on a board whose PA8 straps low the
- * 22 us it spends as an input in a full strap read reset the panel before
- * red could be seen (S-17.003's first row). The full sample, PA0, PA2 and
- * PA8, is opxy_main()'s, after orange.
+ * The entry paint decides the device first (S-18.001 to S-18.004): the
+ * boot mode, then on a main CPU the first stage's fingerprint, read over
+ * SPI2 on the pins as found, with no port register written; the slave
+ * reads nothing. Only then does any paint touch a pin, and with the
+ * device's own pin functions and D/C (S-18.030): red only on a first
+ * stage the table names, a later paint once opxy_main() has the device.
+ * The slave has no panel: a paint on it does nothing. The role is the
+ * boot mode's (S-18.002); on another boot mode the fallback sample of PA2
+ * alone (its INEN, no DIR write) decides, as the front's fr_decide() does
+ * (PA2 = 1 a main CPU all the same). The full strap, PA0, PA2 and PA8, is opxy_main()'s, after orange,
+ * on a device with straps (PA8 is also the panel's RESET, S-13c.004). An
+ * OP-1F image stops here on any other device (waffle/testos.h).
  */
 #include "waffle/testos.h"
 
@@ -59,10 +65,16 @@
 
 #include "waffle/board/opxy.h"
 #include "waffle/board/opxy_boot.h"
+#include "waffle/device.h"
 #include "waffle/display.h"
+#include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_display.h"
 #include "waffle/drivers/bf70x_dma.h"
+#include "waffle/drivers/bf70x_lcd.h"
 #include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x_rcu.h"
+#include "waffle/drivers/bf70x_spiflash.h"
+#include "waffle/drivers/mmr.h"
 #include "waffle/s01_memmap.h"
 #include "waffle/s13c_panel.h"
 
@@ -77,6 +89,7 @@
 #define PAINT_SLAVE    2u	/* this CPU is the slave: no panel */
 #define PAINT_NORECORD 3u	/* S-13c.021's byte +0x28 is not 1 */
 #define PAINT_PANELOFF 4u	/* the panel is not on (S-13c state) */
+#define PAINT_DEVICE   5u	/* the first stage is in no row of S-18.003's table */
 
 struct paint {
 	const char *color, *milestone;
@@ -137,7 +150,30 @@ static bool record_initialized(void)
 
 static bool is_master(void)
 {
-	return opxy_strap_role((uint16_t)opxy_testos_entry[5]) == OPXY_MASTER;
+	return opxy_strap_role((uint16_t)opxy_testos_entry[OPXY_TESTOS_E_ROLE]) == OPXY_MASTER;
+}
+
+/* The entry's decision (OPXY_TESTOS_E_DEVICE). */
+static const struct wb_device *entry_device(enum wb_dev_how *how)
+{
+	const uint32_t w = opxy_testos_entry[OPXY_TESTOS_E_DEVICE];
+
+	*how = (w & OPXY_TESTOS_DECIDED) != 0u ? (enum wb_dev_how)(w >> 8 & 0xFFu) :
+						  WB_DEV_UNKNOWN;
+	return wb_device_of(w & 0xFFu);
+}
+
+void opxy_testos_device(struct opxy_device_pick *out)
+{
+	enum wb_dev_how how;
+
+	out->dev = entry_device(&how);
+	out->how = how;
+	out->master = is_master();
+	out->fallback = (opxy_testos_entry[OPXY_TESTOS_E_DEVICE] & OPXY_TESTOS_BY_STRAP) != 0u;
+	out->decided = true;
+	out->n = opxy_testos_entry[OPXY_TESTOS_E_FS_N];
+	out->c = opxy_testos_entry[OPXY_TESTOS_E_FS_C];
 }
 
 static void fill(const struct s13c_bus *b, uint16_t rgb565)
@@ -168,17 +204,22 @@ static void stage(enum opxy_testos_paint which)
 }
 
 /*
- * Before the display driver is up: S-13b.003's pin functions (the board's
- * own table, which the bring-up applies again), the byte path's set-up,
- * the fill, CS high again. Nothing static is touched.
+ * Before the display driver is up: S-13b.003's pin functions and D/C of
+ * the device the entry decided (the board's own tables, which the
+ * bring-up applies again), the byte path's set-up, the fill, CS high
+ * again. No .bss is read.
  */
 static void paint_private(uint16_t rgb565)
 {
+	enum wb_dev_how how;
+	const struct wb_device *dev = entry_device(&how);
 	struct wb_display_bf70x a;
 	const struct s13c_bus *b;
 
-	(void)wb_pinmux_apply(&opxy_pinmux_master);
-	b = wb_display_bf70x_init(&a, &opxy_time);
+	(void)how;
+	(void)wb_pinmux_apply(opxy_pinmux_main(dev));
+	b = wb_display_bf70x_init_cfg(&a, dev->id == WB_DEV_OP1F ? &wb_lcd_op1f : &wb_lcd_opxy,
+				      &opxy_time);
 	if (b == NULL)
 		return;
 	fill(b, rgb565);
@@ -190,25 +231,88 @@ static void hold(void)
 	wb_delay_us(&opxy_time, OPXY_TESTOS_PAINT_HOLD_US);
 }
 
-void opxy_testos_entry_paint(void)
+/* S-18.003's read, on a bus of its own on the stack: SPI2's registers
+ * alone (as opxy_main()'s, S-18.001). */
+struct entry_flash {
+	struct wb_spi spi;
+	struct wb_spiflash flash;
+	bool up;
+};
+
+static int entry_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 {
-	/* S-13b.001's role strap alone (opxy_strap's timings): PA8 is the
-	 * panel's RESET and is not released here, see above. */
-	const struct wb_strap role = {
+	struct entry_flash *e = ctx;
+
+	if (!e->up) {
+		(void)wb_spi_init(&e->spi, OPXY_SPI_FLASH, &opxy_spi_flash, &opxy_time,
+				  OPXY_SPI_WORD_US);
+		e->flash.spi = &e->spi;
+		e->flash.size = OPXY_FLASH_SIZE;
+		e->flash.busy_timeout_us = OPXY_FLASH_BUSY_US;
+		e->flash.busy = true;
+		e->up = true;
+	}
+	return wb_spiflash_read(&e->flash, off, buf, len);
+}
+
+#if defined(OPXY_TESTOS_1F)
+/* An image for another device: nothing more runs, nothing is touched. */
+static void stop(void)
+{
+	for (;;)
+		wb_core_idle();
+}
+#endif
+
+_Static_assert(WB_FS_READ_BUSY == WB_SPIFLASH_BUSY, "a busy flash is not read again");
+
+/* S-18.002's fallback sample, on a boot mode that is not 1: PA2's INEN
+ * alone; PA0 and PA8 (the panel's RESET) are not released here. */
+static uint16_t entry_strap(void *ctx)
+{
+	const struct wb_strap pa2 = {
 		.port = opxy_strap.port,
 		.pins = OPXY_STRAP_ROLE,
 		.settle_us = opxy_strap.settle_us,
-		.inen_us = opxy_strap.inen_us,
+		.inen_us = 0u,
 	};
-	uint16_t strap = 0;
+	uint16_t v = 0;
+
+	(void)ctx;
+	if (wb_strap_inen_read(&pa2, &opxy_time, &v) != 0)
+		v = 0;
+	return v;
+}
+
+void opxy_testos_entry_paint(void)
+{
+	struct entry_flash e;
+	const unsigned bmode = (wb_mmr_read32(RCU0_STAT) & RCU_STAT_BMODE_MASK) >>
+			       RCU_STAT_BMODE_SHIFT;
+	struct wb_dev_role r;
 	uint32_t outcome;
 
-	/* S-13b.001: the role before any other pin is touched. */
-	if (wb_strap_read(&role, &opxy_time, &strap) != 0)
-		strap = 0;
-	opxy_testos_entry[5] = strap;
-	if (opxy_strap_role(strap) != OPXY_MASTER) {
+	_Static_assert(OPXY_STRAP_ROLE == WB_STRAP_PA2, "PA2 is the role strap");
+	/* S-18.001, S-18.002 as the front decides: the boot mode, the
+	 * fallback sample where it is not 1, then a main CPU's first stage,
+	 * up to three tries, before any other pin is touched */
+	memset(&e, 0, sizeof e);
+	wb_device_decide_role(bmode, entry_strap, NULL, entry_read, &e, &r);
+	opxy_testos_entry[OPXY_TESTOS_E_BMODE] = bmode;
+	opxy_testos_entry[OPXY_TESTOS_E_FS_N] = r.n;
+	opxy_testos_entry[OPXY_TESTOS_E_FS_C] = r.c;
+	opxy_testos_entry[OPXY_TESTOS_E_DEVICE] =
+		OPXY_TESTOS_DECIDED | (r.fallback ? OPXY_TESTOS_BY_STRAP : 0u) |
+		(uint32_t)r.d.how << 8 | (uint32_t)r.d.id;
+	opxy_testos_entry[OPXY_TESTOS_E_ROLE] = r.main ? OPXY_STRAP_ROLE : 0u;
+#if defined(OPXY_TESTOS_1F)
+	if (!r.main || r.d.how != WB_DEV_BY_TABLE || (unsigned)r.d.id != OPXY_TESTOS_IMAGE_DEVICE)
+		stop();
+#endif
+	if (!is_master()) {
 		outcome = PAINT_SLAVE;
+	} else if (r.d.how != WB_DEV_BY_TABLE) {
+		outcome = PAINT_DEVICE;
 	} else if (!record_initialized()) {
 		outcome = PAINT_NORECORD;
 	} else {
@@ -218,7 +322,7 @@ void opxy_testos_entry_paint(void)
 		}
 		outcome = PAINT_DONE;
 	}
-	opxy_testos_entry[4] = outcome;
+	opxy_testos_entry[OPXY_TESTOS_E_PAINT] = outcome;
 }
 
 static void line(struct opxy_master *m, enum opxy_testos_paint which,
@@ -243,6 +347,9 @@ static void line(struct opxy_master *m, enum opxy_testos_paint which,
 		break;
 	case PAINT_PANELOFF:
 		s14_text_str(&t, ": not painted, the panel is not on");
+		break;
+	case PAINT_DEVICE:
+		s14_text_str(&t, ": not painted, the device is not identified (S-18.004)");
 		break;
 	case PAINT_NONE:
 	default:
@@ -329,7 +436,7 @@ void opxy_testos_paint_log(struct opxy_master *m)
 	unsigned i;
 
 	log_m = m;
-	line(m, OPXY_PAINT_RED, opxy_testos_entry[4]);
+	line(m, OPXY_PAINT_RED, opxy_testos_entry[OPXY_TESTOS_E_PAINT]);
 	for (i = 0; i < n_pending; i++)
 		line(m, (enum opxy_testos_paint)pending[i][0], pending[i][1]);
 	n_pending = 0;

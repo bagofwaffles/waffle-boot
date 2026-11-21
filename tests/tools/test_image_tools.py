@@ -3,7 +3,8 @@
 """Host tests of tools/mkldr.py and tools/layout.py on a synthetic ELF32 file
 laid out like the bootloader image (bf703.ld), and of tools/testos_layout.py
 and mkldr.py --no-init on one laid out like the test OS (bf703_testos.ld,
-wiki/Test-OS.md). The streams and layouts they write are
+wiki/Test-OS.md), and --os-1f and --device 1f on one laid out like the OP-1F's
+installer (bf703_testos_1f.ld). The streams and layouts they write are
 judged by tests/oracle/S-01-boot-chain's checkers. Also tools/png2logo.py on PNG files made here
 (S-15.132). Python 3, standard library only.
 
@@ -915,6 +916,166 @@ class TestOs(unittest.TestCase):
         self.assertIn('"S-13a.003"', src)
         tr1 = [r for r in rows if r[0] == 'DMC0_TR1' and r[2] == 'TREF'][0]
         self.assertEqual((tr1[5], tr1[6], tr1[7]), ('in', 1, 1560))
+
+
+TESTOS_1F_LD = os.path.join(TOP, 'src', 'testos', 'bf703_testos_1f.ld')
+STUB = bytes(range(0x40, 0x98))                 # 88 bytes, eleven 8-byte words
+
+
+def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000):
+    """An OP-1F installer image (bf703_testos_1f.ld): the entry stub loaded at 0x11A00000, its one L1
+    block, and the test OS's DDR run at 0x8D000000 with .l1.text loaded in it."""
+    sections = [
+        ('.l1.entry', elf32.SHT_PROGBITS, AX, 0x11A00000, stub),
+        ('.text', elf32.SHT_PROGBITS, AX, ddr_at, TEXT),
+        ('.rodata', elf32.SHT_PROGBITS, elf32.SHF_ALLOC, ddr_at + 0x20, b'\x55' * 3),
+        ('.data', elf32.SHT_PROGBITS, WA, ddr_at + 0x24, b'\x33' * 16),
+        ('.l1.text', elf32.SHT_PROGBITS, AX, 0x11A00100, L1_TEXT),
+        ('.bss', elf32.SHT_NOBITS, WA, ddr_at + 0x100, 0x1000),
+        ('.stack', elf32.SHT_NOBITS, WA, ddr_at + 0x2000, 0x1000),
+    ]
+    if extra:
+        sections += extra
+    symbols = [('_wb_testos_entry_1f', 0x11A00000, '.l1.entry'), ('_wb_testos_entry', ddr_at, '.text'),
+               ('_main', ddr_at + 8, '.text'), ('_opxy_testos_entry', ddr_at + 0x24, '.data'),
+               ('_wb_cplb_setup', 0x11A00100, '.l1.text')]
+    relocs = {'.text': [(ddr_at + 4, '_opxy_testos_entry', 0)]}
+    return build_elf(sections, symbols, relocs, entry, lma={'.l1.text': ddr_at + 0x34})
+
+
+def run_testos_layout_1f(elf_path, *extra):
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = testos_layout.main(['testos_layout.py', elf_path, '--ld', TESTOS_1F_LD, '--board', BOARD,
+                                 '--memmap', MEMMAP, '--device', '1f'] + list(extra))
+    return rc, out.getvalue()
+
+
+def fix_header(h):
+    """The XOR of a block header's 16 bytes made zero again."""
+    h = bytearray(h)
+    h[2] = 0
+    x = 0
+    for b in h:
+        x ^= b
+    h[2] = x
+    return bytes(h)
+
+
+class TestOs1F(unittest.TestCase):
+    """The OP-1F's installer images (make installer-1f): mkldr.py --os-1f and testos_layout.py --device 1f
+    against S-05.040's shape of the OP-1F's OS 1.7.3, S-01's os profile and S-05.024."""
+
+    def test_stream_shape(self):
+        data = mkldr.stream(elf32.Elf(testos_1f_image()), None, 0, mkldr.OS_1F_SPLIT)
+        blocks = check_stream.ldr.parse(data)
+        self.assertEqual([(b['flags'], b['target'], b['count'], b['argument']) for b in blocks],
+                         [(check_stream.ldr.FIRST | check_stream.ldr.IGNORE, 0x11A00000, 0, len(data) - 16),
+                          (0, 0x11A00000, len(STUB), 0), (0, 0x8D000000, 0x94, 0),
+                          (check_stream.ldr.FINAL, 0x11A00000, 0, 0)])
+        # S-05.041: a run over the limit becomes consecutive blocks no longer, each a multiple of 4
+        cut = mkldr.stream(elf32.Elf(testos_1f_image()), None, 0, (0xC000, 0x40))
+        self.assertEqual([(b['target'], b['count']) for b in check_stream.ldr.parse(cut)][2:-1],
+                         [(0x8D000000, 0x40), (0x8D000040, 0x40), (0x8D000080, 0x14)])
+        self.assertEqual(testos_layout.check_blocks_1f(cut, (0x8D000000, 0x8D300000)), [])
+        # the limits and the first block's argument are checked
+        keep = testos_layout.DDR_BLOCK_MAX_1F
+        try:
+            testos_layout.DDR_BLOCK_MAX_1F = 0x40
+            self.assertTrue(any('over 0x40' in f for f in testos_layout.check_blocks_1f(
+                data, (0x8D000000, 0x8D300000))))
+        finally:
+            testos_layout.DDR_BLOCK_MAX_1F = keep
+        bad = bytearray(data)
+        bad[12:16] = struct.pack('<I', len(data))
+        self.assertTrue(any('length less 16' in f for f in testos_layout.check_blocks_1f(
+            bytes(bad), (0x8D000000, 0x8D300000))))
+        self.assertTrue(all(ok for _, ok, _ in check_stream.check('os', data)))
+        testos_layout.kernel_model.compatibility_check(data)
+        self.assertEqual(testos_layout.check_blocks_1f(data, (0x8D000000, 0x8D300000)), [])
+        # every destination inside S-05.040's ranges
+        ranges = testos_layout.os_1f_ranges()
+        for b in blocks:
+            if b['count']:
+                self.assertTrue(any(lo <= b['target'] and b['target'] + b['count'] <= hi
+                                    for lo, hi in ranges), hex(b['target']))
+        # the OP-XY's --no-init form keeps the entry as the FINAL argument
+        self.assertEqual(testos_layout.stream_entries(mkldr.stream(elf32.Elf(testos_1f_image()), None))[2],
+                         0x11A00000)
+
+    def test_main_mode(self):
+        with Tmp() as t:
+            e = t.write('t.elf', testos_1f_image())
+            self.assertEqual(mkldr.main(['mkldr.py', e, t.path('t.ldr'), '--os-1f']), 0)
+            with open(t.path('t.ldr'), 'rb') as f:
+                data = f.read()
+            self.assertEqual(testos_layout.stream_entries(data), (0x11A00000, 0x11A00000, 0))
+            rc, out = run_testos_layout_1f(e, '--stream', t.path('t.ldr'), '--json', t.path('t.json'))
+            self.assertEqual(rc, 0, out)
+            self.assertIn('entry      0x11a00000', out)
+            with open(t.path('t.json')) as f:
+                names = [r['name'] for r in json.load(f)['ranges']]
+            self.assertEqual(names[-3:], ['ramdisk', 'os_frame', 'frame_buffers'])
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(mkldr.main(['mkldr.py', e, t.path('u.ldr'), '--os-1f', '--no-init']), 2)
+
+    def test_link_map_and_board(self):
+        regions = layout.memory_regions(TESTOS_1F_LD)
+        self.assertEqual([r[0] for r in regions], ['l1_entry', 'l1_code', 'ddr'])
+        board = layout.defines(BOARD)
+        ddr = [r for r in regions if r[0] == 'ddr'][0]
+        self.assertEqual((ddr[1], ddr[2]), (board['OPXY_TESTOS_1F_IMAGE_START'],
+                                            board['OPXY_TESTOS_1F_IMAGE_END']))
+        self.assertEqual(regions[0][1], 0x11A00000)
+        # inside OS 1.7.3's second DDR range, above the OS frame, clear of the OP-1F's RAM disk
+        lo, hi = testos_layout.os_1f_ranges()[-1]
+        self.assertTrue(lo <= board['OPXY_TESTOS_1F_IMAGE_START'] and board['OPXY_TESTOS_1F_IMAGE_END'] <= hi)
+        self.assertGreaterEqual(board['OPXY_TESTOS_1F_IMAGE_START'], board['OPXY_OS_FRAME_END'])
+        self.assertGreaterEqual(board['OPXY_TESTOS_1F_IMAGE_START'], board['OPXY_1F_DISK_END'])
+        self.assertLessEqual(board['OPXY_TESTOS_1F_HEAP_END'], board['OPXY_FRAMES_START'])
+
+    def test_refusals(self):
+        with Tmp() as t:
+            # an entry stub of no whole 8-byte words
+            e = t.write('odd.elf', testos_1f_image(stub=STUB[:84]))
+            s = t.write('odd.ldr', mkldr.stream(elf32.read(e), None, 0))
+            rc, out = run_testos_layout_1f(e, '--stream', s)
+            self.assertEqual(rc, 1)
+            self.assertIn('wanted one L1 code block at 0x11a00000 of whole 8-byte words', out)
+            # the DDR image outside OS 1.7.3's ranges (below the OS frame's rows)
+            e = t.write('low.elf', testos_1f_image(ddr_at=0x8C000000))
+            s = t.write('low.ldr', mkldr.stream(elf32.read(e), None, 0))
+            rc, out = run_testos_layout_1f(e, '--stream', s)
+            self.assertEqual(rc, 1)
+            self.assertIn("in none of OS 1.7.3's ranges (S-05.040)", out)
+            self.assertIn('outside the test OS image range', out)
+            # the FINAL argument the entry, as --no-init writes it
+            e = t.write('g.elf', testos_1f_image())
+            s = t.write('n.ldr', mkldr.stream(elf32.read(e), None))
+            rc, out = run_testos_layout_1f(e, '--stream', s)
+            self.assertEqual(rc, 1)
+            self.assertIn('FINAL block argument 0x11a00000 is not 0x00000000', out)
+            # the ELF entry elsewhere
+            e = t.write('ent.elf', testos_1f_image(entry=0x8D000000))
+            rc, out = run_testos_layout_1f(e)
+            self.assertEqual(rc, 1)
+            self.assertIn('the ELF entry 0x8d000000 is not 0x11a00000', out)
+            # a flag OS 1.7.3 does not use (CALLBACK) on the DDR block
+            data = bytearray(mkldr.stream(elf32.read(t.path('g.elf')), None, 0))
+            at = 16 + 16 + len(STUB)
+            h = bytearray(data[at:at + 16])
+            h[1] |= 0x04
+            data[at:at + 16] = fix_header(h)
+            rc, out = run_testos_layout_1f(t.path('g.elf'), '--stream', t.write('cb.ldr', bytes(data)))
+            self.assertEqual(rc, 1)
+            self.assertIn('OS 1.7.3 uses FIRST, IGNORE, FILL, FINAL', out)
+            # a second L1 block
+            extra = [('.l1.more', elf32.SHT_PROGBITS, AX, 0x11A08000, b'\x11' * 8)]
+            e = t.write('two.elf', testos_1f_image(extra=extra))
+            s = t.write('two.ldr', mkldr.stream(elf32.read(e), None, 0))
+            rc, out = run_testos_layout_1f(e, '--stream', s)
+            self.assertEqual(rc, 1)
+            self.assertIn('wanted one L1 code block', out)
 
 
 def make_png(width, height, ctype, depth, rows, plte=None, trns=None, interlace=0, filt=0):

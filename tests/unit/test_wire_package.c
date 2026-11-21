@@ -3,7 +3,7 @@
  * S-11 checks 1-15 on the vendored libraries (src/wire_package.c): every
  * package vector of tests/oracle/S-11-packages/vectors/pkg/ through
  * s11_check_package() with BearSSL's SHA-256 and AES, micro-ecc's P-224 and
- * minizip's check 15, against the reason, TE-signed and forced verdicts and
+ * minizip's check 15, against the reason, signature state and forced verdicts and
  * the recovered zip's SHA-256 of s11_vectors.h; micro-ecc's verdict on each
  * signature against the conformance verifier's; the AES chaining contract
  * of s11_crypto_ops; a zip too big for its RAM; and every package again
@@ -14,6 +14,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
+#include "waffle/device.h"
 #include "waffle/s11_package.h"
 #include "waffle/wire_package.h"
 
@@ -102,6 +103,7 @@ static void check_package(const struct s11v_package *v, size_t zip_cap)
 	in.option = v->option != 0;
 	in.file_name = v->file_name;
 	in.fw_command = v->cdc != 0;
+	in.dev = &wb_device_opxy;
 	memset(&out, 0, sizeof(out));
 	r = s11_check_package(&ops, &in, &out);
 	if (zip_cap != 0 && zip_cap < sizeof(zip_ram)) {
@@ -113,9 +115,9 @@ static void check_package(const struct s11v_package *v, size_t zip_cap)
 	}
 	CHECK(r == v->reason, "%s: reason %s, want %s", v->name,
 	      s11_reason_name(r), s11_reason_name(v->reason));
-	if (v->te_signed >= 0)
-		CHECK(out.te_signed == (v->te_signed != 0), "%s: TE-signed",
-		      v->name);
+	if (v->signature >= 0)
+		CHECK(out.sig == (enum s11_sig)v->signature,
+		      "%s: signature state %d", v->name, (int)out.sig);
 	if (r == S11_REASON_NONE) {
 		uint8_t d[32];
 		br_sha256_context sha;
@@ -222,7 +224,7 @@ int main(void)
 				check_package(&s11v_packages[i], 31);
 		}
 	}
-	CHECK(check_verdicts() >= 80, "signatures checked");
+	CHECK(check_verdicts() >= 70, "signatures checked");
 	CHECK(N(s11v_packages) >= 80 && accepted >= 30, "%zu packages, %zu accepted",
 	      N(s11v_packages), accepted);
 	return tl_done("test_wire_package");

@@ -37,8 +37,9 @@
  *     lengths and loop counters;
  *   - points EVT2 to EVT14 at start.S's fault entry and EVT15 at its main
  *     entry, leaves only IVG15 enabled, calls the first milestone paint
- *     (opxy_testos_entry_paint(): red on the panel the loading bootloader
- *     initialized, waffle/testos.h's milestone paints), and jumps to the
+ *     (opxy_testos_entry_paint(): the device decided first, S-18.001 to
+ *     S-18.004, then red on the panel the loading bootloader initialized,
+ *     waffle/testos.h's milestone paints), and jumps to the
  *     main entry, which runs wb_start_c() (the L1 parity pass of S-13a.040
  *     if this is the first start since power-on, which rewrites the words
  *     just copied with themselves, from DDR code; the sections; the CPLB
@@ -231,11 +232,11 @@ _wb_testos_entry:
 	R0 = 0x8000 (Z);
 	STI R0;
 
-	/* The first paint (waffle/testos.h's milestone paints): the strap,
+	/* The first paint (waffle/testos.h's milestone paints): the device,
 	 * then red over the panel the loading bootloader initialized, before
 	 * wb_start_c(). C on the stack set above, with the callee's argument
-	 * area (C ABI); it touches no static data of the image, since .bss is
-	 * cleared only by wb_start_c(). */
+	 * area (C ABI); it reads no .bss of the image, which is cleared only by
+	 * wb_start_c(). */
 	SP += -12;
 	P1.L = _opxy_testos_entry_paint;
 	P1.H = _opxy_testos_entry_paint;
@@ -246,5 +247,54 @@ _wb_testos_entry:
 	P1.H = _wb_main_entry;
 	JUMP (P1);
 	.size _wb_testos_entry, . - _wb_testos_entry
+
+#if defined(OPXY_TESTOS_1F)
+/*
+ * The OP-1F's images (bf703_testos_1f.ld) are laid out like the OP-1F's
+ * OS 1.7.3 (S-05.040): the stream's FIRST and FINAL targets are
+ * 0x11A00000, the ROM's default application entry, and its one L1 block
+ * is this, there. It turns the predictor and the CPLBs off as the shim
+ * does, before its one branch, since what the loading bootloader left
+ * may not cover DDR, then jumps to the shim in the DDR image. The shim's
+ * .l1.text copy goes to L1 code after it.
+ */
+	.section .wb.l1entry, "ax"
+	.p2align 3
+
+	.global _wb_testos_entry_1f
+	.type _wb_testos_entry_1f, STT_FUNC
+_wb_testos_entry_1f:
+	CSYNC;
+	P0.L = BPCFG_LO;
+	P0.H = BPCFG_HI;
+	R0.L = BPCLR_L;
+	R0.H = BPCLR_H;
+	[P0] = R0;
+	R0 = SYSCFG;
+	BITCLR(R0, BPEN_BIT);
+	SYSCFG = R0;
+	P0.L = DCTL_LO;
+	P0.H = CTL_HI;
+	SSYNC;
+	R0 = [P0];
+	R1.L = DCTL_KEEP_L;
+	R1.H = DCTL_KEEP_H;
+	R0 = R0 & R1;
+	[P0] = R0;
+	SSYNC;
+	P0.L = ICTL_LO;
+	R0 = [P0];
+	R1.L = ICTL_KEEP_L;
+	R1.H = ICTL_KEEP_H;
+	R0 = R0 & R1;
+	[P0] = R0;
+	SSYNC;
+	CSYNC;
+	P1.L = _wb_testos_entry;
+	P1.H = _wb_testos_entry;
+	JUMP (P1);
+	.p2align 3
+	.size _wb_testos_entry_1f, . - _wb_testos_entry_1f
+#endif
 
 #endif /* OPXY_TEST_OS */

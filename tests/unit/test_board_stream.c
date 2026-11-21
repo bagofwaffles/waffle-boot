@@ -145,9 +145,9 @@ static void set_up(unsigned selected, const uint8_t *loaded)
 	g_fast_wrong = false;
 }
 
-/* A hand-off record's bytes (S-01.023): the layout of `version` with the
- * size field `size`, its CRC at size - 4; version 2's fields filled in all
- * the same, so that a version 1 record shows they are not taken. */
+/* A hand-off record's bytes (S-01.023, S-18.005): version 3's layout with
+ * the version and size fields given, its CRC at size - 4, and the device
+ * OP-1F decided by the table. */
 static void ho_bytes(uint8_t rec[FR_HO_SIZE], unsigned version, unsigned size, uint32_t flags,
 		     uint8_t run_slot)
 {
@@ -165,76 +165,88 @@ static void ho_bytes(uint8_t rec[FR_HO_SIZE], unsigned version, unsigned size, u
 	rec[146] = 0x02u;		/* link_overruns */
 	rec[147] = 0x01u;
 	ff_put32(rec + 148, 1234u);	/* link_gap_max_us */
+	rec[152] = FR_HO_DEV_OP1F;
+	rec[153] = FR_HO_HOW_TABLE;
 	if (size >= 8u && size <= FR_HO_SIZE)
 		ff_put32(rec + size - 4u, wire_crc32(0, rec, size - 4u));
 }
 
-/* S-01.023: the two layouts the main image accepts, and the rest refused. */
+/* S-18.005: version 3 of 160 bytes accepted, and every other layout
+ * refused; the device from offset 152, how from 153. */
 static void test_accept(void)
 {
+	static const struct { unsigned version, size; } refused[] = {
+		{ 1, 148 }, { 2, 156 }, { 3, 156 }, { 2, 160 }, { 1, 160 }, { 4, 160 }, { 3, 148 },
+	};
 	uint8_t rec[FR_HO_SIZE];
 	struct fr_handoff ho;
+	enum wb_dev_id id;
+	enum wb_dev_how how;
 	unsigned slot = 9;
 
-	ho_bytes(rec, 2, FR_HO_SIZE, FR_HO_RUNNING | FR_HO_START_LOGGED, 1);
+	ho_bytes(rec, 3, FR_HO_SIZE, FR_HO_RUNNING | FR_HO_START_LOGGED, 1);
 	CHECK(opxy_front_accept(rec, &ho));
-	CHECK(ho.version == 2u && ho.size == FR_HO_SIZE && ho.log_slot == 1u &&
+	CHECK(ho.version == 3u && ho.size == FR_HO_SIZE && ho.log_slot == 1u &&
 	      ho.log_entry == 0x1234u && ho.stamps[0] == 0x77u);
 	CHECK(ho.run_slot == 1u && ho.te_misses == 9u && ho.link_overruns == 0x0102u &&
 	      ho.link_gap_max_us == 1234u);
+	CHECK(ho.device == 1u && ho.device_how == 0u && ho.zero == 0u);
+	CHECK(ho.crc32 == wire_crc32(0, rec, FR_HO_SIZE - 4u));
+	CHECK(opxy_front_device(&ho, &id, &how) && id == WB_DEV_OP1F && how == WB_DEV_BY_TABLE);
 	CHECK(opxy_front_running(&ho, &slot) && slot == 1u);
-	/* version 1 of 148 bytes: version 2's fields read 0, its flag not taken */
-	ho_bytes(rec, 1, FR_HO_SIZE_V1, FR_HO_RUNNING | FR_HO_START_LOGGED, 1);
-	memset(&ho, 0xA5, sizeof ho);
-	CHECK(opxy_front_accept(rec, &ho));
-	CHECK(ho.version == 1u && ho.size == FR_HO_SIZE_V1 && ho.log_entry == 0x1234u);
-	CHECK(ho.run_slot == 0u && ho.te_misses == 0u && ho.link_overruns == 0u &&
-	      ho.link_gap_max_us == 0u);
-	slot = 9;
-	CHECK(!opxy_front_running(&ho, &slot) && slot == 9u);
-	CHECK(!opxy_front_no_trial(&ho, &slot));
-	/* a version with the other's size, each CRC right for that size */
-	ho_bytes(rec, 2, FR_HO_SIZE_V1, 0, 0);
-	CHECK(!opxy_front_accept(rec, &ho));
-	ho_bytes(rec, 1, FR_HO_SIZE, 0, 0);
+	/* versions 1 and 2, and version 3 at another size, each CRC right for
+	 * its size */
+	for (unsigned i = 0; i < sizeof refused / sizeof refused[0]; i++) {
+		ho_bytes(rec, refused[i].version, refused[i].size, 0, 0);
+		CHECK(!opxy_front_accept(rec, &ho));
+	}
+	/* a wrong CRC, a wrong magic, and any one byte changed */
+	ho_bytes(rec, 3, FR_HO_SIZE, 0, 0);
+	rec[FR_HO_SIZE - 1u] ^= 0x01u;
 	CHECK(!opxy_front_accept(rec, &ho));
 	ho_bytes(rec, 3, FR_HO_SIZE, 0, 0);
+	rec[0] ^= 0x01u;
+	ff_put32(rec + FR_HO_SIZE - 4u, wire_crc32(0, rec, FR_HO_SIZE - 4u));
 	CHECK(!opxy_front_accept(rec, &ho));
-	/* a wrong CRC, a wrong magic, and any one byte changed */
-	for (unsigned v = 1; v <= 2u; v++) {
-		const unsigned n = v == 1u ? FR_HO_SIZE_V1 : FR_HO_SIZE;
-
-		ho_bytes(rec, v, n, 0, 0);
-		rec[n - 1u] ^= 0x01u;
+	for (unsigned i = 0; i < FR_HO_SIZE; i++) {
+		ho_bytes(rec, 3, FR_HO_SIZE, 0, 0);
+		rec[i] ^= 0x40u;
 		CHECK(!opxy_front_accept(rec, &ho));
-		ho_bytes(rec, v, n, 0, 0);
-		rec[0] ^= 0x01u;
-		ff_put32(rec + n - 4u, wire_crc32(0, rec, n - 4u));
-		CHECK(!opxy_front_accept(rec, &ho));
-		for (unsigned i = 0; i < n; i++) {
-			ho_bytes(rec, v, n, 0, 0);
-			rec[i] ^= 0x40u;
-			CHECK(!opxy_front_accept(rec, &ho));
-		}
 	}
-	/* version 2: the flag with no slot that exists; the trial mark */
-	ho_bytes(rec, 2, FR_HO_SIZE, FR_HO_RUNNING, 2);
+	/* every device and how code: the record is whole, the codes known or not */
+	for (unsigned d = 0; d < 4u; d++)
+		for (unsigned h = 0; h < 4u; h++) {
+			const bool known = d <= 1u && h <= 2u;
+
+			ho_bytes(rec, 3, FR_HO_SIZE, 0, 0);
+			rec[152] = (uint8_t)d;
+			rec[153] = (uint8_t)h;
+			ff_put32(rec + FR_HO_SIZE - 4u, wire_crc32(0, rec, FR_HO_SIZE - 4u));
+			CHECK(opxy_front_accept(rec, &ho));
+			id = WB_DEV_OP1F;
+			how = WB_DEV_SECOND_CPU;
+			CHECK(opxy_front_device(&ho, &id, &how) == known);
+			if (known)
+				CHECK(id == (enum wb_dev_id)d && how == (enum wb_dev_how)h);
+		}
+	/* the flag with no slot that exists; the trial mark */
+	ho_bytes(rec, 3, FR_HO_SIZE, FR_HO_RUNNING, 2);
 	CHECK(opxy_front_accept(rec, &ho) && !opxy_front_running(&ho, &slot));
-	ho_bytes(rec, 2, FR_HO_SIZE, 0, 1);
+	ho_bytes(rec, 3, FR_HO_SIZE, 0, 1);
 	CHECK(opxy_front_accept(rec, &ho) && !opxy_front_running(&ho, &slot));
-	ho_bytes(rec, 2, FR_HO_SIZE, FR_HO_RUNNING | FR_HO_TRIAL_MARKED, 0);
+	ho_bytes(rec, 3, FR_HO_SIZE, FR_HO_RUNNING | FR_HO_TRIAL_MARKED, 0);
 	CHECK(opxy_front_accept(rec, &ho) && opxy_front_running(&ho, &slot) && slot == 0u);
 	CHECK(!opxy_front_no_trial(&ho, &slot));
-	ho_bytes(rec, 2, FR_HO_SIZE, FR_HO_RUNNING, 0);
+	ho_bytes(rec, 3, FR_HO_SIZE, FR_HO_RUNNING, 0);
 	CHECK(opxy_front_accept(rec, &ho) && opxy_front_no_trial(&ho, &slot) && slot == 0u);
 }
 
-/* The front's record for the stream tests: taken, of `version`. */
-static void give_record(unsigned version, uint32_t flags, uint8_t run_slot)
+/* The front's record for the stream tests: taken, version 3. */
+static void give_record(uint32_t flags, uint8_t run_slot)
 {
 	uint8_t rec[FR_HO_SIZE];
 
-	ho_bytes(rec, version, version == 1u ? FR_HO_SIZE_V1 : FR_HO_SIZE, flags, run_slot);
+	ho_bytes(rec, 3, FR_HO_SIZE, flags, run_slot);
 	m.front = opxy_front_accept(rec, &m.ho);
 	CHECK(m.front);
 }
@@ -251,9 +263,9 @@ static bool only_slot_read(unsigned slot)
 }
 
 /*
- * S-01.023: the running slot from a version 2 record with its flag, read
+ * S-01.023: the running slot from the record with its flag, read
  * from no stream; its stream alone read, for the slave, and judged as
- * always (S-02.016). Without the flag, or with version 1, the streams.
+ * always (S-02.016). Without the flag, the streams.
  */
 static void test_from_record(void)
 {
@@ -268,7 +280,7 @@ static void test_from_record(void)
 		set_up(0, g_a);
 		put_slot(0, g_a, g_alen, 0);
 		put_slot(1, g_b, g_blen, 0);
-		give_record(2, FR_HO_RUNNING, (uint8_t)named);
+		give_record(FR_HO_RUNNING, (uint8_t)named);
 		slot = opxy_stream_slot(&m, &g_src, &established);
 		CHECK(established);
 		CHECK_EQ(slot, named);
@@ -285,7 +297,7 @@ static void test_from_record(void)
 	set_up(0, g_b);
 	put_slot(0, g_a, g_alen, 0);
 	put_slot(1, g_b, g_blen, 2);
-	give_record(2, FR_HO_RUNNING | FR_HO_TRIAL_MARKED, 1);
+	give_record(FR_HO_RUNNING | FR_HO_TRIAL_MARKED, 1);
 	slot = opxy_stream_slot(&m, &g_src, &established);
 	CHECK(established && slot == 1u);
 	CHECK(only_slot_read(1));
@@ -296,23 +308,21 @@ static void test_from_record(void)
 	set_up(0, g_a);
 	put_slot(0, g_a, g_alen, 1);
 	put_slot(1, g_b, g_blen, 0);
-	give_record(2, FR_HO_RUNNING, 0);
+	give_record(FR_HO_RUNNING, 0);
 	slot = opxy_stream_slot(&m, &g_src, &established);
 	CHECK(established && slot == 0u);
 	CHECK(!opxy_stream_checked(&m, slot, established, &stream, &len));
 	CHECK_EQ(len, 0u);
-	/* without the flag, with version 1, with no slot that exists: the
-	 * streams, as before; memory holds Slot 2's image */
-	for (unsigned c = 0; c < 3u; c++) {
+	/* without the flag, with no slot that exists: the streams, as before;
+	 * memory holds Slot 2's image */
+	for (unsigned c = 0; c < 2u; c++) {
 		set_up(0, g_b);
 		put_slot(0, g_a, g_alen, 0);
 		put_slot(1, g_b, g_blen, 0);
 		if (c == 0u)
-			give_record(2, 0, 0);
-		else if (c == 1u)
-			give_record(1, FR_HO_RUNNING, 0);
+			give_record(0, 0);
 		else
-			give_record(2, FR_HO_RUNNING, 2);
+			give_record(FR_HO_RUNNING, 2);
 		slot = opxy_stream_slot(&m, &g_src, &established);
 		CHECK(established);
 		CHECK_EQ(slot, 1u);
@@ -322,7 +332,7 @@ static void test_from_record(void)
 	set_up(0, g_b);
 	put_slot(0, g_a, g_alen, 0);
 	put_slot(1, g_b, g_blen, 0);
-	give_record(2, FR_HO_RUNNING, 0);
+	give_record(FR_HO_RUNNING, 0);
 	m.front = false;
 	slot = opxy_stream_slot(&m, &g_src, &established);
 	CHECK(established && slot == 1u && g_mem_reads != 0u);

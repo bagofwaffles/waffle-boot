@@ -119,6 +119,70 @@ def leds_vectors():
     return {'cases': out}
 
 
+def leds_1f_vectors():
+    """S-07.046, S-07.048, S-07.049 on the OP-1F."""
+    forms = {'bar': [{'n': n, 'payload': m.bar_1f(n).hex()} for n in (0, 1, 13, 14)],
+             'rgb': [{'rgb': v, 'payload': m.rgb_1f(bytes.fromhex(v)).hex()}
+                     for v in ('000000', 'c80000', '00c800', 'ff0000', '0000ff', '324b19')]}
+    cases = [
+        [['bar', 0], ['bar', 0], ['bar', 5], ['bar', 5], ['bar', 0]],
+        [['rgb', '000000'], ['rgb', 'ff0000'], ['rgb', 'ff0000'], ['rgb', '00c800']],
+        [['bar', 3], ['clear'], ['clear'], ['bar', 0], ['bar', 2]],
+        [['clear'], ['bar', 14]],
+    ]
+    change = []
+    for c in cases:
+        sent = []
+        leds = m.Leds1F(lambda p: sent.append(p.hex()))
+        for op in c:
+            if op[0] == 'bar':
+                leds.set_bar(op[1])
+            elif op[0] == 'clear':
+                leds.bar_clear()
+            else:
+                leds.set_rgb(bytes.fromhex(op[1]))
+        change.append({'requests': c, 'sent': sent})
+    kt = []
+    for name, evs, state, charge in [
+            ('alone_twice', [(0x10, 1), (0x10, 0), (0x10, 1), (0x10, 0)], 0x10, 50),
+            ('second_while_down', [(0x20, 1), (0x21, 1), (0x21, 0), (0x20, 0)], 0x10, 50),
+            ('none', [], 0x10, 10),
+            ('three_round', [(0x05, 1), (0x05, 0), (0x06, 1), (0x06, 0), (0x07, 1), (0x07, 0)], 0x12, 0)]:
+        kt.append({'name': name, 'events': [[k, d] for k, d in evs], 'state': '0x%02x' % state,
+                   'charge': charge, 'sent': [p.hex() for p in m.key_test_1f(evs, state, charge)]})
+    return {'device': 'OP-1F', 'forms': forms, 'change_only': change,
+            'bar_clear': {'payload': m.bar_1f(0).hex(),
+                          'note': 'S-07.048: once, after the wait loop stops USB mass storage and before the '
+                                  'charge-LED update; sent whatever bar message was sent last'},
+            'key_test': kt}
+
+
+def charge_led_1f_vectors():
+    """S-07.047 on the OP-1F: steady colors and the breathing in state 0x16."""
+    steady = []
+    for s in [None, 0x10, 0x12, 0x14, 0x18]:
+        for c in [0, 14, 15, 50, 100]:
+            rgb = m.charge_led_1f_base(s, c)
+            steady.append({'state': 'none' if s is None else '0x%02x' % s, 'charge': c,
+                           'payload': m.rgb_1f(rgb).hex()})
+    breathing = []
+    for charge, gap_at in ((50, None), (95, 1.0)):
+        base = m.charge_led_1f_base(0x16, charge)
+        phase, last, t, rows = 0.0, None, 0.0, []
+        while t <= 3.6 + 1e-9:
+            phase = m.breathe_step(phase, None if last is None else t - last)
+            last = t
+            rows.append([round(t * 1000), [m.breathe_level(v, phase) for v in base]])
+            t += 0.25 if gap_at is not None and abs(t - gap_at) < 1e-9 else 0.02
+            t = round(t, 6)
+        breathing.append({'charge': charge, 'base': base.hex(), 'updates_ms_levels': rows})
+    return {'device': 'OP-1F', 'steady': steady, 'breathing': breathing,
+            'rate_rad_s': m.BREATHE_RAD_S, 'gap_ms': round(m.BREATHE_GAP_S * 1000),
+            'tolerance': {'level': 1, 'phase': 'the time of one round'},
+            'note': 'S-07.047: phase 0 at power-on; no step after a gap over 100 ms or without a previous '
+                    'update in state 0x16; levels base x (0.25 + 0.75 (0.5 + 0.5 sin phase)) truncated'}
+
+
 def power_vectors():
     states = [{'state': f'{s:#04x}', 'kind': m.power_kind(s)} for s in [0x10, 0x12, 0x14, 0x16, 0x18, 0x20]]
     trans = []
@@ -629,13 +693,46 @@ def build_transcript(t):
     return out
 
 
+def trace_rules_vectors(built):
+    """S-18.020's S-07 trace rules (scenario SC-18-FEATURES): the forms each forbids, an OP-1F frame list
+    that passes both, and the negative control, the rules' findings on the OP-XY's transcripts."""
+    leds = leds_1f_vectors()
+    chg = charge_led_1f_vectors()
+    pass_1f = [('plain', 0x05, '0104'), ('plain', 0x30, ''), ('plain', 0x36, ''), ('plain', 0x51, '000000'),
+               ('request', 0x36, ''), ('request', 0x30, ''), ('request', 0x41, ''), ('plain', 0x43, '0101'),
+               ('plain', 0x02, 'aa'), ('plain', 0x51, '3cff32')]
+    pass_1f += [('plain', 0x40, f['payload']) for f in leds['forms']['bar'] + leds['forms']['rgb']]
+    pass_1f += [('plain', 0x40, p) for k in leds['key_test'] for p in k['sent']]
+    pass_1f += [('plain', 0x40, s['payload']) for s in chg['steady']]
+    frames = [(k, i, bytes.fromhex(p)) for k, i, p in pass_1f]
+    assert m.check_trace_rules(frames) == []
+    neg, fails = [], set()
+    for name, t in sorted(built.items()):
+        got = sorted({r for r, _ in m.check_trace_rules(m.master_frames(
+            [m.ev_from_json(j) for j in t['events']]))})
+        fails.update(got)
+        neg.append({'transcript': name, 'fails': got})
+    assert fails == set(m.TRACE_RULES), 'each rule must fail on an OP-XY transcript'
+    return {'device': 'OP-1F',
+            'rules': {'no_pmic_ids': {'ids': ['%#04x' % i for i in m.PMIC_IDS],
+                                      'note': 'no master frame with these ids (S-07.062)'},
+                      'no_key_led_ids': {'id': '%#04x' % m.LED_ID,
+                                         'first_bytes': ['%02x' % b for b in m.KEY_LED_FIRSTS],
+                                         'note': 'no 0x40 whose payload starts with these bytes (S-07.040)'}},
+            'pass': [{'kind': k, 'id': '%#04x' % i, 'payload': p} for k, i, p in pass_1f],
+            'negative_control': {'device': 'OP-XY', 'transcripts': neg}}
+
+
 def outputs():
     files = {'keys.tsv': keys_tsv(), 'charge_led.tsv': charge_led_tsv()}
     for name, fn in [('catalog', catalog), ('keys', keys_vectors), ('leds', leds_vectors),
-                     ('power', power_vectors), ('pmic', pmic_vectors), ('cypress', cypress_vectors)]:
+                     ('power', power_vectors), ('pmic', pmic_vectors), ('cypress', cypress_vectors),
+                     ('leds-1f', leds_1f_vectors), ('charge_led-1f', charge_led_1f_vectors)]:
         files[f'vectors/{name}.json'] = json.dumps(fn(), indent=1) + '\n'
-    for t in transcripts():
-        files[f'transcripts/{t["name"]}.json'] = json.dumps(build_transcript(t), indent=1) + '\n'
+    built = {t['name']: build_transcript(t) for t in transcripts()}
+    for name, t in built.items():
+        files[f'transcripts/{name}.json'] = json.dumps(t, indent=1) + '\n'
+    files['vectors/trace_rules-1f.json'] = json.dumps(trace_rules_vectors(built), indent=1) + '\n'
     return files
 
 

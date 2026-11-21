@@ -86,7 +86,7 @@ static inline void t_rig_key(void *ctx, uint8_t key, bool down)
 	}
 }
 
-static inline void t_rig_init(uint32_t cap_us)
+static inline void t_rig_init_dev(uint32_t cap_us, const struct wb_device *dev)
 {
 	memset(&rig, 0, sizeof rig);
 	t_sim_init(&rig.sim, cap_us);
@@ -102,7 +102,12 @@ static inline void t_rig_init(uint32_t cap_us)
 	rig.ops.ctx = &rig;
 	rig.ops.key_event = t_rig_key;
 	rig.ops.crc16 = t_crc16_x25;
-	s07_init(&rig.psoc, &rig.node, S06_LINK_PSOC, &rig.ops);
+	s07_init(&rig.psoc, dev, &rig.node, S06_LINK_PSOC, &rig.ops);
+}
+
+static inline void t_rig_init(uint32_t cap_us)
+{
+	t_rig_init_dev(cap_us, &wb_device_opxy);
 }
 
 static uint8_t t_rig_seq;

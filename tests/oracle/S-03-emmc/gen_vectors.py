@@ -300,11 +300,29 @@ def user_area():
             'factory_reset_erase': {'group': 0x4000, 'first': 0x1000000, 'last': 0x10003FF}}
 
 
+# ---- select_1f.json (S-03.012) ----
+
+SELECT_1F_PRESETS = [0x00, 0x08, 0x48, 0x49, 0x4A, 0x38]
+
+
+def select_1f():
+    rows = []
+    for cur in SELECT_1F_PRESETS:
+        for n in (M.USER, M.BP1, M.BP2):
+            v = M.select_1f(cur, n)
+            rows.append({'before': '0x%02X' % cur, 'part': n,
+                         'cmd6': None if v is None else '0x%02X' % v,
+                         'after': '0x%02X' % (cur if v is None else v)})
+    return {'index': 179, 'note': 'S-03.012: only bits 2-0 change; no CMD6 when they already equal the '
+                                  'partition (cmd6 null)', 'rows': rows}
+
+
 def main():
     images_dir = sys.argv[sys.argv.index('--images') + 1] if '--images' in sys.argv else None
     os.makedirs(VEC, exist_ok=True)
     for name, obj in (('headers', headers()), ('load_table', load_table(images_dir)),
-                      ('write_sequences', write_sequences()), ('user_area', user_area())):
+                      ('write_sequences', write_sequences()), ('user_area', user_area()),
+                      ('select_1f', select_1f())):
         with open(os.path.join(VEC, name + '.json'), 'w') as f:
             json.dump(obj, f, indent=1)
             f.write('\n')

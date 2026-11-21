@@ -8,7 +8,10 @@
  * reading written out here, S-07.054's
  * charge wait, S-07.051's power-off and its exception for recovery's
  * in-place write (the hold), S-02.084's battery request, S-07.076's ping,
- * S-07.024 and S-07.055-S-07.057.
+ * S-07.024 and S-07.055-S-07.057. On the OP-1F (S-18): the key reading
+ * over its 58 keys and 8 bytes (S-07.032, S-07.033), S-07.046's LED forms
+ * with the change rule, S-07.047's breathing against a reference written
+ * out here, a power-off with no 0x40 {01}, and no PMIC pass-through id.
  */
 #include <string.h>
 
@@ -64,6 +67,7 @@ static struct fake {
 	int exit_seen;
 	unsigned poweroffs;
 	size_t nout_at_poweroff;
+	uint64_t switch_on_at;		/* a plain 0x30 from then on: 0x31 {10} */
 } fk;
 
 static const uint8_t exit_packet[7] = { 0x01, 0x3B, 0x00, 0x00, 0xC4, 0xFF, 0x17 };
@@ -101,6 +105,12 @@ static void react(const struct item *it)
 		}
 		if (fk.greets == fk.psoc_greet_at)
 			psoc_at(fk.now + 2 * MS, 0x41, 0x05, hello, 1);
+	}
+	if (it->id == 0x30 && it->route == 0x14 && fk.switch_on_at != 0u &&
+	    fk.now >= fk.switch_on_at) {
+		static const uint8_t on[1] = { 0x10 };
+
+		psoc_at(fk.now + 1 * MS, 0x41, 0x31, on, 1);
 	}
 	if ((it->route >> 4) >= 8 && fk.ans[it->id].on) {
 		const struct answer *a = &fk.ans[it->id];
@@ -199,7 +209,14 @@ static void setup(void)
 	memset(&fk, 0, sizeof fk);
 	fk.now = 1000;
 	s06_rx_init(&fk.rx, S06_ADDR_PSOC);
-	fr_psoc_init(&psoc, &fk_io, &fk_clock);
+	fr_psoc_init(&psoc, &fr_dev_opxy, &fk_io, &fk_clock);
+	psoc.on_poweroff = on_poweroff;
+}
+
+static void setup_dev(const struct fr_dev *dev)
+{
+	setup();
+	fr_psoc_init(&psoc, dev, &fk_io, &fk_clock);
 	psoc.on_poweroff = on_poweroff;
 }
 
@@ -468,8 +485,8 @@ static void test_requests(void)
 	CHECK(psoc.keys_replied && psoc.keys_len == 8);
 	CHECK(memcmp(psoc.keys, m1, 8) == 0);
 	CHECK(fk.now - t < 81 * MS);
-	CHECK(fr_keys_one(psoc.keys, psoc.keys_len) == FR_KEY_1);
-	CHECK(!fr_keys_hold(psoc.keys, psoc.keys_len));
+	CHECK(fr_keys_one(&fr_dev_opxy, psoc.keys, psoc.keys_len) == FR_KEY_1);
+	CHECK(!fr_keys_hold(&fr_dev_opxy, psoc.keys, psoc.keys_len));
 	CHECK(fk.nout == 1);		/* a reply is never a greeting */
 
 	/* answered at 150 ms: not used */
@@ -500,7 +517,7 @@ static void test_late_reply(void)
 	CHECK(!psoc.state_known);
 	CHECK(fr_psoc_key_status(&psoc) == FR_PSOC_OK);
 	CHECK(psoc.keys_replied && psoc.keys_len == sizeof m4 && memcmp(psoc.keys, m4, 4) == 0);
-	CHECK(fr_keys_one(psoc.keys, psoc.keys_len) == FR_KEY_4);
+	CHECK(fr_keys_one(&fr_dev_opxy, psoc.keys, psoc.keys_len) == FR_KEY_4);
 	CHECK(psoc.state_known && psoc.state == FR_POWER_ON);
 
 	/* after an unanswered waited 0x30 and 0x36, a 0x37 and a 0x32 while
@@ -535,7 +552,7 @@ static void test_late_reply(void)
 		answer(0x41, ids[k], m4, sizeof m4, 40 * MS);
 		CHECK(fr_psoc_key_status(&psoc) == FR_PSOC_OK);
 		CHECK(psoc.keys_replied && psoc.keys_len == sizeof m4 && memcmp(psoc.keys, m4, 4) == 0);
-		CHECK(fr_keys_one(psoc.keys, psoc.keys_len) == FR_KEY_4);
+		CHECK(fr_keys_one(&fr_dev_opxy, psoc.keys, psoc.keys_len) == FR_KEY_4);
 		CHECK(k == 2u ? psoc.state == FR_POWER_ON && psoc.batt_len == sizeof batt :
 				!psoc.state_known && psoc.batt_len == 0u);
 		CHECK(fk.poweroffs == 0u);
@@ -580,11 +597,11 @@ static void key_compare(const uint8_t *p, size_t n)
 {
 	struct s07_key_status ks;
 
-	s07_key_status_decode(p, n, &ks);
-	CHECK(fr_keys_hold(p, n) == ks.hold);
-	CHECK(fr_keys_one(p, n) == ref_one(p, n));
+	s07_key_status_decode(&wb_device_opxy, p, n, &ks);
+	CHECK(fr_keys_hold(&fr_dev_opxy, p, n) == ks.hold);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, n) == ref_one(p, n));
 	/* S-07.033: Power + M4 is the one chord, as the main image reads it */
-	CHECK((fr_keys_one(p, n) == FR_KEY_4) == (s07_chord_digit(p, n) == 4u));
+	CHECK((fr_keys_one(&fr_dev_opxy, p, n) == FR_KEY_4) == (s07_chord_digit(&wb_device_opxy, p, n) == 4u));
 }
 
 /* S-07.032's hold bits (byte 3 bit 0 or byte 1 bit 5); the debug and
@@ -597,14 +614,14 @@ static void test_keys_hold_bits(void)
 			     m1[4] = { 0x40, 0, 0, 0x01 }, m4[2] = { 0, 0x22 },
 			     other[4] = { 0, 0xDF, 0xFF, 0xFE };
 
-	CHECK(fr_keys_hold(b3, sizeof b3) && fr_keys_one(b3, sizeof b3) == 0x18u);
-	CHECK(fr_keys_hold(b1, sizeof b1) && fr_keys_one(b1, sizeof b1) == 0x0Du);
-	CHECK(!fr_keys_hold(dbg, sizeof dbg) && !fr_keys_hold(pre, sizeof pre));
-	CHECK(fr_keys_one(pre, sizeof pre) == FR_KEYS_NONE);
-	CHECK(fr_keys_hold(m1, sizeof m1) && fr_keys_one(m1, sizeof m1) == FR_KEYS_MANY);
-	CHECK(fr_keys_hold(m4, sizeof m4) && fr_keys_one(m4, sizeof m4) == FR_KEYS_MANY);
-	CHECK(!fr_keys_hold(other, sizeof other));
-	CHECK(!fr_keys_hold(b3, 3u));		/* byte 3 missing */
+	CHECK(fr_keys_hold(&fr_dev_opxy, b3, sizeof b3) && fr_keys_one(&fr_dev_opxy, b3, sizeof b3) == 0x18u);
+	CHECK(fr_keys_hold(&fr_dev_opxy, b1, sizeof b1) && fr_keys_one(&fr_dev_opxy, b1, sizeof b1) == 0x0Du);
+	CHECK(!fr_keys_hold(&fr_dev_opxy, dbg, sizeof dbg) && !fr_keys_hold(&fr_dev_opxy, pre, sizeof pre));
+	CHECK(fr_keys_one(&fr_dev_opxy, pre, sizeof pre) == FR_KEYS_NONE);
+	CHECK(fr_keys_hold(&fr_dev_opxy, m1, sizeof m1) && fr_keys_one(&fr_dev_opxy, m1, sizeof m1) == FR_KEYS_MANY);
+	CHECK(fr_keys_hold(&fr_dev_opxy, m4, sizeof m4) && fr_keys_one(&fr_dev_opxy, m4, sizeof m4) == FR_KEYS_MANY);
+	CHECK(!fr_keys_hold(&fr_dev_opxy, other, sizeof other));
+	CHECK(!fr_keys_hold(&fr_dev_opxy, b3, 3u));		/* byte 3 missing */
 }
 
 /* fr_keys_one(): the keys recovery reads, each alone and with precomp; no
@@ -614,63 +631,63 @@ static void test_keys_one(void)
 	static const uint8_t keys[] = { FR_KEY_1, FR_KEY_2, FR_KEY_3, FR_KEY_4, FR_KEY_8 };
 	uint8_t p[10];
 
-	CHECK(fr_keys_one(NULL, 0) == FR_KEYS_UNREAD);
-	CHECK(fr_keys_one(NULL, 9) == FR_KEYS_UNREAD);
+	CHECK(fr_keys_one(&fr_dev_opxy, NULL, 0) == FR_KEYS_UNREAD);
+	CHECK(fr_keys_one(&fr_dev_opxy, NULL, 9) == FR_KEYS_UNREAD);
 	memset(p, 0, sizeof p);
-	CHECK(fr_keys_one(p, 0) == FR_KEYS_NONE);
-	CHECK(fr_keys_one(p, sizeof p) == FR_KEYS_NONE);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 0) == FR_KEYS_NONE);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == FR_KEYS_NONE);
 	for (unsigned i = 0; i < ARRAY_LEN(keys); i++) {
 		memset(p, 0, sizeof p);
 		p[keys[i] >> 3] = (uint8_t)(1u << (keys[i] & 7u));
-		CHECK(fr_keys_one(p, sizeof p) == keys[i]);
+		CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == keys[i]);
 		p[2] |= 0x80u;		/* precomp */
-		CHECK(fr_keys_one(p, sizeof p) == keys[i]);
-		CHECK(fr_keys_one(p, (keys[i] >> 3) + 0u) == FR_KEYS_NONE);	/* cut short */
+		CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == keys[i]);
+		CHECK(fr_keys_one(&fr_dev_opxy, p, (keys[i] >> 3) + 0u) == FR_KEYS_NONE);	/* cut short */
 		p[0] |= 0x01u;
-		CHECK(fr_keys_one(p, sizeof p) == FR_KEYS_MANY);
+		CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == FR_KEYS_MANY);
 	}
 	/* M1, M2 and M4 as S-07.033 numbers them: byte 0 bits 6 and 7, byte 1
 	 * bit 1 */
 	memset(p, 0, sizeof p);
 	p[0] = 0x40u;
-	CHECK(fr_keys_one(p, 2) == FR_KEY_1);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 2) == FR_KEY_1);
 	p[0] = 0x80u;
-	CHECK(fr_keys_one(p, 2) == FR_KEY_2);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 2) == FR_KEY_2);
 	p[0] = 0x00u;
 	p[1] = 0x02u;
-	CHECK(fr_keys_one(p, 2) == FR_KEY_4);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 2) == FR_KEY_4);
 	/* byte 8, keys 0x40-0x47 (steps 9 to 16), is read; byte 9 is not */
 	memset(p, 0, sizeof p);
 	p[8] = 0x01u;
-	CHECK(fr_keys_one(p, sizeof p) == 0x40u);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == 0x40u);
 	p[8] = 0x80u;
-	CHECK(fr_keys_one(p, 9) == 0x47u);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 9) == 0x47u);
 	p[8] = 0xFFu;
-	CHECK(fr_keys_one(p, sizeof p) == FR_KEYS_MANY);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == FR_KEYS_MANY);
 	p[8] = 0x00u;
 	p[9] = 0xFFu;
-	CHECK(fr_keys_one(p, sizeof p) == FR_KEYS_NONE);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == FR_KEYS_NONE);
 	/* key 1 or key 4 with a step key: many keys */
 	for (unsigned k = 0x40u; k < 0x48u; k++) {
 		memset(p, 0, sizeof p);
 		p[8] = (uint8_t)(1u << (k & 7u));
 		p[0] = 0x40u;
-		CHECK(fr_keys_one(p, sizeof p) == FR_KEYS_MANY);
+		CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == FR_KEYS_MANY);
 		p[0] = 0x00u;
 		p[1] = 0x02u;
-		CHECK(fr_keys_one(p, sizeof p) == FR_KEYS_MANY);
-		CHECK(s07_chord_digit(p, sizeof p) == 0u);
+		CHECK(fr_keys_one(&fr_dev_opxy, p, sizeof p) == FR_KEYS_MANY);
+		CHECK(s07_chord_digit(&wb_device_opxy, p, sizeof p) == 0u);
 	}
 	/* a short reply (S-07.079): the bytes it does not carry read 00 */
 	memset(p, 0, sizeof p);
 	p[1] = 0x02u;
-	CHECK(fr_keys_one(p, 8) == FR_KEY_4 && s07_chord_digit(p, 8) == 4u);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 8) == FR_KEY_4 && s07_chord_digit(&wb_device_opxy, p, 8) == 4u);
 	p[7] = 0x80u;			/* key 0x3F */
-	CHECK(fr_keys_one(p, 8) == FR_KEYS_MANY && s07_chord_digit(p, 8) == 0u);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 8) == FR_KEYS_MANY && s07_chord_digit(&wb_device_opxy, p, 8) == 0u);
 	p[7] = 0x00u;
 	p[8] = 0x01u;			/* not carried by 8 bytes */
-	CHECK(fr_keys_one(p, 8) == FR_KEY_4 && s07_chord_digit(p, 8) == 4u);
-	CHECK(fr_keys_one(p, 9) == FR_KEYS_MANY && s07_chord_digit(p, 9) == 0u);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 8) == FR_KEY_4 && s07_chord_digit(&wb_device_opxy, p, 8) == 4u);
+	CHECK(fr_keys_one(&fr_dev_opxy, p, 9) == FR_KEYS_MANY && s07_chord_digit(&wb_device_opxy, p, 9) == 0u);
 }
 
 static void test_keys(void)
@@ -682,14 +699,14 @@ static void test_keys(void)
 		const struct s07v_status *v = &s07v_status[i];
 
 		key_compare(v->none ? NULL : v->p, v->len);
-		CHECK(fr_keys_hold(v->none ? NULL : v->p, v->len) == (v->hold != 0));
+		CHECK(fr_keys_hold(&fr_dev_opxy, v->none ? NULL : v->p, v->len) == (v->hold != 0));
 	}
 	/* chord_status.json: Power + M4 alone is the chord; keys 1 and 2 are none */
 	for (size_t i = 0; i < s07v_chords_count; i++) {
 		const struct s07v_chord *v = &s07v_chords[i];
 
 		key_compare(v->none ? NULL : v->p, v->len);
-		CHECK((fr_keys_one(v->none ? NULL : v->p, v->len) == FR_KEY_4) == (v->chord == 4));
+		CHECK((fr_keys_one(&fr_dev_opxy, v->none ? NULL : v->p, v->len) == FR_KEY_4) == (v->chord == 4));
 	}
 	/* every one and two bits of ten bytes, at every length */
 	for (unsigned a = 0; a < 80; a++)
@@ -1198,6 +1215,270 @@ static void test_misc(void)
 	no_bad_bytes();
 }
 
+/* ---- the OP-1F (S-18) ---- */
+
+/* S-07.033 on the OP-1F, written out: keys 0x00-0x39 in bytes 0 to 7, no
+ * precomp, missing bytes 00, nothing after byte 7. */
+static unsigned ref_one_1f(const uint8_t *p, size_t n)
+{
+	unsigned key = FR_KEYS_NONE;
+
+	if (p == NULL)
+		return FR_KEYS_UNREAD;
+	for (unsigned k = 0; k < 58u; k++) {
+		if (k >> 3 >= n || ((p[k >> 3] >> (k & 7u)) & 1u) == 0u)
+			continue;
+		if (key != FR_KEYS_NONE)
+			return FR_KEYS_MANY;
+		key = k;
+	}
+	return key;
+}
+
+static void test_1f_keys(void)
+{
+	const struct fr_dev *d = &fr_dev_op1f;
+	uint8_t p[10];
+
+	CHECK(fr_keys_one(d, NULL, 0) == FR_KEYS_UNREAD && fr_keys_hold(d, NULL, 0));
+	/* each key alone, past the count included */
+	for (unsigned k = 0; k < 80u; k++) {
+		memset(p, 0, sizeof p);
+		p[k >> 3] = (uint8_t)(1u << (k & 7u));
+		CHECK(fr_keys_one(d, p, sizeof p) == ref_one_1f(p, sizeof p));
+		CHECK(fr_keys_one(d, p, sizeof p) == (k < 58u ? k : FR_KEYS_NONE));
+		/* S-07.032: hold is 0x39 (byte 7 bit 1) or 0x2C (byte 5 bit 4) */
+		CHECK(fr_keys_hold(d, p, sizeof p) == (k == 0x39u || k == 0x2Cu));
+	}
+	/* the OP-XY's precomp key is an ordinary key here */
+	memset(p, 0, sizeof p);
+	p[2] = 0x80u;
+	CHECK(fr_keys_one(d, p, sizeof p) == 0x17u);
+	p[1] = 0x02u;
+	CHECK(fr_keys_one(d, p, sizeof p) == FR_KEYS_MANY);
+	/* the chord's key alone (provisionally 0x09), and with others */
+	memset(p, 0, sizeof p);
+	p[1] = 0x02u;
+	CHECK(fr_keys_one(d, p, 8) == d->key_recovery && d->key_recovery == 0x09u);
+	p[8] = 0xFFu;			/* not read */
+	CHECK(fr_keys_one(d, p, 9) == 0x09u);
+	p[7] = 0x04u;			/* key 0x3A: none of the 58 */
+	CHECK(fr_keys_one(d, p, 9) == 0x09u);
+	p[7] = 0x02u;			/* key 0x39, a hold key */
+	CHECK(fr_keys_one(d, p, 9) == FR_KEYS_MANY && fr_keys_hold(d, p, 9));
+	CHECK(!fr_keys_hold(d, p, 7));	/* byte 7 missing */
+	/* pairs against the reference, at several lengths */
+	for (unsigned a = 0; a < 72; a++)
+		for (unsigned b = a; b < 72; b++)
+			for (size_t n = 0; n <= 10; n += 3) {
+				memset(p, 0, sizeof p);
+				p[a >> 3] = (uint8_t)(p[a >> 3] | 1u << (a & 7u));
+				p[b >> 3] = (uint8_t)(p[b >> 3] | 1u << (b & 7u));
+				CHECK(fr_keys_one(d, p, n) == ref_one_1f(p, n));
+			}
+	/* NULL is the default device's reading */
+	memset(p, 0, sizeof p);
+	p[2] = 0x80u;
+	CHECK(fr_keys_one(NULL, p, sizeof p) == FR_KEYS_NONE);
+}
+
+/* The 0x40 messages sent from item `from`. */
+static size_t leds(size_t from, const struct item **out, size_t max)
+{
+	size_t n = 0;
+
+	for (size_t i = from; i < fk.nout && n < max; i++)
+		if (!fk.out[i].raw && fk.out[i].id == 0x40u)
+			out[n++] = &fk.out[i];
+	return n;
+}
+
+/* S-07.046, S-07.047 in state 0x10: {06 r 48 g 48 b 48}, sent only when the
+ * color changes, none of S-07.040's forms. */
+static void test_1f_led_forms(void)
+{
+	static const uint8_t s10[1] = { 0x10 }, low[2] = { 0x01, 10 }, full[2] = { 0x01, 80 },
+			     red[7] = { 0x06, 0xC8, 0x48, 0x00, 0x48, 0x00, 0x48 },
+			     green[7] = { 0x06, 0x00, 0x48, 0xC8, 0x48, 0x00, 0x48 };
+	const struct item *l[64] = { NULL };
+	size_t n;
+
+	setup_dev(&fr_dev_op1f);
+	answer(0x36, 0x37, low, 2, 5 * MS);
+	answer(0x30, 0x31, s10, 1, 5 * MS);
+	CHECK(fr_psoc_power_requests(&psoc) == FR_PSOC_OK);
+	n = leds(0, l, ARRAY_LEN(l));
+	/* the battery reply before any state: dark, as at power-on, so
+	 * nothing; then red, once */
+	CHECK(n == 1 && is(l[0], 0x14, 0x40, red, 7));
+	/* the same state again: nothing; a charge of 80: green, once */
+	psoc_at(fk.now + 5 * MS, 0x41, 0x31, s10, 1);
+	psoc_at(fk.now + 6 * MS, 0x41, 0x31, s10, 1);
+	CHECK(fr_psoc_sleep(&psoc, 20 * MS) == FR_PSOC_OK);
+	CHECK(leds(0, l, ARRAY_LEN(l)) == 1);
+	psoc_at(fk.now + 5 * MS, 0x41, 0x37, full, 2);
+	psoc_at(fk.now + 6 * MS, 0x41, 0x37, full, 2);
+	CHECK(fr_psoc_sleep(&psoc, 20 * MS) == FR_PSOC_OK);
+	n = leds(0, l, ARRAY_LEN(l));
+	CHECK(n == 2 && is(l[1], 0x14, 0x40, green, 7));
+	for (size_t i = 0; i < n; i++)
+		CHECK(l[i]->len == 7 && l[i]->d[0] == 0x06);
+	no_bad_bytes();
+}
+
+/* sin by its series, after reducing x to [-pi, pi]. */
+static double ref_sin(double x)
+{
+	const double pi = 3.14159265358979323846;
+	double term, sum;
+
+	while (x > pi)
+		x -= 2.0 * pi;
+	while (x < -pi)
+		x += 2.0 * pi;
+	term = x;
+	sum = x;
+	for (int k = 1; k < 12; k++) {
+		term *= -x * x / ((2.0 * k) * (2.0 * k + 1.0));
+		sum += term;
+	}
+	return sum;
+}
+
+/* S-07.047's level at phase phi for a base of 0xC8, the fraction dropped. */
+static unsigned ref_level(double phi)
+{
+	return (unsigned)(200.0 * (0.25 + 0.75 * (0.5 + 0.5 * ref_sin(phi))));
+}
+
+/* S-07.047 in the charge wait: red breathing (charge 50, at most 90 %),
+ * each message within one level of the reference at its time, the phase
+ * 0.6 pi rad/s from the first update, the levels from 0x32 to 0xC8, only
+ * changes sent. The VBUS request is answered, so that no two updates are
+ * 100 ms or more apart; the switch goes on after about 4 s. */
+static void test_1f_breathing(void)
+{
+	static const uint8_t batt[2] = { 0x01, 50 }, s16[1] = { 0x16 }, vb[2] = { 0x00, 0x32 },
+			     green[7] = { 0x06, 0x00, 0x48, 0xC8, 0x48, 0x00, 0x48 };
+	static const struct item *l[1024];
+	unsigned lo = 0xFFu, hi = 0, off = 0;
+	uint64_t t0;
+	size_t n;
+
+	setup_dev(&fr_dev_op1f);
+	answer(0x36, 0x37, batt, 2, 2 * MS);
+	answer(0x30, 0x31, s16, 1, 2 * MS);
+	answer(0x33, 0x33, vb, 2, 1 * MS);
+	CHECK(fr_psoc_power_requests(&psoc) == FR_PSOC_OK);
+	CHECK(psoc.state == FR_POWER_CHARGE);
+	fk.switch_on_at = fk.now + 3800 * MS;
+	CHECK(fr_psoc_charge_wait(&psoc) == FR_PSOC_OK);
+	n = leds(0, l, ARRAY_LEN(l));
+	CHECK(n > 100u && n < ARRAY_LEN(l));
+	if (n < 2u)
+		return;
+	/* the first update in 0x16 is phase 0: factor 0.625, 0x7D */
+	CHECK(l[0]->len == 7 && l[0]->d[1] == 0x7Du);
+	t0 = l[0]->t;
+	/* the switch on: state 0x10 at charge 50, green */
+	CHECK(is(l[n - 1], 0x14, 0x40, green, 7));
+	for (size_t i = 0; i + 1u < n; i++) {
+		const struct item *it = l[i];
+		const double phi = 0.6 * 3.14159265358979 * (double)(it->t - t0) / 1e6;
+		const unsigned r = it->d[1], want = ref_level(phi);
+
+		CHECK(it->len == 7 && it->d[0] == 0x06 && it->d[2] == 0x48 && it->d[3] == 0 &&
+		      it->d[4] == 0x48 && it->d[5] == 0 && it->d[6] == 0x48);
+		if (r + 1u < want || r > want + 1u)
+			off++;
+		if (i > 0)
+			CHECK(r != l[i - 1]->d[1]);	/* only changes */
+		if (r < lo)
+			lo = r;
+		if (r > hi)
+			hi = r;
+	}
+	CHECK(off == 0u);
+	CHECK(lo >= 0x32u && lo <= 0x33u && hi >= 0xC7u && hi <= 0xC8u);
+	no_bad_bytes();
+}
+
+/* S-07.047's 100 ms rule: an update more than 100 ms after the one before
+ * moves the phase by nothing. Updates here are 0x31 {16} messages. */
+static void test_1f_breath_gap(void)
+{
+	static const uint8_t batt[2] = { 0x01, 50 }, s16[1] = { 0x16 };
+	const struct item *l[16] = { NULL };
+	size_t n;
+
+	setup_dev(&fr_dev_op1f);
+	answer(0x36, 0x37, batt, 2, 2 * MS);
+	answer(0x30, 0x31, s16, 1, 2 * MS);
+	CHECK(fr_psoc_power_requests(&psoc) == FR_PSOC_OK);
+	CHECK(leds(0, l, ARRAY_LEN(l)) == 1 && l[0]->d[1] == 0x7Du);	/* phase 0 */
+	/* 60 ms on: 0.1131 rad, 125 + 75 sin = 133.5 */
+	psoc_at(fk.now + 60 * MS, 0x41, 0x31, s16, 1);
+	CHECK(fr_psoc_sleep(&psoc, 70 * MS) == FR_PSOC_OK);
+	n = leds(0, l, ARRAY_LEN(l));
+	CHECK(n == 2 && (l[1]->d[1] == 133u || l[1]->d[1] == 132u));
+	/* 150 ms later: no step, so the same level and no message */
+	psoc_at(fk.now + 140 * MS, 0x41, 0x31, s16, 1);
+	CHECK(fr_psoc_sleep(&psoc, 150 * MS) == FR_PSOC_OK);
+	CHECK(leds(0, l, ARRAY_LEN(l)) == 2);
+	/* 90 ms after that: 0.2827 rad in all, 125 + 75 sin = 145.9 */
+	psoc_at(fk.now + 80 * MS, 0x41, 0x31, s16, 1);
+	CHECK(fr_psoc_sleep(&psoc, 90 * MS) == FR_PSOC_OK);
+	n = leds(0, l, ARRAY_LEN(l));
+	CHECK(n == 3 && (l[2]->d[1] == 145u || l[2]->d[1] == 146u));
+	no_bad_bytes();
+}
+
+/* S-07.051 on the OP-1F: the shutdown report and the echo, no 0x40 {01}. */
+static void test_1f_poweroff(void)
+{
+	static const uint8_t s10[1] = { 0x10 }, s14[1] = { 0x14 }, rep[3] = { 0x00, 0x00, 0x02 };
+	size_t n;
+
+	setup_dev(&fr_dev_op1f);
+	answer(0x30, 0x31, s10, 1, 5 * MS);
+	CHECK(fr_psoc_power_requests(&psoc) == FR_PSOC_OK);
+	psoc_at(fk.now + 50 * MS, 0x41, 0x31, s14, 1);
+	CHECK(fr_psoc_sleep(&psoc, 200 * MS) == FR_PSOC_OFF);
+	CHECK(fk.poweroffs == 1);
+	n = fk.nout_at_poweroff;
+	CHECK(fk.nout == n + 2);
+	CHECK(is(&fk.out[n], 0x14, 0x51, rep, 3));
+	CHECK(is(&fk.out[n + 1], 0x14, 0x32, s14, 1));
+	for (size_t i = 0; i < fk.nout; i++)
+		CHECK(!(fk.out[i].id == 0x40u && fk.out[i].len == 1u));
+	no_bad_bytes();
+}
+
+/* What the front sends on the OP-1F holds no PMIC pass-through id (S-07
+ * Devices: no 0x70, 0x71, 0x73 and no request 0x01); a ping from the PSoC
+ * is still answered. */
+static void test_1f_no_pmic(void)
+{
+	static const uint8_t s10[1] = { 0x10 }, ping[1] = { 0xAA };
+
+	setup_dev(&fr_dev_op1f);
+	fk.answer_greet_at = 1;
+	answer(0x30, 0x31, s10, 1, 5 * MS);
+	CHECK(fr_psoc_greet(&psoc) == 1);
+	fr_psoc_power_queries(&psoc);
+	CHECK(fr_psoc_power_requests(&psoc) == FR_PSOC_OK);
+	fr_psoc_subscribe(&psoc);
+	CHECK(fr_psoc_key_status(&psoc) == FR_PSOC_OK);
+	psoc_at(fk.now + 5 * MS, 0x41, 0x01, ping, 1);
+	CHECK(fr_psoc_sleep(&psoc, 20 * MS) == FR_PSOC_OK);
+	CHECK(count(0x02, 0x14, 0) == 1);
+	for (size_t i = 0; i < fk.nout; i++) {
+		CHECK(fk.out[i].id != 0x70u && fk.out[i].id != 0x71u && fk.out[i].id != 0x73u);
+		CHECK(fk.out[i].id != 0x01u);
+	}
+	no_bad_bytes();
+}
+
 int main(void)
 {
 	RUN(test_encode);
@@ -1219,5 +1500,11 @@ int main(void)
 	RUN(test_regreet);
 	RUN(test_usb);
 	RUN(test_misc);
+	RUN(test_1f_keys);
+	RUN(test_1f_led_forms);
+	RUN(test_1f_breathing);
+	RUN(test_1f_breath_gap);
+	RUN(test_1f_poweroff);
+	RUN(test_1f_no_pmic);
 	return check_summary("test_front_psoc");
 }

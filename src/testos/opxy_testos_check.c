@@ -10,7 +10,14 @@
  *
  * What the suite may change: one temporary file on /yaffs2, the RAM disk.
  * The installer's own writes are its file's to list. No OS write, no PSoC
- * 0xEE, 0x97, 0x48, 0x71 or 0x34. The Nordic link passes only the frames of
+ * 0xEE, 0x97, 0x48, 0x71 or 0x34, and on a device without
+ * pmic-pass-through no 0x01 either (S-07 Devices).
+ *
+ * The suite is the device's (opxy_dev(), decided at the entry, S-18): on
+ * the OP-1F there is no slave and no bridge to test, and the eMMC is the
+ * main CPU's own (S-13b.060), reached through the same bridge client. The
+ * survey build (OPXY_TESTOS_SURVEY) makes the OS active again as soon as
+ * it has looked, so that a later fault leaves the unit's OS to start. The Nordic link passes only the frames of
  * its gate. USB offers the RAM disk and the installer's serial port, without
  * the unit's serial; neither S-10c's host commands nor the developer host
  * can be reached through it.
@@ -26,6 +33,7 @@
 #include "waffle/display.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_dmc.h"
+#include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/bf70x_spi.h"
 #include "waffle/drivers/bf70x_spiflash.h"
 #include "waffle/drivers/bf70x_usb.h"
@@ -66,7 +74,8 @@ static struct {
 	unsigned kin, kout;
 } ck;
 
-static _Alignas(4) uint8_t scratch[S09_MAX_SECTORS * S03_SECTOR];
+/* S-13b.054: on a cache line, as the eMMC driver takes it on the OP-1F */
+static _Alignas(32) uint8_t scratch[S09_MAX_SECTORS * S03_SECTOR];
 static _Alignas(4) uint8_t link_pl[S09_TEST_MAX];
 static const struct s06_port_ops *nordic_port;
 
@@ -278,9 +287,16 @@ static void mark(enum tchk_id id)
 	ck.f.ran |= 1u << id;
 }
 
+static bool two_cpus(const struct opxy_master *m)
+{
+	return wb_has(opxy_dev(m), WB_F_SECOND_CPU);
+}
+
+/* The eMMC in reach: over the bridge to the slave, or the main CPU's own
+ * storage up (S-13b.060). */
 static bool slave_up(const struct opxy_master *m)
 {
-	return m->slave_present && !m->bridge.absent;
+	return m->slave_present && !m->bridge.absent && (two_cpus(m) || m->st.emmc_up);
 }
 
 static void t_switch_back(struct opxy_master *m)
@@ -291,8 +307,12 @@ static void t_switch_back(struct opxy_master *m)
 		ck.f.sw.result = TCHK_SW_NO_SLAVE;
 		return;
 	}
-	/* a look alone: an OS found there is made active when the installer ends */
-	tchk_switch_look(&ck.env, &ck.f.sw);
+	/* a look alone: an OS found there is made active when the installer
+	 * ends; the survey, which writes nothing else, makes it active now */
+	if (OPXY_TESTOS_SURVEY_ON)
+		tchk_switch_back(&ck.env, &ck.f.sw);
+	else
+		tchk_switch_look(&ck.env, &ck.f.sw);
 }
 
 static void t_registers(struct opxy_master *m)
@@ -421,7 +441,9 @@ static void t_psoc(struct opxy_master *m)
 			s07_subscribe(&m->psoc);
 		}
 	}
-	ck.f.psoc_ping = s06_transact(&m->node, S06_LINK_PSOC, PSOC_PING, NULL, 0, REQUEST_US,
+	/* the ping 0x01 is pmic-pass-through's: none on a device without it */
+	ck.f.psoc_ping = wb_has(opxy_dev(m), WB_F_PMIC_PASS_THROUGH) &&
+			 s06_transact(&m->node, S06_LINK_PSOC, PSOC_PING, NULL, 0, REQUEST_US,
 				      &r) == 1;
 	ck.f.psoc_keys = s06_transact(&m->node, S06_LINK_PSOC, PSOC_KEY_STATUS, NULL, 0,
 				      REQUEST_US, &r) == 1;
@@ -436,10 +458,12 @@ static void t_slave(struct opxy_master *m)
 {
 	unsigned i;
 
-	progress(m, TCHK_SLAVE);
 	ck.f.slave_failed_row = -1;
 	for (i = 0; i < OPXY_TESTOS_STEP_COUNT; i++)
 		ck.f.slave_ms[i] = 0xFFFFu;
+	if (!two_cpus(m))
+		return;		/* not on this device */
+	progress(m, TCHK_SLAVE);
 	if (!slave_up(m))
 		return;
 	{
@@ -478,6 +502,8 @@ static void t_bridge(struct opxy_master *m)
 {
 	uint32_t seed = 0x1234567u, i;
 
+	if (!two_cpus(m))
+		return;		/* not on this device */
 	progress(m, TCHK_BRIDGE);
 	if (!slave_up(m))
 		return;
@@ -524,9 +550,24 @@ static bool peek_byte(struct opxy_master *m, const void *at, uint8_t *out)
 	return err == 0u && !m->bridge.absent;
 }
 
+/* On the OP-1F the bring-up's EXT_CSD is the main CPU's own (S-13b.060),
+ * refreshed by S-03.012's reads. */
 static bool ext_byte(struct opxy_master *m, unsigned i, uint8_t *out)
 {
-	return peek_byte(m, &opxy_slave.ext_csd[i], out);
+	if (!two_cpus(m)) {
+		*out = m->st.ext_csd[i];
+		return true;
+	}
+	return peek_byte(m, &opxy_slave.st.ext_csd[i], out);
+}
+
+static bool features_made(struct opxy_master *m, uint8_t *out)
+{
+	if (!two_cpus(m)) {
+		*out = m->st.features ? 1u : 0u;
+		return true;
+	}
+	return peek_byte(m, &opxy_slave.st.features, out);
 }
 
 static void t_ext_csd(struct opxy_master *m)
@@ -544,11 +585,12 @@ static void t_ext_csd(struct opxy_master *m)
 	ok = ext_byte(m, 33u, &ck.f.ext33) && ok;
 	ok = ext_byte(m, 34u, &ck.f.ext34) && ok;
 	ok = ext_byte(m, 163u, &ck.f.ext163) && ok;
+	ok = ext_byte(m, 179u, &ck.f.ext179) && ok;
 	ok = ext_byte(m, 183u, &ck.f.ext183) && ok;
 	ok = ext_byte(m, 226u, &ck.f.ext226) && ok;
 	ok = ext_byte(m, 265u, &ck.f.ext265) && ok;
-	/* S-03.009's switches came after that read: the slave's record of them */
-	ok = peek_byte(m, &opxy_slave.features, &features) && ok;
+	/* S-03.009's switches came after that read: the record of them */
+	ok = features_made(m, &features) && ok;
 	ck.f.features = features != 0u;
 	{
 		struct s09_req r = { S09_ERASE_GROUP, 0, 0, 0, 0 };
@@ -562,12 +604,86 @@ static void t_ext_csd(struct opxy_master *m)
 	mark(TCHK_EMMC_CONFIG);
 }
 
+/* A store's note, on this CPU or peeked word by word from the slave's. */
+static bool note_of(struct opxy_master *m, const struct opxy_emmc_note *mine,
+		    const struct opxy_emmc_note *slave, struct opxy_emmc_note *out)
+{
+	uint32_t w[(sizeof(*out) + 3u) / 4u];
+	unsigned i;
+
+	memset(out, 0, sizeof(*out));
+	if (!two_cpus(m)) {
+		*out = *mine;
+		return out->seen != 0u;
+	}
+	if (!peek_byte(m, &slave->seen, &out->seen) || out->seen == 0u)
+		return false;
+	for (i = 0; i < sizeof(w) / 4u; i++) {
+		const uint32_t a = (uint32_t)(uintptr_t)slave + 4u * i;
+		struct s09_req r = { OPXY_TESTOS_PEEK_REQ, 0, 0, a, 0 };
+		uint32_t err = 0;
+
+		w[i] = (uint32_t)s09_master_call(&m->bridge, &r, NULL, 0, NULL, 0, NULL, &err);
+		if (err != 0u || m->bridge.absent)
+			return false;
+	}
+	memcpy(out, w, sizeof(*out));
+	return out->seen != 0u;
+}
+
+/* emmc-boot's fault lines: the first failing select and read (the store's). */
+static void fault_facts(struct opxy_master *m)
+{
+	const struct opxy_emmc_note *mine[2] = { &m->st.note_select, &m->st.note_read };
+	const struct opxy_emmc_note *slave[2] = { &opxy_slave.st.note_select,
+						  &opxy_slave.st.note_read };
+	unsigned k;
+
+	for (k = 0; k < 2u; k++) {
+		struct tchk_emmc_fault *e = &ck.f.emmc_fault[k];
+		struct opxy_emmc_note n;
+
+		memset(e, 0, sizeof(*e));
+		if (!note_of(m, mine[k], slave[k], &n))
+			continue;
+		e->seen = true;
+		e->part = n.part;
+		e->why = n.why;
+		e->pc_flags = n.pc_flags;
+		e->pc_before = n.pc_before;
+		e->pc_after = n.pc_after;
+		e->sector = n.sector;
+		e->count = n.count;
+		e->step = n.f.step;
+		e->cmd = n.f.cmd;
+		e->at = n.f.at;
+		e->state = n.f.state;
+		e->rc = n.f.rc;
+		e->arg = n.f.arg;
+		e->r1 = n.f.r1;
+		e->istat = n.f.istat;
+		e->idsts = n.f.idsts;
+		e->busy_us = n.f.busy_us;
+	}
+}
+
+_Static_assert((int)TCHK_FW_DRIVER == (int)OPXY_NOTE_DRIVER &&
+	       (int)TCHK_FW_DOWN == (int)OPXY_NOTE_DOWN &&
+	       (int)TCHK_FW_UNKNOWN == (int)OPXY_NOTE_UNKNOWN &&
+	       (int)TCHK_FW_REFUSED == (int)OPXY_NOTE_REFUSED, "the note's words are the store's");
+_Static_assert((int)TCHK_FS_COUNT == (int)WB_MSI_STEP_COUNT &&
+	       (int)TCHK_FS_SWITCH == (int)WB_MSI_STEP_SWITCH &&
+	       (int)TCHK_FS_DATA_TIME == (int)WB_MSI_STEP_DATA_TIME, "the steps are the driver's");
+_Static_assert(TCHK_PC_BEFORE == OPXY_NOTE_PC_BEFORE && TCHK_PC_AFTER == OPXY_NOTE_PC_AFTER,
+	       "the flags are the store's");
+
 static void t_emmc(struct opxy_master *m)
 {
 	progress(m, TCHK_EMMC_BOOT);
 	if (!slave_up(m))
 		return;
 	tchk_emmc_boot(&ck.env, &ck.f.sw, now_us, &ck.f.boot);
+	fault_facts(m);
 	mark(TCHK_EMMC_BOOT);
 
 	progress(m, TCHK_EMMC_VOLUME);
@@ -774,11 +890,12 @@ static bool wait_key(struct opxy_master *m, unsigned *key)
 }
 
 /*
- * The one guided test: com and M4, in either order. A person who can read
- * this screen has seen the panel work. 8 ends it without them, and the
- * install is then not offered.
+ * The one guided test: com and the recovery key, in either order
+ * (device.key.com and device.key.recovery; on the OP-XY com and M4). A
+ * person who can read this screen has seen the panel work. 8 ends it
+ * without them, and the install is then not offered.
  */
-static void key_line(struct opxy_master *m)
+static void key_line(struct opxy_master *m, unsigned last)
 {
 	struct inst_screen sc;
 	struct tchk_line l[S15_ROWS];
@@ -787,6 +904,8 @@ static void key_line(struct opxy_master *m)
 	memset(&sc, 0, sizeof sc);
 	sc.phase = INST_GUIDED;
 	sc.keys_seen = ck.f.keys_seen;
+	sc.device = (uint8_t)opxy_dev(m)->id;
+	sc.last_key = (uint8_t)last;
 	n = inst_screen_lines(&sc, l);
 	s15_console_clear(&ck.con);
 	for (i = 0; i < n; i++)
@@ -796,21 +915,38 @@ static void key_line(struct opxy_master *m)
 
 static void g_keys(struct opxy_master *m)
 {
+	const struct wb_device *dev = opxy_dev(m);
 	unsigned key;
 
 	opxy_installer_note(INST_GUIDED, TCHK_COUNT);
-	key_line(m);
+	key_line(m, 0xFFu);
 	while (ck.f.keys_seen != 3u) {
 		(void)wait_key(m, &key);
-		if (key == TCHK_KEY_COM)
+		if (key == tchk_key_com(dev))
 			ck.f.keys_seen |= 1u;
-		else if (key == TCHK_KEY_M4)
+		else if (key == tchk_key_recovery(dev))
 			ck.f.keys_seen |= 2u;
-		else if (s15_digit(key) == 8u)
+		else if (s15_digit(dev, key) == 8u)
 			break;
-		key_line(m);
+		key_line(m, key);
 	}
 	ck.f.keys = ck.f.keys_seen == 3u ? TCHK_G_PASSED : TCHK_G_ENDED;
+}
+
+/* PA2 as the survey reports it (tchk_facts.pa2): the strap where the
+ * device has straps; else its level where the device's own pins have
+ * made it an input (S-13b.006), so that nothing is driven to read it. */
+static uint8_t pa2_level(const struct opxy_master *m)
+{
+	const struct wb_device *dev = opxy_dev(m);
+	unsigned i;
+
+	if (wb_has(dev, WB_F_STRAPS))
+		return (m->strap & OPXY_STRAP_ROLE) != 0u ? 1u : 0u;
+	for (i = 0; i < dev->pins.gpio_n; i++)
+		if (dev->pins.gpio[i].pin == WB_DEV_PA(2u) && dev->pins.gpio[i].kind == WB_GPIO_IN)
+			return wb_gpio_get(WB_PIN(WB_PORT_A, 2)) ? 1u : 0u;
+	return 0xFFu;
 }
 
 /* --- the entry points --- */
@@ -831,6 +967,7 @@ static void version(void)
 /* Before held mode's entry steps: the Nordic link's gate, the keys, USB. */
 void opxy_testos_check_start(struct opxy_master *m)
 {
+	ck.f.dev = opxy_dev(m);
 	ck.f.held_ms = (uint32_t)wb_time_ms(&m->hw.time);
 	version();
 	/* The installer draws in gray always; the check suite follows the color
@@ -878,11 +1015,12 @@ void opxy_testos_check_service(void *ctx, const struct boot_held *h)
 {
 	struct opxy_master *m = ctx;
 	const struct opxy_installer_ctx ic = {
-		m, &ck.t, &ck.f.sw, &ck.env, &ck.con, pass, next_key, show, report,
+		m, &ck.t, &ck.f.sw, &ck.env, &ck.con, pass, next_key, show, report, &ck.f,
 	};
 
 	(void)h;
 	ck.f.slave = slave_up(m);
+	ck.f.pa2 = pa2_level(m);
 	opxy_display_held_start(m);
 	nordic_mode_at_start(m);
 	/* the OS partition first, as soon as the eMMC answers */

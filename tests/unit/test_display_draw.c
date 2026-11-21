@@ -10,6 +10,7 @@
 
 #include "support/check.h"
 #include "s15_sha256.h"
+#include "waffle/device.h"
 #include "waffle/display.h"
 
 /* tests/oracle/S-15-menus/vectors/handover_frame.json: the logo alone */
@@ -165,7 +166,7 @@ static void up(struct wb_display *d, bool gamma)
 	memset(&g, 0, sizeof g);
 	g.t = 50000;
 	wb_display_init(d, fb);
-	wb_display_begin(d, &bus, 0, 0, 1);
+	wb_display_begin(d, &bus, &wb_device_opxy, 0, 0, 1);
 	CHECK(wb_display_start(d, gamma) == S13C_OK);
 	clear_log();
 }
@@ -423,7 +424,7 @@ static void test_logo(void)
 	memset(&g, 0, sizeof g);
 	g.t = 50000;
 	wb_display_init(&d, fb);
-	wb_display_begin(&d, &bus, S13C_HANDSHAKE_MAGIC, 3, 1);
+	wb_display_begin(&d, &bus, &wb_device_opxy, S13C_HANDSHAKE_MAGIC, 3, 1);
 	CHECK(wb_display_handover(&d, rec) == S13C_ERR_STATE);
 	CHECK(wb_display_boot_logo(&d, NULL) == S13C_OK);
 	CHECK(d.panel.gamma_on && d.panel.state == S13C_ON);
@@ -571,7 +572,7 @@ static void test_record_early(void)
 	memset(&g, 0, sizeof g);
 	g.t = 50000;
 	wb_display_init(&d, fb);
-	wb_display_begin(&d, &bus, S13C_HANDSHAKE_MAGIC, 3, 1);
+	wb_display_begin(&d, &bus, &wb_device_opxy, S13C_HANDSHAKE_MAGIC, 3, 1);
 	CHECK(wb_display_record(&d, rec) == S13C_ERR_STATE);
 	CHECK(wb_display_boot_logo(&d, NULL) == S13C_OK);
 	memset(rec, 0xA5, sizeof rec);
@@ -648,7 +649,7 @@ static void test_settle_timeout(void)
 	memset(&g, 0, sizeof g);
 	g.t = 50000;
 	wb_display_init(&d, fb);
-	wb_display_begin(&d, &bus_nostop, 0, 0, 1);
+	wb_display_begin(&d, &bus_nostop, &wb_device_opxy, 0, 0, 1);
 	CHECK(wb_display_start(&d, false) == S13C_OK);
 	o = wb_display_draw(&d);
 	o->fill(o->ctx, 0, 0, 40, 40, 0x1234u);

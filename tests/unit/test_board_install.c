@@ -14,6 +14,10 @@
  * one is written by S-02.042-S-02.053 with S-02.047's read-back, from the
  * bytes that were checked with no further read. The OS step (S-11.067)
  * takes the same check; a staged first-stage file is never read.
+ *
+ * The whole installs sign their package with the conformance test key and
+ * read the test Q0 (S-11.025): S-11.021's three states, S-15.197's prompt
+ * for an invalid one, and S-11.090's bootloader only for a valid one.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +26,7 @@
 #include "s06_fake.h"
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
+#include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/s06_frame.h"
@@ -31,8 +36,11 @@
 #include "waffle/wire_package.h"
 #include "waffle/wire_s09.h"
 #include "waffle/wire_yaffs.h"
+#include "waffle/wire_zip.h"
 #include "vectors/s02_vectors.h"
+#include "vectors/s11_vectors.h"
 #include "s11_ref.h"
+#include "uECC.h"
 
 #define BLOCKS 40u			/* one yaffs2 block is one erase group */
 #define VOL_LEN ((size_t)BLOCKS * 128u * 4096u)
@@ -494,7 +502,8 @@ static void fresh(void)
 	/* The run's values with the option on and the bootloader selected,
 	 * so that it writes (S-11.090, S-11.096); the stated values come with
 	 * extracted(). */
-	opxy_install_begin(&m, true, false, S11_STEP_BIT(S11_STEP_BOOTLOADER));
+	opxy_install_begin(&m, true, S11_SIG_VALID, false,
+			   S11_STEP_BIT(S11_STEP_BOOTLOADER));
 	m.sv.extracted = false;
 }
 
@@ -534,10 +543,14 @@ static void extracted(void)
 	m.sv.extracted = true;
 }
 
+/* The bootloader image the whole installs' package carries: a bootable
+ * stream without a front unless a test gives a waffle-boot build. */
+static const uint8_t *whole_bl = v_boot_good;
+static unsigned whole_bl_len = sizeof v_boot_good;
+
 static bool slot1_holds_image(void)
 {
-	return memcmp(flash_mem + s02_slot_base(1u), v_boot_good,
-		      sizeof v_boot_good) == 0 &&
+	return memcmp(flash_mem + s02_slot_base(1u), whole_bl, whole_bl_len) == 0 &&
 	       flash_mem[S02_SELECTOR_OFF] == 0x01u &&
 	       flash_mem[S02_SELECTOR_OFF + 1u] == 0x00u;
 }
@@ -554,6 +567,7 @@ static enum s11_result result_of(unsigned which)
 	memset(&env, 0, sizeof env);
 	env.staged = &st;
 	env.option = true;
+	env.sig = S11_SIG_VALID;	/* S-11.090: a valid package */
 	env.selected = 0x3Fu;		/* every step selected */
 	env.copro = &copro;
 	return s11_step_result(which, &env, &step);
@@ -627,6 +641,7 @@ static void test_already_written(void)
 	memset(&env, 0, sizeof env);
 	env.staged = &st;
 	env.option = true;
+	env.sig = S11_SIG_VALID;
 	env.selected = S11_STEP_BIT(S11_STEP_BOOTLOADER);
 	CHECK(s11_result_skip(S11_STEP_BOOTLOADER, &env, S11_SKIPPED) ==
 	      S11_SKIP_ALREADY_WRITTEN);
@@ -1146,7 +1161,7 @@ static unsigned pongs_in_order(void)
 static void host_setup(void)
 {
 	fresh();
-	s10c_host_init(&m.sv.host, &m.sv.host_ops, &m);
+	s10c_host_init(&m.sv.host, &m.sv.host_ops, &m, &wb_device_opxy, WB_DEV_BY_TABLE);
 	opxy_usb_start(&m);
 	CHECK(opxy_usb_up());
 	/* the host's side of the CDC port; the link as the board set it up */
@@ -1174,7 +1189,8 @@ static void test_host_hold_through_a_run(void)
 	static const struct s11_zip_ops no_zip;
 	const struct s11_package_ops pkg = { .read = run_read };
 	const struct s11_check_in in = { .form = S11_FORM_BODY,
-					 .size = 0x10000u, .option = true };
+					 .size = 0x10000u, .option = true,
+					 .dev = &wb_device_opxy };
 	const uint8_t crc_off = opxy_crc_off;
 	struct s11_install_result res;
 
@@ -1285,7 +1301,7 @@ static void test_loop_pass_alone(void)
 
 	t_case = "loop pass alone";
 	host_setup();
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	m.psoc_ops.service = psoc_wait_service;
 	fake_core_set_cycle_step(4000u);	/* 10 us a clock read */
 
@@ -1433,11 +1449,44 @@ static size_t zip_make(uint8_t *out, const struct zmember *mb, size_t n)
 	return o;
 }
 
+/* The whole package's signature state (S-11.021): signed with the test
+ * key, signed and then altered, or blank. */
+static enum s11_sig whole_sig = S11_SIG_VALID;
+
+/* uECC_sign()'s random k, from a fixed sequence: the tests repeat. */
+static int test_rng(uint8_t *dest, unsigned size)
+{
+	static uint32_t x = 0x2545F491u;
+
+	for (unsigned i = 0; i < size; i++) {
+		x = x * 1103515245u + 12345u;
+		dest[i] = (uint8_t)(x >> 16);
+	}
+	return 1;
+}
+
+/* S-11.012: the manifest's signature over its bytes with +0x010-+0x04F
+ * zero, with signature key index 0x00 */
+static void manifest_sign(uint8_t *man, bool alter)
+{
+	uint8_t d[S11_MANIFEST_LEN], digest[32], sig[56];
+
+	man[0x89] = 0x00;
+	memcpy(d, man, sizeof d);
+	memset(d + 0x10, 0, 0x40);
+	ref_sha256(d, sizeof d, digest);
+	uECC_set_rng(test_rng);
+	CHECK(uECC_sign(s11v_d, digest, sizeof digest, sig, uECC_secp224r1()) == 1);
+	memcpy(man + 0x14, sig, 28);
+	memcpy(man + 0x34, sig + 28, 28);
+	if (alter)
+		man[0x2F] ^= 0x01u;		/* r no longer verifies */
+}
+
 static void package_make(void)
 {
 	const struct zmember mb[] = {
-		{ "firmware/blackfin/bin/bootloader.ldr", v_boot_good,
-		  sizeof v_boot_good },
+		{ "firmware/blackfin/bin/bootloader.ldr", whole_bl, whole_bl_len },
 		{ "firmware/blackfin/bin/spiboot.ldr", fs_file, sizeof fs_file },
 		{ "firmware/ble/bin/ble.bin", ble_image, sizeof ble_image },
 		{ "firmware/ble/bin/nordic_bootloader_0.bin", nordic_bl_image,
@@ -1460,10 +1509,12 @@ static void package_make(void)
 	zput32(man + 0x80, (uint32_t)zip_len);
 	memcpy(man + 0x84, "TESG", 4);
 	man[0x88] = 0x01;
-	man[0x89] = 0x01;				/* not TE-signed */
+	man[0x89] = 0xFF;				/* blank */
 	zput32(man + 0x8C, 0x00084000u);
 	zput32(man + 0x98, (uint32_t)(0x100u + zip_len));
 	ref_sha256(pl, 0x100u + zip_len, man + 0x9C);
+	if (whole_sig != S11_SIG_NONE)
+		manifest_sign(man, whole_sig == S11_SIG_INVALID);
 	crc = ref_crc16(0, pkg_buf + 0x40u, pkg_len - 0x40u);
 	h[9] = (uint8_t)(crc >> 8);
 	h[10] = (uint8_t)crc;
@@ -1584,7 +1635,7 @@ static void whole_setup(void)
 	m.link[S06_LINK_PSOC].ops = &psoc_port;
 	m.psoc_ops.ctx = &m;
 	m.psoc_ops.key_event = NULL;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	opxy_nordic_ops(&m, &m.nordic_ops);
 	s08_init(&m.nordic, &m.node, S06_LINK_NORDIC, &m.nordic_ops,
 		 S08_STATE_IDLE);
@@ -1605,6 +1656,47 @@ static void whole_end(void)
 	opxy_usb_stop();
 }
 
+/* S-16.095's reads as a unit under test has them: the test Q0 (S-11.025);
+ * no AES key is needed for the plaintext package. */
+static bool t_q0(void *ctx, uint8_t q[56])
+{
+	(void)ctx;
+	memcpy(q, s11v_q0, 56);
+	return true;
+}
+
+static bool t_nokey(void *ctx, uint8_t key[32])
+{
+	(void)ctx;
+	(void)key;
+	return false;
+}
+
+static const struct s11_unit_ops t_unit = { t_q0, t_nokey, t_nokey };
+static struct wire_package t_pkg;
+static struct wire_zip t_zip;
+static struct s09_files_zip t_staged;
+
+/* opxy_install_source() with the test Q0 in place of the OTP's, which a
+ * host cannot read. */
+static void install_source(const struct wire_source *src,
+			   const struct s11_check_in *in,
+			   struct s11_install_result *res)
+{
+	struct s11_package_ops pops;
+	struct s11_zip_ops reader, zops;
+	const bool was = m.sv.working;
+
+	wire_package_init(&t_pkg, &pops, src, &t_unit, NULL, NULL, 0u);
+	wire_zip_init(&t_zip, &reader, &t_pkg, NULL, 0, NULL);
+	reader.crc32 = opxy_crc32;
+	s09_files_zip_ops(&t_staged, &m.sv.files, &reader, &zops);
+	m.sv.working = true;
+	opxy_install_package(&m, &pops, &zops, in, res);
+	m.sv.working = was;
+	wire_zip_close(&t_zip);
+}
+
 /* One install of the package (option on or off; fw_command: over the
  * firmware command, as a host's transfer submits it). */
 static void whole_install(bool option, bool fw_command,
@@ -1613,7 +1705,8 @@ static void whole_install(bool option, bool fw_command,
 	const struct wire_source src = { pkg_src_read, NULL, pkg_src_write };
 	const struct s11_check_in in = { .form = S11_FORM_BODY,
 					 .size = pkg_len, .option = option,
-					 .fw_command = fw_command };
+					 .fw_command = fw_command,
+					 .dev = &wb_device_opxy };
 	const uint8_t crc_off = opxy_crc_off;
 
 	opxy_crc_off = (uint8_t)((1u << OPXY_CRCS) - 1u);	/* software */
@@ -1621,7 +1714,7 @@ static void whole_install(bool option, bool fw_command,
 	ks.in_ask = false;
 	memset(ks.start_ms, 0, sizeof ks.start_ms);
 	memset(ks.end_ms, 0, sizeof ks.end_ms);
-	opxy_install_source(&m, &src, &in, res);
+	install_source(&src, &in, res);
 	opxy_crc_off = crc_off;
 	/* the end of the last selection, if the run never polled after */
 	if (ks.in_ask) {
@@ -1707,6 +1800,22 @@ static const struct kev off_then_8[] = {
 	{ 7000, K_DIGIT8, true }, { 7100, K_DIGIT8, false }, { 0, 0, false },
 };
 static const struct kev nothing[] = { { 0, 0, false } };
+/* S-15.197's prompt: key 1 alone held 5 s goes on */
+static const struct kev prompt_hold[] = {
+	{ 1000, K_DIGIT1, true }, { 6500, K_DIGIT1, false }, { 0, 0, false },
+};
+/* the selection after it, key 1 still down from the prompt: its up, then
+ * 7 and 8 */
+static const struct kev after_prompt_7_then_8[] = {
+	{ 200, K_DIGIT1, false }, { 500, K_DIGIT7, true },
+	{ 600, K_DIGIT7, false }, { 1000, K_DIGIT8, true },
+	{ 1100, K_DIGIT8, false }, { 0, 0, false },
+};
+/* 7, then 8 */
+static const struct kev bl_then_8[] = {
+	{ 500, K_DIGIT7, true }, { 600, K_DIGIT7, false },
+	{ 1000, K_DIGIT8, true }, { 1100, K_DIGIT8, false }, { 0, 0, false },
+};
 
 /* A canceled selection: no run, nothing written, no step reported; back
  * with 8 unless an earlier run in this boot read a zip (S-15.103). */
@@ -1770,8 +1879,16 @@ static void test_whole_hold(void)
 	 * file: S-11.036's) */
 	CHECK(cdc_has("7 Bootloader  0.9.40 > 1234.0.0  No") &&
 	      cdc_has("7 Bootloader  0.9.40 > 1234.0.0  Yes"));
-	CHECK(cdc_has("Slot 2 is replaced. Recovery remains."));
+	/* S-11.091: a bootloader that is not a waffle-boot build, written
+	 * with the option on: a return to the factory bootloader, warned of
+	 * on the selection and the run's screen */
+	CHECK(res.stock && !res.bootloader_waffle);
+	CHECK(cdc_has("This run replaces waffle-boot: back to stock") &&
+	      !cdc_has("Slot 2 is replaced"));
 	CHECK(cdc_has("install: installing by a 5 s hold, steps selected 0x04"));
+	/* S-11.021, S-15.197: valid, so no prompt; shown as TE's */
+	CHECK(res.sig == S11_SIG_VALID && cdc_has("install: signature valid") &&
+	      cdc_has("Signed by TE") && !cdc_has("does not match"));
 	/* the parts left at No: Skipped, each after its own report */
 	CHECK(cdc_has("[skipped] ble: not selected") &&
 	      cdc_has("[skipped] ble bootloader: not selected") &&
@@ -1790,6 +1907,41 @@ static void test_whole_hold(void)
 	CHECK(!frame_on(nordic_wire, nordic_n, 0x0Du, 0xEE));
 	CHECK(!frame_on(wire, wire_n, 0xEEu, -1));
 	whole_end();
+}
+
+/* S-11.091: the package's bootloader is a waffle-boot build (a valid image
+ * descriptor, read from the staged image before the selection): written as
+ * an ordinary update, with the slot it replaces on the selection and no
+ * return to stock. */
+static void test_whole_hold_waffle(void)
+{
+	struct s11_install_result res;
+	const struct s11v_bootloader_kind *k = NULL;
+
+	t_case = "whole: hold, a waffle-boot bootloader";
+	for (size_t i = 0; i < sizeof s11v_bootloader_kinds / sizeof s11v_bootloader_kinds[0]; i++)
+		if (strcmp(s11v_bootloader_kinds[i].name, "waffle") == 0)
+			k = &s11v_bootloader_kinds[i];
+	CHECK(k != NULL);
+	if (k == NULL)
+		return;
+	whole_bl = s11v_blob + k->stream.off;
+	whole_bl_len = (unsigned)k->stream.len;
+	whole_setup();
+	ks.ev[0] = hold_5s;
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	whole_install(true, false, &res);
+	CHECK(res.reason == S11_REASON_NONE && res.run.end == S11_RUN_DONE);
+	CHECK_EQ(res.selected, S11_STEP_BIT(S11_STEP_BOOTLOADER));
+	CHECK(res.bootloader_waffle && !res.stock);
+	CHECK(cdc_has("install: the bootloader image is waffle-boot's"));
+	CHECK(cdc_has("Slot 2 is replaced. Recovery remains.") &&
+	      !cdc_has("back to stock"));
+	CHECK(slot1_holds_image() && first_stage_untouched());
+	whole_end();
+	whole_bl = v_boot_good;
+	whole_bl_len = sizeof v_boot_good;
+	package_make();
 }
 
 /* An early release ends the hold and keeps the selection; the 60 s,
@@ -1934,6 +2086,81 @@ static void test_whole_option_off(void)
 }
 
 /*
+ * S-11.021, S-11.090, S-15.197 (SC-11-SIG, SC-15-SIG-PROMPT): a package
+ * whose signature does not verify shows the prompt first; key 1 held 5 s
+ * goes on to the selection, where the Bootloader's row is picked as for
+ * any package, with no return-to-stock warning; 8 there cancels. 8 at the
+ * prompt cancels with no selection; with the keys unreadable nobody can
+ * confirm it, so nothing is asked or installed. A blank signature (none)
+ * shows no prompt, and its Bootloader's row is picked the same.
+ */
+static void test_whole_signature(void)
+{
+	struct s11_install_result res;
+
+	t_case = "whole: invalid, the prompt held";
+	whole_sig = S11_SIG_INVALID;
+	whole_setup();
+	ks.ev[0] = prompt_hold;
+	ks.ev[1] = after_prompt_7_then_8;
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	whole_install(true, false, &res);
+	CHECK(res.reason == S11_REASON_NONE && res.sig == S11_SIG_INVALID);
+	CHECK_EQ(ks.asks, 2u);
+	CHECK(cdc_has("install: signature invalid"));
+	CHECK(cdc_has("The firmware's signature does not match.") &&
+	      cdc_has("1 Install anyway (hold for 5 s)"));
+	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 6000u &&
+	      ks.end_ms[0] - ks.start_ms[0] < 6500u);
+	CHECK(cdc_has("install: the prompt held 5 s"));
+	CHECK(cdc_has("7 Bootloader  0.9.40 > 1234.0.0  Yes") &&
+	      cdc_has("Slot 2 is replaced") && !cdc_has("Signed by TE") &&
+	      !cdc_has("back to stock"));
+	CHECK(cdc_has("install: canceled with key 8, steps selected 0x04"));
+	CHECK(!res.stock && !res.bootloader_waffle);
+	canceled(&res, true);
+	whole_end();
+
+	t_case = "whole: invalid, 8 at the prompt";
+	whole_setup();
+	ks.ev[0] = key8;
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	whole_install(true, false, &res);
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(cdc_has("install: the prompt canceled with key 8") &&
+	      !cdc_has("1 Install selected"));
+	canceled(&res, true);
+	whole_end();
+
+	t_case = "whole: invalid, keys unreadable";
+	whole_setup();
+	m.key_status.replied = false;
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	whole_install(true, false, &res);
+	CHECK(cdc_has("install: keys not readable, not confirmed: canceled"));
+	CHECK(ks.asks == 0u && !cdc_has("does not match."));
+	canceled(&res, true);
+	whole_end();
+
+	t_case = "whole: none";
+	whole_sig = S11_SIG_NONE;
+	whole_setup();
+	ks.ev[0] = bl_then_8;
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	whole_install(true, false, &res);
+	CHECK(res.sig == S11_SIG_NONE && cdc_has("install: signature none"));
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(!cdc_has("does not match") && !cdc_has("Signed by TE"));
+	CHECK(cdc_has("7 Bootloader  0.9.40 > 1234.0.0  Yes") &&
+	      cdc_has("Slot 2 is replaced") && !cdc_has("back to stock"));
+	CHECK(cdc_has("install: canceled with key 8, steps selected 0x04"));
+	canceled(&res, true);
+	whole_end();
+	whole_sig = S11_SIG_VALID;
+	package_make();
+}
+
+/*
  * S-11.068 item 5 (SC-11-CONFIRM's repeat): the same package again in this
  * power-on, selected again: the bootloader step reports Skipped, already
  * written, with no erase or program of the slots, and the run is done.
@@ -2017,12 +2244,14 @@ int main(void)
 	test_host_hold_through_a_run();
 	test_loop_pass_alone();
 	test_whole_hold();
+	test_whole_hold_waffle();
 	test_whole_release_timeout();
 	test_whole_key8();
 	test_whole_stale();
 	test_whole_timeout();
 	test_whole_unreadable();
 	test_whole_option_off();
+	test_whole_signature();
 	test_whole_rerun();
 	test_whole_host_and_again();
 	wire_s09_release(&S);

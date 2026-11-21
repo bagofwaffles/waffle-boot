@@ -1,0 +1,30 @@
+{
+ "document": "S-05",
+ "requirement": "S-05.038",
+ "evt": {
+  "EVT2": "0x11A00C18",
+  "EVT3": "0x11A00B78",
+  "EVT4": "0x11A00664",
+  "EVT5": "0x11A00664",
+  "EVT6": "0x11A00664",
+  "EVT7": "0x11A00664",
+  "EVT8": "0x11A00664",
+  "EVT9": "0x11A00664",
+  "EVT10": "0x11A00664",
+  "EVT11": "0x11A01438",
+  "EVT12": "0x11A00664",
+  "EVT13": "0x11A00664",
+  "EVT14": "0x11A00664",
+  "EVT15": "0x11A000CA"
+ },
+ "ipend": "0x8000",
+ "imask": "0x8800",
+ "imask_read": "0x881F",
+ "ilat_clear_bits": "5-14",
+ "l1im_ictl": "0x00000207",
+ "l1dm_dctl": "0x00000207",
+ "sp": null,
+ "fp": null,
+ "note": "SP and FP are not fixed (S-05.038, open question 15): recorded, not checked; the rest is S-05.014's",
+ "entry": "RCU0_SVECT0 as the kernel left it (S-05.013)"
+}

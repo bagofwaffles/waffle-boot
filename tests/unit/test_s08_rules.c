@@ -436,7 +436,8 @@ static void test_transfers(void)
 	}
 	t_case = "transfers.json product_word";
 	for (size_t i = 0; i < s08v_pw_count; i++)
-		CHECK_EQ(s08_product_word(s08v_pw[i].sku, s08v_pw[i].read_ok),
+		CHECK_EQ(s08_product_word(wb_device_opxy.ident.product_base, s08v_pw[i].sku,
+					  s08v_pw[i].read_ok),
 			 s08v_pw[i].word);
 
 	/* S-08.045: the sku is read once per power-on; one set later in the
@@ -453,17 +454,59 @@ static void test_transfers(void)
 
 			s08_init(&nd, &node, 0, NULL, 0);	/* a power-on */
 			CHECK_EQ(s08_product(&nd), 0u);
-			s08_set_sku(&nd, v->boot_sku, true);
+			s08_set_sku(&nd, &wb_device_opxy, v->boot_sku, true);
 			if (v->set_sku >= 0)		/* set metadata, held mode */
-				s08_set_sku(&nd, (uint32_t)v->set_sku, true);
+				s08_set_sku(&nd, &wb_device_opxy, (uint32_t)v->set_sku, true);
 			CHECK_EQ(s08_product(&nd), v->word);
 			s08_prepare_payload(ver, 0xB0, s08_product(&nd), pp);
 			CHECK_MEM(pp, sizeof pp, v->prepare, v->len);
 		}
 		s08_init(&nd, &node, 0, NULL, 0);
-		s08_set_sku(&nd, 7, false);		/* unread: 0 for the power-on */
-		s08_set_sku(&nd, 7, true);
+		s08_set_sku(&nd, &wb_device_opxy, 7, false);	/* unread: 0 for the power-on */
+		s08_set_sku(&nd, &wb_device_opxy, 7, true);
 		CHECK_EQ(s08_product(&nd), 0u);
+	}
+
+	/* SC-08-TRANSFER-1F: transfers-1f.json, device.product_base 0x00008000 */
+	CHECK_EQ(wb_device_op1f.ident.product_base, S08V1F_PRODUCT_BASE);
+	t_case = "transfers-1f.json prepare";
+	for (size_t i = 0; i < s08v1f_prepare_count; i++) {
+		const struct s08v_prepare *v = &s08v1f_prepare[i];
+
+		s08_prepare_payload(v->version, v->type, v->product, out);
+		CHECK_MEM(out, 14, v->p, v->len);
+	}
+	t_case = "transfers-1f.json header";
+	for (size_t i = 0; i < s08v1f_header_count; i++) {
+		const struct s08v_header *v = &s08v1f_header[i];
+
+		s08_te_header(img, v->image_len, v->version, v->product,
+			      t_crc16_xmodem, out);
+		CHECK_MEM(out, 64, v->h, v->len);
+	}
+	t_case = "transfers-1f.json product_word";
+	for (size_t i = 0; i < s08v1f_pw_count; i++)
+		CHECK_EQ(s08_product_word(wb_device_op1f.ident.product_base, s08v1f_pw[i].sku,
+					  s08v1f_pw[i].read_ok),
+			 s08v1f_pw[i].word);
+	t_case = "transfers-1f.json product_word_power_ons";
+	{
+		static struct s08_nordic nd;
+		static struct s06_node node;
+		static const uint16_t ver[4] = { 1, 1, 0, 0 };
+		uint8_t pp[14];
+
+		for (size_t i = 0; i < s08v1f_pw_on_count; i++) {
+			const struct s08v_pw_on *v = &s08v1f_pw_on[i];
+
+			s08_init(&nd, &node, 0, NULL, 0);
+			s08_set_sku(&nd, &wb_device_op1f, v->boot_sku, true);
+			if (v->set_sku >= 0)
+				s08_set_sku(&nd, &wb_device_op1f, (uint32_t)v->set_sku, true);
+			CHECK_EQ(s08_product(&nd), v->word);
+			s08_prepare_payload(ver, 0xB0, s08_product(&nd), pp);
+			CHECK_MEM(pp, sizeof pp, v->prepare, v->len);
+		}
 	}
 }
 
@@ -742,7 +785,7 @@ static void test_power_messages(void)
 	s06_link_init(&plink, &t_port_ops, &pport, S06_ADDR_MASTER, S06_ADDR_PSOC);
 	nrig.node.link[S06_LINK_PSOC] = &plink;
 	memset(&pops, 0, sizeof pops);
-	s07_init(&psoc, &nrig.node, S06_LINK_PSOC, &pops);
+	s07_init(&psoc, &wb_device_opxy, &nrig.node, S06_LINK_PSOC, &pops);
 	nrig.ops.power = to_psoc;
 
 	/* 0x31 {10}: state on, charge 0: the charge LED goes red */

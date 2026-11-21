@@ -186,12 +186,12 @@ static void test_erase_op(void)
 	CHECK(erase_calls == 0u && n_ops == 0u);
 
 	/* S-03.007: only while the user area is selected */
-	s.part = S03_PART_BP1;
+	s.st.part = S03_PART_BP1;
 	CHECK(bd.erase(bd.ctx, 0u, S03_GROUP_SECTORS) != 0);
-	s.part = OPXY_PART_UNKNOWN;
+	s.st.part = OPXY_PART_UNKNOWN;
 	CHECK(bd.erase(bd.ctx, 0u, S03_GROUP_SECTORS) != 0);
 	CHECK(erase_calls == 0u);
-	s.part = S03_PART_USER;
+	s.st.part = S03_PART_USER;
 
 	/* S-03.010: an erase that fails is tried again, a bounded number of
 	 * times */
@@ -248,12 +248,12 @@ static void test_reliable_op(void)
 				CHUNK_SECTORS) != 0);
 	CHECK(bd.write_reliable(bd.ctx, 9u * CHUNK_SECTORS, buf, 4u) != 0);
 	CHECK(bd.write_reliable(bd.ctx, 9u * CHUNK_SECTORS, buf, 0u) != 0);
-	s.part = S03_PART_BP2;
+	s.st.part = S03_PART_BP2;
 	CHECK(bd.write_reliable(bd.ctx, 9u * CHUNK_SECTORS, buf, CHUNK_SECTORS) != 0);
-	s.part = S03_PART_USER;
-	s.emmc_more = NULL;		/* the eMMC down */
+	s.st.part = S03_PART_USER;
+	s.st.emmc_more = NULL;		/* the eMMC down */
 	CHECK(bd.write_reliable(bd.ctx, 9u * CHUNK_SECTORS, buf, CHUNK_SECTORS) != 0);
-	s.emmc_more = &em_more;
+	s.st.emmc_more = &em_more;
 	CHECK(n_ops == 0u);
 
 	/* yaffs2's chunk write is that write */
@@ -367,12 +367,12 @@ int main(void)
 	vol = calloc(SECTORS, S03_SECTOR);
 	if (vol == NULL)
 		return 2;
-	s.emmc_ops = em_ops;
-	s.emmc_more = &em_more;
-	s.emmc_up = true;
-	s.part = S03_PART_USER;
+	s.st.emmc_ops = em_ops;
+	s.st.emmc_more = &em_more;
+	s.st.emmc_up = true;
+	s.st.part = S03_PART_USER;
 	opxy_slave_user_bd(&s, &bd);
-	CHECK(bd.ctx == &s && bd.n_sectors == S03_USER_SECTORS);
+	CHECK(bd.ctx == &s.st && bd.n_sectors == S03_USER_SECTORS);
 	CHECK(wire_yaffs_add(&Y, "/yaffs2", &bd, 0u, BLOCKS - 1u));
 	RUN(test_erase_op);
 	RUN(test_reliable_op);

@@ -102,7 +102,7 @@ static void test_shutdown_behind_a_log_line(void)
 	s06_link_init(l, &opxy_port_ops, &m.hw.uart[OPXY_UART_PSOC],
 		      S06_ADDR_MASTER, S06_ADDR_PSOC);
 	m.node.link[S06_LINK_PSOC] = l;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	route = s06_route(S06_ADDR_MASTER, S06_ADDR_PSOC);
 	seq = l->seq;
 

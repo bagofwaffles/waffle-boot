@@ -4,7 +4,7 @@
  * tests/oracle/S-11-packages/vectors/pkg/ through s11_install() with checks 1-15 on
  * BearSSL and micro-ecc (src/wire_package.c), checks 16-17 on minizip
  * (src/wire_zip.c) and the staging area on a yaffs2 volume in RAM
- * (src/wire_yaffs.c). Against s11_vectors.h's reason, TE-signed and forced
+ * (src/wire_yaffs.c). Against s11_vectors.h's reason, signature state and forced
  * verdicts and wire_vectors.h's model results: the reason of checks 16-17,
  * the staged tree (S-11.032) and the version a completed run records
  * (S-11.038, S-04.045 M3), read back by s11_staged_scan() from the volume;
@@ -21,6 +21,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
+#include "waffle/device.h"
 #include "waffle/s11_content.h"
 #include "waffle/s11_package.h"
 #include "waffle/s11_run.h"
@@ -199,9 +200,11 @@ static void check_input(const struct s11v_package *v,
 	struct s11_package_ops pkg;
 	struct s11_zip_ops zip;
 	struct s11_fs_ops fs;
-	/* no confirmation answers (S-11.096); every step switched on */
+	/* no confirmation answers (S-11.096), so the bootloader is never
+	 * selected and its kind is not asked (S-11.091); every step switched
+	 * on */
 	struct s11_install_ops ops = { &pkg, &zip, &fs, &run_ops, &step_ops,
-				       NULL, NULL, 0 };
+				       NULL, NULL, NULL, NULL, 0 };
 	struct s11_check_in in;
 	struct s17_copro copro;
 
@@ -217,6 +220,7 @@ static void check_input(const struct s11v_package *v,
 	in.option = v->option != 0;
 	in.file_name = file_name;
 	in.fw_command = v->cdc != 0;
+	in.dev = &wb_device_opxy;
 	memset(&W, 0, sizeof(W));
 	s17_copro_init(&copro);
 	CHECK(wire_yaffs_staging_reset(&Y), "%s: reset", v->name);
@@ -264,9 +268,9 @@ static void check_install(const struct s11v_package *v,
 	check_input(v, &src, (uint32_t)len, v->file_name, &out);
 	CHECK(out.reason == want, "%s: %s, want %s", v->name,
 	      s11_reason_name(out.reason), s11_reason_name(want));
-	if (v->te_signed >= 0)
-		CHECK(out.te_signed == (v->te_signed != 0), "%s: TE-signed",
-		      v->name);
+	if (v->signature >= 0)
+		CHECK(out.sig == (enum s11_sig)v->signature,
+		      "%s: signature state %d", v->name, (int)out.sig);
 	if (v->reason == S11_REASON_NONE && v->forced >= 0)
 		CHECK(out.forced == (v->forced != 0), "%s: forced", v->name);
 	if (out.reason != S11_REASON_NONE) {
@@ -324,7 +328,7 @@ static void check_disk(const struct wirev_disk *d,
 	bool picked;
 	uint32_t size = 0;
 
-	CHECK(wire_fat_format(&fat, disk), "%s: format", d->name);
+	CHECK(wire_fat_format(&fat, disk, &wb_device_opxy), "%s: format", d->name);
 	for (const char *p = d->entries; *p != '\0';) {
 		size_t n = strcspn(p, "\n"), k = strcspn(p, "="), len;
 		char entry[S11_PATH_MAX], file[S11_PATH_MAX];

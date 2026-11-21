@@ -161,13 +161,12 @@ static bool path_join(char *out, size_t cap, const char *a, const char *b)
 /* ---- holds: S-15.015 ----------------------------------------------- */
 
 #define HOLD_MS S15_HOLD_MS
-#define KEY_PRECOMP 0x17u	/* S-07.032: not acted on */
 
-/* A knob click (0x0A - 0x0D) starts no hold: it is the easiest key to
- * press by accident, and the white knob is one. */
-static bool knob_click(unsigned key)
+/* A knob click starts no hold: it is the easiest key to press by accident,
+ * and the white knob is one (S-15.016). */
+static bool knob_click(const struct s15_menu *m, unsigned key)
 {
-	return key >= 0x0au && key <= 0x0du;
+	return s15_knob_click(m->dev, key);
 }
 
 /* The hold's row, the screen's last: added, or replaced (not logged,
@@ -268,11 +267,11 @@ static void option_key(struct s15_menu *m)
  * (S-15.015), 8 goes back with nothing changed. */
 static void option_screen_key(struct s15_menu *m, unsigned key)
 {
-	const unsigned d = s15_digit(key);
+	const unsigned d = s15_digit(m->dev, key);
 
 	if (d == 8u) {
 		draw_settings(m);
-	} else if (d == 2u && !knob_click(key)) {
+	} else if (d == 2u && !knob_click(m, key)) {
 		draw_option(m, true);
 		hold_begin(m, S15_ARM_OPTION, key);
 	}
@@ -362,8 +361,9 @@ static void draw_settings(struct s15_menu *m)
 	option_item(m);
 	sline(m, S15_ST_ITEM, m->color ? "3 Color\tOn" :      /* S-15.173 */
 					  "3 Color\tOff");
-	sline(m, S15_ST_ITEM, m->mtp_macos ? "5 MTP target\tmacOS" : /* S-15.174 */
-					      "5 MTP target\tWindows");
+	if (wb_has(m->dev, WB_F_MTP_TWO_ITEMS))     /* S-15.174, S-15.196 */
+		sline(m, S15_ST_ITEM, m->mtp_macos ? "5 MTP target\tmacOS" :
+						      "5 MTP target\tWindows");
 	if (m->env->settings_save != NULL)                 /* S-15.175 */
 		sline(m, S15_ST_ITEM, m->start_menu ? "6 Start in boot menu\tOn" :
 						       "6 Start in boot menu\tOff");
@@ -403,7 +403,7 @@ static void settings_changed(struct s15_menu *m)
 
 static void settings_key(struct s15_menu *m, unsigned key)
 {
-	switch (s15_digit(key)) {
+	switch (s15_digit(m->dev, key)) {
 	case 1:
 		m->dev_mode = !m->dev_mode;
 		settings_changed(m);
@@ -417,8 +417,11 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 5:
-		m->mtp_macos = !m->mtp_macos;
-		settings_changed(m);
+		/* S-15.196: no MTP target without mtp-two-items */
+		if (wb_has(m->dev, WB_F_MTP_TWO_ITEMS)) {
+			m->mtp_macos = !m->mtp_macos;
+			settings_changed(m);
+		}
 		break;
 	case 6:
 		/* S-15.193: a host's key leaves Start in boot menu as it is */
@@ -436,6 +439,15 @@ static void settings_key(struct s15_menu *m, unsigned key)
 }
 
 /* ---- the factory reset: S-15.050 - S-15.052 ------------------------- */
+
+/* The restart line's text appended to b (S-15 question 3). */
+static void restart_text(const struct s15_menu *m, struct s15_buf *b)
+{
+	struct s15_buf r;
+
+	s15_restart_line(m->dev, &r);
+	s15_buf_str(b, r.s);
+}
 
 /* S-02.105: the running slot's settings sector cleared, and the settings
  * at their defaults from here on; a clear that failed says so. */
@@ -464,9 +476,32 @@ static void clear_settings(struct s15_menu *m)
 	}
 }
 
+/* S-15.052: what the reset removes, device.reset_removes (S-18.030): the
+ * S-15 list, or the device's own paths and nothing else. */
+static size_t reset_dirs(const struct wb_device *dev, const char *const **dirs)
+{
+	static const char *const list[] = { "/yaffs2/user", "/yaffs2/logs", DLC };
+
+	if (dev->mem.reset_only != NULL) {
+		*dirs = dev->mem.reset_only;
+		return dev->mem.reset_only_n;
+	}
+	*dirs = list;
+	return sizeof list / sizeof list[0];
+}
+
+/* S-03.073, S-16.014: the OS FAT volume's erase, with fat-region alone */
+static void erase_os_fat(struct s15_menu *m)
+{
+	if (wb_has(m->dev, WB_F_FAT_REGION))
+		m->env->erase_os_fat(m->env->ctx);
+}
+
 static void factory_reset(struct s15_menu *m)
 {
-	static const char *const dirs[] = { "/yaffs2/user", "/yaffs2/logs", DLC };
+	const char *const *dirs;
+	const size_t n = reset_dirs(m->dev, &dirs);
+	struct s15_buf b;
 	bool ok = true;
 
 	enter(m, S15_SCR_RESULT, "Factory Reset");
@@ -476,23 +511,27 @@ static void factory_reset(struct s15_menu *m)
 		/* S-12.052: nothing removed or erased on the yaffs2 volume;
 		 * S-15.052: the OS FAT volume's erase and the settings' clear
 		 * are made all the same. */
-		m->env->erase_os_fat(m->env->ctx);
+		erase_os_fat(m);
 		clear_settings(m);
 		sline(m, S15_ST_ERROR, slave_lost(m) ? s15_reset_lost :
 						       s15_reset_unreadable);
 		result_back(m);
 		return;
 	}
-	for (size_t i = 0; i < 3u; i++)
+	for (size_t i = 0; i < n; i++)
 		ok = m->env->remove_tree(m->env->ctx, dirs[i]) && ok;
-	m->env->erase_os_fat(m->env->ctx);                /* S-16.014 */
+	erase_os_fat(m);                                  /* S-16.014 */
 	clear_settings(m);
 	/* S-15.052: a failed removal does not stop the reset; one line of
 	 * required information replaces the OK line. */
-	if (ok)
-		sline(m, S15_ST_OK, "User data removed. Please restart your OP-XY.");
-	else
+	if (ok) {
+		s15_buf_init(&b);
+		s15_buf_str(&b, "User data removed. ");
+		restart_text(m, &b);
+		sline(m, S15_ST_OK, b.s);
+	} else {
 		sline(m, S15_ST_ERROR, s15_reset_incomplete);
+	}
 	result_back(m);
 }
 
@@ -607,7 +646,8 @@ static void remove_pack(struct s15_menu *m, unsigned n)
 	}
 	(void)m->env->remove_tree(m->env->ctx, DLC);
 	sline(m, S15_ST_OK, "All content packs removed.");
-	line(m, "Please restart your OP-XY.");
+	s15_restart_line(m->dev, &b);
+	line(m, b.s);
 	m->packs_item = false;
 	result_back(m);
 }
@@ -615,14 +655,14 @@ static void remove_pack(struct s15_menu *m, unsigned n)
 /* S-15.042: a pack's digit starts the hold of its removal. */
 static void packs_key(struct s15_menu *m, unsigned key)
 {
-	unsigned d = s15_digit(key);
+	unsigned d = s15_digit(m->dev, key);
 
 	if (d == 8u) {
 		m->packs_item = true;     /* S-15.042: drawn again, not opened */
 		draw_system(m, false);
 		return;
 	}
-	if (d < 1u || d > 7u || d > m->npacks || knob_click(key))
+	if (d < 1u || d > 7u || d > m->npacks || knob_click(m, key))
 		return;
 	draw_packs(m, d, 0);
 	hold_begin(m, S15_ARM_PACK, key);
@@ -704,8 +744,15 @@ static void open_info(struct s15_menu *m)
 	info_row(m, "Backplane S/N", b->psoc_serial, "Bootloader", b->version);
 	info_row(m, "Keys", b->provisioned ? "Provisioned" : "None",
 		 "BLE", b->ble_version);
-	info_row(m, "DSP2", dsp2, "Backplane", b->psoc_version);
-	blank(m);
+	if (wb_has(m->dev, WB_F_SECOND_CPU))
+		info_row(m, "DSP2", dsp2, "Backplane", b->psoc_version);
+	else
+		info_row(m, "Backplane", b->psoc_version, NULL, NULL);
+	/* S-18.004: an unidentified device, its n and c on the second page */
+	if (b->dev_how == WB_DEV_UNKNOWN)
+		sline(m, S15_ST_WARN, s15_device_unknown);
+	else
+		blank(m);
 	sline(m, S15_ST_ITEM, "1 More\tStart log");
 	if (b->start.why != S15_START_OK) {                /* S-15.163 */
 		s15_start_info(&start, &b->start);
@@ -752,6 +799,10 @@ static void open_info2(struct s15_menu *m)
 		s15_files_text(&v, b->files_way, b->files_objects);
 		info_row(m, "Files", v.s, NULL, NULL);
 	}
+	if (b->dev_how == WB_DEV_UNKNOWN) {			/* S-18.004 */
+		s15_first_stage_text(&v, b->first_stage_n, b->first_stage_c);
+		info_row(m, "First stage", v.s, NULL, NULL);
+	}
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Device Info");
 }
@@ -785,14 +836,16 @@ static void draw_system(struct s15_menu *m, bool armed)
  * none. */
 static void open_system(struct s15_menu *m)
 {
-	m->packs_item = !refused(m) && !slave_lost(m) &&
+	/* the check and the list are content-packs' (S-15.060) */
+	m->packs_item = wb_has(m->dev, WB_F_CONTENT_PACKS) &&
+			!refused(m) && !slave_lost(m) &&
 			m->env->dir_exists(m->env->ctx, DLC);
 	draw_system(m, false);
 }
 
 static void keytest_start(struct s15_menu *m)
 {
-	s15_keytest_start(&m->kt);
+	s15_keytest_start(&m->kt, m->dev);
 	m->keytest = true;
 	m->changes++;
 	m->env->keytest_leds(m->env->ctx, true);
@@ -813,7 +866,7 @@ static void open_format(struct s15_menu *m);
 /* S-15.060, S-15.050 */
 static void system_key(struct s15_menu *m, unsigned key)
 {
-	switch (s15_digit(key)) {
+	switch (s15_digit(m->dev, key)) {
 	case 1:
 		keytest_start(m);
 		break;
@@ -888,11 +941,13 @@ static void run_format(struct s15_menu *m)
 
 static void format_key(struct s15_menu *m, unsigned key)
 {
-	if (key == 0x06u || key == 0x0eu) {     /* not 0x0A: S-15.071 */
+	/* S-15.071, S-15.016: digit 1 but its knob click (0x06 or 0x0E, not
+	 * 0x0A, on the OP-XY) */
+	if (s15_digit(m->dev, key) == 1u && !knob_click(m, key)) {
 		draw_format(m, true, false);
 		hold_begin(m, S15_ARM_FORMAT, key);
 	}
-	else if (s15_digit(key) == 8u)
+	else if (s15_digit(m->dev, key) == 8u)
 		open_system(m);
 }
 
@@ -903,8 +958,11 @@ static void draw_factory(struct s15_menu *m)
 {
 	enter(m, S15_SCR_FACTORY, "Developer");
 	blank(m);
-	sline(m, S15_ST_ITEM, m->mtp_macos ? "2 MTP file transfer\tmacOS" :
-					      "2 MTP file transfer\tWindows");
+	if (!wb_has(m->dev, WB_F_MTP_TWO_ITEMS))     /* S-15.196 */
+		sline(m, S15_ST_ITEM, s15_mtp_item_shift);
+	else
+		sline(m, S15_ST_ITEM, m->mtp_macos ? "2 MTP file transfer\tmacOS" :
+						      "2 MTP file transfer\tWindows");
 	sline(m, S15_ST_ITEM, s15_once_item);
 	sline(m, S15_ST_ITEM, "5 Write /os.ldr to boot partition");
 	sline(m, S15_ST_ITEM, s15_restart_item);
@@ -1067,7 +1125,7 @@ static void restart_to_os(struct s15_menu *m)
 /* S-15.092 */
 static void factory_key(struct s15_menu *m, unsigned key)
 {
-	unsigned d = s15_digit(key);
+	unsigned d = s15_digit(m->dev, key);
 
 	if (m->mtp != S15_MTP_OFF) {
 		if (d == 8u) {                     /* S-15.093: 8 turns it off */
@@ -1087,8 +1145,12 @@ static void factory_key(struct s15_menu *m, unsigned key)
 		return;
 	}
 	switch (d) {
-	case 2:                                    /* S-15.174 */
-		mtp_on(m, m->mtp_macos ? S15_MTP_VENDOR : S15_MTP_STANDARD);
+	case 2:
+		/* S-15.174; S-15.196: shift held at this key down chooses */
+		if (wb_has(m->dev, WB_F_MTP_TWO_ITEMS))
+			mtp_on(m, m->mtp_macos ? S15_MTP_VENDOR : S15_MTP_STANDARD);
+		else
+			mtp_on(m, m->shift ? S15_MTP_VENDOR : S15_MTP_STANDARD);
 		break;
 	case 3:
 		os_once(m);                        /* S-15.194 */
@@ -1112,6 +1174,8 @@ static void factory_key(struct s15_menu *m, unsigned key)
 /* S-15.100 - S-15.102: the opening lines. */
 static void draw_upgrade(struct s15_menu *m)
 {
+	struct s15_buf b;
+
 	enter(m, S15_SCR_UPGRADE, "Install Firmware");
 	m->restart_ok = false;
 	if (m->midi) {                                     /* S-15.102 */
@@ -1123,7 +1187,11 @@ static void draw_upgrade(struct s15_menu *m)
 		interrupted(m);
 	else
 		blank(m);                                  /* S-15.100 */
-	line(m, "1. Connect the OP-XY to a computer");
+	s15_buf_init(&b);
+	s15_buf_str(&b, "1. Connect the ");
+	s15_buf_str(&b, m->dev->ident.product_text);
+	s15_buf_str(&b, " to a computer");
+	line(m, b.s);
 	line(m, "2. Copy the firmware to the disk that appears");
 	line(m, "3. Eject the disk");
 	sline(m, S15_ST_DIM, "Waiting for the package...");
@@ -1205,12 +1273,12 @@ static void start_scan(struct s15_menu *m)
 
 static void upgrade_key(struct s15_menu *m, unsigned key)
 {
-	if (s15_digit(key) == 8u && can_leave(m)) {
+	if (s15_digit(m->dev, key) == 8u && can_leave(m)) {
 		/* S-15.103: back while nothing is under way; the main
 		 * screen's USB set withdraws the disk. */
 		m->scan_due_set = false;
 		open_main(m);
-	} else if (s15_digit(key) == 6u && m->restart_ok &&
+	} else if (s15_digit(m->dev, key) == 6u && m->restart_ok &&
 		   m->activity == S15_ACT_IDLE) {
 		restart_to_os(m);                   /* S-15.190 */
 	}
@@ -1352,14 +1420,14 @@ static void outcome(struct s15_menu *m, enum s15_outcome o, unsigned skipped,
 {
 	const char *out[2];
 	enum s15_style st[2];
-	struct s15_buf parts[2];
+	struct s15_buf parts[2], rline;
 	size_t n;
 
 	/* a completed run names the parts it did not update, then ends */
 	n = o == S15_OUT_FAILED ? 0u : s15_not_updated(parts, st, skipped);
 	for (size_t i = 0; i < n; i++)
 		sline(m, st[i], parts[i].s);
-	n = s15_outcome_lines(out, st, o, skipped != 0u,
+	n = s15_outcome_lines(m->dev, out, &rline, st, o, skipped != 0u,
 			      m->boot->reason == 40u, content_only, cont);
 	for (size_t i = 0; i < n; i++)
 		sline(m, st[i], out[i]);
@@ -1382,10 +1450,11 @@ void s15_up_extract_refused(struct s15_menu *m, const char *reason,
 #define STEP_KEY(step) (16 + (int)(step))
 
 void s15_up_run_start(struct s15_menu *m, enum s15_run_kind kind,
-		      const char *version, const char *name, bool stock)
+		      const char *version, const char *name, bool stock,
+		      bool te_signed)
 {
-	struct s15_buf hdr[4];
-	enum s15_style st[4];
+	struct s15_buf hdr[S15_RUN_HEADER_MAX];
+	enum s15_style st[S15_RUN_HEADER_MAX];
 	size_t n;
 
 	m->scan_due_set = false;
@@ -1393,7 +1462,7 @@ void s15_up_run_start(struct s15_menu *m, enum s15_run_kind kind,
 	m->content_only = kind == S15_RUN_CONTENT;
 	m->prog_key = -1;
 	make_upgrade_current(m);
-	n = s15_run_header(hdr, st, kind, version, name, stock);
+	n = s15_run_header(hdr, st, kind, version, name, stock, te_signed);
 	for (size_t i = 0; i < n; i++)
 		sline(m, st[i], hdr[i].s);
 }
@@ -1507,13 +1576,14 @@ void s15_up_canceled(struct s15_menu *m)
 {
 	const char *out[2];
 	enum s15_style st[2];
+	struct s15_buf rline;
 	size_t n;
 
 	make_upgrade_current(m);
 	m->prog_key = -1;
 	m->restart_ok = m->boot->reason != 40u;
-	n = s15_outcome_lines(out, st, S15_OUT_NOTHING, true, false, false,
-			      m->restart_ok);
+	n = s15_outcome_lines(m->dev, out, &rline, st, S15_OUT_NOTHING, true,
+			      false, false, m->restart_ok);
 	for (size_t i = 0; i < n; i++)
 		sline(m, st[i], out[i]);
 	if (m->restart_ok)
@@ -1568,7 +1638,7 @@ enum s15_continue s15_menu_continue(struct s15_menu *m)
 
 static void main_key(struct s15_menu *m, unsigned key)
 {
-	unsigned d = s15_digit(key);
+	unsigned d = s15_digit(m->dev, key);
 
 	/* S-15.031: digit 8 is the back key below this screen, no item here */
 	if (key == S15_KEY_HELP || d == 4u)
@@ -1657,7 +1727,7 @@ static void key_down(struct s15_menu *m, unsigned key)
 
 	/* S-15.015: during a hold any other key down only cancels it */
 	if (m->armed != S15_ARM_NONE) {
-		if (key != KEY_PRECOMP)
+		if (key != m->dev->keys.precomp)	/* S-07.032 */
 			hold_cancel(m);
 		return;
 	}
@@ -1669,13 +1739,13 @@ static void key_down(struct s15_menu *m, unsigned key)
 		packs_key(m, key);
 		break;
 	case S15_SCR_INFO:
-		if (s15_digit(key) == 8u)           /* S-15.081 */
+		if (s15_digit(m->dev, key) == 8u)           /* S-15.081 */
 			open_main(m);
-		else if (s15_digit(key) == 1u)      /* S-15.082 */
+		else if (s15_digit(m->dev, key) == 1u)      /* S-15.082 */
 			open_info2(m);
 		break;
 	case S15_SCR_INFO2:
-		if (s15_digit(key) == 8u)           /* S-15.082 */
+		if (s15_digit(m->dev, key) == 8u)           /* S-15.082 */
 			open_info(m);
 		break;
 	case S15_SCR_SYSTEM:
@@ -1697,7 +1767,7 @@ static void key_down(struct s15_menu *m, unsigned key)
 		upgrade_key(m, key);
 		break;
 	case S15_SCR_RESULT:
-		if (s15_digit(key) == 8u)
+		if (s15_digit(m->dev, key) == 8u)
 			open_system(m);
 		break;
 	case S15_SCR_STARTING:                      /* S-15.190: no key */
@@ -1711,7 +1781,7 @@ void s15_menu_key(struct s15_menu *m, unsigned key, bool down)
 {
 	bool was_down;
 
-	if (key >= S15_NKEYS)                       /* S-15.014 */
+	if (key >= m->dev->keys.count)        /* S-15.014 */
 		return;
 	was_down = bit(m->down, key);
 	set_bit(m->down, key, down);
@@ -1731,7 +1801,7 @@ void s15_menu_key(struct s15_menu *m, unsigned key, bool down)
 		keytest_event(m, key, down);
 		return;
 	}
-	if (key == S15_KEY_SHIFT)                   /* S-15.012 */
+	if (key == m->dev->keys.shift)        /* S-15.012 */
 		m->shift = down;
 	/* S-15.015: the held key's release before the time cancels */
 	if (!down && was_down && m->armed != S15_ARM_NONE && key == m->arm_key) {
@@ -1747,7 +1817,8 @@ void s15_menu_key(struct s15_menu *m, unsigned key, bool down)
  * only after an up and a down. Shift is still tracked (S-15.012). */
 void s15_menu_event(struct s15_menu *m, unsigned key, bool down)
 {
-	if (m->hold && down && key < S15_NKEYS && key != S15_KEY_SHIFT &&
+	if (m->hold && down && key < m->dev->keys.count &&
+	    key != m->dev->keys.shift &&
 	    m->screen != S15_SCR_NONE && !bit(m->down, key))
 		set_bit(m->stale, key, true);
 	s15_menu_key(m, key, down);
@@ -1777,12 +1848,14 @@ void s15_menu_release(struct s15_menu *m)
 
 /* ---- start and frames ---------------------------------------------- */
 
-void s15_menu_init(struct s15_menu *m, const struct s15_boot *boot,
+void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
+		   const struct s15_boot *boot,
 		   const struct s15_env_ops *env, struct s14_log *log)
 {
 	unsigned i;
 
 	s15_console_init(&m->con, log);
+	m->dev = dev;
 	m->boot = boot;
 	m->env = env;
 	m->screen = S15_SCR_NONE;

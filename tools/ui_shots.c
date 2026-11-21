@@ -24,6 +24,7 @@
 
 #include "front/fr_draw.h"
 #include "front/fr_start.h"
+#include "waffle/device.h"
 #include "waffle/display.h"
 #include "waffle/s15_menu.h"
 
@@ -146,7 +147,7 @@ static uint32_t now_ms;		/* the menu's clock (S-15.015) */
 
 static void start(void)
 {
-	s15_menu_init(&menu, &boot, &env, NULL);
+	s15_menu_init(&menu, &wb_device_opxy, &boot, &env, NULL);
 	now_ms = 0;
 	s15_menu_tick(&menu, now_ms);
 	s15_menu_start(&menu);
@@ -550,7 +551,7 @@ int main(int argc, char **argv)
 	bad |= shot(d, "upgrade-wait");
 
 	setup(); boot.reason = 30; start();
-	s15_up_run_start(&menu, S15_RUN_FIRMWARE, "1.2.0", NULL, false);
+	s15_up_run_start(&menu, S15_RUN_FIRMWARE, "1.2.0", NULL, false, false);
 	s15_up_step_start(&menu, S15_STEP_CONTENT);
 	s15_up_step_result(&menu, S15_STEP_CONTENT, S15_RES_OK, NULL, false, NULL);
 	s15_up_step_start(&menu, S15_STEP_OS);
@@ -575,7 +576,7 @@ int main(int argc, char **argv)
 	/* a run done: the content, the OS and the BLE installed, the BLE
 	 * bootloader already installed, the backplane left at No */
 	setup(); boot.reason = 30; start();
-	s15_up_run_start(&menu, S15_RUN_FIRMWARE, "1.2.0", NULL, false);
+	s15_up_run_start(&menu, S15_RUN_FIRMWARE, "1.2.0", NULL, false, false);
 	s15_up_step_start(&menu, S15_STEP_CONTENT);
 	s15_up_step_result(&menu, S15_STEP_CONTENT, S15_RES_OK, NULL, false, NULL);
 	s15_up_step_start(&menu, S15_STEP_OS);
@@ -621,12 +622,12 @@ int main(int argc, char **argv)
 		s15_up_released(&menu, 100000);
 		s15_up_tick(&menu, 102000);
 		s15_up_phase(&menu, S15_PH_EXTRACT_FIRMWARE);
-		s15_select_open(&sel, 0x3Fu, NULL, 0);
+		s15_select_open(&sel, &wb_device_opxy, 0x3Fu, NULL, 0);
 		s15_up_select(&menu, &info, &sel, 0);
 		bad |= shot(d, "upgrade-select");
 
 		info.row[S15_STEP_KEYBOARD].kind = S15_ROW_UP_TO_DATE;
-		s15_select_open(&sel, (uint8_t)(S15_SELECT_BIT(S15_STEP_OS) |
+		s15_select_open(&sel, &wb_device_opxy, (uint8_t)(S15_SELECT_BIT(S15_STEP_OS) |
 						S15_SELECT_BIT(S15_STEP_CONTENT) |
 						S15_SELECT_BIT(S15_STEP_BOOTLOADER)), NULL, 0);
 		s15_select_key(&sel, 0x07, true, 0);
@@ -643,6 +644,17 @@ int main(int argc, char **argv)
 		/* canceled: nothing installed, 6 and 8 */
 		s15_up_canceled(&menu);
 		bad |= shot(d, "upgrade-canceled");
+
+		/* S-15.197: the prompt for a package whose signature does not
+		 * match; then a valid package's selection */
+		s15_select_prompt_open(&sel, &wb_device_opxy, NULL, 0);
+		s15_up_select(&menu, &info, &sel, 0);
+		bad |= shot(d, "upgrade-sig-prompt");
+		info.valid = true;
+		info.row[S15_STEP_KEYBOARD].kind = S15_ROW_PICK;
+		s15_select_open(&sel, &wb_device_opxy, 0x3Fu, NULL, 0);
+		s15_up_select(&menu, &info, &sel, 0);
+		bad |= shot(d, "upgrade-signed");
 	}
 
 	bad |= installer_shots(d);

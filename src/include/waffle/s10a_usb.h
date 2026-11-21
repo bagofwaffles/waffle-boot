@@ -14,7 +14,7 @@
  * and rings; S-10c is called from s10a_usb_poll() only.
  *
  * The board, in held mode:
- *   s10a_usb_init(&board, &host);
+ *   s10a_usb_init(&board, &host, dev);
  *   wb_usb_set_setup_filter(s10a_usb_setup_filter, NULL);
  *   wb_usb_init(&cfg);
  * and for each state of S-10a.010 that starts a set
@@ -39,6 +39,7 @@
 
 struct s10b;
 struct s10c_host;
+struct wb_device;
 
 struct s10a_usb_board {
 	void *ctx;
@@ -62,9 +63,10 @@ struct s10a_usb_board {
 	bool (*midi_ready)(void *ctx);
 };
 
-/* host may be NULL: CDC and MIDI bytes then go nowhere. */
+/* host may be NULL: CDC and MIDI bytes then go nowhere. dev is the device
+ * whose identity the sets carry (S-10a.001, S-18.030). */
 void s10a_usb_init(const struct s10a_usb_board *board,
-		   struct s10c_host *host);
+		   struct s10c_host *host, const struct wb_device *dev);
 
 /*
  * The set the next wb_usb_attach() presents (S-10a.010), with the serial

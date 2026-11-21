@@ -27,7 +27,7 @@ patch=${rest#*.}
 ${CC:-cc} -std=c11 -O2 -DSHOT_MAJOR="$major" -DSHOT_MINOR="$minor" -DSHOT_PATCH="$patch" \
 	-Isrc -Isrc/include tools/ui_shots.c src/front/fr_draw.c src/front/fr_font.c \
 	src/front/fr_recscreen.c src/front/fr_recui.c src/front/fr_proto.c src/front/fr_slots.c \
-	src/front/fr_image.c src/front/fr_util.c \
+	src/front/fr_image.c src/front/fr_util.c src/front/fr_device.c \
 	"$build/host/libwaffle.a" -o "$raw/ui-shots"
 "$raw/ui-shots" "$raw"
 python3 -I -B tools/ui_shots.py "$raw" "$out" "$ver"

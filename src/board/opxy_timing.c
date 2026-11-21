@@ -35,6 +35,11 @@ _Static_assert(OPXY_BOOT_TIME_RECORD + BOOT_TIME_RECORD <= S01_DISPLAY_RECORD_ST
 struct boot_time opxy_boot_time;
 static bool copying;
 
+void opxy_time_mark(unsigned id)
+{
+	boot_time_mark(&opxy_boot_time, id, wb_core_cycles());
+}
+
 /* The power at the start: the PSoC's state and the battery report's status
  * byte, charge, mV and mA (S-07.050, S-07.053). */
 static void power_known(bool state_known, unsigned state, bool batt_known, uint8_t status,
@@ -163,7 +168,7 @@ static struct boot_time_walk stream_walk;
 	 OPXY_BOOT_TIMING_WINDOW_US : OPXY_BOOT_LINK_SETTLE_US)
 #define STREAM_WINDOW_CYCLES ((uint64_t)(STREAM_WINDOW_US) * OPXY_CCLK_MHZ)
 
-static bool stream_reached(unsigned id)
+static bool reached(unsigned id)
 {
 	return (opxy_boot_time.set >> id & 1u) != 0u;
 }
@@ -176,7 +181,7 @@ static bool stream_ready(void *ctx)
 
 	if (!stream_selected) {
 		/* S-09.003's wait, before the opening byte */
-		if (!stream_reached(BOOT_TIME_STREAM_WAIT))
+		if (!reached(BOOT_TIME_STREAM_WAIT))
 			boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_WAIT, at);
 		if (low)
 			boot_time_mark(&opxy_boot_time, BOOT_TIME_STREAM_READY, now);
@@ -539,11 +544,6 @@ void opxy_timing_leave(void)
 
 /* --- held mode's start (BOOT_TIME_MENU_LINE to BOOT_TIME_MENU_SHOWN) --- */
 
-static bool reached(unsigned id)
-{
-	return (opxy_boot_time.set >> id & 1u) != 0u;
-}
-
 void opxy_timing_line(bool drawn)
 {
 	if (drawn)
@@ -596,16 +596,25 @@ _Static_assert(WB_MSI_PH_CACHE == BOOT_TIME_PH_CACHE && WB_MSI_PH_SETUP == BOOT_
 	       WB_MSI_PH_STOP == BOOT_TIME_PH_STOP, "the driver's phases are the record's");
 
 struct boot_time_mount opxy_mount_time;
-static bool mount_on, in_read;
-static uint64_t mount_from, read_from, phase_from, read_sum, tags_sum;
-static uint64_t alloc_from, alloc_sum, glue_from, glue_sum, glue_reads;
-static unsigned glue_depth;
-static uint64_t phase_sum[BOOT_TIME_PHASES];
-static uint32_t phase_now[BOOT_TIME_PHASES];
+/* The mount's running figures, cleared at its start. */
+static struct {
+	bool on, in_read;
+	unsigned glue_depth;
+	uint64_t from, read_from, phase_from, read_sum, tags_sum;
+	uint64_t alloc_from, alloc_sum, glue_from, glue_sum, glue_reads;
+	uint64_t phase_sum[BOOT_TIME_PHASES];
+	uint32_t phase_now[BOOT_TIME_PHASES];
+} mr;
 
 static uint32_t clamp32(uint64_t v)
 {
 	return v > UINT32_MAX ? UINT32_MAX : (uint32_t)v;
+}
+
+/* Cycles as microseconds, held to 32 bits. */
+static __attribute__((noinline)) uint32_t us32(uint64_t cycles, uint32_t cpu)
+{
+	return clamp32(cycles / cpu);
 }
 
 /* The data word of the CPLB that covers addr, the default's with
@@ -633,24 +642,24 @@ void wb_yaffs_timing(unsigned what, bool enter, uintptr_t at)
 	struct boot_time_mount *t = &opxy_mount_time;
 	const uint64_t now = wb_core_cycles();
 
-	if (!mount_on)
+	if (!mr.on)
 		return;
 	if (what == WB_YAFFS_T_TAGS) {
-		if (enter && glue_depth++ == 0u) {
-			glue_from = now;
-			glue_reads = read_sum;
-		} else if (!enter && glue_depth != 0u && --glue_depth == 0u) {
-			const uint64_t in_reads = read_sum - glue_reads;
+		if (enter && mr.glue_depth++ == 0u) {
+			mr.glue_from = now;
+			mr.glue_reads = mr.read_sum;
+		} else if (!enter && mr.glue_depth != 0u && --mr.glue_depth == 0u) {
+			const uint64_t in_reads = mr.read_sum - mr.glue_reads;
 
-			glue_sum += now - glue_from > in_reads ? now - glue_from - in_reads : 0u;
+			mr.glue_sum += now - mr.glue_from > in_reads ? now - mr.glue_from - in_reads : 0u;
 		}
 		return;
 	}
 	if (enter) {
-		alloc_from = now;
+		mr.alloc_from = now;
 		return;
 	}
-	alloc_sum += now - alloc_from;
+	mr.alloc_sum += now - mr.alloc_from;
 	if (what == WB_YAFFS_T_FREE) {
 		t->frees++;
 		return;
@@ -671,17 +680,10 @@ void opxy_timing_mount_slave(bool start)
 
 	if (start) {
 		memset(t, 0, sizeof *t);
+		memset(&mr, 0, sizeof mr);
 		t->read_min = UINT32_MAX;
-		for (i = 0; i < BOOT_TIME_PHASES; i++) {
+		for (i = 0; i < BOOT_TIME_PHASES; i++)
 			t->phase_min[i] = UINT32_MAX;
-			phase_sum[i] = 0;
-		}
-		read_sum = 0;
-		tags_sum = 0;
-		alloc_sum = 0;
-		glue_sum = 0;
-		glue_depth = 0;
-		in_read = false;
 		t->dctl = wb_mmr_read32(L1DM_DCTL);
 		t->ictl = wb_mmr_read32(L1IM_ICTL);
 		t->dcplb_dflt = wb_mmr_read32(L1DM_DCPLB_DFLT);
@@ -690,24 +692,24 @@ void opxy_timing_mount_slave(bool start)
 		t->static_cplb = cplb_of(t->static_at, false);
 		t->code_at = (uint32_t)(uintptr_t)&wb_yaffs_tags_reads;
 		t->code_cplb = cplb_of(t->code_at, true);
-		mount_from = now;
-		mount_on = true;
+		mr.from = now;
+		mr.on = true;
 		return;
 	}
-	if (!mount_on)
+	if (!mr.on)
 		return;
-	mount_on = false;
+	mr.on = false;
 	t->cpu = cpu;
-	t->mount_us = clamp32((now - mount_from) / cpu);
-	t->read_us = clamp32(read_sum / cpu);
-	t->tags_us = clamp32(tags_sum / cpu);
-	t->alloc_us = clamp32(alloc_sum / cpu);
-	t->glue_us = clamp32(glue_sum / cpu);
+	t->mount_us = us32(now - mr.from, cpu);
+	t->read_us = us32(mr.read_sum, cpu);
+	t->tags_us = us32(mr.tags_sum, cpu);
+	t->alloc_us = us32(mr.alloc_sum, cpu);
+	t->glue_us = us32(mr.glue_sum, cpu);
 	t->heap_cplb = t->heap_lo != 0u ? cplb_of(t->heap_lo, false) : 0u;
 	if (t->reads == 0u)
 		t->read_min = 0;
 	for (i = 0; i < BOOT_TIME_PHASES; i++) {
-		t->phase_us[i] = clamp32(phase_sum[i] / cpu);
+		t->phase_us[i] = us32(mr.phase_sum[i], cpu);
 		if (t->reads == 0u)
 			t->phase_min[i] = 0;
 	}
@@ -728,6 +730,23 @@ void opxy_timing_mount_files(const struct wire_yaffs_report *r)
 	t->scan_reads = r->scan_reads;
 }
 
+/* n words of the slave's memory from at, while the slave is there and
+ * each peek is answered; how many were read. */
+static unsigned slave_peek(struct opxy_master *m, uint32_t at, uint32_t *w, unsigned n)
+{
+	unsigned i;
+
+	for (i = 0; i < n && m->slave_present && !m->bridge.absent; i++) {
+		struct s09_req r = { OPXY_DEV_PEEK_REQ, 0, 0, at + 4u * i, 0 };
+		uint32_t err = 0;
+
+		w[i] = (uint32_t)s09_master_call(&m->bridge, &r, NULL, 0, NULL, 0, NULL, &err);
+		if (err != 0u)
+			break;
+	}
+	return i;
+}
+
 /* The scan before a write (S-12.062), the slave's figures, read by the
  * master once its request is answered: magic, time, reads, way. */
 #define WSCAN_MAGIC 0x4E435357u	/* "WSCN" */
@@ -746,35 +765,16 @@ void opxy_timing_write_scan(struct opxy_master *m, bool start)
 	static uint64_t from;
 	const uint32_t at = (uint32_t)(uintptr_t)write_scan_time;
 	uint32_t w[4] = { 0, 0, 0, 0 };
+	uint32_t request_ms;
 	struct s14_text t;
-	unsigned i;
 
 	if (start) {
 		from = wb_time_us(&m->hw.time);
 		return;
 	}
-	s14_text_init(&t);
-	s14_text_str(&t, "scan before a write: ");
-	s14_text_dec(&t, (uint32_t)((wb_time_us(&m->hw.time) - from) / 1000u));
-	s14_text_str(&t, " ms for the request");
-	for (i = 0; i < 4u && m->slave_present && !m->bridge.absent; i++) {
-		struct s09_req r = { OPXY_DEV_PEEK_REQ, 0, 0, at + 4u * i, 0 };
-		uint32_t err = 0;
-
-		w[i] = (uint32_t)s09_master_call(&m->bridge, &r, NULL, 0, NULL, 0, NULL, &err);
-		if (err != 0u)
-			break;
-	}
-	if (w[0] == WSCAN_MAGIC) {
-		s14_text_str(&t, "; the slave's scan ");
-		s14_text_dec(&t, w[1] / 1000u);
-		s14_text_str(&t, " ms, ");
-		s14_text_dec(&t, w[2]);
-		s14_text_str(&t, " reads, way ");
-		s14_text_dec(&t, w[3]);
-	} else {
-		s14_text_str(&t, "; no figures from the slave");
-	}
+	request_ms = (uint32_t)((wb_time_us(&m->hw.time) - from) / 1000u);
+	(void)slave_peek(m, at, w, 4u);
+	boot_time_scan_line(&t, request_ms, w[0] == WSCAN_MAGIC ? w + 1 : NULL);
 	s14_log_text(&m->sv.log, S14_INFO, S14_TAG("time"), &t);
 }
 
@@ -785,18 +785,18 @@ void opxy_timing_chunk(bool start, bool ok, uint32_t sectors)
 	uint32_t c;
 	unsigned i;
 
-	if (!mount_on)
+	if (!mr.on)
 		return;
 	if (start) {
-		read_from = now;
-		phase_from = now;
+		mr.read_from = now;
+		mr.phase_from = now;
 		for (i = 0; i < BOOT_TIME_PHASES; i++)
-			phase_now[i] = 0;
-		in_read = true;
+			mr.phase_now[i] = 0;
+		mr.in_read = true;
 		return;
 	}
-	in_read = false;
-	c = clamp32(now - read_from);
+	mr.in_read = false;
+	c = clamp32(now - mr.read_from);
 	t->reads++;
 	if (!ok)
 		t->failed++;
@@ -804,21 +804,21 @@ void opxy_timing_chunk(bool start, bool ok, uint32_t sectors)
 		t->whole_reads++;
 	} else if (ok) {
 		t->tags_reads++;
-		tags_sum += c;
+		mr.tags_sum += c;
 	} else {
 		t->fell_back++;		/* read again whole by the glue */
 	}
-	read_sum += c;
+	mr.read_sum += c;
 	if (c < t->read_min)
 		t->read_min = c;
 	if (c > t->read_max)
 		t->read_max = c;
 	for (i = 0; i < BOOT_TIME_PHASES; i++) {
-		phase_sum[i] += phase_now[i];
-		if (phase_now[i] < t->phase_min[i])
-			t->phase_min[i] = phase_now[i];
-		if (phase_now[i] > t->phase_max[i])
-			t->phase_max[i] = phase_now[i];
+		mr.phase_sum[i] += mr.phase_now[i];
+		if (mr.phase_now[i] < t->phase_min[i])
+			t->phase_min[i] = mr.phase_now[i];
+		if (mr.phase_now[i] > t->phase_max[i])
+			t->phase_max[i] = mr.phase_now[i];
 	}
 }
 
@@ -826,11 +826,11 @@ void wb_msi_phase(unsigned phase)
 {
 	uint64_t now;
 
-	if (!in_read || phase >= BOOT_TIME_PHASES)
+	if (!mr.in_read || phase >= BOOT_TIME_PHASES)
 		return;
 	now = wb_core_cycles();
-	phase_now[phase] = clamp32((uint64_t)phase_now[phase] + (now - phase_from));
-	phase_from = now;
+	mr.phase_now[phase] = clamp32((uint64_t)mr.phase_now[phase] + (now - mr.phase_from));
+	mr.phase_from = now;
 }
 
 /* The slave's figures, word by word, once; kept only whole and filled. */
@@ -839,24 +839,14 @@ static void mount_figures(struct opxy_master *m)
 	static bool tried;
 	uint32_t w[BOOT_TIME_MOUNT_WORDS];
 	const uint32_t at = (uint32_t)(uintptr_t)&opxy_mount_time;
-	unsigned i;
 
 	/* after the first frame's end, which this would otherwise delay */
 	if (tried || !reached(BOOT_TIME_MOUNT_REPLY) ||
 	    (reached(BOOT_TIME_MENU_FRAME) && !reached(BOOT_TIME_MENU_SHOWN)))
 		return;
 	tried = true;
-	for (i = 0; i < BOOT_TIME_MOUNT_WORDS; i++) {
-		struct s09_req r = { OPXY_DEV_PEEK_REQ, 0, 0, at + 4u * i, 0 };
-		uint32_t err = 0;
-
-		if (!m->slave_present || m->bridge.absent)
-			return;
-		w[i] = (uint32_t)s09_master_call(&m->bridge, &r, NULL, 0, NULL, 0, NULL, &err);
-		if (err != 0u)
-			return;
-	}
-	if (w[0] != BOOT_TIME_MOUNT_MAGIC)
+	if (slave_peek(m, at, w, BOOT_TIME_MOUNT_WORDS) != BOOT_TIME_MOUNT_WORDS ||
+	    w[0] != BOOT_TIME_MOUNT_MAGIC)
 		return;
 	memcpy(&opxy_boot_time.mount, w, sizeof w);
 	opxy_boot_time.flags |= BOOT_TIME_MOUNT_READ;

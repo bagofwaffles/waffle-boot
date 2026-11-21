@@ -111,6 +111,25 @@ void opxy_disk_init(struct opxy_disk *d,
 	d->dev.erase_zeroes = NULL;
 }
 
+void opxy_disk_ddr_dev(const struct wb_device *dev,
+		       struct opxy_disk_part part[OPXY_DISK_PARTS])
+{
+	unsigned i;
+
+	if (!dev->mem.ramdisk_one_region) {
+		opxy_disk_ddr(part);
+		return;
+	}
+	/* S-01.016, S-12.008 on the OP-1F: one region, device.ramdisk_blocks
+	 * sectors; the other part holds none */
+	part[0].mem = (uint8_t *)(uintptr_t)OPXY_1F_DISK_START;
+	part[0].sectors = dev->mem.ramdisk_blocks;
+	for (i = 1; i < OPXY_DISK_PARTS; i++) {
+		part[i].mem = NULL;
+		part[i].sectors = 0u;
+	}
+}
+
 void opxy_disk_ddr(struct opxy_disk_part part[OPXY_DISK_PARTS])
 {
 	part[0].mem = (uint8_t *)(uintptr_t)OPXY_DISK0_START;

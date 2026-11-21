@@ -16,6 +16,7 @@
 #include "tusb.h"
 #include "device/dcd.h"
 
+#include "waffle/device.h"
 #include "waffle/s10a_msc.h"
 #include "waffle/s10a_usb.h"
 #include "waffle/s10b_mtp.h"
@@ -494,8 +495,8 @@ static void start(enum s10a_set set, const char *serial, bool high)
 			.role = TUSB_ROLE_DEVICE, .speed = TUSB_SPEED_HIGH,
 		};
 
-		s10c_host_init(&host, &ops, NULL);
-		s10a_usb_init(&board, &host);
+		s10c_host_init(&host, &ops, NULL, &wb_device_opxy, WB_DEV_BY_TABLE);
+		s10a_usb_init(&board, &host, &wb_device_opxy);
 		CHECK(tud_rhport_init(0, &rh));
 		inited = true;
 	}
@@ -521,7 +522,7 @@ static void check_descriptors(enum s10a_set set, const char *serial,
 
 	start(set, serial, high);
 	CHECK(get_descriptor(1, 0, 255));
-	s10a_desc_device(set, has, want);
+	s10a_desc_device(&wb_device_opxy, set, has, want);
 	CHECK(hw.ep0_in_len == 18 && memcmp(hw.ep0_in, want, 18) == 0);
 	CHECK(get_descriptor(6, 0, 10));
 	s10a_desc_qualifier(set, want);
@@ -540,7 +541,7 @@ static void check_descriptors(enum s10a_set set, const char *serial,
 		}
 	}
 	for (i = 0; i < 16; i++) {
-		n = s10a_desc_string(set, serial, i, want);
+		n = s10a_desc_string(&wb_device_opxy, set, serial, i, want);
 		CHECK(ctl(0x80, 6, (uint16_t)(0x0300 | i), i ? 0x0409u : 0u,
 			  255, NULL) == (n != 0));
 		CHECK(hw.ep0_in_len == n && memcmp(hw.ep0_in, want, n) == 0);
@@ -1134,7 +1135,7 @@ static void test_midi(void)
 	static const uint8_t identity[8] = { 0x04, 0xF0, 0x7E, 0x7F,
 					     0x07, 0x06, 0x01, 0xF7 };
 	static uint8_t msg[S10C_SYSEX_MAX_SENT];
-	uint8_t buf[512];
+	uint8_t buf[512], reply[S10C_IDENTITY_REPLY_LEN];
 	unsigned i, sent;
 
 	start(S10A_SET_MIDI, "", true);
@@ -1155,8 +1156,8 @@ static void test_midi(void)
 	CHECK(!hw.armed[1][7]);		/* nothing before the poll */
 	s10a_usb_poll();
 	packed_len = 0;
-	s10c_usbmidi_send(s10c_identity_reply, S10C_IDENTITY_REPLY_LEN, pack,
-			  NULL);
+	s10c_identity_reply(&wb_device_opxy, 0xFFFFu, reply);
+	s10c_usbmidi_send(reply, S10C_IDENTITY_REPLY_LEN, pack, NULL);
 	CHECK(host_in(0x87, buf, sizeof(buf)) == packed_len &&
 	      memcmp(buf, packed, packed_len) == 0);
 	CHECK(hw.armed[0][8]);
@@ -1201,8 +1202,7 @@ static void test_midi(void)
 	CHECK(host_out(0x08, buf, 64));
 	s10a_usb_poll();
 	packed_len = 0;
-	s10c_usbmidi_send(s10c_identity_reply, S10C_IDENTITY_REPLY_LEN, pack,
-			  NULL);
+	s10c_usbmidi_send(reply, S10C_IDENTITY_REPLY_LEN, pack, NULL);
 	{
 		size_t got = 0, n;
 

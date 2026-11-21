@@ -2,18 +2,22 @@
 /*
  * Recovery's USB device: one CDC ACM serial port on the BF70x USB
  * controller, polled, with S-10a's serial set's identity (vendor 0x2367,
- * product 0x0021) and its own product string, which the host tool looks
- * for. The descriptors are built by portable code (fr_usb_desc.c); the
- * controller's driver is target only (fr_hw_usb.c).
+ * the device's product) and its own product string, which the host tool
+ * looks for (S-02.093): the product text followed by " Recovery". The
+ * descriptors are built by portable code (fr_usb_desc.c); the controller's
+ * driver is target only (fr_hw_usb.c).
  */
 #ifndef FR_USB_H
 #define FR_USB_H
 
 #include "fr.h"
+#include "fr_device.h"
 
 #define FR_USB_VID        0x2367u
-#define FR_USB_PID        0x0021u
+#define FR_USB_PID        0x0021u		/* the OP-XY's */
 #define FR_USB_PRODUCT    "OP-XY Recovery"
+#define FR_USB_PID_OP1F     0x0102u
+#define FR_USB_PRODUCT_OP1F "OP-1 Recovery"
 #define FR_USB_EP0        64u
 #define FR_USB_BULK       64u	/* full speed; 512 at high speed */
 #define FR_USB_BULK_HS    512u
@@ -29,13 +33,16 @@
  * length is returned, at most max copied) for high or full speed; string
  * index i as a USB string descriptor (0: the language list). Each returns
  * the bytes it wrote (0: none such). serial is the device's serial text
- * or NULL. */
-size_t fr_usb_desc_device(uint8_t *out, size_t max);
+ * or NULL. dev names the product (NULL: the default device's). */
+size_t fr_usb_desc_device(const struct fr_dev *dev, uint8_t *out, size_t max);
 size_t fr_usb_desc_config(bool high_speed, uint8_t *out, size_t max);
 size_t fr_usb_desc_qualifier(uint8_t *out, size_t max);
-size_t fr_usb_desc_string(unsigned i, const char *serial, uint8_t *out, size_t max);
+size_t fr_usb_desc_string(const struct fr_dev *dev, unsigned i, const char *serial, uint8_t *out,
+			  size_t max);
 
-/* The controller (target only). */
+/* The controller (target only). The device whose identity it gives, set
+ * before fr_usb_start() (NULL: the default device's). */
+void fr_usb_device(const struct fr_dev *dev);
 void fr_usb_start(const struct fr_clock *clock);
 /* Serves the controller: reset, enumeration, the class requests, the bulk
  * endpoints. Called on every pass of recovery's loop. */

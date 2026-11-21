@@ -89,6 +89,7 @@
 #include <string.h>
 
 #include "hlib.h"
+#include "waffle/device.h"
 #include "waffle/display.h"
 #include "waffle/s13c_panel.h"
 #include "waffle/s15_console.h"
@@ -788,7 +789,7 @@ static void run(const struct h_cmd *c)
 		ev(&s, "RESET\t0");
 	}
 	s.t = 50u * MS;			/* the display set-up */
-	wb_display_begin(&d, &bus, xmod, ymod, (unsigned)o.strap);
+	wb_display_begin(&d, &bus, &wb_device_opxy, xmod, ymod, (unsigned)o.strap);
 	/* S-07.066: the start-up report, before the first panel command. */
 	s.t += 50u * US;
 	ev(&s, "MSG51\t00 00 00");

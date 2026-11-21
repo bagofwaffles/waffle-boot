@@ -410,11 +410,9 @@ static void sector_read(struct s09_slave *s, unsigned slot)
 
 /* S-09.041, S-16.117: a path payload; relative ones are under /yaffs2/. */
 /* 0, or -1 for a malformed path, -2 for one too long to hold */
-static int path_of(struct s09_slave *s, int which, const uint8_t *p,
-		   uint32_t n)
+static int path_into(char *out, size_t cap, const uint8_t *p, uint32_t n)
 {
 	static const char root[8] = { '/', 'y', 'a', 'f', 'f', 's', '2', '/' };
-	char *out = s->path[which];
 	size_t o = 0;
 
 	/* S-09.037: malformed when empty or when its last byte is not NUL;
@@ -425,7 +423,7 @@ static int path_of(struct s09_slave *s, int which, const uint8_t *p,
 		for (; o < sizeof root; o++)
 			out[o] = root[o];
 	for (uint32_t i = 0; p[i]; i++) {
-		if (o + i + 1 >= sizeof s->path[which])
+		if (o + i + 1 >= cap)
 			return -2;	/* longer than this slave holds */
 		out[o + i] = (char)p[i];
 		out[o + i + 1] = '\0';
@@ -456,54 +454,59 @@ static bool path_cmd(uint8_t cmd)
 	}
 }
 
+/*
+ * S-09.041 with S-09.037's path rules: r's paths into path[0] and path[1]
+ * (cap bytes each), the store's file op, its record in out (zeros where
+ * S-09.032 gives a failed result none) and the record's length in *dlen.
+ * A malformed or too long path reaches no op: the failure result of
+ * S-09.041's table (0 for opendir and the space commands, else -1), with
+ * EINVAL or ENAMETOOLONG and zero data.
+ */
+static int32_t file_exec(const struct s09_store_ops *ops, char (*path)[S09_TUNNEL_MAX + 16u],
+			 const struct s09_req *r, const uint8_t *pl, uint32_t n,
+			 uint8_t out[S09_DIRENT_LEN], uint32_t *err, uint32_t *dlen)
+{
+	const size_t cap = sizeof path[0];
+	long len = s09_deferred_data_len(r->cmd, r->arg1);
+	const char *p1 = 0, *p2 = 0;
+	int a = 0, b = 0;
+	int32_t res;
+
+	wb_fill(out, 0, S09_DIRENT_LEN);
+	*dlen = len < 0 ? 0u : (uint32_t)len;
+	*err = 0;
+	if (r->cmd == S09_RENAME) {
+		/* S-09.037: arg1 0 or not less than len is malformed */
+		a = r->arg1 >= n ? -1 : path_into(path[0], cap, pl, r->arg1);
+		b = a ? 0 : path_into(path[1], cap, pl + r->arg1, n - r->arg1);
+		p1 = path[0];
+		p2 = path[1];
+	} else if (path_cmd(r->cmd)) {
+		a = path_into(path[0], cap, pl, n);
+		p1 = path[0];
+	}
+	if (a || b) {
+		*err = a == -1 || b == -1 ? S09_EINVAL : S09_ENAMETOOLONG;
+		return r->cmd == S09_OPENDIR || r->cmd == S09_FREE_SPACE ||
+		       r->cmd == S09_TOTAL_SPACE ? 0 : -1;
+	}
+	res = ops->file(ops->ctx, r, p1, p2, pl, n, out, err);
+	/* S-09.032: a failed result's data are zeros */
+	if (r->cmd == S09_READDIR ? res == 0 :
+	    (r->cmd == S09_STAT || r->cmd == S09_STATFS) && res < 0)
+		wb_fill(out, 0, S09_DIRENT_LEN);
+	return res;
+}
+
 static void file_cmd(struct s09_slave *s, unsigned slot, const uint8_t *pl,
 		     uint32_t n)
 {
 	struct s09_sslot *x = &s->slot[slot];
-	const struct s09_req *r = &x->req;
 	uint8_t out[S09_DIRENT_LEN];
-	long dlen = s09_deferred_data_len(r->cmd, r->arg1);
-	const char *p1 = 0, *p2 = 0;
-	uint32_t err = 0;
-	int32_t res;
-	bool fail_data;
+	uint32_t err, dlen;
+	const int32_t res = file_exec(s->ops, s->path, &x->req, pl, n, out, &err, &dlen);
 
-	wb_fill(out, 0, sizeof out);
-	if (dlen < 0)
-		dlen = 0;
-	if (r->cmd == S09_RENAME) {
-		/* S-09.037: arg1 0 or not less than len is malformed */
-		int a = r->arg1 >= n ? -1 : path_of(s, 0, pl, r->arg1);
-		int b = a ? 0 : path_of(s, 1, pl + r->arg1, n - r->arg1);
-
-		if (a || b) {
-			small_reply(s, slot, -1, a == -1 || b == -1 ? S09_EINVAL :
-				    S09_ENAMETOOLONG, 0, 0);
-			return;
-		}
-		p1 = s->path[0];
-		p2 = s->path[1];
-	} else if (path_cmd(r->cmd)) {
-		int a = path_of(s, 0, pl, n);
-
-		if (a) {
-			/* S-09.037: the failure result of S-09.041's table
-			 * (0 for opendir and the space commands, else -1),
-			 * zero data */
-			small_reply(s, slot, r->cmd == S09_OPENDIR ||
-					     r->cmd == S09_FREE_SPACE ||
-					     r->cmd == S09_TOTAL_SPACE ? 0 : -1,
-				    a == -1 ? S09_EINVAL : S09_ENAMETOOLONG, 0,
-				    (uint32_t)dlen);
-			return;
-		}
-		p1 = s->path[0];
-	}
-	res = s->ops->file(s->ops->ctx, r, p1, p2, pl, n, out, &err);
-	/* S-09.032: a failed result's data are zeros */
-	fail_data = r->cmd == S09_READDIR ? res == 0 :
-		    (r->cmd == S09_STAT || r->cmd == S09_STATFS) && res < 0;
-	small_reply(s, slot, res, err, fail_data ? 0 : out, (uint32_t)dlen);
+	small_reply(s, slot, res, err, out, dlen);
 }
 
 static void deferred(struct s09_slave *s, unsigned slot, const uint8_t *pl,
@@ -1073,5 +1076,141 @@ void s09_slave_cpu_poll(struct s06_node *node, unsigned link,
 		} else if (ops->common) {
 			ops->common(ops->ctx, &f);	/* S-10 */
 		}
+	}
+}
+
+/* ---- a store reached on the same CPU (S-13b.060) ---- */
+
+/* The paths of the one request in hand; one local store per CPU. */
+static char local_path[2][S09_TUNNEL_MAX + 16u];
+
+/* As immediate(): the value of a request of S-09.030 to a store with no
+ * link between it and its client; the link's own requests are never sent
+ * there (s09_master_local()). */
+static uint32_t local_immediate(const struct s09_store_ops *ops, const struct s09_req *r)
+{
+	switch (r->cmd) {
+	case S09_ERASE_GROUP:
+		return ops->erase_group(ops->ctx);
+	case S09_BOOT_SIZE:
+		return ops->boot_size(ops->ctx);
+	case S09_RELEASE:
+		return 1u;		/* no other CPU to release (S-05.036) */
+	OPXY_TESTOS(case OPXY_TESTOS_ROW_REQ: case OPXY_TESTOS_PEEK_REQ: case OPXY_TESTOS_POKE_REQ: return ops->testos_row != NULL ? ops->testos_row(ops->ctx, r->cmd, r->arg0, r->arg1) : UINT32_MAX;)
+#if !defined(OPXY_TEST_OS)
+	case OPXY_DEV_PEEK_REQ:
+	case OPXY_DEV_POKE_REQ:
+		return 0xDEADBEEFu;	/* no other CPU's memory (S-10c.110) */
+#endif
+	case S09_INIT:
+		return S09_INIT_VALUE;
+	default:			/* S09_ECHO; the link's own are not sent */
+		return ~r->arg0;
+	}
+}
+
+/* As file_cmd(): the record's bytes into data, at most max. */
+static int32_t local_file(const struct s09_store_ops *ops, const struct s09_req *r,
+			  const uint8_t *pl, uint32_t n, uint8_t *data, uint32_t max,
+			  uint32_t *got, uint32_t *err)
+{
+	uint8_t out[S09_DIRENT_LEN];
+	uint32_t dlen;
+	const int32_t res = file_exec(ops, local_path, r, pl, n, out, err, &dlen);
+
+	if (dlen > max)
+		dlen = max;
+	if (dlen > sizeof out)
+		dlen = sizeof out;
+	if (data != NULL && dlen != 0u)
+		wb_copy(data, out, dlen);
+	*got = data != NULL ? dlen : 0u;
+	return res;
+}
+
+/* S-09.035 as the client sees it: pieces of S09_READ_CHUNK into buf, their
+ * sum, or a failed piece's result with the bytes before it in *got. */
+static int32_t local_read(const struct s09_store_ops *ops, const struct s09_req *r,
+			  uint8_t *data, uint32_t max, uint32_t *got, uint32_t *err)
+{
+	const uint32_t n = r->arg1 < max ? r->arg1 : max;
+	uint32_t received = 0;
+
+	for (;;) {
+		const uint32_t ask = s09_read_ask(n, received, S09_READ_CHUNK);
+		int32_t v;
+
+		*err = 0;
+		v = ask == 0u ? 0 : ops->read(ops->ctx, r->arg0, data + received, ask, err);
+		if (v < 0) {
+			*got = received;
+			return v;
+		}
+		if ((uint32_t)v > ask)
+			v = (int32_t)ask;
+		if (!s09_read_continues(v, S09_READ_CHUNK, received, n)) {
+			received += (uint32_t)v;
+			*got = received;
+			*err = 0;
+			return (int32_t)received;
+		}
+		received += (uint32_t)v;
+	}
+}
+
+int32_t s09_store_call(const struct s09_store_ops *ops, const struct s09_req *r,
+		       const uint8_t *pl, uint32_t plen, uint8_t *data, uint32_t max,
+		       uint32_t *got, uint32_t *err)
+{
+	const int kind = s09_kind(r->cmd);
+	uint32_t count;
+	int32_t res;
+
+	*got = 0;
+	*err = 0;
+	if (kind == S09_K_IMMEDIATE)
+		return (int32_t)local_immediate(ops, r);
+	if (kind == S09_K_PUSH)
+		return 0;		/* no CPU link to carry (S-09.045) */
+	if (kind != S09_K_DEFERRED) {
+		*err = S09_EINVAL;
+		return -1;
+	}
+	switch (r->cmd) {
+	case S09_READ_SECTOR:
+	case S09_READ_SECTORS:
+		count = r->cmd == S09_READ_SECTOR ? 1u : r->arg1;
+		if (count < 1u || count > S09_MAX_SECTORS || data == NULL ||
+		    max < count * S09_SECTOR) {
+			*err = S09_EINVAL;
+			return -1;
+		}
+		res = ops->emmc(ops->ctx, r->cmd, r->arg0, r->arg1, data, count * S09_SECTOR);
+		if (res)
+			wb_fill(data, 0, count * S09_SECTOR);	/* no information */
+		*got = count * S09_SECTOR;
+		return res;
+	case S09_WRITE_RELIABLE:
+	case S09_WRITE_SECTORS:
+		if (!s09_count_ok(r)) {
+			*err = S09_EINVAL;
+			return -1;
+		}
+		/* fall through */
+	case S09_WRITE_SECTOR:
+	case S09_FLUSH:
+	case S09_ERASE:
+	case S09_SELECT:
+		/* S-09.040: errno is 0 */
+		return ops->emmc(ops->ctx, r->cmd, r->arg0, r->arg1, (uint8_t *)(uintptr_t)pl,
+				 plen);
+	case S09_READ:
+		if (r->len == 0u || r->len > S09_READ_CHUNK || data == NULL) {
+			*err = S09_EINVAL;
+			return -1;
+		}
+		return local_read(ops, r, data, max, got, err);
+	default:
+		return local_file(ops, r, pl, plen, data, max, got, err);
 	}
 }

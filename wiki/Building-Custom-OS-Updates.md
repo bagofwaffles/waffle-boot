@@ -1,8 +1,10 @@
 How to build a firmware package (`.tfw`) that carries your own OS image, in a form waffle-boot installs:
 unsigned, with a plaintext payload. To install one, see [Updating the OS](Updating-the-OS).
 
-waffle-boot asks for no signature and no encryption. A package is accepted on its format, its CRC and its
-SHA-256 alone.
+waffle-boot needs no signature and no encryption. A package is accepted on its format, its CRC-16, and its
+payload length and SHA-256, which catch a damaged file but prove nothing about who made it. Its signature is
+checked but never required ([Signatures](Updating-the-OS#signatures)): a package without one installs every
+part you choose, the bootloader too with Protected writes on, with no warning.
 
 **Status:** the script's packages pass the reference model under `tests/oracle/S-11-packages/`. An install of
 one is **not yet confirmed** on a unit.
@@ -53,11 +55,11 @@ The CRC-16 is CRC-16/XMODEM: polynomial `0x1021`, start value 0, no reflection. 
 | Offset | Size | Value |
 | --- | --- | --- |
 | `0x04` | 1 | `0xFE`: the payload is plaintext |
-| `0x10` | `0x40` | Zero: no signature |
+| `0x10` | `0x40` | Zero: no signature. Nonzero bytes that do not verify make the unit warn before the list |
 | `0x80` | 4 | The zip's length in bytes |
 | `0x84` | 5 | `TESG`, then `0x01` |
 | `0x89` | 1 | `0xFF`: no signing key |
-| `0x8C` | 4 | Product word: `0x00084000` |
+| `0x8C` | 4 | Product word: `0x00084000` (not checked; the TE header's is) |
 | `0x98` | 4 | The payload's length in bytes |
 | `0x9C` | 32 | SHA-256 of the payload |
 
@@ -166,6 +168,21 @@ open(out, 'wb').write(preamble + body)
 python3 mktfw.py os.ldr 1.2.3 custom.tfw
 ```
 
+## On an OP-1F
+
+> **Status:** not yet run on a unit.
+
+Use the OP-1F's product word, `0x00008000`, in the TE header: set `product = 0x02 << 14` in the script (it
+writes the same word in the manifest, where it is not checked). Its package is then checked as on the OP-XY.
+
+The OP-1F also takes a second form: a manifest without the tag `TESG` at `0x84`. Of it, waffle-boot reads
+only the payload key at `0x04`, the IV at `0x70` and the zip's length at `0x80`; there is no signature,
+product word, payload length or SHA-256 to check. The CRC-16 and every check from the payload key on still
+apply, so the payload key must be `0xFE` here too. A manifest with `TESG` is the first form, and needs `0x01`
+after it. Prefer the first form: its SHA-256 catches a damaged file.
+
+In `checktfw.py`, pass `device='OP-1F'` to `m.check_package`.
+
 ## Checking a package
 
 The reference model makes the bootloader's checks on a computer. From the repository's top folder:
@@ -206,8 +223,7 @@ A refused package shows `No valid package found` and a reason line.
 | `PREAMBLE`, `TYPE` | The preamble's magic or type byte is wrong |
 | `MAGIC`, `PRODUCT`, `DEVICE` | The TE header's magic, product word or device id is wrong |
 | `CRC` | The header's CRC-16 does not match the manifest and payload |
-| `FORMAT` | The manifest lacks `TESG` and `0x01` at `0x84` |
-| `SKU` | The manifest's product word is wrong |
+| `FORMAT` | The manifest lacks `TESG` and `0x01` at `0x84` (on an OP-1F, a tag other than `TESG` is the second form, not a refusal) |
 | `LENGTH` | The manifest's payload length is not the payload's |
 | `HASH` | The manifest's SHA-256 is not the payload's |
 | `KEY`, `NOKEY` | The byte at `0x04` of the manifest is not `0xFE` |

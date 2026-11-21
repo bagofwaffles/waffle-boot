@@ -7,16 +7,25 @@
 export const FERRET_URL = 'https://bagofwaffles.github.io/ferret/op-xy/';
 
 export const INSTALLER_FILE = 'waffle-install.ldr';
+// The OP-1F's installer and its survey, laid out like the OP-1F's own OS (S-05.040): written by
+// that unit's own means, never sent by this page.
+export const INSTALLER_FILE_1F = 'waffle-install-1f.ldr';
+export const SURVEY_FILE_1F = 'waffle-install-1f-survey.ldr';
 
-export const IHELLO = 0x40, STATE = 0x41, TEST = 0x42, REPORT = 0x43;
+export const IHELLO = 0x40, STATE = 0x41, TEST = 0x42, REPORT = 0x43, SURVEY = 0x44;
 export const MAGIC = [0x57, 0x42, 0x49, 0x4E];          // "WBIN"
 export const IPROTO = 1;
-export const IHELLO_LEN = 64, STATE_HEAD = 32, REPORT_CHUNK = 1024;
+export const IHELLO_LEN = 64, STATE_HEAD = 32, REPORT_CHUNK = 1024, SURVEY_LEN = 76;
+// HELLO's bytes 56 to 59: the unit's device and how it was decided (S-18.005's codes), the device
+// the installer is built for, and 1 for a survey build
+export const IHELLO_O_DEVICE = 56;
+export const DEVICES = ['OP-XY', 'OP-1F'];
+export const HOW_TABLE = 0, HOW_SECOND = 1, HOW_UNKNOWN = 2;
 export const UNKNOWN = 0xFF;                            // the reply to a type it does not know
 export const NONE = 0xFF;
 
 // flags
-export const F_CHECKS_DONE = 1, F_UNLOCKED = 2, F_IMAGE_OK = 4, F_BREADCRUMB = 8;
+export const F_CHECKS_DONE = 1, F_UNLOCKED = 2, F_IMAGE_OK = 4, F_BREADCRUMB = 8, F_SURVEY = 16;
 
 // slot state bits
 export const SB_GOOD = 0x01, SB_TRIAL_IMAGE = 0x02, SB_COMMITTED = 0x04, SB_PENDING = 0x08,
@@ -24,7 +33,7 @@ export const SB_GOOD = 0x01, SB_TRIAL_IMAGE = 0x02, SB_COMMITTED = 0x04, SB_PEND
 
 export const STARTING = 0, CHECKING = 1, GUIDED = 2, LOCKED = 3, READY = 4, WRITING_TRIAL = 5,
     TRIAL_WRITTEN = 6, COMMIT_READY = 7, COMMITTING = 8, DONE = 9, FAILED = 10, TRIAL_FAILED = 11,
-    LEFT = 12;
+    LEFT = 12, SURVEYED = 13;
 
 // [name, what the page says]
 export const PHASE = {
@@ -41,10 +50,11 @@ export const PHASE = {
     10: ['failed', 'A write failed'],
     11: ['trial failed', 'The trial failed'],
     12: ['left', 'Nothing written'],
+    13: ['surveyed', 'The survey is done: nothing was written to the SPI flash'],
 };
 
 export const VERDICT = { 0: 'PASS', 1: 'PASS WITH GAPS', 2: 'FAIL', 0xFF: 'not yet' };
-export const TEST_STATE = ['not run', 'pass', 'FAIL', 'not tested', 'not passed'];
+export const TEST_STATE = ['not run', 'pass', 'FAIL', 'not tested', 'not passed', 'n/a'];
 export const TEST_KIND = ['OS', 'automatic', 'guided'];
 
 export const LOCK = {
@@ -53,8 +63,12 @@ export const LOCK = {
     3: 'the installer did not verify the image it carries (CRC-32 or front pin)',
     4: 'the slot the selector names is not verified or not good',
     5: "the unit's OS was not found, or fails its check",
-    6: 'the key check (com and M4) was ended with 8',
+    6: 'the key check was ended with 8',
     7: 'the eMMC could not be reached',
+    8: 'the device is not identified by its first stage',
+    9: 'this installer is built for another device',
+    10: "the trial would write over the unit's own bootloader, the last one it has",
+    11: 'this is a survey build: it writes nothing to the SPI flash',
 };
 
 // what to do, by lock reason
@@ -67,6 +81,13 @@ export const LOCK_ADVICE = {
         'make it active again. Write the OS from the developer menu, then the installer again.',
     6: 'Start the installer again and press com, then M4 (4 under the display), on the unit.',
     7: 'Switch off and on and start the installer again. Save check.txt if it happens again.',
+    8: "The unit's first stage is not one this project knows: nothing is installed on it. " +
+        'check.txt gives its n and c.',
+    9: `Use the installer built for this unit: ${INSTALLER_FILE} on an OP-XY, ` +
+        `${INSTALLER_FILE_1F} on an OP-1F.`,
+    10: 'On an OP-1F one slot keeps the bootloader the unit came with; this install would write ' +
+        'over the last one, so it is not offered.',
+    11: 'Save check.txt: it holds what the survey found. An install is not offered by this build.',
 };
 
 export const OS_PART = {
@@ -99,6 +120,9 @@ export const FAILURE = {
     0x41: 'commit refused: the trial entry is not started',
     0x43: 'the installer did not verify the image it carries (CRC-32 or front pin)',
     0x44: 'commit refused: the trial start did not reach the boot menu',
+    0x45: 'refused: a selector step failed and was left as it was; restart the unit first',
+    0x46: "trial refused: it would write over the unit's own bootloader",
+    0x47: 'refused: a survey build writes nothing to the SPI flash',
 };
 
 export const SLOT_BITS = [
@@ -129,7 +153,13 @@ export const OS_STAYS = 'The installer is still the active OS: the unit starts i
 export const BREADCRUMB = 'This installer is a breadcrumb build: it writes the trial, and refuses ' +
     'the commit.';
 
+export const SURVEY_DONE = 'The survey wrote nothing to the SPI flash. Save check.txt below: it ' +
+    'holds what an install on this unit would depend on.';
+export const NOT_IDENTIFIED = 'The device is not identified by its first stage: nothing is ' +
+    'installed on it.';
+
 export const NAMES = ['Slot 1', 'Slot 2'];
+export const deviceName = (d) => DEVICES[d] || `device ${d}`;
 export const slotName = (k) => (k === 0 || k === 1 ? NAMES[k] : 'no slot');
 export const testState = (s) => TEST_STATE[s] || `state ${s}`;
 export const lockText = (r) => LOCK[r] || `lock reason ${r}`;

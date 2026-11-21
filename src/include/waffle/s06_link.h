@@ -19,6 +19,7 @@
 
 #include "waffle/s06_clock.h"
 #include "waffle/s06_frame.h"
+#include "waffle/device.h"
 #include "waffle/s06_rx.h"
 
 #define S06_SLOTS 4		/* S-06.030 */
@@ -116,6 +117,16 @@ struct s06_node {
 extern const struct s06_route_entry s06_master_routes[6];
 #define S06_ROUTE_CDC_NORDIC 4u	/* index of the CDC -> Nordic row */
 #define S06_ROUTE_NORDIC_CDC 5u	/* index of the Nordic -> CDC row */
+/* The rows of the link to the slave (MIDI -> 5, CPU -> host): second-cpu. */
+#define S06_ROUTES_CPU 0x3u
+
+/*
+ * S-06.050 on dev: the master's table in n, its two rows of the link to the
+ * slave out of force on a device without second-cpu, where address 5 is in
+ * no row on any link (S-06.010, S-06.051). Those two bits of routes_off
+ * stay set; nothing else clears them.
+ */
+void s06_node_master_routes(struct s06_node *n, const struct wb_device *dev);
 
 /* Own and peer address of each link (S-06.011). */
 void s06_link_init(struct s06_link *l, const struct s06_port_ops *ops,

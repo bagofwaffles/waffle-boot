@@ -1,0 +1,105 @@
+{
+ "device": "OP-1F",
+ "requirement": "S-15.196",
+ "shift": "0x26",
+ "cases": [
+  {
+   "case": "held",
+   "events": [
+    [
+     "0x26",
+     "down"
+    ],
+    [
+     "0x07",
+     "down"
+    ]
+   ],
+   "interface": "MTP vendor"
+  },
+  {
+   "case": "not_held",
+   "events": [
+    [
+     "0x07",
+     "down"
+    ]
+   ],
+   "interface": "MTP"
+  },
+  {
+   "case": "released_just_before",
+   "events": [
+    [
+     "0x26",
+     "down"
+    ],
+    [
+     "0x26",
+     "up"
+    ],
+    [
+     "0x07",
+     "down"
+    ]
+   ],
+   "interface": "MTP"
+  },
+  {
+   "case": "pressed_just_after",
+   "events": [
+    [
+     "0x07",
+     "down"
+    ],
+    [
+     "0x26",
+     "down"
+    ]
+   ],
+   "interface": "MTP"
+  },
+  {
+   "case": "held_then_released_after",
+   "events": [
+    [
+     "0x26",
+     "down"
+    ],
+    [
+     "0x07",
+     "down"
+    ],
+    [
+     "0x26",
+     "up"
+    ]
+   ],
+   "interface": "MTP vendor"
+  },
+  {
+   "case": "by_another_digit_2_key",
+   "events": [
+    [
+     "0x26",
+     "down"
+    ],
+    [
+     "0x2E",
+     "down"
+    ]
+   ],
+   "interface": "MTP vendor"
+  },
+  {
+   "case": "old_shift_0x37_is_digit_2",
+   "events": [
+    [
+     "0x37",
+     "down"
+    ]
+   ],
+   "interface": "MTP"
+  }
+ ]
+}

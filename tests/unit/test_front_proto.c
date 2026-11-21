@@ -10,7 +10,7 @@
  * after END, and the retries after a failed write of the running slot;
  * protocol version 2: the countdown before a host's write or action, its
  * stop when the host leaves, ACT, the force flag on BEGIN, ACT and RESTART,
- * and INFO's new fields.
+ * and INFO's new fields; the device fields of front version 20 (S-18.004).
  */
 #include <string.h>
 
@@ -513,7 +513,7 @@ static void test_hello(void)
 	start(0, 1, true);
 	CHECK(ask(FR_T_HELLO, NULL, 0, r) == (int)FR_HELLO_LEN);
 	CHECK(r[FR_HELLO_O_PROTO] == FR_PROTO_VERSION);
-	CHECK(fr_le16(r + FR_HELLO_O_FRONT) == FR_FRONT_VERSION && FR_FRONT_VERSION == 18u);
+	CHECK(fr_le16(r + FR_HELLO_O_FRONT) == FR_FRONT_VERSION && FR_FRONT_VERSION == 20u);
 	CHECK(r[FR_HELLO_O_PROTO] == 2u);
 	CHECK(fr_le16(r + FR_HELLO_O_MAX_DATA) == FR_PROTO_MAX_DATA);
 	CHECK(r[FR_HELLO_O_WHY] == FR_WHY_KEYS);
@@ -4124,7 +4124,7 @@ static void info_acts(void (*state)(void))
 	uint8_t r[300] = { 0 };
 
 	state();
-	CHECK(ask(FR_T_INFO, NULL, 0, r) == (int)FR_INFO_LEN && FR_INFO_LEN == 232u);
+	CHECK(ask(FR_T_INFO, NULL, 0, r) == (int)FR_INFO_LEN && FR_INFO_LEN == 242u);
 	CHECK(r[FR_INFO_O_PHASE] == FR_PH_IDLE && r[FR_INFO_O_COUNT] == 0u);
 	CHECK(r[FR_INFO_O_ACT] == FR_ACT_NONE);
 	for (uint8_t a = FR_ACT_TRY; a <= FR_ACT_PUT_BACK; a++) {
@@ -4285,8 +4285,44 @@ static void test_info_te_prefix(void)
 	CHECK(st.slot[1].kind == FR_KIND_WB);
 }
 
+/* S-18.004, S-18.005: INFO's device fields from 232, what recovery was
+ * given; the fields before them as they were. */
+static void test_info_device(void)
+{
+	uint8_t r[300] = { 0 };
+
+	CHECK(FR_INFO_O_DEVICE == 232u && FR_INFO_O_DEV_HOW == 233u && FR_INFO_O_FS_N == 234u &&
+	      FR_INFO_O_FS_C == 238u && FR_INFO_LEN == 242u);
+	CHECK(FR_INFO_O_REFUSED + 1u == FR_INFO_O_DEVICE);
+	start(0, 1, true);
+	info(r);
+	CHECK(r[FR_INFO_O_DEVICE] == FR_HO_DEV_OPXY && r[FR_INFO_O_DEV_HOW] == FR_HO_HOW_TABLE);
+	CHECK(fr_le32(r + FR_INFO_O_FS_N) == 0u && fr_le32(r + FR_INFO_O_FS_C) == 0u);
+	start(0, 1, true);
+	st.dev_id = FR_HO_DEV_OP1F;
+	st.dev_how = FR_HO_HOW_TABLE;
+	st.fs_n = 0x8600u;
+	st.fs_c = 0x49267EB8u;
+	info(r);
+	CHECK(r[FR_INFO_O_DEVICE] == FR_HO_DEV_OP1F && r[FR_INFO_O_DEV_HOW] == FR_HO_HOW_TABLE);
+	CHECK(fr_le32(r + FR_INFO_O_FS_N) == 0x8600u && fr_le32(r + FR_INFO_O_FS_C) == 0x49267EB8u);
+	/* not identified: the default device, with n and c as read */
+	start(0, 1, true);
+	st.dev_id = FR_HO_DEV_OPXY;
+	st.dev_how = FR_HO_HOW_UNKNOWN;
+	st.fs_n = 0x86C0u;
+	st.fs_c = 0xB151F65Du;
+	info(r);
+	CHECK(r[FR_INFO_O_DEVICE] == FR_HO_DEV_OPXY && r[FR_INFO_O_DEV_HOW] == FR_HO_HOW_UNKNOWN);
+	CHECK(r[FR_INFO_O_FS_N] == 0xC0u && r[FR_INFO_O_FS_N + 1] == 0x86u &&
+	      r[FR_INFO_O_FS_N + 2] == 0u && r[FR_INFO_O_FS_N + 3] == 0u);
+	CHECK(fr_le32(r + FR_INFO_O_FS_C) == 0xB151F65Du);
+	CHECK(r[FR_INFO_O_WHY] == FR_WHY_KEYS && r[FR_INFO_O_PHASE] == FR_PH_IDLE);
+}
+
 int main(void)
 {
+	RUN(test_info_device);
 	RUN(test_trial_spent);
 	RUN(test_target);
 	RUN(test_target_all);

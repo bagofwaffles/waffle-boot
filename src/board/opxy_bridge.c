@@ -421,15 +421,22 @@ const char *opxy_bridge_end_line(unsigned end)
 		       "bridge: the slave's replies end on TF";
 }
 
+/* A link to a slave there is: with second-cpu alone; the OP-1F's client
+ * reaches its own storage, with no link to raise, lower or report. */
+static bool linked(const struct opxy_master *m)
+{
+	return m->slave_present && wb_has(opxy_dev(m), WB_F_SECOND_CPU);
+}
+
 void opxy_bridge_report(struct opxy_master *m)
 {
-	if (m->slave_present)
+	if (linked(m))
 		log_record(m);
 }
 
 void opxy_bridge_fast(struct opxy_master *m)
 {
-	if (!m->slave_present)
+	if (!linked(m))
 		return;
 	(void)s09_master_link_fast(&m->bridge, m->link_ceiling);
 	m->sv.files.link = m->link_ceiling;
@@ -445,7 +452,7 @@ void opxy_bridge_plain(struct opxy_master *m)
 	bool lowered;
 
 	m->sv.files.link = 0;
-	if (!m->slave_present)
+	if (!linked(m))
 		return;
 	log_record(m);
 	lowered = s09_master_rung(&m->bridge) != S09_RUNG_PLAIN;
@@ -488,7 +495,7 @@ void opxy_bridge_copy_link(struct opxy_master *m, bool on)
 	const struct s09_qdata_rec *q = s09_master_qdata(&m->bridge);
 	struct s14_text t;
 
-	if (!m->slave_present)
+	if (!linked(m))
 		return;
 	if (on) {
 		(void)s09_master_link_qdata(&m->bridge, m->link_ceiling);
@@ -520,7 +527,7 @@ void opxy_bridge_copy_link(struct opxy_master *m, bool on)
 
 void opxy_bridge_copy_single(struct opxy_master *m)
 {
-	if (m->slave_present)
+	if (linked(m))
 		(void)s09_master_qdata_off(&m->bridge, m->link_ceiling);
 }
 

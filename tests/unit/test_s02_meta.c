@@ -1,13 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-02 metadata mirror: format, write order, restore and power cuts.
- * Requirements: S-02.004 (mirror tail), S-02.018, S-02.041, S-02.060-.065.
+ * Requirements: S-02.004 (mirror tail), S-02.018, S-02.041, S-02.060-.065;
+ * on the OP-1F the record of device.metadata_size 0x28 bytes and its mirror
+ * (S-02.018, S-02.062, S-02.063).
  * Vectors: metadata_writes.json, metadata_cuts.csv (rule conforming; the
  * seed patterns are replaced by seeded tears of the C fake);
  * scenarios SC-META-WRITE, SC-META-CUT.
  */
 #include <string.h>
 
+#include "waffle/device.h"
 #include "s02_check.h"
 #include "s02_fake_flash.h"
 #include "vectors/s02_vectors.h"
@@ -375,11 +378,152 @@ static void test_cuts(void)
 	}
 }
 
+/* ---- the OP-1F: s = device.metadata_size = 0x28 ---- */
+
+#define S1F 0x28u
+
+static uint8_t g_old1f[S1F], g_new1f[S1F];
+
+/* The old record's first 0x28 bytes at 0xC000, the old record's last 0x0C
+ * bytes after them as sector bytes outside the record, the vectors' tail. */
+static void setup_1f(int start)
+{
+	memcpy(g_old1f, v_meta_old_record, S1F);
+	memcpy(g_new1f, v_meta_new_record, S1F);
+	ff_init(&g_f);
+	memcpy(g_f.mem + S02_META_OFF, v_meta_old_record, S02_META_SIZE);
+	memcpy(g_f.mem + S02_META_OFF + v_meta_tail0_off, v_meta_tail0, sizeof v_meta_tail0);
+	memcpy(g_f.mem + S02_META_OFF + v_meta_tail1_off, v_meta_tail1, sizeof v_meta_tail1);
+	if (start == 2) {	/* a write cut after its mirror */
+		uint8_t mirror[S02_MIRROR_SIZE];
+
+		s02_mirror_build_n(g_new1f, S1F, mirror);
+		memcpy(g_f.mem + S02_MIRROR_OFF, mirror, 2u * S1F);
+	}
+	memcpy(g_start_sector, g_f.mem + S02_META_OFF, S02_SECTOR_SIZE);
+	ff_reset(&g_f);
+}
+
+static bool outside_1f_kept(void)
+{
+	return memcmp(g_f.mem + S02_META_OFF + S1F, g_start_sector + S1F,
+		      S02_SECTOR_SIZE - S1F) == 0;
+}
+
+/* S-02.063 with s = 0x28 */
+static void test_format_1f(void)
+{
+	uint8_t m[S02_MIRROR_SIZE];
+	unsigned i, b;
+
+	memcpy(g_old1f, v_meta_old_record, S1F);
+	memset(m, 0xFF, sizeof m);
+	s02_mirror_build_n(g_old1f, S1F, m);
+	for (i = 0; i < S1F; i++) {
+		CHECK_EQ(m[i], g_old1f[i]);
+		CHECK_EQ(m[S1F + i], (uint8_t)~g_old1f[i]);
+	}
+	for (i = 2u * S1F; i < S02_MIRROR_SIZE; i++)
+		CHECK_EQ(m[i], 0xFFu);		/* nothing written from 0xB050 on */
+	CHECK(s02_mirror_valid_n(m, S1F));
+	for (i = 0; i < 2u * S1F; i++)
+		for (b = 0; b < 8u; b++) {
+			if (m[i] & (1u << b))
+				continue;
+			m[i] = (uint8_t)(m[i] | (1u << b));
+			CHECK(!s02_mirror_valid_n(m, S1F));
+			m[i] = (uint8_t)(m[i] & ~(1u << b));
+		}
+	/* one device's mirror is not valid at the other's size */
+	CHECK(!s02_mirror_valid(m));
+	s02_mirror_build(v_meta_old_record, m);
+	CHECK(!s02_mirror_valid_n(m, S1F));
+}
+
+/* SC-META-WRITE at 0x28: the mirror's 0x50 bytes, then 0x28 bytes at 0xC000,
+ * every other byte of the sector kept (S-02.061). */
+static void test_write_1f(void)
+{
+	struct s02_env env = ff_env(&g_f, &g_ops);
+	bool restored;
+	unsigned i, mp = 0, found = 0;
+
+	env.meta_size = (uint8_t)wb_device_op1f.mem.metadata_size;
+	CHECK_EQ(s02_meta_size(&env), S1F);
+	setup_1f(0);
+	CHECK_EQ(s02_meta_write(&env, g_new1f), S02_OK);
+	CHECK(memcmp(g_f.mem + S02_META_OFF, g_new1f, S1F) == 0);
+	CHECK(outside_1f_kept());
+	for (i = 0; i < g_f.nlog; i++)
+		if (g_f.log[i].kind == FF_PROGRAM && g_f.log[i].off == S02_MIRROR_OFF) {
+			mp = i;
+			found++;
+		}
+	CHECK_EQ(found, 1u);
+	CHECK_EQ(g_f.log[mp].len, 2u * S1F);
+	for (i = 0; i < S02_SECTOR_SIZE; i++)
+		CHECK_EQ(g_f.mem[S02_MIRROR_OFF + i], 0xFFu);	/* step 7 */
+	ff_reset(&g_f);
+	CHECK_EQ(s02_meta_restore(&env, &restored), S02_OK);
+	CHECK(!restored);
+
+	/* S-02.065: a valid 0x28 mirror wins over the record, 0x28 bytes of it */
+	setup_1f(2);
+	CHECK_EQ(s02_meta_restore(&env, &restored), S02_OK);
+	CHECK(restored);
+	CHECK(memcmp(g_f.mem + S02_META_OFF, g_new1f, S1F) == 0);
+	CHECK(outside_1f_kept());
+	/* the OP-XY's size reads the same mirror as not valid */
+	setup_1f(2);
+	env.meta_size = 0;
+	CHECK_EQ(s02_meta_restore(&env, &restored), S02_OK);
+	CHECK(!restored);
+	CHECK(memcmp(g_f.mem + S02_META_OFF, g_start_sector, S02_SECTOR_SIZE) == 0);
+}
+
+/* S-02.062 at 0x28: a cut at any operation of the write, then the next
+ * boot's restore, presents the old or the new 0x28 bytes. */
+static void test_cuts_1f(void)
+{
+	struct s02_env env = ff_env(&g_f, &g_ops);
+	unsigned total, n, k;
+
+	env.meta_size = (uint8_t)S1F;
+	setup_1f(0);
+	(void)s02_meta_write(&env, g_new1f);
+	total = g_f.nall;
+	for (k = 0; k < 2u; k++)
+		for (n = 1; n <= total; n++) {
+			bool restored;
+			const uint8_t *rec;
+
+			setup_1f(0);
+			g_f.count_reads = true;
+			g_f.cut_after = n;
+			if (k == 1u) {		/* torn, by seed */
+				g_f.tear = n;
+				g_f.tear_kind = FF_TEAR_SEED;
+				g_f.tear_a = 5000u + n;
+			}
+			(void)s02_meta_write(&env, g_new1f);
+			ff_reset(&g_f);
+			CHECK_EQ(s02_meta_restore(&env, &restored), S02_OK);
+			rec = g_f.mem + S02_META_OFF;
+			CHECK(memcmp(rec, g_new1f, S1F) == 0 || memcmp(rec, g_old1f, S1F) == 0);
+			ff_reset(&g_f);
+			CHECK_EQ(s02_meta_restore(&env, &restored), S02_OK);
+			CHECK(!restored);
+		}
+}
+
 int main(void)
 {
 	test_format();
 	test_write();
 	test_restore();
 	test_cuts();
+	test_format_1f();
+	test_write_1f();
+	test_cuts_1f();
 	return finish("test_s02_meta");
 }

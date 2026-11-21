@@ -84,6 +84,7 @@ static void scan(struct opxy_master *m)
 		in.option = sv->option;		/* S-11.090: as the checks begin */
 		in.file_name = name;		/* S-11.047 */
 		in.fw_command = false;
+		in.dev = opxy_dev(m);
 		opxy_install_source(m, &src, &in, &res);
 		/* S-10c.106: a disk package's last report, on CDC */
 		s10c_host_outcome(&sv->host, &res.outcome);
@@ -92,7 +93,7 @@ static void scan(struct opxy_master *m)
 	}
 	/* S-11.049: a package taken leaves a freshly formatted disk */
 	if (taken) {
-		if (wire_fat_format(&sv->fat, &sv->disk.dev))
+		if (wire_fat_format(&sv->fat, &sv->disk.dev, opxy_dev(m)))
 			wire_fat_unmount(&sv->fat);
 		else
 			s14_log_str(&sv->log, S14_ERROR, S14_NO_TAG,

@@ -2,13 +2,15 @@
 /*
  * Recovery's descriptors (src/front/fr_usb_desc.c): they parse, and they
  * are S-10a's serial set (S-10a.019, libwaffle's s10a_desc_*) in identity,
- * class layout, endpoints and power, with recovery's own product string.
+ * class layout, endpoints and power, with recovery's own product string;
+ * the product and its string per device (S-02.093).
  */
 #include <string.h>
 
 #include "support/check.h"
 
 #include "front/fr_usb.h"
+#include "waffle/device.h"
 #include "waffle/s10a_desc.h"
 
 static unsigned le16(const uint8_t *p)
@@ -20,7 +22,7 @@ static unsigned le16(const uint8_t *p)
 static bool string_is(unsigned i, const char *text)
 {
 	uint8_t d[80];
-	const size_t n = fr_usb_desc_string(i, NULL, d, sizeof d);
+	const size_t n = fr_usb_desc_string(&fr_dev_opxy, i, NULL, d, sizeof d);
 	size_t k;
 
 	if (n != 2u + 2u * strlen(text) || d[0] != n || d[1] != 0x03)
@@ -34,8 +36,9 @@ static bool string_is(unsigned i, const char *text)
 static void test_device(void)
 {
 	uint8_t d[32], ref[18];
+	char text[S10A_TEXT_MAX];
 
-	CHECK(fr_usb_desc_device(d, sizeof d) == 18u);
+	CHECK(fr_usb_desc_device(&fr_dev_opxy, d, sizeof d) == 18u);
 	CHECK(d[0] == 18 && d[1] == 0x01);
 	CHECK(le16(d + 2) == 0x0200u);
 	CHECK(d[4] == 0x02 && d[5] == 0x00 && d[6] == 0x00);	/* S-10a.002 */
@@ -49,14 +52,14 @@ static void test_device(void)
 	/* The serial set's device descriptor, with no serial, is the same
 	 * but for the product string, which is the same index and differs in
 	 * text only. */
-	s10a_desc_device(S10A_SET_SERIAL, false, ref);
+	s10a_desc_device(&wb_device_opxy, S10A_SET_SERIAL, false, ref);
 	CHECK(memcmp(d, ref, 18) == 0);
-	CHECK(strcmp(s10a_desc_text(S10A_SET_SERIAL, NULL, ref[15]),
-		     "OP-XY Boot") == 0);
+	CHECK(s10a_desc_text(&wb_device_opxy, S10A_SET_SERIAL, NULL, ref[15], text) &&
+	      strcmp(text, "OP-XY Boot") == 0);
 
 	/* Cut to max. */
 	memset(d, 0xEE, sizeof d);
-	CHECK(fr_usb_desc_device(d, 8) == 8u);
+	CHECK(fr_usb_desc_device(&fr_dev_opxy, d, 8) == 8u);
 	CHECK(d[0] == 18 && d[7] == 64 && d[8] == 0xEE);
 }
 
@@ -177,25 +180,62 @@ static void test_config(void)
 static void test_strings(void)
 {
 	uint8_t d[80];
+	char text[S10A_TEXT_MAX];
 
-	CHECK(fr_usb_desc_string(0, NULL, d, sizeof d) == 4u);
+	CHECK(fr_usb_desc_string(&fr_dev_opxy, 0, NULL, d, sizeof d) == 4u);
 	CHECK(memcmp(d, "\x04\x03\x09\x04", 4) == 0);
 	CHECK(string_is(1, "teenage engineering"));
 	CHECK(string_is(2, "OP-XY Recovery"));
-	CHECK(fr_usb_desc_string(3, NULL, d, sizeof d) == 0u);
-	CHECK(fr_usb_desc_string(4, NULL, d, sizeof d) == 0u);
-	CHECK(fr_usb_desc_string(255, NULL, d, sizeof d) == 0u);
+	CHECK(fr_usb_desc_string(&fr_dev_opxy, 3, NULL, d, sizeof d) == 0u);
+	CHECK(fr_usb_desc_string(&fr_dev_opxy, 4, NULL, d, sizeof d) == 0u);
+	CHECK(fr_usb_desc_string(&fr_dev_opxy, 255, NULL, d, sizeof d) == 0u);
 	/* The product string differs from the serial set's by design. */
-	CHECK(strcmp(s10a_desc_text(S10A_SET_SERIAL, NULL, 2),
-		     FR_USB_PRODUCT) != 0);
-	CHECK(strcmp(s10a_desc_text(S10A_SET_SERIAL, NULL, 1),
-		     "teenage engineering") == 0);
+	CHECK(s10a_desc_text(&wb_device_opxy, S10A_SET_SERIAL, NULL, 2, text) &&
+	      strcmp(text, FR_USB_PRODUCT) != 0);
+	CHECK(s10a_desc_text(&wb_device_opxy, S10A_SET_SERIAL, NULL, 1, text) &&
+	      strcmp(text, "teenage engineering") == 0);
 	/* A serial text, if one is given, is string 3. */
-	CHECK(fr_usb_desc_string(3, "AB12", d, sizeof d) == 10u);
+	CHECK(fr_usb_desc_string(&fr_dev_opxy, 3, "AB12", d, sizeof d) == 10u);
 	CHECK(d[2] == 'A' && d[8] == '2' && d[9] == 0);
 	/* Cut to max. */
-	CHECK(fr_usb_desc_string(2, NULL, d, 2) == 2u);
+	CHECK(fr_usb_desc_string(&fr_dev_opxy, 2, NULL, d, 2) == 2u);
 	CHECK(d[0] == 30 && d[1] == 0x03);
+}
+
+/* The string descriptor `i` on dev decodes to `text`. */
+static bool dev_string_is(const struct fr_dev *dev, unsigned i, const char *text)
+{
+	uint8_t d[80];
+	const size_t n = fr_usb_desc_string(dev, i, NULL, d, sizeof d);
+	size_t k;
+
+	if (n != 2u + 2u * strlen(text) || d[0] != n || d[1] != 0x03)
+		return false;
+	for (k = 0; text[k]; k++)
+		if (le16(d + 2 + 2 * k) != (unsigned char)text[k])
+			return false;
+	return true;
+}
+
+/* S-02.093 per device: device.usb_pid and device.product_text + " Recovery";
+ * NULL (a device not known) gives the default device's. Every other byte
+ * is the same on both. */
+static void test_per_device(void)
+{
+	uint8_t xy[18], f[18], none[18];
+
+	CHECK(fr_usb_desc_device(&fr_dev_opxy, xy, sizeof xy) == 18u);
+	CHECK(fr_usb_desc_device(&fr_dev_op1f, f, sizeof f) == 18u);
+	CHECK(fr_usb_desc_device(NULL, none, sizeof none) == 18u);
+	CHECK(le16(f + 8) == 0x2367u && le16(f + 10) == 0x0102u);
+	CHECK(memcmp(none, xy, 18) == 0);
+	CHECK(memcmp(f, xy, 10) == 0 && memcmp(f + 12, xy + 12, 6) == 0);
+	CHECK(dev_string_is(&fr_dev_op1f, f[15], "OP-1 Recovery"));
+	CHECK(dev_string_is(&fr_dev_op1f, 1, "teenage engineering"));
+	CHECK(dev_string_is(NULL, 2, "OP-XY Recovery"));
+	CHECK(dev_string_is(&fr_dev_opxy, 2, FR_USB_PRODUCT) &&
+	      dev_string_is(&fr_dev_op1f, 2, FR_USB_PRODUCT_OP1F));
+	CHECK(fr_dev_op1f.usb_pid == FR_USB_PID_OP1F && fr_dev_opxy.usb_pid == FR_USB_PID);
 }
 
 int main(void)
@@ -204,5 +244,6 @@ int main(void)
 	RUN(test_qualifier);
 	RUN(test_config);
 	RUN(test_strings);
+	RUN(test_per_device);
 	return check_summary("front_usb");
 }

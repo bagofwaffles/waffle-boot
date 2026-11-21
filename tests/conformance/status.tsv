@@ -3,7 +3,7 @@
 # the BF70x drivers; -: nothing). full: emulator | hardware | OS | - (- keeps the index's kind). note: shown
 # in COVERAGE.md.
 pattern	logic	full	note
-S-11/SC-11-DISK-WAIT	-	-	not driven: the host's hold on the disk, the USB key and the scan delay are outside s11_install() (S-10a, S-15)
+S-11/SC-11-DISK-WAIT	-	-	not driven: the host's hold on the disk, the com key and the scan delay are outside s11_install() (S-10a, S-15)
 S-11/SC-11-DISK-AFTER	-	-	not driven: no src/ logic yet formats or re-attaches the RAM disk after a scan
 S-11/SC-11-OPTION-FLIP	-	-	not driven: the menu act that flips the option (S-15); s11_install() takes the option once, when the checks begin
 S-11/*	-	-	harness: s11_install() and s11_interrupted() on BearSSL, micro-ecc, minizip, yaffs2 and FatFs; the metadata record, the Nordic and PSoC peers and the image writers are fakes that log their calls (no SPI-flash or eMMC op log, no host link, no screen)

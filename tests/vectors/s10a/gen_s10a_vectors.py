@@ -6,7 +6,8 @@ Run from the repository root:  python3 -I -B tests/vectors/s10a/gen_s10a_vectors
 
 Byte strings go into one blob array and are referenced as {present, offset,
 length}. The descriptor, serial, SCSI and medium vectors are the JSON files'
-contents. The Bulk-Only Transport cases are computed here with the
+contents; the OP-1F's descriptor and SCSI vectors (descriptors_1f.json,
+scsi_1f.json) go into arrays of their own (s10av_sets_1f, s10av_steps_1f). The Bulk-Only Transport cases are computed here with the
 conformance package's run_bot (BOT 1.0 6.7) on s10a_model's unit, for a grid
 of host lengths and directions around each command's intent (S-10a.040).
 """
@@ -73,9 +74,9 @@ def serials(blob):
     return out
 
 
-def descriptor_sets(blob):
+def descriptor_sets(blob, fname='descriptors.json'):
     out = []
-    for key, v in sorted(load('descriptors.json').items()):
+    for key, v in sorted(load(fname).items()):
         name, speed, variant = key.split('/')
         cfgs = [blob.ref(bytes.fromhex(c)) for c in v['configurations']]
         others = [blob.ref(bytes.fromhex(c)) for c in v['other_speed']]
@@ -117,11 +118,11 @@ def step_line(blob, seq, s):
                 s['status'], s['data_in_len'], din, sha, s['sense'])
 
 
-def scsi_steps(blob):
+def scsi_steps(blob, fnames=('scsi.json', 'medium.json')):
     out = []
     starts = {'offered': (EV_NEW_OFFERED, M.SERIAL), 'no_serial': (EV_NEW_OFFERED, ''),
               'no_medium': (EV_NEW_ABSENT, M.SERIAL)}
-    for fname in ('scsi.json', 'medium.json'):
+    for fname in fnames:
         for seq, steps in sorted(load(fname).items()):
             ev, serial = starts.get(seq, (EV_NEW_OFFERED, M.SERIAL))
             if seq == 'stop_eject_states':
@@ -167,6 +168,8 @@ def main():
     ser = serials(blob)
     sets = descriptor_sets(blob)
     steps = scsi_steps(blob)
+    sets_1f = descriptor_sets(blob, 'descriptors_1f.json')
+    steps_1f = scsi_steps(blob, ('scsi_1f.json',))
     bots = bot_cases(blob)
     lines = [
         '/* SPDX-License-Identifier: GPL-2.0-or-later */',
@@ -210,6 +213,11 @@ def main():
     lines += ['', 'static const struct s10av_serial s10av_serials[] = {'] + ser + ['};']
     lines += ['', 'static const struct s10av_set s10av_sets[] = {'] + sets + ['};']
     lines += ['', 'static const struct s10av_step s10av_steps[] = {'] + steps + ['};']
+    lines += ['', '/* the OP-1F\'s (S-18.030) */']
+    lines += ['static const struct s10av_set s10av_sets_1f[] = {'] + sets_1f + ['};']
+    lines += ['', 'static const struct s10av_step s10av_steps_1f[] = {'] + steps_1f + ['};']
+    lines += ['', '/* the OP-1F\'s disk (device.ramdisk_blocks) */',
+              '#define S10AV_BLOCKS_1F %du' % M.F1.blocks]
     lines += ['', 'static const struct s10av_bot s10av_bots[] = {'] + bots + ['};']
     lines += ['', '#endif /* TEST_S10A_VECTORS_H */', '']
     genout.write(OUT, '\n'.join(lines))

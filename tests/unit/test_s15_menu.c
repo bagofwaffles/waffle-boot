@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "waffle/device.h"
 #include "waffle/s14_log.h"
 #include "waffle/s15_menu.h"
 #include "waffle/s15_prompt.h"
@@ -31,6 +32,7 @@
 
 #define S15V_UPGRADE
 #define S15V_OSW
+#define S15V_DEVICE_1F
 #include "vectors/s15_vectors.h"
 
 /* ---- the fake environment ------------------------------------------- */
@@ -420,11 +422,13 @@ static void default_boot(void)
 
 /* The menu's clock (S-15.015), as the board gives it: ms since start(). */
 static uint32_t T;
+/* The device held mode runs on; the OP-XY but in test_op1f(). */
+static const struct wb_device *menu_dev = &wb_device_opxy;
 
 static void start(void)
 {
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env, &LOG);
+	s15_menu_init(&M, menu_dev, &BOOT, &env, &LOG);
 	T = 0;
 	s15_menu_tick(&M, T);
 	s15_menu_start(&M);
@@ -715,7 +719,7 @@ static void test_info2(void)
 	/* a board with no read: the page shows what held mode began with */
 	reset_fake(); default_boot();
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env_bare, &LOG);
 	s15_menu_start(&M);
 	press(0x09);
 	press(0x06);
@@ -735,7 +739,7 @@ static void prompt_transition(unsigned key, bool down, unsigned *next,
 {
 	struct s15_prompt p;
 
-	s15_prompt_open(&p, NULL);
+	s15_prompt_open(&p, &wb_device_opxy, NULL);
 	s15_prompt_key(&p, key, down);
 	switch (s15_prompt_choice(&p)) {
 	case S15_PROMPT_START:
@@ -1115,7 +1119,7 @@ enum rule {
 	R_FROM_SYSTEM,        /* S-15.060: format and packs only from System */
 	R_UPGRADE_EXIT,       /* S-15.103 */
 	R_OPTION_KEYS,        /* S-15.140 */
-	R_UPGRADE_GATE,       /* S-15.103: the USB key and digit 6 */
+	R_UPGRADE_GATE,       /* S-15.103: the com key and digit 6 */
 	R_FORMAT_KEYS,        /* S-15.071 */
 	R_MTP_BUSY,           /* S-15.092, S-15.093 */
 	R_OSW_RESULT,         /* S-15.092, S-15.094, S-15.190 */
@@ -1800,7 +1804,7 @@ static void test_screens(void)
 	 * install that followed it. */
 	reset_fake(); default_boot(); BOOT.interrupted = true; start();
 	press(0x06);
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, false);
 	s15_up_run_end(&M, S15_OUT_DONE, 0);
 	press(0x15);
 	CHECK(M.screen == S15_SCR_UPGRADE, "S-15.115 no key leaves the outcome");
@@ -2123,7 +2127,7 @@ static void test_boot_prompt(void)
 
 	reset_fake(); default_boot();
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env, &LOG);
 	v.running = 0;
 	v.selector = 0;
 	v.verified = 0x01;
@@ -2158,8 +2162,8 @@ static void test_boot_prompt(void)
 
 		for (size_t k = 0; k < c->n_down; k++)
 			known[c->down_at_open[k] >> 3] |= (uint8_t)(1u << (c->down_at_open[k] & 7u));
-		s15_prompt_open(&p, known);
-		s15_prompt_open(&control, NULL);
+		s15_prompt_open(&p, &wb_device_opxy, known);
+		s15_prompt_open(&control, &wb_device_opxy, NULL);
 		for (size_t k = 0; k < c->n; k++) {
 			s15_prompt_key(&p, c->events[k][0], c->events[k][1] != 0u);
 			s15_prompt_key(&control, c->events[k][0],
@@ -2183,7 +2187,7 @@ static void test_boot_prompt(void)
 		struct s15_prompt p;
 		static const uint8_t known[9] = { 0xC0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-		s15_prompt_open(&p, known);		/* 0x06 and 0x07 down */
+		s15_prompt_open(&p, &wb_device_opxy, known);		/* 0x06 and 0x07 down */
 		s15_prompt_key(&p, 0x06, true);
 		s15_prompt_key(&p, 0x07, true);
 		CHECK(s15_prompt_choice(&p) == S15_PROMPT_WAIT, "S-15.180 both stale");
@@ -2193,7 +2197,7 @@ static void test_boot_prompt(void)
 		s15_prompt_key(&p, 0x06, false);
 		s15_prompt_key(&p, 0x06, true);
 		CHECK(s15_prompt_choice(&p) == S15_PROMPT_HELD, "S-15.180 the first digit wins");
-		s15_prompt_open(&p, NULL);
+		s15_prompt_open(&p, &wb_device_opxy, NULL);
 		s15_prompt_key(&p, 72, true);		/* S-15.014: no such key */
 		CHECK(s15_prompt_choice(&p) == S15_PROMPT_WAIT, "S-15.014 no fault");
 	}
@@ -2206,7 +2210,7 @@ static void test_keys(void)
 	/* S-15.013: keys down across the start act only after up and down. */
 	reset_fake(); default_boot();
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env, &LOG);
 	ev(0x12, true);
 	ev(0x0d, true);
 	ev(0x06, true);
@@ -2223,7 +2227,7 @@ static void test_keys(void)
 	 * (held from power-on): a down of it is no press; once seen released,
 	 * its press acts. */
 	reset_fake(); default_boot();
-	s15_menu_init(&M, &BOOT, &env, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env, &LOG);
 	{
 		uint8_t known[(S15_NKEYS + 7u) / 8u] = { 0 };
 
@@ -2767,7 +2771,7 @@ static void test_os_write(void)
 		 * digit 6 after a success. */
 		before = s15_menu_changes(&M);
 		for (unsigned key = 0; key < S15_NKEYS; key++)
-			if (s15_digit(key) != 8u && s15_digit(key) != 6u)
+			if (s15_digit(&wb_device_opxy, key) != 8u && s15_digit(&wb_device_opxy, key) != 6u)
 				press(key);
 		if (strcmp(c->result, "ok") != 0)
 			press(0x13);
@@ -2793,7 +2797,7 @@ static void test_os_write(void)
 	/* A board with no continue_os: digit 6 there is the restart W7. */
 	reset_fake(); default_boot(); F.osw = S15_OSW_OK;
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env_bare, &LOG);
 	s15_menu_start(&M);
 	press(0x08);
 	press(0x12);
@@ -2875,13 +2879,13 @@ static void test_upgrade(void)
 	press(0x15);
 	CHECK(M.screen == S15_SCR_UPGRADE, "S-15.103 the MIDI form stays");
 
-	/* S-15.103: neither the USB key nor digit 6 does anything here; only
+	/* S-15.103: neither the com key nor digit 6 does anything here; only
 	 * a release starts a scan. */
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	press(0x18);
 	press(0x13);
 	CHECK(F.scan == 0u && M.armed != S15_ARM_OPTION && !M.option_on &&
-	      M.screen == S15_SCR_UPGRADE, "S-15.103 USB key and 6: no effect");
+	      M.screen == S15_SCR_UPGRADE, "S-15.103 com and 6: no effect");
 	scan_by_release();
 	CHECK(F.scan == 1u, "S-15.105 a release scans");
 	press(0x15);
@@ -2944,7 +2948,7 @@ static void test_upgrade(void)
 	CHECK(n_log_frames == 0u, "progress not logged");
 	CHECK(strcmp(last_row(row), "step-run:Decrypting\t33%") == 0,
 	      "decrypting: '%s'", row);
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, true);
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, true, false);
 	CHECK(appended("Upgrading to 1.3.0") &&
 	      appended(s15_stock_line) && M.con.count == 4u,
 	      "header");
@@ -3051,7 +3055,7 @@ static void test_upgrade(void)
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	s15_up_transfer_begin(&M, 2000);
 	s15_up_phase(&M, S15_PH_DECRYPT);
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, false);
 	s15_up_run_end(&M, S15_OUT_FAILED, 0);
 	CHECK(s15_up_disk_offerable(&M), "S-15.115 offered after a host run");
 	s15_up_released(&M, 30000);
@@ -3061,7 +3065,7 @@ static void test_upgrade(void)
 
 	/* A content-only install's other steps show nothing. */
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
-	s15_up_run_start(&M, S15_RUN_CONTENT, NULL, "Bass", false);
+	s15_up_run_start(&M, S15_RUN_CONTENT, NULL, "Bass", false, false);
 	n = M.con.count;
 	s15_up_step_start(&M, S15_STEP_OS);
 	s15_up_step_progress(&M, S15_STEP_OS, 1, 2);
@@ -3073,7 +3077,7 @@ static void test_upgrade(void)
 
 	/* A step that stops the run says why on its row. */
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, false);
 	s15_up_step_start(&M, S15_STEP_BLE_BOOTLOADER);
 	s15_up_step_result(&M, S15_STEP_BLE_BOOTLOADER, S15_RES_FAILURE, NULL,
 			   false, "no slot answer");
@@ -3135,7 +3139,7 @@ static void test_select_screen(void)
 	s15_up_phase(&M, S15_PH_EXTRACT_FIRMWARE);
 	s15_up_progress(&M, 1, 1);
 	sel_full();
-	s15_select_open(&sl, 0x3Fu, NULL, 1000u);
+	s15_select_open(&sl, &wb_device_opxy, 0x3Fu, NULL, 1000u);
 	s15_up_select(&M, &sel_info, &sl, 1000u);
 	expect_screen("upgrade_select_open");
 	expect_title("upgrade");
@@ -3165,7 +3169,7 @@ static void test_select_screen(void)
 	sel_info.row[S15_STEP_BLE].kind = S15_ROW_OFF;
 	sel_info.row[S15_STEP_BLE_BOOTLOADER].kind = S15_ROW_OFF;
 	sel_info.row[S15_STEP_KEYBOARD].kind = S15_ROW_UP_TO_DATE;
-	s15_select_open(&sl, 0x07u, NULL, 1000u);
+	s15_select_open(&sl, &wb_device_opxy, 0x07u, NULL, 1000u);
 	sel_press(&sl, 0x07u, 1000u);
 	sel_press(&sl, 0x14u, 1000u);
 	s15_up_select(&M, &sel_info, &sl, 9000u);
@@ -3186,27 +3190,48 @@ static void test_select_screen(void)
 			sel_info.row[i].kind = S15_ROW_NONE;
 	sel_info.row[S15_STEP_OS].installed = NULL;
 	sel_info.row[S15_STEP_BOOTLOADER].kind = S15_ROW_OPTION_OFF;
-	s15_select_open(&sl, 0x02u, NULL, 1000u);
+	s15_select_open(&sl, &wb_device_opxy, 0x02u, NULL, 1000u);
 	s15_up_select(&M, &sel_info, &sl, 1000u);
 	expect_screen("upgrade_select_option_off");
 	sel_info.row[S15_STEP_BOOTLOADER].kind = S15_ROW_PICK;
 	sel_info.stock = true;
-	s15_select_open(&sl, 0x06u, NULL, 1000u);
+	s15_select_open(&sl, &wb_device_opxy, 0x06u, NULL, 1000u);
 	sel_press(&sl, 0x14u, 1000u);
 	s15_up_select(&M, &sel_info, &sl, 1000u);
 	expect_screen("upgrade_select_stock");
+	/* S-15.197: a valid package's line; the prompt */
+	sel_info.stock = false;
+	sel_info.valid = true;
+	s15_select_open(&sl, &wb_device_opxy, 0x06u, NULL, 1000u);
+	s15_up_select(&M, &sel_info, &sl, 1000u);
+	expect_screen("upgrade_select_signed");
+	sel_info.valid = false;
+	s15_select_prompt_open(&sl, &wb_device_opxy, NULL, 1000u);
+	s15_up_select(&M, &sel_info, &sl, 1000u);
+	expect_screen("upgrade_sig_prompt");
+	expect_title("upgrade");
+	CHECK(appended("The firmware's signature does not match."),
+	      "S-15.004 the prompt logged");
+	s15_select_key(&sl, 0x06u, true, 10000u);
+	s15_up_select(&M, &sel_info, &sl, 10000u);
+	nlogged = n_app;
+	s15_up_select_time(&M, &sel_info, &sl, 12000u);
+	expect_screen("upgrade_sig_prompt_held");
+	CHECK(n_app == nlogged, "S-15.004 the prompt's bar not logged");
 	sel_full();
 	for (unsigned i = 0; i < S15_STEP_COUNT; i++)
 		if (i != S15_STEP_CONTENT)
 			sel_info.row[i].kind = S15_ROW_NONE;
-	s15_select_open(&sl, 0x01u, NULL, 1000u);
+	s15_select_open(&sl, &wb_device_opxy, 0x01u, NULL, 1000u);
 	s15_up_select(&M, &sel_info, &sl, 1000u);
 	expect_screen("upgrade_select_content");
 
-	/* the run's own header follows on the upgrade screen's title */
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+	/* the run's own header follows on the upgrade screen's title; a
+	 * valid package is shown as TE's (S-15.197) */
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, true);
 	expect_title("upgrade");
-	CHECK(appended("Upgrading to 1.3.0"), "the run's header after it");
+	CHECK(appended("Upgrading to 1.3.0") && appended("Signed by TE"),
+	      "the run's header after it");
 }
 
 /* S-11.096: a canceled selection: nothing installed, and how to leave as
@@ -3219,7 +3244,7 @@ static void test_select_canceled(void)
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
 	sel_full();
-	s15_select_open(&sl, 0x3Fu, NULL, 1000u);
+	s15_select_open(&sl, &wb_device_opxy, 0x3Fu, NULL, 1000u);
 	s15_up_select(&M, &sel_info, &sl, 1000u);
 	s15_up_canceled(&M);
 	expect_title("upgrade");
@@ -3230,7 +3255,7 @@ static void test_select_canceled(void)
 	scans = F.scan;
 	scan_by_release();
 	CHECK(F.scan == scans + 1u, "S-15.103 a new scan after a cancel");
-	s15_select_open(&sl, 0x3Fu, NULL, 2000u);
+	s15_select_open(&sl, &wb_device_opxy, 0x3Fu, NULL, 2000u);
 	s15_up_select(&M, &sel_info, &sl, 2000u);
 	expect_screen("upgrade_select_open");
 	s15_up_canceled(&M);
@@ -3284,7 +3309,7 @@ static void test_run_end_skipped(void)
 
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, false);
 	s15_up_step_start(&M, S15_STEP_OS);
 	s15_up_step_result(&M, S15_STEP_OS, S15_RES_OK, "1.3.0", false, NULL);
 	s15_up_step_start(&M, S15_STEP_BLE);
@@ -3298,7 +3323,7 @@ static void test_run_end_skipped(void)
 
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, false);
 	s15_up_step_start(&M, S15_STEP_OS);
 	s15_up_step_result(&M, S15_STEP_OS, S15_RES_SKIPPED_UNSELECTED,
 			   NULL, false, NULL);
@@ -3315,7 +3340,7 @@ static void test_run_end_skipped(void)
 
 	reset_fake(); default_boot(); BOOT.reason = 30; start();
 	scan_by_release();
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, false);
 	s15_up_step_start(&M, S15_STEP_BLE);
 	s15_up_step_result(&M, S15_STEP_BLE, S15_RES_SKIPPED_OFF, NULL, false, NULL);
 	s15_up_step_start(&M, S15_STEP_OS);
@@ -3420,7 +3445,7 @@ static void test_os_once(void)
 	/* A build that starts no OS (the test OS): refused, with why. */
 	reset_fake(); default_boot();
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env_bare, &LOG);
 	s15_menu_start(&M);
 	press(0x08);
 	clear_records();
@@ -3498,7 +3523,7 @@ static void test_continue(void)
 	 * nothing. */
 	reset_fake(); default_boot();
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env_bare, &LOG);
 	s15_menu_start(&M);
 	clear_records();
 	n_app = 0;
@@ -3563,14 +3588,14 @@ static void test_done_restart(void)
 				reset_fake(); default_boot(); BOOT.reason = r ? 40 : 30;
 				if (bare) {
 					s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-					s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+					s15_menu_init(&M, &wb_device_opxy, &BOOT, &env_bare, &LOG);
 					s15_menu_start(&M);
 				} else {
 					start();
 				}
 				press(0x13);
 				CHECK(F.reset_w7 == 0u && F.cont == 0u, "upgrade: no 6 before a run");
-				s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+				s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, false);
 				press(0x13);
 				CHECK(F.reset_w7 == 0u && F.cont == 0u, "upgrade: no 6 while it runs");
 				s15_up_run_end(&M, (enum s15_outcome)o, 0);
@@ -3638,7 +3663,7 @@ static void test_start_menu(void)
 	 * nothing, and a change lasts for this start. */
 	reset_fake(); default_boot();
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env_bare, &LOG);
 	s15_menu_start(&M);
 	press(0x07);
 	CHECK(!appended("6 Start in boot menu  Off"), "no sector: no item");
@@ -3674,7 +3699,7 @@ static void test_reset_settings(void)
 	/* without a settings sector: nothing to clear */
 	reset_fake(); default_boot();
 	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
-	s15_menu_init(&M, &BOOT, &env_bare, &LOG);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env_bare, &LOG);
 	s15_menu_start(&M);
 	press(0x12);
 	hold(0x14);
@@ -3800,7 +3825,7 @@ static void test_keytest_end_draws(void)
 	s15_up_transfer_begin(&M, 2000);
 	CHECK(!M.keytest && F.leds_end == 1u && M.screen == S15_SCR_UPGRADE,
 	      "S-15.104 the key test ended, its LEDs too");
-	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false);
+	s15_up_run_start(&M, S15_RUN_FIRMWARE, "1.3.0", NULL, false, false);
 	CHECK(F.leds_end == 1u, "ended once");
 }
 
@@ -3992,6 +4017,104 @@ static void test_step_labels_fit(void)
 		      s15_step_label((enum s15_step)k));
 }
 
+/* The OP-1F's keys (S-15.016) and features (S-18.020): Settings without an
+ * MTP target and the one MTP item chosen by shift (S-15.196), the factory
+ * reset of device.reset_removes with no FAT erase (S-15.052), no pack check
+ * (S-15.060), the format's hold of 0x06 or 0x2D and never 0x36 (S-15.071),
+ * Device Info with one CPU, and the product's name (S-15 question 3). */
+static void test_op1f(void)
+{
+	unsigned saves;
+
+	menu_dev = &wb_device_op1f;
+
+	/* S-15.196: Settings has no MTP target; its digit 5 (0x11) does nothing */
+	reset_fake(); default_boot(); start();
+	press(0x07);
+	expect_screen("settings_1f");
+	saves = F.saves;
+	press(0x11);
+	CHECK(F.saves == saves && M.mtp_macos, "1F: Settings' digit 5 has no effect");
+	expect_screen("settings_1f");
+
+	/* the developer menu's one item: shift (0x26) held at digit 2's key down */
+	reset_fake(); default_boot(); start();
+	press(0x08);
+	expect_screen("factory_1f");
+	for (size_t i = 0; i < S15V_N(s15v_mtp_items_1f); i++) {
+		const struct s15v_mtp_item *v = &s15v_mtp_items_1f[i];
+
+		reset_fake(); default_boot(); start();
+		press(0x08);
+		clear_records();
+		for (size_t e = 0; e < v->n; e++)
+			ev(v->events[e][0], v->events[e][1] != 0);
+		CHECK(F.n_usb == 1u && F.usb[0] == (v->vendor ? S15_USB_MTP_VENDOR : S15_USB_MTP),
+		      "S-15.196 %s", v->name);
+		ev(0x26, false);
+		press(0x14);			/* digit 8 turns it off */
+		CHECK(F.n_usb == 2u && F.usb[1] == S15_USB_SERIAL, "S-15.196 %s: off", v->name);
+	}
+
+	/* S-15.052: user/ and logs/ alone, no FAT erase */
+	reset_fake(); default_boot(); start();
+	press(0x11);
+	CHECK(M.screen == S15_SCR_SYSTEM && F.dir_checks == 0u, "1F: no pack check");
+	hold(0x13);
+	CHECK(F.n_removed == S15V_N(s15v_reset_removes_1f), "1F reset: %u removed", F.n_removed);
+	for (size_t i = 0; i < S15V_N(s15v_reset_removes_1f); i++)
+		CHECK(removed(s15v_reset_removes_1f[i]), "1F reset removes %s",
+		      s15v_reset_removes_1f[i]);
+	CHECK(F.erase_fat == 0u && !removed("/yaffs2/content/dlc"), "1F reset: no FAT erase, DLC kept");
+	expect_screen("factory_reset_run_1f");
+	/* on a refused volume: the settings cleared, nothing removed or erased */
+	reset_fake(); default_boot(); F.refused = true; start();
+	press(0x11);
+	hold(0x13);
+	CHECK(F.n_removed == 0u && F.erase_fat == 0u && F.clears == 1u &&
+	      appended(s15_reset_unreadable), "1F reset on a refused volume");
+
+	/* S-15.071 with S-15.016: the format's hold of 0x2D, none of 0x36 */
+	reset_fake(); default_boot(); start();
+	press(0x11);
+	press(0x11);
+	CHECK(M.screen == S15_SCR_FORMAT, "1F: digit 5 opens the format menu");
+	hold(0x36);
+	CHECK(F.format == 0u && M.screen == S15_SCR_FORMAT, "1F: 0x36 starts no hold");
+	hold(0x2D);
+	CHECK(F.format == 1u, "1F: a hold of 0x2D formats");
+
+	/* Device Info with one CPU; the upgrade screen names the OP-1 */
+	reset_fake(); default_boot(); start();
+	press(0x09);
+	expect_screen("info_1f");
+	press(0x14);
+	press(0x06);
+	expect_screen("upgrade_disk_1f");
+
+	/* keys past the 58th, and the OP-XY's shift key, change nothing */
+	reset_fake(); default_boot(); start();
+	press(0x3A);
+	press(0x47);
+	ev(0x37, true);
+	CHECK(!M.shift && M.screen == S15_SCR_SETTINGS,
+	      "1F: 0x37 is digit 2's knob click, not shift; no key above 0x39");
+	ev(0x37, false);
+
+	menu_dev = &wb_device_opxy;
+
+	/* S-18.004: an unidentified device, on the default's values */
+	reset_fake(); default_boot();
+	BOOT.dev_how = WB_DEV_UNKNOWN;
+	BOOT.first_stage_n = 0x1234u;
+	BOOT.first_stage_c = 0xDEADBEEFu;
+	start();
+	press(0x09);
+	expect_screen("info_unknown");
+	press(0x06);
+	expect_screen("info2_unknown");
+}
+
 int main(void)
 {
 	test_rules();
@@ -4018,5 +4141,6 @@ int main(void)
 	test_indicator();
 	test_keytest_end_draws();
 	test_gray();
+	test_op1f();
 	return check_done("test_s15_menu");
 }

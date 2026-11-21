@@ -9,8 +9,10 @@
  * What it may write: through the engine, the slot the selector does not
  * name, its record and the selector; through the suite's guard, the active
  * byte of the two boot partitions' headers. Each only after its key was held
- * 5 s on the unit, and nothing at all unless every check passed and the
- * carried image passed its check.
+ * 5 s on the unit, and nothing at all unless the device is the one this
+ * image is built for, known by its first stage, every check passed and the
+ * carried image passed its check. The survey build offers no write: it
+ * shows what it found (INST_SURVEYED) and saves it in check.txt.
  */
 #include "waffle/board/installer.h"
 
@@ -51,6 +53,8 @@ static struct {
 	unsigned last_form;
 	char version[24];
 	const struct s06_port_ops *cdc;
+	struct inst_survey survey;
+	bool surveyed;
 } in;
 
 /* --- the USB port: the protocol in place of the S-06 link --- */
@@ -82,6 +86,7 @@ static size_t port_read(void *ctx, uint8_t *buf, size_t max)
 	static const struct tchk_table empty;
 	const struct inst_view v = {
 		&in.hello, &in.st, in.table != NULL ? in.table : &empty, in.report, in.report_len,
+		OPXY_TESTOS_SURVEY_ON && in.surveyed ? &in.survey : NULL,
 	};
 	uint8_t c;
 	size_t n;
@@ -164,6 +169,16 @@ void opxy_installer_start(struct opxy_master *m)
 #if defined(OPXY_BOOT_CRUMBS_ON)
 	in.st.flags |= INST_F_CRUMBS;
 #endif
+	if (OPXY_TESTOS_SURVEY_ON)
+		in.st.flags |= INST_F_SURVEY;
+	/* the device, decided at the entry (S-18), for HELLO and check.txt */
+	in.hello.device = (uint8_t)opxy_dev(m)->id;
+	in.hello.how = m->dev_how;
+	in.hello.image_device = (uint8_t)OPXY_TESTOS_IMAGE_DEVICE;
+	in.hello.survey = OPXY_TESTOS_SURVEY_ON ? 1u : 0u;
+	in.hello.fs_n = m->fs_n;
+	in.hello.fs_c = m->fs_c;
+	in.hold.dev = opxy_dev(m);
 	version();
 	/* the serial port's bytes to the protocol */
 	in.cdc = m->link[S06_LINK_CDC].ops;
@@ -186,8 +201,11 @@ void opxy_installer_table(const struct tchk_table *t, const char *report, size_t
 
 size_t opxy_installer_report(char *out, size_t len, size_t cap)
 {
-	return inst_report_append(out, len, cap, &in.hello, &in.st, &in.img,
-				  in.eng_read ? in.eng : NULL);
+	len = inst_report_append(out, len, cap, &in.hello, &in.st, &in.img,
+				 in.eng_read ? in.eng : NULL);
+	if (OPXY_TESTOS_SURVEY_ON && in.surveyed)
+		len = inst_survey_report(out, len, cap, &in.survey);
+	return len;
 }
 
 /* --- the flash as the engine sees it --- */
@@ -202,6 +220,7 @@ static void engine(struct opxy_master *m, unsigned form)
 	in.st.slot_state[1] = in.eng[5];
 	in.st.target = (uint8_t)s02_other_slot(in.eng[2]);
 	in.st.trial = (uint8_t)inst_trial_of(in.eng[4u + in.st.target]);
+	in.st.streams = in.eng[OPXY_INSTALL_STREAMS];
 	if (form != OPXY_INSTALL_STATUS)
 		in.st.last_rc = in.eng[0];
 }
@@ -214,16 +233,48 @@ static bool selected_ok(void)
 	       (in.st.slot_state[s] & OPXY_INSTALL_SLOT_GOOD) != 0u;
 }
 
+/* The survey's facts: the entry's, the suite's and the flash's. */
+static void survey(const struct opxy_installer_ctx *c)
+{
+	const struct tchk_facts *f = c->f;
+	struct inst_survey *sv = &in.survey;
+
+	sv->device = in.hello.device;
+	sv->how = in.hello.how;
+	sv->boot_mode = (uint8_t)opxy_testos_entry[OPXY_TESTOS_E_BMODE];
+	sv->fs_n = in.hello.fs_n;
+	sv->fs_c = in.hello.fs_c;
+	sv->pa2 = f != NULL ? f->pa2 : 0xFFu;
+	sv->ext_read = f != NULL && f->ext_read;
+	sv->part_config = f != NULL ? f->ext179 : 0u;
+	sv->sec_count = f != NULL ? f->sec_count : 0u;
+	sv->boot_kib = f != NULL ? (uint32_t)f->ext226 * 128u : 0u;
+	sv->os = (uint8_t)inst_os_state(c->sw);
+	for (unsigned k = 0; k < 2u && f != NULL; k++)
+		tchk_fault_bytes(&f->emmc_fault[k], sv->fault[k]);
+	opxy_installer_survey_read(c->m, sv);
+	in.surveyed = true;
+}
+
 /* The phase the flash and the checks give, on entry. */
 static enum inst_phase settle(const struct opxy_installer_ctx *c)
 {
-	const unsigned sel = s02_selected_slot(in.st.sel_index);
+	const struct inst_lock_in li = {
+		in.image_ok, selected_ok(), in.hello.how,
+		in.hello.how == (uint8_t)WB_DEV_BY_TABLE && in.hello.device == in.hello.image_device,
+		inst_keeps_factory(opxy_dev(c->m), in.st.target, in.st.streams),
+		OPXY_TESTOS_SURVEY_ON,
+	};
 
-	in.st.lock = (uint8_t)inst_lock_of(c->t, c->sw, in.image_ok, selected_ok());
+	in.st.lock = (uint8_t)inst_lock_of(c->t, c->sw, &li);
+	if (OPXY_TESTOS_SURVEY_ON) {
+		survey(c);
+		return INST_SURVEYED;
+	}
 	if (in.st.lock != INST_LOCK_NONE)
 		return INST_LOCKED;
 	in.st.flags |= INST_F_UNLOCKED;
-	if ((in.st.slot_state[sel] & OPXY_INSTALL_SLOT_COMMITTED) != 0u)
+	if ((in.st.slot_state[s02_selected_slot(in.st.sel_index)] & OPXY_INSTALL_SLOT_COMMITTED) != 0u)
 		return INST_DONE;	/* already the unit's bootloader */
 	if (in.st.trial == INST_TRIAL_REACHED)
 		return INST_COMMIT_READY;
@@ -240,7 +291,7 @@ static uint16_t holds_for(enum inst_phase p, bool os_ok)
 
 	if (p == INST_READY || p == INST_COMMIT_READY || p == INST_FAILED || p == INST_TRIAL_FAILED)
 		return (uint16_t)(1u << 1 | back);
-	if (p == INST_LOCKED || p == INST_DONE)
+	if (p == INST_LOCKED || p == INST_DONE || p == INST_SURVEYED)
 		return back;
 	return 0;
 }
@@ -270,6 +321,11 @@ static void draw(const struct opxy_installer_ctx *c, uint32_t now)
 	s.hold_left_s = in.hold.holding ?
 		(S15_HOLD_MS - (now - in.hold.t0 < S15_HOLD_MS ?
 					now - in.hold.t0 : S15_HOLD_MS) + 999u) / 1000u : 0u;
+	s.device = in.hello.device;
+	s.last_key = 0xFFu;
+	s.fs_n = in.hello.fs_n;
+	s.fs_c = in.hello.fs_c;
+	s.survey = in.surveyed ? &in.survey : NULL;
 	in.st.hold_fill = (uint16_t)s.hold_fill;
 	in.st.hold_digit = (uint8_t)s.hold_digit;
 	n = inst_screen_lines(&s, l);
@@ -325,6 +381,10 @@ static enum inst_phase act(const struct opxy_installer_ctx *c, unsigned digit)
 
 	if (digit == 8u) {
 		leave(c);
+		if (p == INST_SURVEYED) {
+			in.survey.os = (uint8_t)inst_os_state(c->sw);
+			return INST_SURVEYED;
+		}
 		return p == INST_DONE ? INST_DONE : INST_LEFT;
 	}
 	if (p == INST_READY || p == INST_TRIAL_FAILED)
@@ -358,7 +418,7 @@ void opxy_installer_run(const struct opxy_installer_ctx *c)
 
 		c->pass(c->m);
 		while (c->next_key(&key, &down))
-			inst_hold_key(&in.hold, key, s15_digit(key), down, now_ms(c));
+			inst_hold_key(&in.hold, key, s15_digit(opxy_dev(c->m), key), down, now_ms(c));
 		digit = inst_hold_tick(&in.hold, now_ms(c));
 		if (digit != 0u) {
 			enter(c, act(c, digit), now_ms(c));

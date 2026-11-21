@@ -1,0 +1,375 @@
+{
+ "table": [
+  {
+   "n": 34496,
+   "c": "0xF3C93780",
+   "device": "OP-XY"
+  },
+  {
+   "n": 34304,
+   "c": "0x49267EB8",
+   "device": "OP-1F"
+  }
+ ],
+ "arg_offset": 12,
+ "head": 16,
+ "n_max": 49152,
+ "n_saturated": 4294967295,
+ "most_tries": 3,
+ "cases": [
+  {
+   "name": "xy_row",
+   "length": 34496,
+   "seed": 1,
+   "argument": 34480,
+   "patches": [
+    {
+     "offset": 17248,
+     "bytes": "47441c13"
+    }
+   ],
+   "n": 34496,
+   "c": "0xF3C93780",
+   "in_range": true,
+   "device": "OP-XY",
+   "how": "table"
+  },
+  {
+   "name": "1f_row",
+   "length": 34304,
+   "seed": 2,
+   "argument": 34288,
+   "patches": [
+    {
+     "offset": 17152,
+     "bytes": "2ba77af6"
+    }
+   ],
+   "n": 34304,
+   "c": "0x49267EB8",
+   "in_range": true,
+   "device": "OP-1F",
+   "how": "table"
+  },
+  {
+   "name": "xy_row_with_tail",
+   "length": 35520,
+   "seed": 3,
+   "argument": 34480,
+   "patches": [
+    {
+     "offset": 17248,
+     "bytes": "345662e6"
+    }
+   ],
+   "n": 34496,
+   "c": "0xF3C93780",
+   "in_range": true,
+   "device": "OP-XY",
+   "how": "table"
+  },
+  {
+   "name": "xy_crc_at_1f_length",
+   "length": 34304,
+   "seed": 4,
+   "argument": 34288,
+   "patches": [
+    {
+     "offset": 17152,
+     "bytes": "604a6e53"
+    }
+   ],
+   "n": 34304,
+   "c": "0xF3C93780",
+   "in_range": true,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "1f_crc_at_xy_length",
+   "length": 34496,
+   "seed": 5,
+   "argument": 34480,
+   "patches": [
+    {
+     "offset": 17248,
+     "bytes": "92b1058c"
+    }
+   ],
+   "n": 34496,
+   "c": "0x49267EB8",
+   "in_range": true,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "xy_crc_one_longer",
+   "length": 34497,
+   "seed": 6,
+   "argument": 34481,
+   "patches": [
+    {
+     "offset": 17248,
+     "bytes": "0195ecf3"
+    }
+   ],
+   "n": 34497,
+   "c": "0xF3C93780",
+   "in_range": true,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "xy_length_other_crc",
+   "length": 34496,
+   "seed": 7,
+   "argument": 34480,
+   "patches": [],
+   "n": 34496,
+   "c": "0xB151F65D",
+   "in_range": true,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "1f_length_other_crc",
+   "length": 34304,
+   "seed": 8,
+   "argument": 34288,
+   "patches": [],
+   "n": 34304,
+   "c": "0x6F7BBCC9",
+   "in_range": true,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "n_16",
+   "length": 256,
+   "seed": 9,
+   "argument": 0,
+   "patches": [],
+   "n": 16,
+   "c": null,
+   "in_range": false,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "n_17",
+   "length": 256,
+   "seed": 10,
+   "argument": 1,
+   "patches": [],
+   "n": 17,
+   "c": "0x930148FD",
+   "in_range": true,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "n_c000",
+   "length": 49152,
+   "seed": 11,
+   "argument": 49136,
+   "patches": [],
+   "n": 49152,
+   "c": "0xD1F9DA82",
+   "in_range": true,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "n_c001",
+   "length": 49153,
+   "seed": 12,
+   "argument": 49137,
+   "patches": [],
+   "n": 49153,
+   "c": null,
+   "in_range": false,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "n_past_32_bits",
+   "length": 256,
+   "seed": 13,
+   "argument": 4294967288,
+   "patches": [],
+   "n": 4294967295,
+   "c": null,
+   "in_range": false,
+   "device": null,
+   "how": "unknown"
+  },
+  {
+   "name": "erased",
+   "length": 0,
+   "seed": null,
+   "argument": null,
+   "patches": [],
+   "n": 4294967295,
+   "c": null,
+   "in_range": false,
+   "device": null,
+   "how": "unknown"
+  }
+ ],
+ "tries": [
+  {
+   "name": "whole_first_try",
+   "first_stage": "xy_row",
+   "faults": [],
+   "tries": 1,
+   "device": "OP-XY",
+   "how": "table",
+   "n": 34496,
+   "c": "0xF3C93780"
+  },
+  {
+   "name": "failed_then_row",
+   "first_stage": "1f_row",
+   "faults": [
+    "later"
+   ],
+   "tries": 2,
+   "device": "OP-1F",
+   "how": "table",
+   "n": 34304,
+   "c": "0x49267EB8"
+  },
+  {
+   "name": "failed_head_then_row",
+   "first_stage": "xy_row",
+   "faults": [
+    "head"
+   ],
+   "tries": 2,
+   "device": "OP-XY",
+   "how": "table",
+   "n": 34496,
+   "c": "0xF3C93780"
+  },
+  {
+   "name": "two_failed_then_row",
+   "first_stage": "1f_row",
+   "faults": [
+    "head",
+    "later"
+   ],
+   "tries": 3,
+   "device": "OP-1F",
+   "how": "table",
+   "n": 34304,
+   "c": "0x49267EB8"
+  },
+  {
+   "name": "flip_then_row",
+   "first_stage": "1f_row",
+   "faults": [
+    "flip"
+   ],
+   "tries": 2,
+   "device": "OP-1F",
+   "how": "table",
+   "n": 34304,
+   "c": "0x49267EB8"
+  },
+  {
+   "name": "three_failed_head",
+   "first_stage": "xy_row",
+   "faults": [
+    "head",
+    "head",
+    "head"
+   ],
+   "tries": 3,
+   "device": "OP-XY",
+   "how": "unknown",
+   "n": 0,
+   "c": null
+  },
+  {
+   "name": "three_failed_later",
+   "first_stage": "1f_row",
+   "faults": [
+    "later",
+    "later",
+    "later"
+   ],
+   "tries": 3,
+   "device": "OP-XY",
+   "how": "unknown",
+   "n": 34304,
+   "c": null
+  },
+  {
+   "name": "busy_head_no_further_try",
+   "first_stage": "1f_row",
+   "faults": [
+    "busy_head"
+   ],
+   "tries": 1,
+   "device": "OP-XY",
+   "how": "unknown",
+   "n": 0,
+   "c": null
+  },
+  {
+   "name": "busy_later_no_further_try",
+   "first_stage": "1f_row",
+   "faults": [
+    "busy_later"
+   ],
+   "tries": 1,
+   "device": "OP-XY",
+   "how": "unknown",
+   "n": 34304,
+   "c": null
+  },
+  {
+   "name": "failed_then_busy",
+   "first_stage": "1f_row",
+   "faults": [
+    "later",
+    "busy_head"
+   ],
+   "tries": 2,
+   "device": "OP-XY",
+   "how": "unknown",
+   "n": 0,
+   "c": null
+  },
+  {
+   "name": "unlisted_three_tries",
+   "first_stage": "xy_length_other_crc",
+   "faults": [],
+   "tries": 3,
+   "device": "OP-XY",
+   "how": "unknown",
+   "n": 34496,
+   "c": "0xB151F65D"
+  },
+  {
+   "name": "out_of_range_three_tries",
+   "first_stage": "n_c001",
+   "faults": [],
+   "tries": 3,
+   "device": "OP-XY",
+   "how": "unknown",
+   "n": 49153,
+   "c": null
+  },
+  {
+   "name": "erased_three_tries",
+   "first_stage": "erased",
+   "faults": [],
+   "tries": 3,
+   "device": "OP-XY",
+   "how": "unknown",
+   "n": 4294967295,
+   "c": null
+  }
+ ]
+}

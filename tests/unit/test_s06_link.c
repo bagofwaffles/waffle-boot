@@ -3,7 +3,8 @@
  * S-06 links and node: S-06.002, S-06.010-S-06.013, S-06.020-S-06.022,
  * S-06.030-S-06.035, S-06.046, S-06.050-S-06.052, S-06.060-S-06.065, against
  * tests/oracle/S-06-framing/links.tsv, routing.tsv and the transcripts
- * request_reply.json and forward_host_psoc.json.
+ * request_reply.json and forward_host_psoc.json; without second-cpu
+ * FR-NODE5-1F (S-06.010, S-06.011, S-06.050, S-06.051).
  */
 #include "waffle/s06_link.h"
 
@@ -597,6 +598,44 @@ static void test_raw(void)
 	}
 }
 
+/* FR-NODE5-1F: the OP-1F's main CPU, no link to a slave; address 5 is in
+ * no row on any link, the other rows as on the OP-XY. */
+static void test_node5_1f(void)
+{
+	static const struct { unsigned in; uint8_t dst; int out; } rows[] = {
+		{ S06_LINK_MIDI, 5, -1 }, { S06_LINK_MIDI, 4, -1 }, { S06_LINK_MIDI, 3, -1 },
+		{ S06_LINK_CDC, 5, -1 }, { S06_LINK_CDC, 4, S06_LINK_PSOC },
+		{ S06_LINK_CDC, 3, S06_LINK_NORDIC }, { S06_LINK_PSOC, 5, -1 },
+		{ S06_LINK_NORDIC, 5, -1 }, { S06_LINK_PSOC, 2, S06_LINK_CDC },
+	};
+
+	for (size_t i = 0; i < sizeof rows / sizeof rows[0]; i++) {
+		uint8_t wire[S06_MAX_WIRE];
+		const uint8_t pl[2] = { 0x0A, 0x0B };
+		size_t w = s06_frame_encode(s06_route(2, rows[i].dst), 0x21, 0x7A, pl, 2, t_crc8,
+					    wire);
+
+		t_case = "node5-1f";
+		setup(0);
+		node.link[S06_LINK_CPU] = NULL;
+		s06_node_master_routes(&node, &wb_device_op1f);
+		t_port_inject(&port[rows[i].in], 0, wire, w);
+		s06_node_poll(&node);
+		if (rows[i].out < 0) {
+			CHECK_EQ(tx_total(), 0);
+			CHECK_EQ(drops[S06_DROP_NO_ROUTE], 1);
+		} else {
+			CHECK_MEM(port[rows[i].out].tx, port[rows[i].out].ntx, wire, w);
+			CHECK_EQ(tx_total(), w);
+		}
+	}
+	/* the OP-XY: the same call puts every row in force */
+	setup(0);
+	s06_node_master_routes(&node, &wb_device_opxy);
+	CHECK_EQ(node.routes_off, 0u);
+	CHECK_EQ(node.nroutes, 6u);
+}
+
 int main(void)
 {
 	test_links();
@@ -610,5 +649,6 @@ int main(void)
 	test_arrival();
 	test_transcript_request_reply();
 	test_raw();
+	test_node5_1f();
 	return t_finish("test_s06_link");
 }

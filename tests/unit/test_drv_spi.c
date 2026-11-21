@@ -1008,7 +1008,7 @@ static void test_flash_read_dma_fallback(void)
 		ops = (struct s02_flash_ops){
 			&f, wb_spiflash_read, wb_spiflash_erase, wb_spiflash_program,
 		};
-		env = (struct s02_env){ &ops, crc32_bits, scratch, sizeof(scratch), NULL };
+		env = (struct s02_env){ &ops, crc32_bits, scratch, sizeof(scratch), NULL, 0 };
 		memset(buf, 0, sizeof(buf));
 		s02_image_init(&im, buf, sizeof(buf), read_dma_50, &f);
 		CHECK(s02_image_read(&env, 0u, &im) == S02_OK);

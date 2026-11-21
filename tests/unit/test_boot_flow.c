@@ -4,7 +4,8 @@
  * every row of S-05's boot decision table (boot_decision.tsv) with the
  * slave present and absent, the load and each of its failures, the DDR
  * check, held-mode entry, the boot prompt (S-05.025), the setting to start
- * in the boot menu (S-15.175), and the slave's boot and release.
+ * in the boot menu (S-15.175), and the slave's boot and release; on the
+ * OP-1F the one CPU's order (S-01.001 without step 5, S-05.036).
  */
 #include <string.h>
 
@@ -158,15 +159,26 @@ static void h_held(void *ctx, enum s05_fail cause)
 	boot_master_load_failed(&master_ops, cause, &account);
 }
 
+static void h_accepted(void *ctx) { (void)ctx; step('A'); }
+
 static const struct s05_master_ops handoff_ops = {
 	NULL, h_pre, h_stage, h_release, h_teardown, h_kernel, h_svect,
-	h_jump, h_clear, h_held,
+	h_jump, h_clear, h_held, h_accepted,
 };
 
 static const struct boot_master_ops master_ops = {
 	NULL, m_bringup, m_ddr, m_fatal, m_meta, m_reason,
 	m_psoc, m_slave, &handoff_ops, staging, 0x0803D000u, m_held, NULL,
-	NULL,
+	NULL, &wb_device_opxy, NULL,
+};
+
+/* S-13b.060: the OP-1F's own eMMC, in the slave's place. */
+static void m_storage(void *ctx) { (void)ctx; step('E'); }
+
+static const struct boot_master_ops op1f_ops = {
+	NULL, m_bringup, m_ddr, m_fatal, m_meta, m_reason,
+	m_psoc, m_slave, &handoff_ops, staging, 0x0803D000u, m_held, NULL,
+	NULL, &wb_device_op1f, m_storage,
 };
 
 /* S-05.025: a build with the boot prompt. */
@@ -175,7 +187,7 @@ static int m_prompt(void *ctx) { (void)ctx; step('Q'); return mf.prompt; }
 static const struct boot_master_ops prompt_ops = {
 	NULL, m_bringup, m_ddr, m_fatal, m_meta, m_reason,
 	m_psoc, m_slave, &handoff_ops, staging, 0x0803D000u, m_held,
-	m_prompt, NULL,
+	m_prompt, NULL, &wb_device_opxy, NULL,
 };
 
 /* S-15.175: the boot store's setting, with and without the prompt. */
@@ -190,13 +202,13 @@ static bool m_menu(void *ctx)
 static const struct boot_master_ops menu_ops = {
 	NULL, m_bringup, m_ddr, m_fatal, m_meta, m_reason,
 	m_psoc, m_slave, &handoff_ops, staging, 0x0803D000u, m_held, NULL,
-	m_menu,
+	m_menu, &wb_device_opxy, NULL,
 };
 
 static const struct boot_master_ops menu_prompt_ops = {
 	NULL, m_bringup, m_ddr, m_fatal, m_meta, m_reason,
 	m_psoc, m_slave, &handoff_ops, staging, 0x0803D000u, m_held,
-	m_prompt, m_menu,
+	m_prompt, m_menu, &wb_device_opxy, NULL,
 };
 
 static void master_reset(void)
@@ -625,6 +637,47 @@ static void test_slave(void)
 	CHECK(strcmp(trace, "bdf") == 0);
 }
 
+/*
+ * The OP-1F: no slave's stream (the storage op in its place), no slave to
+ * be absent, no release and no wait (S-05.036); the decision and the
+ * failed loads as on the OP-XY.
+ */
+static void test_one_cpu(void)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_LEN(v_decisions); i++) {
+		const struct v_dec *v = &v_decisions[i];
+
+		master_reset();
+		mf.reason = v->reason < 0 ? BOOT_REASON_NONE : (uint16_t)v->reason;
+		mf.state = v->state;
+		mf.keys = (enum s05_keys)v->keys;
+		mf.present = false;	/* never asked */
+		mf.nonzero = true;
+		boot_master(&op1f_ops);
+		if (v->boot) {
+			CHECK(strcmp(trace, "BDMRKEPGATkVJ") == 0);
+		} else {
+			CHECK(strcmp(trace, "BDMRKEH") == 0);
+			CHECK(mf.held && !mf.h.slave_absent);
+			CHECK(mf.h.interrupted == (v->cleared == 1));
+		}
+	}
+	/* a failed load: held with its cause, no teardown */
+	master_reset();
+	mf.stage = S05_FAIL_NO_OS;
+	mf.nonzero = true;
+	boot_master(&op1f_ops);
+	CHECK(strcmp(trace, "BDMRKEPGZH") == 0);
+	CHECK(mf.h.cause == S05_FAIL_NO_OS && !mf.h.slave_absent);
+	/* a release reply never decides on the OP-1F */
+	master_reset();
+	mf.reply = 1u;
+	boot_master(&op1f_ops);
+	CHECK(strcmp(trace, "BDMRKEPGATkVJ") == 0);
+}
+
 int main(void)
 {
 	RUN(test_decision_table);
@@ -634,5 +687,6 @@ int main(void)
 	RUN(test_start_in_menu);
 	RUN(test_held_entry);
 	RUN(test_slave);
+	RUN(test_one_cpu);
 	return check_summary("test_boot_flow");
 }

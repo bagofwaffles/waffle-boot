@@ -408,6 +408,15 @@ test('HELLO and INFO parse as the Python tool parses them, for every front', nee
     assert.equal(shimFronts.size, gen.shim ? 1 : 0);
     assert.ok(n > 500);
     assert.throws(() => core.parseInfo(new Uint8Array(198)), /INFO reply too short/);
+    // front 20's device fields (S-18.004)
+    const p20 = new Uint8Array(core.INFO_V20);
+    p20.set([0, 2], 232);
+    new DataView(p20.buffer).setUint32(234, 34000, true);
+    new DataView(p20.buffer).setUint32(238, 0x12345678, true);
+    const i20 = core.parseInfo(p20);
+    assert.deepEqual([i20.v20, i20.device, i20.dev_how, i20.fs_n, i20.fs_c], [true, 0, 2, 34000, 0x12345678]);
+    assert.deepEqual(core.describe(i20).device, { name: 'OP-XY', identified: false, n: 34000, c: 0x12345678 });
+    assert.equal(core.parseInfo(p20.subarray(0, core.INFO_V11)).device, null);
     assert.throws(() => core.parseHello(new Uint8Array(46)), /HELLO reply too short/);
 });
 

@@ -52,8 +52,8 @@ def reason(r):
 
 
 def unit_of(u):
-    return m.Unit(g.PUB if u['q0'] else None, g.AES0 if u['k0'] else None, g.AES1 if u['k1'] else None,
-                  u['option'], u['dev'])
+    return m.Unit(g.AES0 if u['k0'] else None, g.AES1 if u['k1'] else None, u['option'], u['dev'],
+                  q0=g.PUB if u['q0'] else None)
 
 
 def installs(out):

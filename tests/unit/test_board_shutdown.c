@@ -260,7 +260,7 @@ static void setup(bool mount)
 		      S06_ADDR_PSOC);
 	m.node.link[S06_LINK_PSOC] = &m.link[S06_LINK_PSOC];
 	m.psoc_ops.ctx = &m;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	s09_files_init(&m.sv.files, &m.bridge);
 	if (mount)
 		(void)s09_files_mount(&m.sv.files);
@@ -342,11 +342,58 @@ static void test_unmount_silent_alone(void)
 	CHECK(at('U') == ev_n && ev_n == 0u);
 }
 
+static size_t count_of(char c)
+{
+	size_t i, n = 0;
+
+	for (i = 0; i < ev_n; i++)
+		n += ev[i] == c;
+	return n;
+}
+
+/*
+ * S-04.066 (P-SHUT-1F): with one CPU, the volume's unmount on the main
+ * CPU's own store (its S-03.013 is test_board_storage_1f's), then the
+ * reports: 0x51 {00 00 02} and no 0x40 {01}; no power-off request, nothing
+ * on the CPU link. An unmounted volume gets no 0x09.
+ */
+static void test_one_cpu(void)
+{
+	size_t opxy_frames;
+
+	mount_ok = true;
+	setup(true);
+	opxy_shutdown(&m);
+	opxy_frames = count_of('R');		/* 0x51 {00 00 02} and 0x40 {01} */
+	CHECK(opxy_frames == 2u);
+
+	for (int mounted = 1; mounted >= 0; mounted--) {
+		mount_ok = true;
+		setup(false);
+		m.dev = &wb_device_op1f;
+		s09_master_init(&m.bridge, &bus, &clk);
+		s09_master_local(&m.bridge, &store);
+		s07_init(&m.psoc, &wb_device_op1f, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+		s09_files_init(&m.sv.files, &m.bridge);
+		if (mounted)
+			CHECK(s09_files_mount(&m.sv.files) >= 0 && m.sv.files.mounted);
+		ev_n = 0;
+		lb.req_n = 0;
+		opxy_shutdown(&m);
+		CHECK(count_of('P') == 0u);		/* no CPU link frame */
+		CHECK(count_of('R') == opxy_frames - 1u);	/* no 0x40 {01} */
+		CHECK(mounted ? at('U') == 0u && at('R') == 1u : at('U') == ev_n);
+		CHECK(ev[ev_n - 1u] == 'R' && !m.sv.files.mounted);
+		CHECK(lb.req_n == 0u);			/* nothing on any bus */
+	}
+}
+
 int main(void)
 {
 	RUN(test_mounted);
 	RUN(test_not_mounted);
 	RUN(test_unmount_silent);
 	RUN(test_unmount_silent_alone);
+	RUN(test_one_cpu);
 	return check_summary("test_board_shutdown");
 }

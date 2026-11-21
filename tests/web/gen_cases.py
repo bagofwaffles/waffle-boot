@@ -390,9 +390,9 @@ def tables():
         'status_text': {str(st): w.status_text(st) for st in list(w.STATUS) + [0x7F]},
         'refusal_text': {str(st): w.refusal_text(st) for st in w.STATUS},
         'constants': {k: getattr(w, k) for k in (
-            'VID', 'PID', 'PRODUCT', 'PROTO', 'OLD_PROTO', 'MAX_DATA', 'MAX_PAYLOAD', 'HEAD',
+            'VID', 'PID', 'PRODUCT', 'PID_1F', 'PRODUCT_1F', 'PROTO', 'OLD_PROTO', 'MAX_DATA', 'MAX_PAYLOAD', 'HEAD',
             'FRAME_MAX', 'NO_SLOT', 'SLOT_CAP', 'IMAGE_MAX', 'WB_IMAGE_MAX', 'HELLO_LEN', 'INFO_V5',
-            'INFO_V6', 'INFO_V11', 'BATT_MAX', 'TRIAL_FRONT', 'KEEPS_WRITE', 'ACTS_FRONT',
+            'INFO_V6', 'INFO_V11', 'INFO_V20', 'BATT_MAX', 'TRIAL_FRONT', 'KEEPS_WRITE', 'ACTS_FRONT',
             'SAME_FRONT', 'COUNTDOWN', 'PHRASE', 'TRIAL_PHRASE', 'SWITCH_PHRASE', 'PHASES',
             'RESTART_TIPS', 'READ_ERROR', 'COUNTDOWN_LINE', 'SETTINGS_LINE', 'RESTART_RISK',
             'RESET_HINT', 'SAFE_HINT', 'FRONT_HINT', 'OTHER_HINT', 'NOT_STARTED_HINT',

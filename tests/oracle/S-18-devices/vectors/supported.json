@@ -1,0 +1,26 @@
+{
+ "device": "OP-1F",
+ "first_stage": {
+  "n": 34304,
+  "c": "0x49267EB8"
+ },
+ "parts": [
+  {
+   "part": "OS",
+   "version": "1.7.3"
+  },
+  {
+   "part": "PSoC (backplane)",
+   "version": "1.3.5"
+  },
+  {
+   "part": "Nordic application",
+   "version": "1.3.3"
+  },
+  {
+   "part": "Nordic bootloader",
+   "version": "1000.0.9"
+  }
+ ],
+ "claimed_by_a_release": false
+}

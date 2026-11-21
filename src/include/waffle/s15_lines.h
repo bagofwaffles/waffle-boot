@@ -11,18 +11,21 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
 #include "waffle/s15_console.h"
 
-/* Keys (S-07.030) the screens name. */
+/* Keys (S-07.030) the screens name. Shift and the white knob are
+ * device.key.shift and device.key.confirm (S-15.016). */
 #define S15_KEY_HELP  0x00u
-#define S15_KEY_WHITE 0x0du
-#define S15_KEY_SHIFT 0x37u
 
 /* S-15.015: how long a hold lasts before its action runs. */
 #define S15_HOLD_MS 5000u
 
-/* S-15.011: the menu digit of a key, 0 when it is none. */
-unsigned s15_digit(unsigned key);
+/* S-15.011, S-15.016: the menu digit of a key on dev, 0 when it is none. */
+unsigned s15_digit(const struct wb_device *dev, unsigned key);
+/* S-15.015, S-15.016: a knob click (the knob key of digits 1 to 4), which
+ * starts no hold. */
+bool s15_knob_click(const struct wb_device *dev, unsigned key);
 
 /* Round(done * 100 / total), 100 for a total of 0. */
 unsigned s15_progress(uint32_t done, uint32_t total);
@@ -102,11 +105,14 @@ void s15_header_line(struct s15_buf *out, enum s15_run_kind kind,
 		     const char *version, const char *name);
 
 /* The console's lines after a run starts, with their
- * styles: the header, the line for a return to the factory bootloader
- * when stock, the warning and the screen line. Returns the count (3 or 4). */
-size_t s15_run_header(struct s15_buf out[4], enum s15_style style[4],
+ * styles: the header, that the package is signed by TE when te_signed
+ * (S-15.197), the line for a return to the factory bootloader when stock,
+ * the warning and the screen line. Returns the count (3 to 5). */
+#define S15_RUN_HEADER_MAX 5u
+size_t s15_run_header(struct s15_buf out[S15_RUN_HEADER_MAX],
+		      enum s15_style style[S15_RUN_HEADER_MAX],
 		      enum s15_run_kind kind, const char *version,
-		      const char *name, bool stock);
+		      const char *name, bool stock, bool te_signed);
 
 enum s15_outcome {
 	S15_OUT_DONE,
@@ -118,10 +124,14 @@ enum s15_outcome {
  * with their styles; 0 for no bit. */
 size_t s15_not_updated(struct s15_buf out[2], enum s15_style style[2],
 		       unsigned skipped);
+/* The restart line, which names device.product_text (S-15 question 3). */
+void s15_restart_line(const struct wb_device *dev, struct s15_buf *out);
 /* One or two lines into out[], with their styles; returns the count.
  * cont: the Restart item follows, so a run with nothing to do does not
- * also ask for a restart. */
-size_t s15_outcome_lines(const char *out[2], enum s15_style style[2],
+ * also ask for a restart. out[1] may point into *restart, which holds dev's
+ * restart line. */
+size_t s15_outcome_lines(const struct wb_device *dev, const char *out[2],
+			 struct s15_buf *restart, enum s15_style style[2],
 			 enum s15_outcome outcome, bool any_skipped,
 			 bool reason40, bool content_only, bool cont);
 
@@ -260,6 +270,13 @@ extern const char s15_slave_absent[];
 extern const char s15_slave_lost[];	/* it stopped answering after the start */
 extern const char s15_drive_lost[];	/* S15_ST_WARN: the drive with it */
 extern const char s15_reset_lost[];	/* S15_ST_ERROR: a reset that could not run */
+/* S-18.004: Device Info's line for a device the first stage did not name
+ * (S15_ST_WARN), and its second page's value: n and c. */
+extern const char s15_device_unknown[];
+void s15_first_stage_text(struct s15_buf *out, uint32_t n, uint32_t c);
+/* S-15.196: the developer menu's one MTP item, shift choosing the vendor
+ * interface (S15_ST_ITEM). */
+extern const char s15_mtp_item_shift[];
 extern const char s15_checking_files[];	/* S15_ST_DIM: the scan before a write (S-15.191) */
 /* S15_ST_WARN under Settings: why a change lasts for this start only
  * (S-15.172, S-15.193) */
@@ -284,6 +301,8 @@ extern const char s15_os_write_failed[];
 extern const char s15_reset_needed[];
 extern const char s15_nothing_skipped[];
 extern const char s15_stock_line[];
+/* S-15.197: a package whose signature is valid (S15_ST_OK). */
+extern const char s15_signed_line[];
 /* S-15.015: the line under items chosen by a hold (S15_ST_DIM). */
 extern const char s15_hold_line[];
 /* S-15.015: a hold's item hint ("Hold 7 for 5 s"), and its last row

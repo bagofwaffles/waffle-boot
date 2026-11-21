@@ -120,6 +120,11 @@ def keys(o):
     for r in tsv(os.path.join(SPEC, 'vectors', 'digits.tsv')):
         o.w('\t{ 0x%02xu, %su },' % (int(r['key'], 16), r['digit']))
     o.w('};')
+    o.w('/* the OP-1F\'s (S-15.016): digits_1f.tsv */')
+    o.w('static const struct s15v_digit s15v_digits_1f[] = {')
+    for r in tsv(os.path.join(SPEC, 'vectors', 'digits_1f.tsv')):
+        o.w('\t{ 0x%02xu, %su },' % (int(r['key'], 16), r['digit']))
+    o.w('};')
     o.w('#endif')
     o.w()
     v = load('boot_prompt_keys.json')
@@ -158,21 +163,51 @@ def keys(o):
     o.w('struct s15v_select { const char *name; unsigned pickable; const uint8_t *down_at_open; size_t n_down;'
         ' const struct s15v_select_event *events; size_t n; uint32_t end_ms; const char *expect; long at_ms;'
         ' unsigned selected; };')
+    for table, vec in (('s15v_select', v), ('s15v_select_1f', load('select_keys_1f.json'))):
+        cases = []
+        for c in vec['cases']:
+            dn = o.uid('s15v_sel_down')
+            ev = o.uid('s15v_sel_events')
+            o.w('static const uint8_t %s[] = { %s };' % (dn, ', '.join(str(int(k, 16)) for k in c['down_at_open'])
+                                                       or '0'))
+            o.w('static const struct s15v_select_event %s[] = { %s };' % (ev, ', '.join(
+                '{ %du, 0x%02x, %s }' % (t, int(k, 16), cbool(e == 'down')) for t, k, e in c['events'])
+                or '{ 0u, 0, false }'))
+            cases.append((c, dn, ev))
+        if table.endswith('_1f'):
+            o.w('/* the OP-1F\'s (S-15.016): select_keys_1f.json */')
+        o.w('static const struct s15v_select %s[] = {' % table)
+        for c, dn, ev in cases:
+            o.w('\t{ %s, 0x%02xu, %s, %du, %s, %du, %du, %s, %d, 0x%02xu },' % (
+                cstr(c['case']), sum(1 << x for x in c['pickable']), dn, len(c['down_at_open']), ev,
+                len(c['events']), c['end_ms'], cstr(c['expect']), -1 if c['at_ms'] is None else c['at_ms'],
+                sum(1 << x for x in c['selected'])))
+        o.w('};')
+    # S-15.197 sig_prompt.json: the prompt's keys and time as the selection's, with no row (pickable 0)
+    sp = load('sig_prompt.json')
+    assert (sp['hold_ms'], sp['timeout_ms']) == (v['hold_ms'], v['timeout_ms'])
+    o.w('/* S-15.197 sig_prompt.json: per signature state (S-11.021) whether the prompt shows and whether the')
+    o.w('   package is shown as TE\'s; the prompt\'s cases, opened at 0 ms, "install" going on to the selection */')
+    o.w('struct s15v_sig_state { const char *state; bool prompt, sig_valid; };')
+    o.w('static const struct s15v_sig_state s15v_sig_states[] = {')
+    for st in sp['states']:
+        o.w('\t{ %s, %s, %s },' % (cstr(st['state']), cbool(st['prompt']), cbool(st['sig_valid'])))
+    o.w('};')
     cases = []
-    for c in v['cases']:
-        dn = o.uid('s15v_sel_down')
-        ev = o.uid('s15v_sel_events')
-        o.w('static const uint8_t %s[] = { %s };' % (dn, ', '.join(str(int(k, 16)) for k in c['down_at_open']) or '0'))
+    for c in sp['cases']:
+        dn = o.uid('s15v_sig_down')
+        ev = o.uid('s15v_sig_events')
+        o.w('static const uint8_t %s[] = { %s };' % (dn, ', '.join(str(int(k, 16)) for k in c['down_at_open'])
+                                                   or '0'))
         o.w('static const struct s15v_select_event %s[] = { %s };' % (ev, ', '.join(
             '{ %du, 0x%02x, %s }' % (t, int(k, 16), cbool(e == 'down')) for t, k, e in c['events'])
             or '{ 0u, 0, false }'))
         cases.append((c, dn, ev))
-    o.w('static const struct s15v_select s15v_select[] = {')
+    o.w('static const struct s15v_select s15v_sig_prompt[] = {')
     for c, dn, ev in cases:
-        o.w('\t{ %s, 0x%02xu, %s, %du, %s, %du, %du, %s, %d, 0x%02xu },' % (
-            cstr(c['case']), sum(1 << x for x in c['pickable']), dn, len(c['down_at_open']), ev, len(c['events']),
-            c['end_ms'], cstr(c['expect']), -1 if c['at_ms'] is None else c['at_ms'],
-            sum(1 << x for x in c['selected'])))
+        o.w('\t{ %s, 0x00u, %s, %du, %s, %du, %du, %s, %d, 0x00u },' % (
+            cstr(c['case']), dn, len(c['down_at_open']), ev, len(c['events']), c['end_ms'],
+            cstr(c['expect']), -1 if c['at_ms'] is None else c['at_ms']))
     o.w('};')
     o.w('#endif')
     o.w()
@@ -186,17 +221,41 @@ def keys(o):
     o.w('};')
     o.w('struct s15v_keyseq { const char *name; const uint8_t (*events)[2]; size_t n;'
         ' const uint8_t *tested; size_t n_tested; bool end; };')
-    seqs = []
-    for c in v['sequences']:
-        ev = o.uid('s15v_kt_events')
-        te = o.uid('s15v_kt_tested')
-        o.w('static const uint8_t %s[][2] = { %s };' % (ev, ', '.join('{ %d, %d }' % tuple(e) for e in c['events'])))
-        o.w('static const uint8_t %s[] = { %s };' % (te, ', '.join(str(k) for k in c['tested']) or '0'))
-        seqs.append((c, ev, te))
-    o.w('static const struct s15v_keyseq s15v_keyseqs[] = {')
-    for c, ev, te in seqs:
-        o.w('\t{ %s, %s, %du, %s, %du, %s },' % (cstr(c['name']), ev, len(c['events']), te, len(c['tested']),
-                                                cbool(c['end'])))
+    k1f = load('keytest_1f.json')
+    for table, vec in (('s15v_keyseqs', v), ('s15v_keyseqs_1f', k1f)):
+        seqs = []
+        for c in vec['sequences']:
+            ev = o.uid('s15v_kt_events')
+            te = o.uid('s15v_kt_tested')
+            o.w('static const uint8_t %s[][2] = { %s };' % (ev, ', '.join('{ %d, %d }' % tuple(e)
+                                                                       for e in c['events'])))
+            o.w('static const uint8_t %s[] = { %s };' % (te, ', '.join(str(k) for k in c['tested']) or '0'))
+            seqs.append((c, ev, te))
+        if table.endswith('_1f'):
+            o.w('/* the OP-1F\'s (S-15.016): keytest_1f.json, %d keys */' % k1f['nkeys'])
+            o.w('#define S15V_KEYTEST_NKEYS_1F %du' % k1f['nkeys'])
+        o.w('static const struct s15v_keyseq %s[] = {' % table)
+        for c, ev, te in seqs:
+            o.w('\t{ %s, %s, %du, %s, %du, %s },' % (cstr(c['name']), ev, len(c['events']), te, len(c['tested']),
+                                                    cbool(c['end'])))
+        o.w('};')
+    o.w('#endif')
+    o.w()
+    o.w('#ifdef S15V_DEVICE_1F')
+    o.w('/* S-15.052 on the OP-1F: factory_reset_1f.json\'s paths removed; S-15.196: mtp_item_1f.json */')
+    fr = load('factory_reset_1f.json')
+    o.w('static const char *const s15v_reset_removes_1f[] = { %s };' % ', '.join(cstr(p) for p in fr['removes']))
+    mi = load('mtp_item_1f.json')
+    o.w('struct s15v_mtp_item { const char *name; const uint8_t (*events)[2]; size_t n; bool vendor; };')
+    items = []
+    for c in mi['cases']:
+        ev = o.uid('s15v_mtp_events')
+        o.w('static const uint8_t %s[][2] = { %s };' % (ev, ', '.join(
+            '{ %d, %d }' % (int(k, 16), e == 'down') for k, e in c['events'])))
+        items.append((c, ev))
+    o.w('static const struct s15v_mtp_item s15v_mtp_items_1f[] = {')
+    for c, ev in items:
+        o.w('\t{ %s, %s, %du, %s },' % (cstr(c['case']), ev, len(c['events']), cbool(c['interface'] == 'MTP vendor')))
     o.w('};')
     o.w('#endif')
     o.w()
@@ -310,15 +369,19 @@ def upgrade(o):
     for kind, ver, name, line in v['headers']:
         o.w('\t{ %s, %s, %s, %s },' % (cstr(kind), cstr(ver), cstr(name), cstr(line)))
     o.w('};')
-    o.w('struct s15v_run_header { const char *kind, *version, *name; bool stock; const char *const *lines; };')
+    o.w('struct s15v_run_header { const char *kind, *version, *name; bool stock, te_signed;'
+        ' const char *const *lines; };')
     rh = []
-    for (kind, ver, name, stock), lines in v['run_headers']:
+    for head, lines in v['run_headers']:
+        kind, ver, name, stock = head[:4]
+        signed = head[4] if len(head) > 4 else False   # S-15.197: a valid package
         ident = o.uid('s15v_rh')
         o.w(clist(ident, lines))
-        rh.append((kind, ver, name, stock, ident))
+        rh.append((kind, ver, name, stock, signed, ident))
     o.w('static const struct s15v_run_header s15v_run_headers[] = {')
-    for kind, ver, name, stock, ident in rh:
-        o.w('\t{ %s, %s, %s, %s, %s },' % (cstr(kind), cstr(ver), cstr(name), cbool(stock), ident))
+    for kind, ver, name, stock, signed, ident in rh:
+        o.w('\t{ %s, %s, %s, %s, %s, %s },' % (cstr(kind), cstr(ver), cstr(name), cbool(stock), cbool(signed),
+                                              ident))
     o.w('};')
     o.w('struct s15v_result { const char *step, *result, *version; bool content_only;'
         ' const char *op, *line; };')
@@ -408,18 +471,31 @@ def installer(o):
     v = load('installer.json')
     o.w('#ifdef S15V_INSTALLER')
     o.w('/* installer.json: the installer\'s screens, one case per state shown. */')
+    o.w('struct s15v_inst_survey { unsigned device, how; unsigned long fs_n, fs_c; int sel_read;'
+        ' unsigned sel_index, sel_verified, slot_bits[2]; int ext_read; unsigned part_config, boot_kib; };')
     o.w('struct s15v_inst { const char *name; unsigned phase; const char *version; unsigned target, lock, last_rc,'
-        ' os, trial, hold_digit, hold_fill, hold_left_s, keys_seen; const char *const *lines; size_t n; };')
+        ' os, trial, hold_digit, hold_fill, hold_left_s, keys_seen, device, last_key; unsigned long fs_n, fs_c;'
+        ' const struct s15v_inst_survey *survey; const char *const *lines; size_t n; };')
     items = []
     for c in v['cases']:
         ident = o.uid('s15v_inst_lines')
         o.w(clist(ident, c['lines']))
-        items.append((c, ident))
+        sv = 'NULL'
+        if 'survey' in c:
+            x = c['survey']
+            sv = o.uid('s15v_inst_survey')
+            o.w('static const struct s15v_inst_survey %s = { %du, %du, %dul, %dul, %d, %du, %du, { %du, %du },'
+                ' %d, %du, %du };' % (sv, x['device'], x['how'], x['fs_n'], x['fs_c'], int(x['sel_read']),
+                                      x['sel_index'], x['sel_verified'], x['slot_bits'][0], x['slot_bits'][1],
+                                      int(x['ext_read']), x['part_config'], x['boot_kib']))
+            sv = '&' + sv
+        items.append((c, ident, sv))
     o.w('static const struct s15v_inst s15v_insts[] = {')
-    for c, ident in items:
-        o.w('\t{ %s, %du, %s, %du, %du, %du, %du, %du, %du, %du, %du, %du, %s, %d },' % (
+    for c, ident, sv in items:
+        o.w('\t{ %s, %du, %s, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %dul, %dul, %s, %s, %d },' % (
             cstr(c['name']), c['phase'], cstr(c['version']), c['target'], c['lock'], c['last_rc'], c['os'],
-            c['trial'], c['hold_digit'], c['hold_fill'], c['hold_left_s'], c.get('keys_seen', 0), ident,
+            c['trial'], c['hold_digit'], c['hold_fill'], c['hold_left_s'], c.get('keys_seen', 0),
+            c.get('device', 0), c.get('last_key', 255), c.get('fs_n', 0), c.get('fs_c', 0), sv, ident,
             len(c['lines'])))
     o.w('};')
     o.w('#endif')

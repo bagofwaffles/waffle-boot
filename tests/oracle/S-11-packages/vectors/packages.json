@@ -17,7 +17,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": true,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -45,6 +45,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -152,6 +153,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -179,6 +181,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "forced": true,
     "recorded_version": [
      1,
@@ -367,6 +370,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "forced": false,
     "recorded_version": [
      1,
@@ -395,6 +399,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "forced": true,
     "recorded_version": [
      1,
@@ -423,6 +428,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "forced": true,
     "recorded_version": [
      1,
@@ -491,6 +497,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -518,6 +525,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -545,6 +553,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -572,6 +581,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -659,6 +669,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -731,6 +742,26 @@
    "requirement": "S-11.011"
   },
   {
+   "case": "plain_on_opxy",
+   "file": "pkg/plain_on_opxy.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-xy.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "FORMAT",
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
    "case": "sig_valid",
    "file": "pkg/sig_valid.bin",
    "form": "file",
@@ -746,7 +777,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": true,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -774,7 +805,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -802,7 +833,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": true,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -830,7 +861,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -858,7 +889,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -886,7 +917,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -896,7 +927,7 @@
     "zip_reason": null,
     "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
    },
-   "requirement": "S-11.022"
+   "requirement": "S-11.021"
   },
   {
    "case": "sig_other_key_option",
@@ -914,7 +945,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -942,7 +973,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -952,7 +983,7 @@
     "zip_reason": null,
     "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
    },
-   "requirement": "S-11.022"
+   "requirement": "S-11.012"
   },
   {
    "case": "sig_index_01_option",
@@ -970,7 +1001,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -998,7 +1029,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -1009,6 +1040,62 @@
     "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
    },
    "requirement": "S-11.022"
+  },
+  {
+   "case": "sig_garbage",
+   "file": "pkg/sig_garbage.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-xy.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "invalid",
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.021"
+  },
+  {
+   "case": "sig_blank",
+   "file": "pkg/sig_blank.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-xy.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.021"
   },
   {
    "case": "sig_unsigned_option",
@@ -1026,6 +1113,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "none",
     "recorded_version": [
      1,
      2,
@@ -1035,7 +1123,7 @@
     "zip_reason": null,
     "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
    },
-   "requirement": "S-11.022"
+   "requirement": "S-11.021"
   },
   {
    "case": "sig_no_q0",
@@ -1053,7 +1141,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -1081,7 +1169,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": false,
+    "signature": "invalid",
     "recorded_version": [
      1,
      2,
@@ -1094,8 +1182,36 @@
    "requirement": "S-11.021"
   },
   {
-   "case": "manifest_product_bad",
-   "file": "pkg/manifest_product_bad.bin",
+   "case": "sig_blank_no_q0",
+   "file": "pkg/sig_blank_no_q0.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-xy.tfw",
+   "unit": {
+    "q0": null,
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.021"
+  },
+  {
+   "case": "manifest_product_not_read",
+   "file": "pkg/manifest_product_not_read.bin",
    "form": "file",
    "link": null,
    "file_name": "op-xy.tfw",
@@ -1107,9 +1223,17 @@
     "dev": false
    },
    "expect": {
-    "accepted": false,
-    "reason": "SKU",
-    "zip_reason": null
+    "accepted": true,
+    "reason": null,
+    "signature": "valid",
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
    },
    "requirement": "S-11.013"
   },
@@ -1129,6 +1253,7 @@
    "expect": {
     "accepted": false,
     "reason": "LENGTH",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.014"
@@ -1149,6 +1274,7 @@
    "expect": {
     "accepted": false,
     "reason": "LENGTH",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.014"
@@ -1169,6 +1295,7 @@
    "expect": {
     "accepted": false,
     "reason": "LENGTH",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.014"
@@ -1189,29 +1316,10 @@
    "expect": {
     "accepted": false,
     "reason": "HASH",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.014"
-  },
-  {
-   "case": "manifest_product_bad_option",
-   "file": "pkg/manifest_product_bad_option.bin",
-   "form": "file",
-   "link": null,
-   "file_name": "op-xy.tfw",
-   "unit": {
-    "q0": "test",
-    "k0": "test",
-    "k1": "test_k1",
-    "option": true,
-    "dev": false
-   },
-   "expect": {
-    "accepted": false,
-    "reason": "SKU",
-    "zip_reason": null
-   },
-   "requirement": "S-11.022"
   },
   {
    "case": "payload_length_plus1_option",
@@ -1229,6 +1337,7 @@
    "expect": {
     "accepted": false,
     "reason": "LENGTH",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.022"
@@ -1249,6 +1358,7 @@
    "expect": {
     "accepted": false,
     "reason": "HASH",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.022"
@@ -1269,6 +1379,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -1296,6 +1407,7 @@
    "expect": {
     "accepted": false,
     "reason": "NOKEY",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.023"
@@ -1316,6 +1428,7 @@
    "expect": {
     "accepted": false,
     "reason": "KEY",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.023"
@@ -1336,6 +1449,7 @@
    "expect": {
     "accepted": false,
     "reason": "KEY",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.023"
@@ -1356,6 +1470,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -1383,6 +1498,7 @@
    "expect": {
     "accepted": false,
     "reason": "NOKEY",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.023"
@@ -1403,6 +1519,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -1430,6 +1547,7 @@
    "expect": {
     "accepted": false,
     "reason": "KEY",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.023"
@@ -1450,6 +1568,7 @@
    "expect": {
     "accepted": false,
     "reason": "KEY",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.023"
@@ -1470,6 +1589,7 @@
    "expect": {
     "accepted": false,
     "reason": "KEY",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.015"
@@ -1490,6 +1610,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -1517,6 +1638,7 @@
    "expect": {
     "accepted": false,
     "reason": "NAME",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.017"
@@ -1537,6 +1659,7 @@
    "expect": {
     "accepted": false,
     "reason": "NAME",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.017"
@@ -1557,6 +1680,7 @@
    "expect": {
     "accepted": false,
     "reason": "NAME",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.017"
@@ -1577,6 +1701,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -1604,6 +1729,7 @@
    "expect": {
     "accepted": false,
     "reason": "NAME",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.017"
@@ -1624,6 +1750,7 @@
    "expect": {
     "accepted": false,
     "reason": "NAME",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.017"
@@ -1644,6 +1771,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -1671,6 +1799,7 @@
    "expect": {
     "accepted": false,
     "reason": "ZIPLEN",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.018"
@@ -1691,6 +1820,7 @@
    "expect": {
     "accepted": false,
     "reason": "ZIPLEN",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.018"
@@ -1711,6 +1841,7 @@
    "expect": {
     "accepted": false,
     "reason": "ZIP",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.018"
@@ -1731,6 +1862,7 @@
    "expect": {
     "accepted": false,
     "reason": "ZIP",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.018"
@@ -1751,6 +1883,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -1778,6 +1911,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "zip_reason": "MEMBER",
     "zip_sha256": "f6190d6917cf438ae52bf44d69d98217e52732f56cbf08ac35460b7584b71315"
    },
@@ -1799,6 +1933,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "recorded_version": [
      1,
      2,
@@ -1831,8 +1966,8 @@
    "requirement": "S-11.020"
   },
   {
-   "case": "multi_fault_sku_and_hash",
-   "file": "pkg/multi_fault_sku_and_hash.bin",
+   "case": "multi_fault_length_and_hash",
+   "file": "pkg/multi_fault_length_and_hash.bin",
    "form": "file",
    "link": null,
    "file_name": "op-xy.tfw",
@@ -1845,7 +1980,8 @@
    },
    "expect": {
     "accepted": false,
-    "reason": "SKU",
+    "reason": "LENGTH",
+    "signature": "valid",
     "zip_reason": null
    },
    "requirement": "S-11.020"
@@ -1866,6 +2002,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "version": [
      1,
      2,
@@ -1899,7 +2036,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
-    "te_signed": true,
+    "signature": "valid",
     "forced": true,
     "version": [
      0,
@@ -1934,6 +2071,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "version": [
      1,
      2,
@@ -1962,6 +2100,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "forced": true,
     "recorded_version": [
      1,
@@ -1990,6 +2129,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "forced": false,
     "recorded_version": [
      1,
@@ -2018,6 +2158,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "forced": true,
     "recorded_version": [
      1,
@@ -2046,6 +2187,7 @@
    "expect": {
     "accepted": true,
     "reason": null,
+    "signature": "valid",
     "forced": false,
     "recorded_version": [
      1,

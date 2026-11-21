@@ -1,0 +1,383 @@
+{
+ "devices": [
+  "OP-XY",
+  "OP-1F"
+ ],
+ "tables": {
+  "identity": [
+   {
+    "name": "device.product_number",
+    "OP-XY": 33,
+    "OP-1F": 2
+   },
+   {
+    "name": "device.product_base",
+    "OP-XY": 540672,
+    "OP-1F": 32768
+   },
+   {
+    "name": "device.product_text",
+    "OP-XY": "OP-XY",
+    "OP-1F": "OP-1"
+   },
+   {
+    "name": "device.sku_prefix",
+    "OP-XY": "TE033AS",
+    "OP-1F": "TE002AS"
+   },
+   {
+    "name": "device.usb_pid",
+    "OP-XY": 33,
+    "OP-1F": 258
+   },
+   {
+    "name": "device.midi_pid",
+    "OP-XY": 32801,
+    "OP-1F": 33026
+   },
+   {
+    "name": "device.midi_byte",
+    "OP-XY": 33,
+    "OP-1F": 2
+   },
+   {
+    "name": "device.midi_family",
+    "OP-XY": [
+     33,
+     0
+    ],
+    "OP-1F": [
+     2,
+     0
+    ]
+   },
+   {
+    "name": "device.midi_member",
+    "OP-XY": [
+     1,
+     0
+    ],
+    "OP-1F": {
+     "from_sku": {
+      "bytes": 2,
+      "bits": 7,
+      "low_first": true
+     },
+     "sku_unset": 65535,
+     "when_unset": 2
+    }
+   }
+  ],
+  "memory": [
+   {
+    "name": "device.metadata_size",
+    "OP-XY": 52,
+    "OP-1F": 40
+   },
+   {
+    "name": "device.ramdisk_regions",
+    "OP-XY": {
+     "free": true
+    },
+    "OP-1F": {
+     "regions": [
+      [
+       2147500032,
+       133169152
+      ]
+     ]
+    }
+   },
+   {
+    "name": "device.ramdisk_blocks",
+    "OP-XY": 454656,
+    "OP-1F": 260096
+   },
+   {
+    "name": "device.emmc_width",
+    "OP-XY": 8,
+    "OP-1F": 4
+   },
+   {
+    "name": "device.emmc_sectors",
+    "OP-XY": {
+     "exactly": 30375936
+    },
+    "OP-1F": {
+     "at_least": 30375936
+    }
+   },
+   {
+    "name": "device.reset_removes",
+    "OP-XY": {
+     "as": "S-15",
+     "fat_erase": true
+    },
+    "OP-1F": {
+     "only": [
+      "/yaffs2/user",
+      "/yaffs2/logs"
+     ],
+     "fat_erase": false
+    }
+   }
+  ],
+  "pins": [
+   {
+    "name": "device.porta_mux",
+    "OP-XY": 805314560,
+    "OP-1F": 807927808
+   },
+   {
+    "name": "device.portb_mux",
+    "OP-XY": 335609855,
+    "OP-1F": 335609855
+   },
+   {
+    "name": "device.portc_mux",
+    "OP-XY": 8737024,
+    "OP-1F": 698880
+   },
+   {
+    "name": "device.porta_fer",
+    "OP-XY": 16448,
+    "OP-1F": 17952
+   },
+   {
+    "name": "device.portb_fer",
+    "OP-XY": 65535,
+    "OP-1F": 65535
+   },
+   {
+    "name": "device.portc_fer",
+    "OP-XY": 3027,
+    "OP-1F": 6131
+   },
+   {
+    "name": "device.gpio_outputs",
+    "OP-XY": [
+     [
+      "PA3",
+      "low"
+     ],
+     [
+      "PC11",
+      "high"
+     ]
+    ],
+    "OP-1F": [
+     [
+      "PA0",
+      "keep"
+     ],
+     [
+      "PA3",
+      "keep"
+     ],
+     [
+      "PA4",
+      "keep"
+     ],
+     [
+      "PA6",
+      "keep"
+     ],
+     [
+      "PC13",
+      "keep"
+     ]
+    ]
+   },
+   {
+    "name": "device.gpio_inputs",
+    "OP-XY": [
+     "PA6",
+     "PA7",
+     "PC2",
+     "PC5"
+    ],
+    "OP-1F": [
+     "PA1",
+     "PA2",
+     "PA7",
+     "PC2",
+     "PC11",
+     "PC14"
+    ]
+   },
+   {
+    "name": "device.panel_dc",
+    "OP-XY": "PA5",
+    "OP-1F": "PA11"
+   }
+  ],
+  "keys": [
+   {
+    "name": "device.key.count",
+    "OP-XY": 72,
+    "OP-1F": 58
+   },
+   {
+    "name": "device.key.bitmap_bytes",
+    "OP-XY": 9,
+    "OP-1F": 8
+   },
+   {
+    "name": "device.key.hold",
+    "OP-XY": {
+     "either": [
+      24,
+      13
+     ]
+    },
+    "OP-1F": {
+     "either": [
+      57,
+      44
+     ]
+    }
+   },
+   {
+    "name": "device.key.debug",
+    "OP-XY": {
+     "either": [
+      10,
+      11
+     ]
+    },
+    "OP-1F": {
+     "both": [
+      10,
+      12
+     ]
+    }
+   },
+   {
+    "name": "device.key.precomp",
+    "OP-XY": 23,
+    "OP-1F": null
+   },
+   {
+    "name": "device.key.digit1",
+    "OP-XY": [
+     6,
+     10,
+     14
+    ],
+    "OP-1F": [
+     6,
+     45,
+     54
+    ]
+   },
+   {
+    "name": "device.key.digit2",
+    "OP-XY": [
+     7,
+     11,
+     15
+    ],
+    "OP-1F": [
+     7,
+     46,
+     55
+    ]
+   },
+   {
+    "name": "device.key.digit3",
+    "OP-XY": [
+     8,
+     12,
+     16
+    ],
+    "OP-1F": [
+     8,
+     47,
+     56
+    ]
+   },
+   {
+    "name": "device.key.digit4",
+    "OP-XY": [
+     9,
+     13,
+     17
+    ],
+    "OP-1F": [
+     9,
+     16,
+     57
+    ]
+   },
+   {
+    "name": "device.key.digit5to8",
+    "OP-XY": [
+     18,
+     19,
+     20,
+     21
+    ],
+    "OP-1F": [
+     17,
+     18,
+     19,
+     20
+    ]
+   },
+   {
+    "name": "device.key.shift",
+    "OP-XY": 55,
+    "OP-1F": 38
+   },
+   {
+    "name": "device.key.confirm",
+    "OP-XY": 13,
+    "OP-1F": 57
+   },
+   {
+    "name": "device.key.com",
+    "OP-XY": 24,
+    "OP-1F": 44
+   },
+   {
+    "name": "device.key.recovery",
+    "OP-XY": 9,
+    "OP-1F": 9
+   }
+  ],
+  "screen": [
+   {
+    "name": "device.logo",
+    "OP-XY": {
+     "as": "S-15.132"
+    },
+    "OP-1F": {
+     "free": true
+    }
+   }
+  ]
+ },
+ "digit_knob": {
+  "OP-XY": 1,
+  "OP-1F": 2
+ },
+ "provisional": [
+  [
+   "device.key.precomp",
+   "OP-1F"
+  ],
+  [
+   "device.key.recovery",
+   "OP-1F"
+  ]
+ ],
+ "device_id": {
+  "OP-XY": "xy",
+  "OP-1F": "1f",
+  "unknown": "unknown"
+ },
+ "contract": {
+  "OP-XY": "XY-HANDOFF-2",
+  "OP-1F": "1F-HANDOFF-1"
+ }
+}

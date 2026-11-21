@@ -296,6 +296,10 @@ static void info(struct fr_proto *p, uint8_t seq)
 	o[FR_INFO_O_WAY] = p->w.way;
 	o[FR_INFO_O_BATT_LEN] = st->batt_len;
 	fr_copy(o + FR_INFO_O_BATT, st->batt, st->batt_len);
+	o[FR_INFO_O_DEVICE] = st->dev_id;
+	o[FR_INFO_O_DEV_HOW] = st->dev_how;
+	fr_put32(o + FR_INFO_O_FS_N, st->fs_n);
+	fr_put32(o + FR_INFO_O_FS_C, st->fs_c);
 	if (st->own_desc) {
 		put_version(o + FR_INFO_O_VERSION, st->desc.bl_version);
 		fr_copy(o + FR_INFO_O_PIN, st->desc.pin, FR_SHA256_LEN);

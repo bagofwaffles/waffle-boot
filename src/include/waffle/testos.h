@@ -58,6 +58,8 @@ struct wb_display;
  */
 #if defined(OPXY_TESTOS_MONITOR)
 #define OPXY_TESTOS_PANEL_NAME "smc, monitor"
+#elif defined(OPXY_TESTOS_SURVEY)
+#define OPXY_TESTOS_PANEL_NAME "smc, survey"
 #elif defined(OPXY_TESTOS_INSTALLER)
 #define OPXY_TESTOS_PANEL_NAME "smc, installer"
 #elif defined(OPXY_TESTOS_PANEL_GPIO)
@@ -93,13 +95,51 @@ extern const unsigned opxy_testos_regs_n;
  * Written by src/testos/opxy_testos_entry.S before anything else of the
  * image runs, once the CPLBs are off: SP, IPEND, IMASK and RETS at the
  * first instruction (S-05.014), in [0] to [3]. Then by the entry paint
- * (opxy_testos_entry_paint(), before wb_start_c()): [4] what the red paint
- * did (src/testos/opxy_testos_paint.c's PAINT_ values), [5] the role strap
- * sample of S-13b.001, PA2 alone (the full sample is opxy_main()'s). Loaded
- * data (.l1.data.testos, placed with .data in the DDR image), which the
- * stream loads and wb_start_c() does not clear.
+ * (opxy_testos_entry_paint(), before wb_start_c()), which decides the
+ * device before any pin, paint, UART, SPI0 or MSI0 access (S-18.001 to
+ * S-18.004): [4] what the red paint did (src/testos/opxy_testos_paint.c's
+ * PAINT_ values), [5] the role as opxy_strap_role() reads it, from the
+ * boot mode, or the PA2 sample where it is not 1 (S-18.002, as the
+ * front's fr_decide(); the full strap is opxy_main()'s, on a device with
+ * straps), and the OPXY_TESTOS_E_* words. Loaded data (.l1.data.testos,
+ * placed with .data in the DDR image), which the stream loads and
+ * wb_start_c() does not clear.
  */
-extern uint32_t opxy_testos_entry[8];
+#define OPXY_TESTOS_E_PAINT  4u
+#define OPXY_TESTOS_E_ROLE   5u
+#define OPXY_TESTOS_E_DEVICE 8u		/* OPXY_TESTOS_DECIDED | how << 8 | id */
+#define OPXY_TESTOS_E_FS_N   9u		/* S-18.003's n and c, 0 when not read */
+#define OPXY_TESTOS_E_FS_C   10u
+#define OPXY_TESTOS_E_BMODE  11u	/* RCU0_STAT.BMODE */
+#define OPXY_TESTOS_E_WORDS  12u
+#define OPXY_TESTOS_DECIDED  0x80000000u
+#define OPXY_TESTOS_BY_STRAP 0x40000000u	/* boot mode not 1, PA2 read 1: a main CPU */
+extern uint32_t opxy_testos_entry[OPXY_TESTOS_E_WORDS];
+
+/*
+ * The device this image was built for (OPXY_TESTOS_1F: the OP-1F's
+ * installer images, laid out like its OS, waffle/board/opxy.h), and the
+ * survey (OPXY_TESTOS_SURVEY: every SPI-flash write refused, at the gate
+ * and in the driver, wiki/Installer-Reference.md). An OP-1F image runs
+ * on a main CPU whose first stage the table names as the OP-1F's alone:
+ * anywhere else its entry stops before any pin or memory outside the
+ * image is touched, since its DDR bytes lie in the OP-XY's RAM disk.
+ */
+#if defined(OPXY_TESTOS_1F)
+#define OPXY_TESTOS_IMAGE_DEVICE 1u	/* WB_DEV_OP1F */
+#else
+#define OPXY_TESTOS_IMAGE_DEVICE 0u	/* WB_DEV_OPXY */
+#endif
+#if defined(OPXY_TESTOS_SURVEY)
+#define OPXY_TESTOS_SURVEY_ON true
+#else
+#define OPXY_TESTOS_SURVEY_ON false
+#endif
+
+/* opxy_main()'s device and role in the test OS: the entry's decision,
+ * the first stage read once (waffle/board/opxy_boot.h). */
+struct opxy_device_pick;
+void opxy_testos_device(struct opxy_device_pick *out);
 
 /*
  * The milestone paints (src/testos/opxy_testos_paint.c, which lists
@@ -127,9 +167,12 @@ enum opxy_testos_paint {
 };
 #define OPXY_TESTOS_PAINT_HOLD_US 300000u
 /* From the entry shim, on the test OS's own stack with IVG15 alone enabled
- * and the CPLBs off, before wb_start_c(): the strap, then red on the
- * master when the display record says the panel is initialized. Touches
- * no static data of the image (.bss is not yet cleared). */
+ * and the CPLBs off, before wb_start_c(): the device (the boot mode, the
+ * PA2 sample where it is not 1, then a main CPU's first stage over SPI2,
+ * read up to three times, no other pin written), then red on a
+ * master whose first stage the table names, when the display record says
+ * the panel is initialized. Reads no .bss of the image (not yet cleared);
+ * an OP-1F image stops here on any other device. */
 void opxy_testos_entry_paint(void);
 /* A later milestone: through the display driver's bus once it is up, else
  * as the entry paint. Logs at once when the log has its sink, else when
@@ -350,7 +393,8 @@ bool opxy_testos_mem_ok(uint32_t addr, uint32_t len, bool write);
  *   [3..4] used entries, u16 little-endian
  *   [5..6] unfinished entries at the end of them, u16
  *   [7..8] the last eight used entries' two bits, the newest lowest, u16
- * Without the log the bytes after [0] are 0xFF. The 9 bytes of state: rc,
+ * Without the log the bytes after [0] are 0xFF. Then one byte,
+ * OPXY_INSTALL_STREAMS. The 9 bytes of state: rc,
  * the flash's status register, the selector's two bytes, each slot's
  * OPXY_INSTALL_SLOT_* bits, the target slot, the writes the gate refused,
  * the metadata mirror (OPXY_INSTALL_MIRROR_*).
@@ -370,8 +414,16 @@ enum { OPXY_INSTALL_STATUS, OPXY_INSTALL_TRIAL, OPXY_INSTALL_COMMIT };
 /* rc: refused, a failed selector step was left as it was: no slot write
  * until a restart (S-02.102 item 6) */
 #define OPXY_INSTALL_REFUSED_HELD 0x45
+/* rc: trial refused on the OP-1F, the target is the last slot holding a
+ * bootloader that is not a waffle-boot stream */
+#define OPXY_INSTALL_REFUSED_FACTORY 0x46
+/* rc: refused, a survey build writes nothing to the SPI flash */
+#define OPXY_INSTALL_REFUSED_SURVEY 0x47
 #define OPXY_INSTALL_LOG 9u
-#define OPXY_INSTALL_REPLY (9u + OPXY_INSTALL_CRUMBS + OPXY_INSTALL_LOG)
+/* After the log: bit k set when slot k's image is a waffle-boot stream
+ * (s02_stream_is_waffle()). */
+#define OPXY_INSTALL_STREAMS (9u + OPXY_INSTALL_CRUMBS + OPXY_INSTALL_LOG)
+#define OPXY_INSTALL_REPLY (OPXY_INSTALL_STREAMS + 1u)
 enum { OPXY_INSTALL_LOG_OK, OPXY_INSTALL_LOG_ODD, OPXY_INSTALL_LOG_FULL,
        OPXY_INSTALL_LOG_UNREAD, OPXY_INSTALL_LOG_NONE };
 #define OPXY_INSTALL_SLOT_GOOD      0x01u	/* S-02.016 */

@@ -15,6 +15,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
+#include "waffle/device.h"
 #include "waffle/s11_content.h"
 #include "waffle/s11_staging.h"
 #include "waffle/wire_yaffs.h"
@@ -141,7 +142,7 @@ static void test_installs(void)
 		s11_staged_scan(&fs, &st);
 		CHECK(s11_staged_content_only(&st) == (v->content_only != 0),
 		      "%s: content-only from the staging area", v->name);
-		r = s11_install_content(&fs, v->content_only != 0);
+		r = s11_install_content(&wb_device_opxy, &fs, v->content_only != 0);
 		CHECK(r == (enum s11_result)v->result, "%s: result %d", v->name,
 		      (int)r);
 		CHECK(files_in("", v->after) == set_files(v->after),
@@ -162,7 +163,7 @@ static void test_pack_names(void)
 
 		fresh();
 		load_set(v->staged);
-		s11_pack_name(&fs, name, sizeof(name));
+		s11_pack_name(&wb_device_opxy, &fs, name, sizeof(name));
 		/* alt: S-11.039 lets a manifest over 4096 bytes be read in its
 		 * first 4096 bytes only */
 		CHECK(strcmp(name, v->pack) == 0 ||
@@ -186,7 +187,7 @@ static void test_listing(void)
 	CHECK(put(p, (const uint8_t *)"{\"name\": \"B\"}", 13), "B");
 	CHECK(fs.list(fs.ctx, dir, 0, name, sizeof(name), &is_dir) &&
 	      !strcmp(name, "B"), "the pack written last is listed first");
-	s11_pack_name(&fs, name, sizeof(name));
+	s11_pack_name(&wb_device_opxy, &fs, name, sizeof(name));
 	CHECK(!strcmp(name, "B"), "S-11.039: written A then B, named '%s'", name);
 	wire_yaffs_unmount(&Y);
 	CHECK(wire_yaffs_mount(&Y) == WIRE_MOUNT_OK, "remount");

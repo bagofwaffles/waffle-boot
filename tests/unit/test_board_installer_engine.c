@@ -19,10 +19,13 @@
 #define opxy_install_len (*inst_len_p)
 #define opxy_install_crc (*inst_crc_p)
 #include "../../src/testos/installer_engine.c"
+#include "../../src/testos/check_logic.c"
+#include "../../src/testos/installer_logic.c"
 
 #include <stdio.h>
 
 #include "waffle/board/opxy_ops.h"
+#include "waffle/device.h"
 
 #include "support/check.h"
 
@@ -1402,6 +1405,154 @@ static void test_refusals(void)
 	CHECK(writes == 0u);
 }
 
+/* --- the devices (S-18) --- */
+
+static size_t put_block(uint8_t *p, uint32_t flags, uint32_t target, const uint8_t *pl, uint32_t n)
+{
+	uint8_t x = 0;
+
+	put32(p, 0xAD000004u | flags);
+	put32(p + 4, target);
+	put32(p + 8, n);
+	put32(p + 12, 0u);
+	for (unsigned i = 0; i < 16u; i++)
+		x ^= p[i];
+	p[2] = x;
+	if (pl != NULL)
+		memcpy(p + 16, pl, n);
+	return 16u + (pl != NULL ? n : 0u);
+}
+
+/* Slot s holds a waffle-boot stream, one with the image descriptor at
+ * FR_DESC_ADDR, and its right record. */
+static void waffle_slot(unsigned s)
+{
+	uint8_t *slot = mem + s02_slot_base(s), *rec = mem + s02_record_off(s);
+	uint8_t d[FR_DESC_HEAD + 8u + 4u];
+	size_t n = 0;
+
+	memset(slot, 0xFF, S02_SLOT_CAPACITY - S02_SECTOR_SIZE);
+	memset(d, 0, sizeof d);
+	put32(d + FR_DESC_O_MAGIC, FR_DESC_MAGIC);
+	d[FR_DESC_O_VERSION] = (uint8_t)FR_DESC_VERSION;
+	d[FR_DESC_O_SIZE] = (uint8_t)sizeof d;
+	put32(d + FR_DESC_O_NREGIONS, 1u);
+	put32(d + sizeof d - 4u, opxy_crc32_long(0u, d, sizeof d - 4u));
+	n += put_block(slot + n, S05_FLAG_FIRST | S05_FLAG_IGNORE, 0x11A00000u, NULL, 0u);
+	n += put_block(slot + n, 0u, FR_DESC_ADDR, d, sizeof d);
+	n += put_block(slot + n, S05_FLAG_FINAL, 0x11A00000u, NULL, 0u);
+	put32(rec, opxy_crc32_long(0u, slot, (uint32_t)n));
+	put32(rec + 4, (uint32_t)n);
+	put32(rec + 8, S02_RECORD_TAG);
+	memcpy(before, mem, sizeof mem);
+}
+
+/* S-02.108: the OP-1F keeps a slot whose image is not a waffle-boot
+ * stream, in the four cases of the two slots; the OP-XY keeps its rule. */
+static void test_op1f_keeps_factory(void)
+{
+	uint8_t out[OPXY_INSTALL_REPLY];
+
+	/* neither slot waffle-boot's: the selected one stays the unit's own */
+	setup(0u, true);
+	m.dev = &wb_device_op1f;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+	CHECK(out[0] == S02_OK && out[OPXY_INSTALL_STREAMS] == 0u);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+	CHECK(out[0] == S02_OK);
+	CHECK(only_allowed_changed(1u));
+
+	/* waffle-boot in the selected slot, the unit's own in the other: refused */
+	setup(0u, true);
+	waffle_slot(0u);
+	m.dev = &wb_device_op1f;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+	CHECK(out[0] == S02_OK && out[OPXY_INSTALL_STREAMS] == 0x01u);
+	CHECK((out[4] & OPXY_INSTALL_SLOT_GOOD) != 0u);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+	CHECK(out[0] == OPXY_INSTALL_REFUSED_FACTORY);
+	CHECK(writes == 0u && memcmp(mem, before, sizeof mem) == 0);
+	CHECK(out[OPXY_INSTALL_STREAMS] == 0x01u);
+	/* the same flash on the OP-XY: written, as before */
+	m.dev = NULL;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+	CHECK(out[0] == S02_OK);
+
+	/* both waffle-boot's: nothing of the unit's own is left to keep */
+	setup(1u, true);
+	waffle_slot(1u);
+	waffle_slot(0u);
+	m.dev = &wb_device_op1f;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+	CHECK(out[0] == S02_OK && out[6] == 0u);
+	CHECK(only_allowed_changed(0u));
+
+	/* waffle-boot in the target alone: the selected slot, the unit's own,
+	 * stays */
+	setup(0u, true);
+	waffle_slot(1u);
+	m.dev = &wb_device_op1f;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+	CHECK(out[0] == S02_OK && out[OPXY_INSTALL_STREAMS] == 0x02u);
+	(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+	CHECK(out[0] == S02_OK);
+	CHECK(only_allowed_changed(1u));
+}
+
+/* S-02.063 at the device's record size: the OP-1F's 0x28 bytes. */
+static void test_mirror_size(void)
+{
+	uint8_t out[OPXY_INSTALL_REPLY];
+	uint8_t rec[0x28];
+
+	setup(0u, true);
+	for (unsigned i = 0; i < sizeof rec; i++)
+		rec[i] = (uint8_t)(i * 3u + 1u);
+	put32(rec, S02_META_MAGIC);
+	memcpy(mem + S02_META_OFF, rec, sizeof rec);
+	memcpy(mem + S02_MIRROR_OFF, rec, sizeof rec);
+	for (unsigned i = 0; i < sizeof rec; i++)
+		mem[S02_MIRROR_OFF + sizeof rec + i] = (uint8_t)~rec[i];
+	m.flash.meta_size = 0x28u;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+	CHECK(out[8] == OPXY_INSTALL_MIRROR_SAME);
+	mem[S02_META_OFF + 0x27u] ^= 1u;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+	CHECK(out[8] == OPXY_INSTALL_MIRROR_DIFFERS);
+	/* the OP-XY's 0x34 bytes: that mirror is not one */
+	m.flash.meta_size = 0x34u;
+	(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+	CHECK(out[8] == OPXY_INSTALL_MIRROR_INVALID);
+	CHECK(writes == 0u);
+}
+
+/* The survey's flash part: read, nothing written. */
+static void test_survey_read(void)
+{
+	struct inst_survey sv;
+	struct s02_record r0;
+
+	setup(0u, true);
+	waffle_slot(1u);
+	mem[log_byte(0u)] = 0xF0u;
+	mem[log_byte(0u) + 1u] = 0x3Fu;
+	memcpy(before, mem, sizeof mem);
+	memset(&sv, 0xEE, sizeof sv);
+	opxy_installer_survey_read(&m, &sv);
+	CHECK(sv.sel_read && sv.sel_index == 0u && sv.sel_verified == 0x01u);
+	s02_record_decode(mem + s02_record_off(0), &r0);
+	CHECK(sv.slot[0].bits == (INST_SV_RECORD | INST_SV_GOOD | INST_SV_LOG));
+	CHECK(sv.slot[0].crc == r0.crc32 && sv.slot[0].length == 0x1800u &&
+	      sv.slot[0].tag == S02_RECORD_TAG);
+	CHECK(sv.slot[0].log[0] == 0xF0u && sv.slot[0].log[1] == 0x3Fu && sv.slot[0].log[2] == 0xFFu);
+	CHECK(sv.slot[1].bits == (INST_SV_RECORD | INST_SV_GOOD | INST_SV_WAFFLE | INST_SV_LOG));
+	CHECK(writes == 0u && memcmp(mem, before, sizeof mem) == 0);
+	/* a selector that does not read */
+	sel_read_fails = true;
+	opxy_installer_survey_read(&m, &sv);
+	CHECK(!sv.sel_read && sv.sel_index == 0xFFu);
+}
+
 int main(void)
 {
 	RUN(test_image);
@@ -1423,5 +1574,8 @@ int main(void)
 	RUN(test_image_checks_first);
 	RUN(test_trial_settings_sector);
 	RUN(test_commit_read_back);
+	RUN(test_op1f_keeps_factory);
+	RUN(test_mirror_size);
+	RUN(test_survey_read);
 	return check_summary("test_board_installer_engine");
 }

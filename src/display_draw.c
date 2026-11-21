@@ -175,15 +175,16 @@ const struct s15_draw_ops *wb_display_draw(struct wb_display *d)
 /* ---- the panel ---- */
 
 void wb_display_begin(struct wb_display *d, const struct s13c_bus *bus,
-		      uint32_t xmod, uint32_t ymod, unsigned pa8)
+		      const struct wb_device *dev, uint32_t xmod, uint32_t ymod,
+		      unsigned pa8)
 {
-	s13c_begin(&d->panel, bus, xmod, ymod, pa8);
+	s13c_begin(&d->panel, bus, dev, xmod, ymod, pa8);
 }
 
 void wb_display_adopt(struct wb_display *d, const struct s13c_bus *bus,
-		      uint32_t reset_ms)
+		      const struct wb_device *dev, uint32_t reset_ms)
 {
-	s13c_adopt(&d->panel, bus, reset_ms);
+	s13c_adopt(&d->panel, bus, dev, reset_ms);
 }
 
 int wb_display_start(struct wb_display *d, bool gamma)

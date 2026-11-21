@@ -22,5 +22,9 @@ struct wb_display_bf70x {
  */
 const struct s13c_bus *wb_display_bf70x_init(struct wb_display_bf70x *a,
 					     const struct wb_time *t);
+/* The same on the pins of cfg (wb_lcd_opxy, wb_lcd_op1f). */
+const struct s13c_bus *wb_display_bf70x_init_cfg(struct wb_display_bf70x *a,
+						 const struct wb_lcd_config *cfg,
+						 const struct wb_time *t);
 
 #endif /* WAFFLE_DRIVERS_BF70X_DISPLAY_H */

@@ -47,8 +47,10 @@ static void put_version(struct text *t, const struct s11_version *v)
 	put(t, d, n);
 }
 
-/* S-10c.054, S-10c.055. S-17.033: no coprocessor value is carried. */
-size_t s10c_info_text(const struct s10c_info *v, char *buf)
+/* S-10c.054, S-10c.055, S-18.031. S-17.033: no coprocessor value is
+ * carried. */
+size_t s10c_info_text(const struct wb_device *dev, enum wb_dev_how how,
+		      const struct s10c_info *v, char *buf)
 {
 	struct text t = { buf, 0, S10C_INFO_TEXT_MAX };
 
@@ -65,7 +67,10 @@ size_t s10c_info_text(const struct s10c_info *v, char *buf)
 	}
 	puts_(&t, ";hw_rev:");
 	put_u32(&t, v->hw_rev);		/* S-17.013 */
-	puts_(&t, ";product:OP-XY;sku:TE033AS");
+	puts_(&t, ";product:");
+	puts_(&t, dev->ident.product_text);
+	puts_(&t, ";sku:");
+	puts_(&t, dev->ident.sku_prefix);
 	put_3digits(&t, v->sku);
 	puts_(&t, ";sw_version:");
 	put_version(&t, &v->sw);
@@ -73,8 +78,13 @@ size_t s10c_info_text(const struct s10c_info *v, char *buf)
 	put_version(&t, &v->bl);
 	puts_(&t, ";os_version:");
 	put_version(&t, &v->os);
-	puts_(&t, ";factory:");
-	put_u32(&t, v->factory);
+	if (wb_has(dev, WB_F_FACTORY_WORD)) {
+		puts_(&t, ";factory:");
+		put_u32(&t, v->factory);
+	}
+	/* the last entry on every device */
+	puts_(&t, ";device_id:");
+	puts_(&t, how == WB_DEV_UNKNOWN ? WB_DEVICE_ID_UNKNOWN : dev->device_id);
 	return t.len;
 }
 

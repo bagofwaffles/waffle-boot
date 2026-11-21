@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
+
 /* --- The boot decision (S-05.001) --- */
 
 enum s05_keys { S05_KEYS_NOT_HELD = 0, S05_KEYS_HELD, S05_KEYS_SILENT };
@@ -46,8 +48,8 @@ void s05_boot_decision(uint16_t reason, uint32_t state, enum s05_keys keys,
 #define S05_FLAG_FILL      0x0100u
 #define S05_FLAG_AUX       0x0020u
 #define S05_FLAG_SAVE      0x0010u
-/* S-05.023: the contract this implements. */
-#define S05_CONTRACT_VERSION "XY-HANDOFF-1"
+/* S-05.023: the contract this implements on the OP-XY. */
+#define S05_CONTRACT_VERSION "XY-HANDOFF-2"
 
 /* S-05.024: the flags that make an image refused. */
 #define S05_FLAGS_REFUSED  (S05_FLAG_INIT | S05_FLAG_CALLBACK | S05_FLAG_INDIRECT | \
@@ -90,6 +92,9 @@ enum s05_refusal {
 
 /* S-05.024, S-01.017: the check of a staged image before the release or the kernel call. */
 enum s05_refusal s05_check_image(const uint8_t *img, uint32_t len);
+
+/* S-05.023, S-05.039: the contract version on dev (device.contract). */
+const char *s05_contract(const struct wb_device *dev);
 
 /* --- The kernel call (S-05.008, S-05.009) --- */
 
@@ -143,7 +148,7 @@ struct s05_master_ops {
 	 * that wait ran out.
 	 */
 	int (*release)(void *ctx, uint8_t *reply);
-	/* S-05.016 */
+	/* S-05.016; with emmc-on-main S-05.037's MSI close is part of it */
 	void (*teardown)(void *ctx);
 	/* S-05.008: the call of 0x04000008 with the configuration block's address. */
 	void (*kernel_call)(void *ctx, uint32_t config_addr);
@@ -154,6 +159,13 @@ struct s05_master_ops {
 	void (*clear_sw_version)(void *ctx);
 	/* Held mode with the cause (S-15.161 shows the encrypted one only). */
 	void (*held)(void *ctx, enum s05_fail cause);
+	/*
+	 * S-05.036, on a device without second-cpu: what the OP-XY's release
+	 * op does before it sends the release (the start log's steps), made
+	 * once the image is staged and accepted and before the teardown.
+	 * NULL: nothing. Not called on a device with second-cpu.
+	 */
+	void (*accepted)(void *ctx);
 };
 
 #define S05_REPLY_NO_START 0xFEu
@@ -163,9 +175,14 @@ struct s05_master {
 	uint32_t config_addr;	/* the configuration block, in the handover reserve */
 	bool sw_version_nonzero;	/* S-04.045 M6's condition on the record read */
 	bool file;		/* S-05.035: a file start, whose failure clears nothing */
+	const struct wb_device *dev;	/* the device (S-18): its order, S-05.018 or S-05.036 */
 };
 
-/* S-05.018 on the master.  Returns only into held mode, or with test ops. */
+/*
+ * S-05.018 on the OP-XY's master; S-05.036 on a device without second-cpu:
+ * no release and no wait, the accepted op, then the teardown and the
+ * kernel call. Returns only into held mode, or with test ops.
+ */
 void s05_master_handoff(const struct s05_master_ops *ops, const struct s05_master *m);
 
 struct s05_slave_ops {

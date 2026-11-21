@@ -127,12 +127,12 @@ int s08_classify_dfu(uint8_t cmd, uint8_t reply_id, const uint8_t *p,
 	return S08_DFU_FAIL;		/* an empty payload too (S-16.185) */
 }
 
-/* S-08.045 */
-uint32_t s08_product_word(uint32_t sku, bool read_ok)
+/* S-08.045: base is device.product_base */
+uint32_t s08_product_word(uint32_t base, uint32_t sku, bool read_ok)
 {
 	if (!read_ok)
 		return 0;
-	return 0x00084000u | (sku <= 999u ? sku : 0u);
+	return base | (sku <= 999u ? sku : 0u);
 }
 
 /* S-08.048, S-11.070: the prepare is the first request after the query. */

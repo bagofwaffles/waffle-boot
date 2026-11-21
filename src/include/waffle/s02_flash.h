@@ -35,6 +35,8 @@
 
 #define S02_RECORD_SIZE     12u
 #define S02_RECORD_TAG      0x0000B004u
+/* The largest metadata record, the OP-XY's; a device's is
+ * device.metadata_size (S-18.030), s02_env.meta_size. */
 #define S02_META_SIZE       0x34u
 #define S02_META_MAGIC      0xDEADBABEu
 #define S02_MIRROR_SIZE     (2u * S02_META_SIZE)
@@ -86,7 +88,13 @@ struct s02_env {
 	 * first when it is not NULL: a result equal to the record's CRC or its
 	 * complement is the verdict, any other is computed again by crc32. */
 	s02_crc32_fn crc32_fast;
+	/* device.metadata_size (S-02.018, S-02.063): the record's bytes, at
+	 * most S02_META_SIZE; 0 reads as S02_META_SIZE. */
+	uint8_t meta_size;
 };
+
+/* The metadata record's size env works with (S-02.018). */
+uint32_t s02_meta_size(const struct s02_env *env);
 
 /* --- Formats (S-02.010 to S-02.016) --- */
 
@@ -315,17 +323,36 @@ int s02_write_selector(const struct s02_env *env, unsigned slot, uint8_t verifie
 
 /* --- The metadata mirror (S-02.060 to S-02.065) --- */
 
-/* S-02.063: the mirror's 0x68 bytes for a record. */
+/*
+ * S-02.063 with s = size: the mirror's 2s bytes for a record of s bytes
+ * (the copy, then its complement), and whether 2s bytes read at 0xB000 are
+ * a valid mirror of that size. size is at most S02_META_SIZE.
+ */
+void s02_mirror_build_n(const uint8_t *rec, uint32_t size, uint8_t *mirror);
+bool s02_mirror_valid_n(const uint8_t *mirror, uint32_t size);
+/* The same at the OP-XY's size, 0x34 (the mirror's 0x68 bytes). */
 void s02_mirror_build(const uint8_t rec[S02_META_SIZE], uint8_t mirror[S02_MIRROR_SIZE]);
 bool s02_mirror_valid(const uint8_t mirror[S02_MIRROR_SIZE]);
 
-/* S-02.064: write a new record R.  R is S-04.043's.  The sector is read
+/* S-02.064: write a new record R of s02_meta_size(env) bytes.  R is S-04.043's.  The sector is read
  * twice and the reads must agree before the first erase (S02_ERR_VERIFY
  * otherwise, nothing erased); once the record is read back, the mirror
  * sector is erased (step 7). */
-int s02_meta_write(const struct s02_env *env, const uint8_t rec[S02_META_SIZE]);
+int s02_meta_write(const struct s02_env *env, const uint8_t *rec);
 
 /* S-02.065: the boot-time restore.  *restored tells whether it wrote. */
 int s02_meta_restore(const struct s02_env *env, bool *restored);
+
+/*
+ * Whether the bytes read through read from base on hold waffle-boot: LDR
+ * block headers (S-05) up to FINAL within max bytes, one of them the image
+ * descriptor at FR_DESC_ADDR whose magic, version, size and CRC hold
+ * (S-01.023, front/fr_handoff.h). Reads headers and the descriptor alone.
+ * Recovery's WB kind (S-02.106 rule 1), the installer's slot test (S-02.108)
+ * and S-11.091's test of a package's bootloader image.
+ */
+bool s02_stream_is_waffle(int (*read)(void *ctx, uint32_t off, uint8_t *buf, uint32_t len),
+			  void *ctx, uint32_t base, uint32_t max,
+			  uint32_t (*crc32)(uint32_t crc, const uint8_t *p, size_t n));
 
 #endif /* WAFFLE_S02_FLASH_H */

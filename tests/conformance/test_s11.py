@@ -43,18 +43,19 @@ def vectors(name):
 
 
 def keys():
+    """The test Q0 (x then y), K0 and K1."""
     aes0, _, pub = tfw.test_keys()
     aes1 = tfw.test_keys(b'opxy-conformance-k1')[0]
     return (pub[0].to_bytes(28, 'big') + pub[1].to_bytes(28, 'big')).hex(), aes0.hex(), aes1.hex()
 
 
-def otp(q0=True, k0=True, k1=True):
+def otp(k0=True, k1=True, q0=True):
     q, a, b = keys()
     return 'otp %s %s %s' % (q if q0 else 'x', a if k0 else 'x', b if k1 else 'x')
 
 
 def otp_unit(u):
-    return otp(u['q0'] is not None, u['k0'] is not None, u['k1'] is not None)
+    return otp(u['k0'] is not None, u['k1'] is not None, u['q0'] is not None)
 
 
 def write(name, data):
@@ -75,13 +76,15 @@ def vtext(v):
 
 
 class Result:
-    """install's fields."""
+    """install's fields; sig: the signature state (S-11.021); wb: the staged bootloader is a waffle-boot build
+    (S-11.091)."""
 
     def __init__(self, line):
         f = line.split()
         self.reason = None if f[0] == 'none' else f[0]
-        self.te, self.forced, self.stock = f[1] == '1', f[2] == '1', f[3] == '1'
-        self.end, self.outcome, self.step, self.result = f[4], f[5], int(f[6]), int(f[7])
+        self.sig = f[1]
+        self.wb, self.forced, self.stock = f[2] == '1', f[3] == '1', f[4] == '1'
+        self.end, self.outcome, self.step, self.result = f[5], f[6], int(f[7]), int(f[8])
 
 
 def tree(line):
@@ -248,11 +251,13 @@ FIRST_STAGE_FILE = {'firmware/blackfin/bin/spiboot.ldr': img(0xC001, 13),
                     'firmware/blackfin/bin/spiboot.version': b'1.2.0+0\n'}
 
 
-def full_zip(version=(1, 2, 0), content=True, fw_version=True, **comp_versions):
+def full_zip(version=(1, 2, 0), content=True, fw_version=True, bl_image=None, **comp_versions):
     """Every component, both Nordic bootloaders, a first-stage file (S-11.034: no component, never looked
-    for) and (content) a content file."""
+    for) and (content) a content file; bl_image in place of the bootloader image."""
     comps = {c: (comp_img(c, 100 + i, i), comp_versions.get(c, version))
              for i, c in enumerate(('os', 'bootloader', 'ble', 'backplane'))}
+    if bl_image is not None:
+        comps['bootloader'] = (bl_image, comp_versions.get('bootloader', version))
     extra = dict(FIRST_STAGE_FILE)
     if content:
         extra['firmware/blackfin/content/op1.json'] = b'{}'
@@ -305,8 +310,9 @@ class Refusals(unittest.TestCase):
                 r = Result(out[name])
                 want = e['reason'] or e.get('zip_reason')
                 self.assertEqual(r.reason, want)
-                if 'te_signed' in e:
-                    self.assertEqual(r.te, e['te_signed'])
+                if 'signature' in e:                    # S-11.021, once check 8 is reached
+                    self.assertEqual(r.sig, e['signature'])
+                self.assertFalse(r.wb)
                 if 'forced' in e:
                     self.assertEqual(r.forced, e['forced'])
                 before, after = tree(out[name + '/before']), tree(out[name + '/after'])
@@ -458,30 +464,28 @@ class Acceptance(unittest.TestCase):
     @requirement('S-16.039')
     @scenario('S-11/SC-11-ACCEPT')
     def test_SC_11_ACCEPT(self):
-        """The acceptance table (S-11's acceptance_table()): checks 8 and 12 under each unit. One package per signature key index, signature
-        validity and payload key index; the OTP and the option vary in h_s11. Dev mode has no input: developer mode
-        (S-15.172) has no effect on it, and the rows with it on must read as those with it off."""
+        """The acceptance table (S-11's acceptance_table()): check 12 under each unit; the signature never refuses
+        (S-11.022). One package per payload key index, valid; the OTP and the option vary in h_s11. Dev mode
+        has no input: developer mode (S-15.172) has no effect on it, and the rows with it on must read as those
+        with it off. SC-11-SIG has the other signature states."""
         g = gv()
         rows = g.m.acceptance_table()
         built, s = {}, Session()
-        rows.sort(key=lambda r: (r['sig_key_index'], r['sig_valid'], r['payload_key_index']))
+        rows.sort(key=lambda r: r['payload_key_index'])
         for i, r in enumerate(rows):
-            key = (r['sig_key_index'], r['sig_valid'], r['payload_key_index'])
+            key = r['payload_key_index']
             if key not in built:
-                ki = int(key[2], 16)
-                built[key] = package('acc_%s_%s_%s' % key, g.BASE_ZIP, sig_index=int(key[0], 16),
-                                     sign_d=g.D if key[1] == '1' else g.D_OTHER, key_index=ki,
+                ki = int(key, 16)
+                built[key] = package('acc_%s' % key, g.BASE_ZIP, key_index=ki,
                                      key=g.AES0 if ki in (0xFF, 0x02) else None)
                 s.add('load ' + built[key])
-            s.add(otp(r['q0_readable'] == '1', r['k0_readable'] == '1', r['k1_readable'] == '1'))
+            s.add(otp(r['k0_readable'] == '1', r['k1_readable'] == '1'))
             s.add('install file 0 %s p.tfw' % r['option'], name=i)
         out = s.run()
         for i, r in enumerate(rows):
             with self.subTest(row=r):
                 got = Result(out[i])
                 self.assertEqual(got.reason or 'accept', r['verdict'])
-                if r['verdict'] in ('accept', 'KEY', 'NOKEY'):
-                    self.assertEqual(got.te, r['te_signed'] == '1')
                 if r['verdict'] == 'accept':
                     self.assertEqual(got.outcome, 'done')
 
@@ -651,13 +655,14 @@ class Content(unittest.TestCase):
 class Runs(unittest.TestCase):
 
     def check_run(self, out, tag, staged, option, faults=None, dfu=True, tree0=None, os_version=OLD,
-                  version=None, steps_off=(), answer=ALL_ON['answer']):
+                  version=None, steps_off=(), answer=ALL_ON['answer'], signature='valid'):
         """The run's writes and step effects against s11_model.install() on the same staging area, with the
-        steps switched off and the answers h_s11 was given (setup()'s by default)."""
+        steps switched off, the answers h_s11 was given (setup()'s by default) and the package's signature
+        state; S-15.197's prompt for an invalid one is the screen's, which h_s11's answer stands in for."""
         m = model()
         dev = m.Device(tree0, tuple(int(x) for x in os_version.split('.')))
         want = m.install(dev, staged, option=option, faults=faults or {}, nordic_dfu_ok=dfu, steps_off=steps_off,
-                         answer=answer)
+                         answer=answer, signature=signature, prompt=lambda: 'install')
         lg = log(out[tag + '/log'])
         pv = m.package_version(staged)
         self.assertEqual(writes(lg), model_writes(want['writes'], pv), tag)
@@ -763,21 +768,24 @@ class Runs(unittest.TestCase):
     @scenario('S-11/SC-11-CONFIRM')
     def test_SC_11_CONFIRM(self):
         """S-11.096, the selection, with steps 3-5 switched off (S-11.073). The SC-11-RUN-OK package
-        (TE-signed, a first-stage file carried), option on: asked once before the run's first write, offered
-        content, the OS and the bootloader (never a first-stage file, nothing writes it); every step offered
-        selected: all written, a return to the factory bootloader; the bootloader left out: Skipped, not
-        selected, no return to the factory bootloader; the bootloader alone: the OS Skipped, not selected,
+        (built with the test key, not verified; a first-stage file carried), option on: asked once before the
+        run's first write, offered content, the OS and the bootloader (never a first-stage file, nothing writes
+        it); every step offered selected: all written, a return to the factory bootloader; the bootloader left
+        out: Skipped, not selected, no return to the factory bootloader; the same package with a waffle-boot
+        bootloader image, every step selected: written, no return to the factory bootloader (S-11.091); the bootloader alone: the OS Skipped, not selected,
         and no package version recorded (S-11.064); a cancel: no run, nothing written (no metadata state, no
         progress record, no Nordic exchange), nothing to do; the keys unreadable: every step offered but the
         bootloader. The option off: the bootloader not offered, Skipped, option off. A package without the
         bootloader: not offered. The same package over the CDC firmware command and the MIDI transfer: the
         same ask. The same package installed again: asked again."""
         z = full_zip(version=(1, 2, 0))
+        zw = full_zip(version=(1, 2, 0), bl_image=gv().wb_stream() + img(100, 1))
         os_only = fwzip.build({'os': os_img(300, 1)}, version=(1, 2, 0))
         body = package('confirm_body', z, pre=False)
         s = Session()
         every = ('install', None)
-        legs = [('all', z, 1, every), ('no_bl', z, 1, ('install', (0, 1))), ('only_bl', z, 1, ('install', (2,))),
+        legs = [('all', z, 1, every), ('waffle_bl', zw, 1, every), ('no_bl', z, 1, ('install', (0, 1))),
+                ('only_bl', z, 1, ('install', (2,))),
                 ('cancel', z, 1, ('cancel',)), ('unasked', z, 1, None), ('option_off', z, 0, every),
                 ('no_protected', os_only, 1, every)]
 
@@ -814,12 +822,14 @@ class Runs(unittest.TestCase):
                 if written:
                     self.assertLess(asks[0], min(written), 'asked before the run\'s first write')
                 bl = a is not None and a[0] == 'install' and (a[1] is None or 2 in a[1])
-                self.assertEqual('bootloader_write' in lg, bool(opt and bl and zz is z), tag)
+                self.assertEqual('bootloader_write' in lg, bool(opt and bl and zz in (z, zw)), tag)
                 self.assertFalse([t for t in lg if 'spiboot' in t], tag)
                 if zz is z:
-                    self.assertTrue(r.te)
+                    self.assertFalse(r.wb)
                     self.assertEqual(r.stock, bool(opt and bl),
                                      'S-11.091: a return to the factory bootloader only when selected')
+                if zz is zw:
+                    self.assertTrue(r.wb and not r.stock, 'S-11.091: a waffle-boot bootloader is an update')
         self.assertEqual([t for t in log(out['all/log']) if t.startswith('select:')],
                          ['select:offered=0,1,2', 'select:selected=0,1,2'])
         self.assertEqual(Result(out['all']).outcome, 'done')
@@ -898,7 +908,7 @@ class Runs(unittest.TestCase):
         self.install(s, 'record_fails', z, extra=['set recordfail 4'])
         out = s.run()
         lg, r = self.check_run(out, 'ok', staged_of(z), True)
-        self.assertTrue(r.te and not r.forced)
+        self.assertTrue(not r.wb and not r.forced)
         eff = step_effects(lg)
         self.assertEqual([k for k in sorted(eff) if k], [1, 2, 3, 4, 5])    # step 6 reserved: no effect
         self.assertEqual(eff[1], ['os_write', 'sw_version'])
@@ -1008,10 +1018,36 @@ class Runs(unittest.TestCase):
         self.assertEqual((r.outcome, r.step, r.result), ('failed', 5, 1))
         self.assertNotIn('progress:6,0', log(out['fails/log']))
 
+    @scenario('S-11/SC-11-SIG')
+    def test_SC_11_SIG(self):
+        """The SC-11-RUN-OK package in each signature state, option on, every step offered selected: valid (the
+        test key with Q0 read), invalid (another key; or the test key with Q0 unreadable) and none (a blank
+        signature). Each is accepted, offered every step and writes them all, the bootloader included; only the
+        valid one is called a return to the factory bootloader (wording only). As the model's run with that
+        state."""
+        g = gv()
+        z = full_zip(version=(1, 2, 0))
+        legs = [('valid', dict(), True, 'valid'), ('other_key', dict(sign_d=g.D_OTHER), True, 'invalid'),
+                ('no_q0', dict(), False, 'invalid'), ('blank', dict(sign_d=None), True, 'none')]
+        s = Session()
+        for tag, kw, q0, _ in legs:
+            self.install(s, tag, z, extra=['set off 3,4,5', otp(q0=q0)], **kw)
+        out = s.run()
+        for tag, _, _, state in legs:
+            with self.subTest(leg=tag):
+                lg, r = self.check_run(out, tag, staged_of(z), True, steps_off=(3, 4, 5), signature=state)
+                valid = state == 'valid'
+                self.assertEqual((r.reason, r.sig, r.outcome), (None, state, 'done'))
+                self.assertIn('bootloader_write', lg)
+                self.assertIn('os_write', lg)
+                self.assertEqual(r.stock, valid, 'S-11.091: only a valid package is called a return to stock')
+                self.assertEqual([t for t in lg if t.startswith('select:offered=')], ['select:offered=0,1,2'])
+                self.assertNotIn('skip:2=not_selected', lg)
+
     @scenario('S-11/SC-11-FORCED')
     def test_SC_11_FORCED(self):
-        """1. Option on: a bootloader of 1.1.0, 1.0.0 or 0.9.0, unforced and forced, is written every time;
-        0.9.0 unforced and TE-signed is a return to the factory bootloader. 2. Option off (TE-signed packages):
+        """1. Option on, the package valid: a bootloader of 1.1.0, 1.0.0 or 0.9.0, unforced and forced, is written
+        every time; 0.9.0 unforced is a return to the factory bootloader (no waffle-boot descriptor). 2. Option off:
         Skipped, not written. 3. The Nordic application, Nordic bootloader and backplane at the peers' versions:
         unforced Already installed (nothing sent), forced each sent."""
         s = Session()
@@ -1019,7 +1055,7 @@ class Runs(unittest.TestCase):
             z = fwzip.build({'bootloader': (boot_img(300, 7), v)}, version=(1, 2, 0))
             for forced in (0, 1):
                 hv = (0, 1, 0, 0) if forced else (1, 2, 0, 0)
-                self.install(s, 'on_%s_%d' % (vtext(v), forced), z, sign_d=None, version=hv)
+                self.install(s, 'on_%s_%d' % (vtext(v), forced), z, version=hv)
                 self.install(s, 'off_%s_%d' % (vtext(v), forced), z, option=0, version=hv)
             if v == (0, 9, 0):
                 self.install(s, 'stock', z)
@@ -1038,7 +1074,7 @@ class Runs(unittest.TestCase):
                     self.assertEqual((r.reason, r.outcome), (None, 'nothing'))
                     self.assertNotIn('bootloader_write', log(out['off_%s_%d/log' % (v, forced)]))
         r = Result(out['stock'])
-        self.assertTrue(r.te and r.stock)
+        self.assertTrue(r.sig == 'valid' and not r.wb and r.stock)
         self.assertIn('bootloader_write', log(out['stock/log']))
         lg = log(out['peers_0/log'])
         for e in ('nordic_send:ble', 'nordic_send:bl0', 'psoc_program'):

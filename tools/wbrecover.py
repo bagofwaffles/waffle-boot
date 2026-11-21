@@ -45,8 +45,9 @@ switching it off or unplugging USB in that time stops it with nothing written. T
 let a unit whose keys do not work be recovered from the host alone; on the unit the same actions are
 in the recovery menu (key 1, "Change the boot slot").
 
-The port is found by its USB product string, "OP-XY Recovery" (vendor 0x2367, product 0x0021),
-through ioreg on macOS and sysfs on Linux; elsewhere give --port. Exit status 0 only when the
+The port is found by its USB product string, "OP-XY Recovery" (vendor 0x2367, product 0x0021) or,
+on an OP-1F, "OP-1 Recovery" (product 0x0102), through ioreg on macOS and sysfs on Linux; elsewhere
+give --port. Exit status 0 only when the
 command did what it says (write: the slot holds the file's bytes, read back, and the selector
 names it). Python 3, standard library only; needs this repository's tests/oracle/ and tools/ for
 the image checks, and reads src/front/front.pin and its git history to tell a signed front pin.
@@ -71,6 +72,9 @@ import check_stream  # noqa: E402
 
 VID, PID = 0x2367, 0x0021      # src/front/fr_usb.h
 PRODUCT = 'OP-XY Recovery'
+PID_1F, PRODUCT_1F = 0x0102, 'OP-1 Recovery'    # S-02.093 on the OP-1F
+# Recovery's port on each device: (product id, product string).
+PORTS = ((PID, PRODUCT), (PID_1F, PRODUCT_1F))
 
 # src/front/fr_proto.h
 PROTO = 2                      # from front version 11
@@ -87,6 +91,12 @@ WB_IMAGE_MAX = 0x76000         # S-02.104: this tool's, the sector below it hold
 BEGIN_REPLY_LEN, DATA_REPLY_LEN, END_REPLY_LEN, ACT_REPLY_LEN = 3, 5, 2, 4
 HELLO_LEN, HELLO_O_VERSION, HELLO_O_PIN = 47, 7, 15
 INFO_V5, INFO_V6, INFO_V11 = 199, 219, 232      # INFO's length from a version 5, 6 and 11 front
+INFO_V20 = 242                                  # and from a version 20 front: the device (S-18)
+# version 20: the device (0 OP-XY, 1 OP-1F), how it was decided (0 the first stage's table, 2 not
+# identified: the default, the OP-XY), and the first stage's n and c (S-18.003, S-18.004)
+INFO_O_DEVICE, INFO_O_DEV_HOW, INFO_O_FS_N, INFO_O_FS_C = 232, 233, 234, 238
+DEVICES = ('OP-XY', 'OP-1F')
+HOW_TABLE, HOW_UNKNOWN = 0, 2
 INFO_O_VERSION, INFO_O_PIN, INFO_O_READBACK = 21, 29, 61
 INFO_O_SLOT, INFO_SLOT_LEN = 93, 53                     # slot k at INFO_O_SLOT + INFO_SLOT_LEN * k
 INFO_S_VERSION, INFO_S_FRONT_CRC, INFO_S_PIN = 9, 17, 21
@@ -342,15 +352,16 @@ def take_frame(buf):
 
 def find_port():
     if sys.platform == 'darwin':
-        try:
-            out = subprocess.run(['ioreg', '-r', '-l', '-n', PRODUCT], capture_output=True,
-                                 text=True, timeout=10).stdout
-        except (OSError, subprocess.SubprocessError):
-            out = ''
-        if re.search(r'"idVendor" = %d\b' % VID, out) and re.search(r'"idProduct" = %d\b' % PID, out):
-            ports = re.findall(r'"IOCalloutDevice" = "([^"]+)"', out)
-            if ports:
-                return ports[0]
+        for pid, product in PORTS:
+            try:
+                out = subprocess.run(['ioreg', '-r', '-l', '-n', product], capture_output=True,
+                                     text=True, timeout=10).stdout
+            except (OSError, subprocess.SubprocessError):
+                out = ''
+            if re.search(r'"idVendor" = %d\b' % VID, out) and re.search(r'"idProduct" = %d\b' % pid, out):
+                ports = re.findall(r'"IOCalloutDevice" = "([^"]+)"', out)
+                if ports:
+                    return ports[0]
     elif sys.platform.startswith('linux'):
         for tty in sorted(glob.glob('/sys/class/tty/ttyACM*')):
             usb = os.path.dirname(os.path.realpath(os.path.join(tty, 'device')))
@@ -361,11 +372,12 @@ def find_port():
                         return f.read().strip()
                 except OSError:
                     return ''
-            if field('idVendor') == '%04x' % VID and field('idProduct') == '%04x' % PID \
-                    and field('product') == PRODUCT:
+            if field('idVendor') == '%04x' % VID and \
+                    any(field('idProduct') == '%04x' % pid and field('product') == product
+                        for pid, product in PORTS):
                 return '/dev/' + os.path.basename(tty)
-    raise Failure('no serial port named "%s" found: is the unit in recovery (Power + M4) and on USB? '
-                  'Or give --port' % PRODUCT)
+    raise Failure('no serial port named "%s" or "%s" found: is the unit in recovery (Power + M4) and '
+                  'on USB? Or give --port' % (PRODUCT, PRODUCT_1F))
 
 
 class Link:
@@ -510,6 +522,12 @@ def parse_info(p):
         i['count'] = i['act'] = i['tier'] = 0
         i['acts'] = i['forced'] = None
         i['keep'] = NO_SLOT
+    i['v20'] = len(p) >= INFO_V20
+    if i['v20']:
+        i['device'], i['dev_how'] = p[INFO_O_DEVICE], p[INFO_O_DEV_HOW]
+        i['fs_n'], i['fs_c'] = struct.unpack_from('<II', p, INFO_O_FS_N)
+    else:
+        i['device'] = i['dev_how'] = i['fs_n'] = i['fs_c'] = None
     i['version'] = struct.unpack_from('<4H', p, INFO_O_VERSION)
     i['pin'] = p[INFO_O_PIN:INFO_O_PIN + 32]
     i['readback'] = p[INFO_O_READBACK:INFO_O_READBACK + 32]
@@ -995,6 +1013,8 @@ def countdown_note(i):
 def describe(i):
     """INFO as lines a person reads."""
     out = ['Recovery runs because %s.' % WHY.get(i['why'], 'of reason %d' % i['why'])]
+    if i['v20']:
+        out.append(device_line(i))
     sel = selected(i['sel_index']) if i['selector_ok'] else None
     if i['established']:
         out.append('Running:  %s' % slot_name(i['running']))
@@ -1427,6 +1447,15 @@ def cmd_info(link, out=print):
     for line in describe(i):
         out(line)
     return 0
+
+
+def device_line(i):
+    """INFO's device (front 20, S-18.004): the device and how, with n and c when not identified."""
+    name = DEVICES[i['device']] if i['device'] < len(DEVICES) else 'device %d' % i['device']
+    if i['dev_how'] == HOW_TABLE:
+        return 'Device:   %s, identified by its first stage' % name
+    return 'Device:   not identified (first stage n %d, c %08x): recovery runs as on the %s' % (
+        i['fs_n'], i['fs_c'], name)
 
 
 def progress(out, what, done, total):

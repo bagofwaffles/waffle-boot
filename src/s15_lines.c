@@ -7,14 +7,21 @@
 
 /* ---- keys ------------------------------------------------------------ */
 
-/* S-15.011: digits 1 - 4 from S-07's keys.tsv, 5 - 8 the sound keys. */
-unsigned s15_digit(unsigned key)
+/* S-15.011, S-15.016: the device's digit keys (device.key.digit1 to
+ * digit5to8). */
+unsigned s15_digit(const struct wb_device *dev, unsigned key)
 {
-	if (key >= 0x06u && key <= 0x11u)
-		return (key - 0x06u) % 4u + 1u;
-	if (key >= 0x12u && key <= 0x15u)
-		return key - 0x12u + 5u;
-	return 0;
+	return wb_key_digit(dev, key);
+}
+
+bool s15_knob_click(const struct wb_device *dev, unsigned key)
+{
+	unsigned d;
+
+	for (d = 0; d < 4u; d++)
+		if (key == dev->keys.digit[d][dev->keys.digit_knob])
+			return true;
+	return false;
 }
 
 /* ---- buffers --------------------------------------------------------- */
@@ -218,14 +225,20 @@ void s15_header_line(struct s15_buf *out, enum s15_run_kind kind,
 	}
 }
 
-size_t s15_run_header(struct s15_buf out[4], enum s15_style style[4],
+size_t s15_run_header(struct s15_buf out[S15_RUN_HEADER_MAX],
+		      enum s15_style style[S15_RUN_HEADER_MAX],
 		      enum s15_run_kind kind, const char *version,
-		      const char *name, bool stock)
+		      const char *name, bool stock, bool te_signed)
 {
 	size_t n = 0;
 
 	style[n] = S15_ST_HEAD;
 	s15_header_line(&out[n++], kind, version, name);
+	if (te_signed) {
+		style[n] = S15_ST_OK;
+		s15_buf_init(&out[n]);
+		s15_buf_str(&out[n++], s15_signed_line);
+	}
 	if (stock) {
 		style[n] = S15_ST_WARN;
 		s15_buf_init(&out[n]);
@@ -281,12 +294,22 @@ size_t s15_not_updated(struct s15_buf out[2], enum s15_style style[2],
 	return n + 1u;
 }
 
-size_t s15_outcome_lines(const char *out[2], enum s15_style style[2],
+void s15_restart_line(const struct wb_device *dev, struct s15_buf *out)
+{
+	s15_buf_init(out);
+	s15_buf_str(out, "Please restart your ");
+	s15_buf_str(out, dev->ident.product_text);
+	s15_buf_str(out, ".");
+}
+
+size_t s15_outcome_lines(const struct wb_device *dev, const char *out[2],
+			 struct s15_buf *restart, enum s15_style style[2],
 			 enum s15_outcome outcome, bool any_skipped,
 			 bool reason40, bool content_only, bool cont)
 {
 	style[1] = S15_ST_TEXT;
-	out[1] = "Please restart your OP-XY.";
+	s15_restart_line(dev, restart);
+	out[1] = restart->s;
 	switch (outcome) {
 	case S15_OUT_DONE:
 		style[0] = S15_ST_OK;
@@ -426,8 +449,8 @@ void s15_handover_frame(void (*put)(void *ctx, uint16_t pixel), void *ctx)
  * hint names the hold. */
 const char *const s15_option_prompt[S15_OPTION_PROMPT_LINES] = {
 	"Allow protected writes until the next reset?",
-	"- Installs can write the bootloader slots; a TE",
-	"  package's own returns the unit to stock",
+	"- Installs can write the bootloader slots; any",
+	"  but waffle-boot's returns the unit to stock",
 	"- The host can unlock factory mode and change",
 	"  the serial and identity",
 	"- No install writes the first stage",
@@ -445,6 +468,31 @@ const char s15_slave_no_start[] = "Not started";
 const char s15_slave_lost[] = "Not answering";
 const char s15_drive_lost[] = "DSP2 is not answering: the drive can't be used";
 const char s15_reset_lost[] = "User data not removed: DSP2 is not answering";
+const char s15_device_unknown[] = "Device not identified: see 1 More";
+const char s15_mtp_item_shift[] = "2 MTP file transfer\tShift: macOS";
+
+static void buf_hex(struct s15_buf *b, uint32_t v)
+{
+	static const char digits[] = "0123456789ABCDEF";
+	char t[11];
+	unsigned i;
+
+	t[0] = '0';
+	t[1] = 'x';
+	for (i = 0; i < 8u; i++)
+		t[2u + i] = digits[(v >> (28u - 4u * i)) & 0xFu];
+	t[10] = '\0';
+	s15_buf_str(b, t);
+}
+
+void s15_first_stage_text(struct s15_buf *out, uint32_t n, uint32_t c)
+{
+	s15_buf_init(out);
+	s15_buf_str(out, "n ");
+	buf_hex(out, n);
+	s15_buf_str(out, " c ");
+	buf_hex(out, c);
+}
 const char s15_checking_files[] = "Checking files...";
 const char s15_settings_host[] = "Not saved: changed from the computer";
 const char s15_settings_this_start[] = "Not saved: kept until the next start";
@@ -494,6 +542,7 @@ const char s15_reset_needed[] =
 	"Reset needed before the bootloader can be written";
 const char s15_nothing_skipped[] = "Nothing was installed.";
 const char s15_stock_line[] = "This run replaces waffle-boot: back to stock";
+const char s15_signed_line[] = "Signed by TE";
 
 /* S-15.015: under the items a hold chooses, while none is held. */
 const char s15_hold_line[] = "   Hold key to make selection";

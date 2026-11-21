@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """The host's end of the test OS's USB debug monitor (wiki/Test-OS.md).
 
-    testos_mon.py [--port /dev/cu.usbmodemNNN] COMMAND...
+    testos_mon.py [--port /dev/cu.usbmodemNNN] [--device xy|1f] COMMAND...
+
+--device names the unit's device (S-18) where a command depends on it: the carrier's device byte
+(S-10c.020, device.midi_byte: 0x21 on the OP-XY, the default, 0x02 on the OP-1F). The port is
+found by name alone, so an OP-1F's (USB product 0x0102) is found as the OP-XY's (0x0021) is.
 
     ping                 is the monitor there
     report               the text of testos.txt so far
@@ -226,7 +230,7 @@ PATTERNS = ['0x00', '0xFF', '0xAA', '0x55', '0x0F', '0xF0', 'walking one', 'walk
 BENCH_STAGES = ['sector copy', 'crc-16', 'sha-256', 'aes-256-cbc', 'screen frame', 'sha-256 software',
                 'aes-256 software']
 CHECK_STAGES = ['reads', 'crc-16', 'sha-256', 'aes-256-cbc', 'signature', 'usb service', 'whole check']
-CHECK_REASONS = ['', 'short', 'preamble', 'type', 'magic', 'product', 'device', 'crc', 'format', 'sku',
+CHECK_REASONS = ['', 'short', 'preamble', 'type', 'magic', 'product', 'device', 'crc', 'format',
                  'length', 'hash', 'key', 'nokey', 'name', 'ziplen', 'zip', 'member', 'space', 'spacequery',
                  'size', 'stream']
 EXTRACT_COUNTS = ['files', 'directories', 'staging writes', 'write requests', 'mkdir requests', 'stat requests']
@@ -260,6 +264,13 @@ STEPS = ['server', 'msi init', 'eMMC init', 'volume', 'eMMC features', 'mount',
 
 FW, FW_REPLY, FW_CONTINUE = 0x0D, 0x0E, 0x19   # S-10c.070, S-10c.076
 CARRIER = bytes([0xF0, 0x00, 0x20, 0x76, 0x21, 0x66])   # S-10c.020
+# device.midi_byte (S-18.030), the carrier's fifth byte, by --device
+MIDI_BYTE = {'xy': 0x21, '1f': 0x02}
+
+
+def carrier_for(device):
+    """S-10c.020's carrier head on the device ('xy' or '1f')."""
+    return CARRIER[:4] + bytes([MIDI_BYTE[device]]) + CARRIER[5:]
 
 
 def pack7(data):
@@ -2526,6 +2537,12 @@ def main(argv):
     port = None
     if args[:1] == ['--port']:
         port, args = args[1], args[2:]
+    if args[:1] == ['--device']:
+        global CARRIER
+        if len(args) < 2 or args[1] not in MIDI_BYTE:
+            print(__doc__)
+            return 2
+        CARRIER, args = carrier_for(args[1]), args[2:]
     if args[:1] == ['--send-addr']:
         global SEND_ADDR
         SEND_ADDR, args = num(args[1]), args[2:]

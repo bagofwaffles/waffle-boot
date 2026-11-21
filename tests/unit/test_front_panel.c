@@ -10,7 +10,9 @@
  * byte. The waits' bounds (S-13c.006, S-13c.007); the logo frame, the
  * logo alone, byte for byte (S-15.132), sent by the CPU from the frame
  * buffer on a bus with no DMA; DISPON once; nothing at a power-off
- * (S-13c.022). test_front_draw has the TE pacing and the DMA.
+ * (S-13c.022). On a device without digital gamma (S-13c.026) the same
+ * start with the gamma window taken out. test_front_draw has the TE pacing
+ * and the DMA.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +21,7 @@
 
 #include "front/fr_draw.h"
 #include "front/fr_panel.h"
+#include "waffle/device.h"
 #include "waffle/display.h"
 #include "waffle/s13c_panel.h"
 #include "waffle/s15_lines.h"
@@ -395,7 +398,7 @@ static void test_start_matches(void)
 
 			rec_init(&rb, c->t0);
 			sb = full_bus(&rb, reads != 0);
-			s13c_begin(&sp, &sb, c->xmod, c->ymod, c->pa8);
+			s13c_begin(&sp, &sb, &wb_device_opxy, c->xmod, c->ymod, c->pa8);
 			rb.now += c->gap;
 			CHECK(s13c_start(&sp, true) == S13C_OK);
 
@@ -560,7 +563,7 @@ static void test_logo_frame(void)
 		rec_init(&rb, c->t0);
 		sb = full_bus(&rb, true);
 		wb_display_init(&d, fb_mem);
-		wb_display_begin(&d, &sb, c->xmod, c->ymod, c->pa8);
+		wb_display_begin(&d, &sb, &wb_device_opxy, c->xmod, c->ymod, c->pa8);
 		CHECK(wb_display_boot_logo(&d, NULL) == S13C_OK);
 		CHECK(front_form(&rb, &rc));
 		CHECK(ra.len == at + FRAME_LOG + 2u);
@@ -587,11 +590,93 @@ static void test_logo_frame(void)
 	}
 }
 
+/* The parameter bytes of the n-th command c in the log (0 first), or NULL;
+ * *len their count. */
+static const uint8_t *params_of(const struct rec *r, uint8_t c, unsigned nth, uint32_t *len)
+{
+	for (size_t p = 0; p < r->len; p += ev_len(r->log + p)) {
+		if (r->log[p] != EV_CMD || r->log[p + 1u] != c || nth-- != 0u)
+			continue;
+		p += 2u;
+		if (p >= r->len || r->log[p] != EV_DATA) {
+			*len = 0;
+			return NULL;
+		}
+		memcpy(len, r->log + p + 1, 4);
+		return r->log + p + 5;
+	}
+	*len = 0;
+	return NULL;
+}
+
+/*
+ * S-13c.026 (a device without digital gamma) and S-13c.027 (PA8 no strap,
+ * passed as high): the start sends what the OP-XY's does with the gamma
+ * load's window taken out, nothing else changed: no E2, no E3, no
+ * B9 42 E0, one command-set-2 window, B9 02 E0 the only B9. The reset
+ * paths are the handshake when it is valid and earlier, else one pulse.
+ */
+static void test_no_gamma(void)
+{
+	/* the window the OP-XY sends: CSCON C3, CSCON 96, E2 64, E3 64,
+	 * B9 42 E0, CSCON 3C, CSCON 69 */
+	const size_t window = 4u * 8u + 2u * (2u + 5u + 64u) + (2u + 5u + 2u);
+
+	for (unsigned i = 0; i < ARRAY_LEN(cases); i++) {
+		const struct scenario *c = &cases[i];
+		struct fr_panel fp;
+		struct fr_panel_bus fb;
+		struct fr_clock fc;
+		const uint8_t *b9;
+		uint32_t n;
+		size_t at = 0;
+
+		if (c->pa8 != 1u)
+			continue;	/* no strap: only the high reading is passed */
+		rec_init(&ra, c->t0);
+		fb = fr_bus(&ra);
+		fc = fr_clk(&ra);
+		fr_panel_begin(&fp, &fb, &fc, c->xmod, c->ymod, 1);
+		ra.now += c->gap;
+		fr_panel_start(&fp);
+		CHECK(fp.gamma);
+
+		rec_init(&rb, c->t0);
+		fb = fr_bus(&rb);
+		fc = fr_clk(&rb);
+		fr_panel_begin(&fp, &fb, &fc, c->xmod, c->ymod, 1);
+		fp.gamma = false;
+		rb.now += c->gap;
+		fr_panel_start(&fp);
+		CHECK(fp.ready && !fp.on && fp.path == c->path);
+		CHECK(c->path == FR_PANEL_HANDSHAKE || c->path == FR_PANEL_PULSE);
+
+		CHECK(count_cmd(&rb, 0, 0xE2u) == 0u && count_cmd(&rb, 0, 0xE3u) == 0u);
+		CHECK(count_cmd(&rb, 0, 0xB9u) == 1u);
+		b9 = params_of(&rb, 0xB9u, 0, &n);
+		CHECK(b9 != NULL && n == 2u && b9[0] == 0x02u && b9[1] == 0xE0u);
+		CHECK(count_cmd(&rb, 0, 0xF0u) == 4u && count_cmd(&ra, 0, 0xF0u) == 8u);
+		/* the OP-XY's log with its window taken out */
+		while (at < ra.len && !(ra.log[at] == EV_CMD && ra.log[at + 1u] == 0xE2u))
+			at += ev_len(ra.log + at);
+		CHECK(at >= 16u && at < ra.len && ra.len == rb.len + window);
+		if (at < 16u || ra.len != rb.len + window)
+			continue;
+		at -= 16u;
+		CHECK(ra.log[at] == EV_CMD && ra.log[at + 1u] == 0xF0u);
+		CHECK(memcmp(ra.log, rb.log, at) == 0);
+		CHECK(memcmp(ra.log + at + window, rb.log + at, rb.len - at) == 0);
+		if (failed_once(i, 0))
+			return;
+	}
+}
+
 int main(void)
 {
 	RUN(test_start_matches);
 	RUN(test_frames_and_off);
 	RUN(test_logo_frame);
+	RUN(test_no_gamma);
 	free(ra.log);
 	free(rb.log);
 	free(rc.log);

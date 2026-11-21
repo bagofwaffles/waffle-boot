@@ -5,6 +5,8 @@
  * - the format of wb_fatfs_format (S-12.003 to S-12.007): sectors 0, 63,
  *   64 and 175 as the vectors give them, the FAT and root directory zero
  *   beyond that, and no other sector written;
+ * - the OP-1F's format (S-12.008): its table's values on a disk of 260,096
+ *   sectors, the label OP-1, and no sector written but 0, 63 and 64 to 222;
  * - the volumes a host may leave on the disk (S-12.020, S-12.021) and the
  *   populated RAM disk, each read to its tree;
  * - files written and read back on a fresh volume.
@@ -32,6 +34,19 @@ static struct wb_ramdisk ram;
 static uint8_t *sector(uint32_t n)
 {
 	return disk + (size_t)n * WB_SECTOR_SIZE;
+}
+
+/* Whether len bytes of disk d from sector s, offset off, are all value. */
+static int is_filled_in(const uint8_t *d, uint32_t s, size_t off, size_t len,
+			uint8_t value)
+{
+	const uint8_t *p = d + (size_t)s * WB_SECTOR_SIZE + off;
+	size_t i;
+
+	for (i = 0; i < len; i++)
+		if (p[i] != value)
+			return 0;
+	return 1;
 }
 
 static int is_filled(uint32_t first, uint32_t last, uint8_t value)
@@ -67,7 +82,7 @@ static void check_format(FILE *f)
 
 	/* Every sector the format does not write keeps this pattern. */
 	memset(disk, 0xA5, (size_t)disk_sectors * WB_SECTOR_SIZE);
-	CHECK(wb_fatfs_format(work, sizeof(work)) == FR_OK, "format");
+	CHECK(wb_fatfs_format(work, sizeof(work), "OP-XY") == FR_OK, "format");
 	CHECK(f_mount(&fs, "", 1) == FR_OK, "mount after format");
 	CHECK(fs.fs_type == FS_FAT16, "FAT type %u", fs.fs_type);
 	CHECK(fs.n_fatent - 2 == 28403, "%lu clusters",
@@ -285,7 +300,7 @@ static void check_write(void)
 	for (i = 0; i < sizeof(data); i++)
 		data[i] = (uint8_t)(i * 31 + (i >> 9));
 	memset(disk, 0, (size_t)disk_sectors * WB_SECTOR_SIZE);
-	CHECK(wb_fatfs_format(work, sizeof(work)) == FR_OK, "format");
+	CHECK(wb_fatfs_format(work, sizeof(work), "OP-XY") == FR_OK, "format");
 	CHECK(f_mount(&fs, "", 1) == FR_OK, "mount");
 	CHECK(f_mkdir("systeminfo") == FR_OK, "mkdir systeminfo");
 	CHECK(f_mkdir("logs") == FR_OK, "mkdir logs");
@@ -329,6 +344,55 @@ static void check_write(void)
 	CHECK(f_mount(NULL, "", 0) == FR_OK, "unmount");
 }
 
+static uint32_t le32(const uint8_t *p)
+{
+	return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 |
+	       (uint32_t)p[3] << 24;
+}
+
+/* S-12.008: the format on the OP-1F's disk, with its label (S-12.006). */
+static void check_format_1f(void)
+{
+	static const uint8_t label[11] = { 'O', 'P', '-', '1', ' ', ' ', ' ', ' ',
+					   ' ', ' ', ' ' };
+	static uint8_t work[FF_MAX_SS * 4];
+	const uint32_t n = 260096u;
+	uint8_t *d = tl_xmalloc((size_t)n * WB_SECTOR_SIZE);
+	struct wb_blockdev b;
+	struct wb_ramdisk r;
+	const uint8_t *s0 = d, *s63 = d + 63u * WB_SECTOR_SIZE;
+	const uint8_t *s191 = d + 191u * WB_SECTOR_SIZE;
+	FATFS fs;
+
+	memset(d, 0xA5, (size_t)n * WB_SECTOR_SIZE);
+	wb_ramdisk_init(&b, &r, d, n);
+	wb_fatfs_attach(&b);
+	CHECK(wb_fatfs_format(work, sizeof(work), "OP-1") == FR_OK, "1F format");
+	CHECK(s0[0x1C3] == 0xFE && s0[0x1C4] == 0x3F && s0[0x1C5] == 0x10,
+	      "1F end CHS %02x %02x %02x", s0[0x1C3], s0[0x1C4], s0[0x1C5]);
+	CHECK(le32(s0 + 0x1C6) == 63u && le32(s0 + 0x1CA) == 260033u,
+	      "1F partition %lu", (unsigned long)le32(s0 + 0x1CA));
+	CHECK(s63[0x0D] == 8 && s63[0x16] == 127 && s63[0x17] == 0 &&
+	      le32(s63 + 0x20) == 260033u && s63[0x10] == 1,
+	      "1F BPB: %u per cluster, %u per FAT", s63[0x0D], s63[0x16]);
+	CHECK(memcmp(s63 + 0x2B, "NO NAME    ", 11) == 0, "1F boot sector label");
+	CHECK(memcmp(s191, label, 11) == 0 && s191[11] == 0x08 &&
+	      is_filled_in(d, 191, 12, 20, 0), "1F label entry");
+	CHECK(f_mount(&fs, "", 1) == FR_OK && fs.fs_type == FS_FAT16 &&
+	      fs.n_fatent - 2 == 32484 && fs.csize == 8 && fs.fatbase == 64 &&
+	      fs.dirbase == 191 && fs.database == 223, "1F layout");
+	CHECK(f_mount(NULL, "", 0) == FR_OK, "1F unmount");
+	/* S-12.007 with S-12.008: sectors 0, 63 and 64-222 alone */
+	CHECK(is_filled_in(d, 1, 0, 62 * WB_SECTOR_SIZE, 0xA5) &&
+	      is_filled_in(d, 223, 0, (size_t)(n - 223) * WB_SECTOR_SIZE, 0xA5),
+	      "1F: no other sector written");
+	CHECK(is_filled_in(d, 65, 0, (size_t)(190 - 64) * WB_SECTOR_SIZE, 0) &&
+	      is_filled_in(d, 192, 0, (size_t)(222 - 191) * WB_SECTOR_SIZE, 0),
+	      "1F: FAT and root directory zero");
+	wb_fatfs_attach(&bdev);
+	free(d);
+}
+
 int main(void)
 {
 	FILE *f = tl_open_vectors("fat.txt");
@@ -346,6 +410,7 @@ int main(void)
 	wb_fatfs_attach(&bdev);
 
 	check_format(f);
+	check_format_1f();
 	check_volumes(f);
 	check_write();
 

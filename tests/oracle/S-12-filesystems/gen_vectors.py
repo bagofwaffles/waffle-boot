@@ -26,6 +26,8 @@ from fs.disk import SparseDisk  # noqa: E402
 SECTOR = 512
 FIXED_CLOCK = (fat.fat_date(1980, 1, 1), 0)
 DISK_SECTORS = 454656
+# S-12.008: the OP-1F's disk (device.ramdisk_blocks), clusters of 8 sectors, the label device.product_text
+DISK_SECTORS_1F = 260096
 
 
 def hx(b):
@@ -141,8 +143,35 @@ def fresh_volume():
     return v
 
 
-def ramdisk_format():
-    v = fresh_volume()
+def fresh_volume_1f():
+    """S-12.008: the rule of S-12.003 to S-12.005 on 260,096 sectors."""
+    v = fat.FatVolume(fat.ramdisk_params(disk_sectors=DISK_SECTORS_1F, sectors_per_cluster=8))
+    v.add_label('OP-1')
+    return v
+
+
+def ramdisk_format_1f():
+    """S-12.008's table, as sectors: the same names as ramdisk_format.json, the label in sector 191."""
+    v = fresh_volume_1f()
+    d = v.build()
+    info = v.info()
+    out = ramdisk_format(v)
+    root = info['rootbase']
+    assert (info['fatbase'], info['fat_sectors'], root, info['database']) == (64, 127, 191, 223), info
+    assert info['n_clusters'] == 32484, info
+    out.pop('sector_175')
+    out['sector_191'] = hx(d.read(root * SECTOR, SECTOR))
+    out['requirements'] = ['S-12.008']
+    out['disk'] = {'sectors': DISK_SECTORS_1F, 'sector_size': SECTOR, 'bytes': DISK_SECTORS_1F * SECTOR}
+    out['written_sectors'] = [[0, 0], [63, 63], [64, 190], [191, 222]]
+    s0 = d.read(0, SECTOR)
+    assert s0[0x1C3:0x1C6] == bytes([0xFE, 0x3F, 0x10]), s0[0x1C3:0x1C6].hex()
+    assert struct.unpack_from('<I', s0, 0x1CA)[0] == 260033
+    return out
+
+
+def ramdisk_format(v=None):
+    v = v or fresh_volume()
     d = v.build()
     info = v.info()
     s63 = d.read(63 * SECTOR, SECTOR)
@@ -800,7 +829,8 @@ def yaffs_trust():
 
 
 VECTORS = {
-    'ramdisk_format': ramdisk_format, 'names': names, 'stamps': stamps, 'ramdisk_populated': populated,
+    'ramdisk_format': ramdisk_format, 'ramdisk_format_1f': ramdisk_format_1f, 'names': names, 'stamps': stamps,
+    'ramdisk_populated': populated,
     'host_volumes': host_volumes, 'yaffs_layout': yaffs_layout, 'yaffs_trees': yaffs_trees,
     'yaffs_trust': yaffs_trust,
 }
@@ -809,6 +839,7 @@ VECTORS = {
 def write_images(out):
     os.makedirs(out, exist_ok=True)
     fresh_volume().build().save(os.path.join(out, 'ramdisk_fresh.img'))
+    fresh_volume_1f().build().save(os.path.join(out, 'ramdisk_fresh_1f.img'))
     populated_volume()[1].save(os.path.join(out, 'ramdisk_populated.img'))
     for c in HOST_CASES:
         host_volume(c).save(os.path.join(out, 'host_%s.img' % c['kind']))

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """S-01 layout checks on an implementation's declared memory layout (S-01.011, .013-.016, .019; S-05.008).
 
-    check_layout.py LAYOUT.json
+    check_layout.py LAYOUT.json [--device xy|1f]
 
 LAYOUT.json comes from the implementation's build (its link map):
 
@@ -14,7 +14,12 @@ LAYOUT.json comes from the implementation's build (its link map):
 `handover` marks every range the handover path uses. `role` is optional; each role appears once. Prints
 PASS/FAIL per rule and exits 1 on any failure. Rule `heap_clear` (every heap range ends below the staging
 area and meets no held-mode buffer) is a self-check: it prints INFO-PASS/INFO-FAIL and never sets the exit
-status. Also importable: check(layout) -> list of (rule, ok, detail).
+status. Also importable: check(layout, device='xy') -> list of (rule, ok, detail).
+
+Rule `held_room` (S-01.016) takes the device's RAM disk from S-18's profile (vectors/profile.json of
+S-18-devices): `device.ramdisk_blocks` of 512 bytes, held anywhere in the held-mode buffers where
+`device.ramdisk_regions` is free (the OP-XY), and inside them at each region it names otherwise (the
+OP-1F). --device names the device, xy (the default) or 1f.
 """
 import json
 import os
@@ -32,8 +37,23 @@ def _h(x):
     return int(x, 16) if isinstance(x, str) else x
 
 
-DISK_BYTES = 454656 * 512        # S-12.001: the RAM disk, held in held-mode buffers (S-01.016)
+DISK_BYTES = 454656 * 512        # S-12.001: the OP-XY's RAM disk, held in held-mode buffers (S-01.016)
 KERNEL_STACK_MIN = 4096          # S-05.008
+DEVICES = {'xy': 'OP-XY', '1f': 'OP-1F'}
+PROFILE = os.path.join(HERE, '..', 'S-18-devices', 'vectors', 'profile.json')
+
+
+def ramdisk(device):
+    """S-18.030's device.ramdisk_blocks (in bytes) and device.ramdisk_regions ([(start, end)], None when
+    free) of device ('xy' or '1f')."""
+    with open(PROFILE) as f:
+        rows = {r['name']: r for r in json.load(f)['tables']['memory']}
+    name = DEVICES[device]
+    blocks = rows['device.ramdisk_blocks'][name]
+    regions = rows['device.ramdisk_regions'][name]
+    if regions.get('free'):
+        return blocks * 512, None
+    return blocks * 512, [(s, s + n) for s, n in regions['regions']]
 
 
 def handover_stack(rs, reserve):
@@ -57,8 +77,9 @@ def handover_stack(rs, reserve):
     return bad
 
 
-def check(layout):
+def check(layout, device='xy'):
     m = load_map()
+    disk_bytes, regions = ramdisk(device)
     rs = [dict(r, start=_h(r['start']), end=_h(r['end'])) for r in layout['ranges']]
     rng = lambda r: (r['start'], r['end'])
     own = [r for r in rs if r['kind'] in OWN]
@@ -91,7 +112,11 @@ def check(layout):
         a = max(a, top)
         if b > a:
             total, top = total + b - a, b
-    out.append(('held_room', total >= DISK_BYTES, '%d of %d bytes' % (total, DISK_BYTES)))  # S-01.016
+    room = total >= disk_bytes
+    if regions is not None:              # the device's disk at fixed addresses, each inside one buffer
+        room = room and all(inside_any(r, cover) for r in regions)
+    out.append(('held_room', room, '%d of %d bytes%s' % (                              # S-01.016
+        total, disk_bytes, '' if regions is None else ' at %s' % ', '.join(fmt(r) for r in regions))))
     bad = [r['name'] for r in rs if meets(rng(r), record)]
     out.append(('record_clear', not bad, ', '.join(bad)))                              # S-01.007
     display_record = (int(dr['start'], 16), int(dr['end'], 16))
@@ -103,11 +128,17 @@ def check(layout):
 
 
 def main(argv):
-    if len(argv) != 2:
+    args = argv[1:]
+    device = 'xy'
+    if '--device' in args:
+        i = args.index('--device')
+        device = args[i + 1] if i + 1 < len(args) else ''
+        del args[i:i + 2]
+    if len(args) != 1 or device not in DEVICES:
         print(__doc__)
         return 2
-    with open(argv[1]) as f:
-        res = check(json.load(f))
+    with open(args[0]) as f:
+        res = check(json.load(f), device)
     for rule, ok, detail in res:
         verdict = 'PASS' if ok else 'FAIL'
         if rule in INFORMATIVE:

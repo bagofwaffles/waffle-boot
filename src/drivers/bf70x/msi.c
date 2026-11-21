@@ -24,6 +24,70 @@ static bool buf_ok(const uint8_t *buf)
 	return ((uintptr_t)buf & (WB_MSI_BUF_ALIGN - 1u)) == 0u;
 }
 
+/* The fault record is kept for the test OS's report and the host's tests;
+ * the bootloader itself does without it. */
+#if defined(OPXY_TEST_OS) || !defined(__bfin__)
+#define FAULTS 1
+#else
+#define FAULTS 0
+#endif
+
+/* MSI_ISTAT as the last command's end found it, before its bits were
+ * cleared: one controller, so one value. */
+static uint32_t cmd_istat;
+
+void wb_msi_fault_clear(struct wb_msi *m)
+{
+	m->fault = (struct wb_msi_fault){ 0 };
+	m->fault.state = 0xFFu;
+	m->cmd13_seen = false;
+	m->busy_from = 0u;
+}
+
+/* The operation's first fault, recorded; rc returned. */
+static int fault_is(struct wb_msi *m, enum wb_msi_step step, uint8_t at, int rc,
+		    uint32_t is)
+{
+	struct wb_msi_fault *f = &m->fault;
+
+	if (!FAULTS || f->step != WB_MSI_STEP_NONE)
+		return rc;
+	f->step = (uint8_t)step;
+	f->cmd = m->cmd_idx;
+	f->at = at;
+	f->rc = (int8_t)rc;
+	f->state = m->cmd13_seen ? (uint8_t)WB_MMC_R1_STATE(m->cmd13_r1) : 0xFFu;
+	f->arg = m->cmd_arg;
+	f->r1 = m->last_r1;
+	f->istat = is;
+	f->idsts = wb_mmr_read32(MSI_IDSTS);
+	f->busy_us = m->busy_from != 0u && m->t != NULL ?
+		     (uint32_t)(wb_time_us(m->t) - m->busy_from) : 0u;
+	return rc;
+}
+
+static int fault(struct wb_msi *m, enum wb_msi_step step, uint8_t at, int rc)
+{
+	return FAULTS ? fault_is(m, step, at, rc, wb_mmr_read32(MSI_ISTAT)) : rc;
+}
+
+/* The command an operation is about; CMD12 and CMD13 serve it. */
+static void begin(struct wb_msi *m, uint32_t idx, uint32_t arg)
+{
+	if (!FAULTS)
+		return;
+	m->cmd_idx = (uint8_t)idx;
+	m->cmd_arg = arg;
+	m->busy_from = 0u;
+}
+
+/* A buffer refused: nothing sent. */
+static int refuse_buf(struct wb_msi *m, uint32_t idx, const uint8_t *buf)
+{
+	begin(m, idx, (uint32_t)(uintptr_t)buf);
+	return fault(m, WB_MSI_STEP_ARG, (uint8_t)idx, WB_MSI_ERR_ARG);
+}
+
 static int poll(const struct wb_msi *m, wb_mmr_addr addr, uint32_t mask,
 		uint32_t value, uint32_t timeout_us)
 {
@@ -147,13 +211,19 @@ static int send(const struct wb_msi *m, uint32_t idx, uint32_t arg,
 	if (!(flags & MSI_CMD_STPABORT))
 		flags |= MSI_CMD_WTPRIVDATA;
 	rc = start(m, CMD_BASE | flags | (idx & 0x3Fu));
+	if (FAULTS)
+		cmd_istat = wb_mmr_read32(MSI_ISTAT);
 	if (rc != WB_MSI_OK)
 		return rc;
 	rc = poll(m, MSI_ISTAT, MSI_IS_CMDDONE, MSI_IS_CMDDONE,
 		  m->c->xfer_timeout_us);
+	if (FAULTS)
+		cmd_istat = wb_mmr_read32(MSI_ISTAT);
 	if (rc != WB_MSI_OK)
 		return rc;
 	is = wb_mmr_read32(MSI_ISTAT);
+	if (FAULTS)
+		cmd_istat = is;
 	wb_mmr_write32(MSI_ISTAT, is & (MSI_IS_CMDDONE | MSI_IS_CMD_ERR));
 	if (is & MSI_IS_CMD_ERR)
 		return WB_MSI_ERR_CMD;
@@ -178,17 +248,36 @@ int wb_msi_cmd(const struct wb_msi *m, uint32_t idx, uint32_t arg,
 static int r1(struct wb_msi *m, uint32_t idx, uint32_t arg, uint32_t flags)
 {
 	uint32_t resp[4] = { 0 };
-	int rc = send(m, idx, arg, WB_MSI_R1 | flags, resp);
+	int rc;
 
+	if (idx != 12u && idx != 13u)
+		begin(m, idx, arg);
+	rc = send(m, idx, arg, WB_MSI_R1 | flags, resp);
 	if (rc != WB_MSI_OK)
-		return rc;
+		return fault_is(m, rc == WB_MSI_ERR_OFF ? WB_MSI_STEP_OFF : WB_MSI_STEP_CMD,
+				(uint8_t)idx, rc, cmd_istat);
 	m->last_r1 = resp[0];
-	return (resp[0] & WB_MMC_R1_ERRORS) ? WB_MSI_ERR_EMMC : WB_MSI_OK;
+	if (FAULTS && idx == 13u) {
+		m->cmd13_r1 = resp[0];
+		m->cmd13_seen = true;
+	}
+	if (resp[0] & WB_MMC_R1_ERRORS)
+		return fault_is(m, WB_MSI_STEP_R1, (uint8_t)idx, WB_MSI_ERR_EMMC, cmd_istat);
+	return WB_MSI_OK;
 }
 
-static int wait_dat0(const struct wb_msi *m, uint32_t timeout_us)
+/* The busy wait's start: the response's end. */
+static void busy_start(struct wb_msi *m)
 {
-	return poll(m, MSI_STAT, MSI_STAT_DBUSY, 0, timeout_us);
+	if (FAULTS && m->t != NULL)
+		m->busy_from = wb_time_us(m->t);
+}
+
+static int wait_dat0(struct wb_msi *m, uint32_t timeout_us)
+{
+	int rc = poll(m, MSI_STAT, MSI_STAT_DBUSY, 0, timeout_us);
+
+	return rc != WB_MSI_OK ? fault(m, WB_MSI_STEP_BUSY, m->cmd_idx, rc) : rc;
 }
 
 /* CMD13 until READY_FOR_DATA in transfer state (S-13b.054, .055). */
@@ -205,12 +294,12 @@ static int wait_ready(struct wb_msi *m)
 		if (rc != WB_MSI_OK)
 			return rc;
 		if (m->last_r1 & WB_MMC_R1_SWITCH_ERROR)
-			return WB_MSI_ERR_EMMC;
+			return fault(m, WB_MSI_STEP_SWITCH, 13u, WB_MSI_ERR_EMMC);
 		if ((m->last_r1 & WB_MMC_R1_READY) &&
 		    WB_MMC_R1_STATE(m->last_r1) == WB_MMC_STATE_TRAN)
 			return WB_MSI_OK;
 	} while (!late);
-	return WB_MSI_TIMEOUT;
+	return fault(m, WB_MSI_STEP_STATE, 13u, WB_MSI_TIMEOUT);
 }
 
 /* After an R1b command or a write: DAT0 released, then CMD13. */
@@ -260,6 +349,7 @@ static int data(struct wb_msi *m, uint32_t idx, uint32_t arg,
 	bool late;
 	int rc;
 
+	begin(m, idx, arg);
 	for (i = 0; i < n; i++) {
 		struct wb_msi_desc *d = &m->desc[i];
 		uint32_t left = len - i * WB_MSI_DESC_BLOCKS * WB_MSI_BLOCK;
@@ -287,7 +377,7 @@ static int data(struct wb_msi *m, uint32_t idx, uint32_t arg,
 	wb_mmr_write32(MSI_CTL, wb_mmr_read32(MSI_CTL) | MSI_CTL_FIFORST);
 	rc = poll(m, MSI_CTL, MSI_CTL_FIFORST, 0, m->c->xfer_timeout_us);
 	if (rc != WB_MSI_OK)
-		return rc;
+		return fault(m, WB_MSI_STEP_CMD, (uint8_t)idx, rc);
 	wb_mmr_write32(MSI_IDSTS, MSI_IDSTS_ALL);
 	wb_mmr_write32(MSI_ISTAT, MSI_IS_DTO | MSI_IS_DATA_ERR);
 	wb_mmr_write32(MSI_BYTCNT, len);
@@ -298,10 +388,13 @@ static int data(struct wb_msi *m, uint32_t idx, uint32_t arg,
 		flags |= MSI_CMD_RDWR;
 	WB_MSI_PHASE(WB_MSI_PH_SETUP);
 	rc = send(m, idx, arg, flags, NULL);
+	if (rc != WB_MSI_OK)
+		(void)fault_is(m, rc == WB_MSI_ERR_OFF ? WB_MSI_STEP_OFF : WB_MSI_STEP_CMD,
+			       (uint8_t)idx, rc, cmd_istat);
 	if (rc == WB_MSI_OK)
 		m->last_r1 = wb_mmr_read32(MSI_RESP0);
 	if (rc == WB_MSI_OK && (m->last_r1 & WB_MMC_R1_ERRORS))
-		rc = WB_MSI_ERR_EMMC;
+		rc = fault_is(m, WB_MSI_STEP_R1, (uint8_t)idx, WB_MSI_ERR_EMMC, cmd_istat);
 	WB_MSI_PHASE(WB_MSI_PH_CMD);
 	if (rc != WB_MSI_OK) {
 		stop_dma();
@@ -342,7 +435,7 @@ static int data(struct wb_msi *m, uint32_t idx, uint32_t arg,
 		ids = wb_mmr_read32(MSI_IDSTS);
 		if ((is & MSI_IS_DATA_ERR) ||
 		    (ids & (MSI_IDSTS_FBE | MSI_IDSTS_DU | MSI_IDSTS_CES))) {
-			rc = WB_MSI_ERR_DATA;
+			rc = fault_is(m, WB_MSI_STEP_DATA, (uint8_t)idx, WB_MSI_ERR_DATA, is);
 			break;
 		}
 		if (is & MSI_IS_DTO) {
@@ -355,7 +448,7 @@ static int data(struct wb_msi *m, uint32_t idx, uint32_t arg,
 		}
 	} while (!late);
 	if (rc == WB_MSI_OK)
-		rc = WB_MSI_TIMEOUT;
+		rc = fault(m, WB_MSI_STEP_DATA_TIME, (uint8_t)idx, WB_MSI_TIMEOUT);
 	stop_dma();
 	/* After a fatal bus error only a controller reset recovers the MSI
 	 * (HRM ch. 33, "Fatal Bus Errors (FBE)"; MSI_IDSTS.FBE). */
@@ -395,11 +488,15 @@ static int stop_transmission(struct wb_msi *m)
  */
 static int stop_read(struct wb_msi *m)
 {
+	const bool had = !FAULTS || m->fault.step != WB_MSI_STEP_NONE;
 	int rc = r1(m, 12, 0, MSI_CMD_STPABORT);
 
 	if (rc == WB_MSI_ERR_EMMC &&
-	    (m->last_r1 & WB_MMC_R1_ERRORS) == WB_MMC_R1_OUT_OF_RANGE)
+	    (m->last_r1 & WB_MMC_R1_ERRORS) == WB_MMC_R1_OUT_OF_RANGE) {
 		rc = WB_MSI_OK;
+		if (!had)
+			wb_msi_fault_clear(m);
+	}
 	return rc != WB_MSI_OK ? rc : wait_dat0(m, m->c->busy_timeout_us);
 }
 
@@ -407,7 +504,7 @@ static int stop_read(struct wb_msi *m)
 int wb_msi_read_ext_csd(struct wb_msi *m, uint8_t *ext_csd)
 {
 	if (!buf_ok(ext_csd))
-		return WB_MSI_ERR_ARG;
+		return refuse_buf(m, 8u, ext_csd);
 	return data(m, 8, 0, ext_csd, 1, false);
 }
 
@@ -418,6 +515,7 @@ static int switch_byte(struct wb_msi *m, uint8_t index, uint8_t value)
 		       (uint32_t)value << 8;
 	int rc = r1(m, 6, arg, 0);
 
+	busy_start(m);
 	/* A flush keeps the eMMC busy for as long as its cache takes (S-03.068). */
 	if (rc == WB_MSI_OK && index == WB_EXT_CSD_FLUSH_CACHE &&
 	    m->c->flush_timeout_us != 0u)
@@ -438,6 +536,59 @@ int wb_msi_power_off(struct wb_msi *m, uint8_t power_off_long_time)
 	return rc != WB_MSI_OK ? rc : wait_dat0(m, timeout_us);
 }
 
+static bool switch_allowed(uint8_t index);
+
+/* S-03.013: the switch's busy end read by CMD13 alone. */
+int wb_msi_switch_poll(void *ctx, uint8_t index, uint8_t value, uint32_t limit_ms)
+{
+	struct wb_msi *m = ctx;
+	int rc, out = 1;
+
+	if (!switch_allowed(index))
+		return -1;
+	rc = r1(m, 6, 3u << 24 | (uint32_t)index << 16 | (uint32_t)value << 8, 0);
+	if (rc != WB_MSI_OK) {
+		out = -1;
+	} else {
+		const uint64_t end = wb_time_deadline(m->t, limit_ms * 1000u);
+		bool late;
+
+		busy_start(m);
+		do {
+			late = wb_time_passed(end);
+			if (r1(m, 13, (uint32_t)m->rca << 16, 0) != WB_MSI_OK) {
+				out = -1;
+				break;
+			}
+			if ((m->last_r1 & WB_MMC_R1_SWITCH_ERROR) != 0u) {
+				(void)fault(m, WB_MSI_STEP_SWITCH, 13u, WB_MSI_ERR_EMMC);
+				out = -1;
+				break;
+			}
+			if ((m->last_r1 & WB_MMC_R1_READY) &&
+			    WB_MMC_R1_STATE(m->last_r1) == WB_MMC_STATE_TRAN) {
+				out = 0;
+				break;
+			}
+		} while (!late);
+		if (out == 1)
+			(void)fault(m, WB_MSI_STEP_STATE, 13u, WB_MSI_TIMEOUT);
+	}
+	/* S-03.013: nothing reaches the eMMC after a notification it took */
+	if (index == WB_EXT_CSD_POWER_OFF && rc == WB_MSI_OK)
+		m->powered_off = true;
+	return out;
+}
+
+int wb_msi_read_part_config(struct wb_msi *m, uint8_t *buf, uint8_t *value)
+{
+	int rc = wb_msi_read_ext_csd(m, buf);
+
+	if (rc == WB_MSI_OK)
+		*value = buf[WB_EXT_CSD_PART_CONFIG];
+	return rc;
+}
+
 static bool switch_allowed(uint8_t index)
 {
 	static const uint8_t ok[] = { 32, 33, 34, 163, 179, 183, 185 };
@@ -454,8 +605,10 @@ int wb_msi_emmc_switch(void *ctx, uint8_t index, uint8_t value)
 	struct wb_msi *m = ctx;
 	int rc;
 
-	if (!switch_allowed(index))
-		return WB_MSI_ERR_ARG;
+	if (!switch_allowed(index)) {
+		begin(m, 6u, 3u << 24 | (uint32_t)index << 16 | (uint32_t)value << 8);
+		return fault(m, WB_MSI_STEP_ARG, 6u, WB_MSI_ERR_ARG);
+	}
 	if (index == WB_EXT_CSD_POWER_OFF && value == 3u)
 		return wb_msi_power_off(m, m->power_off_long_time);
 	rc = switch_byte(m, index, value);
@@ -491,7 +644,7 @@ int wb_msi_emmc_read(void *ctx, uint32_t sector, uint32_t count,
 	int rc = WB_MSI_OK;
 
 	if (count == 0 || !buf_ok(buf))
-		return WB_MSI_ERR_ARG;
+		return refuse_buf(m, count == 1u ? 17u : 18u, buf);
 	while (count != 0 && rc == WB_MSI_OK) {
 		uint32_t n = count < max_blocks(m) ? count : max_blocks(m);
 
@@ -518,11 +671,13 @@ int wb_msi_emmc_write(void *ctx, uint32_t sector, uint32_t count,
 	int rc = WB_MSI_OK;
 
 	if (count == 0 || !buf_ok(buf))
-		return WB_MSI_ERR_ARG;
+		return refuse_buf(m, count == 1u ? 24u : 25u, buf);
 	while (count != 0 && rc == WB_MSI_OK) {
 		uint32_t n = count < max_blocks(m) ? count : max_blocks(m);
 
 		rc = data(m, n == 1 ? 24u : 25u, sector, buf, n, true);
+		if (rc == WB_MSI_OK)
+			busy_start(m);
 		if (rc == WB_MSI_OK && n > 1)
 			rc = stop_transmission(m);
 		/* No data command until the eMMC is ready (S-13b.054). */
@@ -543,7 +698,7 @@ int wb_msi_emmc_write_reliable(void *ctx, uint32_t sector, uint32_t count,
 
 	if (count == 0 || count > max_blocks(m) || count > 0xFFFFu ||
 	    !buf_ok(buf))
-		return WB_MSI_ERR_ARG;
+		return refuse_buf(m, 25u, buf);
 	rc = r1(m, 23, WB_MMC_CMD23_RELIABLE | count, 0);
 	if (rc == WB_MSI_OK)
 		rc = data(m, 25, sector, buf, count, true);
@@ -639,8 +794,10 @@ static int bring_up(struct wb_msi *m, uint8_t *ext_csd)
 	 * one above with no command between, so it ends at its first read. */
 	if (rc == WB_MSI_OK)
 		rc = wb_msi_set_clock(m, 1u, false);
+	/* S-13b.051 step 7: 8 bits (2), or 4 (1) on a 4-line bus (S-13b.061) */
 	if (rc == WB_MSI_OK)
-		rc = wb_msi_emmc_switch(m, WB_EXT_CSD_BUS_WIDTH, 2);
+		rc = wb_msi_emmc_switch(m, WB_EXT_CSD_BUS_WIDTH,
+					m->c->emmc_width == 4u ? 1u : 2u);
 	if (rc == WB_MSI_OK)
 		rc = wb_msi_read_ext_csd(m, ext_csd);
 	if (rc != WB_MSI_OK)
@@ -688,15 +845,24 @@ uint32_t wb_msi_csd_erase_group(const struct wb_msi *m)
 	return (((w >> 10) & 0x1Fu) + 1u) * (((w >> 5) & 0x1Fu) + 1u);
 }
 
-int wb_msi_leave(const struct wb_msi *m, const struct wb_msi_leave *v)
+/* DAT0 released, then the CIU idle: each wait bounded, the second made
+ * whatever the first gave; the first timeout. */
+static int idle_wait(const struct wb_msi *m)
 {
-	const uint32_t resets = MSI_CTL_FIFORST | MSI_CTL_DMARST;
 	int rc = wb_poll32(m->t, MSI_STAT, MSI_STAT_DBUSY, 0,
 			   m->c->busy_timeout_us);
 
 	if (wb_poll32(m->t, MSI_CMD, MSI_CMD_STARTCMD, 0,
 		      m->c->xfer_timeout_us) != WB_TIME_OK)
 		rc = WB_TIME_TIMEOUT;
+	return rc;
+}
+
+int wb_msi_leave(const struct wb_msi *m, const struct wb_msi_leave *v)
+{
+	const uint32_t resets = MSI_CTL_FIFORST | MSI_CTL_DMARST;
+	int rc = idle_wait(m);
+
 	wb_mmr_write32(MSI_CTL, resets);
 	if (wb_poll32(m->t, MSI_CTL, resets, 0, m->c->xfer_timeout_us) !=
 	    WB_TIME_OK)
@@ -710,6 +876,26 @@ int wb_msi_leave(const struct wb_msi *m, const struct wb_msi_leave *v)
 	wb_mmr_write32(MSI_IMSK, v->imsk);
 	wb_mmr_write32(MSI_ISTAT, 0xFFFFFFFFu);
 	wb_mmr_write32(MSI_CTL, v->ctl);
+	wb_mmr_sync();
+	return rc == WB_TIME_OK ? WB_MSI_OK : WB_MSI_TIMEOUT;
+}
+
+int wb_msi_close(const struct wb_msi *m)
+{
+	const uint32_t resets = MSI_CTL_FIFORST | MSI_CTL_DMARST;
+	int rc = idle_wait(m);
+
+	wb_mmr_write32(MSI_BUSMODE, wb_mmr_read32(MSI_BUSMODE) & ~(uint32_t)MSI_BUSMODE_DE);
+	wb_mmr_write32(MSI_IDINTEN, 0);
+	wb_mmr_write32(MSI_IDSTS, MSI_IDSTS_ALL);
+	wb_mmr_write32(MSI_CTL, (wb_mmr_read32(MSI_CTL) &
+				 ~(uint32_t)(MSI_CTL_INTEN | MSI_CTL_INTDMAC)) | resets);
+	if (wb_poll32(m->t, MSI_CTL, resets, 0, m->c->xfer_timeout_us) != WB_TIME_OK)
+		rc = WB_TIME_TIMEOUT;
+	wb_mmr_write32(MSI_IMSK, 0);
+	wb_mmr_write32(MSI_ISTAT, 0xFFFFFFFFu);
+	wb_mmr_write32(MSI_CTL, wb_mmr_read32(MSI_CTL) &
+				~(uint32_t)(MSI_CTL_INTEN | MSI_CTL_INTDMAC | resets));
 	wb_mmr_sync();
 	return rc == WB_TIME_OK ? WB_MSI_OK : WB_MSI_TIMEOUT;
 }

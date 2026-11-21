@@ -25,7 +25,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GENERATORS = [
     ('tests/oracle/S-02-spi-flash/gen_vectors.py', []),
     ('tests/oracle/S-03-emmc/gen_vectors.py', []),
+    ('tests/oracle/S-04-records/gen_vectors_1f.py', []),
     ('tests/oracle/S-05-os-handoff/make_vectors.py', []),
+    ('tests/oracle/S-05-os-handoff/gen_landing_1f.py', []),
     ('tests/oracle/S-06-framing/gen_vectors.py', ['--write']),
     ('tests/oracle/S-07-psoc/gen_s07.py', ['--write']),
     ('tests/oracle/S-08-nordic/gen_vectors.py', []),
@@ -40,6 +42,7 @@ GENERATORS = [
     ('tests/oracle/S-14-logging/gen_vectors.py', ['--write']),
     ('tests/oracle/S-15-menus/gen_vectors.py', []),
     ('tests/oracle/S-17-revisions/gen_vectors.py', []),
+    ('tests/oracle/S-18-devices/gen_vectors.py', []),
 ]
 
 COPIED = ('tests', 'tools')

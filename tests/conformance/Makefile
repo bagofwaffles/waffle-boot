@@ -56,21 +56,21 @@ H_s02_CPPFLAGS := -Isrc
 # The settings sector (S-02.096-.100, S-02.105) and its CRC-32, zlib's (S-02.015).
 H_s02_SRCS += src/s02_store.c src/wire_crc.c
 H_s02_TP := $(call tp_o,$(TP_crc_SRCS) $(TP_crc_GLUE) $(TP_zlib_SRCS) $(TP_zlib_GLUE))
-H_s03_SRCS := src/s03_emmc.c
-H_s04_SRCS := src/s04_records.c src/s10c_text.c src/s11_common.c src/s11_version.c
-H_s05_SRCS := src/s05_handoff.c src/s01_memmap.c
+H_s03_SRCS := src/s03_emmc.c src/device.c
+H_s04_SRCS := src/s04_records.c src/s10c_text.c src/s11_common.c src/s11_version.c src/device.c
+H_s05_SRCS := src/s05_handoff.c src/s01_memmap.c src/device.c
 # The boot flow's order (S-05.001, S-15.175); built with the boot prompt's op
 # (S-05.025), which a run leaves NULL to stand for a build without it.
 H_s05_SRCS += src/boot_flow.c
 H_s05_CPPFLAGS := -DOPXY_BOOT_PROMPT=1
-H_s06_SRCS := src/s06_frame.c src/s06_rx.c src/s06_link.c
-H_s07_SRCS := src/s07_rules.c src/s07_cypress.c
+H_s06_SRCS := src/s06_frame.c src/s06_rx.c src/s06_link.c src/device.c
+H_s07_SRCS := src/s07_rules.c src/s07_cypress.c src/device.c
 # The PSoC link on the unit tests' clock and port (tests/unit/s07_test.h).
 H_s07p_SRCS := src/s07_psoc.c src/s07_program.c src/s07_cypress.c src/s07_rules.c \
 	src/s06_frame.c src/s06_rx.c src/s06_link.c \
 	src/s15_prompt.c src/s15_console.c src/s15_lines.c src/s14_log.c src/s14_line.c \
 	src/s17_revisions.c src/s11_common.c src/s11_version.c
-H_s08_SRCS := src/s08_rules.c
+H_s08_SRCS := src/s08_rules.c src/device.c
 H_s09_SRCS := src/s09_bridge.c src/s09_master.c src/s09_slave.c src/s09_fast.c src/s06_frame.c src/s06_rx.c \
 	src/s06_link.c
 H_s10c_SRCS := src/s10c_sysex.c src/s10c_text.c src/s11_common.c src/s11_version.c
@@ -86,10 +86,11 @@ H_s13c_SRCS := src/s13c_panel.c src/display_draw.c src/display_font.c src/s15_co
 H_s13cf_SRCS := src/front/fr_start.c src/front/fr_recovery.c src/front/fr_recscreen.c \
 	src/front/fr_recui.c src/front/fr_panel.c src/front/fr_draw.c src/front/fr_font.c \
 	src/front/fr_psoc.c src/front/fr_proto.c src/front/fr_slots.c src/front/fr_image.c \
-	src/front/fr_startlog.c src/front/fr_util.c src/s06_frame.c src/s06_rx.c
+	src/front/fr_startlog.c src/front/fr_util.c src/front/fr_device.c src/s06_frame.c src/s06_rx.c
 H_s13cf_CPPFLAGS := -Isrc
 H_s14_SRCS := src/s14_line.c src/s14_log.c src/s14_export.c
 H_s11_SRCS := $(sort $(wildcard src/s11_*.c)) src/s17_revisions.c src/wire_crc.c src/s01_memmap.c src/s05_handoff.c \
+	src/s02_flash.c \
 	src/wire_package.c src/wire_zip.c src/wire_yaffs.c src/wire_ckpt.c src/wire_fat.c \
 	src/s09_files.c src/s09_master.c src/s09_slave.c src/s09_bridge.c src/wire_s09.c src/s15_settings.c \
 	src/s06_frame.c src/s06_rx.c src/s06_link.c src/s03_emmc.c src/s04_records.c \
@@ -98,6 +99,18 @@ H_s12_SRCS := src/s04_records.c src/s10c_text.c src/s11_common.c src/s11_version
 	src/s11_content.c src/s14_export.c src/wire_fat.c src/wire_package.c src/wire_yaffs.c src/wire_ckpt.c \
 	src/wire_crc.c src/wire_zip.c
 # Programs that link the vendored libraries.
+# S-18: the device table the modules read (src/device.c, with its CRC-32, zlib's)
+H_DEVICE_TP := $(call tp_o,$(TP_crc_SRCS) $(TP_crc_GLUE) $(TP_zlib_SRCS) $(TP_zlib_GLUE))
+H_s07p_SRCS += src/device.c src/wire_crc.c
+H_s07p_TP := $(H_DEVICE_TP)
+H_s10a_SRCS += src/device.c src/wire_crc.c
+H_s10a_TP := $(H_DEVICE_TP)
+H_s10c_SRCS += src/device.c src/wire_crc.c
+H_s10c_TP := $(H_DEVICE_TP)
+H_s13c_SRCS += src/device.c src/wire_crc.c
+H_s13c_TP := $(H_DEVICE_TP)
+H_s11_SRCS += src/device.c
+H_s12_SRCS += src/device.c
 H_s11_TP := $(TP_OBJS)
 H_s12_TP := $(TP_OBJS)
 # Programs that need only a vendored library's header.

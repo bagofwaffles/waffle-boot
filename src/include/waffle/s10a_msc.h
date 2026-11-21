@@ -17,8 +17,11 @@
 
 #include "blockdev.h"
 
+struct wb_device;
+
 #define S10A_BLOCK		512u
 #define S10A_SERIAL_MAX		8u	/* S-10a.004 */
+#define S10A_PRODUCT_MAX	16u	/* the standard data's product field */
 
 #define S10A_SCSI_GOOD		0x00u
 #define S10A_SCSI_CHECK		0x02u
@@ -40,6 +43,7 @@ enum s10a_dir {
 struct s10a_lu {
 	const struct wb_blockdev *dev;
 	char serial[S10A_SERIAL_MAX + 1];	/* S-10a.004, "" for none */
+	char product[S10A_PRODUCT_MAX + 1];	/* S-10a.042's product */
 	bool offered;		/* S-10a.049 */
 	bool stopped;		/* S-10a.048 */
 	bool ua;		/* a unit attention owed (S-10a.043) */
@@ -72,9 +76,11 @@ struct s10a_scsi_cmd {
 };
 
 /* The unit with no medium offered (S-10a.047). `serial` is S-10a.004's
- * text (NULL or "" for none), dev->n_sectors the capacity. */
+ * text (NULL or "" for none), dev->n_sectors the capacity (S-10a.039:
+ * device.ramdisk_blocks), device's product_text the product's name
+ * (S-10a.042). */
 void s10a_lu_init(struct s10a_lu *lu, const struct wb_blockdev *dev,
-		  const char *serial);
+		  const char *serial, const struct wb_device *device);
 
 /* Why the bootloader withdraws the disk (S-10a.049, S-10a.050). */
 enum s10a_withdrawal {

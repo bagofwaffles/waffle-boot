@@ -92,7 +92,7 @@ static void options_clear(struct opxy_master *m, bool slave)
 {
 	opxy_ho_flags = 0u;
 	opxy_ho_slave_delay_ms = 0u;
-	if (slave && !m->bridge.absent) {
+	if (slave && !m->bridge.absent && wb_has(opxy_dev(m), WB_F_SECOND_CPU)) {
 		(void)slave_word(m, OPXY_DEV_POKE_REQ,
 				 (uint32_t)(uintptr_t)&opxy_ho_flags, 0u);
 		(void)slave_word(m, OPXY_DEV_POKE_REQ,
@@ -204,6 +204,9 @@ static uint32_t handover_run(struct opxy_master *m, uint32_t flags,
 	opxy_ho_trace = OPXY_HO_M_NONE;
 	opxy_ho_slave_delay_ms = sdelay_ms;
 	opxy_ho_flags = flags;
+	/* without second-cpu "either CPU" is the one (S-10c.110) */
+	if (!wb_has(opxy_dev(m), WB_F_SECOND_CPU))
+		flags |= OPXY_HO_NO_SLAVE_GO;
 	if (!m->bridge.absent && (flags & OPXY_HO_NO_SLAVE_GO) == 0u) {
 		(void)slave_word(m, OPXY_DEV_POKE_REQ,
 				 (uint32_t)(uintptr_t)&opxy_ho_flags, flags);
@@ -226,6 +229,9 @@ static uint32_t handover_run(struct opxy_master *m, uint32_t flags,
 		if (reply != 0u)
 			return 3u;		/* the slave said no */
 	}
+	/* S-05.036: one CPU's start-log steps, in the release's place */
+	if (!wb_has(opxy_dev(m), WB_F_SECOND_CPU) && h->accepted != NULL)
+		h->accepted(h->ctx);
 	/* After the release, before the teardown: USB and the ready pin work. */
 	if (watch)
 		line_window(m, route, stay ? OPXY_HO_STAY_MS : OPXY_HO_PA6_MS);
@@ -518,6 +524,11 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 	case OPXY_DEV_SREAD: {
 		const uint32_t addr = f->len >= 5u ? rd32(f->payload + 1) : 1u;
 
+		/* S-10c.110: no slave to name without second-cpu */
+		if (!wb_has(opxy_dev(m), WB_F_SECOND_CPU)) {
+			out[0] = OPXY_DEV_REFUSED;
+			break;
+		}
 		wr32(out + 1, slave_word(m, OPXY_DEV_PEEK_REQ, addr, 0));
 		n = 5u;
 		break;
@@ -525,6 +536,10 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 	case OPXY_DEV_SWRITE: {
 		const uint32_t addr = f->len >= 9u ? rd32(f->payload + 1) : 1u;
 
+		if (!wb_has(opxy_dev(m), WB_F_SECOND_CPU)) {
+			out[0] = OPXY_DEV_REFUSED;
+			break;
+		}
 		wr32(out + 1, slave_word(m, OPXY_DEV_POKE_REQ, addr,
 					 rd32(f->payload + 5)));
 		n = 5u;

@@ -15,17 +15,23 @@
 #include "waffle/s11_common.h"
 #include "waffle/s11_staging.h"
 
-/* The content step, step 0 (S-11.066, S-11.075-S-11.079, S-11.040).
- * `content_only` is S-11.056's, decided from the staging area. */
-enum s11_result s11_install_content(const struct s11_fs_ops *fs,
+struct wb_device;
+
+/* The content step, step 0 (S-11.066, S-11.075-S-11.079, S-11.040; on a
+ * device without content-packs S-11.097). `content_only` is S-11.056's,
+ * decided from the staging area. */
+enum s11_result s11_install_content(const struct wb_device *dev,
+				    const struct s11_fs_ops *fs,
 				    bool content_only);
 
 /* The staging area holds a partial marker (S-11.040). */
 bool s11_content_partial(const struct s11_fs_ops *fs);
 
 /* The name of the first content pack (S-11.039) into `name` (`cap` bytes,
- * NUL included, cut to fit); "" when there is none. */
-void s11_pack_name(const struct s11_fs_ops *fs, char *name, size_t cap);
+ * NUL included, cut to fit); "" when there is none, and always on a device
+ * without content-packs (S-11.097). */
+void s11_pack_name(const struct wb_device *dev, const struct s11_fs_ops *fs,
+		   char *name, size_t cap);
 
 /* Entry `index` of the RAM disk's root directory in directory order;
  * false past the last. */

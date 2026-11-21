@@ -423,13 +423,18 @@ static void sec_quiet(const struct opxy_sec_keep *keep, unsigned n, bool set)
  * Each UART's queued bytes leave the pin before it closes (S-13b.072). */
 static void teardown_master(struct opxy_master *m)
 {
+	/* S-05.016 without second-cpu: SPI0 and the bridge's pin interrupts
+	 * were never opened and stay as the reset left them (S-13b §6) */
+	const bool link = wb_has(opxy_dev(m), WB_F_SECOND_CPU);
+
 	(void)wb_core_cli();
 	if (!OPXY_HO_BIT(OPXY_HO_NO_TIMER_STOP)) {
 		wb_gptimer_stop_all();
 		wb_coretmr_stop();
 	}
-	wb_spi_disable(OPXY_SPI_LINK);
-	if (OPXY_HO_BIT(OPXY_HO_MASTER_STOCK)) {
+	if (link)
+		wb_spi_disable(OPXY_SPI_LINK);
+	if (link && OPXY_HO_BIT(OPXY_HO_MASTER_STOCK)) {
 		/* SPI0 off, the rest to the OPXY_HO_SPI0_* values; SLVSEL twice,
 		 * as the driver writes it */
 		wb_mmr_write32(SPI_RXCTL(OPXY_SPI_LINK), OPXY_HO_SPI0_RXCTL);
@@ -440,8 +445,10 @@ static void teardown_master(struct opxy_master *m)
 		wb_mmr_write32(SPI_SLVSEL(OPXY_SPI_LINK), OPXY_HO_SPI0_SLVSEL);
 		wb_mmr_sync();
 	}
-	wb_dma_stop(WB_DMA_SPI0_TX);
-	wb_dma_stop(WB_DMA_SPI0_RX);
+	if (link) {
+		wb_dma_stop(WB_DMA_SPI0_TX);
+		wb_dma_stop(WB_DMA_SPI0_RX);
+	}
 	(void)wb_uart_disable(OPXY_UART_PSOC, &m->hw.uart[OPXY_UART_PSOC],
 			      &m->hw.time);
 	wb_dma_stop(10u);
@@ -450,8 +457,10 @@ static void teardown_master(struct opxy_master *m)
 			      &m->hw.time);
 	wb_dma_stop(12u);
 	wb_dma_stop(13u);
-	wb_mmr_write32(PINT0_MSK_CLR, 1u << 22);
-	wb_mmr_write32(PINT1_MSK_CLR, 1u << 5);
+	if (link) {
+		wb_mmr_write32(PINT0_MSK_CLR, 1u << 22);
+		wb_mmr_write32(PINT1_MSK_CLR, 1u << 5);
+	}
 	/* S-05.016: SPI2 disabled, its master-mode bit left set. */
 	wb_mmr_write32(SPI_CTL(OPXY_SPI_FLASH), SPI_CTL_MSTR);
 	wb_mmr_write32(SPI_RXCTL(OPXY_SPI_FLASH), 0u);
@@ -535,12 +544,21 @@ void opxy_teardown_master(void *ctx)
 	ho_cpu_us = m->hw.time.cycles_per_us;
 	ho_mark(OPXY_HO_M_TEARDOWN);
 	teardown_master(m);
+	/* S-05.037, S-13b.062: the MSI controller closed after the last eMMC
+	 * access; no command reaches the eMMC */
+	if (wb_has(opxy_dev(m), WB_F_EMMC_ON_MAIN) && !OPXY_HO_BIT(OPXY_HO_MSI_ASFOUND))
+		(void)opxy_storage_close(&m->st);
 	quiet_dma(&m->hw.time);
 	ho_mark(OPXY_HO_M_PERIPH);
+	/* S-05.016's SEC row; S-05.037 on the OP-1F: source 1 alone kept,
+	 * source 72 (MSI0) neither pending nor enabled (provisional) */
 	if (!OPXY_HO_BIT(OPXY_HO_SEC_ASFOUND))
-		sec_quiet(opxy_sec_keep_master, OPXY_SEC_KEEP_MASTER, true);
+		sec_quiet(opxy_sec_keep_master, opxy_dev(m)->id == WB_DEV_OP1F ? OPXY_SEC_KEEP_1F :
+										 OPXY_SEC_KEEP_MASTER, true);
 	ho_mark(OPXY_HO_M_SEC);
-	opxy_handover_os = opxy_os_entry_master;
+	/* S-05.038: the OP-1F's vectors; SP and FP the master's */
+	opxy_handover_os = opxy_dev(m)->id == WB_DEV_OP1F ? opxy_os_entry_op1f :
+							      opxy_os_entry_master;
 	ho_entry(&opxy_handover_os);
 	ho_mark(OPXY_HO_M_ENTRY);
 	/* the record for an OS that reads it, once nothing more is timed */
@@ -610,7 +628,7 @@ void opxy_teardown_slave(void *ctx)
 	wb_dma_stop(WB_DMA_SPI2_RX);
 	if (!OPXY_HO_BIT(OPXY_HO_NO_USB_STOP))
 		opxy_usb_stop();
-	if (s->emmc_up && !OPXY_HO_BIT(OPXY_HO_MSI_ASFOUND))
+	if (s->st.emmc_up && !OPXY_HO_BIT(OPXY_HO_MSI_ASFOUND))
 		(void)wb_msi_leave(&s->hw.msi, &opxy_msi_leave);
 	quiet_dma(&s->hw.time);
 	ho_mark(OPXY_HO_M_PERIPH);

@@ -182,7 +182,7 @@ static void cmd_setmeta(const struct h_cmd *c)
 	req.serial = req_str(c, 6, serial, sizeof serial);
 	req.sku_variant = req_str(c, 7, sku, sizeof sku);
 	req.factory = req_str(c, 8, factory, sizeof factory);
-	w = s04_set_metadata(&m, h_num(c, 1) != 0, h_num(c, 2) != 0, &req);
+	w = s04_set_metadata(&wb_device_opxy, &m, h_num(c, 1) != 0, h_num(c, 2) != 0, &req);
 	h_putu(w);
 	h_puthex((const uint8_t *)m.serial, strlen(m.serial));
 	h_putu(m.sku);
@@ -212,7 +212,7 @@ static void cmd_metabuild(const struct h_cmd *c)
 	m.cv_zero = 0x2468u;
 	m.cv_pair2[0] = 0x1122u;
 	m.cv_pair2[1] = 0x3344u;
-	s04_meta_build(before, &m, h_num(c, 8) != 0, out);
+	s04_meta_build(&wb_device_opxy, before, &m, h_num(c, 8) != 0, out);
 	h_puthex(out, sizeof out);
 }
 
@@ -293,7 +293,7 @@ static void command(const struct h_cmd *c)
 			h_error(c, "record size");
 			return;
 		}
-		s04_meta_read(raw, &m);
+		s04_meta_read(&wb_device_opxy, raw, &m);
 		put_meta(&m);
 	} else if (strcmp(k, "metabuild") == 0) {
 		cmd_metabuild(c);

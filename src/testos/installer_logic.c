@@ -12,6 +12,7 @@
 
 #include "front/fr_handoff.h"
 #include "waffle/bytes.h"
+#include "waffle/device.h"
 #include "waffle/s02_flash.h"
 #include "waffle/s05_handoff.h"
 #include "waffle/s15_keytest.h"
@@ -59,15 +60,21 @@ enum inst_trial inst_trial_of(uint8_t st)
 /* --- the lock --- */
 
 enum inst_lock inst_lock_of(const struct tchk_table *t, const struct tchk_switch *sw,
-			    bool image_ok, bool selected_ok)
+			    const struct inst_lock_in *in)
 {
 	bool failed = false, untested = false, guided = false;
 	unsigned i;
 
+	/* the device first: nothing else is judged on an unknown one; an
+	 * installer installs only on a table match (S-02.108, S-18.004) */
+	if (in->how != (uint8_t)WB_DEV_BY_TABLE)
+		return INST_LOCK_DEVICE;
+	if (!in->device_mine)
+		return INST_LOCK_OTHER_DEVICE;
 	for (i = 0; i < TCHK_COUNT; i++) {
 		const uint8_t state = t->r[i].state;
 
-		if (i == TCHK_OS_PARTITION || state == TCHK_PASS)
+		if (i == TCHK_OS_PARTITION || state == TCHK_PASS || state == TCHK_NOT_ON_DEVICE)
 			continue;
 		if (tchk_tests[i].kind == TCHK_KIND_GUIDED)
 			guided = true;
@@ -84,13 +91,29 @@ enum inst_lock inst_lock_of(const struct tchk_table *t, const struct tchk_switch
 		return INST_LOCK_NOT_TESTED;
 	if (guided)
 		return INST_LOCK_GUIDED;
-	if (!image_ok)
+	if (!in->image_ok)
 		return INST_LOCK_IMAGE;
-	if (!selected_ok)
+	if (!in->selected_ok)
 		return INST_LOCK_SELECTED;
+	if (!in->keeps_factory)
+		return INST_LOCK_FACTORY;
+	/* last, so that a survey shows whether an install would be offered */
+	if (in->survey)
+		return INST_LOCK_SURVEY;
 	/* S-16.027: after the OS write that started this image the other
 	 * partition may hold no OS at all; the install never waits on one */
 	return INST_LOCK_NONE;
+}
+
+bool inst_keeps_factory(const struct wb_device *dev, unsigned target, uint8_t streams)
+{
+	const unsigned bits = streams;
+	const bool waffle_t = (bits >> (target & 1u) & 1u) != 0u;
+	const bool waffle_other = (bits >> ((target & 1u) ^ 1u) & 1u) != 0u;
+
+	if (dev == NULL || dev->id != WB_DEV_OP1F)
+		return true;
+	return target <= 1u && (waffle_t || !waffle_other);
 }
 
 const char *inst_lock_words(enum inst_lock l)
@@ -102,8 +125,12 @@ const char *inst_lock_words(enum inst_lock l)
 		[INST_LOCK_IMAGE] = "The image it carries does not pass its check.",
 		[INST_LOCK_SELECTED] = "The unit's bootloader slot is not settled.",
 		[INST_LOCK_RESERVED] = "",
-		[INST_LOCK_GUIDED] = "The key check (com and M4) was ended with 8.",
+		[INST_LOCK_GUIDED] = "The key check was ended with 8.",
 		[INST_LOCK_EMMC] = "The eMMC could not be reached.",
+		[INST_LOCK_DEVICE] = "The device is not identified by its first stage.",
+		[INST_LOCK_OTHER_DEVICE] = "This installer is built for another device.",
+		[INST_LOCK_FACTORY] = "It would write over the unit's own bootloader.",
+		[INST_LOCK_SURVEY] = "A survey: it writes nothing to the SPI flash.",
 	};
 
 	return (unsigned)l < sizeof w / sizeof w[0] ? w[l] : "";
@@ -136,6 +163,10 @@ const char *inst_rc_words(uint8_t rc)
 		return "The trial did not reach the new boot menu.";
 	case OPXY_INSTALL_REFUSED_HELD:
 		return "Restart the unit before another write.";
+	case OPXY_INSTALL_REFUSED_FACTORY:
+		return "It would write over the unit's own bootloader.";
+	case OPXY_INSTALL_REFUSED_SURVEY:
+		return "A survey build writes nothing to the SPI flash.";
 	default:
 		return "The write failed.";
 	}
@@ -156,18 +187,21 @@ static void set_bit(uint8_t *m, unsigned k, bool v)
 		m[k >> 3] = (uint8_t)(m[k >> 3] & ~(1u << (k & 7u)));
 }
 
-#define KEY_PRECOMP 0x17u	/* S-07.032: not acted on */
-
-/* A knob click (0x0A - 0x0D) starts no hold. */
-static bool knob_click(unsigned key)
+static const struct wb_device *hold_dev(const struct inst_hold *h)
 {
-	return key >= 0x0au && key <= 0x0du;
+	return h->dev != NULL ? h->dev : &wb_device_opxy;
+}
+
+/* S-07.032: device.key.precomp is not acted on (none on the OP-1F). */
+static bool precomp(const struct inst_hold *h, unsigned key)
+{
+	return hold_dev(h)->keys.precomp != WB_KEY_NONE && key == hold_dev(h)->keys.precomp;
 }
 
 static bool alone(const struct inst_hold *h, unsigned key)
 {
 	for (unsigned k = 0; k < S15_NKEYS; k++)
-		if (k != key && k != KEY_PRECOMP && bit(h->down, k))
+		if (k != key && !precomp(h, k) && bit(h->down, k))
 			return false;
 	return true;
 }
@@ -198,12 +232,13 @@ void inst_hold_key(struct inst_hold *h, unsigned key, unsigned digit, bool down,
 		return;
 	}
 	if (h->holding) {
-		if (key != KEY_PRECOMP)
+		if (!precomp(h, key))
 			h->holding = false;	/* another key down */
 		return;
 	}
-	if (digit != 0u && digit < 16u && ((unsigned)h->mask >> digit & 1u) != 0u && !knob_click(key) &&
-	    alone(h, key)) {
+	/* a knob click starts no hold */
+	if (digit != 0u && digit < 16u && ((unsigned)h->mask >> digit & 1u) != 0u &&
+	    !s15_knob_click(hold_dev(h), key) && alone(h, key)) {
 		h->holding = true;
 		h->key = key;
 		h->digit = digit;
@@ -239,7 +274,7 @@ static bool meets(uint32_t a, uint32_t n, uint32_t lo, uint32_t hi)
 }
 
 /* The front's windows (src/front/front.ld; tools/mkldr.py FR_WINDOWS). */
-static const uint32_t windows[3][2] = {
+static const uint32_t front_windows[3][2] = {
 	{ FR_L1_CODE_START, FR_L1_CODE_END },
 	{ FR_L1_DATA_START, FR_L1_DATA_END },
 	{ FR_L2_START, FR_L2_END },
@@ -285,10 +320,10 @@ bool inst_image_check(const uint8_t *img, uint32_t len, uint32_t crc, const uint
 		for (w = 0; w < 3u; w++) {
 			uint8_t head[8];
 
-			if (!meets(b.target, b.count, windows[w][0], windows[w][1]))
+			if (!meets(b.target, b.count, front_windows[w][0], front_windows[w][1]))
 				continue;
-			if (!data || b.target < windows[w][0] ||
-			    (uint64_t)b.target + b.count > windows[w][1]) {
+			if (!data || b.target < front_windows[w][0] ||
+			    (uint64_t)b.target + b.count > front_windows[w][1]) {
 				bad = true;
 				break;
 			}
@@ -385,8 +420,18 @@ static size_t answer(uint8_t type, const uint8_t *rq, size_t rn, const struct in
 		wb_put_le32(pl + 16, h->len);
 		wb_put_le32(pl + 20, h->crc);
 		memcpy(pl + 24, h->pin, 32);
+		pl[INST_HELLO_O_DEVICE] = h->device;
+		pl[INST_HELLO_O_DEVICE + 1u] = h->how;
+		pl[INST_HELLO_O_DEVICE + 2u] = h->image_device;
+		pl[INST_HELLO_O_DEVICE + 3u] = h->survey;
 		return INST_HELLO_LEN;
 	}
+	case INST_T_SURVEY:
+		if (v->survey == NULL) {
+			pl[0] = INST_ST_UNKNOWN;
+			return 1;
+		}
+		return inst_survey_bytes(v->survey, pl);
 	case INST_T_STATE:
 		memset(pl, 0, INST_STATE_HEAD + TCHK_COUNT);
 		pl[0] = s->phase;
@@ -405,6 +450,7 @@ static size_t answer(uint8_t type, const uint8_t *rq, size_t rn, const struct in
 		pl[14] = s->hold_digit;
 		pl[15] = s->trial;
 		pl[16] = s->next_digit;
+		pl[17] = s->streams;
 		for (i = 0; i < TCHK_COUNT; i++)
 			pl[INST_STATE_HEAD + i] = v->table->r[i].state;
 		return INST_STATE_HEAD + TCHK_COUNT;
@@ -527,23 +573,23 @@ struct lines {
 static void add(struct lines *o, enum s15_style st, const char *a, const char *b)
 {
 	struct tchk_line *l;
-	size_t k = 0, m;
+	size_t k = 0, len;
 
 	if (o->n >= S15_ROWS)
 		return;
 	l = &o->l[o->n++];
 	l->style = (uint8_t)st;
-	m = strlen(a);
-	if (m > sizeof l->s - 1u)
-		m = sizeof l->s - 1u;
-	memcpy(l->s, a, m);
-	k = m;
+	len = strlen(a);
+	if (len > sizeof l->s - 1u)
+		len = sizeof l->s - 1u;
+	memcpy(l->s, a, len);
+	k = len;
 	if (b != NULL) {
-		m = strlen(b);
-		if (k + m > sizeof l->s - 1u)
-			m = sizeof l->s - 1u - k;
-		memcpy(l->s + k, b, m);
-		k += m;
+		len = strlen(b);
+		if (k + len > sizeof l->s - 1u)
+			len = sizeof l->s - 1u - k;
+		memcpy(l->s + k, b, len);
+		k += len;
 	}
 	l->s[k] = '\0';
 }
@@ -566,12 +612,12 @@ static void item(struct lines *o, const struct inst_screen *s, unsigned digit, c
 	{
 		struct s15_buf hint;
 		size_t n = 2;
-		const size_t m = strlen(label);
+		const size_t len = strlen(label);
 
 		s15_hold_hint(&hint, digit);
 		memcpy(row, d, 2);
-		memcpy(row + n, label, m);
-		n += m;
+		memcpy(row + n, label, len);
+		n += len;
 		row[n++] = '\t';
 		memcpy(row + n, hint.s, hint.n);
 		n += hint.n;
@@ -608,6 +654,159 @@ static void os_line(struct lines *o, uint8_t os)
 		add(o, S15_ST_ERROR, "A write to the eMMC's boot partitions failed.", NULL);
 }
 
+/* Small formatters for the screens and the report, into a fixed buffer. */
+struct fmt {
+	char s[S15_LINE];
+	size_t n;
+};
+
+static void f_str(struct fmt *f, const char *s)
+{
+	while (*s != '\0' && f->n + 1u < sizeof f->s)
+		f->s[f->n++] = *s++;
+	f->s[f->n] = '\0';
+}
+
+static void f_dec(struct fmt *f, uint32_t v)
+{
+	char b[11];
+	unsigned i = sizeof b;
+
+	b[--i] = '\0';
+	do {
+		b[--i] = (char)('0' + v % 10u);
+		v /= 10u;
+	} while (v != 0u);
+	f_str(f, b + i);
+}
+
+static void f_hex(struct fmt *f, uint32_t v, unsigned digits)
+{
+	static const char hx[] = "0123456789abcdef";
+	char b[9];
+	unsigned i;
+
+	digits = digits > 8u ? 8u : digits;
+	for (i = 0; i < digits; i++)
+		b[i] = hx[v >> (4u * (digits - 1u - i)) & 0xFu];
+	b[digits] = '\0';
+	f_str(f, b);
+}
+
+/* S-18.003's fingerprint as S-18.004 shows it: n in decimal, c in hex. */
+static void f_fingerprint(struct fmt *f, uint32_t n, uint32_t c)
+{
+	f_str(f, "n ");
+	f_dec(f, n);
+	f_str(f, ", c ");
+	f_hex(f, c, 8u);
+}
+
+static const char *device_name(uint8_t id)
+{
+	return id == WB_DEV_OP1F ? "OP-1F" : "OP-XY";
+}
+
+/* The key check, on the OP-XY by the keys' names, elsewhere by role. */
+static void key_check(struct lines *o, const struct inst_screen *s)
+{
+	const bool usb = (s->keys_seen & 1u) != 0u, rec = (s->keys_seen & 2u) != 0u;
+
+	if (s->device == WB_DEV_OPXY) {
+		add(o, S15_ST_HEAD, "Press com, then M4, to go on", NULL);
+		add(o, S15_ST_TEXT, "These two presses are the key check.", NULL);
+		add(o, S15_ST_TEXT, "", NULL);
+		add(o, usb ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com", usb ? "\tpressed" : "\twaiting");
+		add(o, rec ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "M4 (under display)",
+		    rec ? "\tpressed" : "\twaiting");
+		add(o, S15_ST_TEXT, "", NULL);
+	} else {
+		struct fmt f = { "", 0 };
+
+		add(o, S15_ST_HEAD, "Press com, then the recovery key", NULL);
+		add(o, S15_ST_TEXT, "com: held at power-on, it opens the boot menu.", NULL);
+		add(o, S15_ST_TEXT, "Recovery key: held with Power, the recovery menu.", NULL);
+		add(o, usb ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com", usb ? "\tpressed" : "\twaiting");
+		add(o, rec ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "Recovery key",
+		    rec ? "\tpressed" : "\twaiting");
+		if (s->last_key != 0xFFu) {
+			f_str(&f, "Last key pressed: 0x");
+			f_hex(&f, s->last_key, 2u);
+		}
+		add(o, S15_ST_DIM, f.s, NULL);
+	}
+	add(o, S15_ST_ITEM, "8 End: the install is then not offered", NULL);
+}
+
+/* A slot as the survey found it, in a few words. */
+static void slot_words(struct fmt *f, const struct inst_slot_survey *sl)
+{
+	if ((sl->bits & INST_SV_RECORD) == 0u) {
+		f_str(f, "not read");
+		return;
+	}
+	f_str(f, (sl->bits & INST_SV_GOOD) != 0u ? "good" : "not good");
+	f_str(f, (sl->bits & INST_SV_WAFFLE) != 0u ? ", waffle-boot" : ", not waffle-boot");
+}
+
+/* The survey's screen: what it found, and what an install would do. */
+static void surveyed(struct lines *o, const struct inst_screen *s)
+{
+	const struct inst_survey *sv = s->survey;
+	struct fmt f = { "", 0 };
+	unsigned k;
+
+	add(o, S15_ST_HEAD, "Survey: nothing written to the SPI flash", NULL);
+	if (sv == NULL)
+		return;
+	f_str(&f, sv->how == WB_DEV_BY_TABLE ? device_name(sv->device) : "not identified");
+	f_str(&f, " (");
+	f_fingerprint(&f, sv->fs_n, sv->fs_c);
+	f_str(&f, ")");
+	add(o, S15_ST_KV, "Device\t", f.s);
+	f.n = 0;
+	f.s[0] = '\0';
+	if (sv->sel_read) {
+		f_hex(&f, sv->sel_index, 2u);
+		f_str(&f, " ");
+		f_hex(&f, sv->sel_verified, 2u);
+		f_str(&f, ": ");
+		f_str(&f, s02_selected_slot(sv->sel_index) == 0u ? "Slot 1" : "Slot 2");
+		f_str(&f, s02_verified(sv->sel_verified) ? ", verified" : ", not verified");
+	} else {
+		f_str(&f, "not read");
+	}
+	add(o, S15_ST_KV, "Selector\t", f.s);
+	for (k = 0; k < 2u; k++) {
+		f.n = 0;
+		f.s[0] = '\0';
+		slot_words(&f, &sv->slot[k]);
+		add(o, S15_ST_KV, k == 0u ? "Slot 1\t" : "Slot 2\t", f.s);
+	}
+	f.n = 0;
+	f.s[0] = '\0';
+	if (sv->ext_read) {
+		f_str(&f, "PART_CONFIG ");
+		f_hex(&f, sv->part_config, 2u);
+		f_str(&f, ", boot ");
+		f_dec(&f, sv->boot_kib);
+		f_str(&f, " KiB");
+	} else {
+		f_str(&f, "not read");
+	}
+	add(o, S15_ST_KV, "eMMC\t", f.s);
+	if (s->lock == INST_LOCK_SURVEY)
+		add(o, S15_ST_OK, "An install would be offered.", NULL);
+	else
+		add(o, S15_ST_WARN, inst_lock_words((enum inst_lock)s->lock), NULL);
+	if (s->os == INST_OS_ACTIVE)
+		add(o, S15_ST_TEXT, "Your OS is active again: switch off, then on.", NULL);
+	else if (s->os == INST_OS_WRITE_FAILED)
+		os_line(o, s->os);
+	else
+		add(o, S15_ST_TEXT, "No OS made active: the survey starts again.", NULL);
+}
+
 unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15_ROWS])
 {
 	struct lines o = { out, 0 };
@@ -620,19 +819,17 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		break;
 	case INST_GUIDED:
 		/* the one guided test: reading this shows the panel works */
-		add(&o, S15_ST_HEAD, "Press com, then M4, to go on", NULL);
-		add(&o, S15_ST_TEXT, "These two presses are the key check.", NULL);
-		add(&o, S15_ST_TEXT, "", NULL);
-		add(&o, (s->keys_seen & 1u) ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com",
-		    (s->keys_seen & 1u) ? "\tpressed" : "\twaiting");
-		add(&o, (s->keys_seen & 2u) ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "M4 (under display)",
-		    (s->keys_seen & 2u) ? "\tpressed" : "\twaiting");
-		add(&o, S15_ST_TEXT, "", NULL);
-		add(&o, S15_ST_ITEM, "8 End: the install is then not offered", NULL);
+		key_check(&o, s);
 		break;
 	case INST_LOCKED:
 		add(&o, S15_ST_HEAD, "The install is not offered", NULL);
 		add(&o, S15_ST_ERROR, inst_lock_words((enum inst_lock)s->lock), NULL);
+		if (s->lock == INST_LOCK_DEVICE) {
+			struct fmt f = { "", 0 };
+
+			f_fingerprint(&f, s->fs_n, s->fs_c);
+			add(&o, S15_ST_KV, "First stage\t", f.s);
+		}
 		add(&o, S15_ST_TEXT, "Nothing was written to the SPI flash.", NULL);
 		add(&o, S15_ST_TEXT, "Results: check.txt on the USB disk, or the page.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
@@ -689,8 +886,13 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_OK, "waffle-boot is the unit's bootloader.", NULL);
 		os_line(&o, s->os);
 		add(&o, S15_ST_TEXT, "Switch off, then on.", NULL);
-		add(&o, S15_ST_DIM, "Boot menu: hold com while switching on.", NULL);
-		add(&o, S15_ST_DIM, "Recovery menu: hold Power + M4 while switching on.", NULL);
+		if (s->device == WB_DEV_OPXY) {
+			add(&o, S15_ST_DIM, "Boot menu: hold com while switching on.", NULL);
+			add(&o, S15_ST_DIM, "Recovery menu: hold Power + M4 while switching on.", NULL);
+		} else {
+			add(&o, S15_ST_DIM, "Boot menu: hold com while switching on.", NULL);
+			add(&o, S15_ST_DIM, "Recovery menu: Power and the recovery key.", NULL);
+		}
 		if (os_ok) {
 			add(&o, S15_ST_TEXT, "", NULL);
 			item(&o, s, 8u, "Leave the installer");
@@ -725,6 +927,9 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_HEAD, "Left without installing", NULL);
 		os_line(&o, s->os);
 		add(&o, S15_ST_TEXT, "Switch off, then on.", NULL);
+		break;
+	case INST_SURVEYED:
+		surveyed(&o, s);
 		break;
 	default:
 		break;
@@ -777,7 +982,7 @@ static const char *phase_word(uint8_t p)
 	static const char *const w[] = {
 		"starting", "checking", "key check", "locked", "ready", "writing the trial",
 		"trial written", "commit ready", "committing", "done", "failed",
-		"trial failed", "left",
+		"trial failed", "left", "surveyed",
 	};
 
 	return p < sizeof w / sizeof w[0] ? w[p] : "?";
@@ -825,6 +1030,23 @@ size_t inst_report_append(char *out, size_t len, size_t cap, const struct inst_h
 	if (cap == 0u || len >= cap)
 		return len;
 	r_str(&r, "\ninstall\n");
+	/* S-18: the device, and the fingerprint only of one not identified */
+	r_str(&r, "device: ");
+	if (h->how == (uint8_t)WB_DEV_BY_TABLE) {
+		r_str(&r, device_name(h->device));
+		r_str(&r, ", identified by its first stage");
+	} else if (h->how == (uint8_t)WB_DEV_SECOND_CPU) {
+		r_str(&r, "the second CPU");
+	} else {
+		struct fmt f = { "", 0 };
+
+		f_fingerprint(&f, h->fs_n, h->fs_c);
+		r_str(&r, "not identified, first stage ");
+		r_str(&r, f.s);
+	}
+	r_str(&r, "\nimage built for: ");
+	r_str(&r, device_name(h->image_device));
+	r_str(&r, h->survey != 0u ? ", a survey build: no SPI-flash write\n" : "\n");
 	r_str(&r, "image: waffle-boot v");
 	for (i = 0; i < 3u; i++) {
 		if (i != 0u)
@@ -904,6 +1126,117 @@ size_t inst_report_append(char *out, size_t len, size_t cap, const struct inst_h
 			r_str(&r, "\n");
 		}
 	}
+	out[r.n] = '\0';
+	return r.n;
+}
+
+/* --- the survey (make installer-1f-survey) --- */
+
+size_t inst_survey_bytes(const struct inst_survey *sv, uint8_t *out)
+{
+	unsigned k;
+
+	memset(out, 0, INST_SURVEY_LEN);
+	out[0] = INST_ST_OK;
+	out[1] = sv->device;
+	out[2] = sv->how;
+	out[3] = sv->boot_mode;
+	wb_put_le32(out + 4, sv->fs_n);
+	wb_put_le32(out + 8, sv->fs_c);
+	out[12] = sv->sel_read ? 1u : 0u;
+	out[13] = sv->sel_index;
+	out[14] = sv->sel_verified;
+	out[15] = sv->pa2;
+	wb_put_le32(out + 16, sv->sec_count);
+	wb_put_le32(out + 20, sv->boot_kib);
+	out[24] = sv->ext_read ? 1u : 0u;
+	out[25] = sv->part_config;
+	out[26] = sv->os;
+	for (k = 0; k < 2u; k++) {
+		uint8_t *o = out + 28u + 24u * k;
+		const struct inst_slot_survey *sl = &sv->slot[k];
+
+		o[0] = sl->bits;
+		wb_put_le32(o + 4, sl->crc);
+		wb_put_le32(o + 8, sl->length);
+		wb_put_le32(o + 12, sl->tag);
+		memcpy(o + 16, sl->log, INST_SURVEY_LOG);
+	}
+	memcpy(out + 76, sv->fault, sizeof(sv->fault));
+	return INST_SURVEY_LEN;
+}
+
+size_t inst_survey_report(char *out, size_t len, size_t cap, const struct inst_survey *sv)
+{
+	struct rep r = { out, len, cap };
+	struct fmt f = { "", 0 };
+	unsigned k, i;
+
+	if (cap == 0u || len >= cap)
+		return len;
+	r_str(&r, "\nsurvey (nothing was written to the SPI flash)\n");
+	r_str(&r, "boot mode: ");
+	r_dec(&r, sv->boot_mode);
+	r_str(&r, "\nfirst stage: ");
+	f_fingerprint(&f, sv->fs_n, sv->fs_c);
+	r_str(&r, f.s);
+	r_str(&r, sv->how == WB_DEV_BY_TABLE ? ", the table's " : ", in no row of the table");
+	if (sv->how == WB_DEV_BY_TABLE)
+		r_str(&r, device_name(sv->device));
+	r_str(&r, "\nselector: ");
+	if (sv->sel_read) {
+		r_hex(&r, sv->sel_index, 2u);
+		r_str(&r, " ");
+		r_hex(&r, sv->sel_verified, 2u);
+	} else {
+		r_str(&r, "not read");
+	}
+	r_str(&r, "\n");
+	for (k = 0; k < 2u; k++) {
+		const struct inst_slot_survey *sl = &sv->slot[k];
+
+		r_str(&r, k == 0u ? "slot 1 record: " : "slot 2 record: ");
+		if ((sl->bits & INST_SV_RECORD) != 0u) {
+			r_str(&r, "crc32 ");
+			r_hex(&r, sl->crc, 8u);
+			r_str(&r, ", length ");
+			r_hex(&r, sl->length, 8u);
+			r_str(&r, ", tag ");
+			r_hex(&r, sl->tag, 8u);
+			r_str(&r, (sl->bits & INST_SV_GOOD) != 0u ? "; verifies" : "; does not verify");
+			r_str(&r, (sl->bits & INST_SV_WAFFLE) != 0u ? "; a waffle-boot stream" :
+				  "; not a waffle-boot stream");
+		} else {
+			r_str(&r, "not read");
+		}
+		r_str(&r, k == 0u ? "\nslot 1 start log: " : "\nslot 2 start log: ");
+		if ((sl->bits & INST_SV_LOG) != 0u) {
+			for (i = 0; i < INST_SURVEY_LOG; i++) {
+				r_str(&r, i != 0u ? " " : "");
+				r_hex(&r, sl->log[i], 2u);
+			}
+		} else {
+			r_str(&r, "not read");
+		}
+		r_str(&r, "\n");
+	}
+	r_str(&r, "emmc: ");
+	if (sv->ext_read) {
+		r_str(&r, "EXT_CSD[179] PART_CONFIG ");
+		r_hex(&r, sv->part_config, 2u);
+		r_str(&r, ", SEC_COUNT ");
+		r_hex(&r, sv->sec_count, 8u);
+		r_str(&r, ", boot partition ");
+		r_dec(&r, sv->boot_kib);
+		r_str(&r, " KiB");
+	} else {
+		r_str(&r, "EXT_CSD not read");
+	}
+	r_str(&r, "\nPA2: ");
+	r_str(&r, sv->pa2 == 0u ? "low" : sv->pa2 == 1u ? "high" : "not read");
+	r_str(&r, "\nOS partition: ");
+	r_str(&r, os_word(sv->os));
+	r_str(&r, "\n");
 	out[r.n] = '\0';
 	return r.n;
 }

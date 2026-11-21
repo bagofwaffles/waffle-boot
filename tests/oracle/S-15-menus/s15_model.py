@@ -12,12 +12,38 @@ import re
 DIGITS = {1: (0x06, 0x0A, 0x0E), 2: (0x07, 0x0B, 0x0F), 3: (0x08, 0x0C, 0x10), 4: (0x09, 0x0D, 0x11),
           5: (0x12,), 6: (0x13,), 7: (0x14,), 8: (0x15,)}
 KEY_DIGIT = {k: d for d, ks in DIGITS.items() for k in ks}
-KEY_HELP, KEY_WHITE, KEY_SHIFT, KEY_USB = 0x00, 0x0D, 0x37, 0x18
+KEY_HELP, KEY_WHITE, KEY_SHIFT, KEY_COM = 0x00, 0x0D, 0x37, 0x18
 NKEYS = 72
 
 
-def digit(key):
-    return KEY_DIGIT.get(key, 0)
+def digit(key, dev='xy'):
+    return DEV[dev]['key_digit'].get(key, 0)
+
+
+# ---------- S-15.016 the keys by device ----------
+# The OP-XY's key of each role and the OP-1F's (S-18.030's device.key.*); precomp has no OP-1F key.
+ROLE_1F = {0x06: 0x06, 0x07: 0x07, 0x08: 0x08, 0x09: 0x09,          # the first key of digits 1-4
+           0x0A: 0x36, 0x0B: 0x37, 0x0C: 0x38, 0x0D: 0x39,          # the knob clicks
+           0x0E: 0x2D, 0x0F: 0x2E, 0x10: 0x2F, 0x11: 0x10,          # the other key of digits 1-4
+           0x12: 0x11, 0x13: 0x12, 0x14: 0x13, 0x15: 0x14,          # digits 5-8
+           0x37: 0x26, 0x18: 0x2C}                                  # shift, the com key
+# Keys of no role in the OP-XY's vectors, given keys of no role on the OP-1F (none above 0x39 exists there).
+OTHER_1F = {0x00: 0x00, 0x40: 0x15, 0x47: 0x16, 0x17: 0x17}
+
+
+def to_1f(key):
+    """S-15.016: the OP-1F's key in the OP-XY key's role."""
+    if key in ROLE_1F:
+        return ROLE_1F[key]
+    return OTHER_1F[key]
+
+
+DEV = {
+    'xy': dict(nkeys=NKEYS, shift=KEY_SHIFT, back=0x15, precomp=0x17, knobs=(0x0A, 0x0B, 0x0C, 0x0D),
+               key_digit=KEY_DIGIT),
+    '1f': dict(nkeys=58, shift=0x26, back=0x14, precomp=None, knobs=(0x36, 0x37, 0x38, 0x39),
+               key_digit={to_1f(k): d for k, d in KEY_DIGIT.items()}),
+}
 
 
 # ---------- S-15.020 first screen ----------
@@ -54,11 +80,13 @@ KEY_PRECOMP = 0x17                              # S-07.032, S-07.033: ignored
 ROW_STEPS = {2: 1, 3: 0, 4: 3, 5: 4, 6: 5, 7: 2}
 
 
-def select_choice(events, pickable, down_at_open=(), end_ms=None):
+def select_choice(events, pickable, down_at_open=(), end_ms=None, dev='xy', prompt=False):
     """S-15.116: events after the selection is shown at time 0 with every row at No, as (ms, key, down) in time
     order; pickable: the steps whose rows can be picked. Returns (choice, ms, selected): 'install' or 'cancel'
     and when it was made, with the steps at Yes then, or (None, None, selected) while it goes on waiting at
-    end_ms (the last event's time when None). Every key event restarts the 60 s, which never end a hold."""
+    end_ms (the last event's time when None). Every key event restarts the 60 s, which never end a hold.
+    prompt: S-15.197's prompt, the same keys with no row, so the hold needs no row at Yes (sig_prompt_choice)."""
+    P = DEV[dev]
     stale, hold = set(down_at_open), None        # hold: (key, the time of its key down)
     held = set(down_at_open)                      # every key down now (S-07.031)
     selected, last = set(), 0
@@ -71,6 +99,8 @@ def select_choice(events, pickable, down_at_open=(), end_ms=None):
             return 'cancel', last + SELECT_TIMEOUT_MS
         return None
     for t, key, down in events:
+        if key >= P['nkeys']:                     # S-15.014: no such key; nothing acts
+            continue
         d = due(t)
         if d:
             return d + (sorted(selected),)
@@ -88,21 +118,45 @@ def select_choice(events, pickable, down_at_open=(), end_ms=None):
                 hold = None
             continue
         if hold is not None:                      # any other key down only ends the hold (S-07.033)
-            if key != KEY_PRECOMP:
+            if key != P['precomp']:
                 hold = None
             continue
-        if digit(key) == 8:
+        if digit(key, dev) == 8:
             return 'cancel', t, sorted(selected)
-        step = ROW_STEPS.get(digit(key))
+        step = ROW_STEPS.get(digit(key, dev))
         if step is not None:
             if step in pickable:
                 selected ^= {step}
-        elif (digit(key) == 1 and key not in KNOB_CLICKS and selected
-              and held - {key, KEY_PRECOMP} == set()):
+        elif (digit(key, dev) == 1 and key not in P['knobs'] and (selected or prompt)
+              and held - {key, P['precomp']} == set()):
             hold = (key, t)
     end = end_ms if end_ms is not None else (events[-1][0] if events else 0)
     d = due(end)
     return (d + (sorted(selected),)) if d else (None, None, sorted(selected))
+
+
+# ---------- S-15.197 the signature prompt before an install ----------
+SIG_STATES = ('valid', 'invalid', 'none')         # S-11.021
+
+
+def sig_prompt_shown(state):
+    """S-15.197: only an invalid package shows the prompt; a valid or none one goes straight to the
+    selection."""
+    return state == 'invalid'
+
+
+def sig_valid_shown(state):
+    """S-15.197: a valid package is shown as TE's (`sig:valid`) on the selection and in the outcome; a none
+    package says nothing of a signature."""
+    return state == 'valid'
+
+
+def sig_prompt_choice(events, down_at_open=(), end_ms=None, dev='xy'):
+    """S-15.197: the prompt shown at time 0. Key 1 held 5 s (the hold, S-15.015, with S-15.116's no-other-key
+    rule) goes on to the selection ('install'); digit 8 cancels, and so do 60 s without a key event, as on the
+    selection. Returns (choice, ms): choice None while it waits at end_ms."""
+    choice, at, _ = select_choice(events, (), down_at_open, end_ms, dev, prompt=True)
+    return choice, at
 
 
 # ---------- S-15.172 the settings ----------
@@ -231,21 +285,59 @@ def info_match(spec, rows, values=None):
 
 
 # ---------- S-15.064, S-15.065 key test ----------
-def keytest(events):
-    """events: list of (key, down). Returns the tested set after each event, and the end flag."""
+def keytest(events, dev='xy'):
+    """events: list of (key, down). Returns the tested set after each event, and the end flag. On the OP-1F
+    (S-15.016) 58 keys, and shift 0x26 with digit 8's 0x14 end it."""
+    P = DEV[dev]
     tested, down, lone = set(), set(), None
     out = []
     for key, is_down in events:
-        if is_down:
+        if key >= P['nkeys']:
+            pass
+        elif is_down:
             lone = key if not down else None
             down.add(key)
         else:
             down.discard(key)
             if key == lone:
                 tested.add(key)
-        end = len(tested) == NKEYS or (KEY_SHIFT in down and 0x15 in down)
+        end = len(tested) == P['nkeys'] or (P['shift'] in down and P['back'] in down)
         out.append((sorted(tested), end))
     return out
+
+
+# ---------- S-15.052 the factory reset by device ----------
+RESET_REMOVES = {'xy': ('user', 'logs', 'content/dlc'), '1f': ('user', 'logs')}
+FAT_ERASE = {'xy': True, '1f': False}
+
+
+def factory_reset(tree, dev='xy', refused=False):
+    """S-15.052 with device.reset_removes (S-18.030): tree {path under /yaffs2: bytes}. Returns (tree after,
+    the operations in order: ('remove', path), ('erase_os_fat',), ('clear_settings',))."""
+    ops, t = [], dict(tree)
+    if not refused:
+        for d in RESET_REMOVES[dev]:
+            ops.append(('remove', '/yaffs2/' + d))
+            t = {p: b for p, b in t.items() if p != d and not p.startswith(d + '/')}
+    if FAT_ERASE[dev]:
+        ops.append(('erase_os_fat',))
+    ops.append(('clear_settings',))
+    return t, ops
+
+
+# ---------- S-15.196 one MTP item, chosen by shift ----------
+def mtp_item(events, dev='1f'):
+    """events: (key, down) up to and including digit 2's key down on the developer menu, then any later
+    events. Returns the interface the item starts: 'MTP vendor' when shift was held at that key down
+    (S-15.012's state), else 'MTP'; later events change nothing."""
+    P = DEV[dev]
+    shift, chosen = False, None
+    for key, down in events:
+        if key == P['shift']:
+            shift = down
+        elif down and chosen is None and digit(key, dev) == 2:
+            chosen = 'MTP vendor' if shift else 'MTP'
+    return chosen
 
 
 # ---------- S-15.132 hand-over frame ----------

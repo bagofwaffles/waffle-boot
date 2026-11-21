@@ -2,6 +2,7 @@
 #include "waffle/s11_content.h"
 
 #include "waffle/bytes.h"
+#include "waffle/device.h"
 
 #define STAGED_CONTENT "upgrade/firmware/blackfin/content"
 #define STAGED_DLC STAGED_CONTENT "/dlc"
@@ -219,20 +220,26 @@ static void replace_packs(const struct s11_fs_ops *fs)
 
 /*
  * S-11.066, S-11.075-S-11.079. A removal that fails does not stop the step:
- * the files are installed and the result is theirs (S-11.075).
+ * the files are installed and the result is theirs (S-11.075). Without
+ * content-packs no directory is DLC (S-11.097): a full install removes all
+ * of content/ first, a partial one nothing.
  */
-enum s11_result s11_install_content(const struct s11_fs_ops *fs,
+enum s11_result s11_install_content(const struct wb_device *dev,
+				    const struct s11_fs_ops *fs,
 				    bool content_only)
 {
+	const bool packs = wb_has(dev, WB_F_CONTENT_PACKS);
 	struct walk w;
 	bool partial;
 
 	if (!is_dir(fs, STAGED_CONTENT))
 		return S11_NOT_FOUND;
 	partial = s11_content_partial(fs);
-	if (!partial)			/* S-11.075 */
+	if (!partial && packs)		/* S-11.075 */
 		remove_non_dlc(fs);
-	else if (content_only)		/* S-11.077 */
+	else if (!partial && exists(fs, "content"))	/* S-11.097 */
+		(void)fs->remove(fs->ctx, "content");
+	else if (partial && packs && content_only)	/* S-11.077 */
 		replace_packs(fs);
 	w.fs = fs;
 	w.moved = 0;
@@ -437,7 +444,8 @@ static void json_name(const uint8_t *p, size_t n, struct out *o)
  * first 4096 bytes only, which S-11.039 allows: its name is then empty
  * unless the name member's string ends within them.
  */
-void s11_pack_name(const struct s11_fs_ops *fs, char *name, size_t cap)
+void s11_pack_name(const struct wb_device *dev, const struct s11_fs_ops *fs,
+		   char *name, size_t cap)
 {
 	static uint8_t buf[MANIFEST_MAX];
 	char entry[S11_PATH_MAX];
@@ -448,6 +456,8 @@ void s11_pack_name(const struct s11_fs_ops *fs, char *name, size_t cap)
 	if (cap == 0)
 		return;
 	name[0] = '\0';
+	if (!wb_has(dev, WB_F_CONTENT_PACKS))	/* S-11.097: no pack */
+		return;
 	(void)path_set(&p, STAGED_DLC);
 	for (size_t i = 0; fs->list(fs->ctx, STAGED_DLC, i, entry, sizeof(entry),
 				    &dir); i++) {

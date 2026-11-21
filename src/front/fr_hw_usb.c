@@ -36,6 +36,7 @@ enum ep0_state {
 };
 
 static const struct fr_clock *clock;
+static const struct fr_dev *usb_dev;	/* the identity given (fr_usb_device()) */
 static uint8_t state;		/* enum ep0_state */
 static uint8_t reply[REPLY_MAX];
 static uint16_t reply_len, reply_pos;
@@ -272,7 +273,7 @@ static bool get_descriptor(unsigned type, unsigned index, unsigned *len)
 
 	switch (type) {
 	case 0x01:
-		n = fr_usb_desc_device(reply, sizeof reply);
+		n = fr_usb_desc_device(usb_dev, reply, sizeof reply);
 		break;
 	case 0x02:
 		if (index != 0)
@@ -280,7 +281,7 @@ static bool get_descriptor(unsigned type, unsigned index, unsigned *len)
 		n = fr_usb_desc_config(high_speed(), reply, sizeof reply);
 		break;
 	case 0x03:
-		n = fr_usb_desc_string(index, NULL, reply, sizeof reply);
+		n = fr_usb_desc_string(usb_dev, index, NULL, reply, sizeof reply);
 		break;
 	case 0x06:
 		n = fr_usb_desc_qualifier(reply, sizeof reply);
@@ -600,6 +601,11 @@ static void bus_reset(void)
 	line_state = 0;
 	wb_mmr_write16(USB0_INTRTXE, 1u);
 	wb_mmr_write16(USB0_INTRRXE, 0);
+}
+
+void fr_usb_device(const struct fr_dev *dev)
+{
+	usb_dev = dev;
 }
 
 void fr_usb_start(const struct fr_clock *c)

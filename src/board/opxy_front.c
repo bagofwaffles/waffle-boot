@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "waffle/bytes.h"
+#include "waffle/device.h"
 #include "waffle/wire_crc.h"
 
 /* S-01.007, S-01.021: as the front found them at the INIT call (its
@@ -19,34 +20,78 @@ uint32_t opxy_init_dflt;
 /* The INIT stage's stamps, for BOOT_TIMING=1 (waffle/board/opxy_boot.h). */
 uint64_t opxy_init_cycles[3];
 
-/* The record's layout on the host as on the target, up to its CRC; the host
- * adds only tail padding. */
+/* The record's layout on the host as on the target. */
 _Static_assert(offsetof(struct fr_handoff, stamps) == 80u &&
 	       offsetof(struct fr_handoff, run_slot) == 144u &&
 	       offsetof(struct fr_handoff, link_gap_max_us) == 148u &&
+	       offsetof(struct fr_handoff, device) == 152u &&
 	       offsetof(struct fr_handoff, crc32) == FR_HO_SIZE - 4u,
-	       "S-01.023: the hand-off record's offsets");
+	       "S-18.005: the hand-off record's offsets");
+_Static_assert(FR_HO_DEV_OPXY == WB_DEV_OPXY && FR_HO_DEV_OP1F == WB_DEV_OP1F &&
+	       FR_HO_HOW_TABLE == WB_DEV_BY_TABLE && FR_HO_HOW_SECOND == WB_DEV_SECOND_CPU &&
+	       FR_HO_HOW_UNKNOWN == WB_DEV_UNKNOWN,
+	       "S-18.005: the record's device codes are device.h's");
 
 bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out)
 {
-	const uint16_t version = wb_get_le16(rec + 4u), size = wb_get_le16(rec + 6u);
-	uint32_t n;
+	const uint32_t n = FR_HO_SIZE - 4u;
 
-	/* S-01.023: version 1 of 148 bytes or version 2 of 156, each with its
-	 * CRC in its last four bytes; version 1 reads 0 in version 2's fields */
-	if (wb_get_le32(rec) != FR_HO_MAGIC)
-		return false;
-	if (version == 1u && size == FR_HO_SIZE_V1)
-		n = FR_HO_SIZE_V1 - 4u;
-	else if (version == 2u && size == FR_HO_SIZE)
-		n = FR_HO_SIZE - 4u;
-	else
+	/* S-18.005: version 3 of 160 bytes only, its CRC in its last four */
+	if (wb_get_le32(rec) != FR_HO_MAGIC || wb_get_le16(rec + 4u) != FR_HO_VERSION ||
+	    wb_get_le16(rec + 6u) != FR_HO_SIZE)
 		return false;
 	if (wire_crc32(0, rec, n) != wb_get_le32(rec + n))
 		return false;
-	memset(out, 0, sizeof(*out));
-	memcpy(out, rec, n);
-	out->crc32 = wb_get_le32(rec + n);
+	memcpy(out, rec, FR_HO_SIZE);
+	return true;
+}
+
+void opxy_device_pick(const struct fr_handoff *ho, unsigned boot_mode,
+		      wb_strap_fn pa2, void *pa2_ctx, wb_flash_read_fn read, void *ctx,
+		      struct opxy_device_pick *out)
+{
+	enum wb_dev_id id;
+	enum wb_dev_how how;
+	struct wb_dev_role r;
+
+	out->n = 0u;
+	out->c = 0u;
+	if (ho != NULL && opxy_front_device(ho, &id, &how)) {
+		/* S-18.005: the front decided; the main image does not */
+		out->dev = wb_device_of((unsigned)id);
+		out->how = how;
+		out->master = ho->role_master != 0u;
+		out->fallback = (ho->flags & FR_HO_ROLE_BY_STRAP) != 0u;
+		out->decided = false;
+		return;
+	}
+	/* S-18.001, S-18.002 as the front decides: the boot mode, the
+	 * fallback sample where it is not 1, then a main CPU's first stage
+	 * with its tries. S-18.005: a whole record whose device codes name
+	 * none keeps its role, its master deciding as a main CPU. */
+	if (ho != NULL && ho->role_master != 0u)
+		boot_mode = WB_BOOT_MODE_MAIN;
+	wb_device_decide_role(boot_mode, pa2, pa2_ctx, read, ctx, &r);
+	out->dev = wb_device_of((unsigned)r.d.id);
+	out->how = r.d.how;
+	out->master = r.main;
+	out->fallback = r.fallback;
+	out->decided = true;
+	out->n = r.n;
+	out->c = r.c;
+	if (ho != NULL) {
+		out->master = ho->role_master != 0u;
+		out->fallback = (ho->flags & FR_HO_ROLE_BY_STRAP) != 0u;
+	}
+}
+
+bool opxy_front_device(const struct fr_handoff *ho, enum wb_dev_id *id, enum wb_dev_how *how)
+{
+	/* S-18.005: a device and a way of deciding that exist */
+	if (ho->device > FR_HO_DEV_OP1F || ho->device_how > FR_HO_HOW_UNKNOWN)
+		return false;
+	*id = (enum wb_dev_id)ho->device;
+	*how = (enum wb_dev_how)ho->device_how;
 	return true;
 }
 
@@ -69,7 +114,6 @@ bool opxy_front_take(struct fr_handoff *out)
 #if defined(__bfin__) && !defined(OPXY_TEST_OS)
 	uint8_t rec[FR_HO_SIZE];
 
-	/* version 2's length; a version 1 record does not use the last 8 */
 	memcpy(rec, (const void *)(uintptr_t)FR_HANDOFF_ADDR, sizeof rec);
 	/* S-01.023: the record taken, its magic cleared, so a later stream
 	 * finds none: L2 survives a hard reset (NOMEMINIT, opxy_reset.c). The

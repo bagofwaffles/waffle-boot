@@ -67,7 +67,7 @@ void opxy_log_start(struct opxy_master *m)
 		     &sv->log_cdc, &sv->log_screen);
 	/* Before any key event (S-15.013): sv->boot is filled and the env
 	 * built when held mode starts, and nothing reads them before. */
-	s15_menu_init(&sv->menu, &sv->boot, &sv->env, &sv->log);
+	s15_menu_init(&sv->menu, opxy_dev(m), &sv->boot, &sv->env, &sv->log);
 	/* S-07.076, S-10c.045: the common set from the PSoC link's start */
 	host_boot_start(m);
 }
@@ -242,12 +242,13 @@ static void rb_psoc_reset_request(void *ctx)
 		       sizeof(magic));
 }
 
-/* S-04.025, S-04.032: skipped when the slave is absent (S-09.008). */
+/* S-04.025, S-04.032: skipped when the slave is absent (S-09.008), and
+ * on a device without second-cpu (S-04.066). */
 static void rb_slave_power_off(void *ctx)
 {
 	struct opxy_master *m = ctx;
 
-	if (m->slave_present)
+	if (m->slave_present && wb_has(opxy_dev(m), WB_F_SECOND_CPU))
 		(void)s09_power_off(&m->bridge, &m->node, S06_LINK_CPU);
 }
 
@@ -266,9 +267,43 @@ static void rb_slave_power_off(void *ctx)
  * A wait that runs out counts as a failed unmount and leaves the slave
  * present, so the power-off request still follows (S-04.063).
  */
+/* S-04.066's ops: the volume's unmount runs S-03.013 in the storage
+ * (opxy_storage.c), then the reports. */
+static bool one_cpu_mounted(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+
+	return m->sv.files.mounted;
+}
+
+static int one_cpu_emmc_shutdown(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	return s09_files_unmount(&m->sv.files) ? 0 : -1;
+}
+
+static void one_cpu_reports(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	s07_shutdown_reports(&m->psoc);
+}
+
 void opxy_shutdown(struct opxy_master *m)
 {
 	opxy_display_power_off(m);
+	if (!wb_has(opxy_dev(m), WB_F_SECOND_CPU)) {
+		/* S-04.066: no CPU link, no power-off request, no wait */
+		const struct s04_shutdown_ops ops = {
+			m, one_cpu_mounted, one_cpu_emmc_shutdown, one_cpu_reports,
+		};
+
+		s04_shutdown_one_cpu(&ops);
+		(void)wb_uart_flush(&m->hw.uart[OPXY_UART_PSOC], &m->hw.time,
+				    OPXY_PSOC_DRAIN_US);
+		return;
+	}
 	s09_master_shutdown(&m->bridge);
 	if (m->slave_present && m->sv.files.mounted)
 		(void)s09_files_unmount(&m->sv.files);
@@ -493,7 +528,7 @@ static bool host_write_metadata(void *ctx, const struct s10c_setmeta *sm)
 		factory[t.len] = '\0';
 		req.factory = factory;
 	}
-	if (!s04_set_metadata(&m->meta, m->sv.host.factory, m->sv.option,
+	if (!s04_set_metadata(opxy_dev(m), &m->meta, m->sv.host.factory, m->sv.option,
 			      &req))
 		return false;
 	return opxy_meta_write(m);
@@ -658,7 +693,7 @@ static void host_boot_start(struct opxy_master *m)
 	o->reboot_os = boot_reboot_os;
 	o->reboot_mode = boot_reboot_mode;
 	o->reboot_after_dfu = boot_reboot_after_dfu;
-	s10c_host_init(&m->sv.host, o, m);
+	s10c_host_init(&m->sv.host, o, m, opxy_dev(m), (enum wb_dev_how)m->dev_how);
 }
 
 void opxy_startup_read(struct opxy_master *m, wb_otp_get_fn get)
@@ -669,8 +704,8 @@ void opxy_startup_read(struct opxy_master *m, wb_otp_get_fn get)
 	/* S-04.047: not read when the record could not be read */
 	sv->chip_serial[0] = '\0';
 	sv->chip_ok = !m->meta_failed && opxy_otp_serial(get, sv->chip_serial);
-	/* S-17.012, S-17.015 */
-	s17_rev_power_on(&sv->rev, (rev >> 1) & 1u, rev & 1u);
+	/* S-17.012, S-17.015; without straps 0 until a greeting (S-17.016) */
+	s17_rev_power_on_dev(&sv->rev, opxy_dev(m), (rev >> 1) & 1u, rev & 1u);
 	s17_rev_metadata(&sv->rev, m->meta_failed ? S17_META_RECORD_FAILED
 				   : sv->chip_ok  ? S17_META_READ
 						  : S17_META_SERIAL_FAILED);
@@ -772,7 +807,7 @@ void opxy_services_start(struct opxy_master *m)
 	/* S-10c.076; the test OS never hands over */
 	sv->host_ops.continue_check = OPXY_TESTOS_OR(NULL, host_continue_check);
 	sv->host_ops.continue_os = OPXY_TESTOS_OR(NULL, host_continue);
-	s10c_host_init(&sv->host, &sv->host_ops, m);
+	s10c_host_init(&sv->host, &sv->host_ops, m, opxy_dev(m), (enum wb_dev_how)m->dev_how);
 	opxy_usb_start(m); OPXY_TIME(BOOT_TIME_USB);
 }
 
@@ -1139,6 +1174,11 @@ static void boot_info(struct opxy_master *m, const struct boot_held *h)
 	       m->sv.copro.psoc_serial_len);
 	m->sv.psoc_serial[m->sv.copro.psoc_serial_len] = '\0';
 	b->version = m->sv.bl_text;
+	/* S-18.004: the device not identified, with the first stage's n and
+	 * c (read again in bring-up when the front's record says so) */
+	b->dev_how = (enum wb_dev_how)m->dev_how;
+	b->first_stage_n = m->fs_n;
+	b->first_stage_c = m->fs_c;
 	b->reason = h->reason;
 	b->settings = m->sv.settings;
 	/* A release answered with a value other than 0 is "no OS"
@@ -1296,8 +1336,12 @@ static bool env_remove_tree(void *ctx, const char *path)
 static void env_erase_os_fat(void *ctx)
 {
 	struct opxy_master *m = ctx;
-	const bool offered = long_begin(m);
+	bool offered;
 
+	/* S-03.075: no erase outside the volume without fat-region */
+	if (!wb_has(opxy_dev(m), WB_F_FAT_REGION))
+		return;
+	offered = long_begin(m);
 	s15_menu_hold(&m->sv.menu);
 	opxy_menu_show_now(m);
 	if (!s09_files_erase_os_fat(&m->sv.files))
@@ -1467,7 +1511,9 @@ static void env_reset_w7(void *ctx)
 static void env_continue_os(void *ctx)
 {
 	struct opxy_master *m = ctx;
-	const bool slave = m->slave_present && !m->bridge.absent;
+	/* with one CPU none can be left running by the hard reset (S-04.066) */
+	const bool slave = !wb_has(opxy_dev(m), WB_F_SECOND_CPU) ||
+			   (m->slave_present && !m->bridge.absent);
 
 	opxy_menu_show_now(m);
 	wb_delay_us(&m->hw.time, OPXY_RESTART_HOLD_MS * 1000u);

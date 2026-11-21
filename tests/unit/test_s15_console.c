@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
 #include "waffle/s14_log.h"
 #include "waffle/s15_console.h"
 #include "waffle/s15_keytest.h"
@@ -1035,7 +1036,7 @@ static void test_keytest(void)
 	for (i = 0; i < S15V_N(s15v_keyseqs); i++) {
 		const struct s15v_keyseq *v = &s15v_keyseqs[i];
 
-		s15_keytest_start(&kt);
+		s15_keytest_start(&kt, &wb_device_opxy);
 		for (e = 0; e < v->n; e++)
 			end = s15_keytest_event(&kt, v->events[e][0],
 						v->events[e][1] != 0);
@@ -1047,15 +1048,37 @@ static void test_keytest(void)
 	}
 
 	/* All 72 keys alone: ends at the 72nd up, not before. */
-	s15_keytest_start(&kt);
+	s15_keytest_start(&kt, &wb_device_opxy);
 	for (unsigned k = 0; k < S15_NKEYS; k++) {
 		bool d = s15_keytest_event(&kt, k, true);
 		bool u = s15_keytest_event(&kt, k, false);
 
 		CHECK(!d && u == (k == S15_NKEYS - 1u), "S-15.065 all keys %u", k);
 	}
+	/* S-15.016 on the OP-1F: keytest_1f.json, 58 keys, shift 0x26 with 0x14 */
+	for (i = 0; i < S15V_N(s15v_keyseqs_1f); i++) {
+		const struct s15v_keyseq *v = &s15v_keyseqs_1f[i];
+
+		s15_keytest_start(&kt, &wb_device_op1f);
+		for (e = 0; e < v->n; e++)
+			end = s15_keytest_event(&kt, v->events[e][0],
+						v->events[e][1] != 0);
+		for (unsigned k = 0; k < S15_NKEYS; k++)
+			CHECK(s15_keytest_tested(&kt, k) ==
+			      has(v->tested, v->n_tested, k),
+			      "S-15.064 1F %s: key 0x%02x", v->name, k);
+		CHECK(end == v->end, "S-15.065 1F %s: end", v->name);
+	}
+	s15_keytest_start(&kt, &wb_device_op1f);
+	for (unsigned k = 0; k < S15V_KEYTEST_NKEYS_1F; k++) {
+		bool d = s15_keytest_event(&kt, k, true);
+		bool u = s15_keytest_event(&kt, k, false);
+
+		CHECK(!d && u == (k == S15V_KEYTEST_NKEYS_1F - 1u),
+		      "S-15.065 1F all keys %u", k);
+	}
 	/* S-15.062: a new start forgets everything. */
-	s15_keytest_start(&kt);
+	s15_keytest_start(&kt, &wb_device_opxy);
 	CHECK(!s15_keytest_tested(&kt, 0) &&
 	      s15_keytest_color(&kt, 0) == S15_KT_UNTESTED, "S-15.062 restart");
 
@@ -1113,7 +1136,7 @@ static void test_boxes(void)
 		     "Press every key and knob, one at a time.") == 0 &&
 	      strcmp(s15_keytest_lines[1], "`Shift` + `8`   Back to System Menu") == 0,
 	      "S-15.062 the key test's lines");
-	s15_keytest_start(&kt);
+	s15_keytest_start(&kt, &wb_device_opxy);
 	(void)s15_keytest_event(&kt, 5, true);
 	reset_frame();
 	s15_render_keytest(&kt, &geom, &draw, &f);

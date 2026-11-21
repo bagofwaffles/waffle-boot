@@ -112,7 +112,7 @@ int opxy_boot_prompt(void *ctx)
 	 */
 	if (s07_poll(&m->psoc) == S07_POWEROFF)
 		goto off;
-	s15_prompt_open(&prompt, m->psoc.keys);
+	s15_prompt_open(&prompt, opxy_dev(m), m->psoc.keys);
 	menu_key = m->psoc_ops.key_event;
 	m->psoc_ops.key_event = prompt_key;
 	while (s15_prompt_choice(&prompt) == S15_PROMPT_WAIT) {

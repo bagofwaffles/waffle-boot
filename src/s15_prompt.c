@@ -95,10 +95,12 @@ void s15_prompt_show(struct s15_menu *m, const struct s15_prompt_values *v)
 		s15_console_add(&m->con, st[i], lines[i].s);
 }
 
-void s15_prompt_open(struct s15_prompt *p, const uint8_t *down_now)
+void s15_prompt_open(struct s15_prompt *p, const struct wb_device *dev,
+		     const uint8_t *down_now)
 {
 	unsigned i;
 
+	p->dev = dev;
 	for (i = 0; i < sizeof p->stale; i++)
 		p->stale[i] = down_now != NULL ? down_now[i] : 0u;
 	p->choice = S15_PROMPT_WAIT;
@@ -111,7 +113,7 @@ void s15_prompt_key(struct s15_prompt *p, unsigned key, bool down)
 {
 	unsigned d;
 
-	if (key >= S15_NKEYS)
+	if (key >= p->dev->keys.count)
 		return;
 	if (bit(p->stale, key)) {
 		if (!down)
@@ -120,7 +122,7 @@ void s15_prompt_key(struct s15_prompt *p, unsigned key, bool down)
 	}
 	if (!down || p->choice != S15_PROMPT_WAIT)
 		return;
-	d = s15_digit(key);			/* S-15.011 */
+	d = s15_digit(p->dev, key);		/* S-15.011 */
 	if (d == 1u)
 		p->choice = S15_PROMPT_START;
 	else if (d == 2u)

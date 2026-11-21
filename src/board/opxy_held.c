@@ -200,7 +200,7 @@ void opxy_held_service(void *ctx, const struct boot_held *h)
 		    opxy_held_settle(m) == S07_POWEROFF ||
 		    s08_poll(&m->nordic) != 0)
 			break;
-		if (m->slave_present) {
+		if (m->slave_present && wb_has(opxy_dev(m), WB_F_SECOND_CPU)) {
 			s09_master_service(&m->bridge);
 			opxy_bridge_end_note(m);	/* S-13b.083 */
 		}
@@ -233,15 +233,14 @@ void opxy_held(void *ctx, const struct boot_held *h)
 		      &m->hw.uart[OPXY_UART_NORDIC], S06_ADDR_MASTER,
 		      S06_ADDR_NORDIC);
 	m->node.link[S06_LINK_NORDIC] = &m->link[S06_LINK_NORDIC];
-	/* S-09.045: the CPU link through the bridge's tunnel. */
-	if (m->slave_present) {
+	/* S-09.045: the CPU link through the bridge's tunnel; second-cpu's */
+	if (m->slave_present && wb_has(opxy_dev(m), WB_F_SECOND_CPU)) {
 		s06_link_init(&m->link[S06_LINK_CPU], &s09_tunnel_port,
 			      &m->bridge, S06_ADDR_MASTER, S06_ADDR_SLAVE);
 		m->node.link[S06_LINK_CPU] = &m->link[S06_LINK_CPU];
 	}
-	/* S-06.050 */
-	m->node.routes = s06_master_routes;
-	m->node.nroutes = 6u;
+	/* S-06.050; without second-cpu the slave's rows are out of force */
+	s06_node_master_routes(&m->node, opxy_dev(m));
 
 	opxy_nordic_ops(m, &m->nordic_ops);
 	m->nordic_ops.crc16 = wire_crc16_xmodem;
@@ -249,7 +248,7 @@ void opxy_held(void *ctx, const struct boot_held *h)
 		 (int)m->meta.state);
 	/* S-08.045: the sku read at start-up; the word is 0 when the record
 	 * or the chip serial (OTP item 1, S-04.047) did not read. */
-	s08_set_sku(&m->nordic, m->meta.sku,
+	s08_set_sku(&m->nordic, opxy_dev(m), m->meta.sku,
 		    !m->meta_failed && m->sv.chip_ok);
 
 	/* S-13a.071: RTC0 from held mode's start, before any service reads

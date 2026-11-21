@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
 #include "waffle/s06_link.h"
 
 #define S08_STATE_UNKNOWN (-1)		/* the start-up read failed */
@@ -157,8 +158,9 @@ int s08_classify_dfu(uint8_t cmd, uint8_t reply_id, const uint8_t *p,
 /* S-08.048, S-11.070: a failed transfer stopped after its prepare was sent. */
 bool s08_after_prepare(const struct s08_failure *f);
 
-/* S-08.045: sku as read at start-up; read_ok false when the read failed. */
-uint32_t s08_product_word(uint32_t sku, bool read_ok);
+/* S-08.045: base | sku as read at start-up, base being device.product_base;
+ * read_ok false when the read failed. */
+uint32_t s08_product_word(uint32_t base, uint32_t sku, bool read_ok);
 
 /* S-08.043: the 14-byte prepare payload. */
 void s08_prepare_payload(const uint16_t version[4], uint8_t type,
@@ -186,7 +188,7 @@ void s08_set_state(struct s08_nordic *n, int state);
  * chip serial could not be read). Only the first call after s08_init()
  * counts: a sku set later in the power-on is used from the next one.
  */
-void s08_set_sku(struct s08_nordic *n, uint32_t sku, bool read_ok);
+void s08_set_sku(struct s08_nordic *n, const struct wb_device *dev, uint32_t sku, bool read_ok);
 /* The prepare's product word for this power-on; 0 before s08_set_sku(). */
 uint32_t s08_product(const struct s08_nordic *n);
 

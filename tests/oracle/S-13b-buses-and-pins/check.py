@@ -179,10 +179,11 @@ def check_busy_end(events):
     return out
 
 
-def check_init(events, cmd1_bound_ms=1000):
+def check_init(events, cmd1_bound_ms=1000, width=8):
     """S-13b.051/.052: the bring-up order, the identification clock, the OCR loop, the clock before the
-    timing switch, the bus width on data transfers and at the end."""
-    return _B.check_init(events, RCA, OCR_ARG, SWITCH_INDEXES, cmd1_bound_ms)
+    timing switch, the bus width on data transfers and at the end; S-13b.061 with width 4 (the OP-1F's
+    `device.emmc_width`): Switch(183, 1), host width 1 then 4, never 8."""
+    return _B.check_init(events, RCA, OCR_ARG, SWITCH_INDEXES, cmd1_bound_ms, width)
 
 
 def check_timing(device_type, driver_strength, hs_timing, clock_hz):
@@ -260,23 +261,37 @@ GPIO = {  # S-13b.006 at the hand-off: (outputs low, outputs high, outputs whose
               ['PA1', 'PA15', 'PB4', 'PB7', 'PB15', 'PC14']),
 }
 STRAP_BITS = 0x105
+PA2_BIT = 0x004
 STRAP_SETTLE_NS = 10_000     # S-13b.002: drivers released to sample
 STRAP_INEN_NS = 1_000        # S-13b.008: inputs enabled to sample
 PA4 = 0x10
 
 
+FLASH_BUS_REGS = ('PORTB_MUX', 'PORTB_FER', 'PORTB_FER_SET', 'PORTB_FER_CLR')
+
+
 def check_ports(trace, role):
     """S-13b.001, .003, .004 on the way; .003's end state at the first SPI/UART/MSI access (the mark, or the
-    end of the trace without one); .006 at the end of the trace (the hand-off)."""
+    end of the trace without one); .006 at the end of the trace (the hand-off). Two steps of S-18 are not the
+    strap sample or the first MUX write: S-18.002's fallback sample (a PORTA_DATA read with PA2's input
+    enabled alone, DIR untouched), and S-18.001's flash-bus write (port B's MUX and FER before the event
+    `first_stage_read`), which S-13b.004 exempts."""
     out, st = [], _blank()
-    sampled, muxed, at_mark = False, False, None
+    sampled, muxed, at_mark, fell_back, read = False, False, None, False, False
     pre_inputs = {'B': 0x400} if role == 'slave' else {'B': 0x400, 'C': 0x10}
     for n, e in enumerate(trace):
         if e['op'] == 'mark':
             if at_mark is None:
                 at_mark = st
             continue
+        if e['op'] == 'ev':
+            read = read or e.get('ev') == 'first_stage_read'
+            continue
         reg = e['reg']
+        if e['op'] == 'r' and reg == 'PORTA_DATA' and not sampled and not fell_back and \
+                (st['A']['INEN'] & STRAP_BITS) == PA2_BIT and not st['A']['DIR'] & STRAP_BITS:
+            fell_back = True
+            continue
         if e['op'] == 'r' and reg == 'PORTA_DATA' and not sampled:
             a = st['A']
             if (a['DIR'] & STRAP_BITS) or (a['INEN'] & STRAP_BITS) != STRAP_BITS:
@@ -288,6 +303,9 @@ def check_ports(trace, role):
         if e['op'] != 'w' or not reg.startswith('PORT'):
             continue
         port, base = reg[4], reg[6:].partition('_')[0]
+        if base in ('MUX', 'FER') and role == 'master' and not read and reg in FLASH_BUS_REGS:
+            st = replay_one(st, e)
+            continue
         if base in ('MUX', 'FER'):
             if not sampled:
                 out.append(('strap_before_mux', '#%d %s before the strap sample' % (n, reg)))
@@ -325,6 +343,111 @@ def check_ports(trace, role):
         p, b = _pin(name)
         if st[p]['DATA'] & b:
             out.append(('gpio_directions', '%s not driven low' % name))
+    return out
+
+
+# --- The OP-1F's main CPU (S-13b.003, .004, .006 per device; S-18.001, S-18.020) ------------------------
+
+PINMUX_1F = {'A': (0x30280000, 0x4620), 'B': (0x1400FFFF, 0xFFFF), 'C': (0x000AAA00, 0x17F3)}
+GPIO_1F = (['PA0', 'PA3', 'PA4', 'PA6', 'PC13'], ['PA1', 'PA2', 'PA7', 'PC2', 'PC11', 'PC14'])  # kept, inputs
+PA8 = ('A', 1 << 8)
+
+
+def check_ports_1f(trace):
+    """S-13b.003's six values of the OP-1F at the mark (the first SPI, UART or MSI access, or the trace's
+    end): `pinmux_end_state`; FER bits set over another MUX value: `mux_before_fer`; S-13b.004 there: no DIR
+    or INEN write of PB10 or PC4 before the first MUX write (`inputs_first_1f`); S-13b.006: PA0, PA3, PA4,
+    PA6 and PC13 outputs whose DATA bit is never written (`level_written`), PA1, PA2, PA7, PC2, PC11 and
+    PC14 inputs at the hand-off (`gpio_directions`), PA8 never an input (`pa8_input`)."""
+    out, st, muxed, at_mark = [], _blank(), False, None
+    kept = {_pin(n) for n in GPIO_1F[0]}
+    for n, e in enumerate(trace):
+        if e['op'] == 'mark':
+            if at_mark is None:
+                at_mark = st
+            continue
+        reg = e.get('reg', '')
+        if e['op'] != 'w' or not reg.startswith('PORT'):
+            continue
+        port, base = reg[4], reg[6:].partition('_')[0]
+        if base in ('MUX', 'FER'):
+            muxed = True
+        elif base in ('DIR', 'INEN') and not muxed and \
+                ((port == 'B' and e['val'] & 0x400) or (port == 'C' and e['val'] & 0x10)):
+            out.append(('inputs_first_1f', '#%d %s of PB10 or PC4 before the first MUX write' % (n, reg)))
+        if base == 'DATA':
+            for p, b in kept:
+                if p == port and e['val'] & b:
+                    out.append(('level_written', '#%d %s writes a kept output\'s level' % (n, reg)))
+        before = st[port]['FER']
+        new = replay_one(st, e)
+        if base == 'FER' and new[port]['FER'] & ~before and new[port]['MUX'] != PINMUX_1F[port][0]:
+            out.append(('mux_before_fer', '#%d FER bits set on port %s with MUX 0x%08x' % (n, port, new[port]['MUX'])))
+        if new[PA8[0]]['INEN'] & PA8[1] and not new[PA8[0]]['DIR'] & PA8[1]:
+            out.append(('pa8_input', '#%d PA8 made an input' % n))
+        st = new
+    mk = at_mark if at_mark is not None else st
+    for p in PORTS:
+        mux, fer = PINMUX_1F[p]
+        if (mk[p]['MUX'], mk[p]['FER']) != (mux, fer):
+            out.append(('pinmux_end_state', 'port %s MUX 0x%08x FER 0x%04x' % (p, mk[p]['MUX'], mk[p]['FER'])))
+    for p, b in kept:
+        if not st[p]['DIR'] & b or st[p]['INEN'] & b:
+            out.append(('gpio_directions', 'P%s%d not an output' % (p, b.bit_length() - 1)))
+    for name in GPIO_1F[1]:
+        p, b = _pin(name)
+        if st[p]['DIR'] & b or not st[p]['INEN'] & b:
+            out.append(('gpio_directions', '%s not an input' % name))
+    return out
+
+
+FLASH_BUS = {'PORTB_MUX': 0x1400FFFF, 'PORTB_FER': 0x0000FFFF}   # the same on every device (S-18.001)
+
+
+def check_device_before_pins(trace):
+    """S-18.001 (rule `device_before_pins`) on a main CPU's trace with {"op": "ev", "ev": "first_stage_read"}
+    after the last flash read of S-18.003: before it, no port register write but PORTB_MUX and PORTB_FER
+    with their values and S-18.002's fallback sample (one PORTA_INEN_SET of PA2 alone), and no UART, SPI0
+    or MSI register access; a trace without the event read no first stage."""
+    out = []
+    end = next((n for n, e in enumerate(trace) if e['op'] == 'ev' and e.get('ev') == 'first_stage_read'), None)
+    if end is None:
+        return [('device_before_pins', 'no first-stage read')]
+    fallback = [n for n, e in enumerate(trace[:end])
+                if e['op'] == 'w' and e.get('reg') == 'PORTA_INEN_SET' and e['val'] == PA2_BIT][:1]
+    for n, e in enumerate(trace[:end]):
+        reg = e.get('reg', '')
+        if n in fallback:
+            continue
+        if e['op'] == 'w' and reg.startswith('PORT') and FLASH_BUS.get(reg) != e['val']:
+            out.append(('device_before_pins', '#%d %s before the device is decided' % (n, reg)))
+        if e['op'] in ('w', 'r') and (reg.startswith('UART') or reg.startswith('SPI0_') or
+                                     reg.startswith('MSI')):
+            out.append(('device_before_pins', '#%d %s before the device is decided' % (n, reg)))
+    return out
+
+
+def check_no_spi0(trace):
+    """S-18.020, S-13b.083 without second-cpu (rule `no_spi0`): no SPI0 register access at all."""
+    return [('no_spi0', '#%d %s' % (n, e['reg'])) for n, e in enumerate(trace)
+            if e['op'] in ('w', 'r') and e.get('reg', '').startswith('SPI0_')]
+
+
+def check_no_strap_sample(trace):
+    """S-18.020 without straps (rule `no_strap_sample`): no PORTA_DATA read with PA0, PA2 and PA8 released
+    as inputs, and PA8's input never enabled."""
+    out, st = [], _blank()
+    for n, e in enumerate(trace):
+        reg = e.get('reg', '')
+        if e['op'] == 'r' and reg == 'PORTA_DATA':
+            a = st['A']
+            if not a['DIR'] & STRAP_BITS and (a['INEN'] & STRAP_BITS) == STRAP_BITS:
+                out.append(('no_strap_sample', '#%d PORTA_DATA read as a strap sample' % n))
+            continue
+        if e['op'] == 'w' and reg.startswith('PORT'):
+            st = replay_one(st, e)
+            if st['A']['INEN'] & PA8[1]:
+                out.append(('no_strap_sample', '#%d PA8 input enabled' % n))
     return out
 
 

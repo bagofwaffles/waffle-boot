@@ -9,6 +9,9 @@ under vectors/.
 Synthetic content only. String indexes use one assignment, "canonical" (S-10a.005): each string field gets
 the next free index, from 1, in descriptor order (device, then each configuration). Tests compare the text
 an index resolves to (`normalize`), not the index.
+
+The OP-1F's files (`descriptors_1f.json`, `scsi_1f.json`) are the same cases built with its profile values
+(S-18.030: device.usb_pid, device.midi_pid, device.product_text, device.ramdisk_blocks).
 """
 import json
 import os
@@ -32,7 +35,8 @@ SERIAL = 'XY0A12BC'                      # synthetic serial (S-04.040)
 INT_MPS = 16
 
 
-def midi_function(first, istr_ac='OP-XY', istr_ms='OP-XY Midi'):
+def midi_function(first, product='OP-XY'):
+    istr_ac, istr_ms = product, product + ' Midi'
     ac = first
     ms = first + 1
     ac_header = bytes([9, 0x24, 0x01, 0x00, 0x01, 0x09, 0x00, 0x01, ms])
@@ -76,35 +80,41 @@ def mtp_function(first, vendor=False, cdc=False):
                       (0x83, 'interrupt', 64, None)])]
 
 
-IAD_MIDI = dict(cls=(0x01, 0x02, 0x00), istr='OP-XY (Composite)')
-IAD_CDC = dict(cls=(0x02, 0x02, 0x01), istr='OP-XY Boot')
-
 # ---------------------------------------------------------------- S-10a.010 the sets
-SETS = {
-    'midi': dict(pid=0x8021, product='OP-XY', dev_cls=(0, 0, 0), config_str='Audio Config',
-                 powers=[250, 50, 1], interfaces=midi_function(0), iads=[]),
-    'midi_cdc': dict(pid=0x0021, product='OP-XY Boot', dev_cls=(0xEF, 0x02, 0x01), config_str='Composite Config',
-                     powers=[250], interfaces=midi_function(0) + cdc_function(2),
-                     iads=[dict(IAD_MIDI, first=0, count=2), dict(IAD_CDC, first=2, count=2)]),
-    'msc': dict(pid=0x0021, product='OP-XY Disk', dev_cls=(0, 0, 0), config_str='MS Config',
-                powers=[250, 50], interfaces=msc_function(0), iads=[]),
-    'msc_cdc': dict(pid=0x0021, product='OP-XY Boot', dev_cls=(0xEF, 0x02, 0x01), config_str='Composite Config',
-                    powers=[250], interfaces=cdc_function(0) + msc_function(2),
-                    iads=[dict(IAD_CDC, first=0, count=2)]),
-    'mtp': dict(pid=0x0021, product='OP-XY', dev_cls=(0, 0, 0), config_str='MTP Config',
-                powers=[250], interfaces=mtp_function(0), iads=[]),
-    'mtp_vendor': dict(pid=0x0021, product='OP-XY', dev_cls=(0, 0, 0), config_str='MTP Config',
-                       powers=[250], interfaces=mtp_function(0, vendor=True), iads=[]),
-    'cdc': dict(pid=0x0021, product='OP-XY Boot', dev_cls=(0x02, 0x00, 0x00), config_str='Serial Config',
-                powers=[250], interfaces=cdc_function(0), iads=[]),
-    'mtp_cdc': dict(pid=0x0021, product='OP-XY Boot', dev_cls=(0xEF, 0x02, 0x01), config_str='Composite Config',
-                    powers=[250], interfaces=cdc_function(0) + mtp_function(2, cdc=True),
-                    iads=[dict(IAD_CDC, first=0, count=2)]),
-    'mtp_vendor_cdc': dict(pid=0x0021, product='OP-XY Boot', dev_cls=(0xEF, 0x02, 0x01),
-                           config_str='Composite Config', powers=[250],
-                           interfaces=cdc_function(0) + mtp_function(2, vendor=True, cdc=True),
-                           iads=[dict(IAD_CDC, first=0, count=2)]),
-}
+def sets(device=M.XY):
+    """The nine sets on a device: idProduct and every string built on the product's name follow
+    device.usb_pid, device.midi_pid and device.product_text (S-10a.001)."""
+    p, pid = device.product_text, device.usb_pid
+    iad_midi = dict(cls=(0x01, 0x02, 0x00), istr=p + ' (Composite)')
+    iad_cdc = dict(cls=(0x02, 0x02, 0x01), istr=p + ' Boot')
+    return {
+        'midi': dict(pid=device.midi_pid, product=p, dev_cls=(0, 0, 0), config_str='Audio Config',
+                     powers=[250, 50, 1], interfaces=midi_function(0, p), iads=[]),
+        'midi_cdc': dict(pid=pid, product=p + ' Boot', dev_cls=(0xEF, 0x02, 0x01), config_str='Composite Config',
+                         powers=[250], interfaces=midi_function(0, p) + cdc_function(2),
+                         iads=[dict(iad_midi, first=0, count=2), dict(iad_cdc, first=2, count=2)]),
+        'msc': dict(pid=pid, product=p + ' Disk', dev_cls=(0, 0, 0), config_str='MS Config',
+                    powers=[250, 50], interfaces=msc_function(0), iads=[]),
+        'msc_cdc': dict(pid=pid, product=p + ' Boot', dev_cls=(0xEF, 0x02, 0x01), config_str='Composite Config',
+                        powers=[250], interfaces=cdc_function(0) + msc_function(2),
+                        iads=[dict(iad_cdc, first=0, count=2)]),
+        'mtp': dict(pid=pid, product=p, dev_cls=(0, 0, 0), config_str='MTP Config',
+                    powers=[250], interfaces=mtp_function(0), iads=[]),
+        'mtp_vendor': dict(pid=pid, product=p, dev_cls=(0, 0, 0), config_str='MTP Config',
+                           powers=[250], interfaces=mtp_function(0, vendor=True), iads=[]),
+        'cdc': dict(pid=pid, product=p + ' Boot', dev_cls=(0x02, 0x00, 0x00), config_str='Serial Config',
+                    powers=[250], interfaces=cdc_function(0), iads=[]),
+        'mtp_cdc': dict(pid=pid, product=p + ' Boot', dev_cls=(0xEF, 0x02, 0x01), config_str='Composite Config',
+                        powers=[250], interfaces=cdc_function(0) + mtp_function(2, cdc=True),
+                        iads=[dict(iad_cdc, first=0, count=2)]),
+        'mtp_vendor_cdc': dict(pid=pid, product=p + ' Boot', dev_cls=(0xEF, 0x02, 0x01),
+                               config_str='Composite Config', powers=[250],
+                               interfaces=cdc_function(0) + mtp_function(2, vendor=True, cdc=True),
+                               iads=[dict(iad_cdc, first=0, count=2)]),
+    }
+
+
+SETS = sets()
 
 
 # ---------------------------------------------------------------- S-10a.021 speed rules
@@ -139,10 +149,10 @@ class Strings:
         return i
 
 
-def build_set(name, speed, serial=SERIAL):
+def build_set(name, speed, serial=SERIAL, device=M.XY):
     """Every reply of one set at one speed: device, qualifier, each configuration (index 0..n-1) and its
     other-speed form, and the strings ({index: text}, index 0 = the LANGID list)."""
-    s = SETS[name]
+    s = sets(device)[name]
     st = Strings()
     other = 'full' if speed == 'high' else 'high'
     dev = D.build_device(bcdUSB=0x0200, bDeviceClass=s['dev_cls'][0], bDeviceSubClass=s['dev_cls'][1],
@@ -189,12 +199,12 @@ def hexs(b):
     return bytes(b).hex()
 
 
-def descriptors_vector():
+def descriptors_vector(device=M.XY):
     out = {}
     for name in SETS:
         for speed in ('high', 'full'):
             for variant, serial in (('provisioned', SERIAL), ('no_serial', '')):
-                r = build_set(name, speed, serial)
+                r = build_set(name, speed, serial, device)
                 out[f'{name}/{speed}/{variant}'] = dict(
                     device=hexs(r['device']), qualifier=hexs(r['qualifier']),
                     configurations=[hexs(c) for c in r['configurations']],
@@ -217,6 +227,8 @@ VECTORS = {
     'serial': serial_vector,
     'scsi': M.scsi_vector,
     'medium': M.medium_vector,
+    'descriptors_1f': lambda: descriptors_vector(M.F1),
+    'scsi_1f': lambda: M.scsi_vector(M.F1),
 }
 
 

@@ -3,6 +3,13 @@
 """Writes S-17's vectors. Every expected value here is written out by hand, not computed by a model.
 
     python3 -I gen_vectors.py          # rewrites vectors/*.json
+
+hw_rev_sequences.json holds two lists of the same shape, each item {name, events, info_entries,
+requirements}: `sequences`, on a device with straps, whose `power_on` event carries the strap sample
+[`power_on`, pa8, pa0]; and `no_strap_sequences` (S-17.016, a device without straps: the OP-1F), whose
+`power_on` is [`power_on`] alone, with no sample, every name starting `no_strap_`. The other events are the
+same in both: [`metadata_read`], [`metadata_read_failed`, `record` | `serial`], [`greeting`, payload bytes]
+and [`info`], each `info` taking the next of `info_entries`.
 """
 import json
 import os
@@ -94,7 +101,21 @@ def hw_rev_sequences():
     ]
     # S-17.014: the byte's value in the log line, written by hand (two hexadecimal digits)
     log = [[0, '00'], [2, '02'], [3, '03'], [7, '07'], [90, '5a'], [156, '9c'], [255, 'ff']]
-    return {'sequences': S, 'backplane_log': log}
+    # S-17.016: a device without straps (the OP-1F); its power_on carries no strap sample
+    N = [
+        _seq('no_strap_no_greeting', [['power_on'], ['metadata_read'], ['info']], ['hw_rev:0'],
+             ['S-17.016', 'S-17.013']),
+        _seq('no_strap_one_greeting', [['power_on'], ['metadata_read'], ['info'], ['greeting', [0xBB, 0x03]],
+                                       ['info']],
+             ['hw_rev:0', 'hw_rev:3'], ['S-17.016', 'S-17.011']),
+        _seq('no_strap_reset_after_greeting', [['power_on'], ['metadata_read'], ['greeting', [0xBB, 0x03]],
+                                               ['info'], ['power_on'], ['metadata_read'], ['info']],
+             ['hw_rev:3', 'hw_rev:0'], ['S-17.016', 'S-17.012']),
+        _seq('no_strap_record_read_failed', [['power_on'], ['metadata_read_failed', 'record'], ['info'],
+                                             ['greeting', [0xBB, 0x02]], ['info']],
+             ['hw_rev:0', 'hw_rev:0'], ['S-17.016', 'S-17.015']),
+    ]
+    return {'sequences': S, 'no_strap_sequences': N, 'backplane_log': log}
 
 
 U = '0.0.0'

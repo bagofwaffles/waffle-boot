@@ -12,6 +12,7 @@
 #include "front/fr.h"
 #include "front/fr_handoff.h"
 #include "front/fr_image.h"
+#include "waffle/bytes.h"
 #include "waffle/wire_crc.h"
 
 static void test_crc32(void)
@@ -228,18 +229,29 @@ static void test_mem_readable(void)
 	CHECK(!fr_mem_readable(0xFFFFFFFCu, 8u));
 }
 
+/* S-18.005: version 3, 160 bytes, the device at 152 and how at 153, a u16 0
+ * at 154 and the CRC-32 of bytes 0 to 155 at 156. test_board_stream checks
+ * the main image's side. */
 static void test_handoff_seal(void)
 {
 	struct fr_handoff ho;
+	uint8_t rec[FR_HO_SIZE];
 
+	CHECK(FR_HO_VERSION == 3u && FR_HO_SIZE == 160u && sizeof ho == FR_HO_SIZE);
 	memset(&ho, 0, sizeof ho);
 	ho.strap = 0x0104u;
+	ho.device = FR_HO_DEV_OP1F;
+	ho.device_how = FR_HO_HOW_UNKNOWN;
 	fr_handoff_seal(&ho);
 	CHECK(ho.magic == FR_HO_MAGIC && ho.version == FR_HO_VERSION);
 	CHECK(ho.size == FR_HO_SIZE && FR_HO_SIZE == offsetof(struct fr_handoff, crc32) + 4u);
 	/* The full bootloader's own CRC agrees (opxy_front_take()). */
 	CHECK(wire_crc32(0, (const uint8_t *)&ho, offsetof(struct fr_handoff, crc32)) ==
 	      ho.crc32);
+	memcpy(rec, &ho, sizeof rec);
+	CHECK(wb_get_le16(rec + 4) == 3u && wb_get_le16(rec + 6) == 160u);
+	CHECK(rec[152] == 1u && rec[153] == 2u && wb_get_le16(rec + 154) == 0u);
+	CHECK(wb_get_le32(rec + 156) == wire_crc32(0, rec, 156));
 	/* The layout tools/mkldr.py writes. */
 	CHECK(offsetof(struct fr_handoff, stamps) % 8u == 0u);
 	CHECK(FR_HANDOFF_ADDR + sizeof ho <= FR_SHARED_END);

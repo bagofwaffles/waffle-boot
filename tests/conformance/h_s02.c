@@ -243,7 +243,7 @@ static int f_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t len)
 }
 
 static const struct s02_flash_ops flash_ops = { NULL, f_read, f_erase, f_program };
-static const struct s02_env env = { &flash_ops, h_crc32, scratch, sizeof scratch, NULL };
+static const struct s02_env env = { &flash_ops, h_crc32, scratch, sizeof scratch, NULL, 0 };
 
 /* --- files --- */
 

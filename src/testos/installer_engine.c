@@ -31,17 +31,26 @@
  *
  * It is not in the bootloader: S-02.050 and S-02.090 hold for waffle-boot,
  * and this runs as an OS, started by the bootloader the unit has.
+ *
+ * On the OP-1F a trial is refused when its target is the last slot whose
+ * image is not a waffle-boot stream (S-02.108, inst_keeps_factory()): the
+ * bootloader the unit came with stays in one slot. A survey build refuses every form
+ * but the status, its gate refuses every erase and program, and its link
+ * wraps the flash driver's erase and program so that nothing in the image
+ * reaches them (__wrap_wb_spiflash_erase(), the Makefile's --wrap).
  */
 #if defined(OPXY_TESTOS_INSTALLER)
 #include <stdint.h>
 #include <string.h>
 
+#include "waffle/board/installer.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/drivers/bf70x_spiflash.h"
 #include "waffle/s01_memmap.h"
 #include "waffle/s02_flash.h"
 #include "waffle/s02_store.h"
 #include "waffle/testos.h"
+#include "waffle/wire_crc.h"
 
 #define TRIAL_CRC_XOR 0xFFFFFFFFu	/* the trial mark: every CRC bit inverted (S-02.016) */
 _Static_assert(TRIAL_CRC_XOR == 0xFFFFFFFFu, "trial_crc_flip inverts every crc bit");
@@ -118,10 +127,37 @@ static int gate_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 	return rc;
 }
 
+#if defined(OPXY_TESTOS_SURVEY)
+/* The survey's link sends every call of the flash driver's erase and
+ * program here (--wrap): refused, nothing sent to the flash. */
+int __wrap_wb_spiflash_erase(void *ctx, uint32_t sector_off);
+int __wrap_wb_spiflash_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t len);
+
+int __wrap_wb_spiflash_erase(void *ctx, uint32_t sector_off)
+{
+	(void)ctx;
+	(void)sector_off;
+	return WB_SPIFLASH_ERR_ARG;
+}
+
+int __wrap_wb_spiflash_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t len)
+{
+	(void)ctx;
+	(void)off;
+	(void)buf;
+	(void)len;
+	return WB_SPIFLASH_ERR_ARG;
+}
+#endif
+
 static int gate_erase(void *ctx, uint32_t sector)
 {
 	struct gate *g = ctx;
 
+	if (OPXY_TESTOS_SURVEY_ON) {
+		g->refused++;
+		return -1;
+	}
 	if (sector == S02_SELECTOR_OFF && !g->selector_open) {
 		g->at_selector = true;
 		return -1;
@@ -137,7 +173,7 @@ static int gate_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t le
 {
 	struct gate *g = ctx;
 
-	if (!gate_allows(g, off, len)) {
+	if (OPXY_TESTOS_SURVEY_ON || !gate_allows(g, off, len)) {
 		g->refused++;
 		return -1;
 	}
@@ -438,16 +474,35 @@ static uint8_t slot_state(const struct s02_env *env, unsigned t)
  */
 static uint8_t mirror_state(const struct s02_env *env)
 {
+	/* the device's record size (S-02.018, S-18.030): 0x34 or 0x28 */
+	const uint32_t size = s02_meta_size(env);
 	uint8_t mirror[S02_MIRROR_SIZE];
 	uint8_t rec[S02_META_SIZE];
 
-	if (env->flash->read(env->flash->ctx, S02_MIRROR_OFF, mirror, sizeof(mirror)) != 0 ||
-	    env->flash->read(env->flash->ctx, S02_META_OFF, rec, sizeof(rec)) != 0)
+	if (env->flash->read(env->flash->ctx, S02_MIRROR_OFF, mirror, 2u * size) != 0 ||
+	    env->flash->read(env->flash->ctx, S02_META_OFF, rec, size) != 0)
 		return OPXY_INSTALL_MIRROR_UNREAD;
-	if (!s02_mirror_valid(mirror))
+	if (!s02_mirror_valid_n(mirror, size))
 		return OPXY_INSTALL_MIRROR_INVALID;
-	return memcmp(mirror, rec, sizeof(rec)) == 0 ? OPXY_INSTALL_MIRROR_SAME :
-						       OPXY_INSTALL_MIRROR_DIFFERS;
+	return memcmp(mirror, rec, size) == 0 ? OPXY_INSTALL_MIRROR_SAME :
+						OPXY_INSTALL_MIRROR_DIFFERS;
+}
+
+static uint32_t crc_of(uint32_t crc, const uint8_t *p, size_t n)
+{
+	return wire_crc32(crc, p, (uint32_t)n);
+}
+
+/* Bit k set when slot k's image is a waffle-boot stream. */
+static uint8_t streams_of(const struct s02_env *env)
+{
+	uint8_t bits = 0u;
+
+	for (unsigned k = 0; k < 2u; k++)
+		if (s02_stream_is_waffle(env->flash->read, env->flash->ctx, s02_slot_base(k),
+					 S02_SLOT_CAPACITY, crc_of))
+			bits = (uint8_t)(bits | 1u << k);
+	return bits;
 }
 
 /*
@@ -525,6 +580,8 @@ size_t opxy_installer_write(struct opxy_master *m, unsigned form, bool image_ok,
 	 * the trial entry (S-02.095) and its settings sector */
 	if (rc == S02_OK && (opxy_install_len == 0u || opxy_install_len > S02_STORE_SLOT_MAX))
 		rc = S02_ERR_SIZE;
+	if (rc == S02_OK && form != OPXY_INSTALL_STATUS && OPXY_TESTOS_SURVEY_ON)
+		rc = OPXY_INSTALL_REFUSED_SURVEY;
 	if (rc == S02_OK && form != OPXY_INSTALL_STATUS && !image_ok)
 		rc = OPXY_INSTALL_REFUSED_IMAGE;	/* its stream, descriptor or front pin */
 	/* S-02.091 in this run, for a commit as for a trial */
@@ -541,6 +598,12 @@ size_t opxy_installer_write(struct opxy_master *m, unsigned form, bool image_ok,
 	}
 	if (rc == S02_OK && form != OPXY_INSTALL_STATUS) {
 		t = s02_other_slot(sel.index);
+		/* S-02.108: the OP-1F keeps a slot of the bootloader it came with */
+		if (form == OPXY_INSTALL_TRIAL &&
+		    !inst_keeps_factory(opxy_dev(m), t, streams_of(&env)))
+			rc = OPXY_INSTALL_REFUSED_FACTORY;
+	}
+	if (rc == S02_OK && form != OPXY_INSTALL_STATUS) {
 		g.slot = s02_slot_base(t);
 		g.record = s02_record_off(t);
 		g.armed = true;
@@ -603,7 +666,44 @@ size_t opxy_installer_write(struct opxy_master *m, unsigned form, bool image_ok,
 	if (sel_rc == S02_OK &&
 	    (out[4u + t] & (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_COMMITTED)) != 0u)
 		log_summary(&env, t, out + 9 + OPXY_INSTALL_CRUMBS);
+	out[OPXY_INSTALL_STREAMS] = streams_of(&env);
 	return OPXY_INSTALL_REPLY;
+}
+
+void opxy_installer_survey_read(struct opxy_master *m, struct inst_survey *sv)
+{
+	struct gate g = { &m->hw.flash, 0u, 0u, false, false, false, 0u, false, false };
+	const struct s02_flash_ops ops = { &g, gate_read, gate_erase, gate_program };
+	struct s02_env env = m->flash;
+	struct s02_selector sel;
+	unsigned k;
+
+	/* reads alone: the gate is not armed, and a survey's refuses anyway */
+	env.flash = &ops;
+	sv->sel_read = s02_read_selector(&env, &sel) == S02_OK;
+	sv->sel_index = sv->sel_read ? sel.index : 0xFFu;
+	sv->sel_verified = sv->sel_read ? sel.verified : 0xFFu;
+	for (k = 0; k < 2u; k++) {
+		struct inst_slot_survey *sl = &sv->slot[k];
+		uint8_t raw[S02_RECORD_SIZE];
+		struct s02_record rec;
+		bool good = false;
+
+		memset(sl, 0, sizeof *sl);
+		if (gate_read(&g, s02_record_off(k), raw, sizeof raw) == 0) {
+			s02_record_decode(raw, &rec);
+			sl->bits |= INST_SV_RECORD;
+			sl->crc = rec.crc32;
+			sl->length = rec.length;
+			sl->tag = rec.tag;
+		}
+		if (s02_check_slot(&env, k, &good) == S02_OK && good)
+			sl->bits |= INST_SV_GOOD;
+		if (s02_stream_is_waffle(gate_read, &g, s02_slot_base(k), S02_SLOT_CAPACITY, crc_of))
+			sl->bits |= INST_SV_WAFFLE;
+		if (gate_read(&g, last_sector(k), sl->log, INST_SURVEY_LOG) == 0)
+			sl->bits |= INST_SV_LOG;
+	}
 }
 #else
 typedef int installer_engine_absent;	/* a translation unit is not empty */

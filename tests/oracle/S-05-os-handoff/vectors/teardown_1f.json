@@ -1,0 +1,57 @@
+{
+ "document": "S-05",
+ "requirement": "S-05.037",
+ "at": "the kernel call, after the last eMMC command",
+ "msi": [
+  {
+   "register": "MSI_CTL",
+   "mask": "0x00000010",
+   "value": "0x00000000",
+   "note": "bit 4, the interrupt enable, clear"
+  },
+  {
+   "register": "MSI_IMSK",
+   "mask": "0xFFFFFFFF",
+   "value": "0x00000000"
+  },
+  {
+   "register": "MSI_ISTAT",
+   "mask": "0xFFFFFFFF",
+   "value": "0x00000000",
+   "note": "the close writes 0xFFFFFFFF (W1C)"
+  },
+  {
+   "register": "MSI_CMD",
+   "field": "START",
+   "value": 0
+  },
+  {
+   "item": "data transfer",
+   "value": "none in progress"
+  }
+ ],
+ "emmc": {
+  "selected": true,
+  "last_command_complete": true,
+  "partition": "user",
+  "bus_width": "device.emmc_width (4 on the OP-1F)"
+ },
+ "sec": {
+  "source_72_msi0": {
+   "pending": false,
+   "ien": false,
+   "sen": false,
+   "provisional": true
+  },
+  "enabled_sources": [
+   1
+  ],
+  "enabled_provisional": true,
+  "others": {
+   "ien": false,
+   "sen": false
+  },
+  "pending": "none"
+ },
+ "other_registers": "not fixed"
+}

@@ -2,13 +2,17 @@
 /*
  * S-03 eMMC against the RAM fake.
  * Requirements: S-03.001, .002, .004-.011, .020-.027, .033, .040-.048,
- * .050-.064, .066-.068, .070-.073.
+ * .050-.064, .066-.068, .070-.073; on the OP-1F .001, .002, .012, .013,
+ * .075.
  * Vectors: tests/oracle/S-03-emmc/vectors headers.json, load_table.json,
- * write_sequences.json, user_area.json (vectors/s03_vectors.h);
+ * write_sequences.json, user_area.json, select_1f.json
+ * (vectors/s03_vectors.h);
  * scenarios SC-03-LOAD-TABLE, SC-03-WRITE-TABLE, SC-03-WRITE-CUT,
  * SC-03-WRITE-TORN, SC-03-WRITE-CACHE, SC-03-SELECT-ERR, SC-03-READ-ERR, SC-03-FINAL-SELECT-ERR,
  * SC-03-BOOT-SIZE, SC-03-FEATURES, SC-03-POWER-OFF, SC-03-POWER-OFF-ERR,
- * SC-03-EMMC-OTHER.
+ * SC-03-EMMC-OTHER; SC-03-EMMC-OTHER-1F, SC-03-SELECT-1F, SC-03-POWER-OFF-1F,
+ * SC-03-POWER-OFF-ERR-1F (the eMMC's side), SC-03-NO-WRITE-1F (the
+ * footprint rule).
  */
 #include <string.h>
 
@@ -972,11 +976,20 @@ static void test_emmc_and_user_area(void)
 	CHECK_EQ(V_EMMC_SECTORS, S03_USER_SECTORS);
 	CHECK_EQ(V_EMMC_GROUP, S03_GROUP_SECTORS);
 	for (i = 0; i < N(v_opt_ok); i++)
-		CHECK(s03_emmc_supported(V_EMMC_SECTORS, V_EMMC_GROUP, v_opt_ok[i]));
+		CHECK(s03_emmc_supported(&wb_device_opxy, V_EMMC_SECTORS, V_EMMC_GROUP, v_opt_ok[i]));
 	for (i = 0; i < N(v_emmc_refused); i++)
-		CHECK(!s03_emmc_supported(v_emmc_refused[i].sectors, v_emmc_refused[i].group,
-					  v_emmc_refused[i].opt));
-	CHECK(!s03_emmc_supported(V_EMMC_SECTORS, V_EMMC_GROUP, 0));
+		CHECK(!s03_emmc_supported(&wb_device_opxy, v_emmc_refused[i].sectors,
+					  v_emmc_refused[i].group, v_emmc_refused[i].opt));
+	CHECK(!s03_emmc_supported(&wb_device_opxy, V_EMMC_SECTORS, V_EMMC_GROUP, 0));
+	/* the OP-XY's footprint is the map's: every sector has its region */
+	for (i = 0; i < N(v_map); i++) {
+		CHECK_EQ(s03_user_region_dev(&wb_device_opxy, v_map[i].first), v_map[i].region);
+		CHECK_EQ(s03_user_region_dev(&wb_device_opxy, v_map[i].last), v_map[i].region);
+	}
+	CHECK(s03_user_access_ok(&wb_device_opxy, 0, S03_YAFFS2_LAST + 1u));
+	CHECK(s03_user_access_ok(&wb_device_opxy, V_FR_FIRST, S03_GROUP_SECTORS));
+	CHECK(!s03_user_access_ok(&wb_device_opxy, V_FR_FIRST, S03_GROUP_SECTORS + 1u));
+	CHECK(!s03_user_access_ok(&wb_device_opxy, S03_UNUSED_FIRST, 1));
 	for (i = 0; i < N(v_map); i++) {
 		CHECK_EQ(s03_user_region(v_map[i].first), v_map[i].region);
 		CHECK_EQ(s03_user_region(v_map[i].last), v_map[i].region);
@@ -997,6 +1010,233 @@ static void test_emmc_and_user_area(void)
 	CHECK_EQ(s03_user_region(V_FR_FIRST), S03_REGION_FAT);
 }
 
+/* ---- the OP-1F ---- */
+
+/* SC-03-EMMC-OTHER-1F (S-03.001, S-03.002), S-03.075 */
+static void test_emmc_1f(void)
+{
+	const struct wb_device *dev = &wb_device_op1f;
+	unsigned i;
+
+	CHECK(s03_emmc_supported(dev, 0x1CF8000u, V_EMMC_GROUP, 8));
+	CHECK(s03_emmc_supported(dev, 0x1D2F000u, V_EMMC_GROUP, 8));	/* more: accepted */
+	CHECK(!s03_emmc_supported(dev, 0x1CF7C00u, V_EMMC_GROUP, 8));	/* fewer: refused */
+	CHECK(!s03_emmc_supported(dev, 0x1CF8000u, 0x200u, 8));
+	CHECK(!s03_emmc_supported(dev, 0x1CF8000u, V_EMMC_GROUP, 16));
+	for (i = 0; i < N(v_opt_ok); i++)
+		CHECK(s03_emmc_supported(dev, V_EMMC_SECTORS, V_EMMC_GROUP, v_opt_ok[i]));
+	/* the OP-XY's exact count refuses the larger eMMC the OP-1F takes */
+	CHECK(!s03_emmc_supported(&wb_device_opxy, 0x1D2F000u, V_EMMC_GROUP, 8));
+	/* S-03.075: nothing from 0x480000 on, whatever the count */
+	CHECK_EQ(s03_user_region_dev(dev, 0), S03_REGION_YAFFS2);
+	CHECK_EQ(s03_user_region_dev(dev, S03_YAFFS2_LAST), S03_REGION_YAFFS2);
+	CHECK_EQ(s03_user_region_dev(dev, S03_UNUSED_FIRST), S03_REGION_NONE);
+	CHECK_EQ(s03_user_region_dev(dev, S03_FAT_FIRST), S03_REGION_NONE);
+	CHECK_EQ(s03_user_region_dev(dev, 0x1D2EFFFu), S03_REGION_NONE);
+	CHECK(s03_user_access_ok(dev, 0, S03_YAFFS2_LAST + 1u));
+	CHECK(s03_user_access_ok(dev, S03_YAFFS2_LAST, 1));
+	CHECK(!s03_user_access_ok(dev, S03_YAFFS2_LAST, 2));
+	CHECK(!s03_user_access_ok(dev, S03_UNUSED_FIRST, 1));
+	CHECK(!s03_user_access_ok(dev, V_FR_FIRST, S03_GROUP_SECTORS));	/* no FAT erase */
+	CHECK(!s03_user_access_ok(dev, 0, 0));
+	CHECK(!s03_user_access_ok(dev, 0xFFFFFFFFu, 2));
+}
+
+static struct s03_select_keep g_keep;
+
+static int keep_select(void *ctx, unsigned part)
+{
+	(void)ctx;
+	return s03_select_keep(&g_keep, part);
+}
+
+static void keep_init(void)
+{
+	g_keep.ctx = &g_e;
+	g_keep.switch_byte = fe_switch;
+	g_keep.read_part_config = fe_read_part_config;
+	g_keep.cur = 0;
+	g_keep.known = false;
+}
+
+/* The CMD6s of index 179 in the log since entry `from`. */
+static unsigned cmd6_179(unsigned from, uint8_t *last)
+{
+	unsigned i, n = 0;
+
+	for (i = from; i < g_e.nlog && i < FE_LOG_MAX; i++)
+		if (g_e.log[i].kind == 'x' && g_e.log[i].a == 179u) {
+			n++;
+			*last = (uint8_t)g_e.log[i].b;
+		}
+	return n;
+}
+
+/* SC-03-SELECT-1F (S-03.012): select_1f.json, then a load and a write. */
+static void test_select_1f(void)
+{
+	static const uint8_t presets[] = {0x00, 0x08, 0x48, 0x49, 0x4A, 0x38};
+	struct s03_env env;
+	unsigned i;
+
+	fe_init(&g_e, V_B);
+	for (i = 0; i < N(v_select_1f); i++) {
+		const struct v_select_1f *v = &v_select_1f[i];
+		uint8_t val = 0xEE, last = 0;
+
+		CHECK_EQ(s03_select_value(v->before, v->part, &val), v->cmd6 >= 0);
+		if (v->cmd6 >= 0)
+			CHECK_EQ(val, (uint8_t)v->cmd6);
+		fe_reset(&g_e);
+		g_e.ext_csd[179] = v->before;
+		g_e.sel = v->before & 0x07u;	/* the partition the byte names */
+		keep_init();
+		CHECK_EQ(s03_select_keep(&g_keep, v->part), 0);
+		CHECK_EQ(g_e.n_ext_reads, 1u);		/* not known: read first */
+		CHECK_EQ(cmd6_179(0, &last), v->cmd6 >= 0 ? 1u : 0u);
+		if (v->cmd6 >= 0)
+			CHECK_EQ(last, (uint8_t)v->cmd6);
+		CHECK_EQ(g_e.ext_csd[179], v->after);
+		/* again: known, no read and no command */
+		CHECK_EQ(s03_select_keep(&g_keep, v->part), 0);
+		CHECK_EQ(g_e.n_ext_reads, 1u);
+		CHECK_EQ(cmd6_179(0, &last), v->cmd6 >= 0 ? 1u : 0u);
+	}
+	/* a load of p1_good and an OS write: bits 7-3 as at power-up, bits 2-0 0 at the end */
+	for (i = 0; i < N(presets); i++) {
+		struct s03_load ld;
+		struct s03_write w;
+		uint8_t last = 0;
+		unsigned k;
+
+		fe_init(&g_e, V_B);
+		fill(g_img, L_A, 7u + i);
+		fe_install(&g_e, S03_PART_BP1, g_img, L_A, 3, 1, 0, 0, 0);
+		fe_reset(&g_e);
+		g_e.ext_csd[179] = presets[i];
+		g_e.sel = presets[i] & 0x07u;
+		keep_init();
+		env = env_now();
+		g_ops.select = keep_select;
+		s03_load_os(&env, g_staging, sizeof g_staging, &ld);
+		CHECK_EQ(ld.result, S03_LOAD_OK);
+		CHECK_EQ(g_e.ext_csd[179] & 0xF8u, presets[i] & 0xF8u);
+		CHECK_EQ(g_e.ext_csd[179] & 0x07u, 0u);
+		for (k = 0; k < g_e.nlog && k < FE_LOG_MAX; k++)
+			if (g_e.log[k].kind == 'x' && g_e.log[k].a == 179u)
+				CHECK_EQ(g_e.log[k].b & 0xF8u, presets[i] & 0xF8u);
+		/* with 0x49 the load's first select (BP1) issues none */
+		if (presets[i] == 0x49u)
+			CHECK(g_e.nlog > 0u && !(g_e.log[0].kind == 'x' && g_e.log[0].a == 179u));
+		fe_reset(&g_e);
+		g_e.sel = g_e.ext_csd[179] & 0x07u;
+		fill(g_new, L_B, 11u + i);
+		s03_write_os(&env, g_new, L_B, &w);
+		CHECK_EQ(w.result, S03_WRITE_OK);
+		CHECK_EQ(g_e.ext_csd[179] & 0xF8u, presets[i] & 0xF8u);
+		CHECK_EQ(g_e.ext_csd[179] & 0x07u, 0u);
+		CHECK(cmd6_179(0, &last) >= 1u);
+		CHECK_EQ(last & 0xF8u, presets[i] & 0xF8u);
+	}
+	/* a failed switch leaves the byte not known: the next select reads it */
+	fe_init(&g_e, V_B);
+	g_e.ext_csd[179] = 0x48u;
+	keep_init();
+	g_e.fail_switch = 179u;
+	CHECK(s03_select_keep(&g_keep, S03_PART_BP2) != 0);
+	CHECK(!g_keep.known);
+	g_e.fail_switch = 0;
+	CHECK_EQ(s03_select_keep(&g_keep, S03_PART_BP2), 0);
+	CHECK_EQ(g_e.n_ext_reads, 2u);
+	CHECK_EQ(g_e.ext_csd[179], 0x4Au);
+	g_e.fail_ext_read = true;
+	g_keep.known = false;
+	CHECK(s03_select_keep(&g_keep, S03_PART_USER) != 0);
+	CHECK(s03_select_keep(&g_keep, 3u) != 0);
+	/* after a failed switch the next select reads first; a read that
+	 * fails fails it, and no value is written blind; from 00 as well */
+	{
+		static const uint8_t from[] = { 0x48u, 0x00u };
+		uint8_t last = 0;
+
+		for (i = 0; i < N(from); i++) {
+			unsigned n6;
+
+			fe_init(&g_e, V_B);
+			g_e.ext_csd[179] = from[i];
+			keep_init();
+			g_e.fail_switch = 179u;
+			CHECK(s03_select_keep(&g_keep, S03_PART_BP1) != 0);
+			g_e.fail_switch = 0;
+			g_e.fail_ext_read = true;
+			n6 = cmd6_179(0, &last);
+			CHECK(s03_select_keep(&g_keep, S03_PART_BP1) != 0);
+			CHECK(s03_select_keep(&g_keep, S03_PART_USER) != 0);
+			CHECK_EQ(cmd6_179(0, &last), n6);
+			CHECK(!g_keep.known);
+			g_e.fail_ext_read = false;
+			CHECK_EQ(s03_select_keep(&g_keep, S03_PART_BP1), 0);
+			CHECK_EQ(g_e.ext_csd[179], (uint8_t)((from[i] & 0xF8u) | 1u));
+		}
+	}
+}
+
+/* SC-03-POWER-OFF-1F, SC-03-POWER-OFF-ERR-1F (S-03.013, S-03.010) */
+static void test_power_off_1f(void)
+{
+	static const uint8_t steps[][2] = {{32, 1}, {33, 0}, {34, 3}};
+	static const int failing[] = {-2, 0, 1, -1, 2};	/* -2 none, -1 the unmount */
+	struct s03_env env;
+	unsigned f, i, k;
+
+	fe_init(&g_e, V_B);
+	env = env_now();
+	CHECK_EQ(s03_power_off_limit_ms(0x32), 500u);
+	CHECK_EQ(s03_power_off_limit_ms(0), 2550u);
+	for (f = 0; f < N(failing); f++) {
+		int rc;
+
+		fe_reset(&g_e);
+		g_unmounted_at = -1;
+		g_unmount_fails = failing[f] == -1;
+		if (failing[f] >= 0)
+			g_e.fail_switch = steps[failing[f]][0];
+		rc = s03_emmc_shutdown_1f(&env, unmount, NULL, fe_switch_poll, 0x32);
+		CHECK_EQ(rc, failing[f] == -2 ? 0 : -1);
+		CHECK_EQ(g_e.poll_limit, 500u);
+		for (i = 0, k = 0; i < g_e.nlog && i < FE_LOG_MAX; k++) {
+			const struct fe_op *o = &g_e.log[i];
+			unsigned tries = 0;
+
+			CHECK(k < N(steps) && o->a == steps[k][0] && o->b == steps[k][1]);
+			CHECK_EQ(o->kind, k == 2u ? 'p' : 'x');	/* the notification is polled */
+			if (k == 2u)
+				CHECK_EQ(g_unmounted_at, (int)i);	/* the unmount before it */
+			for (; i < g_e.nlog && g_e.log[i].a == o->a; i++)
+				tries++;
+			if ((int)k == failing[f])
+				CHECK(tries >= 1u && tries <= S03_RETRIES);
+			else
+				CHECK_EQ(tries, 1u);
+		}
+		CHECK_EQ(k, N(steps));
+		CHECK_EQ(g_e.log[g_e.nlog - 1u].a, 34u);	/* nothing after it */
+		CHECK_EQ(g_e.ext_csd[163], 0u);			/* BKOPS_EN never written */
+	}
+	/* a wait that runs out: no retry, no command after it */
+	fe_reset(&g_e);
+	g_unmount_fails = false;
+	g_e.poll_timeout = true;
+	CHECK_EQ(s03_emmc_shutdown_1f(&env, unmount, NULL, fe_switch_poll, 3), -1);
+	CHECK_EQ(g_e.nlog, 3u);
+	CHECK_EQ(g_e.log[2].kind, 'p');
+	CHECK_EQ(g_e.poll_limit, 30u);
+	/* no polled switch in the ops: the notification counts as failed */
+	fe_reset(&g_e);
+	CHECK_EQ(s03_emmc_shutdown_1f(&env, unmount, NULL, NULL, 3), -1);
+	CHECK_EQ(g_e.nlog, 2u);
+}
+
 int main(void)
 {
 	test_headers();
@@ -1009,5 +1249,8 @@ int main(void)
 	test_features();
 	test_power_off_errors();
 	test_emmc_and_user_area();
+	test_emmc_1f();
+	test_select_1f();
+	test_power_off_1f();
 	return finish("test_s03_emmc");
 }

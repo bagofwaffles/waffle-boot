@@ -15,6 +15,14 @@
  * What reaches a screen or check.txt is built only by the formatters below
  * from the facts' allowed fields: never a serial, OTP content, the eMMC's
  * CID, calibration, flash bytes, or a CRC or length of the first stage.
+ * (The installer's survey build and its lock on an unknown device add the
+ * first stage's n and c of S-18.003, and the survey the slots' records,
+ * in the install part: waffle/board/installer.h.)
+ *
+ * The suite is the device's (S-18.020): on a device without second-cpu
+ * the slave and bridge tests are not run and read "not on this device",
+ * which counts as a pass, and the eMMC tests run on the main CPU's own
+ * storage through the same bridge client (s09_master_local()).
  */
 #ifndef WAFFLE_TESTOS_CHECK_H
 #define WAFFLE_TESTOS_CHECK_H
@@ -23,6 +31,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
 #include "waffle/s03_emmc.h"
 #include "waffle/s15_console.h"
 #include "waffle/testos.h"
@@ -47,7 +56,7 @@ enum tchk_id {
 	TCHK_RTC,
 	TCHK_NORDIC,
 	TCHK_TIMING,
-	TCHK_KEYS,		/* guided: com and M4 */
+	TCHK_KEYS,		/* guided: com and the recovery key */
 	TCHK_COUNT
 };
 
@@ -62,7 +71,8 @@ enum tchk_state {
 	TCHK_PASS,
 	TCHK_FAIL,
 	TCHK_NOT_TESTED,
-	TCHK_NOT_PASSED		/* never set; kept for its number */
+	TCHK_NOT_PASSED,	/* never set; kept for its number */
+	TCHK_NOT_ON_DEVICE	/* the device has no such part (S-18.020): no gap */
 };
 
 struct tchk_info {
@@ -99,6 +109,8 @@ struct tchk_result {
 
 struct tchk_table {
 	struct tchk_result r[TCHK_COUNT];
+	/* emmc-boot's fault lines: [0] the select, [1] the read; may be empty */
+	struct tchk_text emmc_fault[2];
 };
 
 void tchk_table_init(struct tchk_table *t);
@@ -110,7 +122,7 @@ struct tchk_text *tchk_set(struct tchk_table *t, enum tchk_id id, enum tchk_stat
 enum tchk_verdict { TCHK_VERDICT_PASS, TCHK_VERDICT_GAPS, TCHK_VERDICT_FAIL };
 enum tchk_verdict tchk_verdict(const struct tchk_table *t);
 const char *tchk_verdict_word(enum tchk_verdict v);
-/* "pass", "FAIL", "not tested", "not passed" */
+/* "pass", "FAIL", "not tested", "not passed", "n/a" */
 const char *tchk_state_word(enum tchk_state s);
 
 /* --- The guard on the eMMC operations the suite uses (S-03) --- */
@@ -172,7 +184,8 @@ struct tchk_switch {
 	/* Kept for emmc-boot, never shown: the headers as first read. */
 	bool headers_read;
 	struct s03_header h[2];	/* [0] BP1, [1] BP2 */
-	uint8_t raw[2][S03_SECTOR];	/* the headers as first read, for the write */
+	/* the headers as first read, for the write; on a cache line (S-13b.054) */
+	_Alignas(32) uint8_t raw[2][S03_SECTOR];
 	bool other_crc_checked, other_crc_ok;
 };
 
@@ -210,6 +223,38 @@ struct tchk_boot {
 	uint8_t unchecked;	/* enum tchk_unchecked */
 	bool select0_failed;
 };
+/*
+ * The first failing boot-partition select ([0]) and sector read ([1]) as
+ * the eMMC's store recorded them (struct opxy_emmc_note): where the request
+ * stopped, the driver's first fault (struct wb_msi_fault: its step, the
+ * command and the one that failed, the response, the controller's status,
+ * the busy wait so far) and EXT_CSD[179] before and after.
+ */
+enum tchk_fault_why { TCHK_FW_DRIVER, TCHK_FW_DOWN, TCHK_FW_UNKNOWN, TCHK_FW_REFUSED };
+enum tchk_fault_step {
+	TCHK_FS_NONE, TCHK_FS_ARG, TCHK_FS_OFF, TCHK_FS_CMD, TCHK_FS_R1, TCHK_FS_BUSY,
+	TCHK_FS_SWITCH, TCHK_FS_STATE, TCHK_FS_DATA, TCHK_FS_DATA_TIME, TCHK_FS_COUNT
+};
+#define TCHK_PC_BEFORE 0x01u
+#define TCHK_PC_AFTER  0x02u
+struct tchk_emmc_fault {
+	bool seen;
+	uint8_t part, why, pc_flags, pc_before, pc_after;
+	uint32_t sector, count;		/* a read's */
+	uint8_t step, cmd, at, state;	/* state 0xFF: no CMD13 */
+	int8_t rc;
+	uint32_t arg, r1, istat, idsts, busy_us;
+};
+
+/*
+ * A fault as TCHK_FAULT_BYTES bytes, little-endian, for the survey's reply:
+ * [0] seen, [1] part, [2] why, [3] pc_flags, [4] pc_before, [5] pc_after,
+ * [6] step, [7] cmd, [8] at, [9] state, [10] rc, [11] 0, then sector,
+ * count, arg, r1, istat, idsts and busy_us, four bytes each.
+ */
+#define TCHK_FAULT_BYTES 40u
+void tchk_fault_bytes(const struct tchk_emmc_fault *e, uint8_t out[TCHK_FAULT_BYTES]);
+
 /* now_us may be NULL (no rate). sw gives the headers and the other's CRC. */
 void tchk_emmc_boot(const struct s03_env *env, const struct tchk_switch *sw,
 		    uint64_t (*now_us)(void), struct tchk_boot *out);
@@ -300,14 +345,28 @@ void tchk_regs_judge(const struct opxy_testos_reg *rows, unsigned n, const uint3
 /* Guided outcomes. */
 enum { TCHK_G_NOT_RUN = 0, TCHK_G_SKIPPED, TCHK_G_PASSED, TCHK_G_FAILED, TCHK_G_ENDED,
        TCHK_G_EARLIER	/* passed at the start that wrote the trial: not asked again */ };
-/* The guided key check's keys (S-07.030's numbers). */
+/* The guided key check's keys (S-07.030's numbers) on the OP-XY: com is
+ * its device.key.com, M4 its device.key.recovery; on another device those
+ * two roles (tchk_key_com(), tchk_key_recovery()). */
 #define TCHK_KEY_COM 0x18u
 #define TCHK_KEY_M4  0x09u
+static inline unsigned tchk_key_com(const struct wb_device *dev)
+{
+	return dev != NULL ? dev->keys.com : TCHK_KEY_COM;
+}
+static inline unsigned tchk_key_recovery(const struct wb_device *dev)
+{
+	return dev != NULL ? dev->keys.recovery : TCHK_KEY_M4;
+}
 
 #define TCHK_INFO_MAX 128u
 struct tchk_facts {
+	/* the device (S-18): NULL reads as the OP-XY */
+	const struct wb_device *dev;
 	uint32_t ran;			/* bit per enum tchk_id: its facts are in */
-	bool slave;			/* the bridge was up */
+	/* the bridge was up: to the slave, or on a device without second-cpu
+	 * to the main CPU's own eMMC, which came up */
+	bool slave;
 	struct tchk_switch sw;
 	struct tchk_regs regs[TCHK_REGS_GROUPS];
 	bool ddr_aliased;
@@ -344,10 +403,11 @@ struct tchk_facts {
 	 * S-03.009's switches; features: the slave's record that they were made */
 	bool ext_read;
 	uint32_t sec_count, erase_group;
-	uint8_t ext33, ext34, ext163, ext183, ext226, ext265;
+	uint8_t ext33, ext34, ext163, ext179, ext183, ext226, ext265;
 	bool features;
 	/* emmc-boot */
 	struct tchk_boot boot;
+	struct tchk_emmc_fault emmc_fault[2];	/* [0] select, [1] read */
 	/* emmc-volume */
 	bool mounted, space_read;
 	uint64_t free_bytes;
@@ -375,7 +435,11 @@ struct tchk_facts {
 	uint32_t held_ms;			/* entry to the suite's start */
 	/* guided */
 	uint8_t keys;
-	uint8_t keys_seen;			/* bit 0 com, bit 1 M4 */
+	uint8_t keys_seen;			/* bit 0 com, bit 1 the recovery key (M4) */
+	/* PA2's level, 0 or 1: the strap's on a device with straps, else read
+	 * where the device's pins make it an input, never driving PA0 or PA8;
+	 * 0xFF not read. The survey's (waffle/board/installer.h). */
+	uint8_t pa2;
 };
 
 /* Every test's outcome from the facts. */

@@ -61,12 +61,14 @@ static void released(struct s13c_panel *p)
 }
 
 void s13c_begin(struct s13c_panel *p, const struct s13c_bus *bus,
-		uint32_t xmod, uint32_t ymod, unsigned pa8)
+		const struct wb_device *dev, uint32_t xmod, uint32_t ymod,
+		unsigned pa8)
 {
 	const struct s13c_bus *b = bus;
 	uint32_t hs = 0;
 
 	p->bus = bus;
+	p->digital_gamma = wb_has(dev, WB_F_DIGITAL_GAMMA);
 	p->gamma_loaded = false;
 	p->gamma_on = false;
 	p->frame = false;
@@ -105,9 +107,10 @@ void s13c_begin(struct s13c_panel *p, const struct s13c_bus *bus,
 }
 
 void s13c_adopt(struct s13c_panel *p, const struct s13c_bus *bus,
-		uint32_t reset_ms)
+		const struct wb_device *dev, uint32_t reset_ms)
 {
 	p->bus = bus;
+	p->digital_gamma = wb_has(dev, WB_F_DIGITAL_GAMMA);
 	p->path = S13C_RESET_HANDSHAKE;
 	p->reset_ms = reset_ms;
 	p->ready_us = 0;
@@ -202,9 +205,13 @@ static void gamma_table(const struct s13c_panel *p, uint8_t cmd)
 	send(p, cmd, t, sizeof t);
 }
 
-/* S-13c.009, S-13c.012: one window, closed again. */
+/* S-13c.009, S-13c.012: one window, closed again. S-13c.026: without
+ * digital-gamma nothing is sent, so the initialization's B9 02 E0 stays the
+ * last B9. */
 static void gamma_window(struct s13c_panel *p, bool on)
 {
+	if (!p->digital_gamma)
+		return;
 	send(p, S13C_CSCON, p_unlock1, 1);
 	send(p, S13C_CSCON, p_unlock2, 1);
 	if (on && !p->gamma_loaded) {
@@ -290,6 +297,8 @@ int s13c_gamma(struct s13c_panel *p, bool on)
 
 	if (p->state != S13C_ON)
 		return S13C_ERR_STATE;
+	if (!p->digital_gamma)
+		return S13C_OK;		/* S-13c.026: a gamma step sends no byte */
 	rc = s13c_frame_wait(p);	/* S-13c.016: not inside a frame */
 	if (rc != S13C_OK)
 		return rc;
@@ -419,8 +428,8 @@ int s13c_logo_line(struct s13c_panel *p, unsigned y, unsigned h,
 
 int s13c_handover(struct s13c_panel *p, uint8_t rec[S13C_RECORD_SIZE])
 {
-	if (p->state != S13C_ON || !p->boot_frame || p->lined || !p->gamma_on ||
-	    s13c_frame_busy(p))
+	if (p->state != S13C_ON || !p->boot_frame || p->lined ||
+	    (p->digital_gamma && !p->gamma_on) || s13c_frame_busy(p))
 		return S13C_ERR_STATE;
 	p->state = S13C_HANDED;
 	/* S-13c.021: written once the state it describes holds. */

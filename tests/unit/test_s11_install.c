@@ -3,7 +3,10 @@
  * S-11 install from end to end. Checks S-11.020 (a refusal at checks 1-15
  * runs no zip check, one at 16-17 starts no run), S-11.051 (the outcome),
  * S-11.055 (forcing reaches the steps), S-11.090 (the option of the checks
- * holds for the run), S-11.091 (return to the factory bootloader decided before step 1), S-11.073
+ * holds for the run), S-11.021 (the signature state reaches the result; it gates no step, the
+ * bootloader included, S-11.090), S-11.091 (return to the factory bootloader, wording only, decided
+ * before step 1, from the option, the signature state, the selection and whether the bootloader is
+ * a waffle-boot build), S-11.073
  * (switched-off steps: no DFU entry, nothing sent), S-11.096 (the
  * selection: before the run's first write, only the steps selected run,
  * a cancel starts no run); S-11.064 (the package version only with the
@@ -14,6 +17,7 @@
 #include <string.h>
 
 #include "waffle/s11_package.h"
+#include "waffle/device.h"
 #include "waffle/s11_run.h"
 
 #include "s11_check.h"
@@ -42,7 +46,12 @@ static void put_le32(uint8_t *p, uint32_t v)
 	p[3] = (uint8_t)(v >> 24);
 }
 
-static void build(uint8_t device, uint8_t sig_index)
+/* sig: the state the package is built to have, valid by default: a
+ * present signature with key index 0x00 the fake verifier passes, one it
+ * fails, or a blank one. */
+static bool verify_ok;
+
+static void build(uint8_t device, enum s11_sig sig)
 {
 	uint8_t *h = pkg, *m = pkg + 0x40, *pl = pkg + 0x340;
 	uint16_t crc;
@@ -58,7 +67,10 @@ static void build(uint8_t device, uint8_t sig_index)
 	put_le32(m + 0x80, 32);
 	memcpy(m + 0x84, "TESG", 4);
 	m[0x88] = 0x01;
-	m[0x89] = sig_index;
+	m[0x89] = sig == S11_SIG_NONE ? 0xFF : 0x00;
+	if (sig != S11_SIG_NONE)
+		memset(m + 0x14, 0x5A, 0x3C);		/* r and s present */
+	verify_ok = sig == S11_SIG_VALID;
 	put_le32(m + 0x8C, 0x00084000u);
 	put_le32(m + 0x98, 0x120);
 	ref_sha256(pl, 0x120, m + 0x9C);
@@ -108,20 +120,20 @@ static bool c_verify(void *ctx, const uint8_t q[56], const uint8_t d[32],
 	(void)d;
 	(void)r;
 	(void)s;
-	return true;	/* a signature that verifies with Q0 */
-}
-
-static bool u_key(void *ctx, uint8_t k[32])
-{
-	(void)ctx;
-	memset(k, 0, 32);
-	return true;
+	return verify_ok;	/* whether the signature verifies with Q0 */
 }
 
 static bool u_q0(void *ctx, uint8_t q[56])
 {
 	(void)ctx;
 	memset(q, 0, 56);
+	return true;
+}
+
+static bool u_key(void *ctx, uint8_t k[32])
+{
+	(void)ctx;
+	memset(k, 0, 32);
 	return true;
 }
 
@@ -171,6 +183,10 @@ struct world {
 	enum s11_answer answer;
 	unsigned answers, n_asked, calls_at_ask, offered;
 	unsigned meta_versions;		/* meta_complete calls */
+	/* S-11.091: the staged bootloader is a waffle-boot build; how often
+	 * that was asked */
+	bool bl_waffle;
+	unsigned waffle_asks;
 };
 
 static struct world W;
@@ -385,6 +401,13 @@ static const struct s11_step_ops step_ops = {
 };
 
 /* S-11.096: the user's answer on the unit */
+static bool u_waffle(void *ctx)
+{
+	(void)ctx;
+	W.waffle_asks++;
+	return W.bl_waffle;
+}
+
 static enum s11_answer u_select(void *ctx, const struct s11_step_env *env,
 				uint8_t *selected)
 {
@@ -398,7 +421,8 @@ static enum s11_answer u_select(void *ctx, const struct s11_step_env *env,
 
 /* Every step switched on, unless a test says otherwise. */
 static struct s11_install_ops ops = {
-	&pkg_ops, &zip_ops, &fs_ops, &run_ops, &step_ops, u_select, NULL, 0,
+	&pkg_ops, &zip_ops, &fs_ops, &run_ops, &step_ops, u_select, NULL,
+	u_waffle, NULL, 0,
 };
 
 #define YES_ALL 0x3Fu
@@ -515,19 +539,23 @@ static void test_install_select(struct s11_check_in *in,
 	CHECK(W.enters == 0 && W.sends == 0 && out.run.end != S11_RUN_FAILED,
 	      "BLE not selected: no DFU entry, nothing sent");
 
-	/* S-11.091: TE-signed, option on, the bootloader present: a return to
-	 * the factory bootloader only when it is selected */
-	build(0x01, 0x00);
+	/* S-11.091: option on, a bootloader not waffle-boot's present: a
+	 * return to the factory bootloader only when it is selected; a
+	 * waffle-boot bootloader selected is an ordinary update */
 	reset(false, true, copro);
 	W.answers = 0;
 	s11_install(&ops, in, copro, &out);
-	CHECK(out.te_signed && !out.stock && W.writes_bl == 0,
+	CHECK(!out.stock && W.writes_bl == 0,
 	      "not selected: no return to the factory bootloader");
 	reset(false, true, copro);
 	s11_install(&ops, in, copro, &out);
-	CHECK(out.te_signed && out.stock && W.writes_bl == 1,
-	      "selected: a return to the factory bootloader");
-	build(0x01, 0xFF);
+	CHECK(out.stock && !out.bootloader_waffle && W.waffle_asks == 1 &&
+	      W.writes_bl == 1, "selected: a return to the factory bootloader");
+	reset(false, true, copro);
+	W.bl_waffle = true;
+	s11_install(&ops, in, copro, &out);
+	CHECK(!out.stock && out.bootloader_waffle && W.writes_bl == 1,
+	      "a waffle-boot bootloader selected: written, no return to stock");
 
 	/* S-11.073: steps 3-5 switched off; a Nordic image carried: no DFU
 	 * entry, nothing sent, the run done */
@@ -560,30 +588,56 @@ static void test_install_select(struct s11_check_in *in,
 
 int main(void)
 {
-	struct s11_check_in in = { S11_FORM_BODY, 0, false, NULL, false };
+	struct s11_check_in in = { S11_FORM_BODY, 0, false, NULL, false,
+				   &wb_device_opxy };
 	struct s11_install_result out;
 	struct s17_copro copro;
 
 	/* a refusal at checks 1-15: no zip check, no run */
-	build(0x7F, 0xFF);
+	build(0x7F, S11_SIG_VALID);
 	in.size = (uint32_t)pkg_len;
 	reset(true, true, &copro);
 	s11_install(&ops, &in, &copro, &out);
 	CHECK(out.reason == S11_REASON_DEVICE && W.zip_calls == 0 &&
 	      W.run_calls == 0 && out.outcome.kind == S11_OUTCOME_REFUSED &&
 	      out.outcome.result == S11_BAD_FILE, "DEVICE: nothing after it");
-	build(0x01, 0xFF);
+	build(0x01, S11_SIG_NONE);
 
 	/* S-11.022: unsigned, the option off: accepted, the protected step
-	 * skipped (S-11.090) */
+	 * skipped (S-11.090), no return to stock and nothing asked of the
+	 * bootloader image */
 	reset(true, true, &copro);
 	s11_install(&ops, &in, &copro, &out);
-	CHECK(out.reason == S11_REASON_NONE && !out.te_signed &&
+	CHECK(out.reason == S11_REASON_NONE && out.sig == S11_SIG_NONE &&
+	      !out.stock && W.waffle_asks == 0 &&
 	      W.zip_calls == 1u && W.writes_bl == 0u,
 	      "unsigned, option off: accepted, the bootloader step skipped");
 
-	/* a refusal at checks 16-17: no run */
+	/* S-11.090, S-11.096: invalid or none, the option on: accepted, the
+	 * bootloader offered and written as for any package, the other steps
+	 * run; not called a return to stock (S-11.091) */
 	in.option = true;
+	for (unsigned k = 0; k < 2u; k++) {
+		const enum s11_sig sig = k == 0u ? S11_SIG_NONE : S11_SIG_INVALID;
+
+		build(0x01, sig);
+		reset(true, true, &copro);
+		copro.nordic_app = (struct s11_version){ 0, 0, 0, 0 };
+		s11_install(&ops, &in, &copro, &out);
+		CHECK(out.reason == S11_REASON_NONE && out.sig == sig &&
+		      W.n_asked == 1 &&
+		      (W.offered & S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u &&
+		      (W.offered & S11_STEP_BIT(S11_STEP_BLE)) != 0u &&
+		      (out.selected & S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u &&
+		      W.writes_bl == 1u && W.sends == 1u && !out.stock &&
+		      !out.bootloader_waffle && W.waffle_asks == 0u &&
+		      out.outcome.kind == S11_OUTCOME_DONE,
+		      "state %d, option on: the bootloader offered and "
+		      "written, the Nordic step sent", (int)sig);
+	}
+	build(0x01, S11_SIG_VALID);
+
+	/* a refusal at checks 16-17: no run (the option stays on) */
 	reset(true, true, &copro);
 	W.zip_reason = S11_REASON_MEMBER;
 	s11_install(&ops, &in, &copro, &out);
@@ -598,23 +652,31 @@ int main(void)
 	      W.writes_bl == 1 && out.run.end == S11_RUN_DONE &&
 	      out.run.versions_read && out.run.nordic_in_dfu,
 	      "accepted: ble Already installed, bootloader written");
-	CHECK(!out.stock && !out.te_signed, "signature index 0xFF: not TE-signed");
+	CHECK(out.sig == S11_SIG_VALID && out.stock && !out.bootloader_waffle,
+	      "valid, a bootloader not waffle-boot's written: a return to stock");
 
 	/* device id 0x06 forces: the equal version is sent again */
-	build(0x06, 0xFF);
+	build(0x06, S11_SIG_VALID);
 	reset(true, false, &copro);
 	s11_install(&ops, &in, &copro, &out);
 	CHECK(out.forced && W.sends == 1 && out.outcome.kind == S11_OUTCOME_DONE,
 	      "forced reaches the Nordic step");
 
-	/* TE-signed, option on, bootloader present: a return to the factory bootloader */
-	build(0x01, 0x00);
+	/* option on, valid, bootloader present: a return to the factory
+	 * bootloader unless it is a waffle-boot build */
+	build(0x01, S11_SIG_VALID);
 	reset(false, true, &copro);
 	s11_install(&ops, &in, &copro, &out);
-	CHECK(out.te_signed && out.stock, "return to the factory bootloader");
-	reset(false, false, &copro);
+	CHECK(out.stock, "return to the factory bootloader");
+	reset(false, true, &copro);
+	W.bl_waffle = true;
 	s11_install(&ops, &in, &copro, &out);
-	CHECK(out.te_signed && !out.stock, "no bootloader: not a return to the factory bootloader");
+	CHECK(!out.stock && out.bootloader_waffle, "a waffle-boot bootloader: an update");
+	reset(false, false, &copro);
+	W.bl_waffle = true;
+	s11_install(&ops, &in, &copro, &out);
+	CHECK(!out.stock && !out.bootloader_waffle && W.waffle_asks == 0,
+	      "no bootloader: not a return to the factory bootloader, nothing asked");
 
 	/* option off: the bootloader step is Skipped, nothing written */
 	in.option = false;

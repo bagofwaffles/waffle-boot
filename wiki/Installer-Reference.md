@@ -12,11 +12,17 @@ Back up your files before running it: the OS has to be installed again afterward
 ## What it needs on the unit
 
 - A developer menu that writes an OS file to the boot partition the OS is not in.
+- An OP-XY, or with the OP-1F's own images an OP-1F: see [On an OP-1F](#on-an-op-1f).
+
+Before it touches any pin it decides the device: the boot mode, then the first stage's fingerprint
+(S-18.003), read from the SPI flash and never written. It installs only on a first stage the table names,
+and only the image built for that device does.
 
 ## The checks
 
 It tests the clocks and DDR, the SPI flash, the PSoC, the second processor and the bridge, the eMMC, the
 display, the clock and the Nordic chip. Then it asks for one guided step, the key check: press com, then M4 (4 under the display).
+A test of a part the device does not have reads `n/a` ("not on this device") and counts as passed.
 Reading the screen shows the panel works. USB is shown by the page connecting at all.
 
 The results are on the screen, on the page, and in `check.txt` on the unit's USB disk (no serial number or
@@ -43,6 +49,71 @@ key).
 
 A breadcrumb build (`BOOT_CRUMBS=1`) runs only as a trial: the commit is refused, and `check.txt` lists its
 marks, which `tools/testos_mon.py crumbs` decodes.
+
+## On an OP-1F
+
+> **Status:** the OP-1F is not supported by any release, and nothing here has been run on a unit yet
+> (S-18.050). Run the survey first, and save its `check.txt`.
+
+Two images, written as the OS by the unit's own means (the page does not send them):
+
+    make installer-1f-survey      # build/waffle-install-1f-survey.ldr
+    make installer-1f             # build/waffle-install-1f.ldr
+
+Both carry the same waffle-boot image as `waffle-install.ldr`. They are laid out like the OP-1F's OS 1.7.3
+(S-05.040): one stream, the flags FIRST, IGNORE and FINAL, entry `0x11A00000` (FIRST and FINAL), FINAL
+argument 0, one L1 code block at `0x11A00000` that jumps to the rest, and the DDR image from
+`0x8D000000` in blocks of at most `0xACAB8` bytes (S-05.041), inside that OS's second DDR range, clear of
+the frame rows, the staging area, the handover reserve and the OP-1F's RAM disk. They lie in the OP-XY's RAM disk, so they run only on a first stage the table names
+as the OP-1F's: on any other unit they stop at their entry and touch nothing. Such a unit then starts this
+image again until another OS is written by the unit's own means.
+
+On the OP-1F the checks have no second processor and no bridge (`n/a`), reach the eMMC on the main CPU,
+ask the PSoC for its keys and battery without the ping, and the key check asks for the com key, then the
+recovery key, by their roles; the screen shows the number of each key pressed.
+
+**The survey** writes nothing to the SPI flash: its write engine refuses every step, its write gate refuses
+every erase and program, and its link sends the flash driver's erase and program to functions that refuse.
+It makes the OS in the other boot partition active again as soon as it has looked. It shows, and saves in
+`check.txt` and over USB (type `0x44`), what an install would depend on: the first stage's `n` and `c`, the
+boot mode, the selector's two bytes, each slot's record and whether it verifies and is a waffle-boot stream,
+the first bytes of each slot's start log, EXT_CSD[179] (PART_CONFIG), SEC_COUNT and the boot partition's
+size, and PA2's level where the OP-1F's own pins make it an input. Its last line says whether an install
+would be offered.
+
+**The installer** writes as on the OP-XY (above), with one rule more: it never writes over the last slot
+whose image is not a waffle-boot stream, so the bootloader the unit came with stays in one slot. A trial
+that would is not offered ("It would write over the unit's own bootloader.").
+
+### Putting the image on an OP-1F
+
+Either image goes on as `/yaffs2/os.ldr`, and the unit's own OS write in its developer menu writes it.
+Before that write, `tools/mtpcp.py prepare-1f` arranges the volume so that the write takes the file
+(S-05.042). Start the unit in drive mode: hold **com** while powering on, then press 3, then 2. Keep the
+computer on the cable from then until the write.
+
+    python3 tools/mtpcp.py prepare-1f build/waffle-install-1f-survey.ldr --dry-run
+    python3 tools/mtpcp.py prepare-1f build/waffle-install-1f-survey.ldr
+
+The tool:
+
+- reads the bootloader build from the unit and stops, changing nothing, on any build but 1000.1.1 and
+  1000.2.0;
+- lists the whole volume and works out the plan: the files directly in `logs/`, any earlier
+  `waffle-pad*.bin` at the top and the old `os.ldr` go, the image goes on as `os.ldr`, and one pad file,
+  `waffle-pad.bin`, goes at the top when the volume needs it. The pad's size keeps the counts far from
+  their next step. `--dry-run` prints the plan and stops there;
+- copies every file it will remove to `~/waffle-op1f-backup/<time>/` (or `--backup DIR`), and checks each
+  copy by SHA-256 before anything is removed;
+- makes the changes, lists the volume again, and goes on only if every row matches the plan. Then it reads
+  `os.ldr` and the pad back;
+- prints **READY TO WRITE** with the margins. Then, in the same start, copy nothing more to the disk,
+  leave drive mode for the developer menu and run its OS write. Any mismatch stops the tool with a line
+  that says so; do not run the write then.
+
+The arrangement is checked against two writes that landed and one that was refused, all with bootloader
+1000.2.0. Treat it as provisional: the unit's log grows while it runs, so go from READY TO WRITE to the
+write without a pause. A refused write leaves the OS that was active, and that OS still starts. The OP-1F is not supported by any release.
 
 ## Sending it from the page
 
@@ -75,18 +146,22 @@ While it writes, and in some long checks, the installer does not service the por
 
 | Type | Request | Reply |
 | --- | --- | --- |
-| `0x40` HELLO | none | 64 bytes: `WBIN`, protocol version (1), phase, flags, the number of tests, the carried image's version (4 × u16), length (u32), CRC-32 (u32), front pin (32 bytes), 8 zeros |
-| `0x41` STATE | none | 32 bytes, then each test's state (u8): 0 phase, 1 flags, 2 verdict (0 pass, 1 pass with gaps, 2 fail, `FF` not yet), 3 the test under way (`FF` none), 4 the lock, 5 and 6 the selector, 7 and 8 each slot's state, 9 the target slot (`FF` none), 10 the last write's code (`FF` none), 11 the OS partition, 12 the hold's progress (u16, 0 to 1000), 14 the key held (digit), 15 the trial, 16 the key of the next step (1, or 0), the rest zeros |
+| `0x40` HELLO | none | 64 bytes: `WBIN`, protocol version (1), phase, flags, the number of tests, the carried image's version (4 × u16), length (u32), CRC-32 (u32), front pin (32 bytes), then 56 the unit's device (0 OP-XY, 1 OP-1F), 57 how it was decided (0 the first stage's table, 1 the second CPU, 2 not identified), 58 the device the image is built for, 59 1 for a survey build, and 4 zeros |
+| `0x41` STATE | none | 32 bytes, then each test's state (u8): 0 phase, 1 flags, 2 verdict (0 pass, 1 pass with gaps, 2 fail, `FF` not yet), 3 the test under way (`FF` none), 4 the lock, 5 and 6 the selector, 7 and 8 each slot's state, 9 the target slot (`FF` none), 10 the last write's code (`FF` none), 11 the OS partition, 12 the hold's progress (u16, 0 to 1000), 14 the key held (digit), 15 the trial, 16 the key of the next step (1, or 0), 17 bit k set when slot k holds a waffle-boot stream, the rest zeros |
 | `0x42` TEST | the test's index (u8) | status (0, or 1 for no such test), index, state, kind (0 OS, 1 automatic, 2 guided), then four NUL-ended strings: its id, its name, the detail line (at most 56 characters) and the report's note (at most 160) |
 | `0x43` REPORT | an offset (u32) | status (0), `check.txt`'s length (u32), then up to 1024 of its bytes from the offset. The text is rewritten as the checks run, so a reader starts again when the length changes |
+| `0x44` SURVEY | none | a survey build, once its checks end: 76 bytes, `src/include/waffle/board/installer.h` lists them; any other build answers `FF` |
 
 - **Phase:** 0 starting, 1 checking, 2 the key check, 3 locked, 4 ready (the trial offered), 5 writing the
   trial, 6 the trial written, 7 the commit offered, 8 committing, 9 done, 10 a write failed, 11 the trial
-  failed, 12 left without installing.
+  failed, 12 left without installing, 13 the survey's end.
 - **Flags:** bit 0 the checks done, bit 1 the install offered, bit 2 the carried image passed its check, bit 3
-  a breadcrumb build.
+  a breadcrumb build, bit 4 a survey build.
 - **Lock:** 0 none, 1 a check failed, 2 a check could not run, 3 the carried image, 4 the selected slot not
-  verified or not good, 5 not used, 6 the key check ended with 8, 7 the eMMC not reachable.
+  verified or not good, 5 not used, 6 the key check ended with 8, 7 the eMMC not reachable, 8 the device not
+  identified by its first stage, 9 an image built for the other device, 10 the trial would write over the
+  last slot that is not waffle-boot's (OP-1F), 11 a survey build.
+- **Test state:** 0 not run, 1 pass, 2 fail, 3 not tested, 5 not on this device.
 - **Slot state:** bit 0 good, 1 this image under the trial mark, 2 this image committed, 3 trial pending, 4
   trial started, 5 trial spent, 6 trial entry odd, 7 the trial reached the boot menu.
 - **OS partition:** 0 not looked at, 1 found and checked, 2 found, stored encrypted, 3 not found, 4 fails its
@@ -95,7 +170,8 @@ While it writes, and in some long checks, the installer does not service the por
   start of the new bootloader.
 - **Write codes:** S-02's (2 I/O, 3 size, 4 verify, 5 start, 6 not good, 7 not a bootable stream), `40` a
   breadcrumb build's commit, `41` the trial not started, `43` the carried image, `44` the boot menu not
-  reached.
+  reached, `45` a failed selector step left as it was, `46` the last slot that is not waffle-boot's (OP-1F),
+  `47` a survey build.
 
 `src/testos/installer_logic.c` is the reference, `tests/unit/test_board_installer.c` holds frames byte for
 byte, and `docs/web/install.js` reads them.

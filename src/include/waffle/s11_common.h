@@ -10,8 +10,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* S-11.007: bits 14-23 equal 0x21 and bits 10-13 are 0. */
-bool s11_product_ok(uint32_t word);
+struct wb_device;
+
+/* S-11.007: bits 14-23 equal device.product_number (S-18.030) and bits
+ * 10-13 are 0. */
+bool s11_product_ok(const struct wb_device *dev, uint32_t word);
 
 /* Refusal reasons in S-11.020's check order. */
 enum s11_reason {
@@ -24,7 +27,6 @@ enum s11_reason {
 	S11_REASON_DEVICE,
 	S11_REASON_CRC,
 	S11_REASON_FORMAT,
-	S11_REASON_SKU,
 	S11_REASON_LENGTH,
 	S11_REASON_HASH,
 	S11_REASON_KEY,
@@ -70,6 +72,16 @@ struct s11_outcome {
 	enum s11_reason reason;
 	uint8_t step;
 	enum s11_result result;
+};
+
+/* S-11.021: the signature state, set by check 8 (S-11.022). It never
+ * refuses a package. */
+enum s11_sig {
+	S11_SIG_NONE,		/* no signature: a plain package, or sig_r and
+				 * sig_s both zero */
+	S11_SIG_INVALID,	/* a signature that does not verify, or Q0
+				 * cannot be read */
+	S11_SIG_VALID		/* a signature that verifies against Q0 */
 };
 
 /* Why a step whose component is present reports Skipped (S-11.058). */

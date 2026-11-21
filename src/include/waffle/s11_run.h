@@ -144,6 +144,9 @@ struct s11_step_ops {
 struct s11_step_env {
 	const struct s11_staged *staged;
 	bool option;			/* S-11.090: as when the checks began */
+	/* S-11.021: the package's signature state; it decides the wording
+	 * and S-15.197's prompt, never a step (S-11.090). */
+	enum s11_sig sig;
 	bool forced;			/* S-11.055 */
 	bool nordic_in_dfu;		/* reported at the run's start */
 	struct s17_copro *copro;	/* the installed versions (S-17.034) */
@@ -175,7 +178,7 @@ bool s11_run_nordic(const struct s11_step_env *env);
 /* ---- the selection (S-11.096) ---- */
 
 /* What the selection offers for a step, from env's staged, off, option,
- * forced and copro (selected is not read). */
+ * forced and copro (selected and sig are not read). */
 enum s11_pick {
 	S11_PICK_ABSENT,	/* its component is not carried: no row */
 	S11_PICK_OPEN,		/* it can be selected */
@@ -201,7 +204,8 @@ enum s11_answer {
 };
 
 /* The user's answer on the unit; *selected: the steps chosen, a bit each,
- * for S11_ANSWER_INSTALL. */
+ * for S11_ANSWER_INSTALL. For an invalid package (env->sig) it is asked
+ * after S-15.197's prompt, and canceling there is S11_ANSWER_CANCEL. */
 typedef enum s11_answer (*s11_ask_fn)(void *ctx, const struct s11_step_env *env,
 				      uint8_t *selected);
 
@@ -235,12 +239,20 @@ struct s11_install_ops {
 	/* S-11.096: the selection on the unit; NULL: nothing is asked. */
 	s11_ask_fn select;
 	void *select_ctx;
+	/* S-11.091: the staged bootloader image is a waffle-boot build
+	 * (s11_bootloader_is_waffle()); asked before the selection, with the
+	 * option on, the package valid and the image present, for the
+	 * wording only. NULL: it is not. */
+	bool (*bootloader_is_waffle)(void *ctx);
+	void *waffle_ctx;
 	uint8_t off;				/* S-11.073 */
 };
 
 struct s11_install_result {
 	enum s11_reason reason;		/* NONE: the package was accepted */
-	bool te_signed, forced;
+	bool forced;
+	enum s11_sig sig;		/* S-11.021, when check 8 was reached */
+	bool bootloader_waffle;		/* the staged bootloader is waffle-boot's (S-11.091) */
 	bool stock;			/* a return to the factory bootloader (S-11.091) */
 	bool canceled;			/* the selection canceled: no run (S-11.096) */
 	uint8_t selected;		/* the steps selected, a bit each */

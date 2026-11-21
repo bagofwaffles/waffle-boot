@@ -12,6 +12,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
+#include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 /* opxy_display() also pulls src/board/opxy_display.c out of the library
  * over the board's weak hooks */
@@ -115,7 +116,7 @@ static void test_held(void)
 	reset();
 	/* as opxy_services_init() leaves it: the menu's frame reads the
 	 * boot's values */
-	s15_menu_init(&m->sv.menu, &m->sv.boot, &m->sv.env, NULL);
+	s15_menu_init(&m->sv.menu, &wb_device_opxy, &m->sv.boot, &m->sv.env, NULL);
 	m->sv.boot.version = "1.0.0";
 	s15_console_append(&m->sv.menu.con, "held");
 
@@ -386,7 +387,7 @@ static void test_settle(void)
 	const struct s15_geometry *g;
 
 	reset();
-	s15_menu_init(&m->sv.menu, &m->sv.boot, &m->sv.env, NULL);
+	s15_menu_init(&m->sv.menu, &wb_device_opxy, &m->sv.boot, &m->sv.env, NULL);
 	m->sv.boot.version = "1.0.0";
 	opxy_display_handshake(0, 0);
 	g = opxy_display_geometry();
@@ -423,7 +424,7 @@ static void test_long_call_shown(void)
 	s09_master_set_absent(&m->bridge);
 	s09_files_init(&m->sv.files, &m->bridge);
 	opxy_menu_env(m, &m->sv.env);
-	s15_menu_init(&m->sv.menu, &m->sv.boot, &m->sv.env, NULL);
+	s15_menu_init(&m->sv.menu, &wb_device_opxy, &m->sv.boot, &m->sv.env, NULL);
 	m->sv.boot.version = "1.0.0";
 	opxy_display_handshake(0, 0);
 	opxy_display_held_start(m);
@@ -496,7 +497,7 @@ static void test_render_whole(void)
 	s09_master_set_absent(&m->bridge);
 	s09_files_init(&m->sv.files, &m->bridge);
 	opxy_menu_env(m, &m->sv.env);
-	s15_menu_init(&m->sv.menu, &m->sv.boot, &m->sv.env, NULL);
+	s15_menu_init(&m->sv.menu, &wb_device_opxy, &m->sv.boot, &m->sv.env, NULL);
 	m->sv.boot.version = "1.0.0";
 	opxy_display_handshake(0, 0);
 	if (opxy_display_geometry() == NULL)

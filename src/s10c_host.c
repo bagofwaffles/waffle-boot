@@ -21,10 +21,13 @@ static void default_sink(struct s10c_host *h)
 }
 
 void s10c_host_init(struct s10c_host *h, const struct s10c_ops *ops,
-		    void *ctx)
+		    void *ctx, const struct wb_device *dev,
+		    enum wb_dev_how how)
 {
 	h->ops = ops;
 	h->ctx = ctx;
+	h->dev = dev;
+	h->how = how;
 	h->factory = false;		/* S-10c.053: off at each boot */
 	h->transfer = false;
 	h->got_chunk = false;
@@ -83,8 +86,8 @@ static void te_reply(struct s10c_host *h, const struct s10c_te_req *req,
 {
 	uint8_t msg[S10C_SYSEX_MAX_SENT];
 
-	h->ops->send_sysex(h->ctx, msg, s10c_te_reply_build(req, status, p, n,
-							    msg));
+	h->ops->send_sysex(h->ctx, msg, s10c_te_reply_build(h->dev, req, status,
+							    p, n, msg));
 }
 
 static void te_reply_str(struct s10c_host *h, const struct s10c_te_req *req,
@@ -188,7 +191,7 @@ static void fw_begin(struct s10c_host *h, enum s10c_link link,
 	uint32_t w = n >= 14u ? wb_get_be32(p + 10) : 0;
 
 	h->ops->upgrade_screen(h->ctx, 0);
-	if (!s11_product_ok(w)) {
+	if (!s11_product_ok(h->dev, w)) {
 		begin_refused(h);
 		reply_fw_str(h, link, "PRODUCT: incorrect sku");
 		return;
@@ -341,7 +344,7 @@ static void info(struct s10c_host *h, char *text, size_t *n)
 	struct s10c_info v;
 
 	h->ops->read_info(h->ctx, &v);
-	*n = s10c_info_text(&v, text);
+	*n = s10c_info_text(h->dev, h->how, &v, text);
 }
 
 /* S-10c.042, S-10c.045: a pong's route is the ping's exchanged; every other
@@ -381,6 +384,9 @@ bool s10c_host_frame(struct s10c_host *h, enum s10c_link link, uint8_t route,
 		ok = h->factory && h->ops->option_on(h->ctx);
 		if (ok) {
 			s10c_setmeta_parse(p, n, &m);
+			/* S-10c.056: the factory key only with factory-word */
+			if (!wb_has(h->dev, WB_F_FACTORY_WORD))
+				m.has_factory = false;
 			ok = h->ops->write_metadata(h->ctx, &m);
 		}
 		reply1(h, link, 0x0C, ok ? 0x03 : 0x04);
@@ -421,7 +427,7 @@ static void te_begin(struct s10c_host *h, const struct s10c_te_req *req,
 		return;
 	}
 	h->ops->upgrade_screen(h->ctx, wb_get_be32(p + 14));
-	if (!s11_product_ok(w)) {
+	if (!s11_product_ok(h->dev, w)) {
 		char text[32] = "incorrect sku: ";
 
 		begin_refused(h);
@@ -569,19 +575,34 @@ void s10c_host_cdc_line_state(struct s10c_host *h)
 	h->ops->cdc_rx_restart(h->ctx);
 }
 
+/* S-10c.011: the family member from the metadata's sku when it is built,
+ * where the device's member follows the sku */
+static void identity(struct s10c_host *h)
+{
+	uint8_t r[S10C_IDENTITY_REPLY_LEN];
+	struct s10c_info v;
+	uint16_t sku = 0xFFFFu;
+
+	if (h->dev->ident.member_from_sku) {
+		h->ops->read_info(h->ctx, &v);
+		sku = v.sku > 0xFFFFu ? 0xFFFFu : (uint16_t)v.sku;
+	}
+	s10c_identity_reply(h->dev, sku, r);
+	h->ops->send_sysex(h->ctx, r, sizeof(r));
+}
+
 /* S-10c.007, S-10c.010, S-10c.021 */
 void s10c_host_midi_message(struct s10c_host *h, const uint8_t *m, size_t n)
 {
 	uint8_t stream[S10C_CARRIER_MAX_RX];
 	size_t sn;
 
-	switch (s10c_classify(m, n)) {
+	switch (s10c_classify(h->dev, m, n)) {
 	case S10C_MSG_TE:
 		te_request(h, m, n);
 		break;
 	case S10C_MSG_IDENTITY:
-		h->ops->send_sysex(h->ctx, s10c_identity_reply,
-				   S10C_IDENTITY_REPLY_LEN);
+		identity(h);
 		break;
 	case S10C_MSG_CARRIER:
 		/* each carrier message starts the receiver afresh (quirk

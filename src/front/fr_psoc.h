@@ -18,6 +18,7 @@
 #define FR_PSOC_H
 
 #include "fr.h"
+#include "fr_device.h"
 
 #define FR_S06_MAX_PAYLOAD 249u	/* S-06.002 */
 #define FR_S06_MAX_RAW     254u	/* S-06.001: header, payload, check */
@@ -47,6 +48,7 @@ struct fr_frame {
 };
 
 struct fr_psoc {
+	const struct fr_dev *dev;	/* the keys and the LED forms */
 	const struct fr_bytes *io;
 	const struct fr_clock *clock;
 	/* S-06: the link's seq counter (S-06.020), the receiver (S-06.040) */
@@ -92,13 +94,19 @@ struct fr_psoc {
 	uint32_t applied_ma, target_ma;
 	bool usb_configured;
 	uint64_t last_usb_us;
-	uint8_t led_rgb[3];	/* S-07.041: the last charge LED value sent */
+	uint8_t led_rgb[3];	/* S-07.041, S-07.046: the last charge LED value sent */
+	/* S-07.047: the breathing's phase in 2^-32 turns, and the time of the
+	 * last update in state FR_POWER_CHARGE */
+	uint32_t breath;
+	bool breath_had;
+	uint64_t breath_us;
 	/* called once at a power-off, before the reports (the panel's frames stop) */
 	void (*on_poweroff)(void *ctx);
 	void *ctx;
 };
 
-void fr_psoc_init(struct fr_psoc *p, const struct fr_bytes *io,
+/* dev NULL: the default device's keys and LEDs. */
+void fr_psoc_init(struct fr_psoc *p, const struct fr_dev *dev, const struct fr_bytes *io,
 		  const struct fr_clock *clock);
 
 /* S-06.001-S-06.006: the bytes a frame is sent as (COBS, one delimiter),
@@ -161,23 +169,27 @@ void fr_psoc_drain(struct fr_psoc *p, uint32_t us);
 void fr_psoc_usb(struct fr_psoc *p, bool configured, uint32_t ma);
 int fr_psoc_service(struct fr_psoc *p);
 
-/* S-07.032's reading of the reply (NULL: no reply, held, S-16.008). */
-bool fr_keys_hold(const uint8_t *pl, size_t n);
+/* S-07.032's reading of the reply on dev, its device.key.hold (pl NULL:
+ * no reply, held, S-16.008). */
+bool fr_keys_hold(const struct fr_dev *dev, const uint8_t *pl, size_t n);
 
-/* S-07.033's reading of a key-status reply: the one key that is down, with
- * no other key but precomp, as its number (S-07.030); or one of these. No
- * reply (NULL) is unread: an unread key never acts (S-02.080). */
-#define FR_KEYS_BYTES  9u	/* the 72 keys' bytes of a reply (S-07.030) */
+/* S-07.033's reading of a key-status reply on dev: the one key of its
+ * device.key.count that is down, in its bitmap's bytes, with no other key
+ * but precomp, as its number (S-07.030); or one of these. No reply (NULL)
+ * is unread: an unread key never acts (S-02.080). */
+#define FR_KEYS_BYTES  FR_DEV_KEY_BYTES_MAX	/* the most bytes a reading reads */
 #define FR_KEYS_UNREAD 0xFFu
 #define FR_KEYS_NONE   0xFEu	/* a reply, and no key down */
 #define FR_KEYS_MANY   0xFDu	/* more than one key down */
-unsigned fr_keys_one(const uint8_t *pl, size_t n);
+unsigned fr_keys_one(const struct fr_dev *dev, const uint8_t *pl, size_t n);
 
-/* The keys the front reads (S-15.011, S-15.150). */
+/* The keys the front reads (S-15.011, S-15.150): digits 1 to 4 are the
+ * same keys on both devices (S-18.030); digit 8, recovery's Back, and the
+ * chord's key are the device's (struct fr_dev). */
 #define FR_KEY_1 0x06u	/* M1 */
 #define FR_KEY_2 0x07u	/* M2 */
 #define FR_KEY_3 0x08u	/* M3 */
 #define FR_KEY_4 0x09u	/* M4: Power + M4 */
-#define FR_KEY_8 0x15u	/* sound 8: Back */
+#define FR_KEY_8 0x15u	/* the OP-XY's sound 8: Back (fr_dev_opxy.key_back) */
 
 #endif /* FR_PSOC_H */

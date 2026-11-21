@@ -27,6 +27,7 @@
 
 #include "wb_fatfs.h"
 
+#include "waffle/device.h"
 #include "waffle/s11_content.h"
 #include "waffle/wire_fat.h"
 
@@ -178,7 +179,7 @@ static const uint8_t *find_entry(const char *path, bool *lfn)
 
 static void format(void)
 {
-	CHECK(wire_fat_format(&F, &bd), "format");
+	CHECK(wire_fat_format(&F, &bd, &wb_device_opxy), "format");
 	geometry();
 }
 

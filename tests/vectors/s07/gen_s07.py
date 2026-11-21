@@ -326,10 +326,77 @@ def transcripts(h):
             'const uint8_t *cyacd; size_t cyacd_len; size_t m0, mn, p0, pn, c0, cn, a0, an; };')
 
 
+def one_f(h):
+    """leds-1f.json and charge_led-1f.json (S-07.046-.049): payloads as length-prefixed runs."""
+    def runs(hexes):
+        return b''.join(bytes([len(bytes.fromhex(s))]) + bytes.fromhex(s) for s in hexes)
+
+    v = load('vectors/leds-1f.json')
+    rows = ['%d, %s' % (f['n'], h.arr('bar1f', bytes.fromhex(f['payload']))) for f in v['forms']['bar']]
+    h.table('struct s07v1f_bar', 's07v1f_bars', rows,
+            'struct s07v1f_bar { uint8_t n; const uint8_t *p; size_t len; };')
+    rows = ['{%s}, %s' % (', '.join('0x' + f['rgb'][i:i + 2] for i in (0, 2, 4)),
+                          h.arr('rgb1f', bytes.fromhex(f['payload']))) for f in v['forms']['rgb']]
+    h.table('struct s07v1f_rgb', 's07v1f_rgbs', rows,
+            'struct s07v1f_rgb { uint8_t rgb[3]; const uint8_t *p; size_t len; };')
+    # requests: op 0 bar(n), 1 clear, 2 rgb(r, g, b); 4 bytes each
+    rows = []
+    for c in v['change_only']:
+        ops = bytearray()
+        for r in c['requests']:
+            if r[0] == 'bar':
+                ops += bytes([0, r[1], 0, 0])
+            elif r[0] == 'clear':
+                ops += bytes([1, 0, 0, 0])
+            else:
+                ops += bytes([2]) + bytes.fromhex(r[1])
+        rows.append('%s, %s, %d' % (h.arr('led1fop', bytes(ops)), h.arr('led1fsent', runs(c['sent'])),
+                                    len(c['sent'])))
+    h.table('struct s07v_leds', 's07v1f_leds', rows)
+    h.lines.append('static const uint8_t s07v1f_bar_clear[] = {%s};' % ', '.join(
+        '0x%02x' % b for b in bytes.fromhex(v['bar_clear']['payload'])))
+    rows = []
+    for k in v['key_test']:
+        ev = b''.join(bytes([e[0], e[1]]) for e in k['events'])
+        rows.append('%s, %s, %d, %s, %d' % (h.arr('kt1fev', ev), k['state'], k['charge'],
+                                            h.arr('kt1fsent', runs(k['sent'])), len(k['sent'])))
+    h.table('struct s07v1f_kt', 's07v1f_kts', rows,
+            'struct s07v1f_kt { const uint8_t *ev; size_t ev_len; unsigned state; uint8_t charge; '
+            'const uint8_t *sent; size_t sent_len; size_t n_sent; };')
+    c = load('vectors/charge_led-1f.json')
+    rows = ['%s, %d, %s' % ('0x100' if s['state'] == 'none' else s['state'], s['charge'],
+                            h.arr('chg1f', bytes.fromhex(s['payload']))) for s in c['steady']]
+    h.table('struct s07v1f_steady', 's07v1f_steady', rows,
+            'struct s07v1f_steady { unsigned state; uint8_t charge; const uint8_t *p; size_t len; };')
+    rows = []
+    for b in c['breathing']:
+        ts = b''.join(r[0].to_bytes(4, 'little') for r in b['updates_ms_levels'])
+        lv = b''.join(bytes(r[1]) for r in b['updates_ms_levels'])
+        rows.append('%d, %s, %s' % (b['charge'], h.arr('br1ft', ts), h.arr('br1fl', lv)))
+    h.table('struct s07v1f_breathe', 's07v1f_breathe', rows,
+            'struct s07v1f_breathe { uint8_t charge; const uint8_t *t_le32; size_t t_len; const uint8_t *levels; '
+            'size_t l_len; };')
+    h.lines.append('#define S07V1F_TOLERANCE %d' % c['tolerance']['level'])
+
+
+def trace_rules(h):
+    """trace_rules-1f.json (S-18.020, SC-18-FEATURES): the ids no_pmic_ids forbids, and the 0x40 first
+    bytes no_key_led_ids forbids."""
+    r = load('vectors/trace_rules-1f.json')['rules']
+    ids = [h2i(i) for i in r['no_pmic_ids']['ids']]
+    firsts = [int(b, 16) for b in r['no_key_led_ids']['first_bytes']]
+    h.lines.append('static const uint8_t s07v_no_pmic_ids[] = {%s};' % ', '.join('0x%02X' % i for i in ids))
+    h.lines.append('#define S07V_LED_ID 0x%02X' % h2i(r['no_key_led_ids']['id']))
+    h.lines.append('static const uint8_t s07v_no_key_led_firsts[] = {%s};'
+                   % ', '.join('0x%02X' % b for b in firsts))
+
+
 def main():
     h = CHeader('S07_VECTORS_H', 'tests/oracle/S-07-psoc (vectors, charge_led.tsv)', 'tests/vectors/s07/gen_s07.py')
     rules(h)
     cypress_vectors(h)
+    one_f(h)
+    trace_rules(h)
     genout.write('s07_vectors.h', h.text())
     h = CHeader('S07_TRANSCRIPTS_H', 'tests/oracle/S-07-psoc/transcripts', 'tests/vectors/s07/gen_s07.py')
     transcripts(h)

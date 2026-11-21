@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "hlib.h"
+#include "waffle/device.h"
 #include "waffle/s07_program.h"
 #include "waffle/s15_prompt.h"
 
@@ -158,7 +159,7 @@ static enum s15_prompt_choice prompt_wait(int *rc)
 	*rc = s07_poll(&rig.psoc);
 	if (*rc)
 		return S15_PROMPT_WAIT;
-	s15_prompt_open(&p, rig.psoc.keys);
+	s15_prompt_open(&p, &wb_device_opxy, rig.psoc.keys);
 	prompt_shown = &p;
 	while (s15_prompt_choice(&p) == S15_PROMPT_WAIT && rig.sim.now < end) {
 		*rc = s07_poll(&rig.psoc);

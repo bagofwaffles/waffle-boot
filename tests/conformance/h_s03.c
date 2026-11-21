@@ -489,7 +489,7 @@ static void command(const struct h_cmd *c)
 	} else if (strcmp(k, "fault") == 0) {
 		cmd_fault(c);
 	} else if (strcmp(k, "supported") == 0) {
-		h_putu(s03_emmc_supported((uint32_t)h_num(c, 1), (uint32_t)h_num(c, 2),
+		h_putu(s03_emmc_supported(&wb_device_opxy, (uint32_t)h_num(c, 1), (uint32_t)h_num(c, 2),
 					  (uint32_t)h_num(c, 3)));
 	} else if (strcmp(k, "region") == 0) {
 		h_put(region_name(s03_user_region((uint32_t)h_num(c, 1))));

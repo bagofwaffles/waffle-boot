@@ -25,15 +25,17 @@
 void wb_fatfs_attach(const struct wb_blockdev *dev);
 
 /*
- * Formats drive 0 as the RAM disk of S-12.003 to S-12.006: a master boot
- * record with one FAT16 partition from sector 63 to the end of the disk,
- * one FAT, 512 root entries, 16-sector clusters, the volume ID of the fixed
- * clock and the label OP-XY. It writes sectors 0, 63 and 64 to 206 of the
- * RAM disk and no other (S-12.007). work is a scratch buffer of at least
+ * Formats drive 0 as the RAM disk of S-12.003 to S-12.006 (S-12.008 on the
+ * OP-1F's disk): a master boot record with one FAT16 partition from sector
+ * 63 to the end of the disk, one FAT, 512 root entries, clusters by the
+ * disk's size (16 sectors on the OP-XY's, 8 on the OP-1F's), the volume ID
+ * of the fixed clock and the label (device.product_text, at most 11
+ * characters). It writes the sectors S-12.007 names and no other (0, 63
+ * and 64 to 206 on the OP-XY's disk). work is a scratch buffer of at least
  * FF_MAX_SS bytes. Returns a FatFs FRESULT, FR_OK (0) on success. Drive 0
  * is not mounted afterwards.
  */
-int wb_fatfs_format(void *work, unsigned int work_len);
+int wb_fatfs_format(void *work, unsigned int work_len, const char *label);
 
 /*
  * Fast seek for an open file: a link map in tbl, n entries, when its

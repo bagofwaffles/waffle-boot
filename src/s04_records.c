@@ -239,8 +239,13 @@ static void zero_meta(struct s04_meta *m)
 	m->cv_pair2[1] = 0;
 }
 
+uint32_t s04_meta_size(const struct wb_device *dev)
+{
+	return dev->mem.metadata_size;
+}
+
 /* S-04.040, S-04.041, S-04.042 */
-void s04_meta_read(const uint8_t raw[S04_META_SIZE], struct s04_meta *m)
+void s04_meta_read(const struct wb_device *dev, const uint8_t *raw, struct s04_meta *m)
 {
 	unsigned i;
 
@@ -250,26 +255,31 @@ void s04_meta_read(const uint8_t raw[S04_META_SIZE], struct s04_meta *m)
 	for (i = 0; i < 8u && raw[4u + i] != 0u; i++)
 		m->serial[i] = (char)raw[4u + i];
 	m->sku = wb_get_le16(raw + 0x0E);
-	m->factory = wb_get_le16(raw + 0x10);
+	if (wb_has(dev, WB_F_FACTORY_WORD))
+		m->factory = wb_get_le16(raw + 0x10);
 	for (i = 0; i < 4u; i++) {
 		m->os_version[i] = wb_get_le16(raw + 0x12 + 2u * i);
 		m->sw_version[i] = wb_get_le16(raw + 0x1A + 2u * i);
 	}
 	m->state = wb_get_le32(raw + 0x24) == S04_STATE_UPGRADE ? S04_STATE_UPGRADE : S04_STATE_IDLE;
-	m->cv_gain = wb_get_le32(raw + 0x28);
-	m->cv_zero = wb_get_le16(raw + 0x2C);
-	m->cv_pair2[0] = wb_get_le16(raw + 0x2E);
-	m->cv_pair2[1] = wb_get_le16(raw + 0x30);
+	/* +0x28 on: part of the record only with cv-calibration */
+	if (wb_has(dev, WB_F_CV_CALIBRATION) && s04_meta_size(dev) >= S04_META_SIZE) {
+		m->cv_gain = wb_get_le32(raw + 0x28);
+		m->cv_zero = wb_get_le16(raw + 0x2C);
+		m->cv_pair2[0] = wb_get_le16(raw + 0x2E);
+		m->cv_pair2[1] = wb_get_le16(raw + 0x30);
+	}
 }
 
 /* S-04.043, S-16.107 */
-void s04_meta_build(const uint8_t before[S04_META_SIZE], const struct s04_meta *cur,
-		    bool factory_mode, uint8_t out[S04_META_SIZE])
+void s04_meta_build(const struct wb_device *dev, const uint8_t *before,
+		    const struct s04_meta *cur, bool factory_mode, uint8_t *out)
 {
+	const uint32_t size = s04_meta_size(dev);
 	unsigned i;
 
 	/* Every byte kept as raw bytes unless a rule below changes it. */
-	for (i = 0; i < S04_META_SIZE; i++)
+	for (i = 0; i < size; i++)
 		out[i] = before[i];
 	wb_put_le32(out, S04_META_MAGIC);
 	for (i = 0; i < 4u; i++) {
@@ -288,7 +298,9 @@ void s04_meta_build(const uint8_t before[S04_META_SIZE], const struct s04_meta *
 		}
 		out[0x0C] = 0u;
 		wb_put_le16(out + 0x0E, cur->sku);
-		wb_put_le16(out + 0x10, cur->factory);
+		/* without factory-word +0x10..+0x11 are kept bytes */
+		if (wb_has(dev, WB_F_FACTORY_WORD))
+			wb_put_le16(out + 0x10, cur->factory);
 	}
 }
 
@@ -309,8 +321,8 @@ static uint32_t read_number(const char *s)
 }
 
 /* S-04.046, S-16.110 */
-bool s04_set_metadata(struct s04_meta *cur, bool factory_mode, bool option_on,
-		      const struct s04_setmeta *req)
+bool s04_set_metadata(const struct wb_device *dev, struct s04_meta *cur, bool factory_mode,
+		      bool option_on, const struct s04_setmeta *req)
 {
 	uint16_t sku = cur->sku, factory = cur->factory;
 	size_t n = 0;
@@ -328,7 +340,8 @@ bool s04_set_metadata(struct s04_meta *cur, bool factory_mode, bool option_on,
 
 		sku = (uint16_t)(v > 999u ? 0u : v);	/* S-16.110 */
 	}
-	if (req->factory != NULL)
+	/* without factory-word the key is passed over (S-04.046) */
+	if (req->factory != NULL && wb_has(dev, WB_F_FACTORY_WORD))
 		factory = (uint16_t)read_number(req->factory);	/* modulo 2^16 */
 	if (req->serial != NULL) {
 		for (n = 0; n < 8u; n++)
@@ -350,6 +363,14 @@ const struct s04_psoc_msg s04_msg_handover = {0x51, 3, {0x3C, 0xFF, 0x32, 0x00}}
 const struct s04_psoc_msg s04_msg_shutdown = {0x51, 3, {0x00, 0x00, 0x02, 0x00}};
 const struct s04_psoc_msg s04_msg_shutdown_40 = {0x40, 1, {0x01, 0x00, 0x00, 0x00}};
 const struct s04_psoc_msg s04_msg_reset_request = {0x97, 4, {0xDE, 0xAD, 0xBE, 0xEF}};
+
+/* S-04.066 */
+void s04_shutdown_one_cpu(const struct s04_shutdown_ops *ops)
+{
+	if (ops->mounted(ops->ctx))
+		(void)ops->emmc_shutdown(ops->ctx);	/* a failure does not stop it */
+	ops->reports(ops->ctx);
+}
 
 /* --- S-04.070 the RTC, S-16.102 --- */
 

@@ -121,6 +121,10 @@ enum s15_log {
 #define S15_LOG_ENTRIES 16384u
 
 struct s15_boot {
+	/* S-18: how the front decided the device (S-18.005); with
+	 * WB_DEV_UNKNOWN the first stage's n and c (S-18.003, S-18.004) */
+	enum wb_dev_how dev_how;
+	uint32_t first_stage_n, first_stage_c;
 	const char *version;       /* S-17.032 version text */
 	unsigned reason;           /* S-04.006 reason taken */
 	struct s15_settings settings; /* S-15.172: the running slot's settings as read at this start */
@@ -265,6 +269,7 @@ enum s15_osw_view {
 
 struct s15_menu {
 	struct s15_console con;
+	const struct wb_device *dev;	/* S-15.016's keys, S-18's features */
 	const struct s15_boot *boot;
 	const struct s15_env_ops *env;
 	enum s15_screen screen;
@@ -342,7 +347,9 @@ struct s15_menu {
 	uint32_t transfer_total;
 };
 
-void s15_menu_init(struct s15_menu *m, const struct s15_boot *boot,
+/* dev: the device held mode runs on (S-18.005). */
+void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
+		   const struct s15_boot *boot,
 		   const struct s15_env_ops *env, struct s14_log *log);
 /* Held mode starts: open the first screen (S-15.020). */
 void s15_menu_start(struct s15_menu *m);
@@ -445,7 +452,8 @@ void s15_up_extract_refused(struct s15_menu *m, const char *reason,
 /* S-15.116: the selection is shown before the run, each line logged, at
  * every change of its rows or its hold; s15_up_select_time() then
  * replaces, not logged, the rows the time changes. The keys are
- * s15_select's, not the menus'. */
+ * s15_select's, not the menus'. S-15.197's prompt is drawn the same way,
+ * from an s15_select opened by s15_select_prompt_open(). */
 void s15_up_select(struct s15_menu *m, const struct s15_select_info *info,
 		   const struct s15_select *s, uint32_t now_ms);
 void s15_up_select_time(struct s15_menu *m, const struct s15_select_info *info,
@@ -453,9 +461,10 @@ void s15_up_select_time(struct s15_menu *m, const struct s15_select_info *info,
 /* The selection canceled: no run, nothing installed (S-11.096); the zip
  * does not count as read, so the screen is idle again (S-15.103). */
 void s15_up_canceled(struct s15_menu *m);
-/* A run starts. */
+/* A run starts; te_signed: the package's signature is valid (S-15.197). */
 void s15_up_run_start(struct s15_menu *m, enum s15_run_kind kind,
-		      const char *version, const char *name, bool stock);
+		      const char *version, const char *name, bool stock,
+		      bool te_signed);
 void s15_up_step_start(struct s15_menu *m, enum s15_step step);
 void s15_up_step_progress(struct s15_menu *m, enum s15_step step,
 			  uint32_t done, uint32_t total);

@@ -100,7 +100,12 @@ COMMON := -std=c11 $(WARNINGS) -Isrc/include -Isrc -g -fdebug-prefix-map=$(CURDI
 # The image spans L1, L2 and DDR, beyond a CALL's reach (S-01.011;
 # bf703.ld). A function called across regions carries WB_FAR_CALL, and the
 # link fails on a call that cannot reach; the rest are plain calls.
-TARGET_CFLAGS := $(COMMON) -mcpu=bf703-none -Os -ffreestanding \
+# TARGET_SIZE: smaller code at a small cost in speed (no jump tables, no
+# copied loop headers, small functions inlined only when declared inline).
+# The files built for speed take TARGET_SPEED, which is -O2 as it was.
+TARGET_SIZE := -fno-jump-tables -fno-tree-ch -fno-inline-small-functions
+TARGET_SPEED := -O2 $(patsubst -fno-%,-f%,$(TARGET_SIZE))
+TARGET_CFLAGS := $(COMMON) -mcpu=bf703-none -Os $(TARGET_SIZE) -ffreestanding \
 	-fno-common -ffunction-sections -fdata-sections
 TARGET_ASFLAGS := -mcpu=bf703-none -Isrc/include
 # The bootloader's build number (S-17.032), default 0.
@@ -263,7 +268,7 @@ TARGET_CFLAGS    += $(TP_CPPFLAGS) $(LIBC_INCLUDES)
 $(BUILD)/bf703/obj/board/opxy_handover.o: TARGET_CFLAGS += -mlong-calls
 # S-09.072: the bridge's check runs over every byte an install sends, on both
 # CPUs; -O2, as third_party.mk gives the CRCs, speeds its word loop.
-$(BUILD)/bf703/obj/s09_bridge.o: TARGET_CFLAGS += -O2
+$(BUILD)/bf703/obj/s09_bridge.o: TARGET_CFLAGS += $(TARGET_SPEED)
 
 host: $(HOST_LIB) $(FRONT_HOST_LIB) $(TP_HOST_LIBS) $(HOST_TESTS)
 
@@ -306,6 +311,7 @@ $(eval $(call VEC_HEADER,s13b_vectors.h,tests/vectors/s13b/gen_s13b_vectors.py))
 $(eval $(call VEC_HEADER,s14_vectors.h,tests/vectors/s14/gen_s14_vectors.py))
 $(eval $(call VEC_HEADER,s15_vectors.h,tests/vectors/s15/gen_s15_vectors.py))
 $(eval $(call VEC_HEADER,s17_vectors.h,tests/vectors/s17/gen_s17_vectors.py))
+$(eval $(call VEC_HEADER,s18_vectors.h,tests/vectors/s18/gen_s18_vectors.py))
 $(eval $(call VEC_HEADER,wire_vectors.h,tests/vectors/wire/gen_wire_vectors.py))
 
 # A test's own dependency file names the headers it includes once it has
@@ -340,10 +346,12 @@ check/layering:
 	$(PYTHON) -I -B tests/tools/test_layering.py
 	$(PYTHON) -I -B tools/layering.py
 
-# tools/mtpcp.py against the MTP responder and a fake of the factory's.
+# tools/mtpcp.py against the MTP responder and a fake of the factory's, and its
+# prepare-1f against S-05.042's vectors and a stand-in for an OP-1F's responder.
 .PHONY: check/mtpcp
 check/mtpcp:
 	CC="$(CC)" $(PYTHON) -I -B tests/tools/test_mtpcp.py
+	$(PYTHON) -I -B tests/tools/test_mtpcp_prepare_1f.py
 
 # tools/testos_mon.py's frame codec and transport, over a pseudo-terminal.
 .PHONY: check/testos_mon
@@ -583,6 +591,8 @@ $(TESTOS_REGS): tools/testos_regs.py tests/oracle/S-13a-core-bring-up/vectors/re
 # gpio. The gpio variant compiles lcd_gpio.c in place of lcd.c, with its
 # macro; the smc variant is the normal driver.
 define testos_variant
+TESTOS_$(1)_LD     := $(or $(TESTOS_LD_$(1)),$(TESTOS_LD))
+TESTOS_$(1)_MKLDR  := $(or $(TESTOS_MKLDR_$(1)),--no-init)
 TESTOS_$(1)_OBJDIR := $(TESTOS_BUILD)/$(1)
 TESTOS_$(1)_SRCS   := $(if $(filter gpio,$(1)),\
 	$(filter-out src/drivers/bf70x/lcd.c,$(TESTOS_SRCS)) $(TESTOS_LCD_GPIO),\
@@ -591,7 +601,7 @@ TESTOS_$(1)_CFLAGS := $(TESTOS_CFLAGS) $(TESTOS_FLAGS_$(1))
 TESTOS_$(1)_OBJS   := $$(TESTOS_$(1)_SRCS:src/%.c=$$(TESTOS_$(1)_OBJDIR)/obj/%.o) \
 	$(TESTOS_ASM:src/%.S=$$(TESTOS_$(1)_OBJDIR)/obj/%.o) \
 	$$(TESTOS_$(1)_OBJDIR)/obj/gen/testos_regs.o \
-	$(if $(filter installer,$(1)),$$(TESTOS_$(1)_OBJDIR)/obj/gen/installer_image.o)
+	$(if $(filter installer%,$(1)),$$(TESTOS_$(1)_OBJDIR)/obj/gen/installer_image.o)
 TESTOS_$(1)_LIB    := $$(TESTOS_$(1)_OBJDIR)/libwaffle.a
 TESTOS_$(1)_IMAGE  := $(TESTOS_BUILD)/waffle-test-$(1).elf
 TESTOS_$(1)_STREAM := $(TESTOS_BUILD)/waffle-test-$(1).ldr
@@ -611,29 +621,29 @@ $$(TESTOS_$(1)_OBJDIR)/obj/%.o: src/%.c
 
 $$(TESTOS_$(1)_OBJDIR)/obj/%.o: src/%.S
 	@mkdir -p $$(@D)
-	$(CROSS_CC) $(TARGET_ASFLAGS) -DOPXY_TEST_OS=1 -MMD -MP -c $$< -o $$@
+	$(CROSS_CC) $(TARGET_ASFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_$(1)) -MMD -MP -c $$< -o $$@
 
 $$(TESTOS_$(1)_LIB): $$(TESTOS_$(1)_OBJS)
 	@rm -f $$@
 	$(CROSS_AR) rcsD $$@ $$^
 
-$$(TESTOS_$(1)_IMAGE): $$(TESTOS_$(1)_LIB) $(TP_TARGET_LIBS) $(TESTOS_LD)
-	$(CROSS_CC) -mcpu=bf703-none -nostartfiles -nostdlib -T $(TESTOS_LD) \
+$$(TESTOS_$(1)_IMAGE): $$(TESTOS_$(1)_LIB) $(TP_TARGET_LIBS) $$(TESTOS_$(1)_LD)
+	$(CROSS_CC) -mcpu=bf703-none -nostartfiles -nostdlib -T $$(TESTOS_$(1)_LD) \
 		-Wl,-q -Wl,--gc-sections -Wl,-Map,$$(@:.elf=.map) \
-		-Wl,-u,_wb_testos_entry -Wl,-u,_main $(TESTOS_KEEP_$(1)) \
+		-Wl,-u,_wb_testos_entry -Wl,-u,_main $(TESTOS_KEEP_$(1)) $(TESTOS_LDFLAGS_$(1)) \
 		-Wl,--whole-archive $$(TESTOS_$(1)_LIB) -Wl,--no-whole-archive \
 		-Wl,--start-group $(TP_TARGET_LIBS) -lgcc -Wl,--end-group -o $$@
 
 $$(TESTOS_$(1)_STREAM): $$(TESTOS_$(1)_IMAGE) tools/mkldr.py tools/elf32.py
-	$(PYTHON) -I -B tools/mkldr.py --no-init $$< $$@.tmp
+	$(PYTHON) -I -B tools/mkldr.py $$(TESTOS_$(1)_MKLDR) $$< $$@.tmp
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_stream.py os $$@.tmp
 	@mv $$@.tmp $$@
 
 $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testos_layout.py tools/layout.py tools/elf32.py
-	$(PYTHON) -I -B tools/testos_layout.py $$< --ld $(TESTOS_LD) \
+	$(PYTHON) -I -B tools/testos_layout.py $$< --ld $$(TESTOS_$(1)_LD) $(TESTOS_DEVICE_$(1)) \
 		--board src/include/waffle/board/opxy.h --memmap src/include/waffle/s01_memmap.h \
 		--stream $$(TESTOS_$(1)_STREAM) --json $$@.tmp
-	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp
+	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp $(TESTOS_DEVICE_$(1))
 	@mv $$@.tmp $$@
 endef
 
@@ -643,8 +653,29 @@ TESTOS_FLAGS_gpio    := -DOPXY_TESTOS_PANEL_GPIO=1
 TESTOS_FLAGS_mon     := -DOPXY_TESTOS_MONITOR=1
 # The installer (wiki/Installer-Reference.md): the check suite, then this build's image
 # written to the unit, every write held on the unit's key; no monitor.
-TESTOS_INSTALLER := installer
+TESTOS_INSTALLER := installer installer-1f installer-1f-survey
 TESTOS_FLAGS_installer := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1
+# The OP-1F's installer (make installer-1f): the same, with the same carried
+# image, laid out like the OP-1F's OS 1.7.3 for its own loader (S-05.040,
+# bf703_testos_1f.ld); it runs on an OP-1F alone. The survey (make
+# installer-1f-survey) writes nothing to the SPI flash: the gate and the
+# flash driver's write calls (--wrap) refuse every erase and program, and
+# it shows and saves what an install there would depend on.
+TESTOS_1F_FLAGS := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1 -DOPXY_TESTOS_1F=1
+TESTOS_FLAGS_installer-1f := $(TESTOS_1F_FLAGS)
+TESTOS_FLAGS_installer-1f-survey := $(TESTOS_1F_FLAGS) -DOPXY_TESTOS_SURVEY=1
+TESTOS_LD_1F := src/testos/bf703_testos_1f.ld
+TESTOS_LD_installer-1f := $(TESTOS_LD_1F)
+TESTOS_LD_installer-1f-survey := $(TESTOS_LD_1F)
+TESTOS_MKLDR_installer-1f := --os-1f
+TESTOS_MKLDR_installer-1f-survey := --os-1f
+TESTOS_DEVICE_installer-1f := --device 1f
+TESTOS_DEVICE_installer-1f-survey := --device 1f
+TESTOS_KEEP_installer-1f := -Wl,-u,_wb_testos_entry_1f
+TESTOS_KEEP_installer-1f-survey := -Wl,-u,_wb_testos_entry_1f
+TESTOS_COMMA := ,
+TESTOS_SURVEY_WRAPS := wb_spiflash_erase wb_spiflash_program
+TESTOS_LDFLAGS_installer-1f-survey := $(foreach f,$(TESTOS_SURVEY_WRAPS),-Wl$(TESTOS_COMMA)--wrap=$(f))
 # A local, untracked local.mk may add targets, test-OS variants
 # (TESTOS_EXTRA) and sources to analyze (LOCAL_SRCS).
 TESTOS_EXTRA :=
@@ -657,9 +688,15 @@ $(TESTOS_BUILD)/gen/installer_image.c: $(STREAM) tools/installer_image.py src/fr
 	$(PYTHON) -I -B tools/installer_image.py $(STREAM) src/front/front.pin $@
 $(foreach v,$(TESTOS_PANELS) $(TESTOS_MON) $(TESTOS_INSTALLER) $(TESTOS_EXTRA),$(eval $(call testos_variant,$(v))))
 
-.PHONY: installer
+.PHONY: installer installer-1f installer-1f-survey
 installer: $(BUILD)/waffle-install.ldr
 $(BUILD)/waffle-install.ldr: $(TESTOS_installer_STREAM) $(TESTOS_installer_LAYOUT)
+	cp $< $@
+installer-1f: $(BUILD)/waffle-install-1f.ldr
+$(BUILD)/waffle-install-1f.ldr: $(TESTOS_installer-1f_STREAM) $(TESTOS_installer-1f_LAYOUT)
+	cp $< $@
+installer-1f-survey: $(BUILD)/waffle-install-1f-survey.ldr
+$(BUILD)/waffle-install-1f-survey.ldr: $(TESTOS_installer-1f-survey_STREAM) $(TESTOS_installer-1f-survey_LAYOUT)
 	cp $< $@
 
 test-os: $(addprefix test-os-,$(TESTOS_PANEL))
@@ -764,15 +801,18 @@ ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
 # files their options reach.
 ANALYZE_MON := $(addprefix analyze-mon/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
 ANALYZE_INSTALLER := $(addprefix analyze-installer/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
+# The OP-1F's survey installer, over the files its options reach.
+ANALYZE_SURVEY := $(addprefix analyze-survey/,$(sort $(shell grep -l 'OPXY_TESTOS' src/testos/*.c src/board/*.c)))
 DEV_VARIANT := $(sort $(shell grep -l 'OPXY_BOOT_CRUMBS\|OPXY_CRUMB\|OPXY_TIM\|OPXY_STARTUP\|S14_DEFAULT_THRESHOLD' \
 	src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
 ANALYZE_DEV := $(addprefix analyze-dev/,$(DEV_VARIANT))
-.PHONY: $(CHECKS) $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_MON) $(ANALYZE_INSTALLER) $(ANALYZE_DEV)
+.PHONY: $(CHECKS) $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_MON) $(ANALYZE_INSTALLER) $(ANALYZE_SURVEY) \
+	$(ANALYZE_DEV)
 
 $(CHECKS): check/%: $(BUILD)/host/tests/% $(VECTORS)/.stamp
 	@out=$$(WB_VECTORS=$(VECTORS) ./$< 2>&1); s=$$?; printf '%s\n' "$$out"; exit $$s
 
-analyze: $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_MON) $(ANALYZE_INSTALLER) $(ANALYZE_DEV)
+analyze: $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_MON) $(ANALYZE_INSTALLER) $(ANALYZE_SURVEY) $(ANALYZE_DEV)
 
 $(addprefix analyze/,$(TESTS)): | $(VEC_HEADERS)
 
@@ -803,6 +843,13 @@ $(ANALYZE_INSTALLER): analyze-installer/%:
 		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_installer) \
 		$* -o /dev/null 2>&1); s=$$?; \
 	printf '  ANALYZE %s (installer)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
+
+$(ANALYZE_SURVEY): analyze-survey/%:
+	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \
+		-Xanalyzer -analyzer-output=text \
+		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_installer-1f-survey) \
+		$* -o /dev/null 2>&1); s=$$?; \
+	printf '  ANALYZE %s (OP-1F survey)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
 
 $(ANALYZE_DEV): analyze-dev/%:
 	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \

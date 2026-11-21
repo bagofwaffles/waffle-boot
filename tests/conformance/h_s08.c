@@ -87,7 +87,8 @@ int main(void)
 			h_putu((unsigned long)s08_classify_dfu((uint8_t)h_num(&c, 1), (uint8_t)h_num(&c, 2), buf, n));
 			h_end();
 		} else if (strcmp(k, "product") == 0 && c.n == 3) {
-			h_putx(s08_product_word((uint32_t)h_num(&c, 1), h_num(&c, 2) != 0));
+			h_putx(s08_product_word(wb_device_opxy.ident.product_base,
+						(uint32_t)h_num(&c, 1), h_num(&c, 2) != 0));
 			h_end();
 		} else if (strcmp(k, "prepare") == 0 && c.n == 7) {
 			uint16_t v[4];

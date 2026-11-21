@@ -38,6 +38,7 @@ struct inj {
 	unsigned hits;
 	unsigned writes;	/* writes that reached the fake */
 	unsigned erases;
+	unsigned off_line;	/* buffers refused: not on a cache line */
 };
 static struct inj inj;
 
@@ -58,8 +59,20 @@ static int i_select(void *ctx, unsigned part)
 	return fe_select(ctx, part);
 }
 
+/* S-13b.054 as the OP-1F's driver holds it, the suite's buffers reaching
+ * it unchanged (S-13b.060): one off a cache line is refused. */
+static bool off_line(const uint8_t *buf)
+{
+	if (((uintptr_t)buf & 31u) == 0u)
+		return false;
+	inj.off_line++;
+	return true;
+}
+
 static int i_read(void *ctx, uint32_t sector, uint32_t count, uint8_t *buf)
 {
+	if (off_line(buf))
+		return -1;
 	if (inj_match('r', fe.sel, sector))
 		return -1;
 	return fe_read(ctx, sector, count, buf);
@@ -67,6 +80,8 @@ static int i_read(void *ctx, uint32_t sector, uint32_t count, uint8_t *buf)
 
 static int i_write(void *ctx, uint32_t sector, uint32_t count, const uint8_t *buf)
 {
+	if (off_line(buf))
+		return -1;
 	if (inj.corrupt ? false : inj_match('w', fe.sel, sector))
 		return -1;
 	inj.writes++;
@@ -96,7 +111,7 @@ static int i_switch(void *ctx, uint8_t index, uint8_t value)
 static const struct s03_emmc_ops inj_ops = { &fe, i_select, i_read, i_write, i_erase, i_switch };
 
 static struct tchk_guard guard;
-static uint8_t scratch[16u * S03_SECTOR];
+static _Alignas(32) uint8_t scratch[16u * S03_SECTOR];
 
 static struct s03_env env_guarded(void)
 {
@@ -506,6 +521,7 @@ static void test_emmc_boot(void)
 	CHECK(b.mine_checked && b.mine_ok);
 	CHECK(b.bytes == 2u * B && b.us != 0u);
 	CHECK(fe.sel == S03_PART_USER && unchanged());
+	CHECK(inj.off_line == 0u);	/* every buffer on a cache line */
 
 	/* the suite's image damaged, and a read that fails */
 	start(S03_PART_BP2, O_ZERO);
@@ -1352,6 +1368,152 @@ static void test_first_stage(void)
 	CHECK(!st.parsed);
 }
 
+/* The one-CPU suite (S-18.020): the OP-1F's facts as the runner collects
+ * them, with no slave and no bridge. */
+static void op1f_good(void)
+{
+	all_good();
+	facts.dev = &wb_device_op1f;
+	facts.slave_echo = false;
+	facts.link_bytes = 0u;
+	facts.link_us = 0u;
+	facts.psoc_ping = false;		/* never sent there */
+	facts.ext183 = 1;			/* S-13b.061: four lines */
+	facts.sec_count = 0x1D5A000u;		/* S-03.001: any count of 0x1CF8000 or more */
+	facts.ext179 = 0x48u;
+}
+
+static void test_one_cpu(void)
+{
+	unsigned i;
+	size_t n;
+
+	op1f_good();
+	judge();
+	for (i = 0; i < TCHK_COUNT; i++)
+		if (i != TCHK_OS_PARTITION && table.r[i].state != TCHK_PASS &&
+		    table.r[i].state != TCHK_NOT_ON_DEVICE)
+			printf("    %s: %s\n", tchk_tests[i].id, table.r[i].detail.s);
+	CHECK(table.r[TCHK_SLAVE].state == TCHK_NOT_ON_DEVICE);
+	CHECK(table.r[TCHK_BRIDGE].state == TCHK_NOT_ON_DEVICE);
+	CHECK(strcmp(table.r[TCHK_SLAVE].detail.s, "not on this device") == 0);
+	CHECK(strcmp(tchk_state_word(TCHK_NOT_ON_DEVICE), "n/a") == 0);
+	CHECK(tchk_verdict(&table) == TCHK_VERDICT_PASS);
+	CHECK(table.r[TCHK_PSOC].state == TCHK_PASS);
+	CHECK(strcmp(table.r[TCHK_PSOC].detail.s, "greeting, keys, battery answered") == 0);
+	CHECK(table.r[TCHK_EMMC_CONFIG].state == TCHK_PASS);
+	CHECK(strstr(table.r[TCHK_EMMC_CONFIG].more.s, "[179] 48 [183] 01") != NULL);
+	CHECK(strcmp(table.r[TCHK_KEYS].detail.s, "com and the recovery key pressed") == 0);
+	CHECK(strstr(table.r[TCHK_TIMING].more.s, "slave") == NULL);
+	CHECK(strstr(table.r[TCHK_TIMING].more.s, "bridge") == NULL);
+	/* the report and the pages show it as such */
+	n = tchk_report(&table, &facts.sw, "1.0.11", report, sizeof report);
+	CHECK(n > 0u && has("slave         n/a         not on this device\n"));
+	CHECK(has("bridge        n/a         not on this device\n"));
+
+	/* the OP-XY's width on the OP-1F is a failure, and a count below */
+	op1f_good();
+	facts.ext183 = 2;
+	judge();
+	CHECK(table.r[TCHK_EMMC_CONFIG].state == TCHK_FAIL);
+	CHECK(strcmp(table.r[TCHK_EMMC_CONFIG].detail.s, "BUS_WIDTH [183] differs from S-03") == 0);
+	op1f_good();
+	facts.sec_count = S03_USER_SECTORS - 1u;
+	judge();
+	CHECK(strcmp(table.r[TCHK_EMMC_CONFIG].detail.s, "SEC_COUNT differs from S-03") == 0);
+	op1f_good();
+	facts.sec_count = S03_USER_SECTORS;
+	judge();
+	CHECK(table.r[TCHK_EMMC_CONFIG].state == TCHK_PASS);
+	/* on the OP-XY the count is exact */
+	all_good();
+	facts.sec_count = 0x1D5A000u;
+	judge();
+	CHECK(table.r[TCHK_EMMC_CONFIG].state == TCHK_FAIL);
+
+	/* the eMMC not up: its tests not tested, named so */
+	op1f_good();
+	facts.slave = false;
+	judge();
+	CHECK(table.r[TCHK_SLAVE].state == TCHK_NOT_ON_DEVICE);
+	CHECK(table.r[TCHK_EMMC_FILE].state == TCHK_NOT_TESTED);
+	CHECK(strcmp(table.r[TCHK_EMMC_FILE].detail.s, "the eMMC did not come up") == 0);
+	CHECK(tchk_verdict(&table) == TCHK_VERDICT_GAPS);
+
+	/* the PSoC without the ping: keys and battery still asked */
+	op1f_good();
+	facts.psoc_battery = false;
+	judge();
+	CHECK(table.r[TCHK_PSOC].state == TCHK_FAIL);
+	CHECK(strcmp(table.r[TCHK_PSOC].detail.s, "no answer: battery") == 0);
+	/* on the OP-XY the ping stays part of it */
+	all_good();
+	facts.psoc_ping = false;
+	judge();
+	CHECK(strcmp(table.r[TCHK_PSOC].detail.s, "no answer: ping") == 0);
+
+	/* the key check ended with 8, by role */
+	op1f_good();
+	facts.keys = TCHK_G_ENDED;
+	facts.keys_seen = 2u;
+	judge();
+	CHECK(strcmp(table.r[TCHK_KEYS].detail.s,
+		     "ended with 8; com not pressed, recovery key pressed") == 0);
+	CHECK(tchk_key_com(&wb_device_op1f) == 0x2Cu && tchk_key_recovery(&wb_device_op1f) == 0x09u);
+	CHECK(tchk_key_com(&wb_device_opxy) == TCHK_KEY_COM && tchk_key_com(NULL) == TCHK_KEY_COM);
+	CHECK(tchk_key_recovery(&wb_device_opxy) == TCHK_KEY_M4);
+}
+
+/* emmc-boot's fault lines in check.txt, and their bytes for the survey. */
+static void test_fault_lines(void)
+{
+	struct tchk_emmc_fault *sel = &facts.emmc_fault[0], *rd = &facts.emmc_fault[1];
+	uint8_t b[TCHK_FAULT_BYTES];
+	size_t n;
+
+	op1f_good();
+	judge();
+	CHECK(table.emmc_fault[0].n == 0u && table.emmc_fault[1].n == 0u);
+	*sel = (struct tchk_emmc_fault){ .seen = true, .part = 1, .why = TCHK_FW_DRIVER,
+					 .pc_flags = TCHK_PC_BEFORE | TCHK_PC_AFTER,
+					 .pc_before = 0x00, .pc_after = 0x00,
+					 .step = TCHK_FS_SWITCH, .cmd = 6, .at = 13, .state = 4,
+					 .rc = -5, .arg = 0x03B30100u, .r1 = 0x00000980u,
+					 .istat = 0x4u, .idsts = 0, .busy_us = 1234u };
+	*rd = (struct tchk_emmc_fault){ .seen = true, .part = 1, .why = TCHK_FW_DRIVER,
+					.sector = 0, .count = 128, .step = TCHK_FS_ARG, .cmd = 18,
+					.at = 18, .state = 0xFF, .rc = -1, .arg = 0x0012A004u };
+	judge();
+	CHECK(strcmp(table.emmc_fault[0].s,
+		     "select BP1: CMD6 03b30100, at CMD13 SWITCH_ERROR, rc -5, r1 00000980, "
+		     "state 4, is 00000004, ids 00000000, busy 1234 us, [179] 00 then 00") == 0);
+	CHECK(strcmp(table.emmc_fault[1].s,
+		     "read BP1 0+128: CMD18 0012a004, at CMD18 refused (argument or buffer), rc -1, "
+		     "r1 00000000, state -, is 00000000, ids 00000000, busy 0 us") == 0);
+	CHECK(!table.emmc_fault[0].cut && !table.emmc_fault[1].cut);
+	n = tchk_report(&table, &facts.sw, "1.0.11", report, sizeof report);
+	CHECK(n > 0u && has("\n                          select BP1: CMD6 03b30100"));
+	CHECK(strstr(report, "select BP1") < strstr(report, "read BP1 0+128") &&
+	      strstr(report, "read BP1 0+128") < strstr(report, "emmc-volume"));
+	/* the store's own refusals, in words */
+	sel->why = TCHK_FW_UNKNOWN;
+	rd->why = TCHK_FW_REFUSED;
+	rd->step = TCHK_FS_NONE;
+	judge();
+	CHECK(strcmp(table.emmc_fault[0].s, "select BP1: no partition known since a failed select") == 0);
+	CHECK(strcmp(table.emmc_fault[1].s, "read BP1 0+128: refused by the store") == 0);
+	tchk_fault_bytes(sel, b);
+	CHECK(b[0] == 1u && b[1] == 1u && b[2] == TCHK_FW_UNKNOWN && b[3] == 3u && b[6] == TCHK_FS_SWITCH);
+	CHECK(b[7] == 6u && b[8] == 13u && b[9] == 4u && b[10] == 0xFBu && b[11] == 0u);
+	CHECK(b[20] == 0x00u && b[21] == 0x01u && b[22] == 0xB3u && b[23] == 0x03u);
+	CHECK(b[36] == 0xD2u && b[37] == 0x04u);
+	memset(sel, 0, sizeof(*sel));
+	tchk_fault_bytes(sel, b);
+	for (unsigned i = 0; i < TCHK_FAULT_BYTES; i++)
+		CHECK(b[i] == 0u);
+	memset(rd, 0, sizeof(*rd));
+}
+
 int main(void)
 {
 	RUN(test_first_stage);
@@ -1368,6 +1530,8 @@ int main(void)
 	RUN(test_formatters);
 	RUN(test_regs_groups);
 	RUN(test_verdict);
+	RUN(test_one_cpu);
+	RUN(test_fault_lines);
 	RUN(test_nordic_gate);
 	RUN(test_pages_fit);
 	RUN(test_report_redaction);

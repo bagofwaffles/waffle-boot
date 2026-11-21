@@ -1,0 +1,268 @@
+{
+ "device": "OP-1F",
+ "forms": {
+  "bar": [
+   {
+    "n": 0,
+    "payload": "020000000000000000000000000000"
+   },
+   {
+    "n": 1,
+    "payload": "02ff00000000000000000000000000"
+   },
+   {
+    "n": 13,
+    "payload": "02ffffffffffffffffffffffffff00"
+   },
+   {
+    "n": 14,
+    "payload": "02ffffffffffffffffffffffffffff"
+   }
+  ],
+  "rgb": [
+   {
+    "rgb": "000000",
+    "payload": "06004800480048"
+   },
+   {
+    "rgb": "c80000",
+    "payload": "06c84800480048"
+   },
+   {
+    "rgb": "00c800",
+    "payload": "060048c8480048"
+   },
+   {
+    "rgb": "ff0000",
+    "payload": "06ff4800480048"
+   },
+   {
+    "rgb": "0000ff",
+    "payload": "0600480048ff48"
+   },
+   {
+    "rgb": "324b19",
+    "payload": "0632484b481948"
+   }
+  ]
+ },
+ "change_only": [
+  {
+   "requests": [
+    [
+     "bar",
+     0
+    ],
+    [
+     "bar",
+     0
+    ],
+    [
+     "bar",
+     5
+    ],
+    [
+     "bar",
+     5
+    ],
+    [
+     "bar",
+     0
+    ]
+   ],
+   "sent": [
+    "02ffffffffff000000000000000000",
+    "020000000000000000000000000000"
+   ]
+  },
+  {
+   "requests": [
+    [
+     "rgb",
+     "000000"
+    ],
+    [
+     "rgb",
+     "ff0000"
+    ],
+    [
+     "rgb",
+     "ff0000"
+    ],
+    [
+     "rgb",
+     "00c800"
+    ]
+   ],
+   "sent": [
+    "06ff4800480048",
+    "060048c8480048"
+   ]
+  },
+  {
+   "requests": [
+    [
+     "bar",
+     3
+    ],
+    [
+     "clear"
+    ],
+    [
+     "clear"
+    ],
+    [
+     "bar",
+     0
+    ],
+    [
+     "bar",
+     2
+    ]
+   ],
+   "sent": [
+    "02ffffff0000000000000000000000",
+    "020000000000000000000000000000",
+    "020000000000000000000000000000",
+    "02ffff000000000000000000000000"
+   ]
+  },
+  {
+   "requests": [
+    [
+     "clear"
+    ],
+    [
+     "bar",
+     14
+    ]
+   ],
+   "sent": [
+    "020000000000000000000000000000",
+    "02ffffffffffffffffffffffffffff"
+   ]
+  }
+ ],
+ "bar_clear": {
+  "payload": "020000000000000000000000000000",
+  "note": "S-07.048: once, after the wait loop stops USB mass storage and before the charge-LED update; sent whatever bar message was sent last"
+ },
+ "key_test": [
+  {
+   "name": "alone_twice",
+   "events": [
+    [
+     16,
+     1
+    ],
+    [
+     16,
+     0
+    ],
+    [
+     16,
+     1
+    ],
+    [
+     16,
+     0
+    ]
+   ],
+   "state": "0x10",
+   "charge": 50,
+   "sent": [
+    "02ffffffffffffffffffffffffffff",
+    "06ff4800480048",
+    "060048ff480048",
+    "0600480048ff48",
+    "06004800480048",
+    "020000000000000000000000000000",
+    "060048c8480048"
+   ]
+  },
+  {
+   "name": "second_while_down",
+   "events": [
+    [
+     32,
+     1
+    ],
+    [
+     33,
+     1
+    ],
+    [
+     33,
+     0
+    ],
+    [
+     32,
+     0
+    ]
+   ],
+   "state": "0x10",
+   "charge": 50,
+   "sent": [
+    "02ffffffffffffffffffffffffffff",
+    "06ff4800480048",
+    "060048ff480048",
+    "06004800480048",
+    "020000000000000000000000000000",
+    "060048c8480048"
+   ]
+  },
+  {
+   "name": "none",
+   "events": [],
+   "state": "0x10",
+   "charge": 10,
+   "sent": [
+    "02ffffffffffffffffffffffffffff",
+    "06ff4800480048",
+    "06004800480048",
+    "020000000000000000000000000000",
+    "06c84800480048"
+   ]
+  },
+  {
+   "name": "three_round",
+   "events": [
+    [
+     5,
+     1
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     6,
+     0
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     7,
+     0
+    ]
+   ],
+   "state": "0x12",
+   "charge": 0,
+   "sent": [
+    "02ffffffffffffffffffffffffffff",
+    "06ff4800480048",
+    "060048ff480048",
+    "0600480048ff48",
+    "06ff4800480048",
+    "06004800480048",
+    "020000000000000000000000000000"
+   ]
+  }
+ ]
+}

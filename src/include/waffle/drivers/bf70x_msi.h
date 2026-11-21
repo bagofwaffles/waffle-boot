@@ -149,6 +149,41 @@ struct wb_msi_config {
 	/* A multi-block data phase, whole; never less than one block's
 	 * allowance (xfer, plus busy for a write), which 0 gives. */
 	uint32_t xfer_total_us;
+	/* The eMMC's data lines (device.emmc_width): 4, else 8 (0 is 8). */
+	uint8_t emmc_width;
+};
+
+/*
+ * The first fault of an operation, for a report: where it failed, the
+ * command then in hand, its response and the controller's status. Cleared
+ * by wb_msi_fault_clear(); a later fault does not overwrite it.
+ */
+enum wb_msi_step {
+	WB_MSI_STEP_NONE = 0,
+	WB_MSI_STEP_ARG,	/* refused before a command: an argument or a buffer */
+	WB_MSI_STEP_OFF,	/* after the power-off notification */
+	WB_MSI_STEP_CMD,	/* the command not taken, or no good response */
+	WB_MSI_STEP_R1,		/* R1 error bits in the command's response */
+	WB_MSI_STEP_BUSY,	/* DAT0 still busy at the end of the wait */
+	WB_MSI_STEP_SWITCH,	/* CMD13 reported SWITCH_ERROR */
+	WB_MSI_STEP_STATE,	/* CMD13 never showed ready in the transfer state */
+	WB_MSI_STEP_DATA,	/* a data or DMA error in the data phase */
+	WB_MSI_STEP_DATA_TIME,	/* the data phase did not end in time */
+	WB_MSI_STEP_COUNT
+};
+
+struct wb_msi_fault {
+	uint8_t step;		/* enum wb_msi_step; WB_MSI_STEP_NONE: none */
+	uint8_t cmd;		/* the operation's command (6, 8, 17, 18, ...) */
+	uint8_t at;		/* the command that failed: cmd, or a CMD12 or CMD13 */
+	int8_t rc;		/* the WB_MSI_* result */
+	uint8_t state;		/* the last CMD13's CURRENT_STATE, 0xFF: none */
+	uint8_t pad[3];
+	uint32_t arg;		/* cmd's argument (ARG: the buffer's address) */
+	uint32_t r1;		/* the last R1 received */
+	uint32_t istat;		/* MSI_ISTAT at the fault */
+	uint32_t idsts;		/* MSI_IDSTS at the fault */
+	uint32_t busy_us;	/* the busy wait so far, from the response's end */
 };
 
 struct wb_msi {
@@ -157,7 +192,7 @@ struct wb_msi {
 	struct wb_msi_desc *desc;
 	unsigned ndesc;
 	uint32_t rca;
-	uint8_t width;		/* host and eMMC bus width, 1 or 8 */
+	uint8_t width;		/* host and eMMC bus width, 1, 4 or 8 */
 	uint8_t hs_timing;	/* written to EXT_CSD[185], or 0 */
 	uint32_t clkdiv;	/* MSI_CLKDIV now; 0 is the bypass */
 	uint8_t power_off_long_time;	/* EXT_CSD[247], from emmc_init */
@@ -167,7 +202,18 @@ struct wb_msi {
 	uint32_t csd[4];
 	bool powered_off;	/* Switch(34, 3) sent: no command since */
 	uint32_t last_r1;
+	/* for the fault record: the command in hand, the last CMD13's R1,
+	 * when the current busy wait began */
+	uint8_t cmd_idx;
+	uint32_t cmd_arg;
+	uint32_t cmd13_r1;
+	bool cmd13_seen;
+	uint64_t busy_from;
+	struct wb_msi_fault fault;
 };
+
+/* The fault record emptied, before an operation. */
+void wb_msi_fault_clear(struct wb_msi *m);
 
 #define WB_MSI_OK          0
 #define WB_MSI_ERR_ARG    (-1)
@@ -195,7 +241,8 @@ int wb_msi_cmd(const struct wb_msi *m, uint32_t idx, uint32_t arg,
 
 /*
  * S-13b.051 steps 1-9 at RCA 0x5A7E, with CMD9 between steps 5 and 6,
- * leaving the eMMC selected, on the 8-bit bus, with HS_TIMING and the
+ * leaving the eMMC selected, on the bus of c->emmc_width lines (8:
+ * Switch(183, 2); 4: Switch(183, 1), S-13b.061), with HS_TIMING and the
  * clock of S-13b.053. ext_csd (512 bytes, WB_MSI_BUF_ALIGN) holds the last
  * EXT_CSD read, and m->csd the CSD. A failure clears m->csd (S-13b.059).
  */
@@ -215,6 +262,23 @@ int wb_msi_read_ext_csd(struct wb_msi *m, uint8_t *ext_csd);
  * wb_msi_init() (S-13b.056).
  */
 int wb_msi_power_off(struct wb_msi *m, uint8_t power_off_long_time);
+
+/*
+ * S-03.013's switch (an s03_switch_poll_fn; ctx is the struct wb_msi): a
+ * CMD6 in write-byte mode, then CMD13 until the eMMC reports
+ * READY_FOR_DATA in the transfer state, for at most limit_ms; DAT0 is not
+ * watched. Returns 0 done, 1 the wait ran out, -1 the command failed (a
+ * response error, R1 error bits, SWITCH_ERROR, or an index the driver
+ * does not switch). After POWER_OFF_NOTIFICATION no command follows,
+ * whatever the outcome, until wb_msi_init().
+ */
+int wb_msi_switch_poll(void *ctx, uint8_t index, uint8_t value, uint32_t limit_ms);
+
+/*
+ * S-03.012: PARTITION_CONFIG (EXT_CSD[179]) as the eMMC holds it, by one
+ * CMD8 into buf (512 bytes, WB_MSI_BUF_ALIGN). WB_MSI_OK with *value.
+ */
+int wb_msi_read_part_config(struct wb_msi *m, uint8_t *buf, uint8_t *value);
 
 /* s03_emmc_ops shapes (ctx is the struct wb_msi). */
 int wb_msi_emmc_select(void *ctx, unsigned part);
@@ -283,6 +347,16 @@ struct wb_msi_leave {
  * driver's own transfers leave it as reset sets it.
  */
 int wb_msi_leave(const struct wb_msi *m, const struct wb_msi_leave *v);
+
+/*
+ * S-05.037, S-13b.062: the controller closed and idle at a hand-off on the
+ * CPU that boots, the eMMC sent nothing: a bounded wait for DAT0 and the
+ * CIU, the internal DMA off (BUSMODE.DE clear, CTL.INTDMAC clear, IDINTEN
+ * 0, IDSTS cleared), the DMA interface and FIFO reset, IMSK 0, ISTAT
+ * written with 0xFFFFFFFF, CTL.INTEN clear. Every write is made even after
+ * a wait ran out (WB_MSI_TIMEOUT then).
+ */
+int wb_msi_close(const struct wb_msi *m);
 
 /*
  * A timing build's phases of a data command (make BOOT_TIMING=1): the

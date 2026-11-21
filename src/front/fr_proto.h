@@ -32,7 +32,7 @@
 #include "fr_slots.h"
 
 #define FR_PROTO_VERSION  2u
-#define FR_FRONT_VERSION  18u	/* the front's own version, bumped with its pin */
+#define FR_FRONT_VERSION  20u	/* the front's own version, bumped with its pin */
 #define FR_PROTO_MAX_DATA 1024u	/* image bytes in one DATA, after its offset */
 #define FR_PROTO_MAX      (FR_PROTO_MAX_DATA + 8u)	/* a frame's payload */
 #define FR_PROTO_HEAD     6u	/* "WR", type, seq, len */
@@ -98,7 +98,15 @@
 					 * countdown stopped, since the write this recovery
 					 * made last; 0 when none, or once a write or an
 					 * action is accepted */
-#define FR_INFO_LEN          232u
+/* S-02.093, S-18.004, S-18.005: the device and how it was decided, with
+ * the first stage's n and c as read, a table match's the row's
+ * (FR_HO_HOW_UNKNOWN: the default device, not identified); front version
+ * 19 on. A host reads INFO as at least the bytes its fields need. */
+#define FR_INFO_O_DEVICE     232u	/* u8 FR_HO_DEV_* */
+#define FR_INFO_O_DEV_HOW    233u	/* u8 FR_HO_HOW_* */
+#define FR_INFO_O_FS_N       234u	/* u32 n (S-18.003) */
+#define FR_INFO_O_FS_C       238u	/* u32 c (S-18.003) */
+#define FR_INFO_LEN          242u
 /* each slot, from fr_slot_info(), its offsets relative to FR_INFO_O_SLOT(k) */
 #define FR_INFO_S_FLAGS      0u		/* u8 FR_SLOT_F_* */
 #define FR_INFO_S_LENGTH     1u		/* u32 the record's length */
@@ -181,6 +189,11 @@ struct fr_rec_status {
 	struct fr_home home;		/* what this recovery did to the running slot */
 	uint8_t batt[FR_BATT_MAX];	/* the PSoC's last 0x37 payload */
 	uint8_t batt_len;
+	/* S-18.004: the device (FR_HO_DEV_*), how it was decided
+	 * (FR_HO_HOW_*) and the fingerprint read, for the screen and INFO */
+	uint8_t dev_id;
+	uint8_t dev_how;
+	uint32_t fs_n, fs_c;
 };
 
 struct fr_proto {

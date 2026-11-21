@@ -5,7 +5,9 @@
  */
 #include "waffle/s02_flash.h"
 
+#include "front/fr_handoff.h"
 #include "waffle/bytes.h"
+#include "waffle/s05_handoff.h"
 
 /* S-02.011 */
 unsigned s02_selected_slot(uint8_t index)
@@ -673,4 +675,49 @@ int s02_write_selector(const struct s02_env *env, unsigned slot, uint8_t verifie
 	sel.index = (uint8_t)slot;
 	sel.verified = verified;
 	return selector_store(env, sel);
+}
+
+/* S-02.106 rule 1, S-02.108, S-11.091: the first data block loaded at
+ * FR_DESC_ADDR decides. */
+bool s02_stream_is_waffle(int (*read)(void *ctx, uint32_t off, uint8_t *buf, uint32_t len),
+			  void *ctx, uint32_t base, uint32_t max,
+			  uint32_t (*crc32)(uint32_t crc, const uint8_t *p, size_t n))
+{
+	uint32_t off = 0;
+
+	while (off + S05_LDR_HEADER <= max) {
+		uint8_t h[S05_LDR_HEADER];
+		uint32_t code, target, count;
+		bool fill, data;
+
+		if (read(ctx, base + off, h, sizeof h) != 0 || !s05_ldr_header_ok(h))
+			return false;
+		code = wb_get_le32(h);
+		target = wb_get_le32(h + 4);
+		count = wb_get_le32(h + 8);
+		/* FILL carries no payload; IGNORE carries one and loads nothing */
+		fill = (code & S05_FLAG_FILL) != 0u;
+		data = !fill && (code & S05_FLAG_IGNORE) == 0u;
+		if (data && target == FR_DESC_ADDR && count >= FR_DESC_HEAD + 4u) {
+			uint8_t d[FR_DESC_HEAD + 8u * FR_DESC_REGIONS + 4u];
+			const uint32_t k = count < sizeof d ? count : (uint32_t)sizeof d;
+			uint32_t size, nreg;
+
+			if (off + S05_LDR_HEADER + k > max ||
+			    read(ctx, base + off + S05_LDR_HEADER, d, k) != 0)
+				return false;
+			size = wb_get_le16(d + FR_DESC_O_SIZE);
+			nreg = wb_get_le32(d + FR_DESC_O_NREGIONS);
+			return wb_get_le32(d + FR_DESC_O_MAGIC) == FR_DESC_MAGIC &&
+			       wb_get_le16(d + FR_DESC_O_VERSION) == FR_DESC_VERSION &&
+			       nreg <= FR_DESC_REGIONS && size == FR_DESC_HEAD + 8u * nreg + 4u &&
+			       size <= k && crc32(0u, d, size - 4u) == wb_get_le32(d + size - 4u);
+		}
+		if ((code & S05_FLAG_FINAL) != 0u)
+			return false;
+		off += S05_LDR_HEADER + (fill ? 0u : count);
+		if (!fill && count > max)
+			return false;
+	}
+	return false;
 }

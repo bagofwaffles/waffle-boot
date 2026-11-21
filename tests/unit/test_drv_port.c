@@ -289,6 +289,25 @@ static void test_gpio(void)
 	CHECK(fake_mmr_count() == 0);
 }
 
+/* S-13b.006 on the OP-1F: DIR set, no DATA write. */
+static void test_gpio_keep(void)
+{
+	static const struct fake_mmr_access seq[] = {
+		FAKE_W32(PORT_DIR_SET(WB_PORT_A), 1u << 0),
+		FAKE_W32(PORT_DIR_SET(WB_PORT_C), 1u << 13),
+	};
+	struct port_model pm;
+
+	reset(&pm, NULL);
+	fake_mmr_set_hook(NULL, NULL);
+	CHECK(wb_gpio_output_keep(WB_PIN(WB_PORT_A, 0)) == WB_PORT_OK);
+	CHECK(wb_gpio_output_keep(WB_PIN(WB_PORT_C, 13)) == WB_PORT_OK);
+	CHECK(fake_mmr_expect_writes("keep", seq, ARRAY_LEN(seq)));
+	fake_mmr_clear_log();
+	CHECK(wb_gpio_output_keep(48) == WB_PORT_ERR_ARG);
+	CHECK(fake_mmr_count() == 0);
+}
+
 int main(void)
 {
 	RUN(test_pinmux_from_reset);
@@ -297,5 +316,6 @@ int main(void)
 	RUN(test_pinmux_bad_pin);
 	RUN(test_strap);
 	RUN(test_gpio);
+	RUN(test_gpio_keep);
 	return check_summary("test_drv_port");
 }

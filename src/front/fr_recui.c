@@ -7,6 +7,7 @@
  * keys choose nothing) and after each change of screen; a reading that did not come, or shows more than
  * one key, is no key and ends a hold. An action starts only when key 1 was
  * read down, alone, in every reading for FR_HOLD_US on the confirm screen.
+ * Keys 1 to 4 are the same on both devices; 8 (Back) is the device's.
  */
 #include "fr_start.h"
 
@@ -41,6 +42,7 @@ void fr_ui_reset(struct fr_ui *u)
 static void press(struct fr_ui *u, const struct fr_rec_status *st, unsigned key, uint64_t now)
 {
 	static const uint8_t keys[4] = { FR_KEY_1, FR_KEY_2, FR_KEY_3, FR_KEY_4 };
+	const unsigned back = fr_dev_or_default(u->dev)->key_back;
 
 	switch (u->screen) {
 	case FR_UI_MAIN:
@@ -50,7 +52,7 @@ static void press(struct fr_ui *u, const struct fr_rec_status *st, unsigned key,
 		}
 		break;
 	case FR_UI_SLOTS:
-		if (key == FR_KEY_8) {
+		if (key == back) {
 			show(u, FR_UI_MAIN);
 			break;
 		}
@@ -66,7 +68,7 @@ static void press(struct fr_ui *u, const struct fr_rec_status *st, unsigned key,
 		break;
 	case FR_UI_CONFIRM:
 	default:
-		if (key == FR_KEY_8) {
+		if (key == back) {
 			show(u, FR_UI_SLOTS);
 		} else if (key == FR_KEY_1) {
 			u->holding = true;

@@ -1,0 +1,602 @@
+{
+ "no_serial": [
+  {
+   "cdb": "12010000ff00",
+   "data_in": "00000003008083",
+   "data_in_len": 7,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VPD 00h",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "12018000ff00",
+   "data_in": "00800000",
+   "data_in_len": 4,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VPD 80h, no serial",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "12018300ff00",
+   "data_in": "008300220201001e7465656e61676520656e67696e656572696e67204f502d31204469736b20",
+   "data_in_len": 38,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VPD 83h, no serial",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "120183000800",
+   "data_in": "008300220201001e",
+   "data_in_len": 8,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VPD 83h cut to 8",
+   "sense": null,
+   "status": 0
+  }
+ ],
+ "offered": [
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "first command after the offer: unit attention",
+   "sense": [
+    6,
+    40,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "then ready",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "120000002400",
+   "data_in": "008002021f0000007465656e616765204f502d31204469736b2020202020202020202020",
+   "data_in_len": 36,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "standard INQUIRY 36",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "120000000500",
+   "data_in": "008002021f",
+   "data_in_len": 5,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "standard INQUIRY cut to 5",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "120000006000",
+   "data_in": "008002021f0000007465656e616765204f502d31204469736b2020202020202020202020",
+   "data_in_len": 36,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "standard INQUIRY 96 (36 owed)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "120000010500",
+   "data_in": "008002021f0000007465656e616765204f502d31204469736b2020202020202020202020",
+   "data_in_len": 36,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "standard INQUIRY 261: allocation length in bytes 3-4",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "120200002400",
+   "data_in": "008002021f0000007465656e616765204f502d31204469736b2020202020202020202020",
+   "data_in_len": 36,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "standard INQUIRY with CMDDT set: ignored",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "12010000ff00",
+   "data_in": "00000003008083",
+   "data_in_len": 7,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VPD 00h",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "12018000ff00",
+   "data_in": "008000085859304131324243",
+   "data_in_len": 12,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VPD 80h",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "12018300ff00",
+   "data_in": "0083002a020100267465656e61676520656e67696e656572696e67204f502d31204469736b205859304131324243",
+   "data_in_len": 46,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VPD 83h",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1201b000ff00",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VPD B0h not offered",
+   "sense": [
+    5,
+    36,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "030000001200",
+   "data_in": "700005000000000a00000000240000000000",
+   "data_in_len": 18,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REQUEST SENSE after it",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "120080002400",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "INQUIRY page code without EVPD",
+   "sense": [
+    5,
+    36,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "25000000000000000000",
+   "data_in": "0003f7ff00000200",
+   "data_in_len": 8,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ CAPACITY(10)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "25000000000100000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ CAPACITY(10) LBA 1, PMI 0: refused",
+   "sense": [
+    5,
+    36,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "030000001200",
+   "data_in": "700005000000000a00000000240000000000",
+   "data_in_len": 18,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REQUEST SENSE: READ CAPACITY(10) LBA without PMI",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "25000000000100000100",
+   "data_in": "0003f7ff00000200",
+   "data_in_len": 8,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ CAPACITY(10) LBA 1, PMI 1",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "2300000000000000fc00",
+   "data_in": "000000080003f80002000200",
+   "data_in_len": 12,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ FORMAT CAPACITIES",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1a003f00ff00",
+   "data_in": "0b0000080003f80000000200",
+   "data_in_len": 12,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "MODE SENSE(6) all pages",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1a083f00ff00",
+   "data_in": "03000000",
+   "data_in_len": 4,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "MODE SENSE(6) all pages, DBD",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1a000800ff00",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "MODE SENSE(6) caching page not offered",
+   "sense": [
+    5,
+    36,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "1a001c00ff00",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "MODE SENSE(6) informational exceptions not offered",
+   "sense": [
+    5,
+    36,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "1a00ff00ff00",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "MODE SENSE(6) saved values",
+   "sense": [
+    5,
+    57,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "5a003f0000000000ff00",
+   "data_in": "000e0000000000080003f80000000200",
+   "data_in_len": 16,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "MODE SENSE(10) all pages",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "5a083f0000000000ff00",
+   "data_in": "0006000000000000",
+   "data_in_len": 8,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "MODE SENSE(10) all pages, DBD",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "151000000c00",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "000000000000000000000000",
+   "data_out_len": 12,
+   "name": "MODE SELECT(6) accepted and ignored",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1e0000000100",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "PREVENT",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "1e0000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "ALLOW",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "35000000000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "SYNCHRONIZE CACHE(10)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "2f000000000000000800",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VERIFY(10)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "2f020000000000000800",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "VERIFY(10) BYTCHK",
+   "sense": [
+    5,
+    36,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "2a000000006400000200",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa",
+   "data_out_len": 1024,
+   "name": "WRITE(10) 2 blocks at 100",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "28000000006400000200",
+   "data_in": "01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa",
+   "data_in_len": 1024,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) them back",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "0a0101000100",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "0910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb02",
+   "data_out_len": 512,
+   "name": "WRITE(6) with a 21-bit LBA",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "28000001010000000100",
+   "data_in": "0910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb02",
+   "data_in_len": 512,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) at 0x10100",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "080000000000",
+   "data_in_len": 131072,
+   "data_in_sha256": "33baa25e648b6a4609185b2ad5bb8eefc826677be02a45e22719a7a3df7cd779",
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(6) length 0 = 256 blocks",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "a80000000064000000020000",
+   "data_in": "01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa",
+   "data_in_len": 1024,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(12)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "aa000003f7fe000000020000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc",
+   "data_out_len": 1024,
+   "name": "WRITE(12)",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "28000003f7fe00000200",
+   "data_in": "030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc",
+   "data_in_len": 1024,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) of the last two blocks",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "28000003f7ff00000200",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) past the end",
+   "sense": [
+    5,
+    33,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "030000001200",
+   "data_in": "f000050003f7ff0a00000000210000000000",
+   "data_in_len": 18,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REQUEST SENSE: LBA out of range",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "28000000000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) length 0",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "28200000000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "READ(10) RDPROTECT",
+   "sense": [
+    5,
+    36,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "040000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "FORMAT UNIT unsupported",
+   "sense": [
+    5,
+    32,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "160000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "RESERVE(6) unsupported",
+   "sense": [
+    5,
+    32,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "3b000000000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "WRITE BUFFER unsupported",
+   "sense": [
+    5,
+    32,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "a00000000000000000000000",
+   "data_in": "",
+   "data_in_len": 0,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REPORT LUNS unsupported",
+   "sense": [
+    5,
+    32,
+    0
+   ],
+   "status": 2
+  },
+  {
+   "cdb": "030000001200",
+   "data_in": "700005000000000a00000000200000000000",
+   "data_in_len": 18,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REQUEST SENSE: invalid opcode",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "030000001200",
+   "data_in": "700000000000000a00000000000000000000",
+   "data_in_len": 18,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REQUEST SENSE when there is none",
+   "sense": null,
+   "status": 0
+  },
+  {
+   "cdb": "030000000800",
+   "data_in": "700000000000000a",
+   "data_in_len": 8,
+   "data_out": "",
+   "data_out_len": 0,
+   "name": "REQUEST SENSE cut to 8",
+   "sense": null,
+   "status": 0
+  }
+ ]
+}

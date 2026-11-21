@@ -346,18 +346,81 @@ static void take_bytes(struct fr_psoc *p)
 
 static void led_rgb(struct fr_psoc *p, const uint8_t rgb[3], bool forced)
 {
-	const uint8_t m[4] = { 0x03, rgb[0], rgb[1], rgb[2] };
+	if (!fr_dev_has(p->dev, FR_DEV_F_KEY_LEDS)) {
+		/* S-07.046: {06 r 48 g 48 b 48}, only when it changes */
+		const uint8_t m[7] = { 0x06, rgb[0], 0x48, rgb[1], 0x48, rgb[2], 0x48 };
 
+		if (fr_same(p->led_rgb, rgb, 3))
+			return;
+		fr_copy(p->led_rgb, rgb, 3);
+		fr_psoc_send(p, ID_LED, m, sizeof m);
+		return;
+	}
 	if (!forced) {
 		if (fr_same(p->led_rgb, rgb, 3))
 			return;		/* S-07.041 */
 		fr_copy(p->led_rgb, rgb, 3);
 	}
-	/* S-07.041: a forced message is always sent and not remembered */
-	fr_psoc_send(p, ID_LED, m, 4);
+	{
+		const uint8_t m[4] = { 0x03, rgb[0], rgb[1], rgb[2] };
+
+		/* S-07.041: a forced message is always sent and not remembered */
+		fr_psoc_send(p, ID_LED, m, 4);
+	}
 }
 
-/* S-07.042 (s07_charge_led): from the state and the last charge */
+/* round(32768 sin(i pi / 128)), i = 0..64: a quarter turn. */
+static const uint16_t quarter_sine[65] = {
+	0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740, 9512,
+	10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
+	18205, 18868, 19520, 20160, 20788, 21403, 22006, 22595, 23170, 23732, 24279,
+	24812, 25330, 25833, 26320, 26791, 27246, 27684, 28106, 28511, 28899, 29269,
+	29622, 29957, 30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138,
+	32286, 32413, 32522, 32610, 32679, 32729, 32758, 32768,
+};
+
+/* sin of a phase in 2^-32 turns, times 32768, from the table with linear
+ * steps between its entries (within 1 of 32768 sin). */
+static int32_t sine(uint32_t phase)
+{
+	const uint32_t quadrant = phase >> 30;
+	uint32_t x = (phase >> 16) & 0x3FFFu;	/* 2^-14 of a quarter turn */
+	uint32_t i, f, v;
+
+	if (quadrant & 1u)
+		x = 0x4000u - x;
+	i = x >> 8;
+	f = x & 0xFFu;
+	v = quarter_sine[i];
+	if (i < 64u)
+		v += (((uint32_t)quarter_sine[i + 1u] - (uint32_t)quarter_sine[i]) * f) >> 8;
+	return (quadrant & 2u) ? -(int32_t)v : (int32_t)v;
+}
+
+/* S-07.047: 0.3 turns (0.6 pi rad) a second, in 2^-32 turns a
+ * microsecond times two (1288.49, rounded to 1288.5). */
+#define BREATH_STEP_X2 2577u
+#define BREATH_GAP_US  100000u
+
+/* S-07.047's factor at an update in state FR_POWER_CHARGE, in 2^-16:
+ * 0.25 + 0.75 (0.5 + 0.5 sin phase), the phase grown by the time since
+ * the previous such update, unless that is over 100 ms or there was none
+ * (exactly 100 ms grows it). Every charge-LED update in that state counts,
+ * so a round that waits out an unanswered request may pause it. */
+static uint32_t breathe(struct fr_psoc *p)
+{
+	const uint64_t t = now(p);
+
+	if (p->breath_had && t >= p->breath_us && t - p->breath_us <= BREATH_GAP_US)
+		p->breath += ((uint32_t)(t - p->breath_us) * BREATH_STEP_X2) >> 1;
+	p->breath_had = true;
+	p->breath_us = t;
+	/* 40960 + 24576 sin: 16384 to 65536 */
+	return (uint32_t)(40960 + (3 * sine(p->breath)) / 4);
+}
+
+/* S-07.042 (s07_charge_led): from the state and the last charge; on a
+ * device without key LEDs S-07.047's forms, breathing in state 0x16. */
 static void charge_led(struct fr_psoc *p)
 {
 	static const uint8_t red[3] = { 0xC8, 0, 0 }, green[3] = { 0, 0xC8, 0 },
@@ -373,6 +436,15 @@ static void charge_led(struct fr_psoc *p)
 		v = charge > 90u ? green : red;
 		forced = true;
 	}
+	if (forced && !fr_dev_has(p->dev, FR_DEV_F_KEY_LEDS)) {
+		const uint32_t f = breathe(p);
+		uint8_t b[3];
+
+		for (unsigned i = 0; i < 3u; i++)
+			b[i] = (uint8_t)(((uint32_t)v[i] * f) >> 16);
+		led_rgb(p, b, false);
+		return;
+	}
 	led_rgb(p, v, forced);
 }
 
@@ -385,7 +457,9 @@ static int power_off(struct fr_psoc *p, uint8_t s)
 		p->on_poweroff(p->ctx);
 	/* step 1: S-07.072's shutdown reports; step 2: the echo */
 	fr_psoc_send(p, ID_REPORT, shutdown, 3);
-	fr_psoc_send(p, ID_LED, all_off, 1);
+	/* S-07.044; no 0x40 {01} without key LEDs (S-07.046) */
+	if (fr_dev_has(p->dev, FR_DEV_F_KEY_LEDS))
+		fr_psoc_send(p, ID_LED, all_off, 1);
 	fr_psoc_send(p, ID_POWER_32, &s, 1);
 	p->off = true;			/* step 3: nothing more, no reset */
 	return FR_PSOC_OFF;
@@ -568,10 +642,11 @@ int fr_psoc_sleep(struct fr_psoc *p, uint32_t us)
 	return wait_until(p, now(p) + us, false);
 }
 
-void fr_psoc_init(struct fr_psoc *p, const struct fr_bytes *io,
+void fr_psoc_init(struct fr_psoc *p, const struct fr_dev *dev, const struct fr_bytes *io,
 		  const struct fr_clock *clock)
 {
 	fr_fill(p, 0, sizeof *p);
+	p->dev = fr_dev_or_default(dev);
 	p->io = io;
 	p->clock = clock;	/* S-06.020: seq 0; S-07.041: the LED dark */
 }
@@ -835,32 +910,40 @@ int fr_psoc_service(struct fr_psoc *p)
 
 /* ---- keys (S-07.032, S-07.033) ---- */
 
-/* S-07.032, S-16.008: hold is byte 3 bit 0 or byte 1 bit 5; no reply,
- * held. S-07.079: missing bytes read 00. */
-bool fr_keys_hold(const uint8_t *pl, size_t n)
+/* Key k of a reply, a byte it does not carry reading 00 (S-07.079). */
+static bool key_down(const uint8_t *pl, size_t n, unsigned k)
 {
-	uint8_t b[4] = { 0, 0, 0, 0 };
+	return (k >> 3) < n && (((unsigned)pl[k >> 3] >> (k & 7u)) & 1u) != 0u;
+}
 
+/* S-07.032, S-16.008: either hold key (on the OP-XY byte 3 bit 0 or byte 1
+ * bit 5; on the OP-1F byte 7 bit 1 or byte 5 bit 4); no reply, held. */
+bool fr_keys_hold(const struct fr_dev *dev, const uint8_t *pl, size_t n)
+{
+	dev = fr_dev_or_default(dev);
 	if (!pl)
 		return true;
-	fr_copy(b, pl, n < 4u ? n : 4u);
-	return (b[3] & 0x01u) != 0u || (b[1] & 0x20u) != 0u;
+	return key_down(pl, n, dev->hold[0]) || key_down(pl, n, dev->hold[1]);
 }
 
 /* S-07.033's reading of the reply, key k as bit k & 7 of byte k >> 3, over
- * the 72 keys 0x00-0x47 but precomp (byte 2 bit 7): the one key down, none,
- * or more than one. A byte the reply does not carry reads 00 (S-07.079);
- * what follows byte 8 is not read. */
-unsigned fr_keys_one(const uint8_t *pl, size_t n)
+ * the device's keys but precomp (the OP-XY's byte 2 bit 7; none on the
+ * OP-1F): the one key down, none, or more than one. A byte the reply does
+ * not carry reads 00 (S-07.079); what follows the device's bitmap bytes
+ * is not read. */
+unsigned fr_keys_one(const struct fr_dev *dev, const uint8_t *pl, size_t n)
 {
 	uint8_t b[FR_KEYS_BYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	unsigned key = FR_KEYS_NONE;
+	unsigned key = FR_KEYS_NONE, bytes;
 
 	if (!pl)
 		return FR_KEYS_UNREAD;
-	fr_copy(b, pl, n < FR_KEYS_BYTES ? n : FR_KEYS_BYTES);
-	b[2] &= 0x7Fu;
-	for (unsigned k = 0; k < 8u * FR_KEYS_BYTES; k++) {
+	dev = fr_dev_or_default(dev);
+	bytes = dev->key_bytes < FR_KEYS_BYTES ? dev->key_bytes : FR_KEYS_BYTES;
+	fr_copy(b, pl, n < bytes ? n : bytes);
+	if (dev->precomp != FR_KEY_NONE && (dev->precomp >> 3) < FR_KEYS_BYTES)
+		b[dev->precomp >> 3] &= (uint8_t)~(1u << (dev->precomp & 7u));
+	for (unsigned k = 0; k < dev->key_count && k < 8u * FR_KEYS_BYTES; k++) {
 		if ((((unsigned)b[k >> 3] >> (k & 7u)) & 1u) == 0u)
 			continue;
 		if (key != FR_KEYS_NONE)

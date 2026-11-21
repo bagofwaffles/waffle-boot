@@ -75,6 +75,10 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	struct fr_log log;
 
 	s->hw = hw;
+	s->dev = fr_dev_or_default(hw->ident != NULL ? hw->ident->dev : NULL);
+	/* S-18.005 */
+	ho->device = s->dev->id;
+	ho->device_how = hw->ident != NULL ? hw->ident->how : FR_HO_HOW_TABLE;
 	s->panel_up = false;
 	s->lit = false;
 	s->drawn_ok = false;
@@ -87,8 +91,14 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	if (hw->panel != NULL && hw->frame != NULL) {
 		const uint64_t floor_us = ho->stamps[FR_STAMP_INIT_ENTRY] / FR_CCLK_MHZ + PANEL_FLOOR_US;
 
+		/* S-13c.027: where PA8 is no strap, as a high one */
+		const unsigned pa8 = !fr_dev_has(s->dev, FR_DEV_F_STRAPS) ||
+				     (ho->strap & STRAP_PA8) != 0u ? 1u : 0u;
+
 		fr_panel_begin(&s->panel, hw->panel, hw->clock, ho->dma9_xmod,
-			       ho->dma9_ymod, (ho->strap & STRAP_PA8) != 0u ? 1u : 0u);
+			       ho->dma9_ymod, pa8);
+		/* S-13c.026 */
+		s->panel.gamma = fr_dev_has(s->dev, FR_DEV_F_GAMMA);
 		/* S-13c.006 whatever DMA9_YMOD's time base: the first stage released
 		 * the reset before the INIT stage began, and the counter's count
 		 * from there, at FR_CCLK_MHZ per us, never overstates the time. */
@@ -104,7 +114,7 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 
 	/* S-07.020, S-07.021: the greeting; its failure wait ends when the PSoC
 	 * greets, at most 1.5 s. */
-	fr_psoc_init(&s->psoc, hw->psoc, hw->clock);
+	fr_psoc_init(&s->psoc, s->dev, hw->psoc, hw->clock);
 	s->psoc.on_poweroff = poweroff;
 	s->psoc.ctx = s;
 	if (fr_psoc_greet(&s->psoc) == FR_PSOC_OFF)
@@ -145,8 +155,9 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 		ho->flags |= FR_HO_KEYS_REPLIED;
 		fr_copy(ho->keys, s->psoc.keys, n);
 		ho->key_len = (uint8_t)n;
-		/* S-02.080: Power + M4, key 4 alone; no reply is no chord. */
-		if (fr_keys_one(s->psoc.keys, s->psoc.keys_len) == FR_KEY_4) {
+		/* S-02.080: Power + M4, the device's chord key alone (S-02 §9);
+		 * no reply is no chord. */
+		if (fr_keys_one(s->dev, s->psoc.keys, s->psoc.keys_len) == s->dev->key_recovery) {
 			s->why = FR_WHY_KEYS;	/* S-02.084, S-15.150 */
 			loading_line(s);
 			return FR_NEXT_RECOVERY;

@@ -5,7 +5,9 @@ checks that s11_model agrees before it writes anything.
 
     python3 -I -B tests/oracle/S-11-packages/gen_vectors.py
 
-Only conformance test keys are used (images.tfw.test_keys). Python 3, standard library only.
+Only conformance test keys are used (images.tfw.test_keys): packages are signed with its P-224 key, which a
+unit under test holds in place of Q0. The signature sets the state (S-11.021) and refuses nothing (S-11.022).
+Python 3, standard library only.
 """
 import csv
 import hashlib
@@ -44,24 +46,39 @@ PKG_FILES = (
     'header_product_variant.bin', 'header_reserved_flip.bin', 'header_version_forced.bin',
     'header_version_tampered_te_signed.bin', 'key_00.bin', 'key_00_nokey.bin', 'key_01.bin', 'key_01_dev.bin',
     'key_01_option.bin', 'key_01_option_nokey.bin', 'key_02.bin', 'key_fe.bin', 'key_ff.bin',
-    'key_ff_option_dev.bin', 'manifest_block_version_2.bin', 'manifest_product_bad.bin',
-    'manifest_product_bad_option.bin', 'manifest_tag_TESH.bin', 'midi_not_forced.bin',
-    'multi_fault_crc_and_tag.bin', 'multi_fault_sku_and_hash.bin', 'name_encrypted.bin',
+    'key_ff_option_dev.bin', 'manifest_block_version_2.bin', 'manifest_product_not_read.bin',
+    'manifest_tag_TESH.bin', 'midi_not_forced.bin',
+    'multi_fault_crc_and_tag.bin', 'multi_fault_length_and_hash.bin', 'name_encrypted.bin',
     'name_firmware_zip.bin', 'name_no_zip.bin', 'name_upper_ZIP.bin', 'name_zip_after_nul.bin',
     'name_zip_at_78.bin', 'name_zip_at_7a.bin', 'not_forced_upper.bin', 'payload_appended_byte.bin',
     'payload_hash_flip.bin', 'payload_hash_flip_option.bin', 'payload_length_minus1.bin',
     'payload_length_plus1.bin', 'payload_length_plus1_option.bin', 'preamble_bad_magic.bin',
     'preamble_crc_garbage.bin', 'preamble_forced.bin', 'preamble_type_1.bin',
-    'recorded_version_file_absent.bin', 'short_body.bin', 'short_file.bin', 'sig_high_bytes_nonzero.bin',
-    'sig_index_01.bin', 'sig_index_01_option.bin', 'sig_index_ff_dev.bin', 'sig_no_q0.bin',
-    'sig_no_q0_option.bin', 'sig_other_key.bin', 'sig_other_key_option.bin', 'sig_r_zero.bin',
-    'sig_reserved_flip_after_signing.bin', 'sig_s_n.bin', 'sig_unsigned_option.bin', 'sig_valid.bin',
+    'recorded_version_file_absent.bin', 'short_body.bin', 'short_file.bin', 'sig_blank.bin',
+    'sig_blank_no_q0.bin', 'sig_garbage.bin', 'sig_high_bytes_nonzero.bin', 'sig_index_01.bin',
+    'sig_index_01_option.bin', 'sig_index_ff_dev.bin', 'sig_no_q0.bin', 'sig_no_q0_option.bin',
+    'sig_other_key.bin', 'sig_other_key_option.bin', 'sig_r_zero.bin', 'sig_reserved_flip_after_signing.bin',
+    'sig_s_n.bin', 'sig_unsigned_option.bin', 'sig_valid.bin',
     'version_header_vs_file.bin', 'zip_garbage.bin', 'ziplen_enc_needs_block.bin', 'ziplen_exact.bin',
     'ziplen_over_by_1.bin', 'ziplen_zero.bin',
+    # the OP-1F's (S-11.026, S-11.007)
+    'header_device_0_1f.bin', 'header_device_1_1f.bin', 'header_device_2_1f.bin', 'header_device_3_1f.bin',
+    'header_device_6_1f.bin', 'header_device_7_1f.bin', 'header_device_255_1f.bin',
+    'header_product_xy_1f.bin', 'manifest_product_xy_1f.bin',
+    # S-11.027: the OP-1F's two formats, and the plain one on the OP-XY
+    'plain_on_opxy.bin', 'signed_1f.bin', 'signed_1f_body.bin', 'signed_1f_key_00.bin',
+    'signed_1f_length_plus1.bin', 'signed_1f_hash_flip.bin', 'signed_1f_key_02.bin', 'plain_crypto_header.bin',
+    'format_discriminator_body.bin', 'plain_key_00_cdc.bin', 'plain_key_00_nokey.bin', 'plain_key_01.bin',
+    'plain_key_01_option.bin', 'plain_key_01_option_nokey.bin', 'zero_key_nokey.bin', 'plain_key_02_body.bin',
+    'plain_key_02_option.bin', 'plain_key_03.bin', 'plain_key_fe.bin', 'plain_key_ff.bin', 'format_discriminator.bin',
+    'plain_tag_version_2.bin', 'signed_1f_block_version_2.bin', 'signed_1f_block_version_0_body.bin', 'plain_reserved_garbage.bin', 'plain_trailing.bin', 'plain_ziplen_exact.bin',
+    'plain_ziplen_over_by_1.bin', 'plain_ziplen_enc_needs_block.bin', 'plain_ziplen_zero.bin',
+    'plain_zip_garbage.bin', 'plain_name_no_zip.bin', 'plain_name_fe_no_zip.bin', 'plain_wrong_key.bin',
+    'plain_crc_flip.bin', 'plain_device_6.bin',
 )
 AES0, D, PUB = tfw.test_keys()
 AES1 = tfw.test_keys(b'opxy-conformance-k1')[0]
-D_OTHER, PUB_OTHER = p224.test_key(b'not-the-cloud-key')
+D_OTHER = p224.test_key(b'not-the-cloud-key')[0]
 
 
 # ---- a package writer with a knob for every field
@@ -89,13 +106,13 @@ def assemble(zip_bytes=BASE_ZIP, name=b'firmware.zip', key_index=0xFE, key=None,
              iv=bytes(range(16)), pre=True, pre_magic=0xBABECAFE, pre_type=0, pre_crc=None, pre_version=(1, 2, 0, 0),
              magic=0xBEEFCAFE, device=1, length=None, version=(1, 2, 0, 0), address=0, product=0x84000,
              hdr_reserved=b'', tag=b'TESG', block_version=1, mprod=0x84000, zip_length=None, payload_extra=b'',
-             split_chain=False, man_patch=None, post=None, fix_crc=True, final=None):
+             split_chain=False, man_patch=None, post=None, fix_crc=True, final=None, crypto_header=False):
     # The like-for-like case is images.tfw.build; the knobs below write what that builder never writes
     # (bad magics, lengths, CRCs, split chains, patches).
     if (pre_magic == 0xBABECAFE and pre_type == 0 and pre_crc is None and magic == 0xBEEFCAFE and length is None
             and not hdr_reserved and tag == b'TESG' and block_version == 1 and mprod == product
             and zip_length is None and not payload_extra and not split_chain and man_patch is None
-            and post is None and fix_crc and final is None and len(name) <= 0x100
+            and post is None and fix_crc and final is None and len(name) <= 0x100 and not crypto_header
             and (key_index in (0x00, 0x01, 0xFE) or key is not None)):
         return tfw.build(zip_bytes, name=name, version=version, device_id=device, product=product,
                          preamble=pre_version if pre else None, aes_key_index=key_index, sig_key_index=sig_index,
@@ -104,12 +121,13 @@ def assemble(zip_bytes=BASE_ZIP, name=b'firmware.zip', key_index=0xFE, key=None,
     return _assemble_raw(zip_bytes, name, key_index, key, sig_index, sign_d, iv, pre, pre_magic, pre_type,
                          pre_crc, pre_version, magic, device, length, version, address, product, hdr_reserved,
                          tag, block_version, mprod, zip_length, payload_extra, split_chain, man_patch, post,
-                         fix_crc, final)
+                         fix_crc, final, crypto_header)
 
 
 def _assemble_raw(zip_bytes, name, key_index, key, sig_index, sign_d, iv, pre, pre_magic, pre_type, pre_crc,
                   pre_version, magic, device, length, version, address, product, hdr_reserved, tag,
-                  block_version, mprod, zip_length, payload_extra, split_chain, man_patch, post, fix_crc, final):
+                  block_version, mprod, zip_length, payload_extra, split_chain, man_patch, post, fix_crc, final,
+                  crypto_header=False):
     nb = name.ljust(0x100, b'\0')[:0x100]
     zp = zip_bytes + bytes(-len(zip_bytes) % 0x80)
     if key_index in (0x00, 0x01) or key is not None:
@@ -125,15 +143,16 @@ def _assemble_raw(zip_bytes, name, key_index, key, sig_index, sign_d, iv, pre, p
     man[0x04] = key_index
     man[0x70:0x80] = iv
     struct.pack_into('<I', man, 0x80, len(zip_bytes) if zip_length is None else zip_length)
-    man[0x84:0x88] = tag
-    man[0x88] = block_version
-    man[0x89] = sig_index
-    struct.pack_into('<I', man, 0x8C, mprod)
-    struct.pack_into('<I', man, 0x98, len(payload))
-    man[0x9C:0xBC] = hashlib.sha256(payload).digest()
+    if not crypto_header:
+        man[0x84:0x88] = tag
+        man[0x88] = block_version
+        man[0x89] = sig_index
+        struct.pack_into('<I', man, 0x8C, mprod)
+        struct.pack_into('<I', man, 0x98, len(payload))
+        man[0x9C:0xBC] = hashlib.sha256(payload).digest()
     if man_patch:
         man_patch(man, payload)
-    if sign_d is not None:
+    if sign_d is not None and not crypto_header:
         r, s = p224.sign(sign_d, hashlib.sha256(bytes(man[:0x10]) + bytes(0x40) + bytes(man[0x50:])).digest())
         man[0x10:0x30] = r.to_bytes(32, 'big')
         man[0x30:0x50] = s.to_bytes(32, 'big')
@@ -152,7 +171,7 @@ def _assemble_raw(zip_bytes, name, key_index, key, sig_index, sign_d, iv, pre, p
 
 
 def unit(q0=True, k0=True, k1=True, option=False, dev=False):
-    return m.Unit(PUB if q0 else None, AES0 if k0 else None, AES1 if k1 else None, option, dev)
+    return m.Unit(AES0 if k0 else None, AES1 if k1 else None, option, dev, q0=PUB if q0 else None)
 
 
 def ujson(u):
@@ -178,7 +197,7 @@ def package_cases():
     def add(case, kw=None, form='file', link=None, fname='op-xy.tfw', u=None, reason=None, req='', **exp):
         C.append(dict(case=case, kw=kw or {}, form=form, link=link, file_name=fname if form == 'file' else None,
                       unit=u or {}, reason=reason, req=req, exp=exp))
-    add('form_file_ok', req='S-11.001', te_signed=True)
+    add('form_file_ok', req='S-11.001', signature='valid')
     add('form_body_ok_midi', dict(pre=False), form='body', link='midi', req='S-11.001')
     add('form_file_on_host', dict(pre=True), form='body', link='midi', reason='MAGIC', req='S-11.001')
     add('form_body_on_disk', dict(pre=False), reason='PREAMBLE', req='S-11.001')
@@ -207,24 +226,32 @@ def package_cases():
     add('crc_field_wrong', dict(fix_crc=False), reason='CRC', req='S-11.008')
     add('manifest_tag_TESH', dict(tag=b'TESH'), reason='FORMAT', req='S-11.011')
     add('manifest_block_version_2', dict(block_version=2), reason='FORMAT', req='S-11.011')
-    add('sig_valid', req='S-11.012', te_signed=True)
-    add('sig_reserved_flip_after_signing', dict(post=flip(0x200)), req='S-11.012', te_signed=False)
+    add('plain_on_opxy', dict(crypto_header=True, key_index=0x00), reason='FORMAT', req='S-11.027')
+    # check 8 sets the signature state and refuses nothing (S-11.012, S-11.021, S-11.022): every sig_* case is
+    # accepted; check 9 is not made (S-11.013 withdrawn)
+    add('sig_valid', req='S-11.012', signature='valid')
+    add('sig_reserved_flip_after_signing', dict(post=flip(0x200)), req='S-11.012', signature='invalid')
     add('sig_high_bytes_nonzero', dict(post=lambda b: bytes(b[:0x10] + b'\xAA\xBB\xCC\xDD' + b[0x14:0x30] +
                                                             b'\x11\x22\x33\x44' + b[0x34:])),
-        req='S-11.012', te_signed=True)
-    add('sig_r_zero', dict(post=lambda b: bytes(b[:0x10] + bytes(32) + b[0x30:])), te_signed=False,
-        req='S-11.012')
+        req='S-11.012', signature='valid')
+    add('sig_r_zero', dict(post=lambda b: bytes(b[:0x10] + bytes(32) + b[0x30:])), req='S-11.012',
+        signature='invalid')
     add('sig_s_n', dict(post=lambda b: bytes(b[:0x30] + p224.N.to_bytes(32, 'big') + b[0x50:])),
-        te_signed=False, req='S-11.012')
-    add('sig_other_key', dict(sign_d=D_OTHER), req='S-11.022', te_signed=False)
-    add('sig_other_key_option', dict(sign_d=D_OTHER), u=dict(option=True), req='S-11.022', te_signed=False)
-    add('sig_index_01', dict(sig_index=0x01), req='S-11.022', te_signed=False)
-    add('sig_index_01_option', dict(sig_index=0x01), u=dict(option=True), req='S-11.022', te_signed=False)
-    add('sig_index_ff_dev', dict(sig_index=0xFF), u=dict(dev=True), req='S-11.022', te_signed=False)
-    add('sig_unsigned_option', dict(sign_d=None, sig_index=0xFF), u=dict(option=True), req='S-11.022')
-    add('sig_no_q0', None, u=dict(q0=False), req='S-11.021', te_signed=False)
-    add('sig_no_q0_option', None, u=dict(q0=False, option=True), req='S-11.021', te_signed=False)
-    add('manifest_product_bad', dict(mprod=0x88000), reason='SKU', req='S-11.013')
+        req='S-11.012', signature='invalid')
+    add('sig_other_key', dict(sign_d=D_OTHER), req='S-11.021', signature='invalid')
+    add('sig_other_key_option', dict(sign_d=D_OTHER), u=dict(option=True), req='S-11.022', signature='invalid')
+    add('sig_index_01', dict(sig_index=0x01), req='S-11.012', signature='invalid')
+    add('sig_index_01_option', dict(sig_index=0x01), u=dict(option=True), req='S-11.022', signature='invalid')
+    add('sig_index_ff_dev', dict(sig_index=0xFF), u=dict(dev=True), req='S-11.022', signature='invalid')
+    add('sig_garbage', dict(sign_d=None, sig_index=0x7F, man_patch=lambda mm, p: mm.__setitem__(
+        slice(0x10, 0x50), bytes((i * 29 + 7) & 0xFF for i in range(0x40)))), req='S-11.021', signature='invalid')
+    add('sig_blank', dict(sign_d=None), req='S-11.021', signature='none')
+    add('sig_unsigned_option', dict(sign_d=None, sig_index=0xFF), u=dict(option=True), req='S-11.021',
+        signature='none')
+    add('sig_no_q0', None, u=dict(q0=False), req='S-11.021', signature='invalid')
+    add('sig_no_q0_option', None, u=dict(q0=False, option=True), req='S-11.021', signature='invalid')
+    add('sig_blank_no_q0', dict(sign_d=None), u=dict(q0=False), req='S-11.021', signature='none')
+    add('manifest_product_not_read', dict(mprod=0x88000), req='S-11.013')
     add('payload_length_plus1', dict(man_patch=lambda mm, p: struct.pack_into('<I', mm, 0x98, len(p) + 1)),
         reason='LENGTH', req='S-11.014')
     add('payload_length_minus1', dict(man_patch=lambda mm, p: struct.pack_into('<I', mm, 0x98, len(p) - 1)),
@@ -232,8 +259,7 @@ def package_cases():
     add('payload_appended_byte', dict(post=lambda b: bytes(b) + b'\0'), reason='LENGTH', req='S-11.014')
     add('payload_hash_flip', dict(man_patch=lambda mm, p: mm.__setitem__(0x9C, mm[0x9C] ^ 1)), reason='HASH',
         req='S-11.014')
-    # checks 9-11 apply with the option on too (S-11.022)
-    add('manifest_product_bad_option', dict(mprod=0x88000), u=dict(option=True), reason='SKU', req='S-11.022')
+    # checks 10 and 11 apply with the option on too (S-11.014, S-11.023)
     add('payload_length_plus1_option', dict(man_patch=lambda mm, p: struct.pack_into('<I', mm, 0x98, len(p) + 1)),
         u=dict(option=True), reason='LENGTH', req='S-11.022')
     add('payload_hash_flip_option', dict(man_patch=lambda mm, p: mm.__setitem__(0x9C, mm[0x9C] ^ 1)),
@@ -269,21 +295,109 @@ def package_cases():
     add('enc_split_chain', dict(key_index=0x00, split_chain=True), req='S-11.016', zip_reason='MEMBER')
     add('enc_trailing', dict(key_index=0x00, payload_extra=bytes(0x123)), req='S-11.016')
     add('multi_fault_crc_and_tag', dict(tag=b'XXXX', fix_crc=False), reason='CRC', req='S-11.020')
-    add('multi_fault_sku_and_hash', dict(mprod=0, man_patch=lambda mm, p: mm.__setitem__(0x9C, mm[0x9C] ^ 1)),
-        reason='SKU', req='S-11.020')
+    add('multi_fault_length_and_hash', dict(man_patch=lambda mm, p: (
+        struct.pack_into('<I', mm, 0x98, len(p) + 1), mm.__setitem__(0x9C, mm[0x9C] ^ 1))),
+        reason='LENGTH', req='S-11.020')
     add('version_header_vs_file', dict(zip_bytes=fwzip.build({'os': os_image(20000)}, version=(9, 9, 9), build=9)),
         req='S-11.038', version=[1, 2, 0, 0], recorded_version=[9, 9, 9, 9])
-    # A TE-signed package with its TE header version rewritten: accepted, TE-signed and forced; the recorded
-    # version is the zip's.
+    # A valid package with its TE header version rewritten: the header is not signed (S-11.012), so it stays
+    # valid, accepted and forced; the recorded version is the zip's (S-11.038).
     add('header_version_tampered_te_signed',
         dict(final=lambda b: bytes(b[:0x4B] + struct.pack('>4H', 0, 1, 0, 0) + b[0x53:])),
-        req='S-11.038', te_signed=True, forced=True, version=[0, 1, 0, 0], recorded_version=[1, 2, 0, 0])
+        req='S-11.038', signature='valid', forced=True, version=[0, 1, 0, 0], recorded_version=[1, 2, 0, 0])
     add('recorded_version_file_absent', dict(zip_bytes=zipb({'firmware/blackfin/bin/os.ldr': os_image(5000)})),
         req='S-11.038', version=[1, 2, 0, 0], recorded_version=None)
     add('forced_by_name', None, fname='op-xy_force.tfw', req='S-11.047', forced=True)
     add('not_forced_upper', None, fname='op-xy_FORCE.tfw', req='S-11.047', forced=False)
     add('cdc_forced', dict(pre=False), form='body', link='cdc', req='S-11.050', forced=True)
     add('midi_not_forced', dict(pre=False), form='body', link='midi', req='S-11.050', forced=False)
+    return C
+
+
+def package_cases_1f():
+    """S-11.026 on the OP-1F: device id 0x01 alone passes and none is forced; a package made for the
+    OP-XY fails S-11.007 there (S-18.030: device.product_number, device.product_base). S-11.027: the
+    marker at the block's +0x84 tells the signed format from the plain one, in both forms."""
+    C = []
+    base = m.product_base('OP-1F')
+
+    def add(case, kw, reason=None, req='', form='file', link=None, u=None, **exp):
+        k = dict(product=base, mprod=base)
+        k.update(kw)
+        C.append(dict(case=case, kw=k, form=form, link=link, file_name='op-1.tfw' if form == 'file' else None,
+                      unit=u or {}, reason=reason, req=req, exp=exp, device='OP-1F'))
+    for d in (0, 2, 3, 6, 7, 0xFF):
+        add('header_device_%d_1f' % d, dict(device=d), reason='DEVICE', req='S-11.026')
+    add('header_device_1_1f', dict(device=1), req='S-11.026', forced=False)
+    add('header_product_xy_1f', dict(product=m.product_base('OP-XY'), mprod=m.product_base('OP-XY')),
+        reason='PRODUCT', req='S-11.007')
+    # check 9 is not made (S-11.013 withdrawn): the TE header's product word alone keeps the OP-XY's out
+    add('manifest_product_xy_1f', dict(mprod=m.product_base('OP-XY')), req='S-11.013')
+
+    # S-11.027: the TESG format, checked as on the OP-XY (checks 7, 8, 10 and 11)
+    add('signed_1f', {}, req='S-11.027', signature='valid', plain=False)
+    add('signed_1f_body', dict(pre=False), form='body', link='midi', req='S-11.027', signature='valid',
+        plain=False)
+    add('signed_1f_key_00', dict(key_index=0x00), req='S-11.027', signature='valid', plain=False)
+    add('signed_1f_length_plus1', dict(man_patch=lambda mm, p: struct.pack_into('<I', mm, 0x98, len(p) + 1)),
+        reason='LENGTH', req='S-11.027')
+    add('signed_1f_hash_flip', dict(man_patch=lambda mm, p: mm.__setitem__(0x9C, mm[0x9C] ^ 1)), reason='HASH',
+        req='S-11.027')
+    add('signed_1f_key_02', dict(key_index=0x02, key=AES0), reason='KEY', req='S-11.027')
+
+    # S-11.027: the plain format, a crypto header (key index, iv, zip length) and no TESG
+    P = dict(crypto_header=True)
+
+    def plain(case, kw, reason=None, **exp):
+        k = dict(P)
+        k.update(kw)
+        if reason not in ('CRC', 'DEVICE'):     # refused before the block is read
+            exp.setdefault('plain', True)
+            exp.setdefault('signature', 'none')     # S-11.021: a plain package has no signature
+        add(case, k, reason=reason, req='S-11.027', **exp)
+    plain('plain_crypto_header', dict(key_index=0x00))
+    plain('format_discriminator_body', dict(key_index=0x00, pre=False), form='body', link='midi')
+    plain('plain_key_00_cdc', dict(key_index=0x00, pre=False), form='body', link='cdc', forced=True)
+    plain('plain_key_00_nokey', dict(key_index=0x00), u=dict(k0=False), reason='NOKEY')
+    plain('plain_key_01', dict(key_index=0x01), reason='KEY')
+    plain('plain_key_01_option', dict(key_index=0x01), u=dict(option=True))
+    plain('plain_key_01_option_nokey', dict(key_index=0x01), u=dict(option=True, k1=False), reason='NOKEY')
+    # the key rule does not depend on the format: the zero-key value 0x02 is KEY, as in the signed one
+    plain('zero_key_nokey', dict(key_index=0x02, key=AES0), reason='KEY')
+    plain('plain_key_02_body', dict(key_index=0x02, key=AES0, pre=False), form='body', link='midi',
+          reason='KEY')
+    plain('plain_key_02_option', dict(key_index=0x02, key=AES0), u=dict(option=True), reason='KEY')
+    plain('plain_key_03', dict(key_index=0x03, key=AES0), reason='KEY')
+    plain('plain_key_fe', dict(key_index=0xFE))
+    plain('plain_key_ff', dict(key_index=0xFF, key=AES0), reason='KEY')
+    # the tag decides: another tag is plain, whatever follows it; TESG is signed, and a block version other
+    # than 0x01 is FORMAT there, not plain
+    plain('format_discriminator', dict(key_index=0x00, man_patch=lambda mm, p: mm.__setitem__(slice(0x84, 0x89),
+                                                                                         b'TESH\x01')))
+    plain('plain_tag_version_2', dict(key_index=0x00, man_patch=lambda mm, p: mm.__setitem__(
+        slice(0x84, 0x89), b'TESH\x02')))
+    add('signed_1f_block_version_2', dict(block_version=2), reason='FORMAT', req='S-11.027')
+    add('signed_1f_block_version_0_body', dict(block_version=0, pre=False), form='body', link='midi',
+        reason='FORMAT', req='S-11.027')
+    # the block's other bytes are not read: a payload length and digest that would each refuse a TESG
+    # package, a signature that would make it invalid, and a product word that is read in neither
+    plain('plain_reserved_garbage', dict(key_index=0x00, man_patch=lambda mm, p: (
+        mm.__setitem__(slice(0x00, 0x04), b'\xA5' * 4), mm.__setitem__(slice(0x05, 0x70), b'\x5A' * 0x6B),
+        mm.__setitem__(slice(0x89, 0x300), bytes((i * 7 + 3) & 0xFF for i in range(0x89, 0x300))))))
+    plain('plain_trailing', dict(key_index=0x00, payload_extra=bytes(0x123)))
+    plain('plain_ziplen_exact', dict(key_index=0xFE, zip_bytes=BASE_ZIP + bytes(-len(BASE_ZIP) % 0x80)))
+    plain('plain_ziplen_over_by_1', dict(key_index=0xFE, zip_bytes=BASE_ZIP + bytes(-len(BASE_ZIP) % 0x80),
+                                         zip_length=len(BASE_ZIP) + (-len(BASE_ZIP) % 0x80) + 1), reason='ZIPLEN')
+    plain('plain_ziplen_enc_needs_block', dict(key_index=0x00, zip_bytes=BASE_ZIP + bytes(-len(BASE_ZIP) % 0x80),
+                                               zip_length=len(BASE_ZIP) + (-len(BASE_ZIP) % 0x80) + 1),
+          reason='ZIPLEN')
+    plain('plain_ziplen_zero', dict(key_index=0x00, zip_length=0), reason='ZIP')
+    plain('plain_zip_garbage', dict(key_index=0x00, zip_bytes=bytes(range(200))), reason='ZIP')
+    plain('plain_name_no_zip', dict(key_index=0x00, name=b'no-extension'), reason='NAME')
+    plain('plain_name_fe_no_zip', dict(key_index=0xFE, name=b'firmware.bin'), reason='NAME')
+    plain('plain_wrong_key', dict(key_index=0x00, key=AES1), reason='NAME')
+    plain('plain_crc_flip', dict(key_index=0x00, final=flip(0x80 + 0x300 + 0x150)), reason='CRC')
+    plain('plain_device_6', dict(key_index=0x00, device=6), reason='DEVICE')
     return C
 
 
@@ -295,15 +409,17 @@ def build_case(c):
     return assemble(**c['kw'])
 
 
-def write_packages():
-    os.makedirs(PKG, exist_ok=True)
-    for f in os.listdir(PKG):
-        os.remove(os.path.join(PKG, f))
+def write_packages(cases=None):
+    if cases is None:
+        os.makedirs(PKG, exist_ok=True)
+        for f in os.listdir(PKG):
+            os.remove(os.path.join(PKG, f))
     out = []
-    for c in package_cases():
+    for c in cases or package_cases():
         data = build_case(c)
         u = unit(**c['unit'])
-        got = m.check_package(data, c['form'], u, file_name=c['file_name'], link=c['link'])
+        got = m.check_package(data, c['form'], u, file_name=c['file_name'], link=c['link'],
+                              device=c.get('device', 'OP-XY'))
         assert got['reason'] == c['reason'], (c['case'], got['reason'], c['reason'])
         zr, staged = m.check_zip(got['zip'], 1 << 30) if got['accepted'] else (None, None)
         assert zr == c['exp'].get('zip_reason'), (c['case'], zr)
@@ -321,12 +437,16 @@ def write_packages():
         with open(os.path.join(PKG, fn), 'wb') as f:
             f.write(data)
         exp = dict(accepted=c['reason'] is None, reason=c['reason'])
+        if got['signature'] is not None:
+            exp['signature'] = got['signature']     # S-11.021, once check 8 is reached
         exp.update({k: v for k, v in c['exp'].items()})
         exp['zip_reason'] = zr
         if c['reason'] is None:
             exp['zip_sha256'] = hashlib.sha256(got['zip']).hexdigest()
         out.append(dict(case=c['case'], file='pkg/' + fn, form=c['form'], link=c['link'],
                         file_name=c['file_name'], unit=ujson(u), expect=exp, requirement=c['req']))
+    if cases is not None:
+        return dict(device='OP-1F', cases=out)
     return dict(keys='images.tfw.test_keys(): cloud key Q0 = its P-224 public key, K0 = its AES key; '
                      "K1 = images.tfw.test_keys(b'opxy-conformance-k1') AES key",
                 cases=out, disk_cases=disk_cases())
@@ -539,6 +659,64 @@ def ldr_mod():
 BOOT_STREAM = boot_stream()
 
 
+# ---- S-11.091: which bootloader images are waffle-boot builds
+
+def descriptor(n=1, magic=m.DESC_MAGIC, version=m.DESC_VERSION, size=None, fix_crc=True):
+    """An image descriptor of S-01.023 with n regions: magic, version, size, entry, n, the CRCs, a bootloader
+    version 1.2.3.4, a front pin, the regions, then the CRC-32 of every byte before it."""
+    size = m.DESC_HEAD + 8 * n + 4 if size is None else size
+    head = struct.pack('<IHHIIII', magic, version, size, 0x08031000, n, 0x11111111, 0x22222222)
+    head += struct.pack('<4H', 1, 2, 3, 4) + bytes(range(32))
+    d = head + b''.join(struct.pack('<II', 0x08031000 + 0x100 * i, 0x40) for i in range(n))
+    crc = zlib.crc32(d) & 0xFFFFFFFF
+    return d + struct.pack('<I', crc if fix_crc else crc ^ 1)
+
+
+def wb_stream(desc=None, before=(), after_final=False, flags=0):
+    """BOOT_STREAM (bootable, S-02.091) with a block loaded at the descriptor's address before its FINAL
+    block, or after it; `before`: blocks ahead of that one."""
+    L = ldr_mod()
+    d = descriptor() if desc is None else desc
+    blocks = ldr.parse(BOOT_STREAM)
+    final = blocks.pop()
+    blk = L.Block(L.flag_names(flags), m.DESC_ADDR, len(d), 0, b'' if flags & L.FLAGS['FILL'] else d)
+    extra = [L.Block(L.flag_names(f), t, len(pl), 0, pl) for f, t, pl in before]
+    seq = blocks + extra + ([final, blk] if after_final else [blk, final])
+    return L.pack_blocks(seq)
+
+
+def bootloader_kinds():
+    L = ldr_mod()
+    IGN, FILL = L.FLAGS['IGNORE'], L.FLAGS['FILL']
+    cases = [
+        ('waffle', wb_stream(), True),
+        ('waffle_most_regions', wb_stream(descriptor(n=m.DESC_REGIONS)), True),
+        ('factory', BOOT_STREAM, False),
+        ('not_ldr', b'\x5a' * 256, False),
+        ('desc_crc_bad', wb_stream(descriptor(fix_crc=False)), False),
+        ('desc_magic_bad', wb_stream(descriptor(magic=m.DESC_MAGIC ^ 1)), False),
+        ('desc_version_2', wb_stream(descriptor(version=2)), False),
+        ('desc_size_bad', wb_stream(descriptor(size=m.DESC_HEAD + 8 + 8)), False),
+        ('desc_regions_25', wb_stream(descriptor(n=m.DESC_REGIONS + 1)), False),
+        ('desc_after_final', wb_stream(after_final=True), False),
+        ('desc_in_ignore_block', wb_stream(flags=IGN), False),
+        # the first data block at the address decides: a FILL there loads no descriptor bytes
+        ('desc_after_fill', wb_stream(before=[(FILL, m.DESC_ADDR, b'')]), True),
+        # an IGNORE block's payload is skipped, not read as headers
+        ('desc_after_ignore_payload', wb_stream(before=[(IGN, 0x11A00000, bytes(range(48)))]), True),
+        ('desc_bad_then_good', wb_stream(before=[(0, m.DESC_ADDR, descriptor(fix_crc=False))]), False),
+        ('desc_truncated', wb_stream()[:-0x30], False),
+    ]
+    out = []
+    for case, img, want in cases:
+        assert m.bootloader_is_waffle(img) == want, case
+        out.append(dict(case=case, stream=img.hex(), waffle=want,
+                        bootable=m.stream_verdict('bootloader', img), requirement='S-11.091'))
+    return dict(doc='S-11.091: whether a bootloader image is a waffle-boot build (a valid image descriptor, '
+                    'S-01.023; recovery\'s WB kind, S-02.106 rule 1). bootable: S-02.091\'s verdict, for '
+                    'reference.', cases=out)
+
+
 def write_zips():
     out = []
     for c in zip_cases():
@@ -597,6 +775,15 @@ def product_words():
          (0, False), (0x00FF8000, False), (0x00080000 | (0x21 << 14) | 0x10000000, True)]
     for w, ok in W:
         assert m.product_ok(w) == ok, hex(w)
+    return [dict(word='%08X' % w, passes=ok) for w, ok in W]
+
+
+def product_words_1f():
+    """S-11.007 with device.product_number 0x02 (S-18.030)."""
+    W = [(0x00008000, True), (0x000083FF, True), (0xFF008000, True), (0x00008400, False), (0x00084000, False),
+         (0, False), (0x00FF8000, False)]
+    for w, ok in W:
+        assert m.product_ok(w, 'OP-1F') == ok, hex(w)
     return [dict(word='%08X' % w, passes=ok) for w, ok in W]
 
 
@@ -702,6 +889,38 @@ def content_cases():
     return dict(installs=out, pack_names=nout)
 
 
+def content_cases_1f():
+    """S-11.097 on the OP-1F: no content packs. A full install removes all of content/, dlc/ included; a
+    partial one removes nothing; a content-only install is named after no pack."""
+    base = {'content/op1.json': b'old', 'content/dlc/A/manifest.json': b'{"name":"Pack A"}',
+            'content/dlc/A/a1': b'1', 'content/dlc/B/b1': b'b', 'firmware.version': b'1.0.0+0\n',
+            'user/song.op1': b'u'}
+    CD = m.CONTENT_DIR
+    full = {CD + 'op1.json': b'new', 'firmware/firmware.version': b'1.2.0+0\n',
+            'firmware/blackfin/bin/os.ldr': os_image(32)}
+    part = {CD + 'op1.json': b'new', CD + 'partial_upgrade': b'', 'firmware/firmware.version': b'1.2.0+0\n',
+            'firmware/blackfin/bin/os.ldr': os_image(32)}
+    packonly = {CD + 'dlc/A/manifest.json': b'{"name":"Pack A v2"}', CD + 'dlc/A/a1': b'1new',
+                CD + 'dlc/partial_upgrade': b''}
+    C = [('full_removes_all', full, False, 'OK',
+          {'content/op1.json': b'new', 'firmware.version': b'1.2.0+0\n', 'user/song.op1': b'u'}),
+         ('partial_removes_nothing', part, False, 'OK',
+          dict(base, **{'content/op1.json': b'new', 'firmware.version': b'1.2.0+0\n'})),
+         ('content_only_unnamed', packonly, True, 'OK',
+          dict(base, **{'content/dlc/A/manifest.json': b'{"name":"Pack A v2"}', 'content/dlc/A/a1': b'1new'}))]
+    hx = lambda d: {k: (v.hex() if v is not None else None) for k, v in sorted(d.items())}  # noqa: E731
+    out = []
+    for case, staged, co, result, after in C:
+        r, got = m.install_content(base, staged, co, device='OP-1F')
+        assert m.RESULT_NAMES[r] == result, (case, r)
+        assert got == after, (case, sorted(set(got.items()) ^ set(after.items())))
+        out.append(dict(case=case, staged=hx(staged), content_only=co, tree_before=hx(base), result=result,
+                        tree_after=hx(after), requirement='S-11.097'))
+    names = [dict(case='content_only_unnamed', staged={k: v.hex() for k, v in packonly.items()}, name='',
+                  note='S-11.097: no pack, so no name, whatever the staged dlc/ holds')]
+    return dict(device='OP-1F', installs=out, pack_names=names)
+
+
 # ---- tables
 
 def write_tsv(name, header, rows, comment):
@@ -713,19 +932,21 @@ def write_tsv(name, header, rows, comment):
 
 
 def check_acceptance(rows):
-    """Build a package per distinct (sig, valid, kidx) and run the model under each unit."""
+    """Build packages per payload key index, one in each signature state, and run the model under each unit,
+    with Q0 readable and not: the verdict is the row's whatever the state (S-11.022)."""
     cache = {}
-    for sig, valid, q0, kidx, k0, k1, opt, dev, te, verdict in rows:
-        key = (sig, valid, kidx)
-        if key not in cache:
-            ki = int(kidx, 16)
-            cache[key] = assemble(sig_index=int(sig, 16), sign_d=D if valid else D_OTHER, key_index=ki,
-                                  key=AES0 if ki in (0xFF, 0x02) else None)
-        u = m.Unit(PUB if q0 else None, AES0 if k0 else None, AES1 if k1 else None, bool(opt), bool(dev))
-        got = m.check_package(cache[key], 'file', u, file_name='p.tfw')
-        assert (got['reason'] or 'accept') == verdict, (sig, valid, q0, kidx, k0, k1, opt, dev, got['reason'])
-        if got['reason'] in (None, 'KEY', 'NOKEY'):
-            assert int(got['te_signed']) == te
+    signers = dict(valid=D, invalid=D_OTHER, none=None)
+    for kidx, k0, k1, opt, dev, verdict in rows:
+        for sig, sign_d in signers.items():
+            if (kidx, sig) not in cache:
+                ki = int(kidx, 16)
+                cache[kidx, sig] = assemble(key_index=ki, key=AES0 if ki in (0xFF, 0x02) else None, sign_d=sign_d)
+            for q0 in (PUB, None):
+                u = m.Unit(AES0 if k0 else None, AES1 if k1 else None, bool(opt), bool(dev), q0=q0)
+                got = m.check_package(cache[kidx, sig], 'file', u, file_name='p.tfw')
+                assert (got['reason'] or 'accept') == verdict, (kidx, sig, k0, k1, opt, dev, got['reason'])
+                want = sig if sig == 'none' or q0 is not None else 'invalid'
+                assert got['signature'] == want, (kidx, sig, q0 is not None, got['signature'])
 
 
 def step_rows():
@@ -743,7 +964,8 @@ def step_rows():
         c = dict(present=p, write_ok=ok, option=opt, selected=sel)
         exp = 'Not found' if not p else 'Skipped' if not sel else ('OK' if ok else 'Internal error')
         rows.append(['os', json.dumps(c, sort_keys=True), exp])
-    # S-11.090, S-11.096: the bootloader is written only with the option on and the step selected
+    # S-11.090, S-11.096: the bootloader is written with the option on and the step selected, whatever the
+    # signature state (S-11.021)
     opt_sel = [(0, 0), (0, 1), (1, 0), (1, 1)]
     for p, (opt, sel), rel, forced, dev, ok in itertools.product([0, 1], opt_sel, ['older', 'equal', 'newer'],
                                                                  [0, 1], [0, 1], [1, 0]):
@@ -881,7 +1103,8 @@ def step_rows():
 
 def pick_rows():
     """S-11.096: what the selection offers each step: a row for each step carried; dim when it is switched
-    off, protected with the option off, or would report Already installed with its installed version known."""
+    off, protected with the option off (S-11.090), or would report Already installed
+    with its installed version known."""
     rows = []
     for cd in (0, 1):
         rows.append(['content', dict(content_dir=cd), 'open' if cd else 'absent'])
@@ -889,7 +1112,7 @@ def pick_rows():
         rows.append(['os', dict(present=p), 'open' if p else 'absent'])
     for p, opt in itertools.product((0, 1), (0, 1)):
         rows.append(['bootloader', dict(present=p, option=opt),
-                     'absent' if not p else 'open' if opt else 'option off'])
+                     'absent' if not p else 'option off' if not opt else 'open'])
     for step in ('ble', 'keyboard', 'ble bootloader'):
         carried = ([dict(present0=a, present1=b) for a, b in ((0, 0), (1, 0), (0, 1), (1, 1))]
                    if step == 'ble bootloader' else [dict(present=0), dict(present=1)])
@@ -1039,13 +1262,16 @@ def interrupted_rows():
 
 def stock_rows():
     """S-11.091: each condition varied alone. The bootloader can be selected only when it is present and the
-    option is on (S-11.096: its row cannot be picked otherwise)."""
+    option is on (S-11.096, S-11.090: its row cannot be picked otherwise), whatever the signature state; only
+    a valid package's step is called a return to stock (wording only); only a present image is a waffle-boot
+    build or not (bootloader_is_waffle)."""
     rows = []
-    for opt, te, bl in itertools.product([0, 1], repeat=3):
-        for sel in ([0, 1] if opt and bl else [0]):
-            st = m.return_to_stock(opt, te, bl, sel)
-            assert st == (opt == 1 and te == 1 and bl == 1 and sel == 1)
-            rows.append([opt, te, bl, sel, int(st), m.os_form(st)])
+    for opt, valid, bl in itertools.product([0, 1], repeat=3):
+        for wb in ([0, 1] if bl else [0]):
+            for sel in ([0, 1] if opt and bl else [0]):
+                st = m.return_to_stock(opt, wb, bl, sel, valid=valid)
+                assert st == (opt == 1 and valid == 1 and bl == 1 and sel == 1 and wb == 0)
+                rows.append([opt, valid, bl, wb, sel, int(st), m.os_form(st)])
     return rows
 
 
@@ -1106,9 +1332,13 @@ def main():
     dump('zips', write_zips())
     dump('versions', versions())
     dump('product_words', product_words())
+    dump('product_words_1f', product_words_1f())
+    dump('packages_1f', write_packages(package_cases_1f()))
+    dump('content_1f', content_cases_1f())
     dump('crc16', crc_vectors())
     dump('progress', progress_vectors())
     dump('content', content_cases())
+    dump('bootloader_kind', bootloader_kinds())
     check_acceptance(m.acceptance_rows())
     write_tsv('steps.tsv', ['step', 'conditions', 'result', 'end_nordic'], step_rows(),
               'S-11.066-S-11.073, S-11.096; end_nordic: S-11.064 item 3 after the result (exit: the query and '
@@ -1122,9 +1352,9 @@ def main():
                                   'notice', 'state_after', 'steps', 'nordic_dfu', 'record_access'],
               interrupted_rows(),
               'S-11.080')
-    write_tsv('stock.tsv', ['option', 'te_signed', 'bootloader_present', 'bootloader_selected', 'return_to_stock',
-                            'os_form'],
-              stock_rows(), 'S-11.091, S-11.092, S-11.096')
+    write_tsv('stock.tsv', ['option', 'valid', 'bootloader_present', 'bootloader_waffle', 'bootloader_selected',
+                            'return_to_stock', 'os_form'],
+              stock_rows(), 'S-11.021, S-11.091, S-11.092, S-11.096')
     write_tsv('disk_search.tsv', ['case', 'entries_in_directory_order', 'package', 'forced', 'cdc_reset',
                                   'installed_zip'], disk_rows(),
               'S-11.046-S-11.048, S-04.024')

@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "hlib.h"
+#include "waffle/device.h"
 #include "waffle/s10c_host.h"
 #include "waffle/s10c_sysex.h"
 
@@ -306,7 +307,7 @@ int main(void)
 		} else if (strcmp(k, "classify") == 0 && c.n == 2) {
 			size_t n = h_hex(&c, 1, in, sizeof in);
 
-			h_put(class_name[s10c_classify(in, n)]);
+			h_put(class_name[s10c_classify(&wb_device_opxy, in, n)]);
 			h_end();
 		} else if (strcmp(k, "carrier") == 0 && c.n == 2) {
 			size_t n = h_hex(&c, 1, in, sizeof in);
@@ -315,7 +316,7 @@ int main(void)
 				h_error(&c, "stream too long");
 				continue;
 			}
-			h_puthex(out, s10c_carrier_build(in, n, out));
+			h_puthex(out, s10c_carrier_build(&wb_device_opxy, in, n, out));
 			h_end();
 		} else if (strcmp(k, "percent") == 0 && c.n == 3) {
 			h_putu(s10c_percent((uint32_t)h_num(&c, 1), (uint32_t)h_num(&c, 2)));
@@ -363,7 +364,7 @@ int main(void)
 			dv.slave = h_num(&c, 2) != 0;
 			dv.busy = h_num(&c, 3) != 0;
 			dev_ops.continue_check = dv.held ? d_continue_check : NULL;
-			s10c_host_init(&host, &dev_ops, NULL);
+			s10c_host_init(&host, &dev_ops, NULL, &wb_device_opxy, WB_DEV_BY_TABLE);
 			h_put("ok");
 			h_end();
 		} else if (strcmp(k, "frame") == 0) {

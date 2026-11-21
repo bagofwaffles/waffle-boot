@@ -1,0 +1,78 @@
+{
+ "document": "S-05",
+ "requirement": "S-05.040",
+ "os": "OP-1F OS 1.7.3",
+ "blocks": 313,
+ "bytes": 2079016,
+ "flags": [
+  "FIRST",
+  "IGNORE",
+  "FILL",
+  "FINAL"
+ ],
+ "first_target": "0x11A00000",
+ "final_target": "0x11A00000",
+ "final_argument": 0,
+ "ranges": [
+  {
+   "memory": "l1_code",
+   "start": "0x11A00000",
+   "end": "0x11A0C000",
+   "fill": false
+  },
+  {
+   "memory": "l1_data_a",
+   "start": "0x11800000",
+   "end": "0x11803000",
+   "fill": false
+  },
+  {
+   "memory": "l1_data_b",
+   "start": "0x11900000",
+   "end": "0x11908000",
+   "fill": false
+  },
+  {
+   "memory": "l1_scratch",
+   "start": "0x11B00000",
+   "end": "0x11B01F00",
+   "fill": false
+  },
+  {
+   "memory": "l2",
+   "start": "0x08002000",
+   "end": "0x08002480",
+   "fill": false
+  },
+  {
+   "memory": "l2",
+   "start": "0x08011480",
+   "end": "0x08030000",
+   "fill": true
+  },
+  {
+   "memory": "l2",
+   "start": "0x0803F000",
+   "end": "0x08040000",
+   "fill": false
+  },
+  {
+   "memory": "ddr",
+   "start": "0x84000000",
+   "end": "0x84D262A0",
+   "fill": false
+  },
+  {
+   "memory": "ddr",
+   "start": "0x8C03D002",
+   "end": "0x8FCCDD38",
+   "fill": false
+  }
+ ],
+ "display_rows_end": "0x8C03C000",
+ "stream": "0450e8ad0000a01100000000a00000000401d9ad0000a01100c0000000000000040109ad0000801100300000000000000401a9ad000090110080000000000000040116ad0000b011001f000000000000040104ad00200008800400000000000004015fad8014010880eb010000000000040143ad00f00308001000000000000004013cad00000084a062d20000000000040104ad02d0038c360dc90300000000048098ad0000a0110000000000000000",
+ "note": "stream: one FILL block per range in the shape of S-05.040, for S-05.024's check",
+ "verdict": {
+  "accepted": true
+ }
+}

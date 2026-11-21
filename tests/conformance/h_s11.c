@@ -37,8 +37,13 @@
  *   meta [STATE VERSION]  -> STATE VERSION: the metadata record's (set first)
  *   set KEY VALUE         -> ok: a peer's answer or a fault, below
  *   load FILE             -> the package's length: FILE read into memory
- *   install FORM FWCMD OPTION NAME -> REASON TE FORCED STOCK END OUTCOME STEP
- *                            RESULT: s11_install() of the loaded package; FORM
+ *   install FORM FWCMD OPTION NAME -> REASON SIG WB FORCED STOCK END OUTCOME
+ *                            STEP RESULT: s11_install() of the loaded package
+ *                            (SIG: its signature state, none | invalid |
+ *                            valid, S-11.021; WB: its staged bootloader image
+ *                            is a waffle-boot build, S-11.091, asked only with
+ *                            the option on, the package valid and the image
+ *                            present); FORM
  *                            file | body, NAME "-" for none, REASON "none"
  *                            for an accepted package, END "-" for a refused
  *                            one and "cut" when a cut ended the run; STEP and
@@ -117,6 +122,7 @@
 #include "bearssl_hash.h"
 
 #include "hlib.h"
+#include "waffle/device.h"
 #include "waffle/s05_handoff.h"
 #include "waffle/s11_content.h"
 #include "waffle/s11_package.h"
@@ -445,7 +451,6 @@ static struct {
 	bool q0_ok, k0_ok, k1_ok;
 } otp;
 
-/* cppcheck-suppress [constParameterCallback, constParameterPointer] ; s11_unit_ops fixes the type */
 static bool otp_q0(void *ctx, uint8_t q[56])
 {
 	(void)ctx;
@@ -453,6 +458,7 @@ static bool otp_q0(void *ctx, uint8_t q[56])
 	return otp.q0_ok;
 }
 
+/* cppcheck-suppress [constParameterCallback, constParameterPointer] ; s11_unit_ops fixes the type */
 /* cppcheck-suppress [constParameterCallback, constParameterPointer] ; s11_unit_ops fixes the type */
 static bool otp_k0(void *ctx, uint8_t k[32])
 {
@@ -688,7 +694,7 @@ static enum s11_result s_content(void *ctx)
 
 	(void)ctx;
 	s11_staged_scan(&yfs, &st);
-	r = s11_install_content(&content_fs, s11_staged_content_only(&st));
+	r = s11_install_content(&wb_device_opxy, &content_fs, s11_staged_content_only(&st));
 	snprintf(t, sizeof(t), "content=%u", (unsigned)r);
 	note(t);
 	return r;
@@ -969,6 +975,7 @@ static void note_skips(const struct s11_fs_ops *fs, bool option)
 	memset(&env, 0, sizeof(env));
 	env.staged = &st;
 	env.option = option;
+	env.sig = R.sig;
 	env.off = cfg.off;
 	env.copro = &copro;	/* as the run left it */
 	env.forced = R.forced;
@@ -997,6 +1004,33 @@ static void note_skips(const struct s11_fs_ops *fs, bool option)
 		snprintf(t, sizeof(t), "skip:%u=%s", step, why[w]);
 		note(t);
 	}
+}
+
+/* S-11.021 */
+static const char *sig_name(enum s11_sig s)
+{
+	return s == S11_SIG_VALID ? "valid" :
+	       s == S11_SIG_INVALID ? "invalid" : "none";
+}
+
+static uint32_t bl_crc32(uint32_t crc, const uint8_t *p, size_t n)
+{
+	return h_crc32(crc, p, (uint32_t)n);
+}
+
+/* S-11.091: the staged bootloader image, read whole through the run's view
+ * of the volume (ctx), is a waffle-boot build. */
+static bool bl_waffle(void *ctx)
+{
+	static uint8_t buf[0x78000];
+	const struct s11_fs_ops *fs = ctx;
+	char path[S11_PATH_MAX + 16];
+	size_t n;
+
+	snprintf(path, sizeof(path), "upgrade/%s",
+		 s11_components[S11_C_BOOTLOADER].image);
+	n = fs->read(fs->ctx, path, buf, sizeof(buf));
+	return s11_bootloader_is_waffle(buf, (uint32_t)n, bl_crc32);
 }
 
 /* The package from `src` (size bytes), installed; prints install's fields. */
@@ -1029,12 +1063,15 @@ static void install(const struct wire_source *src, uint32_t size,
 	ops.steps = &step_ops;
 	ops.select = u_select;
 	ops.select_ctx = NULL;
+	ops.bootloader_is_waffle = bl_waffle;
+	ops.waffle_ctx = &fs;
 	ops.off = cfg.off;
 	in.form = form;
 	in.size = size;
 	in.option = option;
 	in.file_name = name;
 	in.fw_command = fw_command;
+	in.dev = &wb_device_opxy;
 	memset(&R, 0, sizeof(R));
 	if (setjmp(cut_jmp) == 0) {
 		s11_install(&ops, &in, &copro, &R);
@@ -1042,7 +1079,8 @@ static void install(const struct wire_source *src, uint32_t size,
 		note_skips(&fs, in.option);
 		h_put(R.reason == S11_REASON_NONE ? "none" :
 		      s11_reason_name(R.reason));
-		h_putu(R.te_signed);
+		h_put(sig_name(R.sig));
+		h_putu(R.bootloader_waffle);
 		h_putu(R.forced);
 		h_putu(R.stock);
 		h_put(R.reason == S11_REASON_NONE ? end_name(R.run.end) : "-");
@@ -1052,7 +1090,8 @@ static void install(const struct wire_source *src, uint32_t size,
 	} else {
 		wire_zip_close(&Z);
 		h_put("none");
-		h_putu(R.te_signed);
+		h_put(sig_name(R.sig));
+		h_putu(R.bootloader_waffle);
 		h_putu(R.forced);
 		h_putu(0);
 		h_put("cut");
@@ -1120,7 +1159,7 @@ static bool disk_new(uint32_t sectors)
 	if (dmem == NULL)
 		return false;
 	wb_ramdisk_init(&dbd, &dram, dmem, sectors);
-	return wire_fat_format(&F, &dbd);
+	return wire_fat_format(&F, &dbd, &wb_device_opxy);
 }
 
 static void put_ok(bool b)

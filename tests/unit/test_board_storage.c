@@ -83,7 +83,7 @@ static struct emmc {
 	uint8_t fail_switch;	/* a CMD6 to this EXT_CSD index (not 0) answers with one */
 	uint8_t ext_csd[512];	/* what CMD8 returns */
 	uint32_t csd[4];	/* what CMD9 returns, as MSI_RESP0-3 */
-	uint8_t *ext_csd_to;	/* where the driver takes it (s.ext_csd) */
+	uint8_t *ext_csd_to;	/* where the driver takes it (s.st.ext_csd) */
 	unsigned log_n;		/* commands since log_start(), the first LOG_N kept */
 	uint8_t log_idx[LOG_N];
 	uint32_t log_arg[LOG_N];
@@ -170,9 +170,11 @@ static void take_command(uint32_t cmd)
 		memcpy(emmc.ext_csd_to, emmc.ext_csd, sizeof(emmc.ext_csd));
 	if (idx == 6u) {
 		emmc.sw[(arg >> 16) & 0xFFu]++;
-		if ((arg >> 16 & 0xFFu) == 179u && (arg >> 8 & 0xFFu) < 8u &&
-		    (emmc.fail_select >> (arg >> 8 & 0xFFu) & 1u))
+		if ((arg >> 16 & 0xFFu) == 179u &&
+		    (emmc.fail_select >> (arg >> 8 & 0x7u) & 1u))
 			r1 |= 1u << 31;		/* an R1 error: the select failed */
+		else if ((arg >> 16 & 0xFFu) == 179u)
+			emmc.ext_csd[179] = (uint8_t)(arg >> 8);	/* the byte as switched */
 		if (emmc.fail_switch != 0u &&
 		    (arg >> 16 & 0xFFu) == emmc.fail_switch)
 			r1 |= 1u << 31;
@@ -306,11 +308,11 @@ static void reset(enum stuck stuck)
 	fake_mmr_set_hook(emmc_hook, NULL);
 	memset(&s, 0, sizeof(s));
 	s.hw.time.cycles_per_us = CCLK_MHZ;
-	memset(s.ext_csd, 0xA5, sizeof(s.ext_csd));	/* not from the eMMC */
+	memset(s.st.ext_csd, 0xA5, sizeof(s.st.ext_csd));	/* not from the eMMC */
 	/* the eMMC's own: the same filler, with S-03.001's geometry */
 	memset(emmc.ext_csd, 0xA5, sizeof(emmc.ext_csd));
 	geometry(S03_USER_SECTORS, 31u, 31u, 1u);
-	emmc.ext_csd_to = s.ext_csd;
+	emmc.ext_csd_to = s.st.ext_csd;
 }
 
 static unsigned count(uint8_t idx)
@@ -378,7 +380,7 @@ static void stuck_run(enum stuck stuck, bool cmd2_first, uint64_t min_us)
 	opxy_slave_storage(&s);
 	us = (fake_core_peek_cycles() - t0) / CCLK_MHZ;
 
-	CHECK(!s.emmc_up);
+	CHECK(!s.st.emmc_up);
 
 	/* S-13b.057: bounded, the CMD1 loop no sooner than its 1 s;
 	 * S-09.018: ready for the init within 5 s of the stream, the slave's
@@ -388,24 +390,24 @@ static void stuck_run(enum stuck stuck, bool cmd2_first, uint64_t min_us)
 	CHECK(count(0) >= 1u && count(0) <= OPXY_EMMC_TRIES);
 	CHECK(!emmc.other);		/* no read, write or erase */
 	/* S-13b.059: nothing of the partly received EXT_CSD */
-	CHECK(s.store.boot_size(s.store.ctx) == 0u);
-	CHECK(s.store.erase_group(s.store.ctx) == 0u);
-	CHECK(s.emmc.boot_size == 0u);
+	CHECK(s.st.store.boot_size(s.st.store.ctx) == 0u);
+	CHECK(s.st.store.erase_group(s.st.store.ctx) == 0u);
+	CHECK(s.st.emmc.boot_size == 0u);
 
 	/* No eMMC command from here on. */
 	n = emmc.n;
-	CHECK(s.store.os_status(s.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
+	CHECK(s.st.store.os_status(s.st.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
 	CHECK(s.staged == S05_FAIL_SELECT);
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) != 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_WRITE_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_ERASE, 0u, WB_MMC_ERASE, NULL,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_ERASE, 0u, WB_MMC_ERASE, NULL,
 			   0u) != 0);
-	CHECK(s.store.file(s.store.ctx, &mount, "/yaffs2", "", NULL, 0u, out,
+	CHECK(s.st.store.file(s.st.store.ctx, &mount, "/yaffs2", "", NULL, 0u, out,
 			   &err) < 0);
-	CHECK(s.emmc_ops.read(s.emmc_ops.ctx, 0u, 1u, data) ==
+	CHECK(s.st.emmc_ops.read(s.st.emmc_ops.ctx, 0u, 1u, data) ==
 	      OPXY_EMMC_DOWN);
 	CHECK(emmc.n == n);
 }
@@ -466,7 +468,7 @@ static int32_t file_req(uint8_t cmd, const char *path, uint32_t *err)
 	static uint8_t out[300];
 
 	*err = 0xFFFFu;
-	return s.store.file(s.store.ctx, &r, path, "", NULL, 0u, out, err);
+	return s.st.store.file(s.st.store.ctx, &r, path, "", NULL, 0u, out, err);
 }
 
 /* The number of reads, writes and erases the eMMC has seen. */
@@ -485,57 +487,57 @@ static void select_guard(void)
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == 0);
 
 	/* BP1 selected: the volume is not used, and the eMMC sees nothing. */
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
 	n = emmc.n;
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == -1 && err == S09_ENODEV);
 	CHECK(file_req(S09_OPENDIR, "/yaffs2", &err) == 0 && err == S09_ENODEV);
 	CHECK(file_req(S09_UNMOUNT, "", &err) == -1 && err == S09_ENODEV);
 	CHECK(file_req(S09_MOUNT, "", &err) == -1 && err == S09_ENODEV);
-	CHECK(s.store.read(s.store.ctx, 3u, data, 16u, &err) == -1 &&
+	CHECK(s.st.store.read(s.st.store.ctx, 3u, data, 16u, &err) == -1 &&
 	      err == S09_ENODEV);
 	CHECK(emmc.n == n);
 	/* The boot partition's own sectors still go through. */
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) == 0);
 
 	/* Back on the user area: the volume again. */
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == 0 && err == 0);
 
 	/* S-03.006: a select of 3 or more sends no command and fails. */
 	n = emmc.n;
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 3u, 0u, NULL, 0u) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0x41u, 0u, NULL, 0u) != 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 3u, 0u, NULL, 0u) != 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0x41u, 0u, NULL, 0u) != 0);
 	CHECK(emmc.n == n);
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == 0);
 
 	/* S-03.063: a failed select; nothing reaches the eMMC but a select. */
 	emmc.fail_select = 1u;
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) != 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) != 0);
 	n = data_cmds();
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_WRITE_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_ERASE, 0u, WB_MMC_ERASE, NULL,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_ERASE, 0u, WB_MMC_ERASE, NULL,
 			   0u) != 0);
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == -1 && err == S09_ENODEV);
 	CHECK(data_cmds() == n);
 	emmc.fail_select = 0;
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == 0 && err == 0);
 
 	/* The slave's own load: BP1's select fails, and its select 0 after it
 	 * (S-03.046); no image is read. */
 	emmc.fail_select = 3u;
-	CHECK(s.store.os_status(s.store.ctx, 0u, 0u) == 1u);
+	CHECK(s.st.store.os_status(s.st.store.ctx, 0u, 0u) == 1u);
 	n = data_cmds();
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == -1 && err == S09_ENODEV);
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
 	CHECK(data_cmds() == n);
 	emmc.fail_select = 0;
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == 0 && err == 0);
 }
 
@@ -554,12 +556,12 @@ static void test_mount_on_request(void)
 
 	reset(GOOD);
 	opxy_slave_storage(&s);
-	CHECK(s.emmc_up);
+	CHECK(s.st.emmc_up);
 	/* S-03.001: the geometry the eMMC's EXT_CSD and CSD give, accepted */
-	CHECK(!s.emmc_other);
+	CHECK(!s.st.emmc_other);
 	CHECK(count(9) == 1u);
-	CHECK(s.ext_csd[212] == (uint8_t)S03_USER_SECTORS && s.ext_csd[265] == 1u);
-	CHECK(s.store.erase_group(s.store.ctx) == S03_GROUP_SECTORS);
+	CHECK(s.st.ext_csd[212] == (uint8_t)S03_USER_SECTORS && s.st.ext_csd[265] == 1u);
+	CHECK(s.st.store.erase_group(s.st.store.ctx) == S03_GROUP_SECTORS);
 	CHECK(s.hw.msi.c == &opxy_msi);		/* the runtime waits */
 	CHECK(count(17) == 0u && count(18) == 0u);
 	CHECK(count(6) == 2u && features() == 0u);	/* no S-03.009 yet */
@@ -571,23 +573,23 @@ static void test_mount_on_request(void)
 	      (uint32_t)d[6] << 16 | (uint32_t)d[7] << 24) == S09_INIT_VALUE);
 	CHECK(count(17) == 0u && count(18) == 0u);
 
-	CHECK(s.store.file(s.store.ctx, &stat, "/yaffs2/logs", "", NULL, 0u,
+	CHECK(s.st.store.file(s.st.store.ctx, &stat, "/yaffs2/logs", "", NULL, 0u,
 			   out, &err) == -1 && err == S09_ENODEV);
 	CHECK(count(17) == 0u && count(18) == 0u);
 
 	/* The 0x08 reads the volume and mounts it, the checkpoint tried first
 	 * (S-12.061): this volume has none; a repeat answers the same. */
-	CHECK(S09_MOUNT_WAY(s.store.file(s.store.ctx, &mount, "", "", NULL, 0u, out,
+	CHECK(S09_MOUNT_WAY(s.st.store.file(s.st.store.ctx, &mount, "", "", NULL, 0u, out,
 					 &err)) == 2u && err == 0);
 	CHECK(count(17) + count(18) > 0u);
 	CHECK(emmc.cmd6_at_read == 5u && features() == 3u);	/* S-03.009 first */
 	CHECK(s.hw.msi.c == &opxy_msi);
 	CHECK(count(24) == 0u && count(25) == 0u && count(38) == 0u);
 	n = emmc.n;
-	CHECK(S09_MOUNT_WAY(s.store.file(s.store.ctx, &mount, "", "", NULL, 0u, out,
+	CHECK(S09_MOUNT_WAY(s.st.store.file(s.st.store.ctx, &mount, "", "", NULL, 0u, out,
 					 &err)) == 2u && err == 0);
 	CHECK(emmc.n == n);
-	CHECK(s.store.file(s.store.ctx, &stat, "/yaffs2", "", NULL, 0u, out,
+	CHECK(s.st.store.file(s.st.store.ctx, &stat, "/yaffs2", "", NULL, 0u, out,
 			   &err) == 0 && err == 0);
 	/* SC-03-SELECT-GUARD on the volume just mounted: the slave's one
 	 * volume is mounted once in a process. */
@@ -640,7 +642,7 @@ static void shutdown_run(uint8_t failing)
 	log_start();
 	CHECK(file_req(S09_UNMOUNT, "", &err) == 1 && err == 0u);
 	emmc.fail_switch = 0;
-	CHECK(s.emmc_notified);
+	CHECK(s.st.emmc_notified);
 	CHECK(emmc.log_n > 0u && emmc.log_n <= LOG_N);
 	a = find_switch(flush, 0);
 	b = find_switch(cache, a);
@@ -676,7 +678,7 @@ static void woken(unsigned first_own)
 	CHECK(find_switch(switch_arg(34, 1), 0) < first_own &&
 	      find_switch(switch_arg(33, 1), 0) < first_own &&
 	      find_switch(switch_arg(163, 2), 0) < first_own);
-	CHECK(!s.emmc_notified && s.emmc_up && !s.emmc_other && s.features);
+	CHECK(!s.st.emmc_notified && s.st.emmc_up && !s.st.emmc_other && s.st.features);
 }
 
 /* The first logged command with index idx; LOG_N if none. */
@@ -708,7 +710,7 @@ static void test_shutdown_unmount(void)
 		n = emmc.n;
 		CHECK(file_req(S09_STAT, "/yaffs2", &err) == -1 && err == S09_ENODEV);
 		CHECK(file_req(S09_UNMOUNT, "", &err) == 1 && err == 0u);
-		CHECK(s.store.boot_size(s.store.ctx) != 0u);
+		CHECK(s.st.store.boot_size(s.st.store.ctx) != 0u);
 		CHECK(emmc.n == n);
 
 		/* the mount brings the eMMC up again and mounts */
@@ -723,11 +725,11 @@ static void test_shutdown_unmount(void)
 	 * select itself. */
 	shutdown_run(0u);
 	log_start();
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
 	woken(find_switch(switch_arg(179, 0), 0));
 	CHECK(find_switch(switch_arg(179, 0), 0) < LOG_N);
 	/* mounted again, as test_mount_on_request left it */
-	CHECK(file_req(S09_MOUNT, "", &err) >= 0 && s.features);
+	CHECK(file_req(S09_MOUNT, "", &err) >= 0 && s.st.features);
 }
 
 /* S-03.009 with the first eMMC request; not again for the load. */
@@ -743,13 +745,13 @@ static void test_features_once(void)
 	 * mounted answers and sends the eMMC nothing. */
 	n = emmc.n;
 	CHECK(file_req(S09_UNMOUNT, "", &err) == 1 && err == 0u);
-	CHECK(!s.emmc_notified && emmc.n == n);
+	CHECK(!s.st.emmc_notified && emmc.n == n);
 	CHECK(features() == 0u);
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
 	CHECK(emmc.sw[34] == 1u && emmc.sw[33] == 1u && emmc.sw[163] == 1u);
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) == 0);
-	(void)s.store.os_status(s.store.ctx, 0u, 0u);
+	(void)s.st.store.os_status(s.st.store.ctx, 0u, 0u);
 	CHECK(features() == 3u);
 }
 
@@ -762,13 +764,13 @@ static void test_file_release(void)
 
 	reset(GOOD);
 	opxy_slave_storage(&s);
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
 	n = data_cmds();
 	emmc.fail_select = 6u;		/* a boot partition's select would fail */
-	CHECK(s.store.os_status(s.store.ctx, 742764u, 0x1234ABCDu) == 1u);
+	CHECK(s.st.store.os_status(s.st.store.ctx, 742764u, 0x1234ABCDu) == 1u);
 	CHECK(s.staged == S05_FAIL_NO_OS && s.staged_len == 0u);
-	CHECK(data_cmds() == n && s.part == S03_PART_USER);
-	CHECK(s.store.os_status(s.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
+	CHECK(data_cmds() == n && s.st.part == S03_PART_USER);
+	CHECK(s.st.store.os_status(s.st.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
 	CHECK(s.staged == S05_FAIL_SELECT);
 	emmc.fail_select = 0;
 }
@@ -782,10 +784,10 @@ static void test_features_fail(void)
 
 	reset(FEATURE_BUSY);
 	opxy_slave_storage(&s);
-	CHECK(s.emmc_up && count(6) == 2u && features() == 0u);
+	CHECK(s.st.emmc_up && count(6) == 2u && features() == 0u);
 
 	t0 = fake_core_peek_cycles();
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
 	CHECK((fake_core_peek_cycles() - t0) / CCLK_MHZ <= 8000000u);
 	CHECK(emmc.sw[34] == S03_RETRIES && features() == S03_RETRIES);
@@ -793,7 +795,7 @@ static void test_features_fail(void)
 	CHECK(s.hw.msi.c == &opxy_msi);
 
 	t0 = fake_core_peek_cycles();
-	CHECK(s.store.os_status(s.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
+	CHECK(s.st.store.os_status(s.st.store.ctx, 0u, 0u) == 1u);	/* S-03.046 */
 	CHECK(s.staged == S05_FAIL_SELECT);
 	CHECK((fake_core_peek_cycles() - t0) / CCLK_MHZ <= 8000000u);
 	CHECK(emmc.sw[34] == 2u * S03_RETRIES && features() == emmc.sw[34]);
@@ -812,7 +814,7 @@ static void test_user_bd_erase(void)
 
 	reset(GOOD);
 	opxy_slave_storage(&s);
-	CHECK(s.emmc_up);
+	CHECK(s.st.emmc_up);
 	opxy_slave_user_bd(&s, &bd);
 	CHECK(bd.erase != NULL);
 	if (bd.erase == NULL)
@@ -834,7 +836,7 @@ static void test_user_bd_erase(void)
 	CHECK(logged(35) == S03_RETRIES && logged(38) == S03_RETRIES);
 	emmc.fail_erase = false;
 
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
 	log_start();
 	CHECK(bd.erase(bd.ctx, 0u, S03_GROUP_SECTORS) != 0);
 	CHECK(emmc.log_n == 0u);
@@ -845,9 +847,9 @@ static void test_user_bd_erase(void)
 	if (bd.erase_zeroes == NULL)
 		return;
 	CHECK(bd.erase_zeroes(bd.ctx));
-	s.ext_csd[181] = 1u;
+	s.st.ext_csd[181] = 1u;
 	CHECK(!bd.erase_zeroes(bd.ctx));
-	s.ext_csd[181] = 0xFEu;
+	s.st.ext_csd[181] = 0xFEu;
 	CHECK(bd.erase_zeroes(bd.ctx));
 }
 
@@ -856,16 +858,16 @@ static void test_flush_needs_cache(void)
 {
 	reset(GOOD);
 	opxy_slave_storage(&s);
-	CHECK(s.emmc_up);
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.emmc_up);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
 	log_start();
-	CHECK(s.store.emmc(s.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
 	CHECK(emmc.sw[32] == 1u);			/* CACHE_SIZE 0xA5A5A5A5 */
-	memset(s.ext_csd + 249, 0, 4u);		/* no cache */
-	CHECK(s.store.emmc(s.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
+	memset(s.st.ext_csd + 249, 0, 4u);		/* no cache */
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
 	CHECK(emmc.sw[32] == 1u);
-	s.ext_csd[252] = 1u;
-	CHECK(s.store.emmc(s.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
+	s.st.ext_csd[252] = 1u;
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
 	CHECK(emmc.sw[32] == 2u);
 }
 
@@ -878,7 +880,7 @@ static void test_user_bd_reliable(void)
 
 	reset(GOOD);
 	opxy_slave_storage(&s);
-	CHECK(s.emmc_up);
+	CHECK(s.st.emmc_up);
 	opxy_slave_user_bd(&s, &bd);
 	CHECK(bd.write_reliable != NULL);
 	if (bd.write_reliable == NULL)
@@ -895,12 +897,12 @@ static void test_user_bd_reliable(void)
 
 	/* the bridge's plain write (0x16) is not routed there */
 	log_start();
-	CHECK(s.store.emmc(s.store.ctx, S09_WRITE_SECTORS, 0x1000000u, 8u, buf,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_SECTORS, 0x1000000u, 8u, buf,
 			   8u * S03_SECTOR) == 0);
 	CHECK(logged(25) == 1u && logged(23) == 0u && logged(12) == 1u);
 
 	/* none while a boot partition is selected */
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 2u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 2u, 0u, NULL, 0u) == 0);
 	log_start();
 	CHECK(bd.write_reliable(bd.ctx, 80u, buf, 8u) != 0);
 	CHECK(emmc.log_n == 0u);
@@ -927,40 +929,40 @@ static void other_run(uint32_t sectors, uint8_t grp_size, uint8_t grp_mult,
 	reset(GOOD);
 	geometry(sectors, grp_size, grp_mult, opt_write);
 	opxy_slave_storage(&s);
-	CHECK(s.emmc_up && s.emmc_other);
+	CHECK(s.st.emmc_up && s.st.emmc_other);
 
 	/* the volume: no mount, no read of it */
-	CHECK(s.store.file(s.store.ctx, &mount, "", "", NULL, 0u, out,
+	CHECK(s.st.store.file(s.st.store.ctx, &mount, "", "", NULL, 0u, out,
 			   &err) < 0 && err == 0u);
 	CHECK(file_req(S09_STAT, "/yaffs2", &err) == -1);
 	/* the user area over the bridge: nothing reaches the eMMC */
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTORS, 0x1000000u, 8u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTORS, 0x1000000u, 8u, data,
 			   sizeof(data)) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_WRITE_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_WRITE_SECTORS, 0u, 8u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_SECTORS, 0u, 8u, data,
 			   sizeof(data)) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_WRITE_RELIABLE, 0u, 8u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_RELIABLE, 0u, 8u, data,
 			   sizeof(data)) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_ERASE, 0x4000u * S03_GROUP_SECTORS,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_ERASE, 0x4000u * S03_GROUP_SECTORS,
 			   WB_MMC_ERASE, NULL, 0u) != 0);
 	CHECK(data_cmds() == 0u);
 	/* a boot partition: selected and read, never written or erased */
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) == 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_WRITE_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_WRITE_SECTORS, 1u, 8u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_SECTORS, 1u, 8u, data,
 			   sizeof(data)) != 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_ERASE, 0u, WB_MMC_ERASE, NULL,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_ERASE, 0u, WB_MMC_ERASE, NULL,
 			   0u) != 0);
 	CHECK(count(24) == 0u && count(25) == 0u && count(35) == 0u &&
 	      count(36) == 0u && count(38) == 0u);
-	CHECK(s.store.emmc(s.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
-	CHECK(s.store.emmc(s.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0u, 0u, data,
 			   S03_SECTOR) != 0);
 	CHECK(count(17) == 1u && count(18) == 0u);	/* BP1's sector alone */
 
@@ -995,15 +997,120 @@ static void test_geometry_accepted(void)
 		reset(GOOD);
 		geometry(S03_USER_SECTORS, 31u, 31u, ok[i]);
 		opxy_slave_storage(&s);
-		CHECK(s.emmc_up && !s.emmc_other);
-		CHECK(s.store.erase_group(s.store.ctx) == S03_GROUP_SECTORS);
+		CHECK(s.st.emmc_up && !s.st.emmc_other);
+		CHECK(s.st.store.erase_group(s.st.store.ctx) == S03_GROUP_SECTORS);
 	}
 	/* another group from the CSD: refused, and 0x03 reports it */
 	reset(GOOD);
 	geometry(S03_USER_SECTORS, 31u, 30u, 1u);
 	opxy_slave_storage(&s);
-	CHECK(s.emmc_up && s.emmc_other);
-	CHECK(s.store.erase_group(s.store.ctx) == 32u * 31u);
+	CHECK(s.st.emmc_up && s.st.emmc_other);
+	CHECK(s.st.store.erase_group(s.st.store.ctx) == 32u * 31u);
+}
+
+/* --- The OP-1F's main CPU (S-13b.060): the same storage on its device --- */
+
+/* S-13b.061, S-03.001: the four-bit bus, and any sector count of
+ * 0x1CF8000 or more accepted. */
+static void test_1f_bring_up(void)
+{
+	unsigned i, w4 = 0, w8 = 0;
+
+	reset(GOOD);
+	geometry(S03_USER_SECTORS + 0x100000u, 31u, 31u, 1u);
+	opxy_storage_init(&s.st, &s.hw, &wb_device_op1f, true);
+	CHECK(s.st.emmc_up && !s.st.emmc_other);
+	CHECK(s.hw.msi.c == &opxy_msi_1f && s.hw.msi.width == 4u);
+	for (i = 0; i < emmc.log_n && i < LOG_N; i++) {
+		w4 += emmc.log_idx[i] == 6u && emmc.log_arg[i] == 0x03B70100u;
+		w8 += emmc.log_idx[i] == 6u && emmc.log_arg[i] == 0x03B70200u;
+	}
+	CHECK(w4 == 1u && w8 == 0u);
+	/* the OP-XY takes that count as another eMMC's */
+	reset(GOOD);
+	geometry(S03_USER_SECTORS + 0x100000u, 31u, 31u, 1u);
+	opxy_storage_init(&s.st, &s.hw, &wb_device_opxy, true);
+	CHECK(s.st.emmc_up && s.st.emmc_other);
+	/* a smaller count is another eMMC's on the OP-1F too */
+	reset(GOOD);
+	geometry(S03_USER_SECTORS - 0x8000u, 31u, 31u, 1u);
+	opxy_storage_init(&s.st, &s.hw, &wb_device_op1f, true);
+	CHECK(s.st.emmc_up && s.st.emmc_other);
+}
+
+/* S-03.012 (SC-03-SELECT-1F): bits 2-0 alone, the rest kept; no CMD6
+ * when they already name the partition; read afresh after a failure. */
+static void test_1f_select(void)
+{
+	uint32_t err;
+
+	reset(GOOD);
+	emmc.ext_csd[179] = 0x48u;	/* BOOT_ACK, BOOT_PARTITION_ENABLE 1 */
+	opxy_storage_init(&s.st, &s.hw, &wb_device_op1f, true);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
+	log_start();
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
+	CHECK(emmc.log_n == 2u + logged(13) && emmc.log_idx[0] == 8u);
+	CHECK(find_switch(switch_arg(179, 0x49u), 0) < LOG_N);
+	log_start();
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
+	CHECK(emmc.log_n == 0u);		/* selected without a command */
+	CHECK(s.st.part == S03_PART_BP1);
+	CHECK(file_req(S09_STAT, "/yaffs2", &err) == -1 && err == S09_ENODEV);
+	log_start();
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(logged(8) == 0u && switches_of(switch_arg(179, 0x48u)) == 1u);
+	/* a failed switch leaves the byte not known: the next select reads it */
+	emmc.fail_select = 1u << 2;
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 2u, 0u, NULL, 0u) != 0);
+	emmc.fail_select = 0u;
+	CHECK(s.st.part == OPXY_PART_UNKNOWN);
+	log_start();
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(emmc.log_idx[0] == 8u && logged(6) == 0u);	/* read, already 0 */
+	CHECK(emmc.ext_csd[179] == 0x48u);	/* bits 7-3 as at power-up */
+	/* the OP-XY's select writes the partition's number (S-03.005) */
+	reset(GOOD);
+	emmc.ext_csd[179] = 0x48u;
+	opxy_storage_init(&s.st, &s.hw, &wb_device_opxy, true);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_FLUSH, 0u, 0u, NULL, 0u) == 0);
+	log_start();
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
+	CHECK(logged(8) == 0u && switches_of(switch_arg(179, 1u)) == 1u);
+}
+
+/* S-03.075: no user-area sector from 0x480000 on, whoever asks. */
+static void test_1f_footprint(void)
+{
+	static _Alignas(32) uint8_t data[2u * S03_SECTOR];
+	unsigned n;
+
+	reset(GOOD);
+	opxy_storage_init(&s.st, &s.hw, &wb_device_op1f, true);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	n = data_cmds();
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0x480000u, 0u, data,
+			      S03_SECTOR) != 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTORS, 0x47FFFFu, 2u, data,
+			      2u * S03_SECTOR) != 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_WRITE_SECTOR, 0x500000u, 0u, data,
+			      S03_SECTOR) != 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_ERASE, 0x480000u, WB_MMC_ERASE, NULL,
+			      0u) != 0);
+	CHECK(data_cmds() == n);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0x47FFFFu, 0u, data,
+			      S03_SECTOR) == 0);
+	CHECK(data_cmds() == n + 1u);
+	/* a boot partition's sectors are not the user area's */
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 1u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0x500000u, 0u, data,
+			      S03_SECTOR) == 0);
+	/* the OP-XY reads its FAT region */
+	reset(GOOD);
+	opxy_storage_init(&s.st, &s.hw, &wb_device_opxy, true);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_SELECT, 0u, 0u, NULL, 0u) == 0);
+	CHECK(s.st.store.emmc(s.st.store.ctx, S09_READ_SECTOR, 0x480000u, 0u, data,
+			      S03_SECTOR) == 0);
 }
 
 int main(void)
@@ -1025,5 +1132,8 @@ int main(void)
 	RUN(test_flush_needs_cache);
 	RUN(test_user_bd_reliable);
 	RUN(test_geometry_accepted);
+	RUN(test_1f_bring_up);
+	RUN(test_1f_select);
+	RUN(test_1f_footprint);
 	return check_summary("test_board_storage");
 }

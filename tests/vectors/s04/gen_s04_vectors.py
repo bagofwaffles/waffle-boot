@@ -177,9 +177,45 @@ def main():
     w('};')
     w('')
 
+    m = js('metadata_1f.json')
+    w('/* metadata_1f.json: the OP-1F record of 0x28 bytes */')
+    w('#define V_META1F_SIZE %su' % m['size'])
+    e = m['encode'][0]
+    w('static const uint8_t v_meta1f_encode_bytes[] = %s;' % carr(hx(e['bytes'])))
+    w('static const struct v_meta_fields v_meta1f_encode_fields = %s;' % fields(e['fields']))
+    w('struct v_meta1f_read { const char *name; uint8_t bytes[0x28]; struct v_meta_fields f; };')
+    w('static const struct v_meta1f_read v_meta1f_reads[] = {')
+    for r in m['read']:
+        w('\t{"%s", %s, %s},' % (r['name'], carr(hx(r['bytes'])), fields(r['fields'])))
+    w('};')
+    w('struct v_meta1f_write { const char *name; uint8_t before[0x28]; int factory_mode; struct v_meta_fields cur; uint8_t after[0x28]; };')
+    w('static const struct v_meta1f_write v_meta1f_writes[] = {')
+    for r in m['write']:
+        w('\t{"%s", %s, %d, %s, %s},' % (r['name'], carr(hx(r['before'])), int(r['factory_mode']),
+                                         fields(r['current']), carr(hx(r['after']))))
+    w('};')
+    w('static const struct v_setmeta v_meta1f_setmetas[] = {')
+    for r in m['set_metadata']:
+        q = r['request']
+        w('\t{"%s", %d, %d, %s, %s, %s, %d, %s},' % (
+            r['name'], int(r['factory_mode']), int(r['option']), cstr(q.get('serial')),
+            cstr(q.get('sku_variant')), cstr(q.get('factory')), int(r['writes']), fields(r['result'])))
+    w('};')
+    w('')
+
+    p = js('psoc_status_1f.json')
+    w('/* psoc_status_1f.json reports */')
+    w('struct v_msg { uint8_t id; uint8_t len; uint8_t payload[4]; };')
+    for name, rep in p['reports'].items():
+        w('static const struct v_msg v_psoc1f_%s[] = {' % name)
+        for msg in rep['messages']:
+            b = hx(msg['payload'])
+            w('\t{%s, %d, %s},' % (msg['id'], len(b), carr(b + bytes(4 - len(b)))))
+        w('};')
+    w('')
+
     p = js('psoc_status.json')
     w('/* psoc_status.json reports */')
-    w('struct v_msg { uint8_t id; uint8_t len; uint8_t payload[4]; };')
     for name, rep in p['reports'].items():
         w('static const struct v_msg v_psoc_%s[] = {' % name)
         for msg in rep['messages']:

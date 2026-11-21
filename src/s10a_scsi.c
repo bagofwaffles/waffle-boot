@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "waffle/bytes.h"
+#include "waffle/device.h"
 
 /* Operation codes (SPC-3, SBC-2) */
 enum {
@@ -32,8 +33,8 @@ enum {
 };
 
 static const char vendor[] = "teenage ";
-static const char product[] = "OP-XY Disk";
-static const char designator[] = "teenage engineering OP-XY Disk ";
+static const char disk[] = " Disk";
+static const char designator_head[] = "teenage engineering ";
 
 /* SPC-3 4.3.4.1: the CDB length of an operation code's group. */
 static unsigned group_len(uint8_t op)
@@ -86,9 +87,10 @@ static void release(struct s10a_lu *lu)
 }
 
 void s10a_lu_init(struct s10a_lu *lu, const struct wb_blockdev *dev,
-		  const char *serial)
+		  const char *serial, const struct wb_device *device)
 {
 	size_t n = serial ? strlen(serial) : 0;
+	size_t p = strlen(device->ident.product_text);
 
 	memset(lu, 0, sizeof(*lu));
 	lu->dev = dev;
@@ -96,6 +98,11 @@ void s10a_lu_init(struct s10a_lu *lu, const struct wb_blockdev *dev,
 		n = S10A_SERIAL_MAX;
 	if (n)
 		memcpy(lu->serial, serial, n);
+	/* S-10a.042: device.product_text and " Disk", at most 16 bytes */
+	if (p > S10A_PRODUCT_MAX - (sizeof(disk) - 1u))
+		p = S10A_PRODUCT_MAX - (sizeof(disk) - 1u);
+	memcpy(lu->product, device->ident.product_text, p);
+	memcpy(lu->product + p, disk, sizeof(disk) - 1u);
 }
 
 void s10a_lu_offer(struct s10a_lu *lu)
@@ -214,15 +221,20 @@ static void inquiry(struct s10a_lu *lu, const uint8_t *cdb,
 			n = 4 + sn;
 			break;
 		case 0x83: {
-			const uint32_t k = (uint32_t)sizeof(designator) - 1u + sn;
+			/* k = 21 + the product's length + the serial's */
+			const uint32_t h = (uint32_t)sizeof(designator_head) - 1u;
+			const uint32_t pn = (uint32_t)strlen(lu->product);
+			const uint32_t k = h + pn + 1u + sn;
 
 			p[1] = 0x83;
 			p[3] = (uint8_t)(k + 4u);
 			p[4] = 0x02;	/* code set ASCII */
 			p[5] = 0x01;	/* logical unit, T10 vendor ID */
 			p[7] = (uint8_t)k;
-			memcpy(p + 8, designator, sizeof(designator) - 1u);
-			memcpy(p + 8 + sizeof(designator) - 1u, lu->serial, sn);
+			memcpy(p + 8, designator_head, h);
+			memcpy(p + 8 + h, lu->product, pn);
+			p[8 + h + pn] = ' ';
+			memcpy(p + 9 + h + pn, lu->serial, sn);
 			n = 8 + k;
 			break;
 		}
@@ -240,7 +252,7 @@ static void inquiry(struct s10a_lu *lu, const uint8_t *cdb,
 		p[4] = 31;
 		memcpy(p + 8, vendor, sizeof(vendor) - 1u);
 		memset(p + 16, ' ', 20);
-		memcpy(p + 16, product, sizeof(product) - 1u);
+		memcpy(p + 16, lu->product, strlen(lu->product));
 		n = 36;
 	}
 	ok_in(lu, cmd, n, alloc);

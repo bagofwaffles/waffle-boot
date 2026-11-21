@@ -78,21 +78,22 @@ static void test_matrix(void)
 	      "PA8 is the high bit");
 }
 
-/* S-17.010-S-17.015 */
-static void test_sequences(void)
+/* S-17.010-S-17.016: the sequences on dev */
+static void run_sequences(const struct s17v_seq *seqs, size_t nseqs,
+			  const struct wb_device *dev)
 {
-	for (size_t i = 0; i < N(s17v_seqs); i++) {
+	for (size_t i = 0; i < nseqs; i++) {
 		struct s17_rev r = { 0, 0, S17_META_UNREAD };
 		uint8_t byte;
 
-		for (const struct s17v_event *e = s17v_seqs[i].ev;
+		for (const struct s17v_event *e = seqs[i].ev;
 		     e->kind != S17V_END; e++) {
 			char buf[S17_HW_REV_ENTRY_MAX];
 			size_t n;
 
 			switch (e->kind) {
 			case S17V_POWER_ON:
-				s17_rev_power_on(&r, e->a, e->b);
+				s17_rev_power_on_dev(&r, dev, e->a, e->b);
 				break;
 			case S17V_META_READ:
 				s17_rev_metadata(&r, S17_META_READ);
@@ -104,13 +105,13 @@ static void test_sequences(void)
 			case S17V_GREETING:
 				if (s17_rev_greeting(&r, e->data, e->len, &byte))
 					CHECK(byte == e->data[1], "%s: logged byte",
-					      s17v_seqs[i].name);
+					      seqs[i].name);
 				break;
 			case S17V_INFO:
 				n = s17_hw_rev_entry(s17_rev_reported(&r), buf,
 						     sizeof(buf));
 				CHECK(s11_text_eq(buf, n, e->entry), "%s: want %s, got %.*s",
-				      s17v_seqs[i].name, e->entry, (int)n, buf);
+				      seqs[i].name, e->entry, (int)n, buf);
 				break;
 			case S17V_END:
 			default:
@@ -118,6 +119,14 @@ static void test_sequences(void)
 			}
 		}
 	}
+}
+
+static void test_sequences(void)
+{
+	run_sequences(s17v_seqs, N(s17v_seqs), &wb_device_opxy);
+	/* S-17.016: the OP-1F, with no strap sample */
+	run_sequences(s17v_nostrap_seqs, N(s17v_nostrap_seqs), &wb_device_op1f);
+	CHECK(N(s17v_nostrap_seqs) >= 3u, "no_strap sequences");
 }
 
 /* S-17.011, S-17.014: a short greeting sets nothing and logs nothing. */

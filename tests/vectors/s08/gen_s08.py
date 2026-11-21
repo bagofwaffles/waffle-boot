@@ -127,6 +127,23 @@ def vectors(h):
     h.table('struct s08v_chunks', 's08v_chunks', rows,
             'struct s08v_chunks { uint32_t image_len; const uint8_t *lens_be16; size_t len; };')
 
+    # transfers-1f.json (S-08.045 with device.product_base 0x00008000): the same tables, s08v1f_*
+    t = load('vectors/transfers-1f.json')
+    h.lines.append('#define S08V1F_PRODUCT_BASE %su' % t['product_base'])
+    rows = ['{%s}, %s, %s, %s' % (', '.join(str(v) for v in p['version']), p['type'], p['product_word'],
+                                  h.arr('tp1f', bytes.fromhex(p['payload']))) for p in t['prepare']]
+    h.table('struct s08v_prepare', 's08v1f_prepare', rows)
+    rows = ['%d, {%s}, %s, %s, %s' % (p['image_len'], ', '.join(str(v) for v in p['version']), p['product_word'],
+                                      p['crc16'], h.arr('th1f', bytes.fromhex(p['header']))) for p in t['header']]
+    h.table('struct s08v_header', 's08v1f_header', rows)
+    rows = ['%d, %d, %s' % (p['sku'], p['read_ok'], p['word']) for p in t['product_word']]
+    h.table('struct s08v_pw', 's08v1f_pw', rows)
+    rows = ['%d, %d, %d, %s, %s' % (p['power_on'], p['boot_sku'],
+                                    -1 if p['set_sku_during'] is None else p['set_sku_during'],
+                                    p['word'], h.arr('tpo1f', bytes.fromhex(p['prepare'])))
+            for p in t['product_word_power_ons']]
+    h.table('struct s08v_pw_on', 's08v1f_pw_on', rows)
+
 
 def peer_rules(h, peer, rules, sends):
     """A scripted Nordic's rules (and what each sends) appended to the tables."""

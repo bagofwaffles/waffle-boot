@@ -16,6 +16,13 @@ const struct s06_route_entry s06_master_routes[6] = {
 	{ S06_LINK_NORDIC, S06_ADDR_HOST, S06_LINK_CDC },
 };
 
+void s06_node_master_routes(struct s06_node *n, const struct wb_device *dev)
+{
+	n->routes = s06_master_routes;
+	n->nroutes = 6u;
+	n->routes_off = wb_has(dev, WB_F_SECOND_CPU) ? 0u : S06_ROUTES_CPU;
+}
+
 void s06_link_init(struct s06_link *l, const struct s06_port_ops *ops,
 		   void *ctx, uint8_t own, uint8_t peer)
 {

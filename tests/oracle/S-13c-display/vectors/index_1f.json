@@ -1,0 +1,106 @@
+{
+ "bad_b9_42_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "no_gamma_bytes",
+  "requirement": "S-13c.026"
+ },
+ "bad_future_handshake_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset",
+  "requirement": "S-13c.027"
+ },
+ "bad_future_handshake_dma9_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset",
+  "requirement": "S-13c.027"
+ },
+ "bad_gamma_load_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "no_gamma_bytes",
+  "requirement": "S-13c.026"
+ },
+ "bad_gamma_window_after_frame_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "no_gamma_bytes",
+  "requirement": "S-13c.026"
+ },
+ "bad_pulse_with_handshake_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset",
+  "requirement": "S-13c.027"
+ },
+ "bad_strap_mark_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset",
+  "requirement": "S-13c.027"
+ },
+ "bad_two_pulses_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": "reset",
+  "requirement": "S-13c.027, S-13c.005"
+ },
+ "good_boot_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.026, S-13c.027"
+ },
+ "good_boot_logo_kept_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.026, S-13c.020"
+ },
+ "good_handshake_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.027, S-13c.006, S-13c.021"
+ },
+ "good_held_1f": {
+  "device": "1f",
+  "expect": [
+   "held"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.026, S-13c.013"
+ },
+ "good_own_reset_1f": {
+  "device": "1f",
+  "expect": [
+   "boot"
+  ],
+  "fails_rule": null,
+  "requirement": "S-13c.027, S-13c.005, S-13c.006"
+ }
+}

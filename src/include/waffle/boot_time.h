@@ -399,6 +399,11 @@ void boot_time_gap(struct boot_time *t, uint64_t cycles, uint32_t at);
 bool boot_time_line(const struct boot_time *t, unsigned k, uint32_t cycles_per_us,
 		    struct s14_text *out);
 
+/* The scan before a write (S-12.062) as a line: the request's time, then
+ * the slave's scan time in us, its reads and its way (slave[0] to [2]), or
+ * that it gave none (slave NULL). */
+void boot_time_scan_line(struct s14_text *out, uint32_t request_ms, const uint32_t *slave);
+
 /*
  * A copy that crosses a hand-over: a fixed layout of little-endian words,
  * with a magic, the counts, and a check. pack() writes BOOT_TIME_RECORD

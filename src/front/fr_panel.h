@@ -44,6 +44,8 @@ struct fr_panel {
 	uint32_t reset_ms;	/* S-13c.021's reset time */
 	uint8_t path;		/* FR_PANEL_* */
 	bool ready;		/* initialized and the gamma loaded: frames are sent */
+	bool gamma;		/* the gamma load is sent (digital gamma, S-13c.012);
+				 * false: none, S-13c.026 */
 	bool on;		/* DISPON sent, after the first frame's last byte */
 	bool started;		/* the run's one initialization began (S-13c.013) */
 	uint8_t te_misses;	/* frames sent without a TE edge, saturating */
@@ -55,14 +57,17 @@ struct fr_panel {
 };
 
 /* S-13c.004, S-13c.005: from the first stage's DMA9 values and the PA8
- * strap sample (1: PA8 high), at once; a pulse is 20 us. */
+ * strap sample (1: PA8 high), at once; a pulse is 20 us. A device whose
+ * PA8 is no strap passes 1 (S-13c.027). Sets gamma; a device without
+ * digital gamma clears it before fr_panel_start(). */
 void fr_panel_begin(struct fr_panel *p, const struct fr_panel_bus *bus,
 		    const struct fr_clock *clock, uint32_t xmod, uint32_t ymod,
 		    unsigned pa8);
 /* S-13c.006-S-13c.013: waits until ready_us (at most S-13c's 120 ms from
  * the reset's release), SLPOUT and 5.1 ms, the init sequence, the gamma
- * load and its window, the frame window. The display stays off. Once per
- * run. */
+ * load and its window (with gamma; S-13c.026 without: no window, and
+ * B9 02 E0 stays the last B9), the frame window. The display stays off.
+ * Once per run. */
 void fr_panel_start(struct fr_panel *p);
 /*
  * S-13c.016, S-13c.017: one whole frame from buf (FR_PANEL_FRAME_BYTES in

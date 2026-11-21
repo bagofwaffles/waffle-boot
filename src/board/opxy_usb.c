@@ -243,8 +243,9 @@ static size_t midi_room(void *ctx)
 
 static void midi_write(void *ctx, const uint8_t *data, size_t n)
 {
-	(void)ctx;
-	s10c_carrier_send_frame(data, n, s10a_usb_send_sysex, NULL);
+	const struct opxy_master *m = ctx;
+
+	s10c_carrier_send_frame(opxy_dev(m), data, n, s10a_usb_send_sysex, NULL);
 }
 
 static const struct s06_port_ops midi_port = { midi_read, midi_room,
@@ -493,7 +494,7 @@ void opxy_usb_start(struct opxy_master *m)
 	s06_link_hold(&m->link[S06_LINK_CDC], true);
 	s06_link_hold(&m->link[S06_LINK_MIDI], true);
 
-	opxy_disk_ddr(parts);
+	opxy_disk_ddr_dev(opxy_dev(m), parts);	/* S-18.030 */
 	opxy_disk_init(&sv->disk, parts);
 	sv->disk_formatted = false;
 	sv->disk_acquired = false;
@@ -505,7 +506,7 @@ void opxy_usb_start(struct opxy_master *m)
 	sv->usb_board.activity = usb_activity;
 	sv->usb_board.disk_released = disk_released;
 	sv->usb_board.midi_ready = midi_ready;
-	s10a_usb_init(&sv->usb_board, &sv->host);
+	s10a_usb_init(&sv->usb_board, &sv->host, opxy_dev(m));
 	opxy_mtp_start(m);
 	wb_usb_set_setup_filter(s10a_usb_setup_filter, NULL);
 	/* The battery wait may have brought the controller up already. */
@@ -619,7 +620,7 @@ bool opxy_disk_ready(struct opxy_master *m)
 	if (sv->disk_formatted)
 		return true;
 	opxy_menu_show_now(m);	/* S-15.002: the format takes a while */
-	if (!wire_fat_format(&sv->fat, &sv->disk.dev)) {
+	if (!wire_fat_format(&sv->fat, &sv->disk.dev, opxy_dev(m))) {
 		s14_log_str(&sv->log, S14_ERROR, S14_NO_TAG,
 			    "ramdisk format failed");
 		return false;

@@ -1,12 +1,18 @@
-# S-11.091, S-11.092, S-11.096
-option	te_signed	bootloader_present	bootloader_selected	return_to_stock	os_form
-0	0	0	0	0	plaintext
-0	0	1	0	0	plaintext
-0	1	0	0	0	plaintext
-0	1	1	0	0	plaintext
-1	0	0	0	0	plaintext
-1	0	1	0	0	plaintext
-1	0	1	1	0	plaintext
-1	1	0	0	0	plaintext
-1	1	1	0	0	plaintext
-1	1	1	1	1	plaintext
+# S-11.021, S-11.091, S-11.092, S-11.096
+option	valid	bootloader_present	bootloader_waffle	bootloader_selected	return_to_stock	os_form
+0	0	0	0	0	0	plaintext
+0	0	1	0	0	0	plaintext
+0	0	1	1	0	0	plaintext
+0	1	0	0	0	0	plaintext
+0	1	1	0	0	0	plaintext
+0	1	1	1	0	0	plaintext
+1	0	0	0	0	0	plaintext
+1	0	1	0	0	0	plaintext
+1	0	1	0	1	0	plaintext
+1	0	1	1	0	0	plaintext
+1	0	1	1	1	0	plaintext
+1	1	0	0	0	0	plaintext
+1	1	1	0	0	0	plaintext
+1	1	1	0	1	1	plaintext
+1	1	1	1	0	0	plaintext
+1	1	1	1	1	0	plaintext

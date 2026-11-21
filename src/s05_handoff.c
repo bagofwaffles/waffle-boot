@@ -108,6 +108,11 @@ enum s05_refusal s05_check_image(const uint8_t *img, uint32_t len)
 	}
 }
 
+const char *s05_contract(const struct wb_device *dev)
+{
+	return dev->contract;
+}
+
 /* --- The kernel call --- */
 
 /* S-05.008 */
@@ -155,7 +160,7 @@ static void failed_load(const struct s05_master_ops *ops, const struct s05_maste
 	ops->held(ops->ctx, cause);
 }
 
-/* S-05.003-.008, S-05.013, S-05.018, S-05.019, S-05.024, S-05.032 */
+/* S-05.003-.008, S-05.013, S-05.018, S-05.019, S-05.024, S-05.032, S-05.036 */
 void s05_master_handoff(const struct s05_master_ops *ops, const struct s05_master *m)
 {
 	enum s05_fail f;
@@ -171,6 +176,15 @@ void s05_master_handoff(const struct s05_master_ops *ops, const struct s05_maste
 	}
 	if (s05_check_image(m->staging, length) != S05_ACCEPT) {
 		failed_load(ops, m, S05_FAIL_REFUSED);
+		return;
+	}
+	if (!wb_has(m->dev, WB_F_SECOND_CPU)) {
+		/* S-05.036: one CPU, one copy; no release, no ready line */
+		if (ops->accepted != NULL)
+			ops->accepted(ops->ctx);
+		ops->teardown(ops->ctx);
+		ops->kernel_call(ops->ctx, m->config_addr);
+		ops->jump(ops->ctx, ops->read_svect0(ops->ctx));
 		return;
 	}
 	/* Steps 2 and 3: exactly one release; only a reply of 0 goes on

@@ -18,6 +18,11 @@
 
 /* RCU0_STAT: the reset-cause bits, HWRST, HBRST, SSRST and SWRST (W1C). */
 #define RCU_STAT_CAUSES    0x0000000Fu
+/* RCU0_STAT.BMODE (bits 11:8, read only): the boot-mode pins' input. 1 is
+ * SPI master boot. */
+#define RCU_STAT_BMODE_SHIFT 8u
+#define RCU_STAT_BMODE_MASK  0x00000F00u
+#define RCU_BMODE_SPI_MASTER 1u
 
 /* RCU0_MSG_CLR: every message bit. */
 #define RCU_MSG_ALL        0xFFFFFFFFu

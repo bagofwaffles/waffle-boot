@@ -7,7 +7,9 @@
  * S-13b.017, a frame whose transfer ends with a controller error (a receive
  * overrun) sent again from its first frame, the WREN included, after an
  * RDSR has read WIP = 0, up to three tries once the front has erased or
- * programmed, one try before; a timeout never tried again.
+ * programmed, one try before; a timeout never tried again. A part that
+ * never reads ready: FR_FLASH_BUSY after one bounded wait, and one such
+ * wait in the first stage's fingerprint.
  */
 #include <stdio.h>
 #include <string.h>
@@ -17,6 +19,8 @@
 #include "support/fake_mmr.h"
 
 #include "front/fr_hw_flash.c"
+#include "front/fr_device.h"
+#include "front/fr_handoff.h"
 
 #define N 2u
 #define SIZE 0x100000u
@@ -299,6 +303,44 @@ static void test_reads(void)
 	CHECK(d.violations == 0u);
 }
 
+static unsigned rdsrs(void)
+{
+	unsigned n = 0;
+
+	for (unsigned i = 0; i < d.nops; i++)
+		n += d.ops[i] == 'S' ? 1u : 0u;
+	return n;
+}
+
+/* A part that never reads ready (WIP stuck, or every bit read 1): the
+ * read's wait gives up after its bound with FR_FLASH_BUSY and no READ;
+ * the first stage's fingerprint then costs that one wait and no more. */
+static void test_stuck(void)
+{
+	struct fr_ident id;
+	uint8_t b;
+	unsigned one;
+
+	start();
+	fake_core_set_cycle_step(50000000u);	/* 0.125 s a read of the counter */
+	d.wip = true;
+	CHECK(f->read(f->ctx, 0u, &b, 1u) == FR_FLASH_BUSY);
+	one = rdsrs();
+	CHECK(one >= 2u && one == d.nops && busy);
+	start();
+	fake_core_set_cycle_step(50000000u);
+	d.wip = true;
+	fr_identify(f, &id);
+	CHECK(rdsrs() == one && d.nops == one);
+	CHECK(id.dev == &fr_dev_opxy && id.how == FR_HO_HOW_UNKNOWN && id.n == 0u);
+	/* a READ whose transfer fails is not FR_FLASH_BUSY */
+	start();
+	d.fail_op = OP_READ;
+	d.fail_left = 1u;
+	CHECK(f->read(f->ctx, 0u, &b, 1u) == FR_FLASH_IO);
+	CHECK(d.violations == 0u);
+}
+
 int main(void)
 {
 	RUN(test_frames);
@@ -306,5 +348,6 @@ int main(void)
 	RUN(test_write_every_try);
 	RUN(test_timeout);
 	RUN(test_reads);
+	RUN(test_stuck);
 	return check_summary("test_front_flash");
 }

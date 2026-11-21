@@ -12,7 +12,7 @@ under `src/glue/`.
 | picolibc (subset) | <https://github.com/picolibc/picolibc> | 1.8.12, `2ae376c6cdf4fef90ca2388ecf7a07457fa63cff` | BSD-3-Clause and other permissive notices of newlib (`COPYING.picolibc`) | none; configured by `src/glue/libc/picolibc.h` |
 | FatFs | <http://elm-chan.org/fsw/ff/>, from the release mirror <https://github.com/abbrev/fatfs> | R0.16 with patches 1–3 (2026-07-10), `ab992fcf2926b8a1ee3f0a8f9cefb6584174100d` | FatFs license (BSD-style, 1 clause) | `ffconf.h` configured (S-12 §3) |
 | yaffs2 | <https://github.com/Aleph-One-Ltd/yaffs2> | master of 2026-06-29, `474b3acb927d27b2305618aaf24456b9d33fe91b` | GPL-2.0 (its `direct/` headers LGPL-2.1) | zero-erased media; lazy checkpoint erase; checkpoint erased first; fuzzing fixes (below) |
-| zlib (inflate) | <https://github.com/madler/zlib> | 1.3.2, `da607da739fa6047df13e66a2af6b8bec7c2a498` | Zlib | none |
+| zlib (inflate) | <https://github.com/madler/zlib> | 1.3.2, `da607da739fa6047df13e66a2af6b8bec7c2a498` | Zlib | none; built with `BUILDFIXED` and an empty `Z_TESTW` (below) |
 | minizip (unzip) | <https://github.com/madler/zlib>, `contrib/minizip` | 1.3.2, as zlib | Zlib (`crypt.h`: Info-ZIP, not built) | `ioapi.c` builds without stdio; built with `NOUNCRYPT`, `MINIZIP_NO_STDIO` and `IOAPI_NO_64` |
 | micro-ecc | <https://github.com/kmackay/micro-ecc> | 1.2, `541b3a78026420a3e369c4c9281c396b5e531113` | BSD-2-Clause | none; P-224 only, by `-D` options |
 | BearSSL (subset) | <https://www.bearssl.org/git/BearSSL>, from FreeBSD's vendor import | `79c060e` (2023-02-20), freebsd-src `d84e570b54961e8874bbd8de25635eb96be0977e` | MIT | none |
@@ -131,28 +131,36 @@ what is built.
 - **zlib**: the inflate subset is `adler32.c`, `crc32.c`, `inffast.c`,
   `inflate.c`, `inftrees.c` and `zutil.c`. `src/wire_zip.c` reads each
   member raw from minizip and inflates it itself, step for step as
-  minizip's read did, so minizip computes no CRC-32 of it.
+  minizip's read did, so minizip computes no CRC-32 of it. Built with
+  `BUILDFIXED`, inflate builds its fixed-code tables in RAM on first use;
+  with `Z_TESTW` empty, `crc32()` works byte by byte from one 1 KiB table,
+  without the braid tables. The bulk CRC-32s run on the CRC peripheral
+  (`src/board/opxy_crc.c`).
+- **yaffs2** is built without yaffs1 (`CONFIG_YAFFS_NO_YAFFS1`,
+  `src/glue/yaffs2/yaffs_port.h`): every device is a yaffs2 one.
 - **micro-ecc** verifies against an unchecked public key; check Q0 with
   `uECC_valid_public_key()` once when it is read. It truncates a SHA-256
   digest to the leftmost 224 bits, as S-11.012 requires.
 
 ## Target sizes
 
-`make size`, archive totals under `-Os` (`-O2` for crc, zlib, and picolibc's
-`memcpy` and `memset`, which copy by words; `-mcpu=bf703-none`,
-`-ffunction-sections`); a linked image keeps only what it uses.
+`make size`, archive totals under `-Os` with the Makefile's `TARGET_SIZE`
+(`-O2` for crc, zlib, and picolibc's `memcpy` and `memset`, which copy by
+words; `-mcpu=bf703-none`, `-ffunction-sections`); a linked image keeps only
+what it uses.
 
 | Component | text | data | bss |
 | --- | ---: | ---: | ---: |
-| picolibc | 5,328 | 0 | 16 |
-| crc (ours) | 964 | 0 | 0 |
-| blockdev (ours) | 336 | 0 | 0 |
-| fatfs (with glue) | 15,343 | 0 | 522 |
-| yaffs2 (with glue) | 51,691 | 8 | 13,608 |
-| zlib | 22,010 | 0 | 0 |
-| minizip (with glue) | 7,592 | 0 | 0 |
-| micro-ecc | 8,256 | 0 | 4 |
-| BearSSL | 5,680 | 0 | 0 |
+| picolibc | 5,000 | 0 | 16 |
+| crc (ours) | 940 | 0 | 0 |
+| blockdev (ours) | 316 | 0 | 0 |
+| fatfs (with glue) | 15,867 | 0 | 522 |
+| yaffs2 (with glue) | 50,731 | 9 | 80,180 |
+| zlib | 15,086 | 0 | 2,196 |
+| minizip (with glue) | 7,716 | 0 | 0 |
+| micro-ecc | 8,260 | 0 | 4 |
+| BearSSL | 5,568 | 0 | 0 |
+| TinyUSB | 7,812 | 29 | 366 |
 
 ## Tests
 

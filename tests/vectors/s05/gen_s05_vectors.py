@@ -165,6 +165,22 @@ def main():
                                                          int(v['expect'].get('all', False))))
     w('};')
     w('')
+
+    d = js(os.path.join(S05, 'vectors', 'os_destinations_1f.json'))
+    st = bytes.fromhex(d['stream'])
+    w('/* os_destinations_1f.json (S-05.040): the stream in OS 1.7.3\'s shape and its ranges */')
+    w('static const uint8_t v_os1f_stream[] = {%s};' % ', '.join('0x%02x' % b for b in st))
+    w('#define V_OS1F_ACCEPTED %d' % int(d['verdict']['accepted']))
+    w('struct v_os1f_range { uint32_t start, end; int fill; };')
+    w('static const struct v_os1f_range v_os1f_ranges[] = {')
+    for r in d['ranges']:
+        w('\t{%su, %su, %d},' % (r['start'], r['end'], int(r['fill'])))
+    w('};')
+    e = js(os.path.join(S05, 'vectors', 'entry_state_1f.json'))
+    w('/* entry_state_1f.json (S-05.038): EVT0 to EVT15, 0 for none given */')
+    w('static const uint32_t v_entry1f_evt[16] = {%s};' % ', '.join(
+        e['evt'].get('EVT%d' % i, '0') + 'u' for i in range(16)))
+    w('')
     w('#endif /* S05_VECTORS_H */')
     genout.write(OUT, '\n'.join(out) + '\n')
     genout.finish()

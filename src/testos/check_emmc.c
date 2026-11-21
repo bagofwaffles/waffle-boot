@@ -321,8 +321,8 @@ static void look(const struct s03_env *env, struct tchk_switch *out, uint8_t hdr
  * image's inactive. */
 static void write_back(const struct s03_env *env, struct tchk_switch *out)
 {
-	_Alignas(4) uint8_t want[S03_SECTOR];
-	_Alignas(4) uint8_t back[S03_SECTOR];
+	_Alignas(32) uint8_t want[S03_SECTOR];
+	_Alignas(32) uint8_t back[S03_SECTOR];
 	const uint8_t *other_raw = out->raw[out->other - 1u];
 	const uint8_t *mine_raw = out->raw[out->mine - 1u];
 
@@ -351,7 +351,7 @@ static void write_back(const struct s03_env *env, struct tchk_switch *out)
 
 void tchk_switch_look(const struct s03_env *env, struct tchk_switch *out)
 {
-	_Alignas(4) uint8_t hdr[2][S03_SECTOR];
+	_Alignas(32) uint8_t hdr[2][S03_SECTOR];
 
 	memset(out, 0, sizeof(*out));
 	memset(hdr, 0, sizeof hdr);
@@ -365,7 +365,7 @@ void tchk_switch_look(const struct s03_env *env, struct tchk_switch *out)
 
 void tchk_switch_write(const struct s03_env *env, struct tchk_switch *out)
 {
-	_Alignas(4) uint8_t now[2][S03_SECTOR];
+	_Alignas(32) uint8_t now[2][S03_SECTOR];
 
 	if (out->result != TCHK_SW_READY)
 		return;

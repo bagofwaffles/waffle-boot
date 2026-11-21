@@ -17,6 +17,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
+
 /* Panel commands (ST7796S datasheet names). */
 #define S13C_RDDID   0x04u
 #define S13C_SLPOUT  0x11u
@@ -120,6 +122,7 @@ struct s13c_panel {
 	enum s13c_reset_path path;
 	uint32_t reset_ms;	/* the panel's reset time, ms time */
 	uint64_t ready_us;	/* the first transaction not before */
+	bool digital_gamma;	/* the device has digital-gamma (S-13c.026) */
 	bool gamma_loaded;	/* E2 and E3 sent */
 	bool gamma_on;		/* the last B9 is 42 E0 */
 	bool frame;		/* a frame may be in flight */
@@ -143,7 +146,8 @@ struct s13c_panel {
  * waits out what is left of the 120 ms.
  */
 void s13c_begin(struct s13c_panel *p, const struct s13c_bus *bus,
-		uint32_t xmod, uint32_t ymod, unsigned pa8);
+		const struct wb_device *dev, uint32_t xmod, uint32_t ymod,
+		unsigned pa8);
 
 /*
  * S-13c.013 across the front's hand-off (S-01.023): the front reset and
@@ -154,7 +158,7 @@ void s13c_begin(struct s13c_panel *p, const struct s13c_bus *bus,
  * not loaded: s13c_gamma(p, true) loads it again (S-13c.012).
  */
 void s13c_adopt(struct s13c_panel *p, const struct s13c_bus *bus,
-		uint32_t reset_ms);
+		const struct wb_device *dev, uint32_t reset_ms);
 
 /*
  * S-13c.006 - S-13c.011, S-13c.013: wait for the reset to complete, read
@@ -167,7 +171,8 @@ void s13c_adopt(struct s13c_panel *p, const struct s13c_bus *bus,
 int s13c_start(struct s13c_panel *p, bool gamma);
 
 /* S-13c.012: digital gamma on (loading the tables first if needed) or
- * off, inside one command-set-2 window. */
+ * off, inside one command-set-2 window; on a device without digital-gamma
+ * nothing is sent (S-13c.026). */
 int s13c_gamma(struct s13c_panel *p, bool on);
 
 /*

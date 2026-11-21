@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The panel bus on the OP-XY (S-13c.001 - S-13c.003), the front's copy of
- * the full bootloader's SMC driver (drivers/bf70x/lcd.c with its OP-XY
- * pins), trimmed to what the front sends: every byte a write cycle of
+ * The panel bus (S-13c.001 - S-13c.003), the front's copy of the full
+ * bootloader's SMC driver (drivers/bf70x/lcd.c with the device's pins),
+ * trimmed to what the front sends: every byte a write cycle of
  * SMC0 bank 0, by the CPU or by the one memory DMA of wb_lcd_frame_start()
  * on MDMA2 (DMA20 from memory, DMA21 to the bank; the ROM and the hand-over
- * use MDMA0), and no reads. D/C (PA5), RD (PA13), CS (PA15) and RESET (PA8) are GPIO outputs,
+ * use MDMA0), and no reads. D/C (the device's: PA5 on the OP-XY, PA11 on
+ * the OP-1F), RD (PA13), CS (PA15) and RESET (PA8) are GPIO outputs,
  * TE (PA7) an input, D[7:0] port B and WR (PA14) the SMC's, on the
  * functions fr_hw_pins() selected (S-13b.003). Writes to the bank are
  * posted: a change of D/C or CS follows wb_mmr_sync(), so the earlier
@@ -28,7 +29,6 @@
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/mmr.h"
 
-#define PA_DC    (1u << 5)
 #define PA_TE    (1u << 7)
 #define PA_RESET (1u << 8)
 #define PA_RD    (1u << 13)
@@ -42,6 +42,7 @@
 #define STOP_US  100u
 
 static bool dc_high = true;
+static uint32_t pa_dc;	/* D/C's bit in port A (fr_hw_lcd_start()) */
 
 /* One byte, one write cycle, ended before the next store. */
 static inline __attribute__((always_inline)) void put(uint8_t b)
@@ -66,7 +67,7 @@ FR_FAST static void set_dc(bool high)
 	if (dc_high == high)
 		return;
 	wb_mmr_sync();		/* the last write cycle has ended */
-	level(PA_DC, high);
+	level(pa_dc, high);
 	wb_mmr_sync();
 	dc_high = high;
 }
@@ -177,8 +178,9 @@ static const struct fr_panel_bus bus = {
 	b_reset, b_select, b_cmd, b_data, b_te, b_dma_start, b_dma_state, b_dma_stop, NULL,
 };
 
-const struct fr_panel_bus *fr_hw_lcd_start(void)
+const struct fr_panel_bus *fr_hw_lcd_start(const struct fr_dev *dev)
 {
+	pa_dc = WB_PIN_BIT(dev->panel_dc);	/* a pin of port A on both devices */
 	/* HRM 10: the bank's timing before it is enabled (S-13c.003). */
 	wb_mmr_write32(SMC0_B0TIM, WB_LCD_B0TIM);
 	wb_mmr_write32(SMC0_B0ETIM, WB_LCD_B0ETIM);
@@ -186,7 +188,7 @@ const struct fr_panel_bus *fr_hw_lcd_start(void)
 
 	/* S-13c.001: the idle levels before the drivers come on; RESET is
 	 * left to fr_panel_begin() (S-13c.004). */
-	output(PA_DC | PA_RD | PA_CS, true);
+	output(pa_dc | PA_RD | PA_CS, true);
 	dc_high = true;
 	wb_mmr_write32(PORT_DIR_CLR(WB_PORT_A), PA_TE);
 	wb_mmr_write32(PORT_INEN_SET(WB_PORT_A), PA_TE);

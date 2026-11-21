@@ -15,7 +15,7 @@ static const struct wb_time cclk400 = { 400u };
 #define SRC_HZ 50000000u
 
 static const struct wb_msi_config cfg = {
-	63u, 0xFFFFFF40u, 0x20070008u, 1000000u, 500000u, 100000u, 0u, 0u,
+	63u, 0xFFFFFF40u, 0x20070008u, 1000000u, 500000u, 100000u, 0u, 0u, 0u,
 };
 
 /*
@@ -63,6 +63,7 @@ static struct emmc {
 	bool idmac_stuck, fbe;
 	uint32_t fifoth_at, thr_at;
 	unsigned ctl_resets, ctl_reset_at;	/* count, and commands before */
+	unsigned not_ready;	/* CMD13s answered busy (PRG) */
 } emmc;
 
 /* The IDMAC closes each descriptor of the chain, up to the last (LD). */
@@ -181,7 +182,8 @@ static void take_command(uint32_t cmd)
 	case 6:
 		emmc.last_switch_index = (uint8_t)(arg >> 16);
 		if (emmc.last_switch_index == WB_EXT_CSD_BUS_WIDTH)
-			emmc.pending_width = (arg >> 8 & 0xFu) == 2u ? 8 : 1;
+			emmc.pending_width = (arg >> 8 & 0xFu) == 2u ? 8 :
+					     (arg >> 8 & 0xFu) == 1u ? 4 : 1;
 		if (emmc.last_switch_index == WB_EXT_CSD_POWER_OFF &&
 		    (arg >> 8 & 0xFFu) == 3u)
 			emmc.off = true;
@@ -194,6 +196,11 @@ static void take_command(uint32_t cmd)
 		break;
 	case 13:
 		emmc.need_status = false;
+		if (emmc.not_ready != 0u) {
+			/* busy programming: not ready, state PRG (7) */
+			emmc.not_ready--;
+			r1 = 7u << 9;
+		}
 		break;
 	default:
 		break;
@@ -580,7 +587,7 @@ static void test_data_timeout(void)
 	static _Alignas(32) uint32_t buf[128 * 128];
 	static const struct wb_msi_config tcfg = {
 		63u, 0xFFFFFF40u, 0x20070008u, 1000000u, 500000u, 100000u, 0u,
-		2000000u,
+		2000000u, 0u,
 	};
 	const uint64_t xfer = tcfg.xfer_timeout_us * US;
 	const uint64_t wallow = xfer + tcfg.busy_timeout_us * US;
@@ -788,7 +795,7 @@ static void test_data_timeout_saturates(void)
 {
 	static const struct wb_msi_config big = {
 		63u, 0xFFFFFF40u, 0x20070008u, 1000000u, 0x80000000u,
-		0x80000000u, 0u, 0u,
+		0x80000000u, 0u, 0u, 0u,
 	};
 	static struct wb_msi_desc desc16[16];
 	static _Alignas(32) uint32_t buf[128 * 128];
@@ -908,7 +915,7 @@ static void test_flush_wait(void)
 {
 	static const struct wb_msi_config flush_cfg = {
 		63u, 0xFFFFFF40u, 0x20070008u, 1000000u, 500000u, 100000u, 5000000u,
-		0u,
+		0u, 0u,
 	};
 	struct wb_msi m;
 
@@ -1005,6 +1012,176 @@ static void test_leave(void)
 	fake_core_set_cycle_step(1);
 }
 
+/* S-13b.061: the OP-1F's bus, Switch(183, 1) and four lines. */
+static void test_bring_up_four(void)
+{
+	static const struct wb_msi_config cfg4 = {
+		63u, 0xFFFFFF40u, 0x20070008u, 1000000u, 500000u, 100000u, 0u, 0u, 4u,
+	};
+	struct wb_msi m;
+	unsigned i, w4 = 0, w8 = 0;
+
+	reset_emmc();
+	ext[WB_EXT_CSD_DEVICE_TYPE] = 0x57u;
+	ext[WB_EXT_CSD_DRIVER_STR] = 0x0Fu;
+	CHECK(wb_msi_init(&m, &cfg4, &cclk400, desc, 2) == WB_MSI_OK);
+	CHECK(wb_msi_emmc_init(&m, ext) == WB_MSI_OK);
+	CHECK(emmc.violations == 0);	/* every data command at the eMMC's width */
+	for (i = 0; i < emmc.n && i < LOG_MAX; i++) {
+		w4 += emmc.log[i].idx == 6u && emmc.log[i].arg == 0x03B70100u;
+		w8 += emmc.log[i].idx == 6u && emmc.log[i].arg == 0x03B70200u;
+		if (emmc.log[i].idx == 8u && i > 0u)
+			CHECK(emmc.log[i].width == 4u);	/* the CMD8s after the switch */
+	}
+	CHECK(w4 == 1u && w8 == 0u);
+	CHECK(m.width == 4u && emmc.bus_width == 4u);
+	CHECK(fake_mmr_get(MSI_CTYPE) == 1u);
+}
+
+/* S-03.013: the notification's busy end by CMD13 alone, bounded. */
+static void test_switch_poll(void)
+{
+	struct wb_msi m;
+	unsigned from;
+
+	init_emmc(&m, 0x57u, 0x0Fu);
+	from = emmc.n;
+	emmc.busy_set = 0;
+	emmc.not_ready = 3u;
+	CHECK(wb_msi_switch_poll(&m, 34, 3, 100u) == 0);
+	CHECK(emmc.log[from].idx == 6u && emmc.log[from].arg == 0x03220300u);
+	CHECK(count_idx(from, 13u) == 4u);	/* three busy, then ready */
+	CHECK(emmc.n == from + 5u);
+	/* nothing after it */
+	CHECK(wb_msi_cmd(&m, 13, 0, WB_MSI_R1, NULL) == WB_MSI_ERR_OFF);
+	CHECK(emmc.n == from + 5u);
+
+	/* a wait that runs out: 1, and still nothing after */
+	init_emmc(&m, 0x57u, 0x0Fu);
+	fake_core_set_cycle_step(400u * 1000u);	/* 1 ms a read of the counter */
+	from = emmc.n;
+	emmc.busy_set = 0;
+	emmc.not_ready = 0xFFFFFFFFu;
+	CHECK(wb_msi_switch_poll(&m, 34, 3, 20u) == 1);
+	CHECK(count_idx(from, 13u) >= 1u && count_idx(from, 13u) < 40u);
+	CHECK(wb_msi_switch_poll(&m, 34, 3, 20u) == -1);	/* no command */
+	fake_core_set_cycle_step(1);
+
+	/* S-03.013: at least one CMD13, however short the bound */
+	init_emmc(&m, 0x57u, 0x0Fu);
+	from = emmc.n;
+	emmc.busy_set = 0;
+	CHECK(wb_msi_switch_poll(&m, 33, 0, 0u) == 0);
+	CHECK(count_idx(from, 13u) == 1u);
+
+	/* the flush by the same path; an index the driver does not switch */
+	init_emmc(&m, 0x57u, 0x0Fu);
+	from = emmc.n;
+	emmc.busy_set = 0;
+	CHECK(wb_msi_switch_poll(&m, 32, 1, 100u) == 0);
+	CHECK(emmc.log[from].arg == 0x03200100u);
+	CHECK(wb_msi_switch_poll(&m, 162, 1, 100u) == -1);
+	CHECK(emmc.n == from + 2u);
+	CHECK(emmc.violations == 0);
+}
+
+/* S-03.012: EXT_CSD[179] by one CMD8. */
+static void test_part_config(void)
+{
+	static _Alignas(32) uint8_t buf[512];
+	struct wb_msi m;
+	unsigned from;
+	uint8_t v = 0;
+
+	init_emmc(&m, 0x57u, 0x0Fu);
+	memcpy(buf, ext, sizeof buf);
+	buf[WB_EXT_CSD_PART_CONFIG] = 0x48u;
+	from = emmc.n;
+	CHECK(wb_msi_read_part_config(&m, buf, &v) == WB_MSI_OK);
+	CHECK(v == 0x48u);
+	CHECK(emmc.n == from + 1u && emmc.log[from].idx == 8u);
+	CHECK(emmc.violations == 0);
+}
+
+/* The first fault of an operation, for the test OS's report. */
+static void test_fault_record(void)
+{
+	static _Alignas(32) uint8_t buf[2u * 512u + 32u];
+	struct wb_msi m;
+
+	init_emmc(&m, 0x57u, 0x0Fu);
+	wb_msi_fault_clear(&m);
+	CHECK(m.fault.step == WB_MSI_STEP_NONE && m.fault.state == 0xFFu);
+	/* a buffer off a cache line: refused, nothing sent, its address kept */
+	CHECK(wb_msi_emmc_read(&m, 0, 2, buf + 4) == WB_MSI_ERR_ARG);
+	CHECK(m.fault.step == WB_MSI_STEP_ARG && m.fault.cmd == 18u && m.fault.at == 18u);
+	CHECK(m.fault.arg == (uint32_t)(uintptr_t)(buf + 4) && m.fault.rc == WB_MSI_ERR_ARG);
+	/* a later fault does not overwrite the first */
+	CHECK(wb_msi_emmc_read(&m, 0, 1, buf + 8) == WB_MSI_ERR_ARG);
+	CHECK(m.fault.cmd == 18u);
+
+	/* the select's CMD6 not answered: the controller's status kept */
+	wb_msi_fault_clear(&m);
+	emmc.rto_idx = 6;
+	CHECK(wb_msi_emmc_select(&m, 1) == WB_MSI_ERR_CMD);
+	emmc.rto_idx = 0;
+	emmc.busy_reads = 0;	/* the fake's busy after a CMD6 the eMMC did not take */
+	CHECK(m.fault.step == WB_MSI_STEP_CMD && m.fault.cmd == 6u && m.fault.at == 6u);
+	CHECK(m.fault.arg == 0x03B30100u && (m.fault.istat & MSI_IS_RTO) != 0u);
+
+	/* R1 error bits in the response */
+	wb_msi_fault_clear(&m);
+	emmc.fail_idx = 6;
+	CHECK(wb_msi_emmc_select(&m, 2) == WB_MSI_ERR_EMMC);
+	emmc.fail_idx = 0;
+	emmc.busy_reads = 0;
+	CHECK(m.fault.step == WB_MSI_STEP_R1 && (m.fault.r1 & (1u << 31)) != 0u);
+
+	/* never ready in tran: the state CMD13 showed, and the wait's length */
+	wb_msi_fault_clear(&m);
+	fake_core_set_cycle_step(400u * 1000u);	/* 1 ms a read of the counter */
+	emmc.not_ready = 0xFFFFFFFFu;
+	CHECK(wb_msi_emmc_select(&m, 1) == WB_MSI_TIMEOUT);
+	emmc.not_ready = 0;
+	fake_core_set_cycle_step(1);
+	CHECK(m.fault.step == WB_MSI_STEP_STATE && m.fault.cmd == 6u && m.fault.at == 13u);
+	CHECK(m.fault.state == 7u && m.fault.busy_us >= cfg.busy_timeout_us);
+
+	/* the read-ahead's out-of-range, which a read ignores, is no fault */
+	wb_msi_fault_clear(&m);
+	emmc.fail_idx = 12;
+	CHECK(wb_msi_emmc_read(&m, 0x3F80u, 2, buf) == WB_MSI_OK);
+	emmc.fail_idx = 0;
+	CHECK(m.fault.step == WB_MSI_STEP_NONE);
+	CHECK(emmc.violations == 0);
+}
+
+/* S-05.037, S-13b.062: closed and idle, the eMMC sent nothing. */
+static void test_close(void)
+{
+	struct wb_msi m;
+	unsigned from;
+
+	init_emmc(&m, 0x57u, 0x0Fu);
+	fake_mmr_set(MSI_CTL, MSI_CTL_INTEN | MSI_CTL_INTDMAC);
+	fake_mmr_set(MSI_IMSK, 0xFFC2u);
+	fake_mmr_set(MSI_ISTAT, 0x21u);
+	fake_mmr_set(MSI_IDINTEN, 0x2u);
+	fake_mmr_set(MSI_IDSTS, 0x2u);
+	from = emmc.n;
+	busy();
+	CHECK(wb_msi_close(&m) == WB_MSI_OK);
+	CHECK(emmc.busy_reads == 0);		/* DAT0 waited for */
+	CHECK(emmc.n == from);			/* no command */
+	CHECK((fake_mmr_get(MSI_CTL) & (MSI_CTL_INTEN | MSI_CTL_INTDMAC)) == 0u);
+	CHECK(fake_mmr_get(MSI_IMSK) == 0u);
+	CHECK(fake_mmr_get(MSI_ISTAT) == 0u);
+	CHECK((fake_mmr_get(MSI_BUSMODE) & MSI_BUSMODE_DE) == 0u);
+	CHECK(fake_mmr_get(MSI_IDINTEN) == 0u && fake_mmr_get(MSI_IDSTS) == 0u);
+	CHECK((fake_mmr_get(MSI_CMD) & MSI_CMD_STARTCMD) == 0u);
+	CHECK(emmc.violations == 0);
+}
+
 int main(void)
 {
 	RUN(test_bring_up_hs200);
@@ -1023,5 +1200,10 @@ int main(void)
 	RUN(test_flush_wait);
 	RUN(test_power_off);
 	RUN(test_leave);
+	RUN(test_bring_up_four);
+	RUN(test_switch_poll);
+	RUN(test_part_config);
+	RUN(test_fault_record);
+	RUN(test_close);
 	return check_summary("test_drv_msi");
 }

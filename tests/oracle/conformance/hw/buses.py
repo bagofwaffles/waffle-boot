@@ -141,10 +141,12 @@ XFER_CMDS = {8, 17, 18, 24, 25}       # commands that move data on DAT[7:0]
 POWER_OFF_LONG = 0x03220300          # Switch(34, 3)
 
 
-def check_init(events, rca, ocr_arg, indexes, cmd1_bound_ms=1000):
+def check_init(events, rca, ocr_arg, indexes, cmd1_bound_ms=1000, width=8):
     """eMMC bring-up: the identification order (CMD0, CMD1 with `ocr_arg` until OCR bit 31, CMD2, CMD3 with
     `rca`, optional CMD9, CMD7), the identification clock, the OCR loop, the clock before the
-    timing switch, the bus width on data transfers and at the end."""
+    timing switch, the bus width on data transfers and at the end: `width` data lines, reached by
+    Switch(183, 2) for 8 and Switch(183, 1) for 4, no other value of that switch."""
+    want = {8: 2, 4: 1}[width]
     out, cmds = [], [e for e in events if e['ev'] == 'cmd']
     # clock and width, event by event
     clock, host_w, emmc_w = None, 1, 1
@@ -189,6 +191,8 @@ def check_init(events, rca, ocr_arg, indexes, cmd1_bound_ms=1000):
                 out.append(('emmc_init', 'HS_TIMING switch before EXT_CSD was read'))
             if sidx == 183 and seen7:
                 width_switched = True
+                if switch_fields(e['arg'])[2] != want:
+                    out.append(('emmc_init', 'Switch(183, %d) for a %d-bit bus' % (switch_fields(e['arg'])[2], width)))
             pending = e
         seen7 = seen7 or idx == 7
     # the identification order
@@ -220,8 +224,8 @@ def check_init(events, rca, ocr_arg, indexes, cmd1_bound_ms=1000):
             return out + [('emmc_init', 'expected CMD%d 0x%08x, got %r' % (idx, arg, got))]
     # after CMD7 the order is free; the end state is not
     if not width_switched:
-        out.append(('emmc_init', 'no Switch(183, 2) after CMD7'))
-    if (host_w, emmc_w) != (8, 8):
+        out.append(('emmc_init', 'no Switch(183, %d) after CMD7' % want))
+    if (host_w, emmc_w) != (width, width):
         out.append(('emmc_init', 'bus width at the end: host %d, eMMC %d' % (host_w, emmc_w)))
     return out + check_switches(events, indexes)
 

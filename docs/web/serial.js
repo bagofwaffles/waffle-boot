@@ -3,8 +3,10 @@
 // and close(), over the port the user picks in the browser's own prompt.
 
 // Recovery's USB vendor and product (S-10a.001), which the boot menu's serial port
-// shares: the prompt lists both, and the HELLO exchange tells them apart.
-export const USB_FILTERS = [{ usbVendorId: 0x2367, usbProductId: 0x0021 }];
+// shares: the prompt lists both, and the HELLO exchange tells them apart. The OP-XY's
+// product, then the OP-1F's (S-18.030, S-02.093).
+export const USB_FILTERS = [{ usbVendorId: 0x2367, usbProductId: 0x0021 },
+    { usbVendorId: 0x2367, usbProductId: 0x0102 }];
 
 export function serialSupported() {
 	return typeof navigator !== 'undefined' && 'serial' in navigator;

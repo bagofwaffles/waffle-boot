@@ -94,6 +94,9 @@ struct wb_strap {
  * a pin from its peripheral back to the port (FER clear).
  */
 int wb_gpio_output(uint8_t pin, bool high);
+/* An output driving the level its DATA bit holds: DIR set, DATA not
+ * written (S-13b.006 on the OP-1F). */
+int wb_gpio_output_keep(uint8_t pin);
 int wb_gpio_input(uint8_t pin);
 int wb_gpio_set(uint8_t pin, bool high);
 bool wb_gpio_get(uint8_t pin);
@@ -107,6 +110,13 @@ int wb_gpio_peripheral(uint8_t pin);
  */
 int wb_strap_read(const struct wb_strap *s, const struct wb_time *t,
 		  uint16_t *value);
+/*
+ * Sample pins by their input enables alone (S-18.002's fallback sample):
+ * INEN set, wait settle_us, read DATA. No DIR bit is written and INEN stays
+ * set. Returns the pins' bits of PORTx_DATA.
+ */
+int wb_strap_inen_read(const struct wb_strap *s, const struct wb_time *t,
+		       uint16_t *value);
 
 /*
  * Apply a pin table: the inputs_first pins become inputs (wb_gpio_input():

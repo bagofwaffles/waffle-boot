@@ -1,0 +1,704 @@
+{
+ "device": "OP-1F",
+ "rules": {
+  "no_pmic_ids": {
+   "ids": [
+    "0x01",
+    "0x70",
+    "0x71",
+    "0x73"
+   ],
+   "note": "no master frame with these ids (S-07.062)"
+  },
+  "no_key_led_ids": {
+   "id": "0x40",
+   "first_bytes": [
+    "00",
+    "01"
+   ],
+   "note": "no 0x40 whose payload starts with these bytes (S-07.040)"
+  }
+ },
+ "pass": [
+  {
+   "kind": "plain",
+   "id": "0x05",
+   "payload": "0104"
+  },
+  {
+   "kind": "plain",
+   "id": "0x30",
+   "payload": ""
+  },
+  {
+   "kind": "plain",
+   "id": "0x36",
+   "payload": ""
+  },
+  {
+   "kind": "plain",
+   "id": "0x51",
+   "payload": "000000"
+  },
+  {
+   "kind": "request",
+   "id": "0x36",
+   "payload": ""
+  },
+  {
+   "kind": "request",
+   "id": "0x30",
+   "payload": ""
+  },
+  {
+   "kind": "request",
+   "id": "0x41",
+   "payload": ""
+  },
+  {
+   "kind": "plain",
+   "id": "0x43",
+   "payload": "0101"
+  },
+  {
+   "kind": "plain",
+   "id": "0x02",
+   "payload": "aa"
+  },
+  {
+   "kind": "plain",
+   "id": "0x51",
+   "payload": "3cff32"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "020000000000000000000000000000"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "02ff00000000000000000000000000"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "02ffffffffffffffffffffffffff00"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "02ffffffffffffffffffffffffffff"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06c84800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048c8480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06ff4800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "0600480048ff48"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "0632484b481948"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "02ffffffffffffffffffffffffffff"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06ff4800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048ff480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "0600480048ff48"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "020000000000000000000000000000"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048c8480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "02ffffffffffffffffffffffffffff"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06ff4800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048ff480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "020000000000000000000000000000"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048c8480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "02ffffffffffffffffffffffffffff"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06ff4800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "020000000000000000000000000000"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06c84800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "02ffffffffffffffffffffffffffff"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06ff4800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048ff480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "0600480048ff48"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06ff4800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "020000000000000000000000000000"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06c84800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06c84800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048c8480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048c8480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "060048c8480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  },
+  {
+   "kind": "plain",
+   "id": "0x40",
+   "payload": "06004800480048"
+  }
+ ],
+ "negative_control": {
+  "device": "OP-XY",
+  "transcripts": [
+   {
+    "transcript": "backplane_bad_file",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "backplane_enter_fail",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "backplane_enter_retry",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "backplane_enter_silent",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "backplane_no_greet",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "backplane_ok",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "backplane_run_fail",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "backplane_run_retry",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "backplane_run_retry_valid",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "battery_wait_charge",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "battery_wait_charger",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "battery_wait_flat",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "battery_wait_host_unconfigured",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "boot_held",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "boot_keys_timeout",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "boot_late_keys",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "boot_no_timestamp",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "boot_noos",
+    "fails": [
+     "no_key_led_ids",
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "boot_normal",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "boot_prompt_held",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "boot_prompt_off",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "boot_prompt_start",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "boot_psoc_silent",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "charge_wait_flat",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "charge_wait_unplug",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "continue_restart",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "greet_by_psoc",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "greet_fail",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "greet_fourth",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "greet_late",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "greet_rejected",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "key_test",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "pmic_set",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "pmic_short",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "pmic_silent",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "power_16_from_other",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "power_misc",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "power_off_10_16",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "power_off_14",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "power_off_once",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "psoc_dead",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "psoc_ping",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "psoc_ping_boot_late",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "psoc_ping_greeting",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "regreet",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "regreet_repeated",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "regreet_unanswered",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "reply_ids_other",
+    "fails": [
+     "no_pmic_ids"
+    ]
+   },
+   {
+    "transcript": "short_payloads",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "soft_reboot",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "usb_reset_100ma",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "vbus_raise",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "vbus_refused",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   },
+   {
+    "transcript": "volcal",
+    "fails": [
+     "no_key_led_ids"
+    ]
+   }
+  ]
+ }
+}

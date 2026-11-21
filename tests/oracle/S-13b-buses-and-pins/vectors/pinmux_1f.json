@@ -1,0 +1,2098 @@
+{
+ "gpio_inputs": [
+  "PA1",
+  "PA2",
+  "PA7",
+  "PC2",
+  "PC11",
+  "PC14"
+ ],
+ "gpio_outputs_kept": [
+  "PA0",
+  "PA3",
+  "PA4",
+  "PA6",
+  "PC13"
+ ],
+ "traces": [
+  {
+   "expect": [],
+   "name": "good",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    }
+   ]
+  },
+  {
+   "expect": [
+    "level_written"
+   ],
+   "name": "level_written_pa3",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DATA_CLR",
+     "val": 8
+    }
+   ]
+  },
+  {
+   "expect": [
+    "gpio_directions"
+   ],
+   "name": "pc11_output",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_CLR",
+     "val": 2048
+    }
+   ]
+  },
+  {
+   "expect": [
+    "gpio_directions"
+   ],
+   "name": "pa6_input",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 64
+    }
+   ]
+  },
+  {
+   "expect": [
+    "no_strap_sample",
+    "pa8_input"
+   ],
+   "name": "pa8_input",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 256
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 256
+    }
+   ]
+  },
+  {
+   "expect": [
+    "device_before_pins",
+    "inputs_first_1f"
+   ],
+   "name": "inputs_first",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    }
+   ]
+  },
+  {
+   "expect": [
+    "mux_before_fer",
+    "pinmux_end_state"
+   ],
+   "name": "opxy_master_values",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 805314560
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 8737024
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 16448
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 3027
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    }
+   ]
+  },
+  {
+   "expect": [
+    "device_before_pins"
+   ],
+   "name": "port_before_identify",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    }
+   ]
+  },
+  {
+   "expect": [
+    "device_before_pins"
+   ],
+   "name": "uart_before_identify",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    }
+   ]
+  },
+  {
+   "expect": [
+    "device_before_pins"
+   ],
+   "name": "no_identify",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    }
+   ]
+  },
+  {
+   "expect": [
+    "no_spi0"
+   ],
+   "name": "spi0_touched",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    },
+    {
+     "op": "w",
+     "reg": "SPI0_CTL",
+     "val": 2
+    }
+   ]
+  },
+  {
+   "expect": [
+    "gpio_directions",
+    "inputs_first_1f",
+    "mux_before_fer",
+    "no_strap_sample",
+    "pa8_input",
+    "pinmux_end_state"
+   ],
+   "name": "opxy_strap_sample",
+   "trace": [
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 261
+    },
+    {
+     "op": "r",
+     "reg": "PORTA_DATA",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 261
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_DIR_CLR",
+     "val": 1024
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_INEN",
+     "val": 1024
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 805314560
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 8737024
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 16448
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 3027
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_CLR",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DATA_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 32
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 32
+    }
+   ]
+  },
+  {
+   "expect": [],
+   "name": "fallback_sample",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "r",
+     "reg": "PORTA_DATA",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    }
+   ]
+  },
+  {
+   "expect": [
+    "device_before_pins"
+   ],
+   "name": "fallback_releases_pa8",
+   "trace": [
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 256
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "r",
+     "reg": "PORTA_DATA",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_MUX",
+     "val": 335609855
+    },
+    {
+     "op": "w",
+     "reg": "PORTB_FER",
+     "val": 65535
+    },
+    {
+     "ev": "first_stage_read",
+     "op": "ev"
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_MUX",
+     "val": 807927808
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_MUX",
+     "val": 698880
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_FER",
+     "val": 17952
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_FER",
+     "val": 6131
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 1
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 8
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 16
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_SET",
+     "val": 64
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_SET",
+     "val": 8192
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 2
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_DIR_CLR",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTA_INEN_SET",
+     "val": 128
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 4
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 2048
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_DIR_CLR",
+     "val": 16384
+    },
+    {
+     "op": "w",
+     "reg": "PORTC_INEN_SET",
+     "val": 16384
+    },
+    {
+     "op": "mark"
+    },
+    {
+     "op": "w",
+     "reg": "UART0_CTL",
+     "val": 769
+    },
+    {
+     "op": "w",
+     "reg": "MSI_CTL",
+     "val": 33554432
+    }
+   ]
+  }
+ ],
+ "values": {
+  "A": {
+   "fer": 17952,
+   "mux": 807927808
+  },
+  "B": {
+   "fer": 65535,
+   "mux": 335609855
+  },
+  "C": {
+   "fer": 6131,
+   "mux": 698880
+  }
+ }
+}

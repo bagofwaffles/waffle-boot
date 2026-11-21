@@ -1,0 +1,96 @@
+{
+ "device": "OP-1F",
+ "installs": [
+  {
+   "case": "full_removes_all",
+   "staged": {
+    "firmware/blackfin/bin/os.ldr": "045058ad0000a0110000000010000000048098ad0000a0110000000000000000",
+    "firmware/blackfin/content/op1.json": "6e6577",
+    "firmware/firmware.version": "312e322e302b300a"
+   },
+   "content_only": false,
+   "tree_before": {
+    "content/dlc/A/a1": "31",
+    "content/dlc/A/manifest.json": "7b226e616d65223a225061636b2041227d",
+    "content/dlc/B/b1": "62",
+    "content/op1.json": "6f6c64",
+    "firmware.version": "312e302e302b300a",
+    "user/song.op1": "75"
+   },
+   "result": "OK",
+   "tree_after": {
+    "content/op1.json": "6e6577",
+    "firmware.version": "312e322e302b300a",
+    "user/song.op1": "75"
+   },
+   "requirement": "S-11.097"
+  },
+  {
+   "case": "partial_removes_nothing",
+   "staged": {
+    "firmware/blackfin/bin/os.ldr": "045058ad0000a0110000000010000000048098ad0000a0110000000000000000",
+    "firmware/blackfin/content/op1.json": "6e6577",
+    "firmware/blackfin/content/partial_upgrade": "",
+    "firmware/firmware.version": "312e322e302b300a"
+   },
+   "content_only": false,
+   "tree_before": {
+    "content/dlc/A/a1": "31",
+    "content/dlc/A/manifest.json": "7b226e616d65223a225061636b2041227d",
+    "content/dlc/B/b1": "62",
+    "content/op1.json": "6f6c64",
+    "firmware.version": "312e302e302b300a",
+    "user/song.op1": "75"
+   },
+   "result": "OK",
+   "tree_after": {
+    "content/dlc/A/a1": "31",
+    "content/dlc/A/manifest.json": "7b226e616d65223a225061636b2041227d",
+    "content/dlc/B/b1": "62",
+    "content/op1.json": "6e6577",
+    "firmware.version": "312e322e302b300a",
+    "user/song.op1": "75"
+   },
+   "requirement": "S-11.097"
+  },
+  {
+   "case": "content_only_unnamed",
+   "staged": {
+    "firmware/blackfin/content/dlc/A/a1": "316e6577",
+    "firmware/blackfin/content/dlc/A/manifest.json": "7b226e616d65223a225061636b2041207632227d",
+    "firmware/blackfin/content/dlc/partial_upgrade": ""
+   },
+   "content_only": true,
+   "tree_before": {
+    "content/dlc/A/a1": "31",
+    "content/dlc/A/manifest.json": "7b226e616d65223a225061636b2041227d",
+    "content/dlc/B/b1": "62",
+    "content/op1.json": "6f6c64",
+    "firmware.version": "312e302e302b300a",
+    "user/song.op1": "75"
+   },
+   "result": "OK",
+   "tree_after": {
+    "content/dlc/A/a1": "316e6577",
+    "content/dlc/A/manifest.json": "7b226e616d65223a225061636b2041207632227d",
+    "content/dlc/B/b1": "62",
+    "content/op1.json": "6f6c64",
+    "firmware.version": "312e302e302b300a",
+    "user/song.op1": "75"
+   },
+   "requirement": "S-11.097"
+  }
+ ],
+ "pack_names": [
+  {
+   "case": "content_only_unnamed",
+   "staged": {
+    "firmware/blackfin/content/dlc/A/manifest.json": "7b226e616d65223a225061636b2041207632227d",
+    "firmware/blackfin/content/dlc/A/a1": "316e6577",
+    "firmware/blackfin/content/dlc/partial_upgrade": ""
+   },
+   "name": "",
+   "note": "S-11.097: no pack, so no name, whatever the staged dlc/ holds"
+  }
+ ]
+}

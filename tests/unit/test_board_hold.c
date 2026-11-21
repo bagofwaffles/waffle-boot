@@ -11,6 +11,7 @@
 #include "support/check.h"
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
+#include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/s10a_msc.h"
 #include "waffle/s10a_usb.h"
@@ -79,7 +80,7 @@ static void setup(void)
 	opxy_usb_host_ops(&m, &m.sv.host_ops);
 	opxy_startup_read(&m, opxy_otp_get);
 	opxy_log_start(&m);
-	s10c_host_init(&m.sv.host, &m.sv.host_ops, &m);
+	s10c_host_init(&m.sv.host, &m.sv.host_ops, &m, &wb_device_opxy, WB_DEV_BY_TABLE);
 	opxy_usb_start(&m);
 	if (disk_mem == NULL)
 		disk_mem = calloc(OPXY_DISK_SECTORS, 512u);

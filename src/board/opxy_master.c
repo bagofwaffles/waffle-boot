@@ -88,6 +88,8 @@ static void psoc_common(void *ctx, const struct s06_frame *f)
 
 /* --- S-13b bring-up --- */
 
+/* S-13b.006: one pin at a time, in order; a keep-level output gets its
+ * direction and no level (the OP-1F). */
 static void apply_gpio(const struct opxy_gpio *g, unsigned n)
 {
 	unsigned i;
@@ -95,6 +97,8 @@ static void apply_gpio(const struct opxy_gpio *g, unsigned n)
 	for (i = 0; i < n; i++) {
 		if (g[i].dir == OPXY_IN)
 			(void)wb_gpio_input(g[i].pin);
+		else if (g[i].dir == OPXY_OUT_KEEP)
+			(void)wb_gpio_output_keep(g[i].pin);
 		else
 			(void)wb_gpio_output(g[i].pin,
 					     g[i].dir == OPXY_OUT_HIGH);
@@ -104,10 +108,14 @@ static void apply_gpio(const struct opxy_gpio *g, unsigned n)
 static void bringup(void *ctx)
 {
 	struct opxy_master *m = ctx;
+	const struct wb_device *dev = opxy_dev(m);
+	unsigned n_gpio;
+	const struct opxy_gpio *gpio = opxy_gpio_main(dev, &n_gpio);
 
-	/* S-13b.003, .004, .006 */
-	(void)wb_pinmux_apply(&opxy_pinmux_master);
-	apply_gpio(opxy_gpio_master, opxy_gpio_master_n);
+	/* S-13b.003, .004, .006: the device's (S-18.030), after it is
+	 * decided (S-18.001) */
+	(void)wb_pinmux_apply(opxy_pinmux_main(dev));
+	apply_gpio(gpio, n_gpio);
 	(void)wb_sec_init();
 	opxy_display_dma_take(); OPXY_TESTOS(opxy_testos_display_dma_stop();)	/* the test OS: S-05.016 lets the loading bootloader leave the display's DMA configured */
 	/* S-01.023: the front reset and started the panel and sent the logo. */
@@ -133,6 +141,13 @@ static void bringup(void *ctx)
 	m->flash.crc32_fast = opxy_crc32_check;	/* S-02.016's slot check */
 	m->flash.scratch = flash_scratch;
 	m->flash.scratch_len = sizeof(flash_scratch); OPXY_CRUMB(2u);
+	m->flash.meta_size = (uint8_t)s04_meta_size(dev);	/* S-04.040 */
+	/* S-18.004: a device the front did not identify shows its n and c;
+	 * the record has no field for them, so the first stage is read
+	 * again here, after the pins (no write) */
+	if (m->dev_how == WB_DEV_UNKNOWN && m->fs_n == 0u)
+		(void)wb_first_stage_identify(wb_spiflash_read, &m->hw.flash, &m->fs_n,
+					      &m->fs_c);
 	/* S-02.097: the defaults until the slave's start reads the running
 	 * slot's settings */
 	s02_store_defaults(&m->sv.store);
@@ -199,7 +214,7 @@ static void metadata(void *ctx, uint32_t *state, bool *nonzero)
 			m->meta_raw[i] = 0xFFu;
 		m->meta_failed = true;
 	}
-	s04_meta_read(m->meta_raw, &m->meta);
+	s04_meta_read(opxy_dev(m), m->meta_raw, &m->meta);
 	opxy_startup_read(m, opxy_otp_get);	/* S-04.047, S-17.015 */
 	*state = m->meta.state;
 	*nonzero = s04_m6_needed(m->meta.sw_version); OPXY_CRUMB(5u); OPXY_TIME(BOOT_TIME_METADATA);
@@ -407,6 +422,19 @@ static void store_load(struct opxy_master *m, bool established, unsigned slot)
 }
 #endif
 
+/* The eMMC through the bridge client, with its boot partitions' size. */
+static void emmc_client(struct opxy_master *m, uint32_t boot_size)
+{
+	m->emmc_ops = opxy_bridge_emmc(&m->bridge);
+	m->emmc.ops = &m->emmc_ops;
+	m->emmc.crc32 = opxy_crc32_long;
+	m->emmc.crc32_fast = opxy_crc32_check;	/* S-03.044 */
+	m->emmc.boot_size = boot_size;
+	m->emmc.scratch = emmc_scratch;
+	m->emmc.scratch_len = sizeof(emmc_scratch);
+	m->emmc.max_xfer = 128u; OPXY_TIME(BOOT_TIME_SLAVE_DONE);
+}
+
 /* S-09.001-S-09.008, then S-09.015. */
 static bool slave_start(void *ctx)
 {
@@ -463,16 +491,42 @@ static bool slave_start(void *ctx)
 		    opxy_bridge_end_line(WB_SPI_REPLY_END_BUILD));
 
 	/* S-05.005: the eMMC is the slave's, through the bridge. */
-	m->emmc_ops = opxy_bridge_emmc(&m->bridge);
-	m->emmc.ops = &m->emmc_ops;
-	m->emmc.crc32 = opxy_crc32_long;
-	m->emmc.crc32_fast = opxy_crc32_check;	/* S-03.044 */
-	m->emmc.boot_size = m->slave_present ?
-				    opxy_bridge_boot_size(&m->bridge) : 0u;
-	m->emmc.scratch = emmc_scratch;
-	m->emmc.scratch_len = sizeof(emmc_scratch);
-	m->emmc.max_xfer = 128u; OPXY_TIME(BOOT_TIME_SLAVE_DONE);
+	emmc_client(m, m->slave_present ? opxy_bridge_boot_size(&m->bridge) : 0u);
 	return m->slave_present;
+}
+
+/*
+ * S-01.001 without step 5, S-13b.060: a device without second-cpu. The
+ * running slot by S-01.002's rule (S-01.025): the front's record names it,
+ * else this image's memory against the slots; the slot's stream is read
+ * from the flash and checked (S-02.016) for its settings sector and trial
+ * mark (S-02.097, S-02.095), and no byte of it is sent to another CPU.
+ * Then the main CPU's own eMMC and volume, served to the
+ * bridge client on this CPU: every s09_files_* and bridge eMMC call reaches
+ * them as the slave's would. No SPI0 register is touched.
+ */
+static void storage_start(void *ctx)
+{
+	struct opxy_master *m = ctx;
+	bool established;
+	unsigned slot = OPXY_TESTOS_OR((established = false, (void)established, 0u), running_slot(m, &established));
+	const uint8_t *stream = NULL;
+	uint32_t len = 0;
+
+	/* S-02.016's verdict on the running slot's image, read now if the
+	 * inference left another slot's in the buffer; nothing is sent */
+	OPXY_TESTOS_OR(((void)stream, (void)len), (void)opxy_stream_checked(m, slot, established, &stream, &len));
+	m->running_established = OPXY_TESTOS_OR(false, established);
+	m->running_slot = (uint8_t)slot;
+	m->running_trial = OPXY_TESTOS_OR(false, established && opxy_stream_trial(slot));
+	OPXY_TESTOS_OR(s02_store_defaults(&m->sv.store), store_load(m, established, slot));
+	opxy_storage_init(&m->st, &m->hw, opxy_dev(m), true);
+	s09_master_init(&m->bridge, &m->bus_ops, &m->clock);
+	s09_master_local(&m->bridge, &m->st.store);
+	m->slave_present = true;	/* the storage's end of the bridge client */
+	if (!m->st.emmc_up)
+		s14_log_str(&m->sv.log, S14_ERROR, S14_TAG("boot"), "emmc bring-up failed");
+	emmc_client(m, m->st.emmc.boot_size);
 }
 
 /* The PSoC link's node and S-07's state, and the log over them. */
@@ -510,7 +564,30 @@ static void psoc_link_init(struct opxy_master *m)
 	m->psoc_ops.service = psoc_service;
 	m->psoc_ops.common = psoc_common;
 	m->psoc_ops.crc16 = wire_crc16_x25;
-	s07_init(&m->psoc, &m->node, S06_LINK_PSOC, &m->psoc_ops);
+	s07_init(&m->psoc, opxy_dev(m), &m->node, S06_LINK_PSOC, &m->psoc_ops);
+}
+
+/*
+ * S-18 to S-14, once the log is up: a first stage the table does not
+ * hold, with n and c (S-18.004); an OP-XY main CPU whose strap read
+ * PA2 = 0, and a main CPU whose boot mode was not 1 (S-18.002).
+ */
+void opxy_device_log(struct opxy_master *m)
+{
+	struct s14_text t;
+
+	if (m->dev_how == WB_DEV_UNKNOWN) {
+		s14_text_init(&t);
+		s14_text_str(&t, "first stage not known: n ");
+		s14_text_dec(&t, m->fs_n);
+		s14_text_str(&t, ", c ");
+		s14_text_hex(&t, m->fs_c, 8u);
+		s14_log_text(&m->sv.log, S14_WARNING, S14_TAG("boot"), &t);
+	}
+	if (m->role_disagrees || m->role_fallback)
+		s14_log_str(&m->sv.log, S14_WARNING, S14_TAG("boot"),
+			    m->role_fallback ? "pa2 fallback: master" :
+					       "pa2 reads 0: still the master");
 }
 
 /* S-07.023 steps 1-6a. */
@@ -533,6 +610,7 @@ static enum s05_keys psoc_start(void *ctx)
 	OPXY_TESTOS_OR((void)0, s14_text_str(&t, " dflt "));
 	OPXY_TESTOS_OR((void)0, s14_text_hex(&t, opxy_init_dflt, 8u));
 	s14_log_text(&m->sv.log, OPXY_TESTOS_OR(S14_INFO, S14_DEBUG), S14_TAG("boot"), &t); OPXY_TESTOS(opxy_testos_log(m);) OPXY_CRUMB(6u);
+	opxy_device_log(m);
 	/* S-07.032: the one key-status reply */
 	ks->replied = false;
 	ks->hold = false;
@@ -632,7 +710,10 @@ static void pre_load(void *ctx)
 	struct opxy_master *m = ctx;
 
 	OPXY_TIME(BOOT_TIME_HANDOFF);
-	(void)s07_pmic(&m->psoc); OPXY_TIME(BOOT_TIME_PMIC);
+	/* S-05.003 is pmic-pass-through's */
+	if (wb_has(opxy_dev(m), WB_F_PMIC_PASS_THROUGH))
+		(void)s07_pmic(&m->psoc);
+	OPXY_TIME(BOOT_TIME_PMIC);
 	OPXY_TIMING_LOGO_KEPT(opxy_display_boot_logo());
 	s07_report(&m->psoc, S07_REPORT_BOOT); OPXY_TIME(BOOT_TIME_BOOT_REPORT);
 	(void)opxy_psoc_drain(m); OPXY_TIME(BOOT_TIME_PRE_LOAD);
@@ -753,6 +834,18 @@ static int release(void *ctx, uint8_t *reply)
 	return 0;
 }
 
+/* S-05.036: what the release op does before the release on the OP-XY,
+ * the image staged and accepted, before the teardown: the start log's
+ * finished mark (S-02.095) and its erase when due (S-02.101). */
+static void accepted(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	OPXY_CRUMB(17u); OPXY_TIME(BOOT_TIME_CHECKED);
+	opxy_start_finished(m);
+	opxy_start_log_tidy(m); OPXY_TIME(BOOT_TIME_RELEASE_SENT);
+}
+
 /* S-05.006, S-04.045 M6: sw_version 0.0.0.0, written by S-02.064. */
 static void clear_sw_version(void *ctx)
 {
@@ -814,6 +907,7 @@ void opxy_master_handoff(struct opxy_master *m)
 	m->handoff.jump = opxy_jump;
 	m->handoff.clear_sw_version = clear_sw_version;
 	m->handoff.held = load_failed;
+	m->handoff.accepted = accepted;		/* S-05.036, one CPU */
 }
 
 void opxy_master_main(struct opxy_master *m)
@@ -829,6 +923,8 @@ void opxy_master_main(struct opxy_master *m)
 	m->ops.metadata = metadata;
 	m->ops.reboot_reason = reboot_reason;
 	m->ops.slave_start = slave_start;
+	m->ops.storage_start = storage_start;	/* without second-cpu (S-13b.060) */
+	m->ops.dev = opxy_dev(m);	/* opxy_main(): the record's, or decided (S-18.005) */
 	m->ops.psoc_start = psoc_start;
 #if OPXY_BOOT_PROMPT
 	m->ops.boot_prompt = opxy_boot_prompt;		/* S-05.025 */

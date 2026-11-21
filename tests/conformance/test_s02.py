@@ -628,7 +628,7 @@ def transfer(img, sha=None, length=None, seq=2, flags=None):
     return out + wr(END, 0xE0) + wr(INFO, 0xE1)
 
 
-INFO_LEN = 232     # front 11: S-02.093's 219 bytes and the countdown, action and keep fields
+INFO_LEN = 242     # front 20: S-02.093's 232 bytes and the device, how and n, c (S-18.005)
 WAY_REFUSED, WAY_PLAIN, WAY_SELECT_FIRST, WAY_IN_PLACE = 0, 1, 2, 3
 
 
@@ -2220,7 +2220,7 @@ class RecoveryActions(unittest.TestCase):
     @scenario('S-02/SC-RECOVERY')
     @requirement('S-02.093')
     def test_SC_RECOVERY_info_and_hello(self):
-        """Runs 38 and 39: HELLO says protocol 2 and front 18; INFO is 232 bytes, its fields from 219 the status
+        """Runs 38 and 39: HELLO says protocol 2 and front 20; INFO is 242 bytes, its fields from 219 the status
         each action would get without and with force (as recovery_actions.json's rows), the tier of B, the
         slot a keep would select, and the last refusal since a write."""
         rows = {(c['act'], c['a'], c['b_kind'], c['start']): c for c in self.V['cases']}
@@ -2230,9 +2230,9 @@ class RecoveryActions(unittest.TestCase):
             a, kind, start = c['a'], c['b_kind'], c['start']
             by, *_ = self.recover(self.flash(a, kind, start), a, wr(HELLO, 0) + wr(INFO, 1), 'info')
             hello = by[(HELLO, 0)][0]
-            self.assertEqual((hello[0], struct.unpack_from('<H', hello, 1)[0], len(hello)), (2, 18, 47))
+            self.assertEqual((hello[0], struct.unpack_from('<H', hello, 1)[0], len(hello)), (2, 20, 47))
             p = by[(INFO, 1)][0]
-            self.assertEqual(len(p), 232)
+            self.assertEqual(len(p), INFO_LEN)
             more = info_more(p)
             want = [rows[(n, a, kind, start)]['status'] for n in ('try', 'switch', 'keep', 'put_back')]
             wantf = [rows[(n, a, kind, start)]['status_forced'] for n in ('try', 'switch', 'keep', 'put_back')]

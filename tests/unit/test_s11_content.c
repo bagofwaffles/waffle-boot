@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "waffle/device.h"
 #include "waffle/s11_content.h"
 #include "waffle/s11_package.h"
 #include "waffle/s11_staging.h"
@@ -220,10 +221,11 @@ static int tree_is(int set)
 }
 
 /* S-11.066, S-11.075-S-11.079, S-11.056 */
-static void test_installs(void)
+static void check_installs(const struct wb_device *dev,
+			   const struct s11v_install *cases, size_t count)
 {
-	for (size_t i = 0; i < N(s11v_installs); i++) {
-		const struct s11v_install *v = &s11v_installs[i];
+	for (size_t i = 0; i < count; i++) {
+		const struct s11v_install *v = &cases[i];
 		struct s11_staged st;
 		enum s11_result r;
 
@@ -233,13 +235,21 @@ static void test_installs(void)
 		s11_staged_scan(&fs, &st);
 		CHECK(s11_staged_content_only(&st) == (v->content_only != 0),
 		      "%s: content-only from the staging area", v->name);
-		r = s11_install_content(&fs, v->content_only != 0);
-		CHECK(r == (enum s11_result)v->result, "%s: result %d", v->name, (int)r);
-		CHECK(tree_is(v->after), "%s: the tree after", v->name);
+		r = s11_install_content(dev, &fs, v->content_only != 0);
+		CHECK(r == (enum s11_result)v->result, "%s %s: result %d", dev->name,
+		      v->name, (int)r);
+		CHECK(tree_is(v->after), "%s %s: the tree after", dev->name, v->name);
 		if (v->result == S11_OK)
 			CHECK(find("upgrade/firmware/blackfin/content") != NULL,
 			      "%s: the content directory stays (S-11.056)", v->name);
 	}
+}
+
+/* S-11.075 to S-11.079; on the OP-1F S-11.097 (content_1f.json) */
+static void test_installs(void)
+{
+	check_installs(&wb_device_opxy, s11v_installs, N(s11v_installs));
+	check_installs(&wb_device_op1f, s11v_installs_1f, N(s11v_installs_1f));
 }
 
 /* Every staged content file of `set` but the markers is at content/R. */
@@ -285,7 +295,7 @@ static void test_removal_fails(void)
 		load_set(v->staged);
 		load_set(v->before);
 		T.remove_fails = 1;
-		r = s11_install_content(&fs, v->content_only != 0);
+		r = s11_install_content(&wb_device_opxy, &fs, v->content_only != 0);
 		CHECK(T.failed_removes != 0, "%s: a removal was tried", v->name);
 		CHECK(r == S11_OK && staged_installed(v->staged),
 		      "%s: every staged file installed, OK (%d)", v->name, (int)r);
@@ -316,7 +326,7 @@ static void test_content_rows(void)
 			}
 		}
 		T.move_fails = v->move_fails;
-		r = s11_install_content(&fs, false);
+		r = s11_install_content(&wb_device_opxy, &fs, false);
 		CHECK(r == (enum s11_result)v->result, "content row %zu: %d", i, (int)r);
 	}
 }
@@ -331,7 +341,7 @@ static void test_move_failure(void)
 	add_file("upgrade/firmware/blackfin/content/b", one, 1);
 	add_file("content/dlc/P/p1", one, 1);
 	T.move_fails = 1;
-	CHECK(s11_install_content(&fs, false) == S11_FAILURE && T.moves == 0,
+	CHECK(s11_install_content(&wb_device_opxy, &fs, false) == S11_FAILURE && T.moves == 0,
 	      "Failure, nothing moved");
 	CHECK(find("content/dlc/P/p1") != NULL, "the DLC is untouched");
 	CHECK(find("firmware.version") == NULL, "no version file after Failure");
@@ -346,10 +356,28 @@ static void test_pack_names(void)
 
 		memset(&T, 0, sizeof(T));
 		load_set(v->staged);
-		s11_pack_name(&fs, name, sizeof(name));
+		s11_pack_name(&wb_device_opxy, &fs, name, sizeof(name));
 		CHECK(strcmp(name, v->pack) == 0 ||
 		      (v->alt != NULL && strcmp(name, v->alt) == 0),
 		      "%s: '%s'", v->name, name);
+	}
+	/* S-11.097: no pack on the OP-1F, whatever is staged */
+	for (size_t i = 0; i < N(s11v_pack_names_1f); i++) {
+		const struct s11v_pack_name *v = &s11v_pack_names_1f[i];
+		char name[256];
+
+		memset(&T, 0, sizeof(T));
+		load_set(v->staged);
+		s11_pack_name(&wb_device_op1f, &fs, name, sizeof(name));
+		CHECK(strcmp(name, v->pack) == 0, "OP-1F %s: '%s'", v->name, name);
+	}
+	for (size_t i = 0; i < N(s11v_pack_names); i++) {
+		char name[256] = "x";
+
+		memset(&T, 0, sizeof(T));
+		load_set(s11v_pack_names[i].staged);
+		s11_pack_name(&wb_device_op1f, &fs, name, sizeof(name));
+		CHECK(name[0] == '\0', "OP-1F %s: no name", s11v_pack_names[i].name);
 	}
 	{
 		static const char json[] = "{\"a\": {\"name\": \"x\"}, \"b\": [1, \"]\"],"
@@ -359,10 +387,10 @@ static void test_pack_names(void)
 		memset(&T, 0, sizeof(T));
 		add_file("upgrade/firmware/blackfin/content/dlc/A/manifest.json",
 			 (const uint8_t *)json, strlen(json));
-		s11_pack_name(&fs, name, sizeof(name));
+		s11_pack_name(&wb_device_opxy, &fs, name, sizeof(name));
 		CHECK(strcmp(name, "A\xc3\xa9\"") == 0, "nested values skipped: '%s'",
 		      name);
-		s11_pack_name(&fs, name, 3);
+		s11_pack_name(&wb_device_opxy, &fs, name, 3);
 		CHECK(strcmp(name, "A\xc3") == 0, "cut to fit");
 	}
 }

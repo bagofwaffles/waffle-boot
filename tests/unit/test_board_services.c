@@ -14,6 +14,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "ff.h"
+#include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/board/opxy_rtc_board.h"
@@ -321,7 +322,7 @@ static void host_disk(void)
 static void usb_setup(void)
 {
 	setup();
-	s10c_host_init(&m.sv.host, &m.sv.host_ops, &m);
+	s10c_host_init(&m.sv.host, &m.sv.host_ops, &m, &wb_device_opxy, WB_DEV_BY_TABLE);
 	opxy_usb_start(&m);
 	host_disk();
 }
@@ -750,7 +751,7 @@ static void test_disk_offer(void)
 static void test_battery_wait(void)
 {
 	setup();
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	opxy_usb_battery(&m, true);
 	CHECK(opxy_usb_up() && wb_usb_attached());
 	CHECK(m.sv.usb_state == S10A_STATE_BATTERY);
@@ -789,7 +790,7 @@ static void test_held_power_off(void)
 			   &opxy_uart_nordic, &m.hw.time, rx, sizeof(rx), tx,
 			   sizeof(tx)) == WB_UART_OK);
 	m.psoc_ops.ctx = &m;		/* as psoc_link_init() sets it */
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	opxy_services_start(&m);
 	CHECK(m.psoc_ops.shutdown != NULL);
 	opxy_usb_select(&m, S10A_STATE_MAIN);
@@ -1030,7 +1031,7 @@ static void test_reboot_settle(void)
 	held_setup();
 	fake_mmr_set(UART_STAT(OPXY_UART_PSOC), UART_STAT_THRE | UART_STAT_TEMT);
 	m.psoc_ops.ctx = &m;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	m.sv.reboot.write_record = rs_write;
 	m.sv.reboot.hard_reset = rs_hard;
 	opxy_usb_select(&m, S10A_STATE_MAIN);
@@ -1065,7 +1066,7 @@ static void test_reboot_os_detach(void)
 	held_setup();
 	fake_mmr_set(UART_STAT(OPXY_UART_PSOC), UART_STAT_THRE | UART_STAT_TEMT);
 	m.psoc_ops.ctx = &m;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	m.sv.reboot.nordic_exit_dfu = rs_other;
 	m.sv.reboot.write_record = rs_write;
 	m.sv.reboot.wait_for_psoc = rs_other;
@@ -1116,7 +1117,7 @@ static void test_nordic_link_stop(void)
 	held_setup();
 	fake_mmr_set(UART_STAT(OPXY_UART_PSOC), UART_STAT_THRE | UART_STAT_TEMT);
 	m.psoc_ops.ctx = &m;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	m.sv.reboot.nordic_exit_dfu = rs_other;
 	m.sv.reboot.write_record = rs_write;
 	m.sv.reboot.hard_reset = rs_hard;
@@ -1197,7 +1198,7 @@ static void test_reboot_never_attached(void)
 	held_setup();
 	fake_mmr_set(UART_STAT(OPXY_UART_PSOC), UART_STAT_THRE | UART_STAT_TEMT);
 	m.psoc_ops.ctx = &m;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	m.sv.reboot.write_record = rs_write;
 	m.sv.reboot.hard_reset = rs_hard;
 	CHECK(!wb_usb_attached());
@@ -2107,7 +2108,7 @@ static void flash_setup(void)
 
 static void flash_meta(struct s04_meta *out)
 {
-	s04_meta_read(flash_mem + S02_META_OFF, out);
+	s04_meta_read(&wb_device_opxy, flash_mem + S02_META_OFF, out);
 }
 
 /* S-07's log events, for the backplane step's failure. */
@@ -2200,7 +2201,7 @@ static void test_install_ops(void)
 	}
 	CHECK(opxy_steps_off() == 0u);
 	m.psoc_ops.log = psoc_why;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	last_why = 0;
 	wire_n = 0;
 	CHECK(!step.psoc_program(step.ctx));
@@ -2263,7 +2264,7 @@ static void test_meta_write_base(void)
 	/* The boot's copy is stale (0xFF): the write keeps the flash's bytes. */
 	factory_put(true);
 	memset(m.meta_raw, 0xFF, sizeof(m.meta_raw));
-	s04_meta_read(factory_rec, &m.meta);
+	s04_meta_read(&wb_device_opxy, factory_rec, &m.meta);
 	CHECK(run.meta_state(run.ctx, S11_STATE_UPGRADING));
 	flash_meta(&r);
 	CHECK(r.state == S04_STATE_UPGRADE && factory_kept());
@@ -2399,7 +2400,7 @@ static void test_install_nordic_state(void)
 	flash_setup();
 	nordic_setup();
 	opxy_install_ops(&m, &run, &step);
-	opxy_install_begin(&m, false, false, 0);
+	opxy_install_begin(&m, false, S11_SIG_NONE, false, 0);
 
 	/* no run: a 0xBB greeting is told to leave DFU */
 	nordic_greets(0xBBu);
@@ -2492,9 +2493,9 @@ static void test_no_slot_chords(void)
 		struct s15_frame f;
 		struct s05_decision d;
 
-		s07_key_status_decode(reply[i], sizeof(k1), &ks);
+		s07_key_status_decode(&wb_device_opxy, reply[i], sizeof(k1), &ks);
 		CHECK(ks.replied && !ks.hold && !ks.debug);
-		CHECK(s07_chord_digit(reply[i], sizeof(k1)) == 0u);
+		CHECK(s07_chord_digit(&wb_device_opxy, reply[i], sizeof(k1)) == 0u);
 		s05_boot_decision(BOOT_REASON_NONE, 0u, S05_KEYS_NOT_HELD, true, &d);
 		CHECK(d.boot_os && !d.interrupted);
 
@@ -2541,7 +2542,7 @@ static void test_boot_prompt(void)
 
 	setup();
 	flash_setup();
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	m.running_established = true;
 	m.running_slot = 0;
 	m.debug_key = true;
@@ -2569,7 +2570,7 @@ static void test_boot_prompt(void)
 	 * and the up and down choose. */
 	setup();
 	flash_setup();
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	m.running_established = false;
 	inject(0x42, k7, sizeof(k7));
 	inject(0x01, ping, sizeof(ping));
@@ -2854,7 +2855,7 @@ static void test_mark_prompt(void)
 
 	setup();
 	flash_setup();
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	front_logged(0, 0);
 	inject(0x42, up, sizeof(up));
 	inject(0x42, k1, sizeof(k1));
@@ -2876,7 +2877,7 @@ static void test_mark_prompt_no_record(void)
 
 	setup();
 	flash_setup();
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	front_logged(0, 0);
 	m.front = opxy_front_take(&m.ho);
 	CHECK(!m.front);

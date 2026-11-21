@@ -165,6 +165,15 @@ def main():
     w('#define V_FR_FIRST %du' % f['first'])
     w('#define V_FR_LAST %du' % f['last'])
     w('')
+    sel = load('select_1f.json')
+    w('/* select_1f.json (S-03.012): cmd6 -1 for none */')
+    w('struct v_select_1f { uint8_t before; unsigned part; int cmd6; uint8_t after; };')
+    w('static const struct v_select_1f v_select_1f[] = {')
+    for r in sel['rows']:
+        w('\t{%s, %d, %s, %s},' % (r['before'], r['part'], '-1' if r['cmd6'] is None else r['cmd6'],
+                                   r['after']))
+    w('};')
+    w('')
     w('#endif /* S03_VECTORS_H */')
     genout.write(OUT, '\n'.join(out) + '\n')
     genout.finish()

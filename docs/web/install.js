@@ -8,8 +8,11 @@
 //
 // EXPORTED API
 //
-//   parseIHello(payload) -> { magic, proto, phase, flags, tests, version: [4], length, crc, pin }
-//                                                   null when the payload is not the installer's
+//   parseIHello(payload) -> { magic, proto, phase, flags, tests, version: [4], length, crc, pin,
+//       device, how, imageDevice, survey }          null when the payload is not the installer's
+//   parseSurvey(payload) -> { status, device, how, bootMode, n, c, selRead, selIndex, selVerified,
+//       pa2, secCount, bootKiB, extRead, partConfig, os, slots: [2 x { bits, crc, length, tag,
+//       log }] }                                    a survey build's facts; status 0xFF elsewhere
 //   parseState(payload, n) -> { phase, flags, verdict, current, lock, selIndex, selVerified,
 //       slots: [2 bits], target, result, os, hold (0..1000), holdKey, trial, nextKey,
 //       tests: number[n] }
@@ -21,7 +24,7 @@
 //       but is not the installer (recovery answers with a status byte)
 //   detect(link, { probe }) -> Promise<{ kind: 'installer', hello } | { kind: 'recovery', hello,
 //       info }>   IHELLO first, then recovery's HELLO and INFO (core.js's connect)
-//   readState(link, n) / readTest(link, index) -> Promise<parsed reply>
+//   readState(link, n) / readTest(link, index) / readSurvey(link) -> Promise<parsed reply>
 //   readReport(link, { onProgress }) -> Promise<string>      check.txt, read in chunks
 //   poll(link, hello, tests, opts) -> Promise<{ state, changed: number[] }>   STATE, then TEST
 //       for each test whose state differs from tests[index]; tests (index -> TEST reply) is
@@ -44,7 +47,7 @@ import { Failure, connect } from './core.js';
 import * as IW from './install_words.js';
 export * from './install_words.js';
 
-const { IHELLO, STATE, TEST, REPORT, MAGIC, IHELLO_LEN, STATE_HEAD, NONE } = IW;
+const { IHELLO, STATE, TEST, REPORT, SURVEY, MAGIC, IHELLO_LEN, STATE_HEAD, NONE } = IW;
 
 const view = (b) => new DataView(b.buffer, b.byteOffset, b.byteLength);
 const u16 = (b, o) => view(b).getUint16(o, true);
@@ -58,9 +61,26 @@ export function parseIHello(p) {
         return null;
     if (p.length < IHELLO_LEN)
         throw new Failure(`the installer's hello is ${p.length} bytes, short of ${IHELLO_LEN}`);
+    const o = IW.IHELLO_O_DEVICE;
     return { magic: 'WBIN', proto: p[4], phase: p[5], flags: p[6], tests: p[7],
         version: [u16(p, 8), u16(p, 10), u16(p, 12), u16(p, 14)], length: u32(p, 16),
-        crc: u32(p, 20), pin: p.slice(24, 56) };
+        crc: u32(p, 20), pin: p.slice(24, 56), device: p[o], how: p[o + 1], imageDevice: p[o + 2],
+        survey: p[o + 3] === 1 };
+}
+
+export function parseSurvey(p) {
+    if (p.length < 1)
+        throw new Failure("the installer's survey reply is empty");
+    if (p[0] !== 0)
+        return { status: p[0] };
+    if (p.length < IW.SURVEY_LEN)
+        throw new Failure(`the installer's survey reply is ${p.length} bytes, short of ${IW.SURVEY_LEN}`);
+    const slot = (at) => ({ bits: p[at], crc: u32(p, at + 4), length: u32(p, at + 8),
+        tag: u32(p, at + 12), log: Array.from(p.subarray(at + 16, at + 24)) });
+    return { status: 0, device: p[1], how: p[2], bootMode: p[3], n: u32(p, 4), c: u32(p, 8),
+        selRead: p[12] === 1, selIndex: p[13], selVerified: p[14], pa2: p[15], secCount: u32(p, 16),
+        bootKiB: u32(p, 20), extRead: p[24] === 1, partConfig: p[25], os: p[26],
+        slots: [slot(28), slot(52)] };
 }
 
 export function parseState(p, n) {
@@ -140,6 +160,10 @@ export async function readTest(link, index, opts = {}) {
     return parseTest((await link.request(TEST, Uint8Array.of(index & 0xFF), opts)).payload);
 }
 
+export async function readSurvey(link, opts = {}) {
+    return parseSurvey((await link.request(SURVEY, undefined, opts)).payload);
+}
+
 // core.js's Link says "no answer" when the port stayed and nothing came back, and names the
 // port going away otherwise.
 export const isBusy = (e) => e instanceof Failure && e.kind === 'link' && /^no answer/.test(e.message);
@@ -211,7 +235,18 @@ function imageOf(hello, state) {
     const pin = hexOf(hello.pin);
     return { version: vtext(hello.version), length: hello.length, crc: IW.hex8(hello.crc), pin,
         pinShort: pin.slice(0, 8), verified: !!(flags & IW.F_IMAGE_OK),
-        breadcrumb: !!(flags & IW.F_BREADCRUMB) };
+        breadcrumb: !!(flags & IW.F_BREADCRUMB), survey: !!(flags & IW.F_SURVEY),
+        device: hello.imageDevice === undefined ? null : IW.deviceName(hello.imageDevice) };
+}
+
+// The unit's device as the installer decided it at its entry (S-18), or null.
+function deviceOf(hello) {
+    if (!hello || hello.how === undefined)
+        return null;
+    if (hello.how === IW.HOW_UNKNOWN)
+        return { name: null, identified: false, text: 'not identified' };
+    return { name: IW.deviceName(hello.device), identified: hello.how === IW.HOW_TABLE,
+        text: IW.deviceName(hello.device) };
 }
 
 // What the unit starts at its next start, from the selector and the slots' bits.
@@ -253,6 +288,7 @@ export function describeInstall(s, hello = null, tests = null) {
         verdict: { code: s.verdict, text: IW.VERDICT[s.verdict] || `verdict ${s.verdict}` },
         checks,
         image: imageOf(hello, s),
+        device: deviceOf(hello),
         target,
         hold: s.holdKey ? { key: s.holdKey, progress: s.hold / 1000 } : null,
         nextKey: s.nextKey || 0,
@@ -282,7 +318,10 @@ export function describeInstall(s, hello = null, tests = null) {
         break;
     case IW.GUIDED:
         L.push('The key check.');
-        A.push('The key check: press com, then M4 (4 under the display), on the unit.');
+        A.push(d.device && d.device.name && d.device.name !== 'OP-XY' ?
+            'The key check: press the com key, then the recovery key, on the unit; its screen ' +
+            'shows the number of each key pressed.' :
+            'The key check: press com, then M4 (4 under the display), on the unit.');
         break;
     case IW.LOCKED:
         d.tone = 'bad';
@@ -350,9 +389,19 @@ export function describeInstall(s, hello = null, tests = null) {
         L.push('Nothing written: the installer was left without installing.');
         L.push(osLine(s.os));
         break;
+    case IW.SURVEYED:
+        d.tone = 'ok';
+        L.push(IW.SURVEY_DONE);
+        L.push(s.lock === 11 ? 'An install by the installer would be offered on this unit.' :
+            `An install would not be offered: ${d.lock ? d.lock.text : 'the checks'}.`);
+        L.push(osLine(s.os));
+        A.push(IW.SAVE_REPORT);
+        break;
     default:
         L.push(`The installer reports phase ${s.phase}, which this page does not know.`);
     }
+    if (d.device && !d.device.identified && d.device.name === null)
+        L.push(IW.NOT_IDENTIFIED);
     if (d.leave)
         A.push(IW.LEAVE);
     if (d.hold)

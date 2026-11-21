@@ -11,6 +11,7 @@
 
 export const VID = 0x2367, PID = 0x0021;
 export const PRODUCT = 'OP-XY Recovery';
+export const PID_1F = 0x0102, PRODUCT_1F = 'OP-1 Recovery';   // recovery on the OP-1F (S-02.093)
 
 export const PROTO = 2;                 // from front version 11
 export const OLD_PROTO = 1;             // fronts 5 to 10
@@ -26,6 +27,10 @@ export const WB_IMAGE_MAX = 0x76000;    // S-02.104: this tool's, the sector bel
 export const BEGIN_REPLY_LEN = 3, DATA_REPLY_LEN = 5, END_REPLY_LEN = 2, ACT_REPLY_LEN = 4;
 export const HELLO_LEN = 47, HELLO_O_VERSION = 7, HELLO_O_PIN = 15;
 export const INFO_V5 = 199, INFO_V6 = 219, INFO_V11 = 232;
+// from front 20: the device (0 OP-XY, 1 OP-1F), how it was decided (0 the first stage's table, 2 not
+// identified, the OP-XY's default) and the first stage's n and c (S-18.003, S-18.004)
+export const INFO_V20 = 242;
+export const DEVICES = ['OP-XY', 'OP-1F'];
 export const BATT_MAX = 16;
 export const F_ESTABLISHED = 1, F_SELECTOR = 2, F_OWN_DESC = 4, F_MOVED = 8, F_SPOILED = 16,
     F_HELD = 32, F_READ_ERROR = 64, F_UNSETTLED = 128;
@@ -819,9 +824,20 @@ export function triedLines(i, failedTrial = false) {
         `start checks ${A} and boots it, so no trial start will come. ${again}`]);
 }
 
+// INFO's device (front 20, S-18.004), as the Python tool's device_line() says it.
+export function deviceLine(i) {
+    const name = DEVICES[i.device] || `device ${i.device}`;
+    if (i.dev_how === 0)
+        return `Device:   ${name}, identified by its first stage`;
+    return `Device:   not identified (first stage n ${i.fs_n}, c ${(i.fs_c >>> 0).toString(16).padStart(8, '0')}): ` +
+        `recovery runs as on the ${name}`;
+}
+
 // INFO as lines a person reads: the Python tool's info, line for line.
 export function describeLines(i) {
     const out = [`Recovery runs because ${WHY[i.why] || `of reason ${i.why}`}.`];
+    if (i.v20)
+        out.push(deviceLine(i));
     const sel = i.selector_ok ? selected(i.sel_index) : null;
     if (i.established)
         out.push(`Running:  ${slotName(i.running)}`);

@@ -2,27 +2,63 @@
 """S-11 executable model: the package checks, zip checks, disk search, step results, run, content
 installation, the boot after an interrupted install and the return-to-factory predicate.
 
-Python 3, standard library plus tests/oracle/conformance (images.aes, images.p224, images.crc). Every key
-used with it is a conformance test key; the model holds no key of its own.
+Python 3, standard library plus tests/oracle/conformance (images.aes, images.p224, images.crc, images.ldr).
+Every key used with it is a conformance test key; the model holds no key of its own. The signature is checked
+but never required (S-11.012, S-11.022): it sets the signature state (S-11.021), valid, invalid or none.
 """
 import hashlib
 import io
 import itertools
 import json
+import os
 import struct
 import zipfile
 import zlib
 
-from images import aes, p224
-from images.crc import crc16_xmodem
+from images import aes, ldr, p224
+from images.crc import crc16_xmodem, crc32
 
 PREAMBLE_MAGIC = 0xBABECAFE
 HEADER_MAGIC = 0xBEEFCAFE
 PRE, HDR, MAN, NAME = 0x40, 0x40, 0x300, 0x100
 PRODUCT = 0x21
 
+
+def _s18(name):
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'S-18-devices', 'vectors',
+                           name + '.json'), encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _profile(name, device):
+    for rows in _s18('profile')['tables'].values():
+        for r in rows:
+            if r['name'] == name:
+                return r[device]
+    raise KeyError(name)
+
+
+def has_feature(name, device):
+    return next(r[device] for r in _s18('features')['features'] if r['name'] == name)
+
+
+def product_number(device='OP-XY'):
+    """device.product_number (S-18.030): 0x21 on the OP-XY, 0x02 on the OP-1F."""
+    return _profile('device.product_number', device)
+
+
+def product_base(device='OP-XY'):
+    """device.product_base, the word a writer stores."""
+    return _profile('device.product_base', device)
+
+
+def device_ids(device='OP-XY'):
+    """S-11.006, S-11.026: the device ids that pass the third check; 0x06 is the OP-XY's alone."""
+    return (0x01, 0x06) if device == 'OP-XY' else (0x01,)
+
 # S-11.020, in check order. Reason -> result code.
-REASONS = ['SHORT', 'PREAMBLE', 'TYPE', 'MAGIC', 'PRODUCT', 'DEVICE', 'CRC', 'FORMAT', 'SKU',
+# Check 8 refuses nothing (S-11.022) and check 9 is not made (S-11.013 withdrawn): no reason of their own.
+REASONS = ['SHORT', 'PREAMBLE', 'TYPE', 'MAGIC', 'PRODUCT', 'DEVICE', 'CRC', 'FORMAT',
            'LENGTH', 'HASH', 'KEY', 'NOKEY', 'NAME', 'ZIPLEN', 'ZIP', 'MEMBER', 'SPACE', 'SPACEQUERY', 'SIZE',
            'STREAM']
 REASON_CODE = {r: 3 for r in REASONS}
@@ -64,17 +100,17 @@ UNKNOWN_VERSION = (1234, 0, 0, 0)
 
 
 class Unit:
-    """What the checks need of the unit: OTP Q0 (point or None), K0, K1 (32 bytes or None), the option,
-    dev mode."""
+    """What the checks need of the unit: K0, K1 (32 bytes or None), the option, dev mode, and the cloud
+    public key Q0 (a P-224 point, or None when it cannot be read), which only sets the signature state."""
 
-    def __init__(self, q0=None, k0=None, k1=None, option=False, dev=False):
-        self.q0, self.k0, self.k1, self.option, self.dev = q0, k0, k1, option, dev
+    def __init__(self, k0=None, k1=None, option=False, dev=False, q0=None):
+        self.k0, self.k1, self.option, self.dev, self.q0 = k0, k1, option, dev, q0
 
 
 # ---- S-11.007, S-11.008, S-11.036, S-11.037
 
-def product_ok(w):
-    return (w >> 14) & 0x3FF == PRODUCT and (w >> 10) & 0xF == 0
+def product_ok(w, device='OP-XY'):
+    return (w >> 14) & 0x3FF == product_number(device) and (w >> 10) & 0xF == 0
 
 
 def crc16(data):
@@ -119,20 +155,45 @@ def is_0_1_0(v):
     return tuple(v[:3]) == (0, 1, 0)
 
 
-# ---- S-11.001-S-11.023: checks 1-15
+# ---- S-11.012, S-11.021: the signature and its state
 
-def _ecdsa_ok(pub, man):
+SIG_VALID, SIG_INVALID, SIG_NONE = 'valid', 'invalid', 'none'
+
+
+def signature_present(man):
+    """S-11.012: a signature is present when sig_r (+0x10) and sig_s (+0x30) are not both zero."""
+    return any(man[0x10:0x50])
+
+
+def signature_verifies(pub, man):
+    """S-11.012: ECDSA P-224 over SHA-256 of the manifest with +0x010-+0x04F zeroed; r and s from the last 28
+    bytes of their fields; the key the signature key index selects, Q0 for 0x00 and none for any other."""
+    if pub is None or man[0x89] != 0x00:
+        return False
     digest = hashlib.sha256(man[:0x10] + bytes(0x40) + man[0x50:MAN]).digest()
     r = int.from_bytes(man[0x14:0x30], 'big')
     s = int.from_bytes(man[0x34:0x50], 'big')
-    return pub is not None and p224.verify(pub, digest, r, s)
+    return p224.verify(pub, digest, r, s)
 
 
-def check_package(data, form, unit, file_name=None, link=None):
+def signature_state(man, q0, plain=False):
+    """S-11.021: 'valid' (a present signature that verifies against Q0), 'invalid' (a present one that does
+    not, or Q0 None: not readable) or 'none' (a plain package, S-11.027, or a blank signature). It never
+    refuses a package (S-11.022)."""
+    if plain or not signature_present(man):
+        return SIG_NONE
+    return SIG_VALID if signature_verifies(q0, man) else SIG_INVALID
+
+
+# ---- S-11.001-S-11.023: checks 1-15
+
+def check_package(data, form, unit, file_name=None, link=None, device='OP-XY'):
     """Checks 1-15. form: 'file' (RAM disk) or 'body' (host link). Returns a dict: accepted, reason,
-    te_signed, forced, version, zip, name."""
+    signature (S-11.021's state once check 8 is reached, else None), forced, version, zip, name, plain (the
+    OP-1F's plain format, S-11.027)."""
     data = bytes(data)
-    out = dict(accepted=False, reason=None, te_signed=False, forced=False, version=None, zip=None, name=None)
+    out = dict(accepted=False, reason=None, signature=None, forced=False, version=None, zip=None, name=None,
+               plain=False)
 
     def refuse(r):
         out['reason'] = r
@@ -163,9 +224,9 @@ def check_package(data, form, unit, file_name=None, link=None):
     hcrc = struct.unpack_from('>H', data, o + 9)[0]
     version = struct.unpack_from('>4H', data, o + 0x0B)
     hprod = struct.unpack_from('>I', data, o + 0x17)[0]
-    if not product_ok(hprod):
+    if not product_ok(hprod, device):
         return refuse('PRODUCT')
-    if dev not in (0x01, 0x06):
+    if dev not in device_ids(device):
         return refuse('DEVICE')
     if dev == 0x06 or is_0_1_0(version):
         forced = True
@@ -177,17 +238,23 @@ def check_package(data, form, unit, file_name=None, link=None):
     if len(data) < m + MAN:
         return refuse('SHORT')
     man = data[m:m + MAN]
-    if man[0x84:0x88] != b'TESG' or man[0x88] != 1:
-        return refuse('FORMAT')
-    te_signed = man[0x89] == 0x00 and _ecdsa_ok(unit.q0, man)
-    out['te_signed'] = te_signed
-    if not product_ok(struct.unpack_from('<I', man, 0x8C)[0]):
-        return refuse('SKU')
     payload = data[m + MAN:]
-    if struct.unpack_from('<I', man, 0x98)[0] != len(payload):
-        return refuse('LENGTH')
-    if hashlib.sha256(payload).digest() != man[0x9C:0xBC]:
-        return refuse('HASH')
+    # S-11.027: the tag tells the format; on the OP-1F a block without TESG is the plain format's crypto
+    # header, not a refusal. A TESG block's version must be 0x01 (S-11.011).
+    plain = man[0x84:0x88] != b'TESG'
+    if (plain and device == 'OP-XY') or (not plain and man[0x88] != 1):
+        return refuse('FORMAT')
+    out['plain'] = plain
+    # check 8 sets the signature state and refuses nothing (S-11.022); check 9 is not made: the manifest
+    # product word is not read (S-11.013 withdrawn)
+    out['signature'] = signature_state(man, unit.q0, plain)
+    if not plain:
+        if struct.unpack_from('<I', man, 0x98)[0] != len(payload):
+            return refuse('LENGTH')
+        if hashlib.sha256(payload).digest() != man[0x9C:0xBC]:
+            return refuse('HASH')
+    # checks 10 and 11 are integrity checks only (S-11.014). plain: checks 10 and 11 are not made; the zip length is enforced at check 14. The key rule is the same for
+    # both formats.
     kidx = man[0x04]
     key = None
     if kidx == 0x00:
@@ -214,8 +281,8 @@ def check_package(data, form, unit, file_name=None, link=None):
     padded = -(-zlen // 16) * 16 if key is not None else zlen
     if len(payload) < NAME + padded:
         return refuse('ZIPLEN')
-    plain = payload[:NAME + padded] if key is None else aes.cbc_decrypt(key, iv, payload[:NAME + padded])
-    z = plain[NAME:NAME + zlen]
+    clear = payload[:NAME + padded] if key is None else aes.cbc_decrypt(key, iv, payload[:NAME + padded])
+    z = clear[NAME:NAME + zlen]
     try:
         zipfile.ZipFile(io.BytesIO(z)).infolist()
     except Exception:
@@ -467,7 +534,8 @@ def _already(step, c):
 
 def skip_reason(step, c):
     """S-11.058, S-11.073, S-11.090, S-11.096: why the step reports Skipped, or None when it does not.
-    c's `selected`: the step selected on the unit (S-11.096), selected when not given."""
+    c's `selected`: the step selected on the unit (S-11.096), selected when not given. The signature state
+    (S-11.021) plays no part."""
     selected = c.get('selected', 1)
     if step == 0:
         return SKIP_NOT_SELECTED if c.get('content_dir') and not selected else None
@@ -651,16 +719,20 @@ def interrupted_boot(state, keys_held=False, slave_present=True, meta_write_ok=T
 
 # ---- S-11.075-S-11.079: content
 
-def install_content(tree, staged, content_only_install):
-    """tree: {path relative to /yaffs2: bytes}. staged: the staging dict. Returns (result, new tree)."""
+def install_content(tree, staged, content_only_install, device='OP-XY'):
+    """tree: {path relative to /yaffs2: bytes}. staged: the staging dict. Returns (result, new tree).
+    Without content-packs no directory is DLC (S-11.097): a full install removes all of content/."""
     t = dict(tree)
+    packs_feature = has_feature('content-packs', device)
     files = {p[len(CONTENT_DIR):]: b for p, b in staged.items() if p.startswith(CONTENT_DIR) and b is not None}
     if not has_content(staged):
         return NOT_FOUND, t
     partial = is_partial(staged)
-    if not partial:
+    if not partial and not packs_feature:
+        t = {p: b for p, b in t.items() if not p.startswith('content/')}
+    elif not partial:
         t = {p: b for p, b in t.items() if not p.startswith('content/') or p.startswith('content/dlc/')}
-    elif content_only_install:
+    elif content_only_install and packs_feature:
         packs = {p[len(DLC_DIR):].split('/')[0] for p in staged if p.startswith(DLC_DIR)}
         for pk in packs:
             if pk and not pk.startswith('.'):
@@ -678,9 +750,43 @@ def install_content(tree, staged, content_only_install):
 
 # ---- S-11.091, S-11.092
 
-def return_to_stock(option, te_signed, has_bootloader, bootloader_selected=True):
-    """S-11.091: the bootloader image present and selected on the unit (S-11.096)."""
-    return bool(option and te_signed and has_bootloader and bootloader_selected)
+def return_to_stock(option, bootloader_waffle, has_bootloader, bootloader_selected=True, valid=True):
+    """S-11.091: the option on, the package valid (S-11.021), the bootloader image present and selected on the
+    unit (S-11.096), and that image not a waffle-boot build (bootloader_is_waffle). valid: the package's
+    signature state is 'valid'."""
+    return bool(option and valid and has_bootloader and bootloader_selected and not bootloader_waffle)
+
+
+DESC_ADDR, DESC_MAGIC, DESC_VERSION, DESC_HEAD, DESC_REGIONS = 0x08030000, 0x4D494257, 1, 0x40, 24
+DESC_MAX = DESC_HEAD + 8 * DESC_REGIONS + 4
+
+
+def bootloader_is_waffle(stream):
+    """S-11.091: the bootloader image is a waffle-boot build when its stream carries a valid image
+    descriptor (S-01.023), as recovery's WB kind (S-02.106 rule 1) and the installer read it: walking the
+    LDR blocks (S-05) up to FINAL, the first data block loaded at the descriptor's address decides; its
+    magic, version, size (0x40 + 8 n + 4, n at most 24) and final CRC-32 must hold. FILL blocks carry no
+    payload, IGNORE blocks carry one and load nothing. Anything else, a factory bootloader included, is not."""
+    data, pos = bytes(stream), 0
+    while pos + ldr.HEADER_SIZE <= len(data):
+        h = data[pos:pos + ldr.HEADER_SIZE]
+        if not ldr.header_ok(h):
+            return False
+        code, target, count, _ = struct.unpack('<IIII', h)
+        fill = bool(code & ldr.FLAGS['FILL'])
+        if not fill and not code & ldr.FLAGS['IGNORE'] and target == DESC_ADDR and count >= DESC_HEAD + 4:
+            d = data[pos + ldr.HEADER_SIZE:pos + ldr.HEADER_SIZE + min(count, DESC_MAX)]
+            if len(d) < min(count, DESC_MAX):
+                return False
+            magic, ver, size = struct.unpack_from('<IHH', d)
+            n = struct.unpack_from('<I', d, 0x0C)[0]
+            return (magic == DESC_MAGIC and ver == DESC_VERSION and n <= DESC_REGIONS
+                    and size == DESC_HEAD + 8 * n + 4 and size <= len(d)
+                    and crc32(d[:size - 4]) == struct.unpack_from('<I', d, size - 4)[0])
+        if code & ldr.FLAGS['FINAL']:
+            return False
+        pos += ldr.HEADER_SIZE + (0 if fill else count)
+    return False
 
 
 # ---- S-11.096: the selection
@@ -691,8 +797,9 @@ PICK_ABSENT, PICK_OPEN, PICK_SWITCHED_OFF, PICK_OPTION_OFF, PICK_UP_TO_DATE = (
 
 def pick(step, c):
     """What the selection offers for a step under steps.tsv's conditions, with `known`: the installed
-    version of a Nordic or PSoC step is known (not 0.0.0). A row for each step carried; one that would
-    report Already installed, its installed version known, is up to date."""
+    version of a Nordic or PSoC step is known (not 0.0.0). A row for each step carried; one that would report
+    Already installed, its installed version known, is up to date. The signature state (S-11.021) plays no
+    part (S-11.090)."""
     if step == 0:
         return PICK_OPEN if c.get('content_dir') else PICK_ABSENT
     if step == 1:
@@ -814,11 +921,14 @@ def extract(dev, staged):
 
 
 def install(dev, staged, option=False, faults=None, nordic_dfu_ok=True, cut=None, steps_off=STEPS_OFF,
-            answer=None):
+            answer=None, signature=SIG_VALID, prompt=None):
     """A run, after its package and zip passed every check. steps_off: the switched-off steps (S-11.073),
     this version's by default; answer(pickable): the user's answer to S-11.096's selection (see select();
-    None: the keys cannot be read). Returns the run dict, with `pickable` and `selected`, or None when cut.
-    A canceled selection starts no run and writes nothing: outcome 'nothing to do', `canceled` true."""
+    None: the keys cannot be read). signature: the package's state (S-11.021), which never gates a step
+    (S-11.090); an invalid one is asked prompt() first (S-15.197): 'install' goes on to
+    the selection, 'cancel' (or prompt None: the keys cannot be read, so nobody can confirm) ends it.
+    Returns the run dict, with `pickable` and `selected`, or None when cut. A canceled selection or prompt
+    starts no run and writes nothing: outcome 'nothing to do', `canceled` true."""
     extract(dev, staged)
     comps = components(dev.staged)
     pickable = set()
@@ -832,7 +942,8 @@ def install(dev, staged, option=False, faults=None, nordic_dfu_ok=True, cut=None
         if st in PROTECTED and not option:
             continue
         pickable.add(st)
-    selected = select(pickable, answer)
+    confirmed = signature != SIG_INVALID or (prompt is not None and prompt() == 'install')
+    selected = select(pickable, answer) if confirmed else None
     if selected is None:
         return dict(outcome='nothing to do', ran=[], writes=[], canceled=True, pickable=sorted(pickable),
                     selected=[])
@@ -856,17 +967,17 @@ def boot(dev, keys_held=False, slave_present=True, meta_write_ok=True):
     return 'interrupted'
 
 
-# ---------- S-11.021 - S-11.023: checks 8 and 12 ----------
-ACCEPTANCE_COLUMNS = ('sig_key_index', 'sig_valid', 'q0_readable', 'payload_key_index', 'k0_readable',
-                      'k1_readable', 'option', 'dev_mode', 'te_signed', 'verdict')
+# ---------- S-11.021 - S-11.023: check 8 sets the state, check 12 refuses ----------
+ACCEPTANCE_COLUMNS = ('payload_key_index', 'k0_readable', 'k1_readable', 'option', 'dev_mode', 'verdict')
 
 
 def acceptance_rows():
-    """S-11.021-S-11.023 tables (checks 8 and 12 only; every other check passes)."""
+    """S-11.023's table (check 12 only; every other check passes). Acceptance is independent of the signature
+    state (S-11.022): no signature, signature key index or Q0 dimension; signature_state() decides only the
+    prompt, the bootloader step and the return to stock. Dev mode has no effect."""
     rows = []
-    for sig, valid, q0, kidx, k0, k1, opt, dev in itertools.product(
-            ['00', '01', 'FF', '7F'], [1, 0], [1, 0], ['00', '01', 'FE', 'FF', '02'], [1, 0], [1, 0], [0, 1], [0, 1]):
-        te = sig == '00' and valid and q0
+    for kidx, k0, k1, opt, dev in itertools.product(['00', '01', 'FE', 'FF', '02'], [1, 0], [1, 0], [0, 1],
+                                                    [0, 1]):
         if kidx == '00':
             verdict = 'accept' if k0 else 'NOKEY'
         elif kidx == '01':
@@ -875,7 +986,7 @@ def acceptance_rows():
             verdict = 'accept'
         else:
             verdict = 'KEY'
-        rows.append([sig, valid, q0, kidx, k0, k1, opt, dev, int(bool(te)), verdict])
+        rows.append([kidx, k0, k1, opt, dev, verdict])
     return rows
 
 

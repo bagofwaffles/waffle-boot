@@ -1247,6 +1247,22 @@ static void test_front_slot(void)
 		      "inference from both slots, timed only, not used: 61.250 ms, no slot"));
 }
 
+/* The scan before a write's line, with and without the slave's figures. */
+static void test_scan_line(void)
+{
+	static const uint32_t slave[3] = { 41250u, 17u, 6u };
+	static const char with[] =
+		"scan before a write: 52 ms for the request; the slave's scan 41 ms, 17 reads, way 6";
+	static const char without[] =
+		"scan before a write: 9 ms for the request; no figures from the slave";
+	struct s14_text out;
+
+	boot_time_scan_line(&out, 52u, slave);
+	CHECK(out.len == strlen(with) && memcmp(out.buf, with, out.len) == 0);
+	boot_time_scan_line(&out, 9u, NULL);
+	CHECK(out.len == strlen(without) && memcmp(out.buf, without, out.len) == 0);
+}
+
 int main(void)
 {
 	RUN(test_mark);
@@ -1266,5 +1282,6 @@ int main(void)
 	RUN(test_os_start);
 	RUN(test_boot_menu);
 	RUN(test_front_slot);
+	RUN(test_scan_line);
 	return check_summary("boot_time");
 }

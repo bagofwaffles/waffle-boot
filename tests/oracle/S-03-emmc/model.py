@@ -201,3 +201,43 @@ def boots(device, old, new, fallback=False):
     if old is not None and r['image'] == old:
         return 'old'
     return 'other'
+
+
+# ---- the OP-1F (S-03.012, S-03.013, S-03.001) ----
+
+def select_1f(cur, n):
+    """S-03.012: the CMD6 value a select of partition n issues on an EXT_CSD[179] that reads cur, or None when
+    bits 2-0 already equal n (no command)."""
+    if cur & 0x07 == n:
+        return None
+    return (cur & 0xF8) | n
+
+
+def select_1f_after_fail(read_ok, cur, n):
+    """S-03.012: the select after a failed switch of the byte. The value is not known, so it reads EXT_CSD
+    first; a read that fails fails the select with no CMD6 (nothing written blind). Returns
+    (ok, cmd6): cmd6 is the value select_1f() gives on what was read, or None."""
+    if not read_ok:
+        return False, None
+    return True, select_1f(cur, n)
+
+
+def power_off_limit_ms(ext_csd_247):
+    """S-03.013: the notification's CMD13 polls last at most EXT_CSD[247] x 10 ms, 255 x 10 ms when the byte
+    is 0 (not defined); at least one CMD13 is sent whatever the bound."""
+    return 10 * (ext_csd_247 if ext_csd_247 != 0 else 0xFF)
+
+
+UNUSED_FIRST = 0x480000         # S-03.075: without fat-region, nothing from here on
+
+
+def user_access_ok_1f(first, count):
+    """S-03.075 without fat-region: a read, write or erase of count user-area sectors from first, on any
+    path (a host's or a developer's raw request included); refused requests send nothing."""
+    return count != 0 and first + count - 1 < UNUSED_FIRST
+
+
+def emmc_supported(sectors, group, opt_write, at_least=False, count=0x1CF8000):
+    """S-03.001: exactly count sectors, or with at_least count or more."""
+    ok = sectors >= count if at_least else sectors == count
+    return ok and group == GROUP and opt_write != 0 and 8 % opt_write == 0

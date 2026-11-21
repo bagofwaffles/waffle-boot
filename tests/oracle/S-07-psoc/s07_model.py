@@ -3,6 +3,7 @@
 """S-07 model of the master's PSoC link: the message catalog, pure rules, a bootloader host, and ``Sim``, a
 virtual-clock master against a scripted ``Psoc`` that produces and checks the timed transcripts (times in ms).
 """
+import math
 import os
 import sys
 
@@ -133,6 +134,97 @@ def charge_led(state, charge):
     if state == 0x16:
         return (b'\x00\xc8\x00' if charge > 90 else b'\xc8\x00\x00'), True
     return b'\x00\x00\x00', False
+
+
+# ---- the OP-1F's LEDs (S-07.046-.049) ----
+
+BAR_LEDS = 14
+RGB_PAD = 0x48                      # S-07.046: sent as written (Q-LED48-1F)
+BREATHE_RAD_S = 0.6 * math.pi       # S-07.047: 0.3 turns a second
+BREATHE_GAP_S = 0.100
+
+
+def bar_1f(n):
+    """S-07.046: {02 l0..l13}, the first n FF, the rest 00."""
+    assert 0 <= n <= BAR_LEDS
+    return bytes([0x02]) + b'\xff' * n + b'\x00' * (BAR_LEDS - n)
+
+
+def rgb_1f(rgb):
+    """S-07.046: {06 r 48 g 48 b 48}."""
+    r, g, b = bytes(rgb)
+    return bytes([0x06, r, RGB_PAD, g, RGB_PAD, b, RGB_PAD])
+
+
+class Leds1F:
+    """S-07.046's change rule: a bar or RGB message only when its value differs from the last sent; at
+    power-on n = 0 and (00, 00, 00) count as sent. The bar clear of S-07.048 is sent whatever was sent last."""
+
+    def __init__(self, send):
+        self.send = send
+        self.bar = 0
+        self.rgb = b'\x00\x00\x00'
+
+    def set_bar(self, n):
+        if n != self.bar:
+            self.bar = n
+            self.send(bar_1f(n))
+
+    def bar_clear(self):
+        self.bar = 0
+        self.send(bar_1f(0))
+
+    def set_rgb(self, rgb):
+        rgb = bytes(rgb)
+        if rgb != self.rgb:
+            self.rgb = rgb
+            self.send(rgb_1f(rgb))
+
+
+def charge_led_1f_base(state, charge):
+    """S-07.047's (r, g, b) before the breathing: S-07.042's colors."""
+    return charge_led(state, charge)[0]
+
+
+def breathe_step(phase, d):
+    """S-07.047: the phase after an update d seconds after the previous one in state 0x16 (None: none)."""
+    if d is None or d > BREATHE_GAP_S:
+        return phase
+    return (phase + BREATHE_RAD_S * d) % (2 * math.pi)
+
+
+def breathe_level(base, phase):
+    """S-07.047: base x f, f = 0.25 + 0.75 (0.5 + 0.5 sin phase), the fraction dropped."""
+    return int(base * (0.25 + 0.75 * (0.5 + 0.5 * math.sin(phase))))
+
+
+def key_test_1f(events, state, charge):
+    """S-07.049: the 0x40 payloads of a key test on the OP-1F from its start to its end, given key events
+    [(key, down)] between, with the charge LED's (state, charge) after it. A press alone advances the RGB
+    value; no message is sent for a key."""
+    sent = []
+    leds = Leds1F(sent.append)
+    leds.set_bar(BAR_LEDS)
+    presses, down = 0, 0
+
+    def rgb():
+        v = [0, 0, 0]
+        v[presses % 3] = 0xFF
+        leds.set_rgb(bytes(v))
+    rgb()
+    for _key, d in events:
+        if d:
+            if down == 0:
+                presses += 1
+            down += 1
+        else:
+            down = max(0, down - 1)
+        rgb()
+    leds.set_rgb(b'\x00\x00\x00')
+    leds.set_bar(0)
+    if state != 0x16:
+        leds.set_rgb(charge_led_1f_base(state, charge))
+    return sent
 
 
 # ---- power (S-07.050-.057) ----
@@ -1056,6 +1148,39 @@ def master_items(events):
 
 def psoc_items(events):
     return [(i, e) for i, e in enumerate(events) if e[1] == 'P']
+
+
+# ---- trace rules of a device without a feature (S-18.020, scenario SC-18-FEATURES) ----
+
+PMIC_IDS = (0x01, 0x70, 0x71, 0x73)  # pmic-pass-through: 0x70, 0x71, 0x73 and the ping request (S-07.062)
+LED_ID = 0x40
+KEY_LED_FIRSTS = (0x00, 0x01)        # key-leds: 0x40 {00 k a b} and {01} (S-07.040)
+
+
+def master_frames(events):
+    """(kind, id, payload) of every frame the master sends, log lines included."""
+    return [(kind_of(e[3]), e[4], e[5]) for e in events if e[1] == 'M' and e[2] == 'frame']
+
+
+def check_no_pmic_ids(frames):
+    """Rule `no_pmic_ids`: the master sends no 0x70, 0x71, 0x73 and no 0x01. A pong to the PSoC's ping
+    (0x02) is not the ping request. ``frames`` are master_frames(); returns [(rule, where)]."""
+    return [('no_pmic_ids', '#%d %#04x' % (n, mid)) for n, (_, mid, _) in enumerate(frames)
+            if mid in PMIC_IDS]
+
+
+def check_no_key_led_ids(frames):
+    """Rule `no_key_led_ids`: no 0x40 whose first byte is 00 (a key LED) or 01 (all key LEDs off)."""
+    return [('no_key_led_ids', '#%d 0x40 {%s}' % (n, p.hex())) for n, (_, mid, p) in enumerate(frames)
+            if mid == LED_ID and p[:1] and p[0] in KEY_LED_FIRSTS]
+
+
+TRACE_RULES = {'no_pmic_ids': check_no_pmic_ids, 'no_key_led_ids': check_no_key_led_ids}
+
+
+def check_trace_rules(frames):
+    """Every S-07 trace rule's findings over master_frames(); [] when all pass."""
+    return [f for fn in TRACE_RULES.values() for f in fn(frames)]
 
 
 class CheckError(AssertionError):

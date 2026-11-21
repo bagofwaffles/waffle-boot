@@ -76,6 +76,13 @@ struct fake_emmc {
 	bool cache_on;
 	unsigned ncached;
 	uint8_t ext_csd[256];
+	/* S-03.013's polled switch: 'p' in the log; its wait runs out when set,
+	 * and the last limit it was given */
+	bool poll_timeout;
+	uint32_t poll_limit;
+	/* S-03.012: CMD8 reads of EXT_CSD[179] ('c' in the log) */
+	unsigned n_ext_reads;
+	bool fail_ext_read;
 };
 
 static uint8_t g_fe_bp1[FE_B_MAX];
@@ -375,6 +382,8 @@ static inline int fe_switch(void *ctx, uint8_t index, uint8_t value)
 	}
 	fe_log(e, 'x', 0, index, value, 0);
 	e->ext_csd[index] = value;
+	if (index == 179u)
+		e->sel = value & 0x07u;	/* PARTITION_ACCESS (S-03.012) */
 	if (index == FE_FLUSH_INDEX) {
 		unsigned i;
 
@@ -383,6 +392,36 @@ static inline int fe_switch(void *ctx, uint8_t index, uint8_t value)
 			fe_commit(&g_fe_cached[i], g_fe_dur1, g_fe_dur2);
 		e->ncached = 0;
 	}
+	return 0;
+}
+
+/* S-03.013: CMD6, then CMD13 until ready, for at most limit_ms. */
+static inline int fe_switch_poll(void *ctx, uint8_t index, uint8_t value, uint32_t limit_ms)
+{
+	struct fake_emmc *e = ctx;
+
+	if (e->dead)
+		return -1;
+	e->poll_limit = limit_ms;
+	if (e->fail_switch != 0u && index == e->fail_switch) {
+		fe_log(e, 'p', 0, index, value, 1);
+		return -1;
+	}
+	fe_log(e, 'p', 0, index, value, e->poll_timeout ? 2 : 0);
+	e->ext_csd[index] = value;
+	return e->poll_timeout ? 1 : 0;
+}
+
+/* S-03.012: an EXT_CSD read of PART_CONFIG. */
+static inline int fe_read_part_config(void *ctx, uint8_t *value)
+{
+	struct fake_emmc *e = ctx;
+
+	if (e->dead || e->fail_ext_read)
+		return -1;
+	fe_log(e, 'c', 0, 179u, e->ext_csd[179], 0);
+	e->n_ext_reads++;
+	*value = e->ext_csd[179];
 	return 0;
 }
 
@@ -410,6 +449,10 @@ static inline void fe_reset(struct fake_emmc *e)
 	e->erase_ff = false;
 	e->fail_erase_from = 0;
 	e->nflush = 0;
+	e->poll_timeout = false;
+	e->poll_limit = 0;
+	e->n_ext_reads = 0;
+	e->fail_ext_read = false;
 }
 
 /* The cache mode on, everything on the eMMC committed so far. */

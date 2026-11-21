@@ -1,0 +1,1053 @@
+{
+ "device": "OP-1F",
+ "cases": [
+  {
+   "case": "header_device_0_1f",
+   "file": "pkg/header_device_0_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "DEVICE",
+    "zip_reason": null
+   },
+   "requirement": "S-11.026"
+  },
+  {
+   "case": "header_device_2_1f",
+   "file": "pkg/header_device_2_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "DEVICE",
+    "zip_reason": null
+   },
+   "requirement": "S-11.026"
+  },
+  {
+   "case": "header_device_3_1f",
+   "file": "pkg/header_device_3_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "DEVICE",
+    "zip_reason": null
+   },
+   "requirement": "S-11.026"
+  },
+  {
+   "case": "header_device_6_1f",
+   "file": "pkg/header_device_6_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "DEVICE",
+    "zip_reason": null
+   },
+   "requirement": "S-11.026"
+  },
+  {
+   "case": "header_device_7_1f",
+   "file": "pkg/header_device_7_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "DEVICE",
+    "zip_reason": null
+   },
+   "requirement": "S-11.026"
+  },
+  {
+   "case": "header_device_255_1f",
+   "file": "pkg/header_device_255_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "DEVICE",
+    "zip_reason": null
+   },
+   "requirement": "S-11.026"
+  },
+  {
+   "case": "header_device_1_1f",
+   "file": "pkg/header_device_1_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "valid",
+    "forced": false,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.026"
+  },
+  {
+   "case": "header_product_xy_1f",
+   "file": "pkg/header_product_xy_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "PRODUCT",
+    "zip_reason": null
+   },
+   "requirement": "S-11.007"
+  },
+  {
+   "case": "manifest_product_xy_1f",
+   "file": "pkg/manifest_product_xy_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "valid",
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.013"
+  },
+  {
+   "case": "signed_1f",
+   "file": "pkg/signed_1f.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "valid",
+    "plain": false,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "signed_1f_body",
+   "file": "pkg/signed_1f_body.bin",
+   "form": "body",
+   "link": "midi",
+   "file_name": null,
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "valid",
+    "plain": false,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "signed_1f_key_00",
+   "file": "pkg/signed_1f_key_00.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "valid",
+    "plain": false,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "signed_1f_length_plus1",
+   "file": "pkg/signed_1f_length_plus1.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "LENGTH",
+    "signature": "valid",
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "signed_1f_hash_flip",
+   "file": "pkg/signed_1f_hash_flip.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "HASH",
+    "signature": "valid",
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "signed_1f_key_02",
+   "file": "pkg/signed_1f_key_02.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "KEY",
+    "signature": "valid",
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_crypto_header",
+   "file": "pkg/plain_crypto_header.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "format_discriminator_body",
+   "file": "pkg/format_discriminator_body.bin",
+   "form": "body",
+   "link": "midi",
+   "file_name": null,
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_00_cdc",
+   "file": "pkg/plain_key_00_cdc.bin",
+   "form": "body",
+   "link": "cdc",
+   "file_name": null,
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "forced": true,
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_00_nokey",
+   "file": "pkg/plain_key_00_nokey.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": null,
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "NOKEY",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_01",
+   "file": "pkg/plain_key_01.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "KEY",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_01_option",
+   "file": "pkg/plain_key_01_option.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": true,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_01_option_nokey",
+   "file": "pkg/plain_key_01_option_nokey.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": null,
+    "option": true,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "NOKEY",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "zero_key_nokey",
+   "file": "pkg/zero_key_nokey.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "KEY",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_02_body",
+   "file": "pkg/plain_key_02_body.bin",
+   "form": "body",
+   "link": "midi",
+   "file_name": null,
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "KEY",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_02_option",
+   "file": "pkg/plain_key_02_option.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": true,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "KEY",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_03",
+   "file": "pkg/plain_key_03.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "KEY",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_fe",
+   "file": "pkg/plain_key_fe.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_key_ff",
+   "file": "pkg/plain_key_ff.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "KEY",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "format_discriminator",
+   "file": "pkg/format_discriminator.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_tag_version_2",
+   "file": "pkg/plain_tag_version_2.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "signed_1f_block_version_2",
+   "file": "pkg/signed_1f_block_version_2.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "FORMAT",
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "signed_1f_block_version_0_body",
+   "file": "pkg/signed_1f_block_version_0_body.bin",
+   "form": "body",
+   "link": "midi",
+   "file_name": null,
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "FORMAT",
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_reserved_garbage",
+   "file": "pkg/plain_reserved_garbage.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_trailing",
+   "file": "pkg/plain_trailing.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "23c3784af704012cb705eee257d8504e5f7954df1aefafc18646fd359f42dfd7"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_ziplen_exact",
+   "file": "pkg/plain_ziplen_exact.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": true,
+    "reason": null,
+    "signature": "none",
+    "plain": true,
+    "recorded_version": [
+     1,
+     2,
+     0,
+     0
+    ],
+    "zip_reason": null,
+    "zip_sha256": "c75687555817e27fe1954e1d4288e2edbc478a349f5432af5efcdc5c68b38aae"
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_ziplen_over_by_1",
+   "file": "pkg/plain_ziplen_over_by_1.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "ZIPLEN",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_ziplen_enc_needs_block",
+   "file": "pkg/plain_ziplen_enc_needs_block.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "ZIPLEN",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_ziplen_zero",
+   "file": "pkg/plain_ziplen_zero.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "ZIP",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_zip_garbage",
+   "file": "pkg/plain_zip_garbage.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "ZIP",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_name_no_zip",
+   "file": "pkg/plain_name_no_zip.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "NAME",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_name_fe_no_zip",
+   "file": "pkg/plain_name_fe_no_zip.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "NAME",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_wrong_key",
+   "file": "pkg/plain_wrong_key.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "NAME",
+    "signature": "none",
+    "plain": true,
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_crc_flip",
+   "file": "pkg/plain_crc_flip.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "CRC",
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  },
+  {
+   "case": "plain_device_6",
+   "file": "pkg/plain_device_6.bin",
+   "form": "file",
+   "link": null,
+   "file_name": "op-1.tfw",
+   "unit": {
+    "q0": "test",
+    "k0": "test",
+    "k1": "test_k1",
+    "option": false,
+    "dev": false
+   },
+   "expect": {
+    "accepted": false,
+    "reason": "DEVICE",
+    "zip_reason": null
+   },
+   "requirement": "S-11.027"
+  }
+ ]
+}

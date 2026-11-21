@@ -11,6 +11,7 @@
 #include "support/check.h"
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
+#include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/devhost.h"
 #include "waffle/drivers/bf70x_dma.h"
@@ -300,7 +301,7 @@ static void setup_before(enum during d)
 		      &m.hw.uart[OPXY_UART_PSOC], S06_ADDR_MASTER, S06_ADDR_PSOC);
 	m.node.link[S06_LINK_PSOC] = &m.link[S06_LINK_PSOC];
 	m.psoc_ops.ctx = &m;
-	s07_init(&m.psoc, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	(void)wb_sec_init();
 	opxy_held_psoc(&m);
 
@@ -308,7 +309,7 @@ static void setup_before(enum during d)
 	boot.version = "1.0.0.0";
 	boot.settings.dev_mode = true;
 	boot.settings.color = true;
-	s15_menu_init(&m.sv.menu, &boot, &env, NULL);
+	s15_menu_init(&m.sv.menu, &wb_device_opxy, &boot, &env, NULL);
 }
 
 /* The first screen, as held mode's loop opens it: what arrived before it

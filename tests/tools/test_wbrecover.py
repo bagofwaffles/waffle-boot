@@ -229,6 +229,7 @@ class Model:
         self.restarted = False
         self.hold = False           # a write that makes no step
         self.other_failed = False   # a write of the other slot failed: in place is offered
+        self.device, self.dev_how, self.fs = 0, 0, (0x86C0, 0xF3C93780)    # front 20's INFO
         self.spoiled = False        # INFO's flag bit 4
         self.held = False           # bit 5
         self.unsettled = False      # bit 7
@@ -438,10 +439,13 @@ class Model:
         plans = [self.act_plan(act, False) for act in range(1, 5)]
         forced = [self.act_plan(act, True) for act in range(1, 5)]
         keep = forced[w.ACT_KEEP - 1]
-        return p + bytes([self.count if self.phase == w.COUNTING else 0, self.act,
-                          self.tier(1 - self.running) if self.established else 0] +
-                         [x[0] for x in plans] + [x[0] for x in forced] +
-                         [keep[1] if keep[0] == 0 else w.NO_SLOT, self.refused])
+        p += bytes([self.count if self.phase == w.COUNTING else 0, self.act,
+                    self.tier(1 - self.running) if self.established else 0] +
+                   [x[0] for x in plans] + [x[0] for x in forced] +
+                   [keep[1] if keep[0] == 0 else w.NO_SLOT, self.refused])
+        if self.front < 20:
+            return p
+        return p + bytes([self.device, self.dev_how]) + struct.pack('<II', *self.fs)
 
     def run_plan(self, force=False):
         if self.run_says:
@@ -2280,6 +2284,33 @@ class Front11(PtyCase):
         self.assertIn('NOT VERIFIED: what the unit reports of Slot 2 does not match: the selector, '
                       'which should read ff ff.', text)
 
+    def test_info_device(self):
+        """info from front 20: the device and how it was decided, n and c when not identified."""
+        m = self.unit(b=self.OTHER)
+        m.front = 20
+        self.assertEqual(len(m.info()), w.INFO_V20)
+        i = w.parse_info(m.info())
+        self.assertEqual((i['v20'], i['device'], i['dev_how'], i['fs_n'], i['fs_c']),
+                         (True, 0, 0, 0x86C0, 0xF3C93780))
+        out = Lines()
+        self.assertEqual(w.cmd_info(self.link, out), 0)
+        self.assertIn('Front version 20, protocol 2.\nRecovery runs because ', out.text)
+        self.assertIn('.\nDevice:   OP-XY, identified by its first stage\n', out.text)
+        m.device, m.dev_how, m.fs = 0, 2, (34000, 0x12345678)
+        out = Lines()
+        self.assertEqual(w.cmd_info(self.link, out), 0)
+        self.assertIn('Device:   not identified (first stage n 34000, c 12345678): recovery runs as on '
+                      'the OP-XY\n', out.text)
+        m.device, m.dev_how = 1, 0
+        self.assertEqual(w.device_line(w.parse_info(m.info())),
+                         'Device:   OP-1F, identified by its first stage')
+        # an older front: no line
+        m.front = 11
+        self.assertIsNone(w.parse_info(m.info())['device'])
+        out = Lines()
+        self.assertEqual(w.cmd_info(self.link, out), 0)
+        self.assertNotIn('Device:', out.text)
+
     def test_info(self):
         """info from front 11: the other slot's tier, each action now and with --force, a
         countdown under way."""
@@ -2677,7 +2708,9 @@ class AgreesWithHeaders(unittest.TestCase):
                    ('FR_ACT_REPLY_LEN', w.ACT_REPLY_LEN),
                    ('FR_END_REPLY_LEN', w.END_REPLY_LEN), ('FR_NO_SLOT', w.NO_SLOT),
                    ('FR_SLOT_CAP', w.SLOT_CAP), ('FR_LOG_IMAGE_MAX', w.IMAGE_MAX),
-                   ('FR_USB_VID', w.VID), ('FR_USB_PID', w.PID), ('FR_USB_PRODUCT', w.PRODUCT)])
+                   ('FR_USB_VID', w.VID), ('FR_USB_PID', w.PID), ('FR_USB_PRODUCT', w.PRODUCT),
+                   ('FR_USB_PID_OP1F', w.PID_1F), ('FR_USB_PRODUCT_OP1F', w.PRODUCT_1F)])
+        self.assertEqual(w.PORTS, ((w.PID, w.PRODUCT), (w.PID_1F, w.PRODUCT_1F)))
         # FR_PROTO_MAX is FR_PROTO_MAX_DATA + 8u, a sum the number pattern does not take
         self.assertIn('#define FR_PROTO_MAX      (FR_PROTO_MAX_DATA + 8u)',
                       open(os.path.join(TOP, 'src', 'front', 'fr_proto.h')).read())
@@ -2696,7 +2729,9 @@ class AgreesWithHeaders(unittest.TestCase):
 
     def test_info(self):
         h = self.h
-        self.same([('FR_INFO_LEN', w.INFO_V11), ('FR_INFO_O_COUNT', w.INFO_V6),
+        self.same([('FR_INFO_LEN', w.INFO_V20), ('FR_INFO_O_COUNT', w.INFO_V6),
+                   ('FR_INFO_O_DEVICE', w.INFO_O_DEVICE), ('FR_INFO_O_DEV_HOW', w.INFO_O_DEV_HOW),
+                   ('FR_INFO_O_FS_N', w.INFO_O_FS_N), ('FR_INFO_O_FS_C', w.INFO_O_FS_C),
                    ('FR_INFO_O_COUNT', w.INFO_O_COUNT), ('FR_INFO_O_ACT', w.INFO_O_ACT),
                    ('FR_INFO_O_TIER', w.INFO_O_TIER), ('FR_INFO_O_ACTS', w.INFO_O_ACTS),
                    ('FR_INFO_O_FORCED', w.INFO_O_FORCED), ('FR_INFO_O_KEEP', w.INFO_O_KEEP),
@@ -2714,6 +2749,7 @@ class AgreesWithHeaders(unittest.TestCase):
         self.assertEqual(w.INFO_O_SLOT + 2 * w.INFO_SLOT_LEN, w.INFO_V5)
         self.assertEqual(w.INFO_O_BATT + w.BATT_MAX, w.INFO_V6)
         self.assertEqual(w.INFO_O_REFUSED + 1, w.INFO_V11)
+        self.assertEqual((w.INFO_V11, w.INFO_O_FS_C + 4), (w.INFO_O_DEVICE, w.INFO_V20))
         self.assertEqual(w.INFO_O_FORCED, w.INFO_O_ACTS + 4)
         self.assertEqual(h['FR_COUNTDOWN_US'], w.COUNTDOWN * 1000000)
         # parse_info()'s INFO_HEAD, field by field

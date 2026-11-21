@@ -48,13 +48,13 @@
 #define REPORT_MAX 8192u
 
 /* Initialized, so that it is loaded data, not .bss: the entry paint writes
- * [4] and [5] before wb_start_c() clears .bss. Its section goes with .data
- * in the DDR image (bf703_testos.ld). */
+ * it before wb_start_c() clears .bss. Its section goes with .data in the
+ * DDR image (bf703_testos.ld). */
 #if defined(__bfin__)
-uint32_t opxy_testos_entry[8] __attribute__((section(".l1.data.testos"))) =
+uint32_t opxy_testos_entry[OPXY_TESTOS_E_WORDS] __attribute__((section(".l1.data.testos"))) =
 	{ 0, 0, 0, 0, 0, 0, 0, 1u };
 #else
-uint32_t opxy_testos_entry[8] = { 0, 0, 0, 0, 0, 0, 0, 1u };	/* the host's analysis of this file */
+uint32_t opxy_testos_entry[OPXY_TESTOS_E_WORDS] = { 0, 0, 0, 0, 0, 0, 0, 1u };	/* the host's analysis */
 #endif
 
 /* S-07's state and the last frame of the PSoC link, for a wait that the
@@ -266,6 +266,22 @@ void opxy_testos_log(struct opxy_master *m)
 	s14_text_hex(&t, opxy_testos_entry[2], 8u);
 	s14_text_str(&t, " rets ");
 	s14_text_hex(&t, opxy_testos_entry[3], 8u);
+	emit(m, &t);
+
+	/* S-18.001 to S-18.004: the entry's decision, before any pin */
+	s14_text_init(&t);
+	s14_text_str(&t, "device ");
+	s14_text_str(&t, opxy_dev(m)->name);
+	s14_text_str(&t, m->dev_how == WB_DEV_BY_TABLE ? " by its first stage" :
+			 m->dev_how == WB_DEV_SECOND_CPU ? " as the second CPU" : " (not identified)");
+	s14_text_str(&t, ", boot mode ");
+	s14_text_dec(&t, opxy_testos_entry[OPXY_TESTOS_E_BMODE]);
+	s14_text_str(&t, (opxy_testos_entry[OPXY_TESTOS_E_DEVICE] & OPXY_TESTOS_BY_STRAP) != 0u ?
+			 " (main CPU by PA2)" : "");
+	s14_text_str(&t, ", first stage n ");
+	s14_text_dec(&t, m->fs_n);
+	s14_text_str(&t, " c ");
+	s14_text_hex(&t, m->fs_c, 8u);
 	emit(m, &t);
 
 	/* S-01.006: 0x12345678 and the reset time when the first stage's
@@ -900,7 +916,7 @@ void opxy_testos_slave_bringup(struct opxy_master *m)
 bool opxy_testos_mem_ok(uint32_t addr, uint32_t len, bool write)
 {
 	const uint64_t end = (uint64_t)addr + len;
-	const bool image = addr >= OPXY_TESTOS_IMAGE_START && end <= OPXY_TESTOS_HEAP_END;
+	const bool image = addr >= OPXY_TESTOS_RUN_START && end <= OPXY_TESTOS_RUN_HEAP_END;
 	const bool mmr = addr >= 0x20000000u && end <= 0x30000000u;
 	const bool core = addr >= 0x1FC00000u && end <= 0x20000000u;
 	const bool otp = addr < 0x20076000u && end > 0x20075000u;

@@ -34,10 +34,11 @@
 // Parsing (fields under the Python tool's names; byte strings are Uint8Array)
 //   parseHello(payload) -> { proto, front_version, max_data, why, own_desc, version: [4], pin }
 //   parseInfo(payload) -> info = {
-//       v6, v11, why, running, sel_index, sel_verified, target, refusal, phase, len, got, progress,
+//       v6, v11, v20, why, running, sel_index, sel_verified, target, refusal, phase, len, got, progress,
 //       result, image_rc, written, established, selector_ok, own_desc, moved, spoiled, held,
 //       read_error, unsettled, run_way, run_refusal, way, batt, count, act, tier,
-//       acts: [4] | null, forced: [4] | null, keep, refused, version: [4], pin, readback,
+//       acts: [4] | null, forced: [4] | null, keep, refused, device, dev_how, fs_n, fs_c (null
+//       before front 20), version: [4], pin, readback,
 //       slots: [2 x { good, has_desc, has_front, tried, started, te_prefix, length, crc, version: [4],
 //                     front_crc, pin }] }
 //       front (the front's version) is added by getInfo(); set it yourself on a parsed payload.
@@ -407,9 +408,9 @@ export function parseHello(p) {
 export function parseInfo(p) {
     if (p.length < W.INFO_V5)
         throw new Failure(`INFO reply too short (${p.length} bytes)`);
-    const v6 = p.length >= W.INFO_V6, v11 = p.length >= W.INFO_V11;
+    const v6 = p.length >= W.INFO_V6, v11 = p.length >= W.INFO_V11, v20 = p.length >= W.INFO_V20;
     const flags = p[1];
-    const i = { v6, v11, why: p[0], running: p[2], sel_index: p[3], sel_verified: p[4],
+    const i = { v6, v11, v20, why: p[0], running: p[2], sel_index: p[3], sel_verified: p[4],
         target: p[5], refusal: p[6], phase: p[7], len: u32(p, 8), got: u32(p, 12),
         progress: u16(p, 16), result: p[18], image_rc: p[19], written: p[20],
         established: !!(flags & W.F_ESTABLISHED), selector_ok: !!(flags & W.F_SELECTOR),
@@ -422,6 +423,8 @@ export function parseInfo(p) {
         acts: v11 ? Array.from(p.subarray(222, 226)) : null,     // by enum fr_act, from 1
         forced: v11 ? Array.from(p.subarray(226, 230)) : null,
         keep: v11 ? p[230] : NO_SLOT, refused: v11 ? p[231] : 0,
+        device: v20 ? p[232] : null, dev_how: v20 ? p[233] : null, fs_n: v20 ? u32(p, 234) : null,
+        fs_c: v20 ? u32(p, 238) : null,
         version: versionAt(p, 21), pin: p.slice(29, 61), readback: p.slice(61, 93), slots: [] };
     for (let k = 0; k < 2; k++) {
         const o = 93 + 53 * k, sf = p[o];
@@ -484,6 +487,8 @@ export function describe(i) {
     return {
         why: W.WHY[i.why] || `reason ${i.why}`,
         frontVersion: i.front || 0,
+        device: i.v20 ? { name: W.DEVICES[i.device] || `device ${i.device}`, identified: i.dev_how === 0,
+            n: i.fs_n, c: i.fs_c } : null,
         running: a,
         established: i.established,
         selector: { read: i.selector_ok, slot: sel, verified: i.selector_ok ? i.sel_verified : null,

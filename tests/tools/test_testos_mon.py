@@ -30,6 +30,14 @@ class Codec(unittest.TestCase):
     def test_unframe_rejects_junk(self):
         self.assertIsNone(m.unframe(b'\x01\x02\x03'))
 
+    def test_carrier_by_device(self):
+        """S-10c.020's carrier names device.midi_byte (S-18.030): 0x21 on the OP-XY, 0x02 on the OP-1F."""
+        self.assertEqual(m.carrier_for('xy'), m.CARRIER)
+        self.assertEqual(m.carrier_for('1f'), bytes([0xF0, 0x00, 0x20, 0x76, 0x02, 0x66]))
+        self.assertTrue(m.continue_sysex().startswith(m.CARRIER))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(m.main(['testos_mon.py', '--device', 'zz', 'ping']), 2)
+
 
 class Transport(unittest.TestCase):
     def setUp(self):

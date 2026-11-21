@@ -12,6 +12,7 @@
 #define EXT_CSD_CACHE_CTRL       33u
 #define EXT_CSD_POWER_OFF_NOTIF  34u
 #define EXT_CSD_BKOPS_EN         163u
+#define EXT_CSD_PART_CONFIG      179u
 
 static bool same(const uint8_t *a, const uint8_t *b, uint32_t n)
 {
@@ -87,9 +88,13 @@ static uint32_t xfer_limit(const struct s03_env *env, uint32_t left)
 /* --- The eMMC --- */
 
 /* S-03.001, S-03.002, S-16.070 */
-bool s03_emmc_supported(uint32_t sec_count, uint32_t erase_group_sectors, uint32_t opt_write)
+bool s03_emmc_supported(const struct wb_device *dev, uint32_t sec_count,
+			uint32_t erase_group_sectors, uint32_t opt_write)
 {
-	return sec_count == S03_USER_SECTORS && erase_group_sectors == S03_GROUP_SECTORS &&
+	const bool count_ok = dev->mem.emmc_sectors_at_least ? sec_count >= dev->mem.emmc_sectors
+							      : sec_count == dev->mem.emmc_sectors;
+
+	return count_ok && erase_group_sectors == S03_GROUP_SECTORS &&
 	       opt_write != 0u && 8u % opt_write == 0u;
 }
 
@@ -123,6 +128,68 @@ int s03_emmc_shutdown(const struct s03_env *env, int (*unmount)(void *ctx), void
 	if (do_switch(env, EXT_CSD_POWER_OFF_NOTIF, 0x03u) != 0)	/* POWER_OFF_LONG */
 		rc = -1;
 	return rc;
+}
+
+uint32_t s03_power_off_limit_ms(uint8_t power_off_long_time)
+{
+	return 10u * (power_off_long_time != 0u ? power_off_long_time : 0xFFu);
+}
+
+/*
+ * S-03.013. The notification is the last command: a retry follows only a
+ * command that failed, not a wait that ran out.
+ */
+int s03_emmc_shutdown_1f(const struct s03_env *env, int (*unmount)(void *ctx), void *unmount_ctx,
+			 s03_switch_poll_fn poll, uint8_t power_off_long_time)
+{
+	const uint32_t limit = s03_power_off_limit_ms(power_off_long_time);
+	int rc = 0, r = -1;
+	unsigned i;
+
+	if (do_switch(env, EXT_CSD_FLUSH_CACHE, 0x01u) != 0)
+		rc = -1;
+	if (do_switch(env, EXT_CSD_CACHE_CTRL, 0x00u) != 0)
+		rc = -1;
+	if (unmount != NULL && unmount(unmount_ctx) != 0)
+		rc = -1;
+	for (i = 0; i < S03_RETRIES && poll != NULL; i++) {
+		r = poll(env->ops->ctx, EXT_CSD_POWER_OFF_NOTIF, 0x03u, limit);
+		if (r >= 0)
+			break;
+	}
+	if (r != 0)
+		rc = -1;
+	return rc;
+}
+
+/* S-03.012 */
+bool s03_select_value(uint8_t cur, unsigned part, uint8_t *value)
+{
+	if ((unsigned)(cur & 0x07u) == part)
+		return false;
+	*value = (uint8_t)((cur & 0xF8u) | (part & 0x07u));
+	return true;
+}
+
+int s03_select_keep(struct s03_select_keep *k, unsigned part)
+{
+	uint8_t v;
+
+	if (part > S03_PART_BP2)
+		return -1;
+	if (!k->known) {
+		if (k->read_part_config(k->ctx, &k->cur) != 0)
+			return -1;
+		k->known = true;
+	}
+	if (!s03_select_value(k->cur, part, &v))
+		return 0;		/* selected without a command */
+	if (k->switch_byte(k->ctx, EXT_CSD_PART_CONFIG, v) != 0) {
+		k->known = false;	/* what the eMMC holds now is not known */
+		return -1;
+	}
+	k->cur = v;
+	return 0;
 }
 
 /* --- The header --- */
@@ -618,6 +685,26 @@ enum s03_region s03_user_region(uint32_t sector)
 }
 
 /* S-03.072 */
+enum s03_region s03_user_region_dev(const struct wb_device *dev, uint32_t sector)
+{
+	if (!wb_has(dev, WB_F_FAT_REGION) && sector >= S03_UNUSED_FIRST)
+		return S03_REGION_NONE;
+	return s03_user_region(sector);
+}
+
+bool s03_user_access_ok(const struct wb_device *dev, uint32_t first, uint32_t count)
+{
+	const uint32_t last = first + count - 1u;
+
+	if (count == 0u || last < first)
+		return false;
+	if (last <= S03_YAFFS2_LAST)
+		return true;
+	return wb_has(dev, WB_F_FAT_REGION) &&
+	       first >= S03_FACTORY_RESET_GROUP * S03_GROUP_SECTORS &&
+	       last < (S03_FACTORY_RESET_GROUP + 1u) * S03_GROUP_SECTORS;
+}
+
 uint32_t s03_fat_volume_to_user(uint32_t s)
 {
 	return s < S03_FAT_FIRST ? s + S03_FAT_SECTORS : s;

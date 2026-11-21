@@ -63,34 +63,44 @@ def main():
     lines.append(' * GREETING: len, data. INFO: the expected entry. */')
     lines.append('struct s17v_event { enum s17v_kind kind; unsigned a, b; size_t len; '
                  'uint8_t data[8]; const char *entry; };')
-    names = []
-    for s in seqs['sequences']:
-        ident = 's17v_seq_' + s['name']
-        names.append((s['name'], ident))
-        lines.append('static const struct s17v_event %s[] = {' % ident)
-        infos = iter(s['info_entries'])
-        for ev in s['events']:
-            k = ev[0]
-            if k == 'power_on':
-                lines.append('\t{ S17V_POWER_ON, %d, %d, 0, { 0 }, NULL },' % (ev[1], ev[2]))
-            elif k == 'metadata_read':
-                lines.append('\t{ S17V_META_READ, 0, 0, 0, { 0 }, NULL },')
-            elif k == 'metadata_read_failed':
-                lines.append('\t{ S17V_META_FAILED, %d, 0, 0, { 0 }, NULL },' % (ev[1] == 'record'))
-            elif k == 'greeting':
-                p = ev[1]
-                assert len(p) <= 8
-                data = ', '.join('0x%02x' % b for b in p) or '0'
-                lines.append('\t{ S17V_GREETING, 0, 0, %d, { %s }, NULL },' % (len(p), data))
-            elif k == 'info':
-                lines.append('\t{ S17V_INFO, 0, 0, 0, { 0 }, %s },' % c_str(next(infos)))
-            else:
-                raise ValueError(k)
-        lines.append('\t{ S17V_END, 0, 0, 0, { 0 }, NULL },')
-        lines += ['};']
+    def emit(seq_list, prefix):
+        names = []
+        for s in seq_list:
+            ident = prefix + s['name']
+            names.append((s['name'], ident))
+            lines.append('static const struct s17v_event %s[] = {' % ident)
+            infos = iter(s['info_entries'])
+            for ev in s['events']:
+                k = ev[0]
+                if k == 'power_on':
+                    pa = (ev[1], ev[2]) if len(ev) > 1 else (0, 0)   # no strap sample: S-17.016
+                    lines.append('\t{ S17V_POWER_ON, %d, %d, 0, { 0 }, NULL },' % pa)
+                elif k == 'metadata_read':
+                    lines.append('\t{ S17V_META_READ, 0, 0, 0, { 0 }, NULL },')
+                elif k == 'metadata_read_failed':
+                    lines.append('\t{ S17V_META_FAILED, %d, 0, 0, { 0 }, NULL },' % (ev[1] == 'record'))
+                elif k == 'greeting':
+                    p = ev[1]
+                    assert len(p) <= 8
+                    data = ', '.join('0x%02x' % b for b in p) or '0'
+                    lines.append('\t{ S17V_GREETING, 0, 0, %d, { %s }, NULL },' % (len(p), data))
+                elif k == 'info':
+                    lines.append('\t{ S17V_INFO, 0, 0, 0, { 0 }, %s },' % c_str(next(infos)))
+                else:
+                    raise ValueError(k)
+            lines.append('\t{ S17V_END, 0, 0, 0, { 0 }, NULL },')
+            lines.append('};')
+        return names
+
+    names = emit(seqs['sequences'], 's17v_seq_')
+    no_strap = emit(seqs.get('no_strap_sequences', []), 's17v_nostrap_')
     lines.append('struct s17v_seq { const char *name; const struct s17v_event *ev; };')
     lines.append('static const struct s17v_seq s17v_seqs[] = {')
     lines += ['\t{ %s, %s },' % (c_str(n), i) for n, i in names]
+    lines += ['};', '']
+    lines.append('/* no_strap_sequences: S-17.016, a device without straps */')
+    lines.append('static const struct s17v_seq s17v_nostrap_seqs[] = {')
+    lines += ['\t{ %s, %s },' % (c_str(n), i) for n, i in no_strap]
     lines += ['};', '']
     lines.append('struct s17v_log { unsigned byte; const char *hex; };')
     lines.append('static const struct s17v_log s17v_logs[] = {')

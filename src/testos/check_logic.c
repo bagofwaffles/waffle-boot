@@ -127,6 +127,8 @@ void tchk_table_init(struct tchk_table *t)
 		tchk_text_init(&t->r[i].detail, TCHK_DETAIL_COLS);
 		tchk_text_init(&t->r[i].more, TCHK_MORE_MAX);
 	}
+	for (i = 0; i < 2u; i++)
+		tchk_text_init(&t->emmc_fault[i], TCHK_MORE_MAX);
 }
 
 struct tchk_text *tchk_set(struct tchk_table *t, enum tchk_id id, enum tchk_state s)
@@ -145,7 +147,7 @@ enum tchk_verdict tchk_verdict(const struct tchk_table *t)
 	for (i = 0; i < TCHK_COUNT; i++) {
 		const uint8_t s = t->r[i].state;
 
-		if (tchk_tests[i].kind == TCHK_KIND_OS)
+		if (tchk_tests[i].kind == TCHK_KIND_OS || s == TCHK_NOT_ON_DEVICE)
 			continue;
 		if (s == TCHK_FAIL || s == TCHK_NOT_PASSED)
 			return TCHK_VERDICT_FAIL;
@@ -171,6 +173,8 @@ const char *tchk_state_word(enum tchk_state s)
 		return "not tested";
 	case TCHK_NOT_PASSED:
 		return "not passed";
+	case TCHK_NOT_ON_DEVICE:
+		return "n/a";
 	case TCHK_NOT_RUN:
 	default:
 		return "not run";
@@ -352,6 +356,28 @@ void tchk_regs_judge(const struct opxy_testos_reg *rows, unsigned n, const uint3
 static bool ran(const struct tchk_facts *f, enum tchk_id id)
 {
 	return (f->ran >> id & 1u) != 0u;
+}
+
+static const struct wb_device *dev_of(const struct tchk_facts *f)
+{
+	return f->dev != NULL ? f->dev : &wb_device_opxy;
+}
+
+/* The slave and its bridge are parts of the OP-XY alone (S-18.020). */
+static bool two_cpus(const struct tchk_facts *f)
+{
+	return wb_has(dev_of(f), WB_F_SECOND_CPU);
+}
+
+/* An eMMC test that could not run because the eMMC is out of reach. */
+static const char *no_emmc(const struct tchk_facts *f)
+{
+	return two_cpus(f) ? "no slave" : "the eMMC did not come up";
+}
+
+static void not_on_device(struct tchk_table *t, enum tchk_id id)
+{
+	tchk_put_str(tchk_set(t, id, TCHK_NOT_ON_DEVICE), "not on this device");
 }
 
 /* An automatic test whose facts are not in: why. */
@@ -591,7 +617,9 @@ static void put_version(struct tchk_text *d, const uint8_t *reply, size_t len)
 static void judge_psoc(const struct tchk_facts *f, struct tchk_table *t)
 {
 	const bool greeted = f->psoc_greeted || f->psoc_asked;
-	const bool ok = greeted && f->psoc_ping && f->psoc_keys && f->psoc_battery;
+	/* the ping 0x01 is pmic-pass-through's (S-07 Devices): not sent elsewhere */
+	const bool pinged = !wb_has(dev_of(f), WB_F_PMIC_PASS_THROUGH) || f->psoc_ping;
+	const bool ok = greeted && pinged && f->psoc_keys && f->psoc_battery;
 	struct tchk_text *d;
 
 	if (!ran(f, TCHK_PSOC)) {
@@ -600,11 +628,12 @@ static void judge_psoc(const struct tchk_facts *f, struct tchk_table *t)
 	}
 	d = tchk_set(t, TCHK_PSOC, ok ? TCHK_PASS : TCHK_FAIL);
 	if (ok) {
-		tchk_put_str(d, "greeting, ping, keys, battery answered");
+		tchk_put_str(d, pinged && f->psoc_ping ? "greeting, ping, keys, battery answered" :
+				"greeting, keys, battery answered");
 	} else {
 		tchk_put_str(d, "no answer:");
 		tchk_put_str(d, greeted ? "" : " greeting");
-		tchk_put_str(d, f->psoc_ping ? "" : " ping");
+		tchk_put_str(d, pinged ? "" : " ping");
 		tchk_put_str(d, f->psoc_keys ? "" : " keys");
 		tchk_put_str(d, f->psoc_battery ? "" : " battery");
 	}
@@ -624,6 +653,10 @@ static void judge_psoc(const struct tchk_facts *f, struct tchk_table *t)
 
 static void judge_slave(const struct tchk_facts *f, struct tchk_table *t)
 {
+	if (!two_cpus(f)) {
+		not_on_device(t, TCHK_SLAVE);
+		return;
+	}
 	if (!f->slave) {
 		tchk_put_str(tchk_set(t, TCHK_SLAVE, TCHK_FAIL), "no answer over the bridge");
 		return;
@@ -653,6 +686,10 @@ static void judge_bridge(const struct tchk_facts *f, struct tchk_table *t)
 	struct tchk_text *d;
 	const bool ok = f->link_bad == 0u && f->link_err == 0u && f->link_bytes >= 0x800000u;
 
+	if (!two_cpus(f)) {
+		not_on_device(t, TCHK_BRIDGE);
+		return;
+	}
 	if (!f->slave) {
 		not_tested(t, TCHK_BRIDGE, "no slave");
 		return;
@@ -682,25 +719,31 @@ static void judge_bridge(const struct tchk_facts *f, struct tchk_table *t)
 /* emmc-config: the first value S-03 fixes that differs, or none. */
 static void judge_ext(const struct tchk_facts *f, struct tchk_table *t)
 {
+	const struct wb_device *dev = dev_of(f);
 	struct tchk_text *d;
 	const char *what = NULL;
+	/* S-13b.051, S-13b.061: the bus width switched to, 2 for 8 lines,
+	 * 1 for 4 */
+	const unsigned width = dev->mem.emmc_width == 4u ? 1u : 2u;
 
 	if (!f->slave) {
-		not_tested(t, TCHK_EMMC_CONFIG, "no slave");
+		not_tested(t, TCHK_EMMC_CONFIG, no_emmc(f));
 		return;
 	}
 	if (!ran(f, TCHK_EMMC_CONFIG) || !f->ext_read) {
 		not_tested(t, TCHK_EMMC_CONFIG, "EXT_CSD not read");
 		return;
 	}
-	if (f->sec_count != S03_USER_SECTORS)
+	/* S-03.001: device.emmc_sectors, exactly or at least */
+	if (dev->mem.emmc_sectors_at_least ? f->sec_count < dev->mem.emmc_sectors :
+					     f->sec_count != dev->mem.emmc_sectors)
 		what = "SEC_COUNT";				/* S-03.001 */
 	else if (f->erase_group != S03_GROUP_SECTORS)
 		what = "erase group";				/* S-03.001 */
 	else if (f->ext265 == 0u || 8u % f->ext265 != 0u)
 		what = "OPTIMAL_WRITE_SIZE [265]";		/* S-03.001 */
-	else if (f->ext183 != 2u)
-		what = "BUS_WIDTH [183]";			/* S-13b.051 */
+	else if (f->ext183 != width)
+		what = "BUS_WIDTH [183]";			/* S-13b.051, S-13b.061 */
 	/*
 	 * S-03.009's bytes 33, 34 and 163 are set by switches before the
 	 * first user-area read, after the bring-up's EXT_CSD read; 33 and 34
@@ -731,6 +774,8 @@ static void judge_ext(const struct tchk_facts *f, struct tchk_table *t)
 	tchk_put_hex(d, f->ext34, 2u);
 	tchk_put_str(d, " [163] ");
 	tchk_put_hex(d, f->ext163, 2u);
+	tchk_put_str(d, " [179] ");
+	tchk_put_hex(d, f->ext179, 2u);
 	tchk_put_str(d, " [183] ");
 	tchk_put_hex(d, f->ext183, 2u);
 	tchk_put_str(d, " [226] ");
@@ -741,14 +786,130 @@ static void judge_ext(const struct tchk_facts *f, struct tchk_table *t)
 	tchk_put_str(d, f->features ? "set since" : "not set");
 }
 
+static const char *const fault_step[TCHK_FS_COUNT] = {
+	[TCHK_FS_NONE] = "no driver fault",
+	[TCHK_FS_ARG] = "refused (argument or buffer)",
+	[TCHK_FS_OFF] = "after the power-off notice",
+	[TCHK_FS_CMD] = "no good response",
+	[TCHK_FS_R1] = "R1 error",
+	[TCHK_FS_BUSY] = "DAT0 busy",
+	[TCHK_FS_SWITCH] = "SWITCH_ERROR",
+	[TCHK_FS_STATE] = "not ready in tran",
+	[TCHK_FS_DATA] = "data error",
+	[TCHK_FS_DATA_TIME] = "data timeout",
+};
+
+static void put_part(struct tchk_text *d, uint8_t part)
+{
+	tchk_put_str(d, part == 0u ? "user" : part == 1u ? "BP1" : part == 2u ? "BP2" : "?");
+}
+
+static void put_pc(struct tchk_text *d, const struct tchk_emmc_fault *e, uint8_t bit, uint8_t v)
+{
+	if ((e->pc_flags & bit) != 0u)
+		tchk_put_hex(d, v, 2u);
+	else
+		tchk_put_str(d, "-");
+}
+
+/* One fault line: where the request stopped, then the driver's record. */
+static void put_fault(struct tchk_text *d, const struct tchk_emmc_fault *e, bool select)
+{
+	tchk_put_str(d, select ? "select " : "read ");
+	put_part(d, e->part);
+	if (!select) {
+		tchk_put_str(d, " ");
+		tchk_put_hex(d, e->sector, 1u);
+		tchk_put_str(d, "+");
+		tchk_put_dec(d, e->count);
+	}
+	tchk_put_str(d, ": ");
+	if (e->why == TCHK_FW_UNKNOWN) {
+		tchk_put_str(d, "no partition known since a failed select");
+		return;
+	}
+	if (e->why == TCHK_FW_REFUSED && e->step == TCHK_FS_NONE) {
+		tchk_put_str(d, "refused by the store");
+		return;
+	}
+	if (e->why == TCHK_FW_DOWN)
+		tchk_put_str(d, "eMMC not up; ");
+	tchk_put_str(d, "CMD");
+	tchk_put_dec(d, e->cmd);
+	tchk_put_str(d, " ");
+	tchk_put_hex(d, e->arg, 8u);
+	tchk_put_str(d, ", at CMD");
+	tchk_put_dec(d, e->at);
+	tchk_put_str(d, " ");
+	tchk_put_str(d, e->step < TCHK_FS_COUNT ? fault_step[e->step] : "?");
+	tchk_put_str(d, ", rc ");
+	if (e->rc < 0) {
+		tchk_put_str(d, "-");
+		tchk_put_dec(d, (uint32_t)(-(int32_t)e->rc));
+	} else {
+		tchk_put_dec(d, (uint32_t)e->rc);
+	}
+	tchk_put_str(d, ", r1 ");
+	tchk_put_hex(d, e->r1, 8u);
+	tchk_put_str(d, ", state ");
+	if (e->state == 0xFFu)
+		tchk_put_str(d, "-");
+	else
+		tchk_put_dec(d, e->state);
+	tchk_put_str(d, ", is ");
+	tchk_put_hex(d, e->istat, 8u);
+	tchk_put_str(d, ", ids ");
+	tchk_put_hex(d, e->idsts, 8u);
+	tchk_put_str(d, ", busy ");
+	tchk_put_dec(d, e->busy_us);
+	tchk_put_str(d, " us");
+	if (select) {
+		tchk_put_str(d, ", [179] ");
+		put_pc(d, e, TCHK_PC_BEFORE, e->pc_before);
+		tchk_put_str(d, " then ");
+		put_pc(d, e, TCHK_PC_AFTER, e->pc_after);
+	}
+}
+
+static void fault_put32(uint8_t *o, uint32_t v)
+{
+	o[0] = (uint8_t)v;
+	o[1] = (uint8_t)(v >> 8);
+	o[2] = (uint8_t)(v >> 16);
+	o[3] = (uint8_t)(v >> 24);
+}
+
+void tchk_fault_bytes(const struct tchk_emmc_fault *e, uint8_t out[TCHK_FAULT_BYTES])
+{
+	const uint32_t w[7] = { e->sector, e->count, e->arg, e->r1, e->istat, e->idsts, e->busy_us };
+	unsigned i;
+
+	memset(out, 0, TCHK_FAULT_BYTES);
+	if (!e->seen)
+		return;
+	out[0] = 1u;
+	out[1] = e->part;
+	out[2] = e->why;
+	out[3] = e->pc_flags;
+	out[4] = e->pc_before;
+	out[5] = e->pc_after;
+	out[6] = e->step;
+	out[7] = e->cmd;
+	out[8] = e->at;
+	out[9] = e->state;
+	out[10] = (uint8_t)e->rc;
+	for (i = 0; i < 7u; i++)
+		fault_put32(out + 12u + 4u * i, w[i]);
+}
+
 static void judge_emmc(const struct tchk_facts *f, struct tchk_table *t)
 {
 	struct tchk_text *d;
 
 	if (!f->slave) {
-		not_tested(t, TCHK_EMMC_BOOT, "no slave");
-		not_tested(t, TCHK_EMMC_VOLUME, "no slave");
-		not_tested(t, TCHK_EMMC_FILE, "no slave");
+		not_tested(t, TCHK_EMMC_BOOT, no_emmc(f));
+		not_tested(t, TCHK_EMMC_VOLUME, no_emmc(f));
+		not_tested(t, TCHK_EMMC_FILE, no_emmc(f));
 		return;
 	}
 	if (!ran(f, TCHK_EMMC_BOOT) || !f->boot.run) {
@@ -789,6 +950,11 @@ static void judge_emmc(const struct tchk_facts *f, struct tchk_table *t)
 			tchk_put_str(d, "; image not checked: a read inside it failed");
 		else if (!f->boot.mine_checked && f->boot.unchecked == TCHK_UNCHECKED_NO_IMAGE)
 			tchk_put_str(d, "; image not checked: no sound active header");
+	}
+	for (unsigned k = 0; k < 2u; k++) {
+		tchk_text_init(&t->emmc_fault[k], TCHK_MORE_MAX);
+		if (f->emmc_fault[k].seen)
+			put_fault(&t->emmc_fault[k], &f->emmc_fault[k], k == 0u);
 	}
 
 	if (!ran(f, TCHK_EMMC_VOLUME)) {
@@ -946,7 +1112,7 @@ static void judge_timing(const struct tchk_facts *f, struct tchk_table *t)
 	tchk_put_dec(d, f->held_ms);
 	tchk_put_str(d, " ms after entry");
 	d = &t->r[TCHK_TIMING].more;
-	if (f->slave) {
+	if (f->slave && two_cpus(f)) {
 		tchk_put_str(d, "slave, ms after its server: ");
 		for (unsigned i = 0; i < sizeof rows / sizeof rows[0]; i++) {
 			tchk_put_str(d, rows[i].name);
@@ -959,7 +1125,7 @@ static void judge_timing(const struct tchk_facts *f, struct tchk_table *t)
 	}
 	tchk_put_str(d, "flash ");
 	tchk_put_rate(d, f->flash_bytes, f->flash_us);
-	if (f->slave) {
+	if (f->slave && two_cpus(f)) {
 		tchk_put_str(d, ", bridge ");
 		tchk_put_rate(d, f->link_bytes, f->link_us);
 	}
@@ -967,11 +1133,14 @@ static void judge_timing(const struct tchk_facts *f, struct tchk_table *t)
 
 static void judge_guided(const struct tchk_facts *f, struct tchk_table *t)
 {
+	/* com on every device; the recovery key by name on the OP-XY alone */
+	const bool xy = dev_of(f)->id == WB_DEV_OPXY;
 	struct tchk_text *d;
 
 	switch (f->keys) {
 	case TCHK_G_PASSED:
-		tchk_put_str(tchk_set(t, TCHK_KEYS, TCHK_PASS), "com and M4 pressed");
+		tchk_put_str(tchk_set(t, TCHK_KEYS, TCHK_PASS),
+			     xy ? "com and M4 pressed" : "com and the recovery key pressed");
 		break;
 	case TCHK_G_EARLIER:
 		tchk_put_str(tchk_set(t, TCHK_KEYS, TCHK_PASS),
@@ -980,8 +1149,10 @@ static void judge_guided(const struct tchk_facts *f, struct tchk_table *t)
 	case TCHK_G_ENDED:
 		d = tchk_set(t, TCHK_KEYS, TCHK_NOT_TESTED);
 		tchk_put_str(d, "ended with 8; ");
-		tchk_put_str(d, (f->keys_seen & 1u) ? "com pressed" : "com not pressed");
-		tchk_put_str(d, (f->keys_seen & 2u) ? ", M4 pressed" : ", M4 not pressed");
+		tchk_put_str(d, "com");
+		tchk_put_str(d, (f->keys_seen & 1u) ? " pressed, " : " not pressed, ");
+		tchk_put_str(d, xy ? "M4" : "recovery key");
+		tchk_put_str(d, (f->keys_seen & 2u) ? " pressed" : " not pressed");
 		break;
 	default:
 		not_tested(t, TCHK_KEYS, "not run");
@@ -1153,6 +1324,13 @@ size_t tchk_report(const struct tchk_table *t, const struct tchk_switch *sw, con
 		if (r->more.n != 0u) {
 			emit_pad(&o, "", 26u);
 			emit(&o, r->more.s);
+			emit(&o, "\n");
+		}
+		for (k = 0; i == TCHK_EMMC_BOOT && k < 2u; k++) {
+			if (t->emmc_fault[k].n == 0u)
+				continue;
+			emit_pad(&o, "", 26u);
+			emit(&o, t->emmc_fault[k].s);
 			emit(&o, "\n");
 		}
 	}

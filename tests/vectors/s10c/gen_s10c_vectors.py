@@ -210,11 +210,14 @@ def main():
     for v in inf['info']:
         f = v['fields']
         otp = f['dsp_otp']
-        rows.append('{ %s, %s, %d, %s, %d, %d, { %s }, { %s }, { %s }, %d, %s }' % (
+        dev = 1 if v.get('device') == 'OP-1F' else 0
+        if v.get('how') == 'unknown':
+            dev = 0                     # S-18.004: the default device's values
+        rows.append('{ %s, %s, %d, %s, %d, %d, { %s }, { %s }, { %s }, %d, %s, %d, %d }' % (
             c_str(v['name']), c_str(f['serial']), otp is not None, blob.ref(h(otp) if otp else b''),
             f['hw_rev'], f['sku'], ', '.join(map(str, f['sw_version'])),
             ', '.join(map(str, f['bl_version'])), ', '.join(map(str, f['os_version'])), f['factory'],
-            c_str(v['text'])))
+            c_str(v['text']), dev, v.get('how') == 'unknown'))
     table('s10cv_info', 'struct s10cv_info', rows)
     table('s10cv_te_code', 'struct s10cv_te_code',
           ['{ 0x%08xu, %d, %s }' % (int(v['word'], 16), v['passes'], c_str(v['code']))
@@ -267,7 +270,8 @@ def main():
              '\tunsigned route, id; struct s10cv_ref payload; int prefix; };',
              'struct s10cv_info { const char *name; const char *serial; int dsp_ok;',
              '\tstruct s10cv_ref dsp_otp; unsigned hw_rev, sku; unsigned sw[4], bl[4], os[4];',
-             '\tunsigned factory; const char *text; };',
+             '\tunsigned factory; const char *text;',
+             '\tint device; int unknown; };	/* device: 0 the OP-XY, 1 the OP-1F (S-18) */',
              'struct s10cv_te_code { uint32_t word; int passes; const char *code; };',
              '/* S-10c.045 service: id; cls 0 claimed by the coprocessor, 1 a reply,',
              ' * 2 served with no reply, 3 not served. Progress: id is the route. */',

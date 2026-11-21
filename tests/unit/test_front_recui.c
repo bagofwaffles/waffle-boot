@@ -6,7 +6,8 @@
  * come, or shows two keys, arms nothing and disarms. Key 1 opens the slot
  * menu; there 1 to 4 choose an action, each only where it is offered, and
  * 8 goes back; on the confirm screen key 1 read down alone in every reading
- * for 5 s starts the action, and anything else empties the bar.
+ * for 5 s starts the action, and anything else empties the bar. On the
+ * OP-1F the same keys 1 to 4 and its own Back (S-18.030).
  */
 #include <string.h>
 
@@ -325,6 +326,45 @@ static void test_offers(void)
 	}
 }
 
+/* The OP-1F (S-18.030): keys 1 to 4 are the same keys; 8 (Back) is 0x14,
+ * and the OP-XY's 0x15 is no key of the menu there. fr_ui_reset() keeps
+ * the device. */
+static void test_op1f_keys(void)
+{
+	base();
+	ui.dev = &fr_dev_op1f;
+	fr_ui_reset(&ui);
+	CHECK(ui.dev == &fr_dev_op1f);
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(FR_KEY_1, NULL));
+	CHECK(ui.screen == FR_UI_SLOTS);
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(0x15u, NULL));		/* the OP-XY's Back: nothing here */
+	CHECK(ui.screen == FR_UI_SLOTS);
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(0x14u, NULL));
+	CHECK(ui.screen == FR_UI_MAIN);
+	/* to the confirm screen and back with 0x14 */
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(FR_KEY_1, NULL));
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(FR_KEY_2, NULL));
+	CHECK(ui.screen == FR_UI_CONFIRM && ui.act == FR_ACT_SWITCH);
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(0x14u, NULL));
+	CHECK(ui.screen == FR_UI_SLOTS);
+	/* and on the OP-XY 0x14 is no Back */
+	base();
+	ui.dev = &fr_dev_opxy;
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(FR_KEY_1, NULL));
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(0x14u, NULL));
+	CHECK(ui.screen == FR_UI_SLOTS);
+	CHECK(fr_dev_opxy.key_back == FR_KEY_8);
+	ui.dev = NULL;
+}
+
 int main(void)
 {
 	RUN(test_gate_entry);
@@ -332,5 +372,6 @@ int main(void)
 	RUN(test_hold);
 	RUN(test_hold_broken);
 	RUN(test_offers);
+	RUN(test_op1f_keys);
 	return check_summary("test_front_recui");
 }

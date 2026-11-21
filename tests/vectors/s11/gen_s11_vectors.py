@@ -8,9 +8,9 @@ The test reads the package files under tests/oracle/S-11-packages/vectors/pkg/
 at run time; this header carries their expectations and the conformance test
 keys. For each package the generator records the digest, r and s the
 implementation must pass to its P-224 verifier and the verdict the
-conformance package's verifier (images.p224) gives. Zips are pre-parsed with
-Python's zipfile into member tables, standing in for the zip reader
-(S-11.030-S-11.035).
+conformance package's verifier (images.p224) gives, and the signature state
+(S-11.021). Zips are pre-parsed with Python's zipfile into member tables,
+standing in for the zip reader (S-11.030-S-11.035).
 """
 import hashlib
 import io
@@ -113,38 +113,51 @@ def main():
         body.append('')
 
     # ---- keys (conformance test keys only, S-11.025)
-    k0, _, q0 = tfw.test_keys()
+    k0, d, q0 = tfw.test_keys()
     k1 = tfw.test_keys(b'opxy-conformance-k1')[0]
     qx, qy = q0
     body.append('static const uint8_t s11v_k0[32] = %s;' % c_bytes(k0))
     body.append('static const uint8_t s11v_k1[32] = %s;' % c_bytes(k1))
     body.append('static const uint8_t s11v_q0[56] = %s;' % c_bytes(
         qx.to_bytes(28, 'big') + qy.to_bytes(28, 'big')))
+    body.append('/* the test signing key whose public key is s11v_q0, for packages a test builds */')
+    body.append('static const uint8_t s11v_d[28] = %s;' % c_bytes(d.to_bytes(28, 'big')))
     body.append('')
 
-    # ---- packages.json: S-11.001-S-11.025, S-11.047, S-11.055
-    pk = load('packages.json')
-    rows = []
-    for c in pk['cases']:
+    # ---- packages.json: S-11.001-S-11.025, S-11.047, S-11.055; the OP-1F's packages_1f.json
+    # (S-11.026, S-11.007)
+    def package_rows(pk):
+        rows = []
+        for c in pk['cases']:
+            rows.append(package_row(c))
+        return rows
+
+    sig_no = {None: -1, 'none': 0, 'invalid': 1, 'valid': 2}     # enum s11_sig
+
+    def package_row(c):
         with open(os.path.join(SPEC, 'vectors', c['file']), 'rb') as f:
             data = f.read()
         e, u = c['expect'], c['unit']
         o = 0x40 if c['form'] == 'file' else 0
         man = data[o + 0x40:o + 0x40 + 0x300]
         sig = None
-        if len(man) == 0x300 and u['q0'] == 'test':
+        # S-11.012: what a verifier is given for a signature that is present, the key index 0x00 and Q0 read;
+        # a plain package (S-11.027) has none
+        if (len(man) == 0x300 and u['q0'] == 'test' and not e.get('plain') and any(man[0x10:0x50])
+                and man[0x89] == 0x00):
             digest = hashlib.sha256(man[:0x10] + bytes(0x40) + man[0x50:]).digest()
             r, s = man[0x14:0x30], man[0x34:0x50]
             ok = p224.verify(q0, digest, int.from_bytes(r, 'big'), int.from_bytes(s, 'big'))
             sig = (digest, r, s, ok)
         zsha = bytes.fromhex(e['zip_sha256']) if e.get('zip_sha256') else None
-        rows.append('{ %s, %s, %d, %d, %s, %d, %d, %d, %d, %s, %d, %d, %d, %s, %s, %d }' % (
+        return '{ %s, %s, %d, %d, %s, %d, %d, %d, %d, %s, %d, %d, %d, %s, %s, %d }' % (
             c_str(c['case']), c_str(c['file']), c['form'] == 'file', c['link'] == 'cdc',
             c_str(c.get('file_name')), u['q0'] == 'test', u['k0'] == 'test', u['k1'] == 'test_k1',
-            u['option'], reason(e['reason']), int(e.get('te_signed', -1)), int(e.get('forced', -1)),
+            u['option'], reason(e['reason']), sig_no[e.get('signature')], int(e.get('forced', -1)),
             sig is not None, blob.ref(sig[0] + sig[1] + sig[2]) if sig else blob.ref(None),
-            blob.ref(zsha), sig[3] if sig else 0))
-    table('s11v_packages', 'struct s11v_package', rows)
+            blob.ref(zsha), sig[3] if sig else 0)
+    table('s11v_packages', 'struct s11v_package', package_rows(load('packages.json')))
+    table('s11v_packages_1f', 'struct s11v_package', package_rows(load('packages_1f.json')))
 
     # ---- versions.json, crc16.json, product_words.json
     v = load('versions.json')
@@ -161,13 +174,14 @@ def main():
            for p in load('crc16.json')])
     table('s11v_product', 'struct s11v_product',
           ['{ 0x%su, %d }' % (p['word'], p['passes']) for p in load('product_words.json')])
+    table('s11v_product_1f', 'struct s11v_product',
+          ['{ 0x%su, %d }' % (p['word'], p['passes']) for p in load('product_words_1f.json')])
 
-    # ---- the acceptance table: S-11.021-S-11.023
+    # ---- the acceptance table: S-11.023 (check 12)
     rows = []
     for r in s11_model.acceptance_table():
-        rows.append('{ 0x%s, %s, %s, 0x%s, %s, %s, %s, %s, %s, %s }' % (
-            r['sig_key_index'], r['sig_valid'], r['q0_readable'], r['payload_key_index'],
-            r['k0_readable'], r['k1_readable'], r['option'], r['dev_mode'], r['te_signed'],
+        rows.append('{ 0x%s, %s, %s, %s, %s, %s }' % (
+            r['payload_key_index'], r['k0_readable'], r['k1_readable'], r['option'], r['dev_mode'],
             reason(None if r['verdict'] == 'accept' else r['verdict'])))
     table('s11v_acceptance', 'struct s11v_acceptance', rows)
 
@@ -261,13 +275,13 @@ def main():
     rows = []
     for r in tsv('steps.tsv'):
         c = json.loads(r['conditions'])
-        rows.append('{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d }' % (
-            step_no[r['step']], c.get('content_dir', 0), c.get('files', 0), c.get('move_fails', 0),
-            c.get('present', 0), c.get('present0', 0), c.get('present1', 0), c.get('option', 0),
-            c.get('write_ok', 1), rel_no[c.get('rel', 'newer')], c.get('forced', 0), c.get('dev', 0),
-            c.get('in_dfu', 1), c.get('slot', 0), result_code[r['result']], staged_no[c.get('staged', 'ok')],
-            c.get('selected', 1), c.get('switched_on', 1), start_no[c.get('start', 'ok')],
-            c.get('written_here', 0), c.get('slot_matches', 0)))
+        rows.append('{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d }'
+                    % (step_no[r['step']], c.get('content_dir', 0), c.get('files', 0), c.get('move_fails', 0),
+                       c.get('present', 0), c.get('present0', 0), c.get('present1', 0), c.get('option', 0),
+                       c.get('write_ok', 1), rel_no[c.get('rel', 'newer')], c.get('forced', 0), c.get('dev', 0),
+                       c.get('in_dfu', 1), c.get('slot', 0), result_code[r['result']],
+                       staged_no[c.get('staged', 'ok')], c.get('selected', 1), c.get('switched_on', 1),
+                       start_no[c.get('start', 'ok')], c.get('written_here', 0), c.get('slot_matches', 0)))
     table('s11v_steps', 'struct s11v_step', rows)
 
     # ---- picks.tsv: S-11.096
@@ -294,9 +308,13 @@ def main():
 
     # ---- stock.tsv: S-11.091, S-11.092; progress.json: S-11.062
     table('s11v_stock', 'struct s11v_stock',
-          ['{ %s, %s, %s, %s, %s }' % (r['option'], r['te_signed'], r['bootloader_present'],
-                                      r['bootloader_selected'], r['return_to_stock'])
+          ['{ %s, %s, %s, %s, %s, %s }' % (r['option'], r['valid'], r['bootloader_waffle'],
+                                          r['bootloader_present'], r['bootloader_selected'], r['return_to_stock'])
            for r in tsv('stock.tsv') if r['os_form'] == 'plaintext'])
+    # ---- bootloader_kind.json: S-11.091, a waffle-boot build or not
+    table('s11v_bootloader_kinds', 'struct s11v_bootloader_kind',
+          ['{ %s, %s, %d }' % (c_str(c['case']), blob.ref(bytes.fromhex(c['stream'])), c['waffle'])
+           for c in load('bootloader_kind.json')['cases']])
     table('s11v_records', 'struct s11v_record',
           ['{ %d, %d, 0x%s }' % (p['step'], p['count'], p['file_hex']) for p in load('progress.json')])
 
@@ -311,12 +329,15 @@ def main():
                                             blob.ref(bytes.fromhex(tree[path]))))
         return sets[0]
 
-    rows = []
-    for c in ct['installs']:
-        rows.append('{ %s, %d, %d, %d, %d, %d }' % (
+    def install_rows(ct):
+        return ['{ %s, %d, %d, %d, %d, %d }' % (
             c_str(c['case']), file_set(c['staged'], 'upgrade/'), file_set(c['tree_before']),
-            file_set(c['tree_after']), c['content_only'], result_code[c['result']]))
-    installs = rows
+            file_set(c['tree_after']), c['content_only'], result_code[c['result']]) for c in ct['installs']]
+    installs = install_rows(ct)
+    ct1f = load('content_1f.json')
+    installs_1f = install_rows(ct1f)
+    names_1f = ['{ %s, %d, %s, NULL }' % (c_str(c['case']), file_set(c['staged'], 'upgrade/'), c_str(c['name']))
+                for c in ct1f['pack_names']]
     rows = []
     for c in ct['pack_names']:
         alt = c.get('also_conforming', [])      # S-11.039: over 4096 bytes
@@ -326,6 +347,8 @@ def main():
     table('s11v_files', 'struct s11v_file', files)
     table('s11v_installs', 'struct s11v_install', installs)
     table('s11v_pack_names', 'struct s11v_pack_name', rows)
+    table('s11v_installs_1f', 'struct s11v_install', installs_1f)
+    table('s11v_pack_names_1f', 'struct s11v_pack_name', names_1f)
 
     # ---- disk_search.tsv: S-11.046, S-11.047
     rows = []
@@ -344,17 +367,19 @@ def main():
              '#include "waffle/s11_common.h"', '#include "waffle/s11_run.h"', '',
              '/* present (0 for null), offset into s11v_blob, length */',
              'struct s11v_ref { int present; size_t off, len; };',
-             '/* sig: digest (32), r (28), s (28) the verifier must be given; verdict */',
+             '/* sig: digest (32), r (28), s (28) the verifier must be given; verdict. signature: the',
+             ' * state (enum s11_sig), -1 when check 8 is not reached */',
              'struct s11v_package { const char *name, *file; int file_form, cdc;',
              '\tconst char *file_name; int q0, k0, k1, option; enum s11_reason reason;',
-             '\tint te_signed, forced; /* -1: not stated */ int has_sig; struct s11v_ref sig, zip_sha256; int verdict; };',
+             '\tint signature, forced; /* -1: not stated */ int has_sig; struct s11v_ref sig, zip_sha256;',
+             '\tint verdict; };',
              '/* file: null when absent */',
              'struct s11v_version_parse { struct s11v_ref file; unsigned v[4]; };',
              'struct s11v_version_compare { unsigned a[4], b[4]; int result; };',
              'struct s11v_crc16 { struct s11v_ref data; unsigned crc; };',
              'struct s11v_product { uint32_t word; int passes; };',
-             'struct s11v_acceptance { unsigned sig_index; int sig_valid, q0; unsigned key_index;',
-             '\tint k0, k1, option, dev, te_signed; enum s11_reason verdict; };',
+             'struct s11v_acceptance { unsigned key_index; int k0, k1, option, dev;',
+             '\tenum s11_reason verdict; };',
              '/* a zip member as a zip reader reports it; data: run-length (byte, u32be count),',
              ' * absent (data_ok 0) when the member cannot be read or inflated in full */',
              'struct s11v_member { const char *name; unsigned method, flags; uint32_t size, crc;',
@@ -391,7 +416,10 @@ def main():
              ' * expect 0 ok, 1 bad, 2 read_error; the bytes a step may write are the read\'s, on ok */',
              'struct s11v_staged_check { const char *name; uint32_t stated_len, stated_crc;',
              '\tstruct s11v_ref read; int expect; };',
-             'struct s11v_stock { int option, te_signed, bootloader, selected, stock; };',
+             '/* valid: the package\'s signature state is valid (S-11.021); waffle: the bootloader image is a',
+             ' * waffle-boot build (S-11.091) */',
+             'struct s11v_stock { int option, valid, waffle, bootloader, selected, stock; };',
+             'struct s11v_bootloader_kind { const char *name; struct s11v_ref stream; int waffle; };',
              'struct s11v_record { unsigned step, count, bytes; };',
              '/* a file of tree `set`, path relative to /yaffs2/ (staged files under upgrade/) */',
              'struct s11v_file { int set; const char *path; struct s11v_ref data; };',

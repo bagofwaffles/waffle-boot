@@ -65,6 +65,7 @@ void fr_panel_begin(struct fr_panel *p, const struct fr_panel_bus *bus,
 	p->bus = bus;
 	p->clock = clock;
 	p->ready = false;
+	p->gamma = true;
 	p->on = false;
 	p->started = false;
 	p->cpu = false;
@@ -190,14 +191,17 @@ void fr_panel_start(struct fr_panel *p)
 	delay_us(p, SLPOUT_WAIT_US);
 	for (i = 0; i < sizeof init_seq / sizeof init_seq[0]; i++)
 		send(p, init_seq[i].cmd, init_seq[i].p, init_seq[i].len);
-	/* S-13c.009, S-13c.012: the gamma load in one window. */
-	send(p, C_CSCON, p_unlock1, 1);
-	send(p, C_CSCON, p_unlock2, 1);
-	gamma_table(p, C_DGR);
-	gamma_table(p, C_DGB);
-	send(p, C_B9, p_b9_on, 2);
-	send(p, C_CSCON, p_lock1, 1);
-	send(p, C_CSCON, p_lock2, 1);
+	/* S-13c.009, S-13c.012: the gamma load in one window; S-13c.026:
+	 * none without digital gamma. */
+	if (p->gamma) {
+		send(p, C_CSCON, p_unlock1, 1);
+		send(p, C_CSCON, p_unlock2, 1);
+		gamma_table(p, C_DGR);
+		gamma_table(p, C_DGB);
+		send(p, C_B9, p_b9_on, 2);
+		send(p, C_CSCON, p_lock1, 1);
+		send(p, C_CSCON, p_lock2, 1);
+	}
 	/* S-13c.014: the frame window, kept from here on. The display stays
 	 * off: the first frame writes every pixel of the visible window, and
 	 * DISPON follows its last byte (S-13c.010). */

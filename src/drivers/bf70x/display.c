@@ -77,9 +77,16 @@ static void a_delay_us(void *ctx, uint32_t us)
 const struct s13c_bus *wb_display_bf70x_init(struct wb_display_bf70x *a,
 					     const struct wb_time *t)
 {
+	return wb_display_bf70x_init_cfg(a, &wb_lcd_opxy, t);
+}
+
+const struct s13c_bus *wb_display_bf70x_init_cfg(struct wb_display_bf70x *a,
+						 const struct wb_lcd_config *cfg,
+						 const struct wb_time *t)
+{
 	struct s13c_bus *b = &a->bus;
 
-	if (wb_lcd_init(&a->lcd, &wb_lcd_opxy, t) != WB_LCD_OK)
+	if (wb_lcd_init(&a->lcd, cfg, t) != WB_LCD_OK)
 		return 0;
 	b->reset = a_reset;
 	b->select = a_select;

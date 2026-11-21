@@ -188,12 +188,15 @@ static bool in_flash(uint32_t off, uint32_t len)
 }
 
 /* S-13b.017: a READ that ends with a controller error is sent again after
- * WIP = 0, up to three tries while writing, one otherwise. */
+ * WIP = 0, up to three tries while writing, one otherwise. FR_FLASH_BUSY
+ * when the wait before it gave up. */
 static int hw_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 {
 	(void)ctx;
-	if (len == 0u || !in_flash(off, len) || !idle())
+	if (len == 0u || !in_flash(off, len))
 		return FR_FLASH_IO;
+	if (!idle())
+		return FR_FLASH_BUSY;
 	for (unsigned t = 1u;; t++) {
 		if (frame_addr(OP_READ, off, NULL, buf, len))
 			return FR_FLASH_OK;

@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "waffle/device.h"
 #include "waffle/s10c_host.h"
 #include "waffle/s10c_sysex.h"
 
@@ -338,7 +339,7 @@ static void fake_boot(bool option, bool fsn_ok)
 	F.factory = 1;
 	F.append_ok = F.start_ok = true;
 	F.outcome.kind = S11_OUTCOME_DONE;
-	s10c_host_init(&F.host, &fake_ops, &F);
+	s10c_host_init(&F.host, &fake_ops, &F, &wb_device_opxy, WB_DEV_BY_TABLE);
 }
 
 /* ---- S-10c.001-S-10c.006 ---- */
@@ -419,7 +420,7 @@ static void test_classify(void)
 	for (size_t i = 0; i < N(s10cv_classify); i++) {
 		const struct s10cv_class *v = &s10cv_classify[i];
 
-		CHECK((int)s10c_classify(B(v->msg), v->msg.len) == v->cls, "%s",
+		CHECK((int)s10c_classify(&wb_device_opxy, B(v->msg), v->msg.len) == v->cls, "%s",
 		      v->name);
 	}
 }
@@ -455,7 +456,7 @@ static void test_carrier(void)
 
 		if (v->a.len > S10C_CARRIER_MAX_STREAM)
 			continue;	/* longer streams go through send_frame */
-		n = s10c_carrier_build(B(v->a), v->a.len, out);
+		n = s10c_carrier_build(&wb_device_opxy, B(v->a), v->a.len, out);
 		CHECK(bytes_eq(out, n, B(v->b), v->b.len), "%s", v->name);
 	}
 	for (size_t i = 0; i < N(s10cv_carrier_tx); i++) {
@@ -463,7 +464,7 @@ static void test_carrier(void)
 		static struct msgs c;
 
 		memset(&c, 0, sizeof(c));
-		s10c_carrier_send_frame(B(v->a), v->a.len, collect_msg, &c);
+		s10c_carrier_send_frame(&wb_device_opxy, B(v->a), v->a.len, collect_msg, &c);
 		CHECK(!c.too_long && bytes_eq(c.data, c.n, B(v->b), v->b.len),
 		      "%s", v->name);
 	}
@@ -665,7 +666,10 @@ static void test_info(void)
 		in.os = (struct s11_version){ (uint16_t)v->os[0], (uint16_t)v->os[1],
 					      (uint16_t)v->os[2], (uint16_t)v->os[3] };
 		in.factory = v->factory;
-		n = s10c_info_text(&in, text);
+		/* S-18.031: the device and how it was decided */
+		n = s10c_info_text(wb_device_of((unsigned)v->device),
+				   v->unknown ? WB_DEV_UNKNOWN : WB_DEV_BY_TABLE, &in,
+				   text);
 		CHECK(s11_text_eq(text, n, v->text), "info %s: %.*s", v->name,
 		      (int)n, text);
 	}
@@ -675,7 +679,7 @@ static void test_info(void)
 
 		s10c_te_code(v->word, code);
 		CHECK(s11_text_eq(code, 10, v->code) &&
-		      s11_product_ok(v->word) == (v->passes != 0),
+		      s11_product_ok(&wb_device_opxy, v->word) == (v->passes != 0),
 		      "TE code %08x", (unsigned)v->word);
 	}
 }
@@ -710,7 +714,7 @@ static void test_progress_texts(void)
 		size_t n = s10c_progress_te(v->done, v->total, v->outcome != 0,
 					    v->label, out);
 
-		n = s10c_te_reply_build(&req, 0x40, out, n, msg);
+		n = s10c_te_reply_build(&wb_device_opxy, &req, 0x40, out, n, msg);
 		CHECK(bytes_eq(msg, n, B(v->out), v->out.len), "TE progress '%s'",
 		      v->label);
 	}
@@ -997,7 +1001,7 @@ static void test_begin_refused(void)
 
 		bare.begin_refused = NULL;
 		fake_boot(false, true);
-		s10c_host_init(&F.host, &bare, &F);
+		s10c_host_init(&F.host, &bare, &F, &wb_device_opxy, WB_DEV_BY_TABLE);
 		F.nframes = 0;
 		s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x0D, bad, 14);
 		CHECK(F.refusals == 0 && F.nframes == 1 && F.frames[0].p[0] == 0x84,
@@ -1164,10 +1168,168 @@ static void test_continue(void)
 	fake_boot(false, true);
 	bare.continue_check = NULL;
 	bare.continue_os = NULL;
-	s10c_host_init(&F.host, &bare, &F);
+	s10c_host_init(&F.host, &bare, &F, &wb_device_opxy, WB_DEV_BY_TABLE);
 	s10c_host_frame(&F.host, S10C_LINK_MIDI, 0x21, 0x0D, only, 1u);
 	CHECK(F.continued == 0u && F.nframes == 1u && F.frames[0].p[0] == 0x84,
 	      "before held mode: 84");
+}
+
+/* ---- the OP-1F (S-18.030, S-18.020) ---- */
+
+static void fake_boot_1f(enum wb_dev_how how)
+{
+	fake_boot(true, true);
+	s10c_host_init(&F.host, &fake_ops, &F, &wb_device_op1f, how);
+}
+
+/* H-IDENTITY-1F: device byte 02 or 7F, the member from the sku (S-10c.010,
+ * S-10c.011); 21 gets no reply there (S-10c.007). */
+static void test_identity_1f(void)
+{
+	static const uint8_t req02[6] = { 0xF0, 0x7E, 0x02, 0x06, 0x01, 0xF7 };
+	static const uint8_t req7f[6] = { 0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7 };
+	static const uint8_t req21[6] = { 0xF0, 0x7E, 0x21, 0x06, 0x01, 0xF7 };
+	static const uint8_t longer[7] = { 0xF0, 0x7E, 0x02, 0x06, 0x01, 0x00, 0xF7 };
+	static const struct { uint32_t sku; uint8_t m0, m1; } rows[] = {
+		{ 0, 0x00, 0x00 }, { 1, 0x01, 0x00 }, { 127, 0x7F, 0x00 },
+		{ 128, 0x00, 0x01 }, { 999, 0x67, 0x07 }, { 0xFFFF, 0x02, 0x00 },
+	};
+	uint8_t want[S10C_IDENTITY_REPLY_LEN] = {
+		0xF0, 0x7E, 0x02, 0x06, 0x02, 0x00, 0x20, 0x76, 0x02, 0x00,
+		0, 0, 0x00, 0x00, 0x00, 0x00, 0xF7,
+	};
+	uint8_t xy[S10C_IDENTITY_REPLY_LEN];
+
+	for (size_t i = 0; i < N(rows); i++) {
+		fake_boot_1f(WB_DEV_BY_TABLE);
+		F.sku = rows[i].sku;
+		want[10] = rows[i].m0;
+		want[11] = rows[i].m1;
+		s10c_host_midi_message(&F.host, req02, sizeof(req02));
+		s10c_host_midi_message(&F.host, req7f, sizeof(req7f));
+		s10c_host_midi_message(&F.host, req21, sizeof(req21));
+		s10c_host_midi_message(&F.host, longer, sizeof(longer));
+		CHECK(F.nmsgs == 2 && bytes_eq(F.msgs[0].m, F.msgs[0].len, want, sizeof(want)) &&
+		      bytes_eq(F.msgs[1].m, F.msgs[1].len, want, sizeof(want)),
+		      "1F identity, sku %u", (unsigned)rows[i].sku);
+	}
+	/* the OP-XY's reply is the constant one, whatever the sku */
+	s10c_identity_reply(&wb_device_opxy, 128, xy);
+	CHECK(xy[2] == 0x21 && xy[8] == 0x21 && xy[9] == 0x00 && xy[10] == 0x01 &&
+	      xy[11] == 0x00, "XY identity");
+	CHECK(s10c_classify(&wb_device_op1f, req21, sizeof(req21)) == S10C_MSG_IGNORED &&
+	      s10c_classify(&wb_device_opxy, req02, sizeof(req02)) == S10C_MSG_IGNORED,
+	      "each device answers its own byte");
+}
+
+/* H-DEVBYTE-1F: the carrier's fifth byte and the TE reply's offset 4 are 02
+ * (S-10c.020, S-10c.080); the request's device byte is not checked. */
+static void test_devbyte_1f(void)
+{
+	static const uint8_t ping02[] = { 0xF0, 0x00, 0x20, 0x76, 0x02, 0x66, 0x00, 0x01, 0xF7 };
+	static const uint8_t ping21[] = { 0xF0, 0x00, 0x20, 0x76, 0x21, 0x66, 0x00, 0x01, 0xF7 };
+	static const uint8_t devs[3] = { 0x02, 0x21, 0x7F };
+	uint8_t msg[S10C_SYSEX_MAX_SENT];
+	const uint8_t s[1] = { 0x00 };
+
+	fake_boot_1f(WB_DEV_BY_TABLE);
+	s10c_host_midi_message(&F.host, ping02, sizeof(ping02));
+	CHECK(F.restarts == 1 && F.nfed == 1, "1F: a carrier beginning 02 66");
+	s10c_host_midi_message(&F.host, ping21, sizeof(ping21));
+	CHECK(F.restarts == 1 && F.nfed == 1, "1F: one beginning 21 66 is none");
+	CHECK(s10c_carrier_build(&wb_device_op1f, s, 1, msg) == 9 && msg[4] == 0x02 &&
+	      msg[5] == 0x66, "1F: the carrier sent");
+	for (size_t i = 0; i < N(devs); i++) {
+		const uint8_t info[10] = { 0xF0, 0x00, 0x20, 0x76, devs[i], 0x40,
+					   0x40, 0x00, 0x01, 0xF7 };
+
+		fake_boot_1f(WB_DEV_BY_TABLE);
+		s10c_host_midi_message(&F.host, info, sizeof(info));
+		CHECK(F.nmsgs == 1 && F.msgs[0].len > 10 && F.msgs[0].m[4] == 0x02 &&
+		      F.msgs[0].m[9] == 0x00, "1F: TE info from device byte %02x",
+		      devs[i]);
+	}
+}
+
+/* H-INFO-1F and S-18.031: the text the host reads on each link. */
+static void test_info_1f(void)
+{
+	static const char want[] =
+		"mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;"
+		"hw_rev:255;product:OP-1;sku:TE002AS007;sw_version:1.2.3;"
+		"bl_version:1.0.0;os_version:1.2.3+45;device_id:1f";
+	static const char unknown[] = ";factory:1;device_id:unknown";
+	static const char xy[] = ";factory:1;device_id:xy";
+	const size_t nu = sizeof(unknown) - 1u, nx = sizeof(xy) - 1u;
+
+	fake_boot_1f(WB_DEV_BY_TABLE);
+	s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x09, NULL, 0);
+	CHECK(F.nframes == 1 && F.frames[0].id == 0x0A &&
+	      bytes_eq(F.frames[0].p, F.frames[0].len, (const uint8_t *)want,
+		       sizeof(want) - 1u), "1F info: %.*s", (int)F.frames[0].len,
+	      F.frames[0].p);
+	/* S-18.004: unknown, the default device's values */
+	fake_boot(false, true);
+	s10c_host_init(&F.host, &fake_ops, &F, &wb_device_opxy, WB_DEV_UNKNOWN);
+	s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x09, NULL, 0);
+	CHECK(F.nframes == 1 && F.frames[0].len > nu &&
+	      memcmp(F.frames[0].p + F.frames[0].len - nu, unknown, nu) == 0 &&
+	      memcmp(F.frames[0].p, "mode:bootloader;", 16) == 0 &&
+	      memcmp(F.frames[0].p + 73, "product:OP-XY;sku:TE033AS007", 28) == 0,
+	      "unknown: %.*s", (int)F.frames[0].len, F.frames[0].p);
+	/* the OP-XY's text ends with device_id:xy */
+	fake_boot(false, true);
+	s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x09, NULL, 0);
+	CHECK(F.nframes == 1 && F.frames[0].len > nx &&
+	      memcmp(F.frames[0].p + F.frames[0].len - nx, xy, nx) == 0,
+	      "XY: %.*s", (int)F.frames[0].len, F.frames[0].p);
+}
+
+/* H-SETMETA-1F: the factory key is ignored without factory-word
+ * (S-10c.056); the reply is as with the entry left out. */
+static void test_setmeta_1f(void)
+{
+	static const uint8_t unlock[4] = { 0xCA, 0xFE, 0xBA, 0xBE };
+	static const char *const texts[] = {
+		"serial:CD654321;sku_variant:9;factory:5", "factory:5",
+		"factory:x;serial:EF000001",
+	};
+
+	for (size_t i = 0; i < N(texts); i++) {
+		fake_boot_1f(WB_DEV_BY_TABLE);
+		F.factory = 1;
+		s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x07, unlock, 4);
+		s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x0B,
+				(const uint8_t *)texts[i], strlen(texts[i]));
+		CHECK(F.nframes == 2 && F.frames[1].p[0] == 0x03 && F.factory == 1,
+		      "1F set metadata '%s'", texts[i]);
+	}
+	CHECK(memcmp(F.serial, "EF000001", 8) == 0, "1F: the other keys apply");
+}
+
+/* S-11.007 on the OP-1F: a begin made for the OP-XY is refused, one for
+ * the OP-1F starts (device.product_number 2). */
+static void test_product_1f(void)
+{
+	static const uint8_t xy[14] = { 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0x00, 0x08, 0x40, 0x00 };
+	static const uint8_t f1[14] = { 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0x00, 0x00, 0x80, 0x00 };
+
+	fake_boot_1f(WB_DEV_BY_TABLE);
+	s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x0D, xy, 14);
+	CHECK(F.refusals == 1 && F.starts == 0, "1F: the OP-XY's word refused");
+	s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x0D, f1, 14);
+	CHECK(F.refusals == 1 && F.starts == 1, "1F: its own word starts");
+	CHECK(s11_product_ok(&wb_device_op1f, 0x00008000u) &&
+	      s11_product_ok(&wb_device_op1f, 0x000083FFu) &&
+	      s11_product_ok(&wb_device_op1f, 0xFF008000u) &&
+	      !s11_product_ok(&wb_device_op1f, 0x00008400u) &&
+	      !s11_product_ok(&wb_device_op1f, 0x00084000u) &&
+	      !s11_product_ok(&wb_device_op1f, 0x00000000u) &&
+	      !s11_product_ok(&wb_device_op1f, 0x00FF8000u) &&
+	      !s11_product_ok(&wb_device_opxy, 0x00008000u),
+	      "S-11.007's words on the OP-1F");
 }
 
 int main(void)
@@ -1192,5 +1354,10 @@ int main(void)
 	test_finish_no_transfer();
 	test_coproc_links();
 	test_continue();
+	test_identity_1f();
+	test_devbyte_1f();
+	test_info_1f();
+	test_setmeta_1f();
+	test_product_1f();
 	return s11_check_report("test_s10c_host");
 }

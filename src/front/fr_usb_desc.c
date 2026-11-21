@@ -2,7 +2,7 @@
 /*
  * Recovery's descriptors (fr_usb.h): S-10a's serial set (S-10a.019) with
  * its identity, class layout, endpoints and power, and recovery's own
- * product string. String indexes are free (S-10a.005); this set names
+ * product string, both the device's (S-02.093). String indexes are free (S-10a.005); this set names
  * only the manufacturer (1) and the product (2), and no serial number.
  */
 #include "fr_usb.h"
@@ -12,7 +12,6 @@
 #define MAX_POWER    (FR_USB_MAX_MA / 2u)	/* units of 2 mA (S-10a.020) */
 
 static const char manufacturer[] = "teenage engineering";	/* S-10a.001 */
-static const char product[] = FR_USB_PRODUCT;
 
 /* S-10a.002: Communications at the device level. */
 static const uint8_t dev_class[3] = { 0x02, 0x00, 0x00 };
@@ -23,13 +22,14 @@ static size_t emit(uint8_t *out, size_t max, const uint8_t *d, size_t n)
 	return n < max ? n : max;
 }
 
-size_t fr_usb_desc_device(uint8_t *out, size_t max)
+size_t fr_usb_desc_device(const struct fr_dev *dev, uint8_t *out, size_t max)
 {
+	const uint16_t pid = fr_dev_or_default(dev)->usb_pid;
 	const uint8_t d[18] = {
 		18, 0x01, (uint8_t)BCD_USB, (uint8_t)(BCD_USB >> 8),
 		dev_class[0], dev_class[1], dev_class[2], FR_USB_EP0,
 		(uint8_t)FR_USB_VID, (uint8_t)(FR_USB_VID >> 8),
-		(uint8_t)FR_USB_PID, (uint8_t)(FR_USB_PID >> 8),
+		(uint8_t)pid, (uint8_t)(pid >> 8),
 		(uint8_t)BCD_DEVICE, (uint8_t)(BCD_DEVICE >> 8),
 		1, 2, 0,	/* manufacturer, product, no serial */
 		1,		/* one configuration */
@@ -80,7 +80,7 @@ size_t fr_usb_desc_config(bool high_speed, uint8_t *out, size_t max)
 }
 
 /* S-10a.005: ASCII as UTF-16LE, no terminator; index 0 the LANGID list. */
-size_t fr_usb_desc_string(unsigned i, const char *serial, uint8_t *out,
+size_t fr_usb_desc_string(const struct fr_dev *dev, unsigned i, const char *serial, uint8_t *out,
 			  size_t max)
 {
 	const char *t;
@@ -97,7 +97,7 @@ size_t fr_usb_desc_string(unsigned i, const char *serial, uint8_t *out,
 		t = manufacturer;
 		break;
 	case 2:
-		t = product;
+		t = fr_dev_or_default(dev)->usb_product;
 		break;
 	case 3:
 		/* Named by no descriptor while the device's iSerial is 0. */

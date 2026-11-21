@@ -90,6 +90,19 @@ def pin_traces():
     s = port_trace('slave')
     nohigh = [e for e in s if e.get('reg') != 'PORTC_DATA_SET']
     rows.append({'name': 'slave_pc2_low', 'role': 'slave', 'trace': nohigh, 'expect': ['gpio_directions']})
+    # S-18.001's flash-bus write before the first stage's read, exempt from S-13b.004's second sentence
+    # (and from S-13b.001: it comes before the strap sample on a main CPU); after the read it is not
+    bus = [w('PORTB_MUX', C.PINMUX['master']['B'][0]), w('PORTB_FER', C.PINMUX['master']['B'][1])]
+    read = [{'op': 'ev', 'ev': 'first_stage_read'}]
+    rows.append({'name': 'master_flash_bus_first', 'role': 'master', 'trace': bus + read + m, 'expect': []})
+    rows.append({'name': 'master_flash_bus_after_read', 'role': 'master', 'trace': read + bus + m,
+                 'expect': ['mux_before_fer', 'strap_before_mux']})
+    # S-18.002's fallback sample, PA2's input enable alone, before the second CPU's strap sample
+    fallback = [w('PORTA_INEN_SET', 0x4), r('PORTA_DATA', 0x0)]
+    rows.append({'name': 'slave_fallback_first', 'role': 'slave', 'trace': fallback + s, 'expect': []})
+    rows.append({'name': 'slave_fallback_releases_pa8', 'role': 'slave',
+                 'trace': [w('PORTA_DIR_CLR', 0x104), w('PORTA_INEN_SET', 0x104), r('PORTA_DATA', 0x0)] +
+                 [w('PORTB_MUX', C.PINMUX['slave']['B'][0])] + s, 'expect': ['mux_before_fer', 'strap_before_mux']})
     return rows
 
 
@@ -876,11 +889,89 @@ def pinmux():
     return {role: {p: {'mux': m, 'fer': f} for p, (m, f) in ports.items()} for role, ports in C.PINMUX.items()}
 
 
+def port_trace_1f():
+    """The OP-1F's main CPU: the flash bus's two values, the first stage read (S-18.001), the other four
+    values, the GPIO set-up of S-13b.006 with no level written, then the first SPI/UART/MSI access."""
+    t = [w('PORTB_MUX', C.PINMUX_1F['B'][0]), w('PORTB_FER', C.PINMUX_1F['B'][1]),
+         {'op': 'ev', 'ev': 'first_stage_read'}]
+    t += [w('PORT%s_MUX' % p, C.PINMUX_1F[p][0]) for p in ('A', 'C')]
+    t += [w('PORT%s_FER' % p, C.PINMUX_1F[p][1]) for p in ('A', 'C')]
+    for name in C.GPIO_1F[0]:
+        p, b = C._pin(name)
+        t.append(w('PORT%s_DIR_SET' % p, b))
+    for name in C.GPIO_1F[1]:
+        t += gpio(name, False)
+    return t + [{'op': 'mark'}, w('UART0_CTL', 0x301), w('MSI_CTL', 0x2000000)]
+
+
+def _rules_1f(t):
+    return sorted({v[0] for v in C.check_ports_1f(t) + C.check_device_before_pins(t) +
+                   C.check_no_spi0(t) + C.check_no_strap_sample(t)})
+
+
+def pinmux_1f():
+    """S-13b.003, .004, .006 and S-18.001 on the OP-1F: the six values (S-18's profile), a trace that ends
+    on them, and negative rows."""
+    good = port_trace_1f()
+    rows = [('good', good)]
+    rows.append(('level_written_pa3', good + [w('PORTA_DATA_CLR', 0x8)]))
+    rows.append(('pc11_output', good + [w('PORTC_DIR_SET', 0x800), w('PORTC_INEN_CLR', 0x800)]))
+    rows.append(('pa6_input', good + gpio('PA6', False)))
+    rows.append(('pa8_input', good + gpio('PA8', False)))
+    rows.append(('inputs_first', gpio('PC4', False) + good))
+    master = [w('PORTB_MUX', C.PINMUX['master']['B'][0]), w('PORTB_FER', C.PINMUX['master']['B'][1]),
+              {'op': 'ev', 'ev': 'first_stage_read'}]
+    master += [w('PORT%s_MUX' % p, C.PINMUX['master'][p][0]) for p in ('A', 'C')]
+    master += [w('PORT%s_FER' % p, C.PINMUX['master'][p][1]) for p in ('A', 'C')]
+    rows.append(('opxy_master_values', master + good[len(master):]))
+    rows.append(('port_before_identify', [w('PORTA_DIR_SET', 0x8)] + good))
+    rows.append(('uart_before_identify', [w('UART0_CTL', 0x301)] + good))
+    rows.append(('no_identify', [e for e in good if e.get('ev') != 'first_stage_read']))
+    rows.append(('spi0_touched', good + [w('SPI0_CTL', 0x2)]))
+    # the OP-XY master's own trace: a strap sample (negative control of no_strap_sample)
+    rows.append(('opxy_strap_sample', [{'op': 'ev', 'ev': 'first_stage_read'}] + port_trace('master')))
+    # S-18.002's fallback sample before the read (PA2's input enable alone), and one that releases PA8
+    rows.append(('fallback_sample', [w('PORTA_INEN_SET', 0x4), r('PORTA_DATA', 0x4)] + good))
+    rows.append(('fallback_releases_pa8', [w('PORTA_DIR_CLR', 0x100), w('PORTA_INEN_SET', 0x4),
+                                           r('PORTA_DATA', 0x4)] + good))
+    out = [{'name': n, 'trace': t, 'expect': _rules_1f(t)} for n, t in rows]
+    good_rows = ('good', 'fallback_sample')
+    assert all((r['expect'] == []) == (r['name'] in good_rows) for r in out), out
+    return {'values': {p: {'mux': m, 'fer': f} for p, (m, f) in C.PINMUX_1F.items()},
+            'gpio_outputs_kept': C.GPIO_1F[0], 'gpio_inputs': C.GPIO_1F[1], 'traces': out}
+
+
+def emmc_init_1f():
+    """S-13b.061 on the OP-1F: rules emmc_init, bus_width_match with the width 4."""
+    good = [dict(e, arg=0x03B70100) if e['ev'] == 'cmd' and e['arg'] == 0x03B70200 else
+            ({'ev': 'width', 'bits': 4} if e == {'ev': 'width', 'bits': 8} else e) for e in reference_init()]
+    w4 = good.index({'ev': 'width', 'bits': 4})
+    rows = [('width_4', good)]
+    rows.append(('width_8_switch', [dict(e, arg=0x03B70200) if e['ev'] == 'cmd' and e['arg'] == 0x03B70100
+                                    else ({'ev': 'width', 'bits': 8} if e == {'ev': 'width', 'bits': 4} else e)
+                                    for e in good]))
+    rows.append(('host_width_8_after_switch', [{'ev': 'width', 'bits': 8} if e == {'ev': 'width', 'bits': 4}
+                                               else e for e in good]))
+    rows.append(('no_width_switch', [e for e in good if not (e['ev'] == 'cmd' and e['arg'] == 0x03B70100)
+                                     and e != {'ev': 'width', 'bits': 4}]))
+    rows.append(('width_after_ext_csd', good[:w4] + [good[w4 + 1], good[w4]] + good[w4 + 2:]))
+    earlier = [{'ev': 'clock', 'hz': 50_000_000}, {'ev': 'width', 'bits': 4}]
+    rows.append(('wake_from_step_1', earlier + good))
+    rows.append(('wake_width_kept', earlier + [good[0]] + good[2:]))
+    out = [{'name': n, 'events': e, 'width': 4,
+            'expect': sorted({v[0] for v in C.check_init(e, width=4)})} for n, e in rows]
+    assert out[0]['expect'] == [] and out[5]['expect'] == [] and \
+        all(r['expect'] for i, r in enumerate(out) if i not in (0, 5)), out
+    # the OP-XY's reference is wrong for the OP-1F, and the OP-1F's for the OP-XY
+    assert C.check_init(reference_init(), width=4) and C.check_init(good)
+    return {'rca': C.RCA, 'ocr_arg': C.OCR_ARG, 'width': 4, 'switch_arg': 0x03B70100, 'sequences': out}
+
+
 ALL = {'pinmux': pinmux, 'pin_traces': pin_traces, 'strap_timing': strap_timing, 'bridge_pins': bridge_pins,
        'slave_tx': slave_tx, 'bridge_sessions': bridge_sessions,
        'reply_setup': reply_setup, 'bridge_dma': bridge_dma, 'boot_dma': boot_dma,
        'spi_configs': spi_configs, 'flash_traces': flash_traces, 'emmc_init': emmc, 'uart': uart,
-       'spi_start': spi_start, 'uart_close': uart_close}
+       'spi_start': spi_start, 'uart_close': uart_close, 'pinmux_1f': pinmux_1f, 'emmc_init_1f': emmc_init_1f}
 
 
 def main():

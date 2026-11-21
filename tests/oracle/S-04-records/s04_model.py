@@ -62,7 +62,8 @@ def nordic_step(reason, no_app=False):
 
 # ---- S-04.040-S-04.046 the metadata record ---------------------------------------------------------
 
-META_SIZE = 0x34
+META_SIZE = 0x34              # the OP-XY's; a device's is device.metadata_size (S-18.030)
+META_SIZE_1F = 0x28
 META_MAGIC = 0xDEADBABE
 UPGRADING = 0xAB0D
 # (name, offset, struct format)
@@ -84,9 +85,10 @@ def pack(f):
     return bytes(b)
 
 
-def read(b):
-    """S-04.042: the reader's view."""
-    b = bytes(b[:META_SIZE])
+def read(b, size=META_SIZE, factory_word=True):
+    """S-04.042: the reader's view of a record of size bytes; without factory-word the factory field reads 0
+    (S-04.040)."""
+    b = bytes(b[:size])
     if struct.unpack_from('<I', b, 0)[0] != META_MAGIC:
         return {'serial': '', 'sku': 0, 'factory': 0, 'os_version': [0, 0, 0, 0], 'sw_version': [0, 0, 0, 0],
                 'state': 0}
@@ -94,21 +96,24 @@ def read(b):
     return {
         'serial': b[0x04:0x0C].split(b'\0', 1)[0].decode('latin-1'),
         'sku': struct.unpack_from('<H', b, 0x0E)[0],
-        'factory': struct.unpack_from('<H', b, 0x10)[0],
+        'factory': struct.unpack_from('<H', b, 0x10)[0] if factory_word else 0,
         'os_version': list(struct.unpack_from('<4H', b, 0x12)),
         'sw_version': list(struct.unpack_from('<4H', b, 0x1A)),
         'state': state if state == UPGRADING else 0,
     }
 
 
-def write_record(before, current, factory_mode):
-    """S-04.043: the 0x34 bytes a write stores, given the flash bytes just before it."""
+def write_record(before, current, factory_mode, size=META_SIZE, factory_word=True):
+    """S-04.043: the size bytes a write stores, given the flash bytes just before it; without factory-word
+    +0x10..+0x11 are kept in either mode."""
     assert current['state'] in (0, UPGRADING)
-    b = bytearray(before[:META_SIZE])
+    b = bytearray(before[:size])
     struct.pack_into('<I', b, 0x00, META_MAGIC)
     if factory_mode:
         b[0x04:0x0D] = current['serial'].encode('latin-1')[:8].ljust(9, b'\0')   # +0x0D kept
-        struct.pack_into('<HH', b, 0x0E, current['sku'] & 0xFFFF, current['factory'] & 0xFFFF)
+        struct.pack_into('<H', b, 0x0E, current['sku'] & 0xFFFF)
+        if factory_word:
+            struct.pack_into('<H', b, 0x10, current['factory'] & 0xFFFF)
     struct.pack_into('<4H', b, 0x12, *current['os_version'])
     struct.pack_into('<4H', b, 0x1A, *current['sw_version'])
     struct.pack_into('<I', b, 0x24, current['state'])
@@ -136,9 +141,10 @@ def _udec(s):
     return (-v) & 0xFFFFFFFF if neg else v
 
 
-def set_metadata(fields, request, factory_mode, option):
+def set_metadata(fields, request, factory_mode, option, factory_word=True):
     """S-04.046: returns (writes, new fields). Applied only with factory mode and the session upgrade option
-    both on (S-10c.061)."""
+    both on (S-10c.061). Without factory-word the factory key is passed over: it changes nothing, refuses
+    nothing, and a request with it alone is one with no key present."""
     new = dict(fields)
     if not (factory_mode and option):
         return False, new
@@ -149,7 +155,7 @@ def set_metadata(fields, request, factory_mode, option):
     if 'sku_variant' in request:
         v = _udec(request['sku_variant'])
         new['sku'] = v if v <= 999 else 0
-    if 'factory' in request:
+    if 'factory' in request and factory_word:
         new['factory'] = _udec(request['factory']) & 0xFFFF
     return True, new
 

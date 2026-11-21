@@ -5,8 +5,6 @@
  */
 #include "waffle/s15_select.h"
 
-#define KEY_PRECOMP 0x17u	/* S-07.032: not acted on */
-
 /* The rows in digit order, 2 to 7. */
 static const enum s15_step by_digit[] = {
 	S15_STEP_OS, S15_STEP_CONTENT, S15_STEP_BLE, S15_STEP_BLE_BOOTLOADER,
@@ -51,9 +49,10 @@ static void end(struct s15_select *s, enum s15_select_choice choice,
 	s->holding = false;
 }
 
-void s15_select_open(struct s15_select *s, uint8_t pickable,
-		     const uint8_t *down_now, uint32_t now_ms)
+void s15_select_open(struct s15_select *s, const struct wb_device *dev,
+		     uint8_t pickable, const uint8_t *down_now, uint32_t now_ms)
 {
+	s->dev = dev;
 	for (size_t i = 0; i < sizeof(s->stale); i++)
 		s->stale[i] = s->down[i] = down_now != NULL ? down_now[i] : 0u;
 	s->pickable = pickable;
@@ -62,22 +61,24 @@ void s15_select_open(struct s15_select *s, uint8_t pickable,
 	s->held_ms = now_ms;
 	s->held_key = 0;
 	s->holding = false;
+	s->prompt = false;
 	s->choice = S15_SELECT_WAIT;
 	s->end = S15_SELECT_END_NONE;
 }
 
-/* A knob click (0x0A - 0x0D) starts no hold: it is the easiest key to
- * press by accident. */
-static bool knob_click(unsigned key)
+void s15_select_prompt_open(struct s15_select *s, const struct wb_device *dev,
+			    const uint8_t *down_now, uint32_t now_ms)
 {
-	return key >= 0x0au && key <= 0x0du;
+	s15_select_open(s, dev, 0u, down_now, now_ms);
+	s->prompt = true;
 }
 
-/* S-07.033's rule: no other of the 72 keys down, the precomp key aside. */
+/* S-07.033's rule: no other of the device's keys down, the precomp key
+ * (S-07.032; 0x17 on the OP-XY, none on the OP-1F, S-15.016) aside. */
 static bool alone(const struct s15_select *s, unsigned key)
 {
-	for (unsigned k = 0; k < S15_NKEYS; k++) {
-		if (k != key && k != KEY_PRECOMP && bit(s->down, k))
+	for (unsigned k = 0; k < s->dev->keys.count; k++) {
+		if (k != key && k != s->dev->keys.precomp && bit(s->down, k))
 			return false;
 	}
 	return true;
@@ -86,11 +87,12 @@ static bool alone(const struct s15_select *s, unsigned key)
 void s15_select_key(struct s15_select *s, unsigned key, bool down,
 		    uint32_t now_ms)
 {
-	const unsigned d = s15_digit(key);
+	const unsigned d = s15_digit(s->dev, key);
 	int step;
 
 	/* what the time decided before this event stands */
-	if (key >= S15_NKEYS || s15_select_tick(s, now_ms) != S15_SELECT_WAIT)
+	if (key >= s->dev->keys.count ||
+	    s15_select_tick(s, now_ms) != S15_SELECT_WAIT)
 		return;
 	set_bit(s->down, key, down);
 	s->last_ms = now_ms;
@@ -106,7 +108,7 @@ void s15_select_key(struct s15_select *s, unsigned key, bool down,
 		return;
 	}
 	if (s->holding) {
-		if (key != KEY_PRECOMP)
+		if (key != s->dev->keys.precomp)
 			s->holding = false;	/* another key down */
 		return;
 	}
@@ -116,8 +118,10 @@ void s15_select_key(struct s15_select *s, unsigned key, bool down,
 	} else if (step >= 0) {
 		if ((s->pickable & S15_SELECT_BIT(step)) != 0u)
 			s->selected ^= S15_SELECT_BIT(step);
-	} else if (d == 1u && !knob_click(key) && s->selected != 0u &&
-		   alone(s, key)) {
+	} else if (d == 1u && !s15_knob_click(s->dev, key) &&
+		   (s->selected != 0u || s->prompt) && alone(s, key)) {
+		/* a knob click starts no hold: the easiest key to press by
+		 * accident */
 		s->holding = true;
 		s->held_key = key;
 		s->held_ms = now_ms;
@@ -218,12 +222,62 @@ static void warn_line(const struct s15_select_info *info, struct s15_buf *out)
 	}
 }
 
+/* "8 Cancel", with the countdown while no hold runs. */
+static void cancel_row(const struct s15_select *s, uint32_t now_ms,
+		       struct s15_buf *out)
+{
+	s15_buf_init(out);
+	s15_buf_str(out, "8 Cancel");
+	if (!s->holding) {		/* the countdown in the label */
+		s15_buf_str(out, " (cancels in ");
+		s15_buf_dec(out, s15_select_left(s, now_ms));
+		s15_buf_str(out, " s)");
+	}
+}
+
+static void hold_row(const struct s15_select *s, uint32_t now_ms,
+		     struct s15_buf *out)
+{
+	s15_hold_bar(out, s15_select_fill(s, now_ms),
+		     s15_select_hold_left(s, now_ms));
+}
+
+/* S-15.197 */
+static size_t prompt_lines(const struct s15_select *s, uint32_t now_ms,
+			   struct s15_buf out[S15_ROWS],
+			   enum s15_style style[S15_ROWS])
+{
+	size_t n = 0;
+
+	s15_buf_init(&out[n]);
+	s15_buf_str(&out[n], "The firmware's signature does not match.");
+	style[n++] = S15_ST_WARN;
+	s15_buf_init(&out[n]);
+	s15_buf_str(&out[n], "Installing it anyway is your choice.");
+	style[n++] = S15_ST_TEXT;
+	s15_buf_init(&out[n]);
+	s15_buf_str(&out[n], "1 Install anyway (hold for ");
+	s15_buf_dec(&out[n], S15_HOLD_MS / 1000u);
+	s15_buf_str(&out[n], " s)");
+	style[n++] = s->holding ? S15_ST_ARMED : S15_ST_ITEM;
+	cancel_row(s, now_ms, &out[n]);
+	style[n++] = S15_ST_BACK;
+	if (s->holding) {
+		hold_row(s, now_ms, &out[n]);
+		style[n++] = S15_ST_STEP_RUN;
+	}
+	return n;
+}
+
 size_t s15_select_lines(const struct s15_select_info *info,
 			const struct s15_select *s, uint32_t now_ms,
 			struct s15_buf out[S15_ROWS],
 			enum s15_style style[S15_ROWS])
 {
 	size_t n = 0;
+
+	if (s->prompt)
+		return prompt_lines(s, now_ms, out, style);
 
 	/* the hold named in the label, not as a hint, armed or not */
 	s15_buf_init(&out[n]);
@@ -246,23 +300,22 @@ size_t s15_select_lines(const struct s15_select_info *info,
 			 &out[n], &style[n]);
 		n++;
 	}
-	s15_buf_init(&out[n]);
-	s15_buf_str(&out[n], "8 Cancel");
-	if (!s->holding) {		/* the countdown in the label */
-		s15_buf_str(&out[n], " (cancels in ");
-		s15_buf_dec(&out[n], s15_select_left(s, now_ms));
-		s15_buf_str(&out[n], " s)");
-	}
+	cancel_row(s, now_ms, &out[n]);
 	style[n++] = S15_ST_BACK;
 	if ((s->selected & S15_SELECT_BIT(S15_STEP_BOOTLOADER)) != 0u) {
 		warn_line(info, &out[n]);
 		style[n++] = S15_ST_WARN;
 	}
+	/* S-15.197: a valid package, while a row is free of the bar */
+	if (info->valid && n + (s->holding ? 1u : 0u) < S15_ROWS) {
+		s15_buf_init(&out[n]);
+		s15_buf_str(&out[n], s15_signed_line);
+		style[n++] = S15_ST_OK;
+	}
 	if (s->holding) {
 		if (n == S15_ROWS)
 			n--;		/* the bar in the warning's row */
-		s15_hold_bar(&out[n], s15_select_fill(s, now_ms),
-			     s15_select_hold_left(s, now_ms));
+		hold_row(s, now_ms, &out[n]);
 		style[n++] = S15_ST_STEP_RUN;
 	}
 	return n;

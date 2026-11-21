@@ -754,17 +754,33 @@ def gen_info():
         ('otp-nul-inside', dict(serial='AB123456', dsp_otp=b'ZZ0123' + bytes(1) + b'456789ABCDE', hw_rev=255,
                                 sku=7, sw=(1, 2, 3, 0), bl=(1, 0, 0, 0), os=(1, 2, 3, 45), factory=1)),
     ]
+    # S-18.031: device_id with each of its three values on the OP-XY's text, and the OP-1F's text (no
+    # factory entry, device.product_text and device.sku_prefix)
+    by = dict(cases)
+    cases += [('device-id-unknown', dict(by['typical'], how='unknown')),
+              ('maxima-unknown', dict(by['maxima'], how='unknown')),
+              ('op1f-typical', dict(by['typical'], device='OP-1F')),
+              ('op1f-maxima', dict(by['maxima'], device='OP-1F')),
+              ('op1f-sku-1000', dict(by['sku-1000'], device='OP-1F')),
+              ('op1f-unknown', dict(by['typical'], device='OP-1F', how='unknown'))]
     info = []
     for n, f in cases:
         otp = f['dsp_otp']
         dsp = '' if otp is None else otp.split(b'\x00', 1)[0].decode('ascii')
+        dev, how = f.get('device', 'OP-XY'), f.get('how', 'table')
+        if how == 'unknown':
+            dev = 'OP-XY'          # S-18.004: the default device's values
         t = m.info_text(serial=f['serial'], dsp_serial=dsp, hw_rev=f['hw_rev'], sku=f['sku'], sw=f['sw'],
-                        bl=f['bl'], os_version=f['os'], factory=f['factory'])
+                        bl=f['bl'], os_version=f['os'], factory=f['factory'], device=dev, how=how)
         assert len(t) <= 242, (n, len(t))
         fields = {'serial': f['serial'], 'dsp_otp': None if otp is None else h(otp), 'hw_rev': f['hw_rev'],
                   'sku': f['sku'], 'sw_version': list(f['sw']), 'bl_version': list(f['bl']),
                   'os_version': list(f['os']), 'factory': f['factory']}
-        info.append({'name': n, 'fields': fields, 'text': t})
+        row = {'name': n, 'fields': fields, 'text': t}
+        if 'device' in f or 'how' in f:
+            row['device'] = f.get('device', 'OP-XY')
+            row['how'] = how
+        info.append(row)
     words = [0x00084000, 0x000843FF, 0xFF084000, 0x00084400, 0x00088000, 0, 0x00FF8000, 0x00087C00, 0x000843E8,
              0x000843E7, 0x0009C000, 0x00F9C3E7, 0x00F9C800]
     te_code = [{'word': f'0x{w:08x}', 'code': m.te_code(w), 'passes': m.product_ok(w)} for w in words]
@@ -787,7 +803,8 @@ SKIPS = [(2, 'option off'), (2, 'not selected'),
          (3, 'switched off'), (4, 'switched off'), (5, 'switched off'),
          (2, 'already written'),
          (0, 'not selected'), (1, 'not selected'), (3, 'not selected'), (4, 'not selected'), (5, 'not selected')]
-REASONS = ['SHORT', 'PREAMBLE', 'TYPE', 'MAGIC', 'PRODUCT', 'DEVICE', 'CRC', 'FORMAT', 'SKU',
+# S-11.020's reasons; checks 8 and 9 are not made, so SKU is none
+REASONS = ['SHORT', 'PREAMBLE', 'TYPE', 'MAGIC', 'PRODUCT', 'DEVICE', 'CRC', 'FORMAT',
            'LENGTH', 'HASH', 'KEY', 'NOKEY', 'NAME', 'ZIPLEN', 'ZIP', 'MEMBER', 'SPACE', 'SPACEQUERY', 'SIZE', 'STREAM']
 
 

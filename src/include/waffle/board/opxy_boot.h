@@ -15,6 +15,7 @@
 #include "waffle/board/opxy_ops.h"
 #include "waffle/board/opxy_services.h"
 #include "waffle/boot.h"
+#include "waffle/device.h"
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/s02_flash.h"
 #include "waffle/s02_store.h"
@@ -63,7 +64,9 @@ void opxy_crumb_read(uint32_t addr);
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/s07_psoc.h"
 extern struct boot_time opxy_boot_time;
-#define OPXY_TIME(id) boot_time_mark(&opxy_boot_time, (id), wb_core_cycles())
+/* A milestone stamped now, boot_time_mark() out of line: a call at each site. */
+void opxy_time_mark(unsigned id);
+#define OPXY_TIME(id) opxy_time_mark(id)
 void opxy_timing_start(void);
 /* S-07.023 steps 1-6, as s07_startup(), with the start-up's stamps. */
 int opxy_timing_startup(struct s07_psoc *p, struct s07_key_status *ks);
@@ -298,9 +301,109 @@ size_t opxy_stream_report(uint8_t *out);
 /* S-09.018: a repeat starts only this soon after the first try began. */
 #define OPXY_EMMC_REPEAT_US 1500000u
 
+struct opxy_emmc_more;
+
+/* Where an eMMC request of the store stopped (struct opxy_emmc_note). */
+enum opxy_note_why {
+	OPXY_NOTE_DRIVER = 0,	/* in the driver: its fault record says where */
+	OPXY_NOTE_DOWN,		/* the eMMC down, or S-03.009's switches failed */
+	OPXY_NOTE_UNKNOWN,	/* no partition known since a failed select (S-03.063) */
+	OPXY_NOTE_REFUSED,	/* refused by the store (S-03.002, S-03.075, an argument) */
+	OPXY_NOTE_COUNT
+};
+
+/* The note's pc_flags. */
+#define OPXY_NOTE_PC_BEFORE 0x01u	/* pc_before holds a value */
+#define OPXY_NOTE_PC_AFTER  0x02u	/* pc_after holds a value */
+
+/*
+ * The first failing boot-partition select, or the first failing sector
+ * read, since the storage started: for the test OS's report. EXT_CSD[179]
+ * before is the value the select started from (kept, or read by its CMD8);
+ * after is what the next CMD8 read. Plain words, so another CPU can peek it.
+ */
+struct opxy_emmc_note {
+	uint8_t seen;		/* 1: recorded */
+	uint8_t part;		/* the partition asked for (select) or selected (read) */
+	uint8_t why;		/* enum opxy_note_why */
+	uint8_t pc_flags;
+	uint8_t pc_before;
+	uint8_t pc_after;
+	uint8_t pad[2];
+	uint32_t sector;	/* a read's first sector */
+	uint32_t count;		/* a read's sector count */
+	struct wb_msi_fault f;	/* the driver's first fault in the request */
+};
+
+/*
+ * The eMMC and the yaffs2 volume on the CPU whose MSI0 drives them: the
+ * OP-XY's slave (S-13b.050), or the OP-1F's main CPU (S-13b.060), which
+ * serves the same s09_store_ops to its own bridge client
+ * (s09_master_local()). Device-dependent: the bus width (S-13b.061), the
+ * select (S-03.012 in place of S-03.005), the shutdown (S-03.013 in place
+ * of S-03.011), the sector count accepted (S-03.001) and the user area's
+ * footprint (S-03.075). One per CPU (src/board/opxy_storage.c).
+ */
+struct opxy_storage {
+	struct opxy_hw *hw;
+	const struct wb_device *dev;
+	const struct wb_msi_config *msi, *msi_bringup;
+	_Alignas(32) uint8_t ext_csd[512];	/* the eMMC driver's DMA (S-13b.054) */
+	/* S-13b.059: false after a failed bring-up; then emmc_ops fail at
+	 * once, and nothing of ext_csd is used. */
+	bool emmc_up;
+	/* S-03.002: up, but not the eMMC of S-03.001: its user area is never
+	 * read or written, nor a boot partition written. */
+	bool emmc_other;
+	bool features;		/* S-03.009's switches made */
+	/* S-03.011, S-03.013: the power-off notification given; no command
+	 * until a request needs the eMMC, which first brings it up again. */
+	bool emmc_notified;
+	/* The partition the eMMC has selected (S-03.007): 0, 1 or 2, or
+	 * OPXY_PART_UNKNOWN after a select that failed. */
+	unsigned part;
+	struct s03_emmc_ops emmc_ops;
+	/* The erase with an argument and the reliable write, on emmc_ops'
+	 * ctx (waffle/board/opxy_bridge.h); NULL while the eMMC is down. */
+	const struct opxy_emmc_more *emmc_more;
+	struct s03_env emmc;
+	/* S-03.012: the select byte as the eMMC holds it (the OP-1F) */
+	struct s03_select_keep sel;
+	struct s09_store_ops store;
+	/* the report's records of a failure (struct opxy_emmc_note) */
+	struct opxy_emmc_note note_select, note_read;
+	bool pc_after_pending;	/* note_select waits for the next CMD8 */
+	bool pc_read;		/* this request's CMD8 read pc_value */
+	uint8_t pc_value;
+#if defined(OPXY_TEST_OS)
+	/* The test OS's bring-up steps (waffle/testos.h); NULL: none kept. */
+	int (*note)(void *ctx, unsigned step, int rc);
+	void *note_ctx;
+#endif
+};
+
+#if !defined(__bfin__)
+/* The host's unit tests stand in for the DMA: the store's bounce buffer. */
+uint8_t *opxy_storage_bounce(void);
+#endif
+
 struct opxy_master {
 	struct opxy_hw hw;
 	struct s06_clock clock;
+	/* S-18: the device, from the front's record (S-18.005) or decided at
+	 * entry without one (S-18.002 to S-18.004), and how (enum
+	 * wb_dev_how); NULL reads as the OP-XY (opxy_dev()). With
+	 * WB_DEV_UNKNOWN, the first stage's n and c (S-18.004). */
+	const struct wb_device *dev;
+	uint8_t dev_how;
+	uint32_t fs_n, fs_c;
+	/* S-18.002: an OP-XY main CPU whose strap read PA2 = 0; a main CPU
+	 * whose boot mode was not 1 (the fallback sample, flags bit 12) */
+	bool role_disagrees;
+	bool role_fallback;
+	/* S-13b.060: the main CPU's own eMMC and volume (emmc-on-main),
+	 * served to the bridge client (s09_master_local()) */
+	struct opxy_storage st;
 	/* The frozen front's hand-off (front/fr_handoff.h): front is true when
 	 * the record was found whole, and ho is its copy. */
 	bool front;
@@ -377,13 +480,39 @@ struct opxy_master {
  */
 bool opxy_front_take(struct fr_handoff *out);
 /*
- * S-01.023: the checks on the record's bytes at rec (FR_HO_SIZE readable):
- * version 1 of FR_HO_SIZE_V1 bytes or version 2 of FR_HO_SIZE, its magic and
- * its CRC; version 2's fields read 0 in a version 1 record. True with the
- * record in *out.
+ * S-01.023, S-18.005: the checks on the record's bytes at rec (FR_HO_SIZE
+ * readable): its magic, version 3 of FR_HO_SIZE bytes, and its CRC. True
+ * with the record in *out.
  */
 bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out);
-/* S-01.023: a version 2 record with FR_HO_RUNNING names the running slot,
+/* S-18.005: the device the front decided and how, from an accepted record;
+ * false when either code names none. */
+bool opxy_front_device(const struct fr_handoff *ho, enum wb_dev_id *id, enum wb_dev_how *how);
+/*
+ * S-18.001 to S-18.005, the main image's side: the device and the role.
+ * With a record whose device codes name one (opxy_front_device()), its
+ * device, how and role (offset 14), and nothing is read. With a record
+ * whose codes name none, its role, and the device decided as below, its
+ * master as a main CPU whatever the boot mode. Otherwise as the
+ * front decides (wb_device_decide_role()): boot mode 1 is a main CPU;
+ * another boot mode takes S-18.002's fallback sample through pa2 (PA2's
+ * INEN alone), PA2 = 0 the second CPU, PA2 = 1 a main CPU. A main CPU
+ * reads the first stage through read (S-18.003, S-18.004; no write), up to
+ * three tries. n and c are the fingerprint read, 0 when none was.
+ * S-13b.001's strap sample is the caller's, after this.
+ */
+struct opxy_device_pick {
+	const struct wb_device *dev;
+	enum wb_dev_how how;
+	bool master;
+	bool fallback;		/* S-18.002: the role from the fallback sample */
+	bool decided;		/* here, not by the record */
+	uint32_t n, c;
+};
+void opxy_device_pick(const struct fr_handoff *ho, unsigned boot_mode,
+		      wb_strap_fn pa2, void *pa2_ctx, wb_flash_read_fn read, void *ctx,
+		      struct opxy_device_pick *out);
+/* S-01.023: a record with FR_HO_RUNNING names the running slot,
  * established (S-01.002); false otherwise. */
 bool opxy_front_running(const struct fr_handoff *ho, unsigned *slot);
 /* The same, with FR_HO_TRIAL_MARKED clear: the front marked no trial
@@ -474,31 +603,10 @@ void opxy_start_log_reread(struct opxy_master *m);
 /* The INIT stage's stamps, from the hand-off (BOOT_TIMING=1 reports them). */
 extern uint64_t opxy_init_cycles[3];
 
-struct opxy_emmc_more;
-
 struct opxy_slave {
 	struct opxy_hw hw;
 	struct s06_clock clock;
-	_Alignas(32) uint8_t ext_csd[512];	/* the eMMC driver's DMA (S-13b.054) */
-	/* S-13b.059: false after a failed bring-up; then emmc_ops fail at
-	 * once, and nothing of ext_csd is used. */
-	bool emmc_up;
-	/* S-03.002: up, but not the eMMC of S-03.001: its user area is never
-	 * read or written, nor a boot partition written. */
-	bool emmc_other;
-	bool features;		/* S-03.009's switches made */
-	/* S-03.011: the power-off notification given; no command until a
-	 * request needs the eMMC, which first brings it up again. */
-	bool emmc_notified;
-	/* The partition the eMMC has selected (S-03.007): 0, 1 or 2, or
-	 * OPXY_PART_UNKNOWN after a select that failed. */
-	unsigned part;
-	struct s03_emmc_ops emmc_ops;
-	/* The erase with an argument and the reliable write, on emmc_ops'
-	 * ctx (waffle/board/opxy_bridge.h); NULL while the eMMC is down. */
-	const struct opxy_emmc_more *emmc_more;
-	struct s03_env emmc;
-	struct s09_store_ops store;
+	struct opxy_storage st;		/* the slave's eMMC and volume */
 	struct s09_slave server;
 	uint8_t last_cmd;		/* the last request header's command */
 	enum s05_fail staged;		/* S-05.020 step 1's outcome */
@@ -515,6 +623,14 @@ struct opxy_slave {
 extern struct opxy_master opxy_master;
 extern struct opxy_slave opxy_slave;
 
+/* The master's device (S-18): the OP-XY until one is set. */
+static inline const struct wb_device *opxy_dev(const struct opxy_master *m)
+{
+	return m->dev != NULL ? m->dev : &wb_device_opxy;
+}
+
+/* S-18.002, S-18.004 to S-14: the device's log lines (psoc_start()). */
+void opxy_device_log(struct opxy_master *m);
 /* S-01.003: the entry after start-up, both roles. */
 void opxy_main(void);
 void opxy_master_main(struct opxy_master *m);
@@ -531,13 +647,40 @@ void opxy_slave_main(struct opxy_slave *s);
  * the host's tests.
  */
 void opxy_slave_storage(struct opxy_slave *s);
+/* opxy_storage_user_bd() of the slave's storage, for the host's tests. */
+void opxy_slave_user_bd(struct opxy_slave *s, struct wb_blockdev *bd);
+
 /*
- * The user area as yaffs2's block device (S-12), on s's eMMC ops while
+ * The storage of st on hw for dev (src/board/opxy_storage.c): the bring-up
+ * of S-13b.051 when bring_up (none in the test OS's slave, which waits for
+ * the master's word), the volume added, and st->store's eMMC, file, read,
+ * erase-group and boot-size ops. The other store ops are the caller's.
+ */
+void opxy_storage_init(struct opxy_storage *st, struct opxy_hw *hw,
+		       const struct wb_device *dev, bool bring_up);
+/* S-13b.051, S-13b.057: the bring-up, at most OPXY_EMMC_TRIES times. */
+bool opxy_storage_up(struct opxy_storage *st);
+/* The eMMC as a bring-up left it (up or not): its ops and geometry. */
+void opxy_storage_start(struct opxy_storage *st, bool up);
+/* S-03.009's switches made, after a wake when one is due. */
+bool opxy_storage_features(struct opxy_storage *st);
+/* S-03.007: the volume usable, the user area selected; else ENODEV. */
+bool opxy_storage_volume_usable(const struct opxy_storage *st, uint32_t *err);
+/* The volume's file state (wire_s09) for a staging of /os.ldr. */
+struct wire_s09;
+struct wire_s09 *opxy_storage_files(void);
+/* The volume added on an eMMC brought up by the test OS's word. */
+void opxy_storage_testos_volume(struct opxy_storage *st);
+/*
+ * The user area as yaffs2's block device (S-12), on st's eMMC ops while
  * the user area is selected. Its chunks go as reliable writes through
- * s->emmc_more (S-12.060); its erase is the eMMC's (S-12.042), or none in
+ * st->emmc_more (S-12.060); its erase is the eMMC's (S-12.042), or none in
  * a YAFFS_ZERO_ERASE=1 build. Public for the host's tests.
  */
-void opxy_slave_user_bd(struct opxy_slave *s, struct wb_blockdev *bd);
+void opxy_storage_user_bd(struct opxy_storage *st, struct wb_blockdev *bd);
+/* S-05.037: the MSI controller closed for the kernel call, on a CPU that
+ * boots with emmc-on-main; nothing is sent to the eMMC. */
+int opxy_storage_close(struct opxy_storage *st);
 
 /* Held mode on the master (src/board/opxy_held.c). */
 void opxy_held(void *ctx, const struct boot_held *h);

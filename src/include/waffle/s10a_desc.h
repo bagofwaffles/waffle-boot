@@ -9,11 +9,17 @@
  * String indexes are free (S-10a.005); these follow the vectors: each
  * string field takes the next index in the order the
  * descriptors are listed (device, then each configuration), from 1.
+ *
+ * idProduct and every string built on the product's name follow the
+ * device's profile (S-10a.001, S-18.030); the rest is the same on every
+ * device.
  */
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+struct wb_device;
 
 /* S-10a.010 */
 enum s10a_set {
@@ -53,6 +59,7 @@ enum s10a_function {
 #define S10A_SERIAL_LEN		8u	/* S-04.040 */
 #define S10A_CONFIG_MAX		256u	/* bytes; the largest set needs 175 */
 #define S10A_STRING_MAX		66u	/* bytes of a string descriptor */
+#define S10A_TEXT_MAX		33u	/* a string's text and its NUL */
 #define S10A_MAX_CONFIGS	3u
 #define S10A_MAX_INTERFACES	4u
 
@@ -96,7 +103,8 @@ bool s10a_desc_has_endpoint(enum s10a_set set, uint8_t addr);
 unsigned s10a_desc_max_power(enum s10a_set set, unsigned value);
 
 /* The device descriptor (18 bytes) and the qualifier (10 bytes). */
-void s10a_desc_device(enum s10a_set set, bool has_serial, uint8_t out[18]);
+void s10a_desc_device(const struct wb_device *dev, enum s10a_set set,
+		      bool has_serial, uint8_t out[18]);
 void s10a_desc_qualifier(enum s10a_set set, uint8_t out[10]);
 
 /*
@@ -112,10 +120,12 @@ size_t s10a_desc_config(enum s10a_set set, bool has_serial, unsigned index,
  * String descriptor `index` (S-10a.005): index 0 is the LANGID list.
  * Returns its length, 0 when the set names no such index (a STALL).
  */
-size_t s10a_desc_string(enum s10a_set set, const char *serial,
-			unsigned index, uint8_t out[S10A_STRING_MAX]);
-/* The text of string `index` (1-based), NULL when the set names none. */
-const char *s10a_desc_text(enum s10a_set set, const char *serial,
-			   unsigned index);
+size_t s10a_desc_string(const struct wb_device *dev, enum s10a_set set,
+			const char *serial, unsigned index,
+			uint8_t out[S10A_STRING_MAX]);
+/* The text of string `index` (1-based) into out; false when the set names
+ * none. */
+bool s10a_desc_text(const struct wb_device *dev, enum s10a_set set,
+		    const char *serial, unsigned index, char out[S10A_TEXT_MAX]);
 
 #endif /* WAFFLE_S10A_DESC_H */

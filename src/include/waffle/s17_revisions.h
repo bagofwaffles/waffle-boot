@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
+
 #include "waffle/s11_version.h"
 
 /* ---- 1. The revision strap ---- */
@@ -61,6 +63,13 @@ struct s17_rev {
 
 /* Power-on or any reset of the master: a new strap sample (S-17.012). */
 void s17_rev_power_on(struct s17_rev *r, unsigned pa8, unsigned pa0);
+/*
+ * The same on dev: with straps, s17_rev_power_on(); without them (S-17.016)
+ * no sample, pa8 and pa0 unused, and the reported revision 0 until a
+ * greeting sets it.
+ */
+void s17_rev_power_on_dev(struct s17_rev *r, const struct wb_device *dev, unsigned pa8,
+			  unsigned pa0);
 
 /* The outcome of the start-up metadata read (S-17.010, S-17.015). */
 void s17_rev_metadata(struct s17_rev *r, enum s17_meta_state outcome);

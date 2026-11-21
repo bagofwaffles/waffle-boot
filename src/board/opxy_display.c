@@ -66,16 +66,25 @@ struct wb_display *opxy_testos_display(void)
 
 /* S-13c.004: the reset decision, from the entry's DMA9 values and the PA8
  * strap sample (S-13b.001). Before any DMA9 write. */
+/* S-13c.001: the panel's pins on the device (D/C, S-18.030). */
+static const struct wb_lcd_config *lcd_of(const struct wb_device *dev)
+{
+	return dev->id == WB_DEV_OP1F ? &wb_lcd_op1f : &wb_lcd_opxy;
+}
+
 void opxy_display_handshake(uint32_t xmod, uint32_t ymod)
 {
 	struct opxy_master *m = &opxy_master;
-	const struct s13c_bus *b = wb_display_bf70x_init(&bus, &m->hw.time);
+	const struct wb_device *dev = opxy_dev(m);
+	const struct s13c_bus *b = wb_display_bf70x_init_cfg(&bus, lcd_of(dev), &m->hw.time);
 
 	if (b == NULL)
 		return;
 	wb_display_init(&disp, FB);
-	wb_display_begin(&disp, b, xmod, ymod,
-			 (m->strap & OPXY_STRAP_REV1) != 0u ? 1u : 0u);
+	/* S-13c.027: without straps PA8 is never sampled; the decision is
+	 * the one PA8 high gives (a valid earlier handshake, else a pulse) */
+	wb_display_begin(&disp, b, dev, xmod, ymod,
+			 !wb_has(dev, WB_F_STRAPS) || (m->strap & OPXY_STRAP_REV1) != 0u ? 1u : 0u);
 	adopted = false;
 	up = true;
 }
@@ -83,12 +92,13 @@ void opxy_display_handshake(uint32_t xmod, uint32_t ymod)
 void opxy_display_adopt(uint32_t reset_ms)
 {
 	struct opxy_master *m = &opxy_master;
-	const struct s13c_bus *b = wb_display_bf70x_init(&bus, &m->hw.time);
+	const struct s13c_bus *b = wb_display_bf70x_init_cfg(&bus, lcd_of(opxy_dev(m)),
+							      &m->hw.time);
 
 	if (b == NULL)
 		return;
 	wb_display_init(&disp, FB);
-	wb_display_adopt(&disp, b, reset_ms);
+	wb_display_adopt(&disp, b, opxy_dev(m), reset_ms);
 	/* S-13c.012: this run's own gamma load, whatever the front's left. */
 	(void)s13c_gamma(&disp.panel, true);
 	adopted = true;

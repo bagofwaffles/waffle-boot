@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The master's pins (S-13b.003, S-13b.004, S-13b.006), the values and the
- * order of the board's opxy_pinmux_master and opxy_gpio_master, and the
- * time base from the core cycle counter (S-13a.001: 400 MHz). Target only.
+ * The main CPU's pins (S-13b.003, S-13b.004, S-13b.006), the values and
+ * the order of the board's pin and GPIO set-up for the device decided
+ * (fr_device.c), the flash bus before the decision (S-18.001), and the
+ * time base from the core cycle counter (S-13a.001:
+ * 400 MHz). Target only.
  */
 #include "fr_handoff.h"
 #include "fr_hw.h"
@@ -11,30 +13,6 @@
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/mmr.h"
 
-
-/* S-13b.003: MUX and FER per port. */
-static const struct { uint32_t mux; uint16_t fer; } func[WB_PORTS] = {
-	{ 0x30002000u, 0x4040u },	/* A */
-	{ 0x1400FFFFu, 0xFFFFu },	/* B */
-	{ 0x00855100u, 0x0BD3u },	/* C */
-};
-
-/* S-13b.004: PB10 and PC4 inputs before the first MUX write: DIR cleared,
- * then INEN set, which stays set. */
-static const uint8_t inputs_first[] = {
-	WB_PIN(WB_PORT_B, 10), WB_PIN(WB_PORT_C, 4),
-};
-
-/* S-13b.006: PA3 low; PA7 (the display's TE) before PA6 (the boot link's
- * ready); PC2. The bridge sets its own pins later. */
-#define G_IN  0u
-#define G_LOW 1u
-static const struct { uint8_t pin, dir; } gpio[] = {
-	{ WB_PIN(WB_PORT_A, 3), G_LOW },
-	{ WB_PIN(WB_PORT_A, 7), G_IN },
-	{ WB_PIN(WB_PORT_A, 6), G_IN },
-	{ WB_PIN(WB_PORT_C, 2), G_IN },
-};
 
 /* Pins whose 2-bit MUX field differs between two MUX values. */
 static uint16_t mux_changed(uint32_t a, uint32_t b)
@@ -48,41 +26,73 @@ static uint16_t mux_changed(uint32_t a, uint32_t b)
 	return pins;
 }
 
-void fr_hw_pins(void)
+/* S-13b.004: port p from mux and fer, as read, to want_mux and want_fer,
+ * with no FER bit set while the port's MUX differs from want_mux. */
+static void port_func(uint32_t p, uint32_t mux, uint32_t fer, uint32_t want_mux, uint32_t want_fer)
+{
+	const uint32_t off = fer & (~want_fer | mux_changed(mux, want_mux));
+
+	if (off != 0u)
+		wb_mmr_write32(PORT_FER_CLR(p), off);
+	if (mux != want_mux)
+		wb_mmr_write32(PORT_MUX(p), want_mux);
+	if ((fer & ~off) != want_fer)
+		wb_mmr_write32(PORT_FER_SET(p), want_fer);
+}
+
+bool fr_hw_flash_bus(void)
+{
+	const uint32_t fields = FR_FLASH_BUS_MUX;
+	const uint32_t mux = wb_mmr_read32(PORT_MUX(WB_PORT_B));
+	const uint32_t fer = wb_mmr_read32(PORT_FER(WB_PORT_B));
+
+	/* S-18.001: the bus as found, when its pins are SPI2's already (a
+	 * first stage leaves them so); else PORTB alone, which S-13b.004
+	 * exempts from making PB10 an input first */
+	if ((mux & fields) == (FR_PORTB_MUX & fields) &&
+	    (fer & FR_FLASH_BUS_PINS) == FR_FLASH_BUS_PINS)
+		return false;
+	port_func(WB_PORT_B, mux, fer, FR_PORTB_MUX, FR_PORTB_FER);
+	wb_mmr_sync();
+	return true;
+}
+
+void fr_hw_pins(const struct fr_dev *dev)
 {
 	unsigned i;
 
-	for (i = 0; i < sizeof inputs_first; i++) {
-		wb_mmr_write32(PORT_DIR_CLR(WB_PIN_PORT(inputs_first[i])),
-			       WB_PIN_BIT(inputs_first[i]));
-		wb_mmr_write32(PORT_INEN_SET(WB_PIN_PORT(inputs_first[i])),
-			       WB_PIN_BIT(inputs_first[i]));
+	/* S-13b.004: none on the OP-1F */
+	for (i = 0; i < dev->inputs_first_n; i++) {
+		wb_mmr_write32(PORT_DIR_CLR(WB_PIN_PORT(dev->inputs_first[i])),
+			       WB_PIN_BIT(dev->inputs_first[i]));
+		wb_mmr_write32(PORT_INEN_SET(WB_PIN_PORT(dev->inputs_first[i])),
+			       WB_PIN_BIT(dev->inputs_first[i]));
 	}
-	/* no FER bit set while the port's MUX differs from the table */
 	for (uint32_t p = 0; p < WB_PORTS; p++) {
 		const uint32_t mux = wb_mmr_read32(PORT_MUX(p));
 		const uint32_t fer = wb_mmr_read32(PORT_FER(p));
-		const uint32_t off = fer & (~(uint32_t)func[p].fer |
-					    mux_changed(mux, func[p].mux));
 
-		if (off != 0u)
-			wb_mmr_write32(PORT_FER_CLR(p), off);
-		if (mux != func[p].mux)
-			wb_mmr_write32(PORT_MUX(p), func[p].mux);
-		if ((fer & ~off) != func[p].fer)
-			wb_mmr_write32(PORT_FER_SET(p), func[p].fer);
+		port_func(p, mux, fer, dev->mux[p], dev->fer[p]);
 	}
 	wb_mmr_sync();
-	for (i = 0; i < sizeof gpio / sizeof gpio[0]; i++) {
-		const uint32_t p = WB_PIN_PORT(gpio[i].pin), b = WB_PIN_BIT(gpio[i].pin);
+	for (i = 0; i < dev->gpio_n; i++) {
+		const uint32_t p = WB_PIN_PORT(dev->gpio[i].pin), b = WB_PIN_BIT(dev->gpio[i].pin);
 
-		if (gpio[i].dir == G_IN) {
+		switch (dev->gpio[i].kind) {
+		case FR_GPIO_IN:
 			wb_mmr_write32(PORT_DIR_CLR(p), b);
 			wb_mmr_write32(PORT_INEN_SET(p), b);
-		} else {
-			/* the level before the driver */
-			wb_mmr_write32(PORT_DATA_CLR(p), b);
+			break;
+		case FR_GPIO_KEEP:
+			/* S-13b.006 on the OP-1F: the level it holds now */
 			wb_mmr_write32(PORT_DIR_SET(p), b);
+			break;
+		default:
+			/* the level before the driver */
+			wb_mmr_write32(dev->gpio[i].kind == FR_GPIO_HIGH ? PORT_DATA_SET(p) :
+								   PORT_DATA_CLR(p), b);
+			wb_mmr_write32(PORT_DIR_SET(p), b);
+			break;
 		}
 	}
 }

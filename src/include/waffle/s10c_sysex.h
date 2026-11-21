@@ -63,11 +63,18 @@ enum s10c_msg_class {
 	S10C_MSG_CARRIER,
 };
 
-enum s10c_msg_class s10c_classify(const uint8_t *m, size_t n);
+struct wb_device;
 
-/* The identity reply (S-10c.011). */
+/* The device byte of the identity request and the carrier is
+ * device.midi_byte (S-10c.007, S-18.030). */
+enum s10c_msg_class s10c_classify(const struct wb_device *dev,
+				  const uint8_t *m, size_t n);
+
+/* The identity reply (S-10c.011): device.midi_byte, device.midi_family and
+ * device.midi_member for the metadata's sku (wb_midi_member()). */
 #define S10C_IDENTITY_REPLY_LEN 17u
-extern const uint8_t s10c_identity_reply[S10C_IDENTITY_REPLY_LEN];
+void s10c_identity_reply(const struct wb_device *dev, uint16_t sku,
+			 uint8_t out[S10C_IDENTITY_REPLY_LEN]);
 
 /* ---- the S-06 carrier (S-10c.020-S-10c.022) ---- */
 
@@ -76,12 +83,14 @@ extern const uint8_t s10c_identity_reply[S10C_IDENTITY_REPLY_LEN];
 
 /* Builds one carrier message for `n` (at most 245) stream bytes into `out`,
  * which holds 7 + s10c_packed_len(n) bytes. Returns its length. */
-size_t s10c_carrier_build(const uint8_t *stream, size_t n, uint8_t *out);
+size_t s10c_carrier_build(const struct wb_device *dev, const uint8_t *stream,
+			  size_t n, uint8_t *out);
 
 /* The carrier messages for one frame's encoded bytes, delimiter included
  * (S-10c.022): one message when they number at most 245, else consecutive
  * messages of at most 245 stream bytes each. */
-void s10c_carrier_send_frame(const uint8_t *encoded, size_t n,
+void s10c_carrier_send_frame(const struct wb_device *dev,
+			     const uint8_t *encoded, size_t n,
 			     s10c_sysex_fn emit, void *ctx);
 
 /* The stream bytes of a received carrier message into `out` (512 bytes).
@@ -106,8 +115,9 @@ struct s10c_te_req {
 void s10c_te_parse(const uint8_t *m, size_t n, struct s10c_te_req *r);
 
 /* Builds a TE reply into `out`, which holds 11 + s10c_packed_len(n)
- * bytes. Returns its length. */
-size_t s10c_te_reply_build(const struct s10c_te_req *req, uint8_t status,
+ * bytes, with device.midi_byte at offset 4. Returns its length. */
+size_t s10c_te_reply_build(const struct wb_device *dev,
+			   const struct s10c_te_req *req, uint8_t status,
 			   const uint8_t *payload, size_t n, uint8_t *out);
 
 #endif /* WAFFLE_S10C_SYSEX_H */

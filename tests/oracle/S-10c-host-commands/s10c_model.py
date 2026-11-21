@@ -1,13 +1,64 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """S-10c model: the host command protocol, playing the device, used to build and self-check the vectors.
 Python 3, standard library only.
+
+A device's values (S-18.030) and features (S-18.020) come from S-18's vectors; the module's constants and
+defaults are the OP-XY's.
 """
+import json
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', 'conformance'))
 from serial.frame import Frame, swap_route  # noqa: E402  (the conformance package)
+
+# ---- S-18: the device's values ----
+
+
+def _s18(name):
+    with open(os.path.join(HERE, '..', 'S-18-devices', 'vectors', name + '.json'), encoding='utf-8') as f:
+        return json.load(f)
+
+
+def profile_value(name, device):
+    for rows in _s18('profile')['tables'].values():
+        for r in rows:
+            if r['name'] == name:
+                return r[device]
+    raise KeyError(name)
+
+
+def has_feature(name, device):
+    for r in _s18('features')['features']:
+        if r['name'] == name:
+            return r[device]
+    raise KeyError(name)
+
+
+def device_id(device, how='table'):
+    """S-18.031: xy, 1f, or unknown when the device was not identified (S-18.004)."""
+    return _s18('profile')['device_id']['unknown' if how == 'unknown' else device]
+
+
+def midi_member(device, sku):
+    """device.midi_member (S-18.030): the OP-XY's two bytes, or the sku's bits 6-0 and 13-7 (02 00 for
+    0xFFFF)."""
+    v = profile_value('device.midi_member', device)
+    if isinstance(v, list):
+        return bytes(v)
+    if sku == v['sku_unset']:
+        return bytes([v['when_unset'], 0])
+    return bytes([sku & 0x7F, (sku >> 7) & 0x7F])
+
+
+def identity_reply(device='OP-XY', sku=0xFFFF):
+    """S-10c.011 by device.midi_byte, device.midi_family and device.midi_member."""
+    mb = profile_value('device.midi_byte', device)
+    fam = bytes(profile_value('device.midi_family', device))
+    return bytes([0xF0, 0x7E, mb, 0x06, 0x02, 0x00, 0x20, 0x76]) + fam + midi_member(device, sku) + \
+        bytes(4) + b'\xf7'
+
 
 # ---- S-10c.001, .002: packing ----
 
@@ -197,11 +248,17 @@ def version_text(v):
 
 
 def info_text(serial='', dsp_serial='', hw_rev=255, sku=0, sw=(0, 0, 0, 0), bl=(1, 0, 0, 0),
-              os_version=(0, 0, 0, 0), factory=0):
-    k = f'TE033AS{sku if sku <= 999 else 0:03d}'
-    return (f'mode:bootloader;serial:{serial};dsp_serial:{dsp_serial};hw_rev:{hw_rev};product:OP-XY;sku:{k};'
-            f'sw_version:{version_text(sw)};bl_version:{version_text(bl)};os_version:{version_text(os_version)};'
-            f'factory:{factory}')
+              os_version=(0, 0, 0, 0), factory=0, device='OP-XY', how='table'):
+    """S-10c.054, S-10c.055 with S-18.031: device.product_text and device.sku_prefix, the factory entry
+    only with factory-word, and device_id last on every device. how 'unknown': the default device's values
+    with device_id:unknown (S-18.004)."""
+    k = f'{profile_value("device.sku_prefix", device)}{sku if sku <= 999 else 0:03d}'
+    product = profile_value('device.product_text', device)
+    t = (f'mode:bootloader;serial:{serial};dsp_serial:{dsp_serial};hw_rev:{hw_rev};product:{product};sku:{k};'
+         f'sw_version:{version_text(sw)};bl_version:{version_text(bl)};os_version:{version_text(os_version)}')
+    if has_feature('factory-word', device):
+        t += f';factory:{factory}'
+    return t + ';device_id:' + device_id(device, how)
 
 
 def te_code(w):

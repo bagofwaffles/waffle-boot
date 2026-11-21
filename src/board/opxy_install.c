@@ -185,7 +185,7 @@ bool opxy_meta_write(struct opxy_master *m)
 
 	if (m->meta_failed || m->meta_restore_failed || !meta_before(m, before))
 		return false;
-	s04_meta_build(before, &m->meta, m->sv.host.factory, raw);
+	s04_meta_build(opxy_dev(m), before, &m->meta, m->sv.host.factory, raw);
 	opxy_flash_writer(&m->hw, true);	/* S-13b.017 */
 	r = s02_meta_write(&m->flash, raw);
 	opxy_flash_writer(&m->hw, false);
@@ -527,7 +527,7 @@ static enum s11_result step_content(void *ctx)
 	enum s11_result r;
 
 	s11_staged_scan(&m->sv.staging, &st);
-	r = s11_install_content(&m->sv.staging, s11_staged_content_only(&st));
+	r = s11_install_content(opxy_dev(m), &m->sv.staging, s11_staged_content_only(&st));
 	if (r == S11_FAILURE)
 		cause("a file was not installed");	/* S-11.079 */
 	return r;
@@ -812,12 +812,13 @@ void opxy_install_ops(struct opxy_master *m, struct s11_run_ops *run,
 
 /* --- a run's start and end --- */
 
-void opxy_install_begin(struct opxy_master *m, bool option, bool forced,
-			uint8_t selected)
+void opxy_install_begin(struct opxy_master *m, bool option, enum s11_sig sig,
+			bool forced, uint8_t selected)
 {
 	s11_staged_scan(&m->sv.staging, &cur.st);
 	cur.env.staged = &cur.st;
 	cur.env.option = option;
+	cur.env.sig = sig;
 	cur.env.forced = forced;
 	cur.env.nordic_in_dfu = false;
 	cur.env.copro = &m->sv.copro;
@@ -921,7 +922,7 @@ static void row_versions(struct s15_select_row *r, unsigned step,
 
 /* What the rows show (S-15.116), from S-11's view of each step. */
 static void select_info(struct opxy_master *m, const struct s11_step_env *env,
-			bool te_signed)
+			bool waffle)
 {
 	static const enum s15_row kind[] = {
 		[S11_PICK_ABSENT] = S15_ROW_NONE,
@@ -957,50 +958,76 @@ static void select_info(struct opxy_master *m, const struct s11_step_env *env,
 		     &st->version[S11_C_NORDIC_BL0]);
 	row_versions(&sel_info.row[S11_STEP_KEYBOARD], S11_STEP_KEYBOARD,
 		     &c->psoc, &st->version[S11_C_BACKPLANE]);
-	s11_pack_name(&m->sv.staging, sel_pack, sizeof(sel_pack)); /* S-11.039 */
+	s11_pack_name(opxy_dev(m), &m->sv.staging, sel_pack, sizeof(sel_pack)); /* S-11.039 */
 	sel_info.row[S11_STEP_CONTENT].package = sel_pack[0] != '\0' ? sel_pack
 								       : NULL;
 	/* S-02.043: the slot the bootloader step would replace */
 	sel_info.slot = -1;
 	if (s02_read_selector(&m->flash, &selector) == S02_OK)
 		sel_info.slot = (int)s02_other_slot(selector.index);
-	sel_info.stock = s11_return_to_stock(env->option, te_signed, true);
+	sel_info.valid = env->sig == S11_SIG_VALID;
+	sel_info.stock = s11_return_to_stock(env->option, sel_info.valid, waffle,
+					     true);
 }
 
-/* The package's TE signature, for the return to stock on the screen. */
-static bool sel_te_signed;
+/* The staged bootloader is waffle-boot's (S-11.091), for the screen. */
+static bool sel_waffle;
+
+static uint32_t crc_of(uint32_t crc, const uint8_t *p, size_t n)
+{
+	return wire_crc32(crc, p, (uint32_t)n);
+}
 
 /*
- * S-11.096: the steps to run, chosen on the unit before the run's first
- * write. The start-up key read tells whether the keys can be read
- * (S-07.032); when they cannot, nothing is shown or asked. The keys down
- * when the screen is shown, once every event that arrived before it is
- * taken, act only after an up and a down. The PSoC's messages, the
+ * S-11.091: whether the staged bootloader image is a waffle-boot build,
+ * decided before the selection from the bytes the bootloader step would
+ * write, read and checked as it reads them (S-11.095). Only with the option
+ * on, the package valid (no other is called a return to stock) and the
+ * image present; an image that cannot be read or does not pass its check
+ * is not one. Leaves the run's refusal and cause as they were.
+ */
+static bool staged_bootloader_waffle(struct opxy_master *m, bool option,
+				     enum s11_sig sig)
+{
+	const enum s11_result refusal = cur.refusal;
+	uint32_t len;
+	uint8_t *image;
+	bool waffle;
+
+	if (!option || sig != S11_SIG_VALID ||
+	    !s11_staged_present(&cur.st, S11_C_BOOTLOADER))
+		return false;
+	image = staged(m, S11_C_BOOTLOADER, &len);
+	waffle = s11_bootloader_is_waffle(image, len, crc_of);
+	free(image);
+	cur.refusal = refusal;
+	cur.cause[0] = '\0';
+	return waffle;
+}
+
+/*
+ * The selection's screen, or S-15.197's prompt (pickable 0, no row: as
+ * s15_select_prompt_open() opens it), until its choice is made. The keys
+ * down when the screen is shown, once every event that arrived before it
+ * is taken, act only after an up and a down. The PSoC's messages, the
  * Nordic's greetings and the bus are served while it waits.
  */
-static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
-				  uint8_t *selected)
+static void select_wait(struct opxy_master *m, bool prompt, uint8_t pickable)
 {
-	struct opxy_master *m = ctx;
 	struct s15_menu *menu = &m->sv.menu;
-	const uint8_t pickable = s11_pickable(env);
 	uint8_t drawn_sel;
 	bool drawn_hold;
 	uint32_t drawn;
 
-	if (!m->key_status.replied) {
-		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
-			    "install: keys not readable, nothing asked");
-		return S11_ANSWER_UNASKED;
-	}
-	select_info(m, env, sel_te_signed);
-	s15_select_open(&sel, pickable, NULL, now_ms(m));
+	s15_select_open(&sel, opxy_dev(m), pickable, NULL, now_ms(m));
+	sel.prompt = prompt;
 	s15_up_select(menu, &sel_info, &sel, now_ms(m));
 	show(m);
 	/* What arrived before the screen was shown chooses nothing. */
 	if (psoc_drain(m) == S07_POWEROFF)
-		goto off;
-	s15_select_open(&sel, pickable, m->psoc.keys, now_ms(m));
+		opxy_powered_off(m);	/* S-07.051: the PSoC removes the power */
+	s15_select_open(&sel, opxy_dev(m), pickable, m->psoc.keys, now_ms(m));
+	sel.prompt = prompt;
 	drawn_sel = sel.selected;
 	drawn_hold = sel.holding;
 	drawn = s15_menu_changes(menu);
@@ -1021,21 +1048,60 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 			show(m);
 		}
 		if (s07_poll(&m->psoc) == S07_POWEROFF)
-			goto off;
+			opxy_powered_off(m);	/* S-07.051 */
 		s08_answer_greetings(&m->nordic);
 		opxy_usb_breathe();
 		s06_idle(&m->clock, s06_now(&m->clock) + 1000u);
 	}
 	m->psoc_ops.key_event = menu_key;
+}
+
+/* How the wait ended, for the log: held, or how it was canceled. */
+static const char *select_end(const char *held)
+{
+	return sel.end == S15_SELECT_END_HELD ? held :
+	       sel.end == S15_SELECT_END_KEY ? "canceled with key 8" :
+					       "canceled after 60 s";
+}
+
+/*
+ * S-11.096: the steps to run, chosen on the unit before the run's first
+ * write; for an invalid package (S-11.021) S-15.197's prompt comes first,
+ * and canceling it installs nothing. The start-up key read tells whether
+ * the keys can be read (S-07.032); when they cannot, nothing is shown or
+ * asked, and an invalid package, which nobody can confirm, is canceled.
+ */
+static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
+				  uint8_t *selected)
+{
+	struct opxy_master *m = ctx;
+	struct s14_text t;
+
+	const bool invalid = env->sig == S11_SIG_INVALID;
+
+	if (!m->key_status.replied) {
+		s14_text_init(&t);
+		s14_text_str(&t, "install: keys not readable, ");
+		s14_text_str(&t, invalid ? "not confirmed: canceled" :
+					   "nothing asked");
+		s14_log_text(&m->sv.log, S14_INFO, S14_NO_TAG, &t);
+		return invalid ? S11_ANSWER_CANCEL : S11_ANSWER_UNASKED;
+	}
+	select_info(m, env, sel_waffle);
+	if (invalid) {
+		select_wait(m, true, 0u);
+		s14_text_init(&t);
+		s14_text_str(&t, "install: the prompt ");
+		s14_text_str(&t, select_end("held 5 s"));
+		s14_log_text(&m->sv.log, S14_INFO, S14_NO_TAG, &t);
+		if (sel.choice != S15_SELECT_INSTALL)
+			return S11_ANSWER_CANCEL;
+	}
+	select_wait(m, false, s11_pickable(env));
 	*selected = sel.selected;
-	select_log(m, sel.end == S15_SELECT_END_HELD ? "installing by a 5 s hold" :
-		      sel.end == S15_SELECT_END_KEY ? "canceled with key 8" :
-						      "canceled after 60 s");
+	select_log(m, select_end("installing by a 5 s hold"));
 	return sel.choice == S15_SELECT_INSTALL ? S11_ANSWER_INSTALL :
 						  S11_ANSWER_CANCEL;
-off:
-	/* S-07.051: the PSoC removes the power. */
-	opxy_powered_off(m);
 }
 
 /* --- an install from a package (S-11.020) --- */
@@ -1161,8 +1227,8 @@ static void install(struct opxy_master *m, const struct s11_package_ops *pkg,
 	show(m);
 	r = s11_check_package(&p, in, &checked);
 	opxy_crypto_end();
-	out->te_signed = checked.te_signed;
 	out->forced = checked.forced;
+	out->sig = checked.sig;
 	if (r != S11_REASON_NONE) {
 		refused(out, r);
 		usb_gap_log(m);
@@ -1202,8 +1268,24 @@ static void install(struct opxy_master *m, const struct s11_package_ops *pkg,
 	out->reason = S11_REASON_NONE;
 	sv->extracted_sizes = sizes;	/* S-11.095: kept for this run */
 	sv->extracted = true;
-	opxy_install_begin(m, in->option, checked.forced, 0);
-	sel_te_signed = checked.te_signed;
+	opxy_install_begin(m, in->option, checked.sig, checked.forced, 0);
+	{
+		static const char *const state[] = {
+			[S11_SIG_NONE] = "none", [S11_SIG_INVALID] = "invalid",
+			[S11_SIG_VALID] = "valid",
+		};
+		struct s14_text t;
+
+		s14_text_init(&t);
+		s14_text_str(&t, "install: signature ");
+		s14_text_str(&t, state[checked.sig]);
+		s14_log_text(&sv->log, S14_INFO, S14_NO_TAG, &t);
+	}
+	out->bootloader_waffle = sel_waffle =
+		staged_bootloader_waffle(m, in->option, checked.sig);
+	if (out->bootloader_waffle)
+		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
+			    "install: the bootloader image is waffle-boot's");
 	if (!s11_select(&cur.env, select_ask, m)) {
 		/* S-11.096: no run, nothing written; reported as a run that
 		 * had nothing to do */
@@ -1218,7 +1300,9 @@ static void install(struct opxy_master *m, const struct s11_package_ops *pkg,
 		return;
 	}
 	out->selected = cur.env.selected;
-	out->stock = s11_return_to_stock(in->option, checked.te_signed,
+	out->stock = s11_return_to_stock(in->option,
+					 checked.sig == S11_SIG_VALID,
+					 out->bootloader_waffle,
 					 (cur.env.selected &
 					  S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u);
 	memset(&cfg, 0, sizeof(cfg));
@@ -1227,11 +1311,12 @@ static void install(struct opxy_master *m, const struct s11_package_ops *pkg,
 	cfg.has_version = cur.st.has_fw_version;		/* S-11.038 */
 	cfg.version = cur.st.fw_version;
 	version_str(&cur.st.fw_version, v);
-	s11_pack_name(&sv->staging, name, sizeof(name));	/* S-11.039 */
+	s11_pack_name(opxy_dev(m), &sv->staging, name, sizeof(name));	/* S-11.039 */
 	s15_up_run_start(&sv->menu,
 			 cfg.content_only ? S15_RUN_CONTENT :
 			 checked.forced ? S15_RUN_FORCED : S15_RUN_FIRMWARE,
-			 cfg.has_version ? v : NULL, name, out->stock);
+			 cfg.has_version ? v : NULL, name, out->stock,
+			 checked.sig == S11_SIG_VALID);
 	show(m);
 	(void)s11_run(&sv->run, &cfg, &out->run);
 	s11_run_outcome(&out->run, &out->outcome);

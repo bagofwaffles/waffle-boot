@@ -37,5 +37,6 @@
 | **BLE** | Screens' name for the Nordic Bluetooth chip |
 | **LDR stream** | The boot ROM's image format, used for the first stage, the slots and the OS |
 | **Package** | A firmware file (`.tfw`) installed from the boot menu's USB disk |
+| **Signature state** | What the check of a package's signature found: valid, does not match, or none. It never refuses a package or a part; a valid one is shown as signed by TE, and one that does not match is installed only after a 5 s hold of 1 |
 | **Developer mode** | A setting that adds the developer menu and a USB serial port |
 | **Flash programmer** | An external tool that writes the SPI flash chip directly. The only fix for a unit with nothing that starts |

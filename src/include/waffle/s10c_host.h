@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
 #include "waffle/s10c_sysex.h"
 #include "waffle/s11_common.h"
 #include "waffle/s11_version.h"
@@ -44,13 +45,16 @@ struct s10c_info {
 	uint32_t factory;
 };
 
-/* The longest info text: every field at its limit. As an S-06 payload it
- * is under 249 bytes, and as a TE reply under 288 (S-10c.005). */
-#define S10C_INFO_TEXT_MAX 225u
+/* The longest info text: every field at its limit, device_id:unknown. As an
+ * S-06 payload it is under 249 bytes, and as a TE reply under 288
+ * (S-10c.005). */
+#define S10C_INFO_TEXT_MAX 243u
 
-/* The info text with no NUL (S-10c.054); returns its length. `buf` holds
- * S10C_INFO_TEXT_MAX bytes. */
-size_t s10c_info_text(const struct s10c_info *v, char *buf);
+/* The info text with no NUL (S-10c.054, S-10c.055, S-18.031) of dev,
+ * decided as how says; returns its length. `buf` holds S10C_INFO_TEXT_MAX
+ * bytes. */
+size_t s10c_info_text(const struct wb_device *dev, enum wb_dev_how how,
+		      const struct s10c_info *v, char *buf);
 
 /* The TE code of a product word: 10 characters (S-10c.088). */
 void s10c_te_code(uint32_t word, char out[10]);
@@ -208,6 +212,8 @@ struct s10c_progress_sink {
 struct s10c_host {
 	const struct s10c_ops *ops;
 	void *ctx;
+	const struct wb_device *dev;	/* S-18.030's values */
+	enum wb_dev_how how;		/* S-18.031's device_id */
 	bool factory;			/* factory mode (S-10c.053) */
 	bool transfer;			/* a transfer is in progress */
 	bool got_chunk;			/* ... and has received a chunk */
@@ -216,8 +222,11 @@ struct s10c_host {
 	uint8_t buf[S10C_TE_MAX_PAYLOAD];
 };
 
+/* dev is the device the front decided, how as the hand-off record says
+ * (S-18.005). */
 void s10c_host_init(struct s10c_host *h, const struct s10c_ops *ops,
-		    void *ctx);
+		    void *ctx, const struct wb_device *dev,
+		    enum wb_dev_how how);
 
 /*
  * An S-06 frame that S-06 delivered to the master on a host link

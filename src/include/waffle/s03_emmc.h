@@ -4,9 +4,9 @@
  * 512-byte OS header, the OS load rule, the OS writer with its write order
  * and failure paths, the eMMC features, and the user-area map.
  *
- * eMMC operations come in through struct s03_emmc_ops (on the master they
- * are bridge requests, S-09; on the slave, the eMMC driver).  Nothing here
- * touches hardware.
+ * eMMC operations come in through struct s03_emmc_ops (on the OP-XY's
+ * master they are bridge requests, S-09; on its slave and on the OP-1F's
+ * main CPU, the eMMC driver).  Nothing here touches hardware.
  */
 #ifndef WAFFLE_S03_EMMC_H
 #define WAFFLE_S03_EMMC_H
@@ -14,6 +14,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include "waffle/device.h"
 
 #define S03_SECTOR          512u
 #define S03_GROUP_SECTORS   0x400u		/* S-03.001 erase group */
@@ -37,7 +39,8 @@
  * to the selected partition.  erase() names one erase group by its first
  * sector, which the driver sends as both CMD35 and CMD36 (S-03.004).
  * switch_byte() is a CMD6 SWITCH in write-byte mode of one EXT_CSD byte;
- * select(n) is the same with index 179 and value n (S-03.005).
+ * select(n) is the same with index 179 and value n on the OP-XY (S-03.005)
+ * and s03_select_keep() on the OP-1F (S-03.012).
  */
 struct s03_emmc_ops {
 	void *ctx;
@@ -47,6 +50,14 @@ struct s03_emmc_ops {
 	int (*erase)(void *ctx, uint32_t first_sector);
 	int (*switch_byte)(void *ctx, uint8_t index, uint8_t value);
 };
+
+/*
+ * S-03.013's switch of the OP-1F: a CMD6 in write-byte mode whose busy wait
+ * is CMD13 polled until the eMMC reports ready for data in the transfer
+ * state, for at most limit_ms. ctx is the ops' ctx. Returns 0 done, 1 the
+ * wait ran out, -1 the command failed.
+ */
+typedef int (*s03_switch_poll_fn)(void *ctx, uint8_t index, uint8_t value, uint32_t limit_ms);
 
 /* CRC-32 with zlib's convention (S-03.025), as in S-02. */
 typedef uint32_t (*s03_crc32_fn)(uint32_t crc, const uint8_t *buf, uint32_t len);
@@ -72,9 +83,12 @@ struct s03_env {
 
 /* --- The eMMC (S-03.001, S-03.002, S-03.009, S-03.011) --- */
 
-/* S-03.001: SEC_COUNT, the erase group in sectors, and OPTIMAL_WRITE_SIZE as the
- * number EXT_CSD[265] holds, which passes when it divides 8. */
-bool s03_emmc_supported(uint32_t sec_count, uint32_t erase_group_sectors, uint32_t opt_write);
+/* S-03.001, S-03.002: SEC_COUNT, the erase group in sectors, and
+ * OPTIMAL_WRITE_SIZE as the number EXT_CSD[265] holds, which passes when it
+ * divides 8. The count is device.emmc_sectors: exactly that many, or with
+ * emmc_sectors_at_least that many or more. */
+bool s03_emmc_supported(const struct wb_device *dev, uint32_t sec_count,
+			uint32_t erase_group_sectors, uint32_t opt_write);
 
 /* S-03.009: the three feature switches before the first user-area read. */
 int s03_emmc_features_on(const struct s03_env *env);
@@ -86,6 +100,44 @@ int s03_emmc_features_on(const struct s03_env *env);
  */
 int s03_emmc_shutdown(const struct s03_env *env, int (*unmount)(void *ctx), void *unmount_ctx);
 
+/*
+ * S-03.013, the OP-1F's: FLUSH_CACHE <- 1, CACHE_CTRL <- 0, the volume
+ * unmounted, POWER_OFF_NOTIFICATION <- 3 by poll (NULL: the step fails) with a limit of
+ * EXT_CSD[247] (power_off_long_time) x 10 ms. BKOPS_EN is not written. A
+ * failed step, after S-03.010's retries, does not end the sequence; the
+ * notification is retried only on a command error, never after its wait
+ * ran out, and nothing follows it. Returns 0, or -1 when a step failed.
+ */
+int s03_emmc_shutdown_1f(const struct s03_env *env, int (*unmount)(void *ctx), void *unmount_ctx,
+			 s03_switch_poll_fn poll, uint8_t power_off_long_time);
+
+/* The wait limit of S-03.013 step 4, in ms, for EXT_CSD[247]; a byte of 0
+ * (not defined by the eMMC) takes the longest, 255 x 10 ms. */
+uint32_t s03_power_off_limit_ms(uint8_t power_off_long_time);
+
+/*
+ * S-03.012: the select of the OP-1F, which changes only PARTITION_ACCESS,
+ * bits 2-0 of EXT_CSD[179]. cur is the byte as the eMMC holds it. Returns
+ * false when bits 2-0 already equal part (no CMD6 is issued), else true with
+ * *value = (cur AND 0xF8) OR part.
+ */
+bool s03_select_value(uint8_t cur, unsigned part, uint8_t *value);
+
+/*
+ * S-03.012's select as an s03_emmc_ops select: the current byte from an
+ * EXT_CSD read (read_part_config, a CMD8) when it is not known, or from
+ * the last switch that succeeded. A failed switch leaves it not known, so
+ * the next select reads it first.
+ */
+struct s03_select_keep {
+	void *ctx;
+	int (*switch_byte)(void *ctx, uint8_t index, uint8_t value);
+	int (*read_part_config)(void *ctx, uint8_t *value);
+	uint8_t cur;
+	bool known;
+};
+
+int s03_select_keep(struct s03_select_keep *k, unsigned part);
 /* --- The OS header (S-03.020 to S-03.027) --- */
 
 struct s03_header {
@@ -245,6 +297,19 @@ enum s03_region { S03_REGION_YAFFS2 = 0, S03_REGION_UNUSED, S03_REGION_FAT, S03_
 #define S03_FACTORY_RESET_GROUP 0x4000u
 
 enum s03_region s03_user_region(uint32_t sector);
+/*
+ * S-03.070, S-03.075: the region of a user-area sector on dev. Without
+ * fat-region only the yaffs2 row is defined: every sector from 0x480000
+ * on is S03_REGION_NONE.
+ */
+enum s03_region s03_user_region_dev(const struct wb_device *dev, uint32_t sector);
+/*
+ * S-03.073, S-03.075: whether the bootloader may read, write or erase
+ * user-area sectors [first, first + count) on dev, outside the volume's
+ * own accesses: the yaffs2 region; with fat-region also the factory
+ * reset's group (S-03.073). False for an empty or wrapping range.
+ */
+bool s03_user_access_ok(const struct wb_device *dev, uint32_t first, uint32_t count);
 /* S-03.072: the user-area sector that holds FAT volume sector s. */
 uint32_t s03_fat_volume_to_user(uint32_t s);
 

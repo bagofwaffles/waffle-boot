@@ -90,6 +90,18 @@ const struct wb_pinmux opxy_pinmux_master = {
 	.n_inputs_first = sizeof(first_master),
 };
 
+/* S-13b.003 on the OP-1F (S-18.030): its main CPU's six values, with no
+ * pin made an input first (S-13b.004: PC4 is MSI0's there). */
+const struct wb_pinmux opxy_pinmux_op1f = {
+	.port = {
+		{ 0x30280000u, 0x4620u },	/* A */
+		{ 0x1400FFFFu, 0xFFFFu },	/* B */
+		{ 0x000AAA00u, 0x17F3u },	/* C */
+	},
+	.inputs_first = NULL,
+	.n_inputs_first = 0u,
+};
+
 const struct wb_pinmux opxy_pinmux_slave = {
 	.port = {
 		{ 0x00000200u, 0x0000u },
@@ -117,6 +129,43 @@ const struct opxy_gpio opxy_gpio_master[] = {
 };
 const unsigned opxy_gpio_master_n =
 	sizeof(opxy_gpio_master) / sizeof(opxy_gpio_master[0]);
+
+/*
+ * S-13b.006 on the OP-1F: PA0, PA3, PA4, PA6 and PC13 outputs at the
+ * level each PORTx_DATA bit holds (no level written: 0 at reset and not
+ * written by the first stage, so low), then PA1, PA2, PA7, PC2, PC11 and
+ * PC14 inputs. PA8 is never an input (S-13c.027).
+ */
+const struct opxy_gpio opxy_gpio_op1f[] = {
+	{ PA(0), OPXY_OUT_KEEP },
+	{ PA(3), OPXY_OUT_KEEP },
+	{ PA(4), OPXY_OUT_KEEP },
+	{ PA(6), OPXY_OUT_KEEP },
+	{ PC(13), OPXY_OUT_KEEP },
+	{ PA(1), OPXY_IN },
+	{ PA(2), OPXY_IN },
+	{ PA(7), OPXY_IN },
+	{ PC(2), OPXY_IN },
+	{ PC(11), OPXY_IN },
+	{ PC(14), OPXY_IN },
+};
+const unsigned opxy_gpio_op1f_n =
+	sizeof(opxy_gpio_op1f) / sizeof(opxy_gpio_op1f[0]);
+
+const struct wb_pinmux *opxy_pinmux_main(const struct wb_device *dev)
+{
+	return dev->id == WB_DEV_OP1F ? &opxy_pinmux_op1f : &opxy_pinmux_master;
+}
+
+const struct opxy_gpio *opxy_gpio_main(const struct wb_device *dev, unsigned *n)
+{
+	if (dev->id == WB_DEV_OP1F) {
+		*n = opxy_gpio_op1f_n;
+		return opxy_gpio_op1f;
+	}
+	*n = opxy_gpio_master_n;
+	return opxy_gpio_master;
+}
 
 const struct opxy_gpio opxy_gpio_slave[] = {
 	{ PA(3), OPXY_OUT_LOW },
@@ -217,6 +266,29 @@ const struct wb_msi_config opxy_msi_bringup = {
 	.xfer_timeout_us = 100000u,
 };
 
+/* S-13b.060, S-13b.061: the OP-1F's main CPU drives its eMMC on four data
+ * lines, with the same clocks and bounds. */
+const struct wb_msi_config opxy_msi_1f = {
+	.ident_clkdiv = 63u,
+	.tmout = 0xFFFFFF40u,
+	.fifoth = 0x20070008u,
+	.cmd1_timeout_us = 1500000u,
+	.busy_timeout_us = 2000000u,
+	.xfer_timeout_us = 1000000u,
+	.flush_timeout_us = 6000000u,
+	.xfer_total_us = 4000000u,
+	.emmc_width = 4u,
+};
+const struct wb_msi_config opxy_msi_bringup_1f = {
+	.ident_clkdiv = 63u,
+	.tmout = 0xFFFFFF40u,
+	.fifoth = 0x20070008u,
+	.cmd1_timeout_us = 1050000u,
+	.busy_timeout_us = 250000u,
+	.xfer_timeout_us = 100000u,
+	.emmc_width = 4u,
+};
+
 /* S-05.016's slave MSI row: INTEN set, the internal DMA off, the error
  * interrupts unmasked, the card read threshold on at one block. */
 const struct wb_msi_leave opxy_msi_leave = {
@@ -228,7 +300,9 @@ const struct wb_msi_leave opxy_msi_leave = {
 };
 
 /* S-05.016's SEC row: the sources left enabled at the kernel call, with
- * IEN and SEN set, and the slave's source 21 at its priority alone. */
+ * IEN and SEN set, and the slave's source 21 at its priority alone. The
+ * OP-1F's list is the master's first OPXY_SEC_KEEP_1F (S-05.037: source 1
+ * alone; 19, 20, 21 and 72 clear like every other, provisional). */
 const struct opxy_sec_keep opxy_sec_keep_master[OPXY_SEC_KEEP_MASTER] = {
 	{ 1u, 0x00000005u }, { 19u, 0x00000005u },
 	{ 20u, 0x00000105u }, { 21u, 0x00000105u },
@@ -250,6 +324,17 @@ const struct opxy_os_entry opxy_os_entry_master = {
 };
 const struct opxy_os_entry opxy_os_entry_slave = {
 	0x88A65B18u, 0x88A65B3Cu, OS_EVTS,
+};
+
+/* S-05.038: the OP-1F's vectors, EVT2 first; SP and FP are not fixed
+ * there, so they are the master's: a stack in DDR clear of S-05.040's
+ * ranges and of the staged image. */
+#define EVT_1F_OTHER 0x11A00664u
+const struct opxy_os_entry opxy_os_entry_op1f = {
+	0x88A65B44u, 0x88A65B68u,
+	{ 0x11A00C18u, 0x11A00B78u, EVT_1F_OTHER, EVT_1F_OTHER, EVT_1F_OTHER,
+	  EVT_1F_OTHER, EVT_1F_OTHER, EVT_1F_OTHER, EVT_1F_OTHER, 0x11A01438u,
+	  EVT_1F_OTHER, EVT_1F_OTHER, EVT_1F_OTHER, 0x11A000CAu },
 };
 
 /*

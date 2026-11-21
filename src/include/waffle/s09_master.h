@@ -338,9 +338,13 @@ struct s09_qdata_rec {
 	struct s09_fault fault;		/* how the one that dropped it broke */
 };
 
+struct s09_store_ops;
+
 struct s09_master {
 	const struct s09_bus_ops *bus;
 	const struct s06_clock *clock;
+	/* s09_master_local(): the store on this CPU, NULL for the bridge */
+	const struct s09_store_ops *local;
 	bool absent;		/* S-09.008 */
 	/* a session let go before its end, and the wait before the next one
 	 * then (S-09.013; S09_T_QUIET_US) */
@@ -468,6 +472,19 @@ void s09_master_init(struct s09_master *m, const struct s09_bus_ops *bus,
  * not used again in this boot.
  */
 void s09_master_check_engine(struct s09_master *m, s09_check_fn fn, void *ctx);
+
+/*
+ * S-13b.060: the client of a store on its own CPU (a device without
+ * second-cpu, whose main CPU drives the eMMC). Every request then goes
+ * straight to ops through s09_store_call(), with no bus, framing,
+ * numbering, polls, rungs or tunnel; the store is never absent by the
+ * link. The link's own operations do nothing and succeed (start, the
+ * rungs, quad data, service, settled), the link tests fail as for an
+ * absent slave (bench, quad test), a release is not made (-1) and nothing
+ * is sent to any CPU (the tunnel has no room, s09_power_off() sends
+ * nothing).
+ */
+void s09_master_local(struct s09_master *m, const struct s09_store_ops *ops);
 
 /* The slave is absent from now on (S-09.008), e.g. after s09_boot_slave(). */
 void s09_master_set_absent(struct s09_master *m);

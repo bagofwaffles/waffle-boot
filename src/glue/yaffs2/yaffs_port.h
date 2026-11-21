@@ -12,9 +12,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* yaffs direct, yaffs2 only. */
+/* yaffs direct, yaffs2 only: every device is set up with is_yaffs2
+ * (yaffs_blockdev.c, S-12.040), so the yaffs1 scan is left out. */
 #define CONFIG_YAFFS_DIRECT 1
 #define CONFIG_YAFFS_YAFFS2 1
+#define CONFIG_YAFFS_NO_YAFFS1 1
 #define CONFIG_YAFFS_DEFINES_TYPES 1
 #define CONFIG_YAFFS_PROVIDE_DEFS 1
 #define CONFIG_YAFFSFS_PROVIDE_VALUES 1

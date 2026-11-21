@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "waffle/device.h"
 #include "waffle/s03_emmc.h"
 #include "waffle/s05_handoff.h"
 #include "waffle/s09_master.h"
@@ -118,6 +119,16 @@ struct boot_master_ops {
 	 * NULL: never set.
 	 */
 	bool (*start_in_menu)(void *ctx);
+	/* The device (S-18): with second-cpu slave_start, without it
+	 * storage_start and S-05.036's order. */
+	const struct wb_device *dev;
+	/*
+	 * Without second-cpu, in slave_start's place (S-01.001 without step
+	 * 5, S-13b.060): the main CPU brings up its own eMMC and volume. No
+	 * slave can be absent there (S-05's Devices), so its failure is the
+	 * load's (S-05.006). NULL: nothing to start.
+	 */
+	void (*storage_start)(void *ctx);
 };
 
 #define BOOT_PROMPT_START 1

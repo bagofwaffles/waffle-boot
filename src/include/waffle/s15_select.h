@@ -7,6 +7,10 @@
  * row at Yes, installs; digit 8 cancels; 60 s without a key event cancel.
  * Its key rules are kept apart from the menus' (s15_menu.h): the keys come
  * from the PSoC link alone, so no host can answer.
+ *
+ * S-15.197: the prompt before the selection for a package whose signature
+ * does not match (S-11.021) runs on the same keys and time: key 1 held for
+ * 5 s goes on, with no row to pick; digit 8 or the 60 s cancel.
  */
 #ifndef WAFFLE_S15_SELECT_H
 #define WAFFLE_S15_SELECT_H
@@ -48,6 +52,7 @@ struct s15_select_info {
 	struct s15_select_row row[S15_STEP_COUNT];
 	int slot;	/* the slot index the bootloader replaces, or -1 */
 	bool stock;	/* the bootloader's install returns to stock (S-11.091) */
+	bool valid;	/* the package's signature is valid (S-15.197) */
 };
 
 enum s15_select_choice {
@@ -65,6 +70,7 @@ enum s15_select_end {
 };
 
 struct s15_select {
+	const struct wb_device *dev;		/* S-15.016's keys */
 	uint8_t stale[(S15_NKEYS + 7u) / 8u];	/* down when shown */
 	uint8_t down[(S15_NKEYS + 7u) / 8u];	/* down now (S-07.031) */
 	uint8_t pickable;	/* the rows that can be picked, a bit each */
@@ -73,6 +79,7 @@ struct s15_select {
 	uint32_t held_ms;	/* when the hold began */
 	unsigned held_key;
 	bool holding;
+	bool prompt;		/* S-15.197's prompt: no rows */
 	enum s15_select_choice choice;
 	enum s15_select_end end;
 };
@@ -82,14 +89,18 @@ struct s15_select {
  * S-07.031's known key state (9 bytes, key k bit k & 7 of byte k >> 3),
  * NULL for no key down; a key down then acts only after an up and a down.
  */
-void s15_select_open(struct s15_select *s, uint8_t pickable,
-		     const uint8_t *down_now, uint32_t now_ms);
+void s15_select_open(struct s15_select *s, const struct wb_device *dev,
+		     uint8_t pickable, const uint8_t *down_now, uint32_t now_ms);
+/* S-15.197: the signature prompt shown at now_ms, as s15_select_open()
+ * with no row: key 1 held 5 s goes on (S15_SELECT_INSTALL). */
+void s15_select_prompt_open(struct s15_select *s, const struct wb_device *dev,
+			    const uint8_t *down_now, uint32_t now_ms);
 /*
  * A key event from the PSoC link after the screen was shown (S-07.031).
  * Every event restarts the 60 s. A digit 2 - 7 toggles its row when it can
  * be picked; digit 8 cancels. A down of a digit-1 key that is no knob click,
- * with no other of the 72 keys down but precomp and a row at Yes, starts the
- * hold; its release, or any other key down, ends it and does nothing more
+ * with no other of the device's keys down but precomp and a row at Yes (on
+ * the prompt, none is needed), starts the hold; its release, or any other key down, ends it and does nothing more
  * (S-07.033's rule). The selection is kept.
  */
 void s15_select_key(struct s15_select *s, unsigned key, bool down,
@@ -106,9 +117,11 @@ unsigned s15_select_left(const struct s15_select *s, uint32_t now_ms);
 /*
  * The screen's rows at now_ms, each in its style: item 1, a row for each
  * step carried in digit order, item 8, then the slot's warning while the
- * bootloader is at Yes; while key 1 is held, item 1 armed and the hold's
+ * bootloader is at Yes, then, for a valid package, that it is signed by TE
+ * while a row is free; while key 1 is held, item 1 armed and the hold's
  * bar as the last row, in the warning's place when nine rows are in use.
- * Returns the count.
+ * On the prompt (S-15.197): its warning, item 1 and item 8, and the bar
+ * while key 1 is held. Returns the count.
  */
 size_t s15_select_lines(const struct s15_select_info *info,
 			const struct s15_select *s, uint32_t now_ms,

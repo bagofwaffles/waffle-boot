@@ -87,10 +87,11 @@ void wb_display_init(struct wb_display *d, uint8_t *fb);
  * must be ready (the BF70x one: wb_display_bf70x_init()).
  */
 void wb_display_begin(struct wb_display *d, const struct s13c_bus *bus,
-		      uint32_t xmod, uint32_t ymod, unsigned pa8);
+		      const struct wb_device *dev, uint32_t xmod, uint32_t ymod,
+		      unsigned pa8);
 /* The panel as the front left it (s13c_adopt()). */
 void wb_display_adopt(struct wb_display *d, const struct s13c_bus *bus,
-		      uint32_t reset_ms);
+		      const struct wb_device *dev, uint32_t reset_ms);
 
 /* S-13c.006 - S-13c.013: initialize and turn on (black); gamma on the
  * boot path. Once per run; later calls send nothing. */

@@ -23,6 +23,12 @@ installing, hold **8** for 5 s.
 A unit that already runs waffle-boot does not need the installer: choose **Upgrade / Recover** on the page
 ([How to Recover](How-to-Recover)).
 
+**On an OP-1F:** not supported by any release, and not yet run on a unit. It has images of its own, which
+the unit's own means write as the OS: run the survey (`waffle-install-1f-survey.ldr`) first, which writes
+nothing to the SPI flash, and keep its `check.txt`. See [Installer Reference](Installer-Reference#on-an-op-1f).
+`tools/mtpcp.py prepare-1f` makes the volume ready for the unit's own write of the image
+([Putting the image on an OP-1F](Installer-Reference#putting-the-image-on-an-op-1f)).
+
 ## When something does not pass
 
 | The unit shows | It means | What to do |

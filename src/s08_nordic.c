@@ -85,12 +85,12 @@ void s08_set_state(struct s08_nordic *n, int state)
 	n->state = state;
 }
 
-void s08_set_sku(struct s08_nordic *n, uint32_t sku, bool read_ok)
+void s08_set_sku(struct s08_nordic *n, const struct wb_device *dev, uint32_t sku, bool read_ok)
 {
 	if (n->sku_read)
 		return;		/* S-08.045: once per power-on */
 	n->sku_read = true;
-	n->product = s08_product_word(sku, read_ok);
+	n->product = s08_product_word(dev->ident.product_base, sku, read_ok);
 }
 
 uint32_t s08_product(const struct s08_nordic *n)

@@ -230,7 +230,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      },
@@ -247,7 +247,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -722,7 +722,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      },
@@ -739,7 +739,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -1043,7 +1043,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      },
@@ -1419,7 +1419,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -1492,7 +1492,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -1568,7 +1568,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -1643,7 +1643,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -1753,7 +1753,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -1828,7 +1828,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS042;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS042;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -1903,7 +1903,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS999;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS999;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -1979,7 +1979,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2055,7 +2055,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2131,7 +2131,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2207,7 +2207,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS012;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS012;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2283,7 +2283,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2359,7 +2359,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2435,7 +2435,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:65535$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:65535;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2511,7 +2511,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:65535$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:65535;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2604,7 +2604,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:0$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS000;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:0;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2679,7 +2679,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:QQ000001;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS012;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:3$",
+       "payload_re": "^mode:bootloader;serial:QQ000001;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS012;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:3;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2755,7 +2755,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS011;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS011;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2831,7 +2831,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:7$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:7;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2907,7 +2907,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:9$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:9;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -2983,7 +2983,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS005;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS005;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3059,7 +3059,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3135,7 +3135,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:2$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:2;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3211,7 +3211,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3287,7 +3287,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3363,7 +3363,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS005;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS005;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3473,7 +3473,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3554,7 +3554,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3635,7 +3635,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3716,7 +3716,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3797,7 +3797,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -3878,7 +3878,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:CD654321;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -4278,7 +4278,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      }
@@ -4354,7 +4354,7 @@
      {
       "expect": {
        "id": "0x0a",
-       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$",
+       "payload_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$",
        "route": "0x12"
       }
      },

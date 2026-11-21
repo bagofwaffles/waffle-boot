@@ -1,0 +1,114 @@
+{
+ "index": 179,
+ "note": "S-03.012: only bits 2-0 change; no CMD6 when they already equal the partition (cmd6 null)",
+ "rows": [
+  {
+   "before": "0x00",
+   "part": 0,
+   "cmd6": null,
+   "after": "0x00"
+  },
+  {
+   "before": "0x00",
+   "part": 1,
+   "cmd6": "0x01",
+   "after": "0x01"
+  },
+  {
+   "before": "0x00",
+   "part": 2,
+   "cmd6": "0x02",
+   "after": "0x02"
+  },
+  {
+   "before": "0x08",
+   "part": 0,
+   "cmd6": null,
+   "after": "0x08"
+  },
+  {
+   "before": "0x08",
+   "part": 1,
+   "cmd6": "0x09",
+   "after": "0x09"
+  },
+  {
+   "before": "0x08",
+   "part": 2,
+   "cmd6": "0x0A",
+   "after": "0x0A"
+  },
+  {
+   "before": "0x48",
+   "part": 0,
+   "cmd6": null,
+   "after": "0x48"
+  },
+  {
+   "before": "0x48",
+   "part": 1,
+   "cmd6": "0x49",
+   "after": "0x49"
+  },
+  {
+   "before": "0x48",
+   "part": 2,
+   "cmd6": "0x4A",
+   "after": "0x4A"
+  },
+  {
+   "before": "0x49",
+   "part": 0,
+   "cmd6": "0x48",
+   "after": "0x48"
+  },
+  {
+   "before": "0x49",
+   "part": 1,
+   "cmd6": null,
+   "after": "0x49"
+  },
+  {
+   "before": "0x49",
+   "part": 2,
+   "cmd6": "0x4A",
+   "after": "0x4A"
+  },
+  {
+   "before": "0x4A",
+   "part": 0,
+   "cmd6": "0x48",
+   "after": "0x48"
+  },
+  {
+   "before": "0x4A",
+   "part": 1,
+   "cmd6": "0x49",
+   "after": "0x49"
+  },
+  {
+   "before": "0x4A",
+   "part": 2,
+   "cmd6": null,
+   "after": "0x4A"
+  },
+  {
+   "before": "0x38",
+   "part": 0,
+   "cmd6": null,
+   "after": "0x38"
+  },
+  {
+   "before": "0x38",
+   "part": 1,
+   "cmd6": "0x39",
+   "after": "0x39"
+  },
+  {
+   "before": "0x38",
+   "part": 2,
+   "cmd6": "0x3A",
+   "after": "0x3A"
+  }
+ ]
+}

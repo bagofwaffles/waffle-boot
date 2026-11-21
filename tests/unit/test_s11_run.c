@@ -176,11 +176,13 @@ static void test_interrupted(void)
 	for (size_t i = 0; i < N(s11v_stock); i++) {
 		const struct s11v_stock *v = &s11v_stock[i];
 
-		CHECK(s11_return_to_stock(v->option, v->te_signed, v->selected) ==
-			      (v->stock != 0),
+		CHECK(s11_return_to_stock(v->option, v->valid, v->waffle,
+					  v->selected) == (v->stock != 0),
 		      "stock row %zu", i);
 		CHECK(!v->selected || (v->option && v->bootloader),
 		      "stock row %zu: selected only when it can be (S-11.096)", i);
+		CHECK(!v->waffle || v->bootloader,
+		      "stock row %zu: only a present image is waffle-boot's", i);
 	}
 }
 
@@ -295,6 +297,9 @@ static void test_steps(void)
 		copro.nordic_app = copro.nordic_bl = copro.psoc = installed;
 		env.staged = &st;
 		env.option = v->option != 0;	/* dev mode has no field: no effect */
+		/* S-11.090: the signature state decides no step; each row
+		 * under a state of its own */
+		env.sig = (enum s11_sig)(i % 3u);
 		env.forced = v->forced != 0;
 		env.nordic_in_dfu = true;	/* the run-start answer decides nothing */
 		env.copro = &copro;
@@ -383,6 +388,7 @@ static void test_protected_results(void)
 	memset(&env, 0, sizeof(env));
 	env.staged = &st;
 	env.option = true;
+	env.sig = S11_SIG_VALID;
 	env.selected = 0x3Fu;	/* every step selected */
 	env.copro = &copro;	/* env.off 0: every step switched on */
 	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &ops) == S11_FAILURE,
@@ -527,6 +533,7 @@ static void test_switched_off(void)
 	env.nordic_in_dfu = true;
 	env.forced = true;
 	env.option = true;
+	env.sig = S11_SIG_VALID;
 	env.selected = 0x3Fu;
 
 	/* each switched-off step alone: Skipped, none of its ops called */
@@ -595,6 +602,24 @@ static void test_switched_off(void)
 	CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &count_ops) ==
 		      S11_SKIPPED && C.bootloader == 0,
 	      "the bootloader writes only when selected");
+	/* S-11.090: a package invalid or unsigned writes the bootloader
+	 * the same, selected with the option on */
+	env.selected = 0x3Fu;
+	for (unsigned k = 0; k < 2u; k++) {
+		env.sig = k == 0u ? S11_SIG_NONE : S11_SIG_INVALID;
+		memset(&C, 0, sizeof(C));
+		CHECK(s11_step_result(S11_STEP_BOOTLOADER, &env, &count_ops) ==
+			      S11_OK && C.bootloader == 1 &&
+		      s11_step_skip(S11_STEP_BOOTLOADER, &env) ==
+			      S11_SKIP_NONE &&
+		      s11_step_pick(S11_STEP_BOOTLOADER, &env) ==
+			      S11_PICK_OPEN &&
+		      s11_step_result(S11_STEP_OS, &env, &count_ops) == S11_OK,
+		      "state %d: the bootloader and the OS written",
+		      (int)env.sig);
+	}
+	env.sig = S11_SIG_VALID;
+	env.selected = 0;
 	/* every other step not selected: Skipped, nothing reached */
 	{
 		static const unsigned each[] = {
@@ -748,6 +773,7 @@ static void test_picks(void)
 		memset(&env, 0, sizeof(env));
 		env.staged = &st;
 		env.option = v->option != 0;
+		env.sig = (enum s11_sig)(i % 3u);	/* decides no pick */
 		env.forced = v->forced != 0;
 		env.copro = &copro;
 		env.off = v->switched_on ? 0u : S11_STEP_BIT(v->step);
@@ -791,6 +817,7 @@ static void test_select(void)
 	env.staged = &st;
 	env.copro = &copro;
 	env.option = true;
+	env.sig = S11_SIG_VALID;
 	env.off = S11_STEPS_SWITCHABLE;
 	CHECK(s11_pickable(&env) == (S11_STEP_BIT(S11_STEP_CONTENT) |
 				     S11_STEP_BIT(S11_STEP_OS) |
@@ -827,6 +854,15 @@ static void test_select(void)
 	CHECK(s11_select(&env, ask, NULL) &&
 	      (env.selected & S11_STEP_BIT(S11_STEP_BOOTLOADER)) == 0u,
 	      "option off: the bootloader never selected");
+	/* S-11.090: an invalid package, the option on: offered and
+	 * selected as for any */
+	env.option = true;
+	env.sig = S11_SIG_INVALID;
+	CHECK(s11_select(&env, ask, NULL) &&
+	      (A.offered & S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u &&
+	      (env.selected & S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u &&
+	      (env.selected & S11_STEP_BIT(S11_STEP_OS)) != 0u,
+	      "invalid: the bootloader offered and selected");
 }
 
 /* ---- staged_check.json: S-11.095 ---- */

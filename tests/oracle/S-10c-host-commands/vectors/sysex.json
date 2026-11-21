@@ -325,7 +325,7 @@
         "cmd": 1,
         "req_id": null,
         "status": 0,
-        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$"
+        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$"
        }
       }
      ]
@@ -419,7 +419,7 @@
         "cmd": 1,
         "req_id": 1,
         "status": 0,
-        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$"
+        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$"
        }
       }
      ]
@@ -432,7 +432,7 @@
         "cmd": 1,
         "req_id": 2,
         "status": 0,
-        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1$"
+        "text_re": "^mode:bootloader;serial:AB123456;dsp_serial:ZZ0123456789ABCDEF;hw_rev:255;product:OP\\-XY;sku:TE033AS007;sw_version:1\\.2\\.3;bl_version:[0-9]+\\.[0-9]+\\.[0-9]+(\\+[0-9]+)?;os_version:1\\.2\\.3\\+45;factory:1;device_id:xy$"
        }
       }
      ]

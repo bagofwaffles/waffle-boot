@@ -13,6 +13,15 @@
  * the check of the carried image, the screens, and the USB protocol. The
  * board's runner is src/testos/opxy_testos_installer.c; the write engine is
  * src/testos/installer_engine.c.
+ *
+ * The device (S-18) is decided at the entry, before any pin is touched.
+ * The install is offered on a first stage that S-18.003's table names
+ * only, by the image built for that device (the OP-1F's: make
+ * installer-1f, laid out like its own OS). On the OP-1F it never writes
+ * over the last slot whose image is not a waffle-boot stream: the
+ * bootloader the unit came with stays in one slot. The survey build (make
+ * installer-1f-survey) writes nothing to the SPI flash, and shows and saves
+ * what an install would depend on (struct inst_survey).
  */
 #ifndef WAFFLE_INSTALLER_H
 #define WAFFLE_INSTALLER_H
@@ -41,13 +50,15 @@ enum inst_phase {
 	INST_DONE,
 	INST_FAILED,		/* a write failed */
 	INST_TRIAL_FAILED,	/* the trial start did not reach the boot menu */
-	INST_LEFT		/* left without installing */
+	INST_LEFT,		/* left without installing */
+	INST_SURVEYED		/* the survey build's end: what it found */
 };
 
 #define INST_F_CHECKS_DONE 0x01u
 #define INST_F_UNLOCKED    0x02u
 #define INST_F_IMAGE_OK    0x04u
 #define INST_F_CRUMBS      0x08u
+#define INST_F_SURVEY      0x10u	/* a survey build: no SPI-flash write at all */
 
 enum inst_lock {
 	INST_LOCK_NONE,
@@ -57,7 +68,11 @@ enum inst_lock {
 	INST_LOCK_SELECTED,	/* the selected slot is not verified or not good */
 	INST_LOCK_RESERVED,	/* never set; the numbers after it stay */
 	INST_LOCK_GUIDED,	/* a guided test skipped or not passed */
-	INST_LOCK_EMMC		/* the eMMC could not be reached */
+	INST_LOCK_EMMC,		/* the eMMC could not be reached */
+	INST_LOCK_DEVICE,	/* the first stage is in no row of S-18.003's table */
+	INST_LOCK_OTHER_DEVICE,	/* this image is built for the other device */
+	INST_LOCK_FACTORY,	/* OP-1F: the target holds the last bootloader not waffle-boot's */
+	INST_LOCK_SURVEY	/* a survey build: never offered */
 };
 
 /* STATE byte 11: the other boot partition, and the OS made active there. */
@@ -91,25 +106,48 @@ enum inst_trial inst_trial_of(uint8_t other_slot_state);
 /* --- The lock: whether the install may be offered at all --- */
 
 /*
- * Every test of the table passes (guided ones included), the carried image
- * verified, and the selected slot is verified and good. What the other boot
- * partition holds plays no part; an eMMC out of reach locks. Nothing
- * overrides it.
+ * The device is known by its first stage (S-18.003, how 0) and is the one
+ * this image is built for; every test of the table passes (guided ones
+ * included; a test not on this device counts as passed), the carried image
+ * verified, and the selected slot is verified and good; on the OP-1F the
+ * trial keeps a slot whose image is not a waffle-boot stream; and the
+ * build is not the survey. What the other boot partition holds plays no
+ * part; an eMMC out of reach locks. Nothing overrides it.
  */
+struct inst_lock_in {
+	bool image_ok;		/* inst_image_check() passed */
+	bool selected_ok;	/* the selected slot verified and good */
+	uint8_t how;		/* enum wb_dev_how: only WB_DEV_BY_TABLE installs */
+	bool device_mine;	/* the unit is the device this image is built for */
+	bool keeps_factory;	/* inst_keeps_factory() */
+	bool survey;		/* a survey build */
+};
 enum inst_lock inst_lock_of(const struct tchk_table *t, const struct tchk_switch *sw,
-			    bool image_ok, bool selected_ok);
+			    const struct inst_lock_in *in);
 /* The lock in words, at most 56 columns. */
 const char *inst_lock_words(enum inst_lock l);
+
+/*
+ * S-02.108, the rule that keeps the unit's own bootloader on the OP-1F: a
+ * trial to slot target is refused when the other slot holds waffle-boot and
+ * the target does not; with neither or both it is allowed. streams: bit k
+ * set when slot k's image is a waffle-boot stream (OPXY_INSTALL_STREAMS).
+ * Always true on a device other than the OP-1F, which keeps its rule.
+ */
+bool inst_keeps_factory(const struct wb_device *dev, unsigned target, uint8_t streams);
+
+typedef uint32_t (*inst_crc_fn)(uint32_t crc, const uint8_t *p, size_t n);
 
 /* --- The hold that confirms a write (wiki/Screen-Style-Guide.md) --- */
 
 /*
  * A digit allowed by mask (bit d) starts a hold on its key down, with no
- * other key down. Released early, or any other key down, cancels it. Held
+ * other key down (device.key.precomp aside), and no knob click. Released early, or any other key down, cancels it. Held
  * S15_HOLD_MS it fires once, and the key's release does nothing more.
  * A key that was down when the hold was offered acts only after an up.
  */
 struct inst_hold {
+	const struct wb_device *dev;	/* its keys (S-18.030); NULL the OP-XY's */
 	uint16_t mask;		/* the digits that may be held */
 	uint8_t down[(S15_NKEYS + 7u) / 8u];
 	uint8_t stale[(S15_NKEYS + 7u) / 8u];
@@ -141,7 +179,6 @@ struct inst_sha_ops {
 	void (*update)(void *ctx, const uint8_t *p, size_t n);
 	void (*final)(void *ctx, uint8_t out[32]);
 };
-typedef uint32_t (*inst_crc_fn)(uint32_t crc, const uint8_t *p, size_t n);
 /* True when every part of it holds. */
 bool inst_image_check(const uint8_t *img, uint32_t len, uint32_t crc, const uint8_t pin[32],
 		      inst_crc_fn crc32, const struct inst_sha_ops *sha, struct inst_image *out);
@@ -156,8 +193,14 @@ bool inst_image_check(const uint8_t *img, uint32_t len, uint32_t crc, const uint
 #define INST_T_STATE  0x41u
 #define INST_T_TEST   0x42u
 #define INST_T_REPORT 0x43u
+#define INST_T_SURVEY 0x44u	/* the survey build's facts; others answer INST_ST_UNKNOWN */
 #define INST_PROTO_VERSION 1u
 #define INST_HELLO_LEN 64u
+/* HELLO's bytes 56 to 59 (zero before): the unit's device and how it was
+ * decided (S-18.005's codes), the device this image is built for, and 1
+ * for a survey build. */
+#define INST_HELLO_O_DEVICE 56u
+#define INST_SURVEY_LEN (76u + 2u * TCHK_FAULT_BYTES)
 #define INST_STATE_HEAD 32u
 #define INST_REPORT_CHUNK 1024u
 #define INST_ST_OK 0u
@@ -171,6 +214,7 @@ struct inst_state {
 	uint8_t target, last_rc, os;
 	uint16_t hold_fill;
 	uint8_t hold_digit, trial, next_digit;
+	uint8_t streams;	/* STATE byte 17: OPXY_INSTALL_STREAMS */
 };
 
 struct inst_hello {
@@ -178,7 +222,50 @@ struct inst_hello {
 	uint16_t version[4];
 	uint32_t len, crc;
 	uint8_t pin[32];
+	uint8_t device, how, image_device, survey;
+	uint32_t fs_n, fs_c;	/* S-18.003's, for check.txt (not on the wire) */
 };
+
+/*
+ * The survey (make installer-1f-survey): what decides whether an install is
+ * safe, read and never written. INST_T_SURVEY's reply, INST_SURVEY_LEN bytes,
+ * little-endian: [0] INST_ST_OK, [1] device, [2] how, [3] the boot mode,
+ * [4..7] n, [8..11] c (S-18.003), [12] 1 when the selector was read, [13]
+ * [14] its two bytes, [15] PA2 (0, 1, 0xFF not read), [16..19] SEC_COUNT,
+ * [20..23] the boot partition's KiB, [24] 1 when EXT_CSD was read, [25]
+ * EXT_CSD[179] (PART_CONFIG), [26] the OS state (enum inst_os), [27] 0;
+ * then per slot 24 bytes: [0] bits INST_SV_*, [1..3] 0, the record's crc32,
+ * length and tag, its start log's first INST_SURVEY_LOG bytes; then from
+ * [76] emmc-boot's first failing select and read, TCHK_FAULT_BYTES each
+ * (tchk_fault_bytes()), all 0 when none failed.
+ */
+#define INST_SURVEY_LOG 8u
+#define INST_SV_RECORD 0x01u	/* the record read */
+#define INST_SV_GOOD   0x02u	/* S-02.016's check passes */
+#define INST_SV_WAFFLE 0x04u	/* a waffle-boot stream */
+#define INST_SV_LOG    0x08u	/* the start log's bytes read */
+struct inst_slot_survey {
+	uint8_t bits;		/* INST_SV_* */
+	uint32_t crc, length, tag;
+	uint8_t log[INST_SURVEY_LOG];
+};
+struct inst_survey {
+	uint8_t device, how, boot_mode;
+	uint32_t fs_n, fs_c;
+	bool sel_read;
+	uint8_t sel_index, sel_verified;
+	uint8_t pa2;
+	bool ext_read;
+	uint8_t part_config;
+	uint32_t sec_count, boot_kib;
+	uint8_t os;		/* enum inst_os */
+	struct inst_slot_survey slot[2];
+	uint8_t fault[2][TCHK_FAULT_BYTES];	/* tchk_fault_bytes(): select, read */
+};
+/* The reply's bytes into out (INST_SURVEY_LEN); its length. */
+size_t inst_survey_bytes(const struct inst_survey *sv, uint8_t *out);
+/* The survey part of check.txt, appended at out + len; the new length. */
+size_t inst_survey_report(char *out, size_t len, size_t cap, const struct inst_survey *sv);
 
 /* What a request is answered from. */
 struct inst_view {
@@ -187,6 +274,7 @@ struct inst_view {
 	const struct tchk_table *table;
 	const char *report;
 	size_t report_len;
+	const struct inst_survey *survey;	/* NULL outside a survey build */
 };
 
 struct inst_proto {
@@ -217,7 +305,9 @@ size_t inst_frame(uint8_t *out, uint8_t type, uint8_t seq, const uint8_t *pl, si
 /*
  * The screen of a phase, as lines (at most S15_ROWS) in their styles. The
  * view gives what a screen names: the carried version ("1.0.3"), the target
- * slot index, the lock, the last write's code, the OS state, the hold.
+ * slot index, the lock, the last write's code, the OS state, the hold, the
+ * device (its key names), the first stage's n and c (an unknown device's
+ * lock), and the survey's facts (INST_SURVEYED).
  */
 struct inst_screen {
 	uint8_t phase;
@@ -231,7 +321,11 @@ struct inst_screen {
 	unsigned hold_digit;	/* 0: no hold under way */
 	unsigned hold_fill;	/* 0 to 1000 */
 	unsigned hold_left_s;
-	uint8_t keys_seen;	/* the key check: bit 0 com, bit 1 M4 */
+	uint8_t keys_seen;	/* the key check: bit 0 com, bit 1 the recovery key */
+	uint8_t device;		/* enum wb_dev_id */
+	uint8_t last_key;	/* the key check's last key down that is neither, 0xFF none */
+	uint32_t fs_n, fs_c;	/* S-18.003 */
+	const struct inst_survey *survey;
 };
 unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15_ROWS]);
 /* A write's code (STATE byte 10) in words, at most 56 columns. */
@@ -257,6 +351,7 @@ struct opxy_installer_ctx {
 	bool (*next_key)(unsigned *key, bool *down);
 	void (*show)(struct opxy_master *m);
 	void (*report)(struct opxy_master *m);	/* check.txt rendered and written */
+	const struct tchk_facts *f;		/* the suite's facts, for the survey */
 };
 /* From the suite's start: the carried image checked, the USB port taken. */
 void opxy_installer_start(struct opxy_master *m);
@@ -271,5 +366,9 @@ bool opxy_installer_trial_back(struct opxy_master *m);
 void opxy_installer_run(const struct opxy_installer_ctx *c);
 /* check.txt's install part, for the suite's render(). */
 size_t opxy_installer_report(char *out, size_t len, size_t cap);
+/* The flash's part of the survey, read alone (src/testos/installer_engine.c):
+ * the selector, each slot's record, its check, whether it is a waffle-boot
+ * stream, and the first bytes of its start log. */
+void opxy_installer_survey_read(struct opxy_master *m, struct inst_survey *sv);
 
 #endif /* WAFFLE_INSTALLER_H */
