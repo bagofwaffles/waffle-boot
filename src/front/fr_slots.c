@@ -306,10 +306,13 @@ enum desc_vote { D_UNSURE, D_MATCH, D_DIFFER };
 /*
  * The descriptor's bytes as slot k's stream loads them, read from the
  * flash with no other payload read: D_DIFFER when one of them differs
- * from memory, which fails slot_score()'s whole match too; D_MATCH when
- * the stream loads every one and each is equal; D_UNSURE otherwise (a
- * FILL block or a gap over the descriptor, no descriptor in memory),
- * which leaves the answer to the whole compare.
+ * from memory, which fails slot_score()'s whole match too, or when the
+ * stream reaches its FINAL block loading none of them (an image that is
+ * not this bootloader's: the running stream loads every one); D_MATCH
+ * when the stream loads every one and each is equal; D_UNSURE otherwise
+ * (a FILL block or a partial gap over the descriptor, a stream that ends
+ * before its FINAL block, no descriptor in memory), which leaves the
+ * answer to the whole compare.
  */
 static int desc_vote(const struct fr_flash *f, const struct fr_mem *mem, unsigned k,
 		     enum desc_vote *v)
@@ -318,6 +321,7 @@ static int desc_vote(const struct fr_flash *f, const struct fr_mem *mem, unsigne
 	struct fr_record rec;
 	uint8_t h[LDR_HDR];
 	uint32_t base = FR_SLOT_BASE(k), len = FR_SLOT_CAP, off = 0, size, seen = 0;
+	bool final = false;
 
 	*v = D_UNSURE;
 	if (m == NULL || fr_le32(m + FR_DESC_O_MAGIC) != FR_DESC_MAGIC)
@@ -364,11 +368,15 @@ static int desc_vote(const struct fr_flash *f, const struct fr_mem *mem, unsigne
 				break;
 			off += count;
 		}
-		if (flags & LDR_FINAL)
+		if (flags & LDR_FINAL) {
+			final = true;
 			break;
+		}
 	}
 	if (seen == size)
 		*v = D_MATCH;
+	else if (seen == 0u && final)
+		*v = D_DIFFER;
 	return FR_FLASH_OK;
 }
 

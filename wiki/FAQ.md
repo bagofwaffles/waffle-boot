@@ -36,8 +36,7 @@ No. It removes user data, logs and content packs only. See [Boot Menu](Boot-Menu
 
 **Does waffle-boot update the Bluetooth or backplane chips?**
 It can: choose BLE, BLE bootloader or Backplane on the install's list. These steps are not tested on a unit
-yet. The backplane step needs the PSoC unlock, and a build without it fails that step before anything is
-sent.
+yet.
 
 **Which computer can I use for recovery?**
 A computer with Chrome or Edge, with [the page](https://bagofwaffles.github.io/waffle-boot/). Or macOS
@@ -45,7 +44,7 @@ or Linux, with Python 3 and a clone of this repository, for `tools/wbrecover.py`
 [How to Recover](How-to-Recover#write-a-slot-from-a-computer).
 
 **How do I tell two builds apart on screen?**
-The status bar shows the version, and in recovery the front's too (`v0.9.13 F20`). Run `make bump-version`
+The status bar shows the version, and in recovery the front's too (`v0.9.13 F21`). Run `make bump-version`
 before each build you put on a unit.
 
 **Where do I report a problem?**

@@ -2154,7 +2154,7 @@ static void psoc_why(void *ctx, int event, uint32_t a, uint32_t b)
  * S-11's run ops: S-04.045's M1, M2, M3 and M4 written to the record; a
  * failed write leaves the values as the flash holds them. With no slave the
  * progress record and the staged images cannot be reached; the backplane
- * step is switched off and the board has no PSoC unlock.
+ * step cannot read its image.
  */
 static void test_install_ops(void)
 {
@@ -2190,14 +2190,18 @@ static void test_install_ops(void)
 	CHECK(!run.record_write(run.ctx, 1u));	/* no slave */
 	CHECK(!step.os_write(step.ctx));
 	CHECK(!step.bootloader_write(step.ctx));
-	/* The board supplies no PSoC unlock (S-07.081), and no step is
-	 * switched off (S-11.073). The programmer fails on the missing unlock
-	 * as S-07 reports it (why 10), before the PSoC's bootloader is asked
-	 * for (0xEE). */
+	/* The board supplies the PSoC unlock (S-07.081), and no step is
+	 * switched off (S-11.073). With no slave the staged image cannot be
+	 * read, so the step fails before the PSoC's bootloader is asked for
+	 * (0xEE), and not on the unlock. */
 	{
-		uint8_t unlock[S07_CY_UNLOCK_LEN];
+		static const uint8_t want[S07_CY_UNLOCK_LEN] = {
+			0xA5, 0xB2, 0x98, 0x32, 0xBB, 0x3E,
+		};
+		uint8_t unlock[S07_CY_UNLOCK_LEN] = { 0 };
 
-		CHECK(!opxy_psoc_unlock(unlock));
+		CHECK(opxy_psoc_unlock(unlock));
+		CHECK(memcmp(unlock, want, sizeof want) == 0);
 	}
 	CHECK(opxy_steps_off() == 0u);
 	m.psoc_ops.log = psoc_why;
@@ -2205,7 +2209,17 @@ static void test_install_ops(void)
 	last_why = 0;
 	wire_n = 0;
 	CHECK(!step.psoc_program(step.ctx));
+	CHECK(last_why != S07_CY_WHY_UNLOCK && !psoc_frame_sent(0xEEu));
+	/* S-18: on the OP-1F the step gets no unlock and fails before
+	 * entry, sending nothing to the PSoC. */
+	m.dev = &wb_device_op1f;
+	s07_init(&m.psoc, &wb_device_op1f, &m.node, S06_LINK_PSOC, &m.psoc_ops);
+	last_why = 0;
+	wire_n = 0;
+	CHECK(!step.psoc_program(step.ctx));
 	CHECK(last_why == S07_CY_WHY_UNLOCK && !psoc_frame_sent(0xEEu));
+	m.dev = NULL;
+	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	CHECK(run.step(run.ctx, S11_STEP_DONE) == S11_INTERNAL);
 }
 

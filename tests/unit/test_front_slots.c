@@ -1341,9 +1341,14 @@ static void test_running_checked(void)
 	put_slot(1, c, clen, 0);
 	same_as_whole(false, 0u, true);
 
-	/* a slot with no descriptor, or one by FILL: not told, the whole compare */
+	/* a whole stream with no descriptor (another bootloader): it differs,
+	 * no stream payload read */
 	clen = desc_stream(c, NULL, 0, 0, 63);
 	put_slot(1, c, clen, 1);
+	same_as_whole(true, 0u, true);
+	/* the same cut before its FINAL block, or a descriptor by FILL: not
+	 * told, the whole compare */
+	put_slot(1, c, clen - 16u, 1);
 	same_as_whole(false, 0u, true);
 	clen = desc_stream(c, da, sizeof da, S05_FLAG_FILL, 63);
 	put_slot(1, c, clen, 1);

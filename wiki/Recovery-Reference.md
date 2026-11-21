@@ -36,7 +36,7 @@ Some failures leave a unit that only an external SPI flash programmer brings bac
 
 It shows each slot's bootloader type and state (`checked`, `check failed`, `tried`, `tried, started`),
 which slot runs (`running`) and which the selector names (`boot slot`), and what a write would replace. The status bar shows `USB` and the image and front
-versions (`v1.0.10 F20`). No key acts until every key has been released once; an unreadable key counts as
+versions (`v1.0.10 F21`). No key acts until every key has been released once; an unreadable key counts as
 not pressed.
 
 ### Bootloader type

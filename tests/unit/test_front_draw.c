@@ -424,7 +424,7 @@ static const struct fr_ui *rui;		/* the screen with keys; NULL: the main one */
 static const char *rows[FR_LINES + 1u];
 
 static const uint16_t v_a[4] = { 1, 2, 3, 0 }, v_b[4] = { 1, 3, 0, 0 };
-static const char *want_status = "v1.2.3 F20";	/* the running image's, v_a */
+static const char *want_status = "v1.2.3 F21";	/* the running image's, v_a */
 static bool paint_check = true;		/* rec_draw() checks the painter */
 static bool clip_ok;			/* a slot line may lose parts at the clip */
 static struct fr_screen rs_prev;	/* the screen inc holds */
@@ -456,7 +456,7 @@ static void rec_base(void)
 	rp.st = &rst;
 	rp.phase = FR_PH_IDLE;
 	rp.w.target = FR_NO_SLOT;
-	want_status = "v1.2.3 F20";
+	want_status = "v1.2.3 F21";
 }
 
 /* The x a body row's parts end at, as fr_draw.c lays them out with no
@@ -600,8 +600,8 @@ static void rec_draw(bool usb)
 	}
 	/* the status bar: the running image's version and the front's, and
 	 * no key hint */
-	CHECK(strcmp(rs.status_right, rst.own_desc ? want_status : "F20") == 0);
-	CHECK(FR_FRONT_VERSION == 20u);
+	CHECK(strcmp(rs.status_right, rst.own_desc ? want_status : "F21") == 0);
+	CHECK(FR_FRONT_VERSION == 21u);
 	CHECK(strcmp(rs.status_left, usb ? "USB" : "") == 0);
 }
 
@@ -1495,12 +1495,12 @@ static void test_rec_main(void)
 	ui_base();
 	memcpy(rst.desc.bl_version, v_real, sizeof v_real);
 	memcpy(rst.slot[0].desc.bl_version, v_real, sizeof v_real);
-	want_status = "v1.0.10 F20";
+	want_status = "v1.0.10 F21";
 	rec_draw(true);
 	CHECK(strcmp(rs.line[0], "Slot 1 WB v1.0.10 checked running boot slot") == 0);
 	CHECK(strcmp(rs.line[1], "Slot 2 WB v1.3.0 checked") == 0);
 	CHECK(rs.ink[0] == FR_INK_TEXT && rs.ink[1] == FR_INK_TEXT);
-	CHECK(strcmp(rs.status_right, "v1.0.10 F20") == 0 && strcmp(rs.status_left, "USB") == 0);
+	CHECK(strcmp(rs.status_right, "v1.0.10 F21") == 0 && strcmp(rs.status_left, "USB") == 0);
 	/* no key hint in the status bar, with or without USB */
 	CHECK(!s15t_word_in(rs.status_left, "1", NULL) && !s15t_word_in(rs.status_right, "key", NULL));
 	rec_draw(false);
@@ -1538,7 +1538,7 @@ static void test_rec_main(void)
 	ui_base();
 	rst.own_desc = false;
 	rec_draw(false);
-	CHECK(strcmp(rs.status_right, "F20") == 0);
+	CHECK(strcmp(rs.status_right, "F21") == 0);
 	/* the running slot not known: neither line says running */
 	ui_base();
 	rst.running.established = false;
@@ -2040,7 +2040,7 @@ static void test_rec_fits(void)
 				memcpy(rst.slot[0].desc.bl_version, v_real, sizeof v_real);
 				memcpy(rst.slot[1].desc.bl_version, v_real, sizeof v_real);
 				memcpy(rst.desc.bl_version, v_real, sizeof v_real);
-				want_status = "v1.0.10 F20";
+				want_status = "v1.0.10 F21";
 				fr_rec_target(&rst);
 				rp.made = (v & 1u) != 0u;
 				rp.flags = (v & 2u) ? FR_BEGIN_F_SELECT : 0u;
@@ -2156,7 +2156,7 @@ static void test_parts(void)
 	fr_screen_text(&s, "Recovery: confirm");
 	for (unsigned i = 0; i < FR_LINES; i++)
 		fr_screen_line(&s, i, (enum fr_ink)(i % 6u), lines[i]);
-	fr_screen_status(&s, "USB", "v0.9.36 F20");
+	fr_screen_status(&s, "USB", "v0.9.36 F21");
 	CHECK(row_misses(&s) == 0u);
 	/* the cut ends: an argument, a badge's digit, a chip's text */
 	fr_screen_text(&t, "Recovery");
