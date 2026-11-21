@@ -139,6 +139,13 @@ struct s13c_panel {
 #define S13C_ERR_STATE (-1)
 #define S13C_ERR_BUS   (-2)
 
+/* S-13c.020, S-13c.026: the gamma the hand-over needs: the digital
+ * gamma on, or none on a device without digital-gamma. */
+static inline bool s13c_gamma_ready(const struct s13c_panel *p)
+{
+	return !p->digital_gamma || p->gamma_on;
+}
+
 /*
  * S-13c.004, S-13c.005: the first drive of RESET (high), then the case's
  * reset: none, one pulse, or the strap interval's end. Call it before any

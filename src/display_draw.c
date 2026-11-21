@@ -374,7 +374,7 @@ int wb_display_record(struct wb_display *d, uint8_t rec[S13C_RECORD_SIZE])
 {
 	const struct s13c_panel *p = &d->panel;
 
-	if (p->state != S13C_ON || !p->boot_frame || !p->gamma_on)
+	if (p->state != S13C_ON || !p->boot_frame || !s13c_gamma_ready(p))
 		return S13C_ERR_STATE;
 	s13c_record(p->reset_ms, rec);
 	return S13C_OK;

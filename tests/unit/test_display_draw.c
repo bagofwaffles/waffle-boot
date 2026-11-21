@@ -3,7 +3,8 @@
  * The display (src/display_draw.c, src/display_font.c): the draw
  * interface on the frame buffer, the declared font, the hand-over frame,
  * the shutdown and fatal-error frames, over a recording bus.
- * Requirements: S-15.002, S-15.003, S-15.132, S-13c.022.
+ * Requirements: S-15.002, S-15.003, S-15.132, S-13c.021, S-13c.022,
+ * S-13c.026.
  */
 #include <stdio.h>
 #include <string.h>
@@ -584,6 +585,41 @@ static void test_record_early(void)
 	CHECK(wb_display_record(&d, rec) == S13C_ERR_STATE);
 }
 
+/* S-13c.021, S-13c.026: on a device without digital gamma the record is
+ * written once the hand-over frame is out, the same 44 bytes. */
+static void test_record_1f(void)
+{
+	static struct wb_display d;
+	uint8_t rec[S13C_RECORD_SIZE];
+	unsigned i, other = 0;
+
+	memset(&g, 0, sizeof g);
+	g.t = 50000;
+	wb_display_init(&d, fb);
+	wb_display_begin(&d, &bus, &wb_device_op1f, S13C_HANDSHAKE_MAGIC, 3, 1);
+	CHECK(!d.panel.digital_gamma);
+	CHECK(wb_display_record(&d, rec) == S13C_ERR_STATE);
+	CHECK(wb_display_boot_logo(&d, NULL) == S13C_OK);
+	CHECK(!d.panel.gamma_on && s13c_gamma_ready(&d.panel));
+	memset(rec, 0xA5, sizeof rec);
+	CHECK(wb_display_record(&d, rec) == S13C_OK);
+	CHECK(rec[0x00] == 1 && rec[0x28] == 1);
+	CHECK(rec[0x04] == 3 && rec[0x05] == 0 && rec[0x06] == 0 && rec[0x07] == 0);
+	CHECK(rec[0x08] == 2 && rec[0x09] == 0 && rec[0x0A] == 0 && rec[0x0B] == 0);
+	for (i = 0; i < S13C_RECORD_SIZE; i++)
+		if (i != 0x00 && i != 0x04 && i != 0x08 && i != 0x28)
+			other += rec[i] != 0u;
+	CHECK(other == 0);
+	CHECK(d.panel.state == S13C_ON);
+	/* the same bytes as the kernel call's record */
+	{
+		uint8_t at_call[S13C_RECORD_SIZE];
+
+		CHECK(wb_display_handover(&d, at_call) == S13C_OK);
+		CHECK(memcmp(at_call, rec, sizeof rec) == 0);
+	}
+}
+
 /* One frame at once, none after it */
 static void test_fatal(void)
 {
@@ -676,5 +712,6 @@ int main(void)
 	RUN(test_settle_timeout);
 	RUN(test_update);
 	RUN(test_record_early);
+	RUN(test_record_1f);
 	return check_summary("test_display_draw");
 }

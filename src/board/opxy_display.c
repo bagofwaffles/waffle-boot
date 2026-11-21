@@ -56,6 +56,13 @@ const struct wb_display *opxy_display(void)
 	return up ? &disp : NULL;
 }
 
+#if !defined(__bfin__)
+uint8_t *opxy_display_record(void)
+{
+	return host_record;
+}
+#endif
+
 #if defined(OPXY_TEST_OS)
 /* The test OS's paints go through this display's bus (opxy_testos_paint.c). */
 struct wb_display *opxy_testos_display(void)
@@ -376,7 +383,7 @@ static void os_frame_calibration(void)
 /*
  * S-05.004, S-13c.020: the panel shows the hand-over frame already when its
  * last frame is the early logo frame, nothing sent since but the gamma load
- * (no line under it, S-13c.025),
+ * (none without digital gamma, S-13c.026; no line under it, S-13c.025),
  * and that frame has this build's image: the front's is the logo, so a
  * build-time image (S-15.132) is sent all the same.
  */
@@ -385,16 +392,29 @@ static bool logo_kept(void)
 	const struct s13c_panel *p = &disp.panel;
 
 	return up && p->state == S13C_ON && p->boot_frame && !p->lined &&
-	       p->gamma_on && !p->frame &&
+	       s13c_gamma_ready(p) && !p->frame &&
 	       (!adopted || wb_display_boot_image.data == NULL);
+}
+
+/*
+ * S-13c.021: the record, or, when the hand-over frame did not go out,
+ * zeros in its place, so that a record a warm reboot left in DDR does not
+ * claim a panel state that does not hold.
+ */
+static void record(bool sent)
+{
+	if (sent && wb_display_record(&disp, RECORD) == S13C_OK)
+		return;
+	memset(RECORD, 0, S13C_RECORD_SIZE);
+	s14_log_str(&opxy_master.sv.log, S14_ERROR, S14_TAG("boot"),
+		    "display record not written");
 }
 
 bool opxy_display_boot_logo(void)
 {
 	const bool kept = logo_kept();
 
-	if (kept || logo_frame())
-		(void)wb_display_record(&disp, RECORD);
+	record(kept || logo_frame());
 	if (opxy_master.boot_reason == S04_REASON_OS_FRAME_CAL)
 		os_frame_calibration();
 	else

@@ -4,7 +4,8 @@
  * bus on the fake MMR, in the order the board calls them: the handshake,
  * held mode's start, the draw ops, a frame per render, the power-off that
  * sends nothing.
- * Requirements: S-13c.004, S-13c.007, S-13c.017, S-13c.022, S-15.021.
+ * Requirements: S-13c.004, S-13c.007, S-13c.017, S-13c.021, S-13c.022,
+ * S-13c.026, S-15.021.
  */
 #include <string.h>
 
@@ -12,6 +13,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
+#include "waffle/bytes.h"
 #include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 /* opxy_display() also pulls src/board/opxy_display.c out of the library
@@ -36,6 +38,7 @@ static uint8_t cmds[64];
 static size_t ncmds;
 static unsigned starts;
 static int dc = -1;
+static uint32_t dc_bit = 1u << 5;	/* D/C: PA5, PA11 on the OP-1F */
 static bool stuck;		/* a frame's DMA never reports done */
 
 static void clear(void)
@@ -53,9 +56,9 @@ static bool hook(void *ctx, enum fake_mmr_op op, unsigned width,
 	(void)width;
 	if (op != FAKE_MMR_WRITE)
 		return true;
-	if (addr == PORT_DATA_CLR(WB_PORT_A) && (*value & (1u << 5)))
+	if (addr == PORT_DATA_CLR(WB_PORT_A) && (*value & dc_bit))
 		dc = 0;
-	else if (addr == PORT_DATA_SET(WB_PORT_A) && (*value & (1u << 5)))
+	else if (addr == PORT_DATA_SET(WB_PORT_A) && (*value & dc_bit))
 		dc = 1;
 	else if (addr == WB_LCD_SMC_BANK0 && dc == 0) {
 		if (ncmds < sizeof cmds)
@@ -103,7 +106,45 @@ static void reset(void)
 	m->hw.time.cycles_per_us = 400;
 	m->strap = OPXY_STRAP_REV1;		/* PA8 high */
 	dc = -1;
+	dc_bit = 1u << 5;
 	clear();
+}
+
+/* The OP-1F: no straps, no digital gamma, D/C on PA11 (S-18.030). */
+static void reset_1f(void)
+{
+	reset();
+	opxy_master.dev = &wb_device_op1f;
+	opxy_master.strap = 0u;
+	dc_bit = 1u << 11;
+}
+
+/* The record as S-13c.021 states it, with this reset time. */
+static bool record_is(uint32_t reset_ms)
+{
+	const uint8_t *r = opxy_display_record();
+	unsigned i, other = 0;
+
+	for (i = 0; i < S13C_RECORD_SIZE; i++)
+		if (i != 0x00 && i != 0x04 && i != 0x08 && i != 0x28)
+			other += r[i] != 0u;
+	return other == 0 && r[0x00] == 1u && r[0x28] == 1u &&
+	       wb_get_le32(r + 0x04) == reset_ms && wb_get_le32(r + 0x08) == 2u;
+}
+
+static bool record_zero(void)
+{
+	const uint8_t *r = opxy_display_record();
+	unsigned i, set = 0;
+
+	for (i = 0; i < S13C_RECORD_SIZE; i++)
+		set += r[i] != 0u;
+	return set == 0;
+}
+
+static void record_stale(void)
+{
+	memset(opxy_display_record(), 0xA5, S13C_RECORD_SIZE);
 }
 
 static void test_held(void)
@@ -182,7 +223,9 @@ static void test_boot(void)
 		char hex[65];
 
 		memset(os, 0xA5, n);
+		record_stale();
 		opxy_display_boot_logo();
+		CHECK(record_is(2));		/* S-13c.021 */
 		/* the logo alone, as S-15's pixels give it, in the OS's layout:
 		 * rows 512 bytes apart (S-05.016), low byte first */
 		CHECK(OPXY_OS_FRAME_ROW == 512u);
@@ -302,8 +345,10 @@ static void test_early_logo(void)
 	 * nothing goes to the panel; the OS's frame memory is written */
 	clear();
 	memset((void *)(uintptr_t)opxy_display_os_frame(), 0xA5, OPXY_OS_FRAME_ROW);
+	record_stale();
 	CHECK(opxy_display_boot_logo());
 	CHECK(ncmds == 0 && starts == 0);
+	CHECK(record_is(2));
 	CHECK(opxy_display_os_frame()[0] == 0u);
 	/* held mode instead: the panel is on already */
 	clear();
@@ -321,6 +366,48 @@ static void test_early_logo(void)
 	clear();
 	CHECK(!opxy_display_boot_logo());
 	CHECK(ncmds == 1 && cmds[0] == S13C_RAMWR && starts == 0);
+}
+
+/* S-05.004, S-13c.021, S-13c.026 on the OP-1F: no gamma load, the early
+ * logo kept as the hand-over frame, and the record written. */
+static void test_record_1f(void)
+{
+	reset_1f();
+	fake_core_set_cycles(400u * 50000u);
+	opxy_display_handshake(S13C_HANDSHAKE_MAGIC, 2);
+	CHECK(opxy_display() != NULL && !opxy_display()->panel.digital_gamma);
+	clear();
+	CHECK(opxy_display_early_logo());
+	CHECK(has(S13C_SLPOUT) && has(S13C_DISPON) && !has(S13C_DGR));
+	CHECK(last() == S13C_RAMWR);
+	clear();
+	record_stale();
+	CHECK(opxy_display_boot_logo());	/* kept: nothing sent */
+	CHECK(ncmds == 0 && starts == 0);
+	CHECK(record_is(2));
+
+	/* no early logo: the hand-over frame goes out, then the record */
+	reset_1f();
+	fake_core_set_cycles(400u * 50000u);
+	opxy_display_handshake(S13C_HANDSHAKE_MAGIC, 2);
+	clear();
+	record_stale();
+	CHECK(!opxy_display_boot_logo());
+	CHECK(has(S13C_DISPON) && !has(S13C_DGR) && last() == S13C_RAMWR);
+	CHECK(record_is(2));
+
+	/* the hand-over frame refused (the panel powered off): no record,
+	 * and a stale one cleared */
+	reset_1f();
+	fake_core_set_cycles(400u * 50000u);
+	opxy_display_handshake(S13C_HANDSHAKE_MAGIC, 2);
+	CHECK(opxy_display_early_logo());
+	opxy_display_power_off(&opxy_master);
+	clear();
+	record_stale();
+	CHECK(!opxy_display_boot_logo());
+	CHECK(ncmds == 0 && starts == 0);
+	CHECK(record_zero());
 }
 
 /* S-01.023, S-05.004: the panel taken on from the front, which sent the
@@ -531,6 +618,7 @@ int main(void)
 	RUN(test_boot);
 	RUN(test_calibration);
 	RUN(test_early_logo);
+	RUN(test_record_1f);
 	RUN(test_adopted_logo);
 	RUN(test_logo_line);
 	RUN(test_settle);

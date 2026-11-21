@@ -429,7 +429,7 @@ int s13c_logo_line(struct s13c_panel *p, unsigned y, unsigned h,
 int s13c_handover(struct s13c_panel *p, uint8_t rec[S13C_RECORD_SIZE])
 {
 	if (p->state != S13C_ON || !p->boot_frame || p->lined ||
-	    (p->digital_gamma && !p->gamma_on) || s13c_frame_busy(p))
+	    !s13c_gamma_ready(p) || s13c_frame_busy(p))
 		return S13C_ERR_STATE;
 	p->state = S13C_HANDED;
 	/* S-13c.021: written once the state it describes holds. */
