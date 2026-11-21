@@ -2210,14 +2210,14 @@ static void test_install_ops(void)
 	wire_n = 0;
 	CHECK(!step.psoc_program(step.ctx));
 	CHECK(last_why != S07_CY_WHY_UNLOCK && !psoc_frame_sent(0xEEu));
-	/* S-18: on the OP-1F the step gets no unlock and fails before
-	 * entry, sending nothing to the PSoC. */
+	/* S-18.040, S-07.081: the OP-1F's step takes the same unlock, so it
+	 * goes as far as the OP-XY's. */
 	m.dev = &wb_device_op1f;
 	s07_init(&m.psoc, &wb_device_op1f, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	last_why = 0;
 	wire_n = 0;
 	CHECK(!step.psoc_program(step.ctx));
-	CHECK(last_why == S07_CY_WHY_UNLOCK && !psoc_frame_sent(0xEEu));
+	CHECK(last_why != S07_CY_WHY_UNLOCK && !psoc_frame_sent(0xEEu));
 	m.dev = NULL;
 	s07_init(&m.psoc, &wb_device_opxy, &m.node, S06_LINK_PSOC, &m.psoc_ops);
 	CHECK(run.step(run.ctx, S11_STEP_DONE) == S11_INTERNAL);

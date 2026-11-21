@@ -8,7 +8,7 @@ waffle-boot. To install waffle-boot itself, see [How to Install](How-to-Install)
 | Install a TE firmware package (content and OS) from the boot menu | Tested on one unit |
 | Install waffle-boot | [How to Install](How-to-Install) |
 | Replace waffle-boot in one slot with another waffle-boot build | [How to Recover](How-to-Recover#write-a-slot-from-a-computer) |
-| Update the Bluetooth (BLE) chip, its bootloader, or the backplane (PSoC) | **Not tested on a unit.** Choose them on the list as any part. On an OP-1F the backplane step fails before anything is sent |
+| Update the Bluetooth (BLE) chip, its bootloader, or the backplane (PSoC) | **Not tested on a unit.** Choose them on the list as any part; the backplane step is the same on the OP-1F |
 | Return to the factory bootloader | **Not supported yet** |
 | Build a package with your own OS image | Developers: [Building Custom OS Updates (.tfw)](Building-Custom-OS-Updates) |
 | Write an OS image file directly | Developers: Boot menu → Developer menu → 5 ([Test OS](Test-OS#loading-it)) |
