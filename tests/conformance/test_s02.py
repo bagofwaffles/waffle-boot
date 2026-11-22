@@ -388,12 +388,15 @@ class Upgrade(unittest.TestCase):
                 self.assertEqual(res, ['0', '0'], n)
                 sector_erases = [o for o in ops if o.startswith('e:') and
                                  spiflash.SLOT_OFF[0] <= int(o[2:], 16) < spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX]
-                # S-02.045: the image's sectors, and the last sector when the image leaves it free; S-02.103:
-                # then the settings sector when the image leaves that free too
+                # S-02.045: the image's sectors, and the last sector when the image leaves it free; then the
+                # boot logo's header sector (src/front/fr_handoff.h) and S-02.103's settings sector when the
+                # image leaves them free too
                 last = n <= spiflash.SLOT_MAX - 0x1000
                 settings = n <= spiflash.SLOT_MAX - 0x2000
-                self.assertEqual(len(sector_erases), -(-n // 0x1000) + last + settings, n)
+                logo = n <= spiflash.SLOT_MAX - 0x3000
+                self.assertEqual(len(sector_erases), -(-n // 0x1000) + last + logo + settings, n)
                 tail = ['e:%x' % (spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX - 0x1000)] if last else []
+                tail += ['e:%x' % (spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX - 0x3000)] if logo else []
                 tail += ['e:%x' % (spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX - 0x2000)] if settings else []
                 if tail:
                     self.assertEqual(sector_erases[-len(tail):], tail, n)
@@ -2230,7 +2233,7 @@ class RecoveryActions(unittest.TestCase):
             a, kind, start = c['a'], c['b_kind'], c['start']
             by, *_ = self.recover(self.flash(a, kind, start), a, wr(HELLO, 0) + wr(INFO, 1), 'info')
             hello = by[(HELLO, 0)][0]
-            self.assertEqual((hello[0], struct.unpack_from('<H', hello, 1)[0], len(hello)), (2, 22, 47))
+            self.assertEqual((hello[0], struct.unpack_from('<H', hello, 1)[0], len(hello)), (2, 23, 47))
             p = by[(INFO, 1)][0]
             self.assertEqual(len(p), INFO_LEN)
             more = info_more(p)
@@ -2719,7 +2722,9 @@ class SettingsSector(unittest.TestCase):
             last = max(i for i, o in enumerate(ops) if o.startswith('p:') and int(o.split(':')[1], 16) >= 0x88000)
             tail = [o for o in ops[last + 1:ops.index('e:f000')] if o.startswith('e:')]   # after the image
             log, sec = 'e:%x' % (0x88000 + 0x77000), 'e:%x' % SET_SECTOR[t]
-            want = ([log] if row['erases_start_log'] else []) + ([sec] if row['erases_settings'] else [])
+            logo = 'e:%x' % (0x88000 + 0x75000)     # the boot logo's header, where the image leaves it free
+            want = ([log] if row['erases_start_log'] else []) + ([logo] if n <= 0x75000 else []) + \
+                ([sec] if row['erases_settings'] else [])
             self.assertEqual(tail, want, row)
 
     @scenario('S-02/SC-SETTINGS')
@@ -2768,7 +2773,9 @@ class SettingsSector(unittest.TestCase):
             self.assertEqual(writes(ops), prior + want, (way, a))
             wr_ = writes(ops)[len(prior):]
             k = wr_.index('e:%x' % SET_SECTOR[t])
-            self.assertEqual(wr_[k - 1], 'e:%x' % (spiflash.SLOT_OFF[t] + spiflash.SLOT_MAX - 0x1000), (way, a))
+            # after the log's erase and the boot logo's header's (the image leaves both free)
+            self.assertEqual(wr_[k - 2:k], ['e:%x' % (spiflash.SLOT_OFF[t] + spiflash.SLOT_MAX - 0x1000),
+                                           'e:%x' % (spiflash.SLOT_OFF[t] + spiflash.SLOT_MAX - 0x3000)], (way, a))
             nxt = 'p:%x:1' % (spiflash.SLOT_OFF[t] + spiflash.SLOT_MAX - 0x1000) if way == 'trial' \
                 else 'e:%x' % spiflash.SLOT_RECORD_OFF[t]
             self.assertEqual(wr_[k + 1], nxt, (way, a))
