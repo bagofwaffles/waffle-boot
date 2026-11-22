@@ -2223,7 +2223,7 @@ class RecoveryActions(unittest.TestCase):
     @scenario('S-02/SC-RECOVERY')
     @requirement('S-02.093')
     def test_SC_RECOVERY_info_and_hello(self):
-        """Runs 38 and 39: HELLO says protocol 2 and front 22; INFO is 242 bytes, its fields from 219 the status
+        """Runs 38 and 39: HELLO says protocol 2 and front 23; INFO is 242 bytes, its fields from 219 the status
         each action would get without and with force (as recovery_actions.json's rows), the tier of B, the
         slot a keep would select, and the last refusal since a write."""
         rows = {(c['act'], c['a'], c['b_kind'], c['start']): c for c in self.V['cases']}
