@@ -328,7 +328,7 @@ HOST_TEST_CFLAGS += -I$(GEN)
 $(HOST_TESTS): | $(VEC_HEADERS)
 
 check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check/layering check/mtpcp \
-	check/testos_mon check/wbrecover check/web check/bump_version check/generated check/leak \
+	check/testos_mon check/hostlink check/wbrecover check/web check/bump_version check/generated check/leak \
 	check/wiki_links check/ui_version
 
 # The screenshots in docs/ui/ are drawn at this tree's version (tools/ui_shots.py
@@ -365,6 +365,12 @@ check/mtpcp:
 .PHONY: check/testos_mon
 check/testos_mon:
 	$(PYTHON) -I -B tests/tools/test_testos_mon.py
+
+# tools/hostlink.py, and testos_mon.py's dev-put and dev-get over it, against
+# the host link's own C (src/hostlink.c) with volumes in memory.
+.PHONY: check/hostlink
+check/hostlink:
+	CC="$(CC)" $(PYTHON) -I -B tests/tools/test_hostlink_tool.py
 
 # tools/wbrecover.py against a model of recovery's protocol and the front's
 # own C, over a pseudo-terminal.
