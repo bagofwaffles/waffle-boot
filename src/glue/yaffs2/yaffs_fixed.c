@@ -19,6 +19,8 @@
  * A call that would need the real code goes through BUG(), which
  * wb_yaffs_bug_count counts, and fails where it can.
  */
+#include "yaffs_port.h"
+
 #include "yaffs_guts.h"
 #include "yaffs_ecc.h"
 #include "yaffs_endian.h"
@@ -29,6 +31,7 @@
 
 /* yaffs_tagscompat.c. Without it a yaffs1 device has no tagger and its
  * mount fails yaffs_check_dev_fns(). */
+/* cppcheck-suppress constParameterPointer ; yaffs2 fixes the type */
 void yaffs_tags_compat_install(struct yaffs_dev *dev)
 {
 	if (!dev->param.is_yaffs2)
@@ -224,12 +227,14 @@ void yaffs_verify_objects(struct yaffs_dev *dev)
 	(void)dev;
 }
 
+/* cppcheck-suppress constParameterPointer ; yaffs2 fixes the type */
 void yaffs_verify_obj_in_dir(struct yaffs_obj *obj)
 {
 	if (!obj)
 		BUG();
 }
 
+/* cppcheck-suppress constParameterPointer ; yaffs2 fixes the type */
 void yaffs_verify_dir(struct yaffs_obj *directory)
 {
 	if (!directory || !directory->my_dev)
