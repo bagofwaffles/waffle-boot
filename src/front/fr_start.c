@@ -75,7 +75,6 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	const uint8_t *raw;
 	struct fr_log log;
 	unsigned k = 0;
-	bool logo;
 
 	s->hw = hw;
 	s->dev = fr_dev_or_default(hw->ident != NULL ? hw->ident->dev : NULL);
@@ -97,6 +96,7 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 		/* S-13c.027: where PA8 is no strap, as a high one */
 		const unsigned pa8 = !fr_dev_has(s->dev, FR_DEV_F_STRAPS) ||
 				     (ho->strap & STRAP_PA8) != 0u ? 1u : 0u;
+		bool logo;
 
 		fr_panel_begin(&s->panel, hw->panel, hw->clock, ho->dma9_xmod,
 			       ho->dma9_ymod, pa8);

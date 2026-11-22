@@ -377,14 +377,17 @@ static void test_load(void)
 		CHECK(wb_logo_draw(&wl, c->data, g_px) && frame_is(g_frame, g_px));
 		CHECK(!fr_logo_load(&f, 1u - k, staging, g_frame));	/* the other slot: none */
 		CHECK(!fr_logo_load(&f, 2u, staging, g_frame));
-		/* a read that fails, at the header and in the data */
-		fail_at = FR_LOGO_OFF(k) + 3u;
-		f.ctx = &fail_at;
-		CHECK(!fr_logo_load(&f, k, staging, g_frame));
-		fail_at = FR_LOGO_OFF(k) - c->len / 2u;
-		CHECK(!fr_logo_load(&f, k, staging, g_frame));
-		fail_at = FR_RECORD_OFF(k);
-		CHECK(!fr_logo_load(&f, k, staging, g_frame));
+		/* a read that fails: at the header, in the data, at the record */
+		{
+			const uint32_t at[] = { FR_LOGO_OFF(k) + 3u, FR_LOGO_OFF(k) - c->len / 2u,
+						FR_RECORD_OFF(k) };
+
+			for (unsigned i = 0; i < ARRAY_LEN(at); i++) {
+				fail_at = at[i];
+				f.ctx = &fail_at;
+				CHECK(!fr_logo_load(&f, k, staging, g_frame));
+			}
+		}
 		f.ctx = NULL;
 		/* a data byte changed in the flash */
 		g_flash[FR_LOGO_OFF(k) - 1u] ^= 0x40u;

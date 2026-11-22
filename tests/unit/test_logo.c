@@ -131,7 +131,7 @@ static void test_cases(void)
 
 /* ---- the room and the range ---- */
 
-static struct s02_record rec(uint32_t len)
+static struct s02_record record_of(uint32_t len)
 {
 	struct s02_record r = { 0x12345678u, len, S02_RECORD_TAG };
 
@@ -149,10 +149,10 @@ static void test_room(void)
 	struct s02_record r;
 
 	for (unsigned i = 0; i < ARRAY_LEN(t); i++) {
-		r = rec(t[i].len);
+		r = record_of(t[i].len);
 		CHECK(wb_logo_room(&r) == t[i].room);
 	}
-	r = rec(0x1000u);
+	r = record_of(0x1000u);
 	r.tag = 0x0000B005u;
 	CHECK(wb_logo_room(&r) == 0u);
 }

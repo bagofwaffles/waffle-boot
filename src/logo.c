@@ -266,6 +266,9 @@ static unsigned median_cut(uint32_t ncols, unsigned target, uint16_t *pal)
 				s[k] += hist[c] * comp(c, k);
 			lut[c] = (uint8_t)i;
 		}
+		/* t >= 1: every color in a box has a count; 1 against no box */
+		if (t == 0u)
+			t = 1u;
 		for (unsigned k = 0; k < 3u; k++)
 			v[k] = (2u * s[k] + t) / (2u * t);
 		pal[i] = (uint16_t)(v[0] << 11 | v[1] << 5 | v[2]);

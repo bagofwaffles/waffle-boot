@@ -234,7 +234,6 @@ static enum wb_png_rc decode(struct png *p, uint32_t size)
 		uint8_t kind[4];
 		uint32_t n, crc;
 		bool ihdr, plte, trns, idat;
-		enum wb_png_rc rc;
 
 		if (size - off < 12u)
 			return WB_PNG_DAMAGED;
@@ -277,7 +276,8 @@ static enum wb_png_rc decode(struct png *p, uint32_t size)
 			return WB_PNG_DAMAGED;
 		/* a small chunk's body is whole in piece */
 		if (ihdr) {
-			rc = header(p, piece);
+			const enum wb_png_rc rc = header(p, piece);
+
 			if (rc != WB_PNG_OK)
 				return rc;
 			have = true;
