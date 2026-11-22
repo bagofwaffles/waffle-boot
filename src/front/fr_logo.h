@@ -3,6 +3,9 @@
  * The stored boot logo (fr_handoff.h's format), as the front checks and
  * draws it: every check passes, or the caller draws its own logo. Every
  * loop is bounded by sizes the header check has already limited.
+ *
+ * SPEC-Q: the stored logo, its slot's choice and its check have no
+ * requirement label yet.
  */
 #ifndef FR_LOGO_H
 #define FR_LOGO_H

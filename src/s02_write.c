@@ -180,7 +180,8 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
 			      base + S02_SLOT_CAPACITY - S02_SECTOR_SIZE) != 0)
 		return S02_ERR_IO;
 	/* An image that leaves the logo's header sector free gets it erased,
-	 * so the new image starts on the front's own logo (front/fr_handoff.h). */
+	 * so the new image starts on the front's own logo (front/fr_handoff.h).
+	 * SPEC-Q: this erase has no label yet. */
 	if (n <= FR_LOGO_SLOT_OFF &&
 	    env->flash->erase(env->flash->ctx, base + FR_LOGO_SLOT_OFF) != 0)
 		return S02_ERR_IO;

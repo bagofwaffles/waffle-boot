@@ -1846,7 +1846,8 @@ bool fr_writer_step(struct fr_writer *w)
 	case FR_WS_LOGO_ERASE:
 		/* The stored logo's header sector, where the image leaves it
 		 * free, so that the new image starts with the front's own logo
-		 * (fr_logo.h); class 1, before the record. */
+		 * (fr_logo.h); class 1, before the record. SPEC-Q: this erase
+		 * has no label yet. */
 		if (!w_erase(w, FR_LOGO_OFF(w->target)))
 			return stop(w, FR_WR_FLASH);
 		w->state = FR_WS_SETTINGS_ERASE;
