@@ -10,19 +10,23 @@
 
 #include "waffle/s04_records.h"
 
-/* Days from 1970-01-01 to y-m-d in the Gregorian calendar. */
-static int64_t days_from_civil(int64_t y, unsigned mo, unsigned d)
+/*
+ * Days from 1970-01-01 to y-m-d in the Gregorian calendar, for the years
+ * S-04.070's count holds (1970 to 2059): 32-bit arithmetic throughout.
+ */
+static uint32_t days_from_civil(uint32_t y, unsigned mo, unsigned d)
 {
-	int64_t era, yoe, doy;
+	uint32_t era, yoe, doy;
 
-	y -= mo <= 2u;
-	era = (y >= 0 ? y : y - 399) / 400;
-	yoe = y - era * 400;
-	doy = (153 * (int64_t)(mo > 2u ? mo - 3u : mo + 9u) + 2) / 5 +
-	      (int64_t)d - 1;
-	return era * 146097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719468;
+	y -= mo <= 2u ? 1u : 0u;
+	era = y / 400u;
+	yoe = y - era * 400u;
+	doy = (153u * (mo > 2u ? mo - 3u : mo + 9u) + 2u) / 5u + d - 1u;
+	return era * 146097u + yoe * 365u + yoe / 4u - yoe / 100u + doy - 719468u;
 }
 
+/* S-12.016: below 2^32 for every count (32769 days of 86400 seconds and
+ * a time of day of at most 31:63:63). */
 bool opxy_rtc_utc(struct opxy_master *m, uint64_t *utc)
 {
 	struct s04_datetime t;
@@ -32,8 +36,7 @@ bool opxy_rtc_utc(struct opxy_master *m, uint64_t *utc)
 	if (!opxy_rtc_read(&clk))
 		return false;
 	s04_rtc_decode(clk, &t);
-	*utc = (uint64_t)days_from_civil((int64_t)t.year, t.month, t.day) *
-		       86400u +
+	*utc = days_from_civil(t.year, t.month, t.day) * 86400u +
 	       t.hour * 3600u + t.minute * 60u + t.second;
 	return true;
 }

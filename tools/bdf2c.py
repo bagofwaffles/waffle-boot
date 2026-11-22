@@ -2,15 +2,17 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Writes src/display_font.c, the display's font (S-15.003), from the vendored Spleen 8x16 BDF file.
 
-    python3 -I -B tools/bdf2c.py                  # check src/display_font.c is current
-    python3 -I -B tools/bdf2c.py --write          # rewrite it
+    python3 -I -B tools/bdf2c.py                  # check src/display_font.c and the title reference are current
+    python3 -I -B tools/bdf2c.py --write          # rewrite them
     python3 -I -B tools/bdf2c.py --front [--write]  # the same for the front's copy, src/front/fr_font.c
 
 Run from the repository root. Standard library only. wb_display_font holds the glyphs 0x20..0x7E, each 16 rows
 of one byte, bit 7 the leftmost pixel, row 0 the top of the 16-pixel cell (12 above the baseline, 4 below).
 Spleen has no bold, so the title bar's font is derived from it: each glyph widened to 9 columns (side stems 3
 wide, a column clear after it) and heightened to 17 rows (capitals 14 tall), each row of 16 bits, bit 9 the
-leftmost pixel. TITLE_FIXES draws by hand the glyphs that rule does not serve."""
+leftmost pixel. TITLE_FIXES draws by hand the glyphs that rule does not serve. The bootloader builds the title
+font in RAM by the same rule (src/display_title.c); its table goes to tests/unit/display_title_ref.h, the
+reference the unit tests compare that with. The front carries both tables."""
 import os
 import sys
 
@@ -18,6 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BDF = os.path.join(ROOT, 'src', 'third_party', 'spleen', 'spleen-8x16.bdf')
 OUT = os.path.join(ROOT, 'src', 'display_font.c')
 FRONT_OUT = os.path.join(ROOT, 'src', 'front', 'fr_font.c')
+TITLE_REF = os.path.join(ROOT, 'tests', 'unit', 'display_title_ref.h')
 W, H, FIRST, LAST = 8, 16, 0x20, 0x7E
 TITLE_W, TITLE_H = 10, 17
 # A title glyph's rows drawn by hand, in the widened 16-row cell, from the given row.
@@ -151,12 +154,24 @@ def source(g):
                     ' * Frederic Cambus, BSD-2-Clause (src/third_party/spleen/LICENSE). Generated',
                     ' * by tools/bdf2c.py from src/third_party/spleen/spleen-8x16.bdf; do not edit.',
                     ' * Each glyph is 16 rows of 8 pixels, bit 7 the leftmost; rows 12 to 15',
-                    ' * are below the baseline. wb_display_title_font, the title bar\'s, is derived',
-                    ' * from it by the same tool: each glyph 17 rows of 10 pixels, bit 9 the leftmost.',
+                    ' * are below the baseline. wb_display_title_font, the title bar\'s, is built',
+                    ' * from it at run time (src/display_title.c).',
                     ' */',
                     '#include "waffle/display.h"'],
-                'const uint8_t wb_display_font[WB_FONT_COUNT][WB_FONT_H]',
-                'const uint16_t wb_display_title_font[WB_FONT_COUNT][WB_TITLE_H]')
+                'const uint8_t wb_display_font[WB_FONT_COUNT][WB_FONT_H]', None)
+
+
+def title_ref_source(g):
+    """The title font as bdf2c.py derives it: the unit tests' reference for src/display_title.c."""
+    return text(g, ['/* SPDX-License-Identifier: GPL-2.0-or-later */',
+                    '/*',
+                    ' * The title bar\'s font (S-15.003) as tools/bdf2c.py derives it from',
+                    ' * src/third_party/spleen/spleen-8x16.bdf (Spleen 8x16 2.2.0, Copyright (c)',
+                    ' * 2018-2026 Frederic Cambus, BSD-2-Clause, src/third_party/spleen/LICENSE).',
+                    ' * Generated; do not edit. wb_display_title_font_build() must give the same.',
+                    ' */',
+                    '#include <stdint.h>'],
+                None, 'static const uint16_t display_title_ref[95][17]')
 
 
 def front_source(g):
@@ -185,26 +200,30 @@ def text(g, head, font_decl, title_decl):
             out.append('\t{ %s },\t/* %s */' % (row, name(c)))
         out.append('};')
 
-    table(font_decl, g, '0x%02X')
-    table(title_decl, title_font(g), '0x%03X')
+    if font_decl:
+        table(font_decl, g, '0x%02X')
+    if title_decl:
+        table(title_decl, title_font(g), '0x%03X')
     return '\n'.join(out) + '\n'
 
 
 def main():
     args = sys.argv[1:]
     front = '--front' in args
-    path = FRONT_OUT if front else OUT
-    text = (front_source if front else source)(glyphs(BDF))
-    if '--write' in args:
-        with open(path, 'w', encoding='utf-8') as f:
-            f.write(text)
-        return 0
-    with open(path, encoding='utf-8') as f:
-        if f.read() != text:
-            print('bdf2c: %s is not current; run tools/bdf2c.py%s --write' %
-                  (os.path.relpath(path, ROOT), ' --front' if front else ''))
-            return 1
-    return 0
+    g = glyphs(BDF)
+    outs = [(FRONT_OUT, front_source(g))] if front else [(OUT, source(g)), (TITLE_REF, title_ref_source(g))]
+    status = 0
+    for path, text in outs:
+        if '--write' in args:
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(text)
+            continue
+        with open(path, encoding='utf-8') as f:
+            if f.read() != text:
+                print('bdf2c: %s is not current; run tools/bdf2c.py%s --write' %
+                      (os.path.relpath(path, ROOT), ' --front' if front else ''))
+                status = 1
+    return status
 
 
 if __name__ == '__main__':
