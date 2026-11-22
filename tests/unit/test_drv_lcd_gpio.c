@@ -4,7 +4,7 @@
  * (src/drivers/bf70x/lcd_gpio.c, built only with OPXY_TEST_OS and
  * OPXY_TESTOS_PANEL_GPIO): the source is included here with those macros,
  * so the test does not depend on the host library's lcd.o (the same
- * interface, which this object then defines).
+ * interface, which this object then defines; the pins are lcd_pins.o's).
  *
  * What the gpio variant must do, as these tests check it:
  * every pin a GPIO with its FER bit cleared
