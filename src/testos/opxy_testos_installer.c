@@ -9,9 +9,9 @@
  * What it may write: through the engine, the slot the selector does not
  * name, its record and the selector; through the suite's guard, the active
  * byte of the two boot partitions' headers. Each only after its key was held
- * 5 s on the unit, and nothing at all unless the device is the one this
- * image is built for, known by its first stage, every check passed and the
- * carried image passed its check. The survey build offers no write: it
+ * 5 s on the unit, and nothing at all unless the device is known by its
+ * first stage, every check passed and the carried image passed its check.
+ * The image runs on either device (S-05.043). The survey build offers no write: it
  * shows what it found (INST_SURVEYED) and saves it in check.txt.
  */
 #include "waffle/board/installer.h"
@@ -174,7 +174,10 @@ void opxy_installer_start(struct opxy_master *m)
 	/* the device, decided at the entry (S-18), for HELLO and check.txt */
 	in.hello.device = (uint8_t)opxy_dev(m)->id;
 	in.hello.how = m->dev_how;
-	in.hello.image_device = (uint8_t)OPXY_TESTOS_IMAGE_DEVICE;
+	/* one image for both devices (S-05.043): it installs for the device
+	 * its first stage names, and none otherwise (S-02.108) */
+	in.hello.image_device = in.hello.how == (uint8_t)WB_DEV_BY_TABLE ? in.hello.device :
+								  (uint8_t)WB_DEV_DEFAULT;
 	in.hello.survey = OPXY_TESTOS_SURVEY_ON ? 1u : 0u;
 	in.hello.fs_n = m->fs_n;
 	in.hello.fs_c = m->fs_c;

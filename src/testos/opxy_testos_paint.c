@@ -54,8 +54,9 @@
  * boot mode's (S-18.002); on another boot mode the fallback sample of PA2
  * alone (its INEN, no DIR write) decides, as the front's fr_decide() does
  * (PA2 = 1 a main CPU all the same). The full strap, PA0, PA2 and PA8, is opxy_main()'s, after orange,
- * on a device with straps (PA8 is also the panel's RESET, S-13c.004). An
- * OP-1F image stops here on any other device (waffle/testos.h).
+ * on a device with straps (PA8 is also the panel's RESET, S-13c.004). A
+ * first stage the table does not name goes on as the default device
+ * (S-18.004), where the installer writes nothing.
  */
 #include "waffle/testos.h"
 
@@ -255,15 +256,6 @@ static int entry_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
 	return wb_spiflash_read(&e->flash, off, buf, len);
 }
 
-#if defined(OPXY_TESTOS_1F)
-/* An image for another device: nothing more runs, nothing is touched. */
-static void stop(void)
-{
-	for (;;)
-		wb_core_idle();
-}
-#endif
-
 _Static_assert(WB_FS_READ_BUSY == WB_SPIFLASH_BUSY, "a busy flash is not read again");
 
 /* S-18.002's fallback sample, on a boot mode that is not 1: PA2's INEN
@@ -305,10 +297,6 @@ void opxy_testos_entry_paint(void)
 		OPXY_TESTOS_DECIDED | (r.fallback ? OPXY_TESTOS_BY_STRAP : 0u) |
 		(uint32_t)r.d.how << 8 | (uint32_t)r.d.id;
 	opxy_testos_entry[OPXY_TESTOS_E_ROLE] = r.main ? OPXY_STRAP_ROLE : 0u;
-#if defined(OPXY_TESTOS_1F)
-	if (!r.main || r.d.how != WB_DEV_BY_TABLE || (unsigned)r.d.id != OPXY_TESTOS_IMAGE_DEVICE)
-		stop();
-#endif
 	if (!is_master()) {
 		outcome = PAINT_SLAVE;
 	} else if (r.d.how != WB_DEV_BY_TABLE) {

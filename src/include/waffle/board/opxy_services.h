@@ -79,9 +79,15 @@ struct opxy_draw_rec {
 
 /*
  * S-12.001's RAM disk over its parts in DDR (src/board/opxy_disk.c): the
- * sectors of part 0, then those of part 1, as one device.
+ * sectors of part 0, then those of part 1, and so on, as one device. The
+ * installer's images (OPXY_TESTOS_SHARED) need a third on the OP-XY
+ * (waffle/board/opxy.h).
  */
+#if defined(OPXY_TESTOS_SHARED)
+#define OPXY_DISK_PARTS 3u
+#else
 #define OPXY_DISK_PARTS 2u
+#endif
 struct opxy_disk_part {
 	uint8_t *mem;
 	uint32_t sectors;

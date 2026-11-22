@@ -2,7 +2,7 @@
 /*
  * The RAM disk of S-12.001 as one device of 512-byte sectors over its parts
  * in DDR (S-01.016, waffle/board/opxy.h): the sectors of part 0 first, then
- * those of part 1. A transfer that crosses from one part into the next is
+ * those of the next part, and so on. A transfer that crosses from one part into the next is
  * split there. Memory does not fail, so neither does a transfer inside the
  * disk (S-10a.043's medium errors never arise).
  */
@@ -134,6 +134,16 @@ void opxy_disk_ddr(struct opxy_disk_part part[OPXY_DISK_PARTS])
 {
 	part[0].mem = (uint8_t *)(uintptr_t)OPXY_DISK0_START;
 	part[0].sectors = (OPXY_DISK0_END - OPXY_DISK0_START) / WB_SECTOR_SIZE;
+#if defined(OPXY_TESTOS_SHARED)
+	/* the installer's image and heap where part 1 was (S-05.043) */
+	part[1].mem = (uint8_t *)(uintptr_t)OPXY_TESTOS_SHARED_DISK1_START;
+	part[1].sectors = (OPXY_TESTOS_SHARED_DISK1_END - OPXY_TESTOS_SHARED_DISK1_START) /
+			  WB_SECTOR_SIZE;
+	part[2].mem = (uint8_t *)(uintptr_t)OPXY_TESTOS_SHARED_DISK2_START;
+	part[2].sectors = (OPXY_TESTOS_SHARED_DISK2_END - OPXY_TESTOS_SHARED_DISK2_START) /
+			  WB_SECTOR_SIZE;
+#else
 	part[1].mem = (uint8_t *)(uintptr_t)OPXY_DISK1_START;
 	part[1].sectors = (OPXY_DISK1_END - OPXY_DISK1_START) / WB_SECTOR_SIZE;
+#endif
 }

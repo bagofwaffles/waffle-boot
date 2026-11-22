@@ -6,18 +6,18 @@
 // The ferret tool's page, for a unit that has never had developer mode on.
 export const FERRET_URL = 'https://bagofwaffles.github.io/ferret/op-xy/';
 
+// One installer for both devices (S-05.043). On the OP-1F it and its survey are written by that
+// unit's own means, never sent by this page.
 export const INSTALLER_FILE = 'waffle-install.ldr';
-// The OP-1F's installer and its survey, laid out like the OP-1F's own OS (S-05.040): written by
-// that unit's own means, never sent by this page.
-export const INSTALLER_FILE_1F = 'waffle-install-1f.ldr';
-export const SURVEY_FILE_1F = 'waffle-install-1f-survey.ldr';
+export const SURVEY_FILE = 'waffle-install-survey.ldr';
 
 export const IHELLO = 0x40, STATE = 0x41, TEST = 0x42, REPORT = 0x43, SURVEY = 0x44;
 export const MAGIC = [0x57, 0x42, 0x49, 0x4E];          // "WBIN"
 export const IPROTO = 1;
 export const IHELLO_LEN = 64, STATE_HEAD = 32, REPORT_CHUNK = 1024, SURVEY_LEN = 76;
 // HELLO's bytes 56 to 59: the unit's device and how it was decided (S-18.005's codes), the device
-// the installer is built for, and 1 for a survey build
+// the installer installs for (the unit's, or 0 when not identified: one image serves both), and 1
+// for a survey build
 export const IHELLO_O_DEVICE = 56;
 export const DEVICES = ['OP-XY', 'OP-1F'];
 export const HOW_TABLE = 0, HOW_SECOND = 1, HOW_UNKNOWN = 2;
@@ -83,8 +83,7 @@ export const LOCK_ADVICE = {
     7: 'Switch off and on and start the installer again. Save check.txt if it happens again.',
     8: "The unit's first stage is not one this project knows: nothing is installed on it. " +
         'check.txt gives its n and c.',
-    9: `Use the installer built for this unit: ${INSTALLER_FILE} on an OP-XY, ` +
-        `${INSTALLER_FILE_1F} on an OP-1F.`,
+    9: `Use this project's ${INSTALLER_FILE}: it is built for both devices.`,
     10: 'On an OP-1F one slot keeps the bootloader the unit came with; this install would write ' +
         'over the last one, so it is not offered.',
     11: 'Save check.txt: it holds what the survey found. An install is not offered by this build.',

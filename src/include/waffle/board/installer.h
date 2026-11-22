@@ -16,12 +16,13 @@
  *
  * The device (S-18) is decided at the entry, before any pin is touched.
  * The install is offered on a first stage that S-18.003's table names
- * only, by the image built for that device (the OP-1F's: make
- * installer-1f, laid out like its own OS). On the OP-1F it never writes
- * over the last slot whose image is not a waffle-boot stream: the
- * bootloader the unit came with stays in one slot. The survey build (make
- * installer-1f-survey) writes nothing to the SPI flash, and shows and saves
- * what an install would depend on (struct inst_survey).
+ * only. One image serves both devices (make installer, S-05.043), so the
+ * image's device is the one decided; INST_LOCK_OTHER_DEVICE stays for a
+ * runner that names another. On the OP-1F it never writes over the last
+ * slot whose image is not a waffle-boot stream: the bootloader the unit
+ * came with stays in one slot. The survey build (make installer-survey)
+ * writes nothing to the SPI flash, and shows and saves what an install
+ * would depend on (struct inst_survey).
  */
 #ifndef WAFFLE_INSTALLER_H
 #define WAFFLE_INSTALLER_H
@@ -227,7 +228,7 @@ struct inst_hello {
 };
 
 /*
- * The survey (make installer-1f-survey): what decides whether an install is
+ * The survey (make installer-survey): what decides whether an install is
  * safe, read and never written. INST_T_SURVEY's reply, INST_SURVEY_LEN bytes,
  * little-endian: [0] INST_ST_OK, [1] device, [2] how, [3] the boot mode,
  * [4..7] n, [8..11] c (S-18.003), [12] 1 when the selector was read, [13]

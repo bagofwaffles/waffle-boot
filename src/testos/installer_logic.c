@@ -1130,7 +1130,7 @@ size_t inst_report_append(char *out, size_t len, size_t cap, const struct inst_h
 	return r.n;
 }
 
-/* --- the survey (make installer-1f-survey) --- */
+/* --- the survey (make installer-survey) --- */
 
 size_t inst_survey_bytes(const struct inst_survey *sv, uint8_t *out)
 {

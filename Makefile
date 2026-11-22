@@ -25,7 +25,9 @@
 #   make test-os-mon      the test OS with the USB debug monitor
 #   make installer        the installer (wiki/Installer-Reference.md): the hardware checks,
 #                 then this build's image written to the unit when every
-#                 check passes: $(BUILD)/waffle-install.ldr
+#                 check passes: $(BUILD)/waffle-install.ldr, one image for
+#                 the OP-XY and the OP-1F; make installer-survey, the same
+#                 writing nothing to the SPI flash
 #   make analyze  clang static analyzer over src/ and tests/
 #   make cppcheck cppcheck over src/ and tests/, the vendored code left out
 #   make fuzz     libFuzzer targets (clang), see tests/fuzz/README.md
@@ -643,7 +645,8 @@ $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testo
 	$(PYTHON) -I -B tools/testos_layout.py $$< --ld $$(TESTOS_$(1)_LD) $(TESTOS_DEVICE_$(1)) \
 		--board src/include/waffle/board/opxy.h --memmap src/include/waffle/s01_memmap.h \
 		--stream $$(TESTOS_$(1)_STREAM) --json $$@.tmp
-	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp $(TESTOS_DEVICE_$(1))
+	$(foreach d,$(or $(TESTOS_LAYOUT_DEVICES_$(1)),xy),\
+		$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp --device $(d) &&) true
 	@mv $$@.tmp $$@
 endef
 
@@ -652,30 +655,21 @@ TESTOS_MON := mon
 TESTOS_FLAGS_gpio    := -DOPXY_TESTOS_PANEL_GPIO=1
 TESTOS_FLAGS_mon     := -DOPXY_TESTOS_MONITOR=1
 # The installer (wiki/Installer-Reference.md): the check suite, then this build's image
-# written to the unit, every write held on the unit's key; no monitor.
-TESTOS_INSTALLER := installer installer-1f installer-1f-survey
-TESTOS_FLAGS_installer := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1
-# The OP-1F's installer (make installer-1f): the same, with the same carried
-# image, laid out like the OP-1F's OS 1.7.3 for its own loader (S-05.040,
-# bf703_testos_1f.ld); it runs on an OP-1F alone. The survey (make
-# installer-1f-survey) writes nothing to the SPI flash: the gate and the
-# flash driver's write calls (--wrap) refuse every erase and program, and
-# it shows and saves what an install there would depend on.
-TESTOS_1F_FLAGS := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1 -DOPXY_TESTOS_1F=1
-TESTOS_FLAGS_installer-1f := $(TESTOS_1F_FLAGS)
-TESTOS_FLAGS_installer-1f-survey := $(TESTOS_1F_FLAGS) -DOPXY_TESTOS_SURVEY=1
-TESTOS_LD_1F := src/testos/bf703_testos_1f.ld
-TESTOS_LD_installer-1f := $(TESTOS_LD_1F)
-TESTOS_LD_installer-1f-survey := $(TESTOS_LD_1F)
-TESTOS_MKLDR_installer-1f := --os-1f
-TESTOS_MKLDR_installer-1f-survey := --os-1f
-TESTOS_DEVICE_installer-1f := --device 1f
-TESTOS_DEVICE_installer-1f-survey := --device 1f
-TESTOS_KEEP_installer-1f := -Wl,-u,_wb_testos_entry_1f
-TESTOS_KEEP_installer-1f-survey := -Wl,-u,_wb_testos_entry_1f
+# written to the unit, every write held on the unit's key; no monitor. One image for both
+# devices (S-05.043), laid out like the OP-1F's OS 1.7.3, the shape both devices' own
+# loaders take (S-05.040, S-05.041, bf703_installer.ld); it decides the device at its entry
+# and acts on it. The survey (make installer-survey) writes nothing to the SPI flash: the
+# gate and the flash driver's write calls (--wrap) refuse every erase and program, and it
+# shows and saves what an install there would depend on.
+TESTOS_INSTALLER := installer installer-survey
+TESTOS_FLAGS_installer := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1 -DOPXY_TESTOS_SHARED=1
+TESTOS_FLAGS_installer-survey := $(TESTOS_FLAGS_installer) -DOPXY_TESTOS_SURVEY=1
 TESTOS_COMMA := ,
 TESTOS_SURVEY_WRAPS := wb_spiflash_erase wb_spiflash_program
-TESTOS_LDFLAGS_installer-1f-survey := $(foreach f,$(TESTOS_SURVEY_WRAPS),-Wl$(TESTOS_COMMA)--wrap=$(f))
+TESTOS_LDFLAGS_installer-survey := $(foreach f,$(TESTOS_SURVEY_WRAPS),-Wl$(TESTOS_COMMA)--wrap=$(f))
+$(foreach v,$(TESTOS_INSTALLER),$(eval TESTOS_LD_$(v) := src/testos/bf703_installer.ld)\
+	$(eval TESTOS_MKLDR_$(v) := --os-1f)$(eval TESTOS_DEVICE_$(v) := --device both)\
+	$(eval TESTOS_LAYOUT_DEVICES_$(v) := xy 1f)$(eval TESTOS_KEEP_$(v) := -Wl,-u,_wb_testos_l1_entry))
 # A local, untracked local.mk may add targets, test-OS variants
 # (TESTOS_EXTRA) and sources to analyze (LOCAL_SRCS).
 TESTOS_EXTRA :=
@@ -688,16 +682,16 @@ $(TESTOS_BUILD)/gen/installer_image.c: $(STREAM) tools/installer_image.py src/fr
 	$(PYTHON) -I -B tools/installer_image.py $(STREAM) src/front/front.pin $@
 $(foreach v,$(TESTOS_PANELS) $(TESTOS_MON) $(TESTOS_INSTALLER) $(TESTOS_EXTRA),$(eval $(call testos_variant,$(v))))
 
-.PHONY: installer installer-1f installer-1f-survey
+.PHONY: installer installer-survey installer-1f installer-1f-survey
 installer: $(BUILD)/waffle-install.ldr
 $(BUILD)/waffle-install.ldr: $(TESTOS_installer_STREAM) $(TESTOS_installer_LAYOUT)
 	cp $< $@
-installer-1f: $(BUILD)/waffle-install-1f.ldr
-$(BUILD)/waffle-install-1f.ldr: $(TESTOS_installer-1f_STREAM) $(TESTOS_installer-1f_LAYOUT)
+installer-survey: $(BUILD)/waffle-install-survey.ldr
+$(BUILD)/waffle-install-survey.ldr: $(TESTOS_installer-survey_STREAM) $(TESTOS_installer-survey_LAYOUT)
 	cp $< $@
-installer-1f-survey: $(BUILD)/waffle-install-1f-survey.ldr
-$(BUILD)/waffle-install-1f-survey.ldr: $(TESTOS_installer-1f-survey_STREAM) $(TESTOS_installer-1f-survey_LAYOUT)
-	cp $< $@
+# Other names for the same two targets.
+installer-1f: installer
+installer-1f-survey: installer-survey
 
 test-os: $(addprefix test-os-,$(TESTOS_PANEL))
 
@@ -801,7 +795,7 @@ ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
 # files their options reach.
 ANALYZE_MON := $(addprefix analyze-mon/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
 ANALYZE_INSTALLER := $(addprefix analyze-installer/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
-# The OP-1F's survey installer, over the files its options reach.
+# The survey installer, over the files its options reach.
 ANALYZE_SURVEY := $(addprefix analyze-survey/,$(sort $(shell grep -l 'OPXY_TESTOS' src/testos/*.c src/board/*.c)))
 DEV_VARIANT := $(sort $(shell grep -l 'OPXY_BOOT_CRUMBS\|OPXY_CRUMB\|OPXY_TIM\|OPXY_STARTUP\|S14_DEFAULT_THRESHOLD' \
 	src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
@@ -847,9 +841,9 @@ $(ANALYZE_INSTALLER): analyze-installer/%:
 $(ANALYZE_SURVEY): analyze-survey/%:
 	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \
 		-Xanalyzer -analyzer-output=text \
-		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_installer-1f-survey) \
+		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_installer-survey) \
 		$* -o /dev/null 2>&1); s=$$?; \
-	printf '  ANALYZE %s (OP-1F survey)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
+	printf '  ANALYZE %s (survey)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
 
 $(ANALYZE_DEV): analyze-dev/%:
 	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \

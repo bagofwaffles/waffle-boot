@@ -13,7 +13,8 @@ it.
 | --- | --- | --- |
 | `make test-os` | `waffle-test-smc.ldr`, `waffle-test-gpio.ldr` | The test OS, with the normal or a hand-driven panel driver (`TESTOS_PANEL=smc` or `gpio` builds one) |
 | `make test-os-mon` | `waffle-test-mon.ldr` | The `smc` image with the USB monitor, for `tools/testos_mon.py` |
-| `make installer` | `waffle-test-installer.ldr`, copied to `build/waffle-install.ldr` | The hardware checks, then this build's `waffle-boot.ldr` written to the unit ([How to Install](How-to-Install)); no monitor |
+| `make installer` | `waffle-test-installer.ldr`, copied to `build/waffle-install.ldr` | The hardware checks, then this build's `waffle-boot.ldr` written to the unit ([How to Install](How-to-Install)); no monitor. One image for the OP-XY and the OP-1F, laid out like the OP-1F's OS ([Installer Reference](Installer-Reference#the-images-layout)) |
+| `make installer-survey` | `waffle-test-installer-survey.ldr`, copied to `build/waffle-install-survey.ldr` | The installer that writes nothing to the SPI flash |
 
 Every build fails unless the stream passes the boot-stream checks and `tools/testos_layout.py`, which caps
 it at `0x800000` bytes, the most a unit loads. The test OS's code is in `src/testos/` and behind
