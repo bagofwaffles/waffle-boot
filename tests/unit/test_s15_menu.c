@@ -310,6 +310,7 @@ static const struct s15_env_ops env = {
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, f_settings, NULL, f_lost, f_continue,
 	f_logread, f_files, f_clear, f_once_check, f_once,
+	NULL, NULL, NULL, NULL, NULL,
 };
 
 /* A board with no boot store, no continue_os for the host and no file
@@ -318,7 +319,7 @@ static const struct s15_env_ops env_bare = {
 	f_usb, f_volcal, f_leds, f_refused, f_dir_exists, f_pack_dir,
 	f_manifest, f_remove, f_erase, f_format, f_os_write, f_reset,
 	f_sysinfo, f_scan, f_option, NULL, NULL, f_lost, NULL,
-	NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 };
 
 static void clear_records(void)
@@ -1467,6 +1468,11 @@ static void test_rules(void)
 						break;
 					case S15_SCR_INFO2:
 						ok = next == S15_SCR_INFO;
+						break;
+					case S15_SCR_LOGO:      /* no logo item in this walk */
+					case S15_SCR_LOGO_VIEW:
+					case S15_SCR_LOGO_DONE:
+						ok = next == S15_SCR_SETTINGS;
 						break;
 					case S15_SCR_OPTION:    /* nothing changed */
 						ok = next == S15_SCR_SETTINGS &&
@@ -4115,6 +4121,258 @@ static void test_op1f(void)
 	expect_screen("info2_unknown");
 }
 
+
+/* ---- the boot logo (waffle/logo.h) ------------------------------------- */
+
+static struct {
+	struct s15_logo state;
+	struct s15_logo_pic pic;
+	enum s15_store_save save_rc, remove_rc;
+	unsigned states, disks, loads, saves, removes;
+	unsigned usb_at_disk;
+} L;
+static uint16_t l_px[480u * 222u];
+
+static void l_state(void *c, struct s15_logo *out) { (void)c; L.states++; *out = L.state; }
+static void l_disk(void *c) { (void)c; L.disks++; L.usb_at_disk = F.n_usb; }
+static void l_load(void *c, struct s15_logo_pic *out)
+{
+	(void)c;
+	L.loads++;
+	*out = L.pic;
+}
+static enum s15_store_save l_save(void *c) { (void)c; L.saves++; return L.save_rc; }
+static enum s15_store_save l_remove(void *c) { (void)c; L.removes++; return L.remove_rc; }
+
+static struct s15_env_ops env_logo;
+
+static void logo_start(uint8_t state)
+{
+	reset_fake(); default_boot();
+	memset(&L, 0, sizeof L);
+	L.state.state = state;
+	L.state.room = 36864u;
+	L.state.stored = state == S15_LOGO_CUSTOM ? 12391u : 0u;
+	L.pic.result = S15_LOGO_READY;
+	L.pic.size = 12391u;
+	L.pic.room = 36864u;
+	L.pic.px = l_px;
+	env_logo = env;
+	env_logo.logo_state = l_state;
+	env_logo.logo_disk = l_disk;
+	env_logo.logo_load = l_load;
+	env_logo.logo_save = l_save;
+	env_logo.logo_remove = l_remove;
+	s14_log_init(&LOG, S14_MASTER, NULL, &rec_link, NULL, NULL);
+	s15_menu_init(&M, &wb_device_opxy, &BOOT, &env_logo, &LOG);
+	T = 0;
+	s15_menu_tick(&M, T);
+	s15_menu_start(&M);
+	press(0x07);			/* Settings */
+}
+
+/* The disk released, and read 2 s later. */
+static void logo_drop(void)
+{
+	s15_up_released(&M, T);
+	tick(1999u);
+	s15_up_tick(&M, T);
+	CHECK(L.loads == 0u, "logo: not read before 2 s");
+	tick(1u);
+	s15_up_tick(&M, T);
+}
+
+static unsigned l_fills;
+static uint16_t l_text_y;
+static char l_text[64];
+
+static void l_fill(void *c, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t v)
+{
+	(void)c; (void)x; (void)y; (void)w; (void)h; (void)v;
+	l_fills++;
+}
+
+static void l_draw_text(void *c, uint16_t x, uint16_t y, const char *s, size_t n, uint16_t fg,
+			uint16_t bg)
+{
+	(void)c; (void)x; (void)fg; (void)bg;
+	l_text_y = y;
+	snprintf(l_text, sizeof l_text, "%.*s", (int)n, s);
+}
+
+static void test_logo(void)
+{
+	static const struct s15_geometry g = {
+		.width = 480, .height = 222, .edge = 8, .margin = 16, .top = 27,
+		.pitch = 19, .glyph_w = 8, .glyph_h = 16, .bar_h = 24,
+		.title_w = 10, .title_h = 17, .title_y = 4,
+		.status_y = 202,
+	};
+	static const struct s15_draw_ops d = { l_fill, l_draw_text, NULL, NULL, NULL };
+	const struct s15v_screen *v;
+
+	/* no logo ops: no item (the test OS) */
+	reset_fake(); default_boot(); start();
+	press(0x07);
+	expect_screen("settings");
+	press(0x14);
+	CHECK(M.screen == S15_SCR_SETTINGS, "logo: no item, 7 does nothing");
+
+	/* Settings' item, and its states */
+	logo_start(S15_LOGO_BUILTIN);
+	expect_screen("settings_logo");
+	logo_start(S15_LOGO_CUSTOM);
+	expect_screen("settings_logo_custom");
+	logo_start(S15_LOGO_NO_ROOM);
+	expect_screen("settings_logo_no_room");
+	press(0x14);
+	CHECK(M.screen == S15_SCR_SETTINGS && L.disks == 0u, "logo: no room offers nothing");
+	logo_start(S15_LOGO_UNAVAILABLE);
+	expect_screen("settings_logo_unavailable");
+	press(0x14);
+	CHECK(M.screen == S15_SCR_SETTINGS && L.disks == 0u, "logo: unavailable offers nothing");
+
+	/* the disk's screen, and back */
+	logo_start(S15_LOGO_BUILTIN);
+	press(0x14);
+	CHECK(M.screen == S15_SCR_LOGO && L.disks == 1u, "logo: 7 opens the disk");
+	expect_screen("logo");
+	expect_title("logo");
+	{
+		struct s15_frame f;
+
+		s15_menu_frame(&M, &f);
+		CHECK((f.status & S15_STATUS_USB) != 0u, "logo: the status bar's USB");
+	}
+	press(0x12);
+	CHECK(M.armed == S15_ARM_NONE && L.removes == 0u, "logo: no removal with none stored");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_SETTINGS && usb_called(S15_USB_MAIN), "logo: 8 back, the disk withdrawn");
+	expect_screen("settings_logo");
+	/* the disk released elsewhere reads nothing */
+	logo_drop();
+	CHECK(L.loads == 0u, "logo: a release on Settings reads nothing");
+
+	/* a picture: its view, a hold of 1 saves it */
+	press(0x14);
+	logo_drop();
+	CHECK(L.loads == 1u && M.screen == S15_SCR_LOGO_VIEW, "logo: the view");
+	expect_tail("logo_view");
+	l_fills = 0;
+	s15_menu_render(&M, &g, &d);
+	v = screen_vec("logo_view_line");
+	CHECK(l_fills >= 480u && v != NULL && strcmp(l_text, v->lines[0]) == 0 && l_text_y == 205u,
+	      "logo: the picture drawn, its line '%s'", l_text);
+	press(0x0a);			/* a knob click starts no hold */
+	CHECK(M.armed == S15_ARM_NONE, "logo: no hold from a knob click");
+	s15_menu_host_event(&M, 0x06, true);
+	s15_menu_host_event(&M, 0x06, false);
+	CHECK(M.armed == S15_ARM_NONE && L.saves == 0u, "logo: no hold from a host's key");
+	ev(0x06, true);
+	tick(2000u);
+	CHECK(M.armed == S15_ARM_LOGO_SAVE, "logo: 1 held");
+	s15_menu_render(&M, &g, &d);
+	v = screen_vec("logo_view_held");
+	CHECK(v != NULL && strcmp(l_text, v->lines[0]) == 0, "logo: the hold's line '%s'", l_text);
+	ev(0x06, false);
+	CHECK(M.armed == S15_ARM_NONE && L.saves == 0u && M.screen == S15_SCR_LOGO_VIEW,
+	      "logo: released early, nothing saved");
+	ev(0x06, true);
+	press(0x15);			/* another key only cancels */
+	CHECK(M.armed == S15_ARM_NONE && L.saves == 0u && M.screen == S15_SCR_LOGO_VIEW,
+	      "logo: another key only cancels");
+	ev(0x06, false);
+	L.save_rc = S15_STORE_SAVED;
+	hold(0x06);
+	CHECK(L.saves == 1u && M.screen == S15_SCR_LOGO_DONE, "logo: saved once");
+	expect_screen("logo_saved");
+	press(0x06);
+	CHECK(M.screen == S15_SCR_LOGO_DONE, "logo: only 8 leaves the result");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_SETTINGS, "logo: back to Settings");
+
+	/* a save that fails, or is refused */
+	logo_start(S15_LOGO_BUILTIN);
+	press(0x14);
+	logo_drop();
+	L.save_rc = S15_STORE_FAILED;
+	hold(0x06);
+	expect_screen("logo_failed");
+	logo_start(S15_LOGO_BUILTIN);
+	press(0x14);
+	logo_drop();
+	L.save_rc = S15_STORE_UNUSABLE;
+	hold(0x06);
+	expect_screen("logo_unusable");
+
+	/* 8 on the view: a blank disk again */
+	logo_start(S15_LOGO_BUILTIN);
+	press(0x14);
+	logo_drop();
+	press(0x15);
+	CHECK(M.screen == S15_SCR_LOGO && L.disks == 2u && L.saves == 0u, "logo: 8 cancels the view");
+	expect_screen("logo");
+
+	/* pictures not taken */
+	{
+		static const struct { uint8_t r; const char *why; uint32_t size; const char *scr; } t[] = {
+			{ S15_LOGO_NONE, NULL, 0, "logo_none" },
+			{ S15_LOGO_MANY, NULL, 0, "logo_many" },
+			{ S15_LOGO_BIG, NULL, 53556u, "logo_big" },
+			{ S15_LOGO_REFUSED, "interlaced PNG", 0, "logo_refused" },
+		};
+
+		for (unsigned i = 0; i < sizeof t / sizeof t[0]; i++) {
+			logo_start(S15_LOGO_BUILTIN);
+			L.pic.result = t[i].r;
+			L.pic.why = t[i].why;
+			L.pic.size = t[i].size;
+			L.pic.px = NULL;
+			press(0x14);
+			logo_drop();
+			CHECK(M.screen == S15_SCR_LOGO, "logo: %s, the disk's screen", t[i].scr);
+			expect_screen(t[i].scr);
+		}
+	}
+	/* an acquisition after the release: nothing read */
+	logo_start(S15_LOGO_BUILTIN);
+	press(0x14);
+	s15_up_released(&M, T);
+	s15_up_acquired(&M);
+	tick(5000u);
+	s15_up_tick(&M, T);
+	CHECK(L.loads == 0u, "logo: taken again by the host, not read");
+
+	/* the removal, held on 5 */
+	logo_start(S15_LOGO_CUSTOM);
+	press(0x14);
+	expect_screen("logo_custom");
+	ev(0x12, true);
+	expect_screen("logo_armed");
+	ev(0x12, false);
+	CHECK(L.removes == 0u && M.screen == S15_SCR_LOGO, "logo: released early");
+	expect_screen("logo_custom");
+	s15_menu_host_event(&M, 0x12, true);
+	s15_menu_host_event(&M, 0x12, false);
+	CHECK(M.armed == S15_ARM_NONE, "logo: no removal from a host");
+	L.remove_rc = S15_STORE_SAVED;
+	hold(0x12);
+	CHECK(L.removes == 1u && M.screen == S15_SCR_LOGO_DONE, "logo: removed");
+	expect_screen("logo_removed");
+
+	/* Device Info 2 */
+	logo_start(S15_LOGO_CUSTOM);
+	press(0x15);
+	press(0x09);
+	press(0x06);
+	expect_screen("info2_logo");
+	logo_start(S15_LOGO_BUILTIN);
+	press(0x15);
+	press(0x09);
+	press(0x06);
+	expect_screen("info2_logo_builtin");
+}
+
 int main(void)
 {
 	test_rules();
@@ -4142,5 +4400,6 @@ int main(void)
 	test_keytest_end_draws();
 	test_gray();
 	test_op1f();
+	test_logo();
 	return check_done("test_s15_menu");
 }

@@ -445,6 +445,29 @@ int fr_running_slots_checked(const struct fr_flash *f, const struct fr_mem *mem,
 	return fr_running_slots(f, mem, slot, established, both);
 }
 
+/*
+ * The slot whose stored logo the start shows, before the image check: the
+ * one slot whose descriptor is the loaded one, else the slot the selector
+ * names. Only a picture follows from it, each slot's checked on its own.
+ */
+int fr_logo_slot(const struct fr_flash *f, const struct fr_mem *mem, unsigned *slot)
+{
+	enum desc_vote dv[2];
+	struct fr_selector sel;
+
+	for (unsigned k = 0; k < 2u; k++)
+		if (desc_vote(f, mem, k, &dv[k]) != FR_FLASH_OK)
+			return FR_FLASH_IO;
+	if ((dv[0] == D_MATCH) != (dv[1] == D_MATCH)) {
+		*slot = dv[0] == D_MATCH ? 0u : 1u;
+		return FR_FLASH_OK;
+	}
+	if (fr_read_selector(f, &sel) != FR_FLASH_OK)
+		return FR_FLASH_IO;
+	*slot = fr_selected_slot(sel.index);
+	return FR_FLASH_OK;
+}
+
 int fr_running_slot(const struct fr_flash *f, const struct fr_mem *mem, unsigned *slot,
 		    bool *established)
 {
@@ -1818,6 +1841,14 @@ bool fr_writer_step(struct fr_writer *w)
 		 * empty start log (S-02.095). */
 		if (!w_erase(w, FR_LOG_OFF(w->target)))
 			return stop(w, FR_WR_FLASH);
+		w->state = w->n <= FR_LOGO_SLOT_OFF ? FR_WS_LOGO_ERASE : FR_WS_SETTINGS_ERASE;
+		break;
+	case FR_WS_LOGO_ERASE:
+		/* The stored logo's header sector, where the image leaves it
+		 * free, so that the new image starts with the front's own logo
+		 * (fr_logo.h); class 1, before the record. */
+		if (!w_erase(w, FR_LOGO_OFF(w->target)))
+			return stop(w, FR_WR_FLASH);
 		w->state = FR_WS_SETTINGS_ERASE;
 		break;
 	case FR_WS_SETTINGS_ERASE:
@@ -1943,6 +1974,7 @@ unsigned fr_writer_progress(const struct fr_writer *w)
 		done = w->pos;
 		break;
 	case FR_WS_LOG_ERASE:
+	case FR_WS_LOGO_ERASE:
 	case FR_WS_SETTINGS_ERASE:
 	case FR_WS_LOG_PENDING:
 	case FR_WS_SELECT_LOG:

@@ -71,6 +71,9 @@ struct wb_display {
 struct wb_display_image {
 	const uint8_t *data;
 	size_t len;
+	/* The stored boot logo as the front drew it (waffle/logo.h's
+	 * wb_logo_draw()), in place of data when not NULL. */
+	const uint16_t *logo;
 };
 
 /* The build's image; data NULL when it was given none (the board's weak

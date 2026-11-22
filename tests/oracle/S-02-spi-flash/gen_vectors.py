@@ -26,6 +26,7 @@ RECORD = (0xE000, 0xF000)
 SLOT = (0x10000, 0x88000)
 SLOT_MAX = 0x78000
 LOG_SECTOR = SLOT_MAX - SECTOR   # S-02.045: offset of a slot's last sector
+LOGO_SECTOR = SLOT_MAX - 3 * SECTOR   # the boot logo's header sector (src/front/fr_handoff.h)
 TAG = 0x0000B004
 META = 0xC000
 META_LEN = 0x34
@@ -247,6 +248,8 @@ def upgrade_ops(rule, sel, n=IMAGE_LEN, package=False, recovery=False):
     if rule == "conforming" and n <= LOG_SECTOR:                 # S-02.045
         ops.append(dict(cls="slot_erase", op="erase", offset=base + LOG_SECTOR, length=SECTOR))
     assert not recovery or n <= SLOT_MAX - 2 * SECTOR            # S-02.084
+    if rule == "conforming" and (package or recovery) and n <= LOGO_SECTOR:    # the boot logo's header
+        ops.append(dict(cls="slot_erase", op="erase", offset=base + LOGO_SECTOR, length=SECTOR))
     if rule == "conforming" and (package or recovery) and n <= SLOT_MAX - 2 * SECTOR:   # S-02.103
         ops.append(dict(cls="slot_erase", op="erase", offset=base + SLOT_MAX - 2 * SECTOR, length=SECTOR))
     ops.append(dict(cls="record_erase", op="erase", offset=RECORD[t], length=SECTOR))
@@ -2164,8 +2167,8 @@ def set_torn_check(stamps):
 
 def set_recovery_ops(ops, t):
     """S-02.103: a recovery image write's ops, the erase of target t's settings sector named settings_erase,
-    checked to come right after the erase of its last sector (the start log), before the trial mark or the
-    record erase."""
+    checked to come right after the erase of its last sector (the start log), or of the boot logo's header
+    sector that follows it, before the trial mark or the record erase."""
     log = SLOT[t] + LOG_SECTOR
     out = []
     for o in ops:
@@ -2176,7 +2179,9 @@ def set_recovery_ops(ops, t):
         out.append(o)
     k = [i for i, o in enumerate(out) if o["cls"] == "settings_erase"]
     nxt = [i for i, o in enumerate(out) if o["cls"] in ("trial_log", "record_erase")]
-    assert len(k) == 1 and out[k[0]]["offset"] == SET_SECTOR[t] and out[k[0] - 1]["offset"] == log
+    before = out[k[0] - 1]["offset"]
+    assert len(k) == 1 and out[k[0]]["offset"] == SET_SECTOR[t] and \
+        (before == log or (before == SLOT[t] + LOGO_SECTOR and out[k[0] - 2]["offset"] == log))
     assert nxt and k[0] < nxt[0]
     return out
 
@@ -2194,7 +2199,7 @@ def set_recovery():
             nxt = next(o["cls"] for o in out if o["cls"] in ("trial_log", "record_erase"))
             writes.append({"way": way, "running": a, "target": t, "length": "0x%x" % IMAGE_LEN,
                            "settings_sector": "0x%05x" % SET_SECTOR[t],
-                           "settings_erase": {"after": "the log sector's erase",
+                           "settings_erase": {"after": "the log sector's and the logo header sector's erases",
                                               "before": "the trial mark" if nxt == "trial_log"
                                               else "the record erase"},
                            "ops": [{"op": o["op"], "offset": "0x%05x" % o["offset"], "length": o["length"],

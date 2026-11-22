@@ -1673,7 +1673,7 @@
     "length": "0x1345",
     "settings_sector": "0xfe000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -1817,6 +1817,12 @@
      },
      {
       "op": "erase",
+      "offset": "0xfd000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
       "offset": "0xfe000",
       "length": 4096,
       "cls": "settings_erase"
@@ -1866,7 +1872,7 @@
     "length": "0x1345",
     "settings_sector": "0x86000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -2028,6 +2034,12 @@
      },
      {
       "op": "erase",
+      "offset": "0x85000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
       "offset": "0x86000",
       "length": 4096,
       "cls": "settings_erase"
@@ -2077,7 +2089,7 @@
     "length": "0x1345",
     "settings_sector": "0xfe000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the trial mark"
     },
     "ops": [
@@ -2216,6 +2228,12 @@
      {
       "op": "erase",
       "offset": "0xff000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0xfd000",
       "length": 4096,
       "cls": "slot_erase"
      },
@@ -2288,7 +2306,7 @@
     "length": "0x1345",
     "settings_sector": "0x86000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -2427,6 +2445,12 @@
      {
       "op": "erase",
       "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x85000",
       "length": 4096,
       "cls": "slot_erase"
      },
@@ -2469,7 +2493,7 @@
     "length": "0x1345",
     "settings_sector": "0x86000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -2608,6 +2632,12 @@
      {
       "op": "erase",
       "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x85000",
       "length": 4096,
       "cls": "slot_erase"
      },
@@ -2662,7 +2692,7 @@
     "length": "0x1345",
     "settings_sector": "0xfe000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -2824,6 +2854,12 @@
      },
      {
       "op": "erase",
+      "offset": "0xfd000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
       "offset": "0xfe000",
       "length": 4096,
       "cls": "settings_erase"
@@ -2873,7 +2909,7 @@
     "length": "0x1345",
     "settings_sector": "0x86000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the trial mark"
     },
     "ops": [
@@ -3012,6 +3048,12 @@
      {
       "op": "erase",
       "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x85000",
       "length": 4096,
       "cls": "slot_erase"
      },
@@ -3108,7 +3150,7 @@
     "length": "0x1345",
     "settings_sector": "0xfe000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -3247,6 +3289,12 @@
      {
       "op": "erase",
       "offset": "0xff000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0xfd000",
       "length": 4096,
       "cls": "slot_erase"
      },

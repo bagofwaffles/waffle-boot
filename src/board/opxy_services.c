@@ -1612,6 +1612,7 @@ void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 	/* S-15.194: the test OS (waffle/testos.h) hands over to no OS */
 	env->os_once_check = OPXY_TESTOS_OR(NULL, env_os_once_check);
 	env->os_once = OPXY_TESTOS_OR(NULL, env_os_once);
+	opxy_logo_env(m, env);
 }
 
 __attribute__((weak)) const struct s15_geometry *opxy_display_geometry(void)

@@ -2,6 +2,7 @@
 /* The master's start-up in the front (see fr_start.h). */
 #include "fr_start.h"
 
+#include "fr_logo.h"
 #include "fr_startlog.h"
 
 /* S-13c.006's 120 ms, counted from the INIT stage's start at the latest. */
@@ -73,6 +74,8 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 {
 	const uint8_t *raw;
 	struct fr_log log;
+	unsigned k = 0;
+	bool logo;
 
 	s->hw = hw;
 	s->dev = fr_dev_or_default(hw->ident != NULL ? hw->ident->dev : NULL);
@@ -104,10 +107,20 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 		 * from there, at FR_CCLK_MHZ per us, never overstates the time. */
 		if (s->panel.ready_us < floor_us)
 			s->panel.ready_us = floor_us;
+		/* The stored logo, read and checked whole into the frame buffer
+		 * while the panel comes out of its reset; any fault leaves the
+		 * front's own logo to be drawn. */
+		logo = hw->staging != NULL && fr_logo_slot(hw->flash, hw->mem, &k) == FR_FLASH_OK &&
+		       fr_logo_load(hw->flash, k, hw->staging, hw->frame);
 		fr_panel_start(&s->panel);
 		s->panel_up = true;
 		fr_screen_logo(&s->screen);
-		draw(s);
+		if (logo) {
+			fr_panel_frame(&s->panel, hw->frame);
+			ho->flags |= FR_HO_LOGO | (k != 0u ? FR_HO_LOGO_SLOT1 : 0u);
+		} else {
+			draw(s);
+		}
 		ho->flags |= FR_HO_PANEL_UP;
 		ho->panel_reset_ms = s->panel.reset_ms;
 	}

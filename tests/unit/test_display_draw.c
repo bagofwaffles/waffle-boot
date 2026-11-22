@@ -486,6 +486,7 @@ static void test_image(void)
 		left -= k;
 	}
 	im.data = data;
+	im.logo = NULL;
 	im.len = n;
 	wb_display_handover_frame(&im, f);
 	for (x = 0; x < WB_DISPLAY_W; x++)

@@ -37,6 +37,9 @@ enum s15_screen {
 	S15_SCR_STARTING,   /* S-15.190: restarting for the OS; no key acts */
 	S15_SCR_INFO2,      /* S-15.082: Device Info's second page */
 	S15_SCR_OPTION,     /* S-15.140: the option's screen, from Settings */
+	S15_SCR_LOGO,       /* the boot logo's disk, from Settings */
+	S15_SCR_LOGO_VIEW,  /* a dropped picture as the front will draw it */
+	S15_SCR_LOGO_DONE,  /* a save's or a removal's result: digit 8 alone acts */
 	S15_SCR_NONE        /* before held mode's first screen */
 };
 
@@ -48,7 +51,9 @@ enum s15_arm {
 	S15_ARM_RESET,      /* the factory reset (S-15.050) */
 	S15_ARM_FORMAT,     /* the format (S-15.071) */
 	S15_ARM_PACK,       /* removing the pack `pending` (S-15.042) */
-	S15_ARM_OPTION      /* turning the option on (S-15.140) */
+	S15_ARM_OPTION,     /* turning the option on (S-15.140) */
+	S15_ARM_LOGO_SAVE,  /* saving the boot logo shown */
+	S15_ARM_LOGO_REMOVE /* removing the stored boot logo */
 };
 
 /* S-09: the slave's state, for Device Info. */
@@ -156,6 +161,41 @@ enum s15_store_save {
 	S15_STORE_UNUSABLE	/* the running slot keeps no settings (S-02.099) */
 };
 
+/* The boot logo (waffle/logo.h) as Settings shows it. SPEC-Q: the boot
+ * logo's screens and keys have no requirement label yet. */
+enum s15_logo_state {
+	S15_LOGO_BUILTIN,	/* none stored: the front's own */
+	S15_LOGO_CUSTOM,	/* one stored for this image */
+	S15_LOGO_NO_ROOM,	/* the image leaves no room for one */
+	S15_LOGO_UNAVAILABLE	/* the running slot may not be written now
+				 * (the settings' rule) */
+};
+
+struct s15_logo {
+	uint8_t state;		/* enum s15_logo_state */
+	uint32_t room;		/* the bytes free for a logo's data */
+	uint32_t stored;	/* the stored logo's data bytes, with CUSTOM */
+};
+
+/* What a picture dropped on the disk gave. */
+enum s15_logo_load {
+	S15_LOGO_READY,		/* converted: px and size */
+	S15_LOGO_NONE,		/* no PNG file on the disk */
+	S15_LOGO_MANY,		/* more than one file */
+	S15_LOGO_REFUSED,	/* not taken: why says why */
+	S15_LOGO_BIG		/* does not fit: size the smallest tried */
+};
+
+struct s15_logo_pic {
+	uint8_t result;		/* enum s15_logo_load */
+	const char *why;	/* with S15_LOGO_REFUSED */
+	uint32_t size;		/* the data's bytes */
+	uint32_t room;
+	/* READY: the screen as the front will draw it, window row r (screen
+	 * x 479 - r) by row, 222 pixels each (waffle/logo.h) */
+	const uint16_t *px;
+};
+
 #define S15_PACKS_MAX 7u
 #define S15_NAME_MAX  255u
 
@@ -236,6 +276,16 @@ struct s15_env_ops {
 	 * from /yaffs2/os.ldr, the restarting view drawn. Does not return on
 	 * the device. */
 	void (*os_once)(void *ctx);
+	/* The boot logo, read again. NULL: no Boot logo item. */
+	void (*logo_state)(void *ctx, struct s15_logo *out);
+	/* A blank RAM disk offered for a picture, with the disk's USB set. */
+	void (*logo_disk)(void *ctx);
+	/* After the disk's release: its one PNG file read and converted. */
+	void (*logo_load)(void *ctx, struct s15_logo_pic *out);
+	/* The picture logo_load() gave saved, or the stored logo removed, in
+	 * the running slot under the settings' rule. */
+	enum s15_store_save (*logo_save)(void *ctx);
+	enum s15_store_save (*logo_remove)(void *ctx);
 };
 
 /* What the upgrade screen is doing (S-15.103). */
@@ -293,6 +343,12 @@ struct s15_menu {
 
 	/* system menu */
 	bool packs_item;
+
+	/* the boot logo */
+	struct s15_logo logo;
+	struct s15_logo_pic pic;
+	bool logo_due;             /* the disk was released: read it then */
+	uint32_t logo_due_ms;
 
 	/* S-15.015: the hold under way */
 	enum s15_arm armed;

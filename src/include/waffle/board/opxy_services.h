@@ -37,6 +37,8 @@
 #include "waffle/s17_revisions.h"
 #include "waffle/wire_fat.h"
 
+struct wb_display_image;
+
 struct opxy_master;
 
 /*
@@ -444,6 +446,13 @@ void opxy_install_source(struct opxy_master *m, const struct wire_source *src,
 			 const struct s11_check_in *in,
 			 struct s11_install_result *res);
 void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env);
+/* The boot logo (src/board/opxy_logo.c): Settings' Boot logo item's
+ * operations into env; the stored logo the front drew at this start, read
+ * again for the hand-over frame (NULL: none, the build's picture then,
+ * S-15.132); and whether a picture is the one the front's frame showed. */
+void opxy_logo_env(struct opxy_master *m, struct s15_env_ops *env);
+const struct wb_display_image *opxy_logo_handover(struct opxy_master *m);
+bool opxy_logo_as_front(const struct opxy_master *m, const struct wb_display_image *im);
 const struct s15_geometry *opxy_display_geometry(void);
 void opxy_display_draw_ops(struct opxy_master *m, struct s15_draw_ops *ops);
 void opxy_display_held_start(struct opxy_master *m);

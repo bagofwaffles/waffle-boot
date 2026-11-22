@@ -235,6 +235,7 @@ int wb_display_update(struct wb_display *d)
 /* ---- S-15.132: the hand-over frame ---- */
 
 struct handover {
+	const uint16_t *logo;	/* the stored logo, window row by row */
 	const uint8_t *data;	/* the image's records; NULL: the logo */
 	size_t len, pos;
 	unsigned run;		/* pixels left in the record */
@@ -245,6 +246,10 @@ struct handover {
 static void handover_init(struct handover *h, const struct wb_display_image *image)
 {
 	memset(h, 0, sizeof *h);
+	if (image != NULL && image->logo != NULL) {
+		h->logo = image->logo;
+		return;
+	}
 	if (image != NULL && image->data != NULL) {
 		h->data = image->data;
 		h->len = image->len;
@@ -295,7 +300,9 @@ static void handover_row(void *ctx, unsigned r, uint8_t *out)
 	for (c = 0; c < S13C_FRAME_W; c++) {
 		uint16_t p = S15_BLACK;
 
-		if (c < S15_HANDOVER_VISIBLE)
+		if (c < S15_HANDOVER_VISIBLE && h->logo != NULL)
+			p = h->logo[(size_t)r * S15_HANDOVER_VISIBLE + c];
+		else if (c < S15_HANDOVER_VISIBLE)
 			p = h->data != NULL ? image_pixel(h) : s15_logo_pixel(x, c);
 		out[2u * c] = (uint8_t)(p >> 8);
 		out[2u * c + 1u] = (uint8_t)p;
