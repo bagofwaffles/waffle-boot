@@ -70,9 +70,9 @@ until the next start; Start in boot menu shows what the next start will read.
 
 | Message | Meaning |
 | --- | --- |
-| `Not saved: the flash can't be written` | The write failed |
-| `Not saved: this slot can't keep settings` | The running slot's image is over `0x76000` bytes and fills the settings sector, or this start is a trial start, or the running slot is not known |
-| `Not saved: changed from the computer` | The key came from a computer |
+| `Not saved: flash write failed` | The write failed |
+| `Not saved: slot can't keep settings` | The running slot's image is over `0x76000` bytes and fills the settings sector, or this start is a trial start, or the running slot is not known |
+| `Not saved: set from the computer` | The key came from a computer |
 
 ## System
 
@@ -108,15 +108,15 @@ unit. To erase everything instead, use **5 Format drive**.
    bar fills along the bottom row.
 5. Keep holding for 5 s; the reset starts then. Letting go earlier, or pressing any other key, cancels and
    nothing is removed.
-6. Wait for `User data removed. Please restart your OP-XY.`
+6. Wait for `User data removed. Restart the OP-XY.`
 7. Switch the unit off and on.
 
 | Message | Meaning |
 | --- | --- |
-| `User data not removed: the drive can't be read` | The drive cannot be read. Nothing was removed. A format erases it |
-| `User data not removed: DSP2 is not answering` | The second processor stopped. Switch off and on, then try again |
-| `Some user data could not be removed` | Part of it stayed. Switch off and on, then try again |
-| `Settings not cleared: the flash can't be written` | The settings stayed as they were. Try the reset again |
+| `Not removed: drive unreadable` | The drive cannot be read. Nothing was removed. A format erases it |
+| `Not removed: DSP2 not answering` | The second processor stopped. Switch off and on, then try again |
+| `Some user data not removed` | Part of it stayed. Switch off and on, then try again |
+| `Settings not cleared: flash write failed` | The settings stayed as they were. Try the reset again |
 
 ## Developer menu
 

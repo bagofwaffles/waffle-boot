@@ -1265,11 +1265,11 @@ static void test_scan_not_found(void)
 	m.sv.usb_board.disk_released(m.sv.usb_board.ctx);
 	s15_up_tick(&m.sv.menu, m.sv.menu.scan_due_ms);
 	CHECK(m.sv.scan_due);
-	CHECK(con_has(S15_ST_HEAD, "Preparing the installation") &&
-	      !con_has(S15_ST_WARN, "No valid package found"));
+	CHECK(con_has(S15_ST_HEAD, "Preparing") &&
+	      !con_has(S15_ST_WARN, "No valid package"));
 	opxy_services_poll(&m);
 	CHECK(!m.sv.scan_due);
-	CHECK(con_has(S15_ST_WARN, "No valid package found"));
+	CHECK(con_has(S15_ST_WARN, "No valid package"));
 	CHECK(s10a_usb_disk()->offered && s15_up_disk_offerable(&m.sv.menu));
 	opxy_usb_stop();
 }

@@ -1630,10 +1630,9 @@ START_WHYS = ['OK', 'NO_ACTIVE', 'SELECT', 'HEADER_READ', 'IMAGE_READ', 'USER_SE
               'SLAVE_START', 'FILE']
 # S-05.024's rules, by S05_REFUSE_... less one (S15_CHECK_...): the main screen's words, then Device Info's
 CHECKS = ['LENGTH', 'PARSE', 'FLAGS', 'SPACE', 'STAGING', 'RESERVE', 'RECORD', 'BOOT_RESERVE']
-CHECK_REASON = ['the image is too long to stage', "the image's block headers are not valid",
-                'the image uses a block flag not allowed', 'the image loads outside memory',
-                'the image loads over the staging area', 'the image loads over the hand-over reserve',
-                'the image loads over the reboot record', "the image loads over the ROM's boot reserve"]
+CHECK_REASON = ['image too long to stage', 'bad block headers', 'block flag not allowed',
+                'loads outside memory', 'loads over the staging area', 'loads over the hand-over reserve',
+                'loads over the reboot record', "loads over the ROM's boot reserve"]
 CHECK_INFO = ['too long', 'block headers', 'block flags', 'outside memory', 'over staging', 'over reserve',
               'over reboot record', 'over boot reserve']
 START_AT = ['lost', 'send failed', 'no ready', 'no reply', 'reply broke', 'bad reply', 'bad check', 'timed out',
@@ -1695,7 +1694,7 @@ def start_view(d):
 def file_reason(v):
     """A file start's /os.ldr reason (s15_osw_reason())."""
     w, value, limit = v.get('file_why', 'NONE'), v.get('value', 0), v.get('limit', 0)
-    return {'REFUSED': "the drive can't be read", 'MISSING': 'no /os.ldr on the drive',
+    return {'REFUSED': 'drive unreadable', 'MISSING': 'no /os.ldr on the drive',
             'DIRECTORY': '/os.ldr is a directory', 'READ': 'read failed, error %d' % value,
             'MEMORY': 'not enough memory', 'TOO_SMALL': '%d bytes, at least %d' % (value, limit),
             'TOO_LARGE': '%d bytes, at most %d' % (value, limit)}.get(w, '')
@@ -1710,27 +1709,27 @@ def start_reason(v):
     w, lost = v['why'], start_lost(v)
     part, value = v.get('part', 0), v.get('value', 0)
     if w == 'NO_ACTIVE':
-        t = 'no boot partition is active'
+        t = 'no active boot partition'
     elif w == 'SELECT':
-        t = 'at the select' if lost else 'boot partition %d could not be selected' % part
+        t = 'at the select' if lost else 'boot partition %d select failed' % part
     elif w == 'HEADER_READ':
-        t = 'at the header read' if lost else 'the header of partition %d could not be read' % part
+        t = 'at the header read' if lost else 'partition %d header read failed' % part
     elif w == 'IMAGE_READ':
-        t = 'during the image read' if lost else 'the image could not be read'
+        t = 'during the image read' if lost else 'image read failed'
     elif w == 'USER_SELECT':
-        t = 'at the last select' if lost else 'the user area could not be selected'
+        t = 'at the last select' if lost else 'user area select failed'
     elif w == 'FORMAT':
-        t = 'header format %d is not supported' % value
+        t = 'header format %d not supported' % value
     elif w == 'ZERO_LENGTH':
-        t = 'the header gives the image no length'
+        t = 'image length 0'
     elif w == 'TOO_LONG':
-        t = 'the image is longer than 8 MiB'
+        t = 'image over 8 MiB'
     elif w == 'PAST_PARTITION':
-        t = 'the image runs past the end of its partition'
+        t = 'image runs past its partition'
     elif w == 'CRC':
-        t = "the image's CRC does not match its header"
+        t = 'image CRC mismatch'
     elif w == 'ENCRYPTED':
-        t = 'the image is encrypted'
+        t = 'image is encrypted'
     elif w == 'REFUSED':
         t = CHECK_REASON[CHECKS.index(v.get('check', 'LENGTH'))]
     elif w == 'SLAVE_NO_OS':

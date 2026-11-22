@@ -215,7 +215,7 @@ package's parts, and writes the OS only when **2 Main DSP** is set to `Yes`.
 
 ## Refusal reasons
 
-A refused package shows `No valid package found` and a reason line.
+A refused package shows `No valid package` and a reason line.
 
 | Reason | Meaning |
 | --- | --- |

@@ -219,7 +219,7 @@ void s15_header_line(struct s15_buf *out, enum s15_run_kind kind,
 			s15_buf_str(out, name);
 			s15_buf_str(out, "\"");
 		} else {
-			s15_buf_str(out, "Installing a content package");
+			s15_buf_str(out, "Installing content");
 		}
 		break;
 	}
@@ -246,10 +246,10 @@ size_t s15_run_header(struct s15_buf out[S15_RUN_HEADER_MAX],
 	}
 	style[n] = S15_ST_WARN;
 	s15_buf_init(&out[n]);
-	s15_buf_str(&out[n++], "Don't turn off the device until it's done");
+	s15_buf_str(&out[n++], "Keep the power on");
 	style[n] = S15_ST_DIM;
 	s15_buf_init(&out[n]);
-	s15_buf_str(&out[n++], "The screen may go dark for a second");
+	s15_buf_str(&out[n++], "The screen may go dark briefly");
 	return n;
 }
 
@@ -297,7 +297,7 @@ size_t s15_not_updated(struct s15_buf out[2], enum s15_style style[2],
 void s15_restart_line(const struct wb_device *dev, struct s15_buf *out)
 {
 	s15_buf_init(out);
-	s15_buf_str(out, "Please restart your ");
+	s15_buf_str(out, "Restart the ");
 	s15_buf_str(out, dev->ident.product_text);
 	s15_buf_str(out, ".");
 }
@@ -314,7 +314,7 @@ size_t s15_outcome_lines(const struct wb_device *dev, const char *out[2],
 	case S15_OUT_DONE:
 		style[0] = S15_ST_OK;
 		if (reason40) {
-			out[0] = "Done! Wait for the device to restart.";
+			out[0] = "Done! Wait for the restart.";
 			return 1;
 		}
 		out[0] = "Done!";
@@ -322,7 +322,7 @@ size_t s15_outcome_lines(const struct wb_device *dev, const char *out[2],
 	case S15_OUT_NOTHING:
 		style[0] = any_skipped ? S15_ST_WARN : S15_ST_OK;
 		out[0] = any_skipped ? s15_nothing_skipped
-				     : "Already up to date.";
+				     : "Up to date.";
 		return cont ? 1 : 2;	/* the item says what comes next */
 	case S15_OUT_FAILED:
 	default:
@@ -338,13 +338,13 @@ size_t s15_note_lines(const char *out[S15_NOTE_LINES],
 	switch (note) {
 	case S15_NOTE_NO_APP:		/* S-08.048 */
 		style[0] = S15_ST_ERROR;
-		out[0] = "The BLE chip has no application now.";
+		out[0] = "The BLE chip has no application.";
 		style[1] = S15_ST_TEXT;
-		out[1] = "Installing the package again puts one back.";
+		out[1] = "Install the package again.";
 		return 2;
 	case S15_NOTE_MAY_NOT_START:	/* S-08 open question 11 */
 		style[0] = S15_ST_ERROR;
-		out[0] = "The BLE chip may not start now.";
+		out[0] = "The BLE chip may not start.";
 		return 1;
 	case S15_NOTE_NONE:
 	default:
@@ -448,16 +448,14 @@ void s15_handover_frame(void (*put)(void *ctx, uint16_t pixel), void *ctx)
 /* S-15.140: the option's screen, its question and every effect; its item's
  * hint names the hold. */
 const char *const s15_option_prompt[S15_OPTION_PROMPT_LINES] = {
-	"Allow protected writes until the next reset?",
-	"- Installs can write the bootloader slots; any",
-	"  but waffle-boot's returns the unit to stock",
-	"- The host can unlock factory mode and change",
-	"  the serial and identity",
-	"- No install writes the first stage",
+	"Allow until the next reset?",
+	"- Installs write the bootloader slots",
+	"- Any but waffle-boot returns the unit to stock",
+	"- Computer: factory mode, serial and identity",
+	"- The first stage is never written",
 };
 const enum s15_style s15_option_prompt_style[S15_OPTION_PROMPT_LINES] = {
 	S15_ST_HEAD, S15_ST_TEXT, S15_ST_TEXT, S15_ST_TEXT, S15_ST_TEXT,
-	S15_ST_TEXT,
 };
 const char s15_option_turn_on[] = "Turn on";
 const char s15_option_item_on[] = "2 Protected writes\tOn";
@@ -466,9 +464,9 @@ const char s15_slave_no_os[] = "No OS";
 const char s15_slave_absent[] = "Absent";
 const char s15_slave_no_start[] = "Not started";
 const char s15_slave_lost[] = "Not answering";
-const char s15_drive_lost[] = "DSP2 is not answering: the drive can't be used";
-const char s15_reset_lost[] = "User data not removed: DSP2 is not answering";
-const char s15_device_unknown[] = "Device not identified: see 1 More";
+const char s15_drive_lost[] = "DSP2 not answering: drive unavailable";
+const char s15_reset_lost[] = "Not removed: DSP2 not answering";
+const char s15_device_unknown[] = "Device unknown: see 1 More";
 const char s15_mtp_item_shift[] = "2 MTP file transfer\tShift: macOS";
 
 static void buf_hex(struct s15_buf *b, uint32_t v)
@@ -494,11 +492,11 @@ void s15_first_stage_text(struct s15_buf *out, uint32_t n, uint32_t c)
 	buf_hex(out, c);
 }
 const char s15_checking_files[] = "Checking files...";
-const char s15_settings_host[] = "Not saved: changed from the computer";
-const char s15_settings_this_start[] = "Not saved: kept until the next start";
-const char s15_settings_failed[] = "Not saved: the flash can't be written";
-const char s15_settings_unusable[] = "Not saved: this slot can't keep settings";
-const char s15_reset_settings_failed[] = "Settings not cleared: the flash can't be written";
+const char s15_settings_host[] = "Not saved: set from the computer";
+const char s15_settings_this_start[] = "Not saved: this start only";
+const char s15_settings_failed[] = "Not saved: flash write failed";
+const char s15_settings_unusable[] = "Not saved: slot can't keep settings";
+const char s15_reset_settings_failed[] = "Settings not cleared: flash write failed";
 
 void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects)
 {
@@ -525,23 +523,23 @@ void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects)
 const char s15_os_reinstall[] =
 	"OS needs reinstalling: install a TE firmware update";
 const char *const s15_interrupted[S15_INTERRUPTED_LINES] = {
-	"The last install did not finish.",
-	"Install the firmware again.",
+	"Last install did not finish.",
+	"Install it again.",
 };
 const char s15_restarting[] = "Restarting...";
 const char s15_restart_item[] = "6 Restart";
 const char s15_continue_item[] = "7 Continue to OS";
 const char s15_format_unreadable[] =
-	"The drive can't be read; formatting erases it";
+	"Drive unreadable: a format erases it";
 const char s15_reset_unreadable[] =
-	"User data not removed: the drive can't be read";
-const char s15_reset_incomplete[] = "Some user data could not be removed";
-const char s15_os_ldr_unreadable[] = "/os.ldr not found or could not be read";
-const char s15_os_write_failed[] = "Writing the OS failed";
+	"Not removed: drive unreadable";
+const char s15_reset_incomplete[] = "Some user data not removed";
+const char s15_os_ldr_unreadable[] = "Can't read /os.ldr";
+const char s15_os_write_failed[] = "OS write failed";
 const char s15_reset_needed[] =
-	"Reset needed before the bootloader can be written";
-const char s15_nothing_skipped[] = "Nothing was installed.";
-const char s15_stock_line[] = "This run replaces waffle-boot: back to stock";
+	"Reset needed before a bootloader write";
+const char s15_nothing_skipped[] = "Nothing installed.";
+const char s15_stock_line[] = "Replaces waffle-boot: back to stock";
 const char s15_signed_line[] = "Signed by TE";
 
 /* S-15.015: under the items a hold chooses, while none is held. */
@@ -606,14 +604,14 @@ static const char *const start_at[S15_AT_COUNT] = {
 };
 
 static const char *const check_reason[S15_CHECK_COUNT] = {
-	"the image is too long to stage",
-	"the image's block headers are not valid",
-	"the image uses a block flag not allowed",
-	"the image loads outside memory",
-	"the image loads over the staging area",
-	"the image loads over the hand-over reserve",
-	"the image loads over the reboot record",
-	"the image loads over the ROM's boot reserve",
+	"image too long to stage",
+	"bad block headers",
+	"block flag not allowed",
+	"loads outside memory",
+	"loads over the staging area",
+	"loads over the hand-over reserve",
+	"loads over the reboot record",
+	"loads over the ROM's boot reserve",
 };
 
 static const char *const check_info[S15_CHECK_COUNT] = {
@@ -639,7 +637,7 @@ void s15_start_reason(struct s15_buf *out, const struct s15_start *s)
 		s15_buf_str(out, "DSP2 stopped answering ");
 	switch (s->why) {
 	case S15_START_NO_ACTIVE:
-		s15_buf_str(out, "no boot partition is active");
+		s15_buf_str(out, "no active boot partition");
 		break;
 	case S15_START_SELECT:
 		if (lost) {
@@ -648,44 +646,44 @@ void s15_start_reason(struct s15_buf *out, const struct s15_start *s)
 		}
 		s15_buf_str(out, "boot partition ");
 		s15_buf_dec(out, s->part);
-		s15_buf_str(out, " could not be selected");
+		s15_buf_str(out, " select failed");
 		break;
 	case S15_START_HEADER_READ:
 		if (lost) {
 			s15_buf_str(out, "at the header read");
 			break;
 		}
-		s15_buf_str(out, "the header of partition ");
+		s15_buf_str(out, "partition ");
 		s15_buf_dec(out, s->part);
-		s15_buf_str(out, " could not be read");
+		s15_buf_str(out, " header read failed");
 		break;
 	case S15_START_IMAGE_READ:
 		s15_buf_str(out, lost ? "during the image read" :
-					"the image could not be read");
+					"image read failed");
 		break;
 	case S15_START_USER_SELECT:
 		s15_buf_str(out, lost ? "at the last select" :
-					"the user area could not be selected");
+					"user area select failed");
 		break;
 	case S15_START_FORMAT:
 		s15_buf_str(out, "header format ");
 		s15_buf_dec(out, s->value);
-		s15_buf_str(out, " is not supported");
+		s15_buf_str(out, " not supported");
 		break;
 	case S15_START_ZERO_LENGTH:
-		s15_buf_str(out, "the header gives the image no length");
+		s15_buf_str(out, "image length 0");
 		break;
 	case S15_START_TOO_LONG:
-		s15_buf_str(out, "the image is longer than 8 MiB");
+		s15_buf_str(out, "image over 8 MiB");
 		break;
 	case S15_START_PAST_PARTITION:
-		s15_buf_str(out, "the image runs past the end of its partition");
+		s15_buf_str(out, "image runs past its partition");
 		break;
 	case S15_START_CRC:
-		s15_buf_str(out, "the image's CRC does not match its header");
+		s15_buf_str(out, "image CRC mismatch");
 		break;
 	case S15_START_ENCRYPTED:
-		s15_buf_str(out, "the image is encrypted");
+		s15_buf_str(out, "image is encrypted");
 		break;
 	case S15_START_REFUSED:
 		s15_buf_str(out, check_reason[(unsigned)s->check < S15_CHECK_COUNT ?
@@ -856,15 +854,15 @@ static const char *const osw_labels[S15_OSW_STEP_COUNT] = {
 	[S15_OSW_STEP_ACTIVATE] = "Activate",
 };
 
-const char s15_osw_written[] = "Firmware written.";
-const char s15_osw_select0_failed[] = "The eMMC did not switch back; please restart";
+const char s15_osw_written[] = "OS written.";
+const char s15_osw_select0_failed[] = "The eMMC did not switch back: restart";
 const char s15_osw_back[] = "8 Back to Developer";
 
 /* ---- S-15.194: Start /os.ldr once (does not write) ----------- */
 
 const char s15_once_item[] = "3 Start /os.ldr once (does not write)";
 const char s15_once_not_started[] = "/os.ldr was not started";
-const char s15_once_restarting[] = "Restarting to start /os.ldr once, writing nothing";
+const char s15_once_restarting[] = "Restarting into /os.ldr once";
 
 void s15_once_reason(struct s15_buf *out, enum s15_once why,
 		     const struct s15_os_file *file)
@@ -876,7 +874,7 @@ void s15_once_reason(struct s15_buf *out, enum s15_once why,
 			s15_osw_reason(out, file->why, 0u, file->value, file->limit);
 		break;
 	case S15_ONCE_SLAVE:
-		s15_buf_str(out, "DSP2 does not answer: the drive is on it");
+		s15_buf_str(out, "DSP2 not answering: drive unavailable");
 		break;
 	case S15_ONCE_DISABLED:
 		s15_buf_str(out, "the test OS starts no OS");
@@ -890,7 +888,7 @@ void s15_once_reason(struct s15_buf *out, enum s15_once why,
 /* ---- S-15.190, S-05.033: continue to the OS, at a host's request ---- */
 
 const char s15_cont_title[] = "Restarting";
-const char s15_cont_restarting[] = "Restarting to start the OS...";
+const char s15_cont_restarting[] = "Restarting into the OS...";
 
 const char *s15_osw_label(enum s15_osw_step step)
 {
@@ -968,7 +966,7 @@ void s15_osw_reason(struct s15_buf *out, enum s15_osw_why why, unsigned part,
 	s15_buf_init(out);
 	switch (why) {
 	case S15_OSW_WHY_REFUSED:
-		s15_buf_str(out, "the drive can't be read");
+		s15_buf_str(out, "drive unreadable");
 		break;
 	case S15_OSW_WHY_MISSING:
 		s15_buf_str(out, "no /os.ldr on the drive");
@@ -992,12 +990,12 @@ void s15_osw_reason(struct s15_buf *out, enum s15_osw_why why, unsigned part,
 		break;
 	case S15_OSW_WHY_NO_ROOM:
 		if (limit == 0u) {
-			s15_buf_str(out, "the boot partition size is unknown");
+			s15_buf_str(out, "boot partition size unknown");
 			break;
 		}
 		s15_buf_str(out, "needs ");
 		s15_buf_dec(out, value);
-		s15_buf_str(out, " sectors, the partition has ");
+		s15_buf_str(out, " sectors, partition has ");
 		s15_buf_dec(out, limit);
 		break;
 	case S15_OSW_WHY_SELECT:
@@ -1021,13 +1019,13 @@ void s15_osw_reason(struct s15_buf *out, enum s15_osw_why why, unsigned part,
 		s15_buf_str(out, "OS write disabled in the test OS");
 		break;
 	case S15_OSW_WHY_FLUSH:
-		s15_buf_str(out, "the eMMC did not commit its cache");
+		s15_buf_str(out, "the eMMC did not commit");
 		break;
 	case S15_OSW_WHY_READS_DIFFER:
-		s15_buf_str(out, "the file read differently twice");
+		s15_buf_str(out, "two reads differ");
 		break;
 	case S15_OSW_WHY_NOT_OS:
-		s15_buf_str(out, "not an OS the bootloader would start");
+		s15_buf_str(out, "not a bootable OS");
 		break;
 	case S15_OSW_WHY_NONE:
 	default:
@@ -1043,7 +1041,7 @@ void s15_osw_emmc_line(struct s15_buf *out, enum s15_style *style,
 	switch (emmc) {
 	case S15_OSW_EMMC_UNCHANGED:
 		*style = S15_ST_TEXT;
-		s15_buf_str(out, "   The active boot partition is unchanged.");
+		s15_buf_str(out, "   Active boot partition unchanged.");
 		break;
 	case S15_OSW_EMMC_BAD_HEADER:
 		s15_buf_str(out, "Partition ");
@@ -1053,17 +1051,17 @@ void s15_osw_emmc_line(struct s15_buf *out, enum s15_style *style,
 	case S15_OSW_EMMC_BOTH_ACTIVE:
 		/* S-03.062: BP1 decides (S-03.040) */
 		if (target == 1u)
-			s15_buf_str(out, "The new OS boots; partition 2 may still be active");
+			s15_buf_str(out, "New OS boots; partition 2 may still be active");
 		else
-			s15_buf_str(out, "Partition 1 is still active: the old OS boots");
+			s15_buf_str(out, "Partition 1 still active: old OS boots");
 		break;
 	case S15_OSW_EMMC_UNCONFIRMED:
-		s15_buf_str(out, "Written, but the eMMC did not confirm it");
+		s15_buf_str(out, "Written; the eMMC did not confirm it");
 		break;
 	case S15_OSW_EMMC_UNTOUCHED:
 	default:
 		*style = S15_ST_TEXT;
-		s15_buf_str(out, "   Nothing was written.");
+		s15_buf_str(out, "   Nothing written.");
 		break;
 	}
 }

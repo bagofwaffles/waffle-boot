@@ -556,7 +556,7 @@ static void test_required_info(void)
 	      "S-15.140 option item off");
 
 	/* The option's screen: the rows, its item with the hold's hint, the
-	 * way back; held, the same item armed and the hold's row: nine rows. */
+	 * way back; held, the same item armed and the hold's row: nine rows at most. */
 	for (n = 0; n < S15_OPTION_PROMPT_LINES; n++) {
 		rows[n] = s15_option_prompt[n];
 		CHECK(fits(s15_option_prompt_style[n], rows[n]),
@@ -572,7 +572,7 @@ static void test_required_info(void)
 	CHECK(s15t_match_named("option prompt", rows, n, NULL),
 	      "S-15.140 the screen names every effect and the hold");
 	CHECK(s15_option_prompt_style[0] == S15_ST_HEAD &&
-	      n + 1u == S15_ROWS, "S-15.140 a question first; held, every row shown");
+	      n + 1u <= S15_ROWS, "S-15.140 a question first; held, every row shown");
 
 	/* The title bar's indicator */
 	CHECK(row_matches("indicator", s15_indicator_text, NULL) &&
@@ -700,7 +700,7 @@ static void test_os_write_lines(void)
 		CHECK(why.n > 0u && fits(S15_ST_DIM, b.s), "S-15.094 reason '%s'", b.s);
 	}
 	s15_osw_reason(&why, S15_OSW_WHY_NO_ROOM, 0, 3601, 0);
-	CHECK(strcmp(why.s, "the boot partition size is unknown") == 0, "S-15.094 B unknown");
+	CHECK(strcmp(why.s, "boot partition size unknown") == 0, "S-15.094 B unknown");
 	s15_osw_reason(&why, S15_OSW_WHY_NONE, 0, 0, 0);
 	CHECK(why.n == 0u, "S-15.094 no reason");
 	for (unsigned c = S15_OSW_EMMC_UNTOUCHED; c <= S15_OSW_EMMC_UNCONFIRMED; c++)

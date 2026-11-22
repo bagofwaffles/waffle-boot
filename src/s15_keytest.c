@@ -53,8 +53,8 @@ static const struct cell marks[] = {
 
 /* S-15.062: a text line and a keys line. */
 const char *const s15_keytest_lines[S15_KEYTEST_LINES] = {
-	"Press every key and knob, one at a time.",
-	"`Shift` + `8`   Back to System Menu",
+	"Press each key and knob.",
+	"`Shift` + `8`   Back to System",
 };
 
 static bool bit(const uint8_t *set, unsigned k)

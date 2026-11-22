@@ -10,7 +10,7 @@ the OS's.
 1. Open the [Boot Menu](Boot-Menu).
 2. Hold **shift**, and press **1** (**Install firmware**). Let go.
 3. A disk appears on the computer. Copy the `systeminfo` and `logs` folders.
-4. Eject the disk. The unit looks for a package and finds none (`No valid package found`).
+4. Eject the disk. The unit looks for a package and finds none (`No valid package`).
 5. Press **8** to go back.
 
 | File | Holds |
