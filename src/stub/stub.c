@@ -21,6 +21,8 @@
  */
 #include "unpack.h"
 
+#include <stddef.h>
+
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_coremmr.h"
 #include "waffle/drivers/bf70x_cplb.h"
@@ -112,14 +114,15 @@ uint32_t wb_stub_main(void)
 	const struct wb_unpack_ops ops = { dest, 0, arena, sizeof arena };
 	enum wb_unpack_rc rc;
 	uint32_t entry = 0;
-	char *p;
+	size_t i, n;
 
 	rec->entered = wb_core_cycles();
 	rec->unpacked = 0u;
 	rec->result = WB_STUB_RUNNING;
 	rec->magic = WB_STUB_RECORD_MAGIC;
-	for (p = wb_stub_bss_start; p < wb_stub_bss_end; p++)
-		*p = 0;
+	n = (size_t)((uintptr_t)wb_stub_bss_end - (uintptr_t)wb_stub_bss_start);
+	for (i = 0; i < n; i++)
+		wb_stub_bss_start[i] = 0;
 	caches_on();
 	rc = wb_unpack((const uint8_t *)(uintptr_t)WB_PACK_START, WB_PACK_END - WB_PACK_START,
 		       &ops, &entry);

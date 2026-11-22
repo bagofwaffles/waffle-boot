@@ -249,6 +249,7 @@ static bool loaded_read(void *ctx, uint32_t addr, uint8_t *buf, uint32_t len)
 			  end <= (uint32_t)(uintptr_t)wb_pack_end;
 
 	(void)ctx;
+	/* cppcheck-suppress knownConditionTrueFalse ; weak: NULL in the host build */
 	if (wb_pack_start == NULL || (!desc && !pack))
 		return false;
 	OPXY_CRUMB_READ(addr); memcpy(buf, (const void *)(uintptr_t)addr, len);
