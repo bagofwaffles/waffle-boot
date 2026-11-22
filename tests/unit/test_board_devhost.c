@@ -1053,6 +1053,39 @@ static void test_no_slave(void)
 	CHECK(fake_mmr_get(0x20004000u) == 0x77u);
 }
 
+/*
+ * The host link's hold on what a host reaches past the master: S-06.050's
+ * forwards from a host need the approved session but for a ping or an info
+ * request, and frames the coprocessors send are not asked; the log to the
+ * host stops once no session is approved.
+ */
+static void test_forwards_and_log(void)
+{
+	uint8_t info[S06_MAX_WIRE], led[S06_MAX_WIRE];
+	const size_t ni = s06_frame_encode(0x23, 1, 0x09, NULL, 0, crc8, info);
+	const size_t nl = s06_frame_encode(0x24, 2, 0x45, (const uint8_t[]){ 1, 2, 3 }, 3,
+					   crc8, led);
+
+	host_reset();
+	opxy_hostlink_start(&m);
+	CHECK(m.node.obs.forward_ok != NULL);
+	m.sv.menu.host_link = false;
+	CHECK(m.node.obs.forward_ok(&m, S06_LINK_CDC, 3, info, ni));
+	CHECK(!m.node.obs.forward_ok(&m, S06_LINK_CDC, 4, led, nl));
+	CHECK(!m.node.obs.forward_ok(&m, S06_LINK_MIDI, 5, led, nl));
+	CHECK(m.node.obs.forward_ok(&m, S06_LINK_PSOC, 2, led, nl));
+	m.sv.menu.host_link = true;
+	m.sv.hl.session = HL_S_APPROVED;
+	CHECK(m.node.obs.forward_ok(&m, S06_LINK_CDC, 4, led, nl));
+	/* the log: on only in an approved session */
+	m.sv.log.cdc_on = true;
+	opxy_hostlink_poll(&m);
+	CHECK(m.sv.log.cdc_on);
+	m.sv.hl.session = HL_S_NONE;
+	opxy_hostlink_poll(&m);
+	CHECK(!m.sv.log.cdc_on);
+}
+
 /* The host link reports the front's version: the one this tree pins. */
 static void test_front_version(void)
 {
@@ -1062,6 +1095,7 @@ static void test_front_version(void)
 int main(void)
 {
 	RUN(test_front_version);
+	RUN(test_forwards_and_log);
 	RUN(test_normal);
 	RUN(test_cache_table);
 	RUN(test_os_wait);

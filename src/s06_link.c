@@ -55,6 +55,7 @@ void s06_node_init(struct s06_node *n, s06_crc8_fn crc,
 	n->nroutes = 0;
 	n->routes_off = 0;
 	n->obs.dropped = 0;
+	n->obs.forward_ok = 0;
 	n->obs.ctx = 0;
 }
 
@@ -241,6 +242,10 @@ static void forward(struct s06_node *n, unsigned link, uint8_t dst,
 		out = n->link[r->out];
 		if (!out || out->raw)
 			break;		/* S-06.064 */
+		if (n->obs.forward_ok && !n->obs.forward_ok(n->obs.ctx, link, dst, wire, len)) {
+			drop(n, link, S06_DROP_REFUSED, wire, len);
+			return;
+		}
 		/* S-06.022: unchanged, no number used */
 		if (!put(out, wire, len))
 			drop(n, link, S06_DROP_NO_ROOM, wire, len);

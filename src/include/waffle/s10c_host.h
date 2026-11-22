@@ -207,9 +207,10 @@ struct s10c_ops {
 	/* S-10c.076, S-05.033: the restart, after the reply 54 on link;
 	 * does not return on the device. */
 	void (*continue_os)(void *ctx, enum s10c_link link);
-	/* SPEC-Q: the host link's consent to a change asked for on CDC or the
-	 * MIDI link: a transfer, a restart, factory unlock or set metadata.
-	 * NULL serves every change; a coprocessor link is never asked. */
+	/* SPEC-Q: the host link's consent to a change asked for on CDC, the
+	 * MIDI link or the Nordic's: a transfer, a restart, factory unlock, set
+	 * metadata or the log's configuration (0xB0). NULL serves every one;
+	 * the PSoC's link is never asked. */
 	enum s10c_gate (*gate)(void *ctx, enum s10c_link link);
 };
 

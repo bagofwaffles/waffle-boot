@@ -65,6 +65,7 @@ static void leave(struct s15_menu *m)
 	m->armed = S15_ARM_NONE;
 	m->pending = 0;
 	m->osw = S15_OSW_VIEW_NONE;
+	m->osw_host = false;
 }
 
 /* A screen is opened or drawn: what belongs to the screen it leaves goes. */
@@ -964,6 +965,85 @@ static void format_key(struct s15_menu *m, unsigned key)
 		open_system(m);
 }
 
+/* ---- going back to where a host's action began ------------------------ */
+
+static void draw_factory(struct s15_menu *m);
+
+/* The screen a host's approval or job came over, drawn again; the developer
+ * menu only while developer mode is on. */
+static void redraw(struct s15_menu *m, enum s15_screen s)
+{
+	if (s == S15_SCR_SETTINGS)
+		draw_settings(m);
+	else if (s == S15_SCR_SYSTEM)
+		draw_system(m, false);
+	else if (s == S15_SCR_INFO)
+		open_info(m);
+	else if (s == S15_SCR_INFO2)
+		open_info2(m);
+	else if (s == S15_SCR_FACTORY && m->dev_mode)
+		draw_factory(m);
+	else
+		draw_main(m);
+}
+
+/* Where a host's job goes back to: the screen shown, when redraw() knows it. */
+static enum s15_screen back_of(const struct s15_menu *m)
+{
+	const enum s15_screen s = m->screen;
+
+	if (s == S15_SCR_FACTORY)
+		return m->mtp == S15_MTP_OFF && m->osw == S15_OSW_VIEW_NONE ? s : S15_SCR_MAIN;
+	return s == S15_SCR_SETTINGS || s == S15_SCR_SYSTEM || s == S15_SCR_INFO ||
+	       s == S15_SCR_INFO2 ? s : S15_SCR_MAIN;
+}
+
+static const char *back_title(enum s15_screen s)
+{
+	return s == S15_SCR_SETTINGS ? "Settings" : s == S15_SCR_SYSTEM ? "System" :
+	       s == S15_SCR_INFO ? "Device Info" : s == S15_SCR_INFO2 ? "Device Info 2" :
+	       s == S15_SCR_FACTORY ? "Developer" : "Main Menu";
+}
+
+/* A host's file as the drive shows it, "/yaffs2" left off, its tail kept
+ * when the line would be too long. */
+static void osw_name_of(struct s15_menu *m, const char *path)
+{
+	static const char drive[] = "/yaffs2/";
+	const size_t max = sizeof m->osw_name - 1u;
+	size_t n, k = 0;
+
+	if (wb_equal((const uint8_t *)path, (const uint8_t *)drive, sizeof drive - 1u))
+		path += sizeof drive - 2u;	/* the "/" kept */
+	n = wb_strlen(path);
+	if (n > max) {
+		m->osw_name[k++] = '.';
+		m->osw_name[k++] = '.';
+		m->osw_name[k++] = '.';
+		path += n - (max - 3u);
+		n = max - 3u;
+	}
+	wb_copy((uint8_t *)m->osw_name + k, (const uint8_t *)path, n);
+	m->osw_name[k + n] = '\0';
+}
+
+/* A host's OS write names its own file: its read step's row is
+ * "Read file", not "Read /os.ldr". */
+static void osw_host_row(const struct s15_menu *m, struct s15_buf *b)
+{
+	struct s15_buf r;
+	const char *tab = b->s;
+
+	while (*tab != '\0' && *tab != '\t')
+		tab++;
+	if (!m->osw_host || m->osw_step != (int)S15_OSW_STEP_READ || *tab == '\0')
+		return;
+	s15_buf_init(&r);
+	s15_buf_str(&r, "Read file");
+	s15_buf_str(&r, tab);
+	*b = r;
+}
+
 /* ---- the factory menu: S-15.092 - S-15.095 -------------------------- */
 
 /* The items keep their digits; digits 1 and 4 are no items. */
@@ -1008,7 +1088,8 @@ void s15_osw_step(struct s15_menu *m, enum s15_osw_step step)
 {
 	if (m->osw != S15_OSW_VIEW_RUNNING || (unsigned)step >= S15_OSW_STEP_COUNT)
 		return;
-	sline(m, S15_ST_STEP_RUN, s15_osw_label(step));
+	sline(m, S15_ST_STEP_RUN, step == S15_OSW_STEP_READ && m->osw_host ?
+				  "Read file" : s15_osw_label(step));
 	m->osw_step = (int)step;
 	m->osw_p = ~0u;
 }
@@ -1023,6 +1104,7 @@ void s15_osw_progress(struct s15_menu *m, uint32_t done, uint32_t total)
 		return;
 	m->osw_p = p;
 	s15_osw_progress_row(&b, (enum s15_osw_step)m->osw_step, p);
+	osw_host_row(m, &b);
 	s15_console_set(&m->con, S15_ST_STEP_RUN, b.s);
 }
 
@@ -1033,6 +1115,7 @@ void s15_osw_done(struct s15_menu *m, uint32_t a, uint32_t b)
 	if (m->osw != S15_OSW_VIEW_RUNNING || m->osw_step < 0)
 		return;
 	s15_osw_done_row(&row, (enum s15_osw_step)m->osw_step, a, b);
+	osw_host_row(m, &row);
 	s15_console_set(&m->con, S15_ST_STEP_OK, row.s);
 	m->osw_step = -1;
 }
@@ -1049,10 +1132,18 @@ static void osw_outcome(struct s15_menu *m, const struct s15_osw_end *e)
 	} else {
 		if (m->osw_step >= 0) {
 			s15_osw_failed_row(&b, (enum s15_osw_step)m->osw_step);
+			osw_host_row(m, &b);
 			s15_console_set(&m->con, S15_ST_STEP_FAIL, b.s);
 		}
-		sline(m, S15_ST_ERROR, e->result == S15_OSW_UNREADABLE ?
-				       s15_os_ldr_unreadable : s15_os_write_failed);
+		if (e->result == S15_OSW_UNREADABLE && m->osw_host) {
+			s15_buf_init(&b);
+			s15_buf_str(&b, "Can't read ");
+			s15_buf_str(&b, m->osw_name);
+			sline(m, S15_ST_ERROR, b.s);
+		} else {
+			sline(m, S15_ST_ERROR, e->result == S15_OSW_UNREADABLE ?
+					       s15_os_ldr_unreadable : s15_os_write_failed);
+		}
 		if (e->why != S15_OSW_WHY_NONE) {
 			s15_osw_reason(&why, e->why, e->part, e->value, e->limit);
 			s15_reason_line(&b, why.s);
@@ -1067,21 +1158,40 @@ static void osw_outcome(struct s15_menu *m, const struct s15_osw_end *e)
 	/* S-15.190: a success offers the restart into the OS */
 	if (e->result == S15_OSW_OK)
 		sline(m, S15_ST_ITEM, s15_restart_item);
-	sline(m, S15_ST_BACK, s15_osw_back);
+	if (m->osw_host) {
+		s15_buf_init(&b);
+		s15_buf_str(&b, "8 Back to ");
+		s15_buf_str(&b, back_title(m->osw_back));
+		sline(m, S15_ST_BACK, b.s);
+	} else {
+		sline(m, S15_ST_BACK, s15_osw_back);
+	}
 }
 
 /* S-15.094, S-16.123: busy only while the write runs; the screen then
  * waits for digit 8, or digit 6 (restart) after a success. */
-static void os_write(struct s15_menu *m)
+static void os_write(struct s15_menu *m, const char *host_name, enum s15_screen back)
 {
 	struct s15_osw_end e = { S15_OSW_FAILED, S15_OSW_WHY_NONE,
 				 S15_OSW_EMMC_UNTOUCHED, 0, 0, 0, 0, false };
+	struct s15_buf b;
 
 	m->busy = true;
 	enter(m, S15_SCR_FACTORY, "Write OS");
 	m->osw = S15_OSW_VIEW_RUNNING;
 	m->osw_step = -1;
-	line(m, "Looking for /os.ldr...");
+	m->osw_host = host_name != NULL;
+	m->osw_back = back;
+	if (m->osw_host) {
+		osw_name_of(m, host_name);
+		s15_buf_init(&b);
+		s15_buf_str(&b, "Looking for ");
+		s15_buf_str(&b, m->osw_name);
+		s15_buf_str(&b, "...");
+		line(m, b.s);
+	} else {
+		line(m, "Looking for /os.ldr...");
+	}
 	m->env->os_write(m->env->ctx, &e);
 	m->osw_end = e;
 	osw_outcome(m, &e);
@@ -1102,8 +1212,9 @@ static void restart(struct s15_menu *m)
 /* S-15.194: the restart into a start from /yaffs2/os.ldr, or the reason
  * there is none, under the developer menu drawn again. That start boots
  * whatever start in boot menu says (S-04.014). */
-static void os_once(struct s15_menu *m)
+static void os_once(struct s15_menu *m, bool host)
 {
+	const enum s15_screen back = host ? back_of(m) : S15_SCR_FACTORY;
 	struct s15_os_file file = { S15_OSW_WHY_NONE, 0, 0 };
 	struct s15_buf why, b;
 	enum s15_once r;
@@ -1119,7 +1230,10 @@ static void os_once(struct s15_menu *m)
 		m->env->os_once(m->env->ctx);
 		return;
 	}
-	draw_factory(m);
+	if (host)
+		redraw(m, back);	/* never the developer menu for a host */
+	else
+		draw_factory(m);
 	sline(m, S15_ST_ERROR, s15_once_not_started);
 	s15_once_reason(&why, r, &file);
 	s15_reason_line(&b, why.s);
@@ -1152,7 +1266,9 @@ static void factory_key(struct s15_menu *m, unsigned key)
 	if (m->busy)
 		return;
 	if (m->osw != S15_OSW_VIEW_NONE) {        /* S-15.094 */
-		if (d == 8u)
+		if (d == 8u && m->osw_host)
+			redraw(m, m->osw_back);    /* a host's write: where it began */
+		else if (d == 8u)
 			draw_factory(m);           /* back, drawn again */
 		else if (d == 6u && m->osw_written)
 			restart_to_os(m);                  /* S-15.190 */
@@ -1167,10 +1283,10 @@ static void factory_key(struct s15_menu *m, unsigned key)
 			mtp_on(m, m->shift ? S15_MTP_VENDOR : S15_MTP_STANDARD);
 		break;
 	case 3:
-		os_once(m);                        /* S-15.194 */
+		os_once(m, false);                 /* S-15.194 */
 		break;
 	case 5:
-		os_write(m);
+		os_write(m, NULL, S15_SCR_FACTORY);
 		break;
 	case 6:
 		restart(m);                        /* S-15.095 */
@@ -1234,21 +1350,8 @@ bool s15_menu_approve_open(struct s15_menu *m)
 /* The answer, and the screen it came from drawn again. */
 static void approve_end(struct s15_menu *m, enum s15_approve a)
 {
-	const enum s15_screen back = m->approve_back;
-
 	m->approve = a;
-	if (back == S15_SCR_SETTINGS)
-		draw_settings(m);
-	else if (back == S15_SCR_SYSTEM)
-		draw_system(m, false);
-	else if (back == S15_SCR_INFO)
-		open_info(m);
-	else if (back == S15_SCR_INFO2)
-		open_info2(m);
-	else if (back == S15_SCR_FACTORY)
-		draw_factory(m);
-	else
-		draw_main(m);
+	redraw(m, m->approve_back);
 }
 
 enum s15_approve s15_menu_approve_result(struct s15_menu *m)
@@ -1273,18 +1376,18 @@ static void approve_key(struct s15_menu *m, unsigned key)
 	}
 }
 
-bool s15_menu_os_write(struct s15_menu *m, struct s15_osw_end *e)
+bool s15_menu_os_write(struct s15_menu *m, const char *path, struct s15_osw_end *e)
 {
 	if (m->busy || m->hold || m->activity != S15_ACT_IDLE)
 		return false;
-	os_write(m);
+	os_write(m, path, back_of(m));
 	*e = m->osw_end;
 	return true;
 }
 
 void s15_menu_os_once(struct s15_menu *m)
 {
-	os_once(m);
+	os_once(m, true);
 }
 
 /* ---- the upgrade screen: S-15.100 - S-15.115 ------------------------ */

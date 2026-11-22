@@ -338,6 +338,9 @@ struct s15_menu {
 	enum s15_osw_view osw;
 	bool osw_written;          /* S-15.094: the last OS write succeeded */
 	struct s15_osw_end osw_end;	/* and how it ended */
+	bool osw_host;             /* a host's write: its file, and where 8 goes */
+	enum s15_screen osw_back;
+	char osw_name[40];         /* the file as the drive shows it */
 	int osw_step;        /* the OS write's step whose row is open, or -1 */
 	unsigned osw_p;      /* its last progress value */
 
@@ -405,11 +408,15 @@ void s15_menu_host_event(struct s15_menu *m, unsigned key, bool down);
 bool s15_menu_approve_open(struct s15_menu *m);
 /* Its answer; once read, an answer gives S15_APPROVE_NONE. */
 enum s15_approve s15_menu_approve_result(struct s15_menu *m);
-/* A host's OS write from the developer menu's code, from a path the board
- * holds (S-15.094); false when the menu is busy. *e is the write's end. */
-bool s15_menu_os_write(struct s15_menu *m, struct s15_osw_end *e);
+/* A host's OS write with the developer menu's code (S-15.094), from the
+ * file at path, which the board's os_write reads; false when the menu is
+ * busy. The screen names the file, and 8 goes back to the screen shown
+ * before (never the developer menu with developer mode off). *e is the
+ * write's end. */
+bool s15_menu_os_write(struct s15_menu *m, const char *path, struct s15_osw_end *e);
 /* A host's start of /os.ldr once, as the developer menu's 3 (S-15.194);
- * it returns only when the start was not taken. */
+ * it returns only when the start was not taken, with the screen shown
+ * before drawn again under the reason. */
 void s15_menu_os_once(struct s15_menu *m);
 /*
  * The time passes (ms since any fixed point; only differences matter): a

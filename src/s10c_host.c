@@ -186,7 +186,8 @@ static void begin_refused(struct s10c_host *h)
 
 static enum s10c_gate gate(struct s10c_host *h, enum s10c_link link)
 {
-	if (coproc(link) || h->ops->gate == NULL)
+	/* the PSoC is the unit's own; the Nordic may carry another host's */
+	if (link == S10C_LINK_PSOC || h->ops->gate == NULL)
 		return S10C_GATE_OK;
 	return h->ops->gate(h->ctx, link);
 }
@@ -430,8 +431,9 @@ bool s10c_host_frame(struct s10c_host *h, enum s10c_link link, uint8_t route,
 			fsn[i] = (uint8_t)(words[i / 4] >> (8 * (i % 4)));
 		send(h, link, ROUTE_TO_HOST, 0x20, fsn, ok ? sizeof(fsn) : 0);
 		break;
-	case 0xB0:	/* S-10c.059 */
-		h->ops->log_config(h->ctx, p, n);
+	case 0xB0:	/* S-10c.059; SPEC-Q: the log to a host, with consent */
+		if (gate(h, link) == S10C_GATE_OK)
+			h->ops->log_config(h->ctx, p, n);
 		break;
 	case 0x03:
 	case 0x04:	/* S-10c.060 */

@@ -4226,6 +4226,59 @@ static void test_host_link(void)
 	s15_menu_host_event(&M, 0x07, true);
 	s15_menu_host_event(&M, 0x07, false);
 	CHECK(M.option_on, "a host's 2 leaves it on");
+
+	/* a host's OS write with developer mode off: its file named, and 8
+	 * back to the screen it began on, never the developer menu */
+	{
+		struct s15_osw_end e;
+
+		reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+		for (size_t i = 0; i < S15V_N(s15v_osws); i++)
+			if (strcmp(s15v_osws[i].name, "ok") == 0)
+				F.osw_case = &s15v_osws[i];
+		press(0x07);
+		n_app = 0;
+		CHECK(s15_menu_os_write(&M, "/yaffs2/firmware/os-2.ldr", &e) &&
+		      e.result == S15_OSW_OK && F.os_write == 1u, "host OS write: done");
+		s15_menu_release(&M);	/* the board's pass after the long call */
+		CHECK(appended("Looking for /firmware/os-2.ldr...") &&
+		      !appended("Looking for /os.ldr..."), "host OS write: its file named");
+		expect_last_lines("oswrite_host_ok", screen_vec("oswrite_host_ok")->lines);
+		press(0x15);
+		CHECK(M.screen == S15_SCR_SETTINGS && M.osw == S15_OSW_VIEW_NONE && !M.dev_mode,
+		      "host OS write: 8 back to Settings");
+		expect_screen("settings_devmode_off");
+		/* unreadable: the error names the file; from the main screen,
+		 * back to it */
+		reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+		F.osw = S15_OSW_UNREADABLE;
+		n_app = 0;
+		CHECK(s15_menu_os_write(&M, "/yaffs2/x.ldr", &e), "host OS write: run");
+		s15_menu_release(&M);
+		CHECK(appended("Can't read /x.ldr") && !appended(s15_os_ldr_unreadable),
+		      "host OS write: the file it could not read");
+		press(0x15);
+		CHECK(M.screen == S15_SCR_MAIN, "host OS write: 8 back to the main screen");
+		expect_screen("main_devmode_off");
+		/* the developer menu's own write is as it was */
+		reset_fake(); default_boot(); start();
+		press(0x08);
+		press(0x12);
+		press(0x15);
+		CHECK(M.screen == S15_SCR_FACTORY, "the unit's write: back to Developer");
+	}
+	/* a host's start once that is not taken: the screen it began on drawn
+	 * again under the reason, never the developer menu */
+	reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+	press(0x07);
+	n_app = 0;
+	s15_menu_os_once(&M);
+	CHECK(M.screen == S15_SCR_SETTINGS && appended(s15_once_not_started) &&
+	      F.once == 0u, "host start once refused: on Settings");
+	reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+	s15_menu_os_once(&M);
+	CHECK(M.screen == S15_SCR_MAIN && appended(s15_once_not_started),
+	      "host start once refused: on the main screen");
 }
 
 int main(void)

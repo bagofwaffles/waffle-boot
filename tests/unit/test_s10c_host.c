@@ -1237,6 +1237,16 @@ static void test_gate(void)
 		s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x09, NULL, 0);
 		CHECK(F.gate_asks == 0u && F.nframes == 1u && F.frames[0].id == 0x0A,
 		      "gate %d: info served", g);
+		/* the log's configuration: not taken */
+		fake_boot(true, true);
+		F.gate = (enum s10c_gate)g;
+		s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0xB0, (const uint8_t[]){ 0xA2, 0x03 }, 2);
+		CHECK(F.log_configs == 0u, "gate %d: no log to the host", g);
+		/* the Nordic's link is asked as a host's */
+		fake_boot(true, true);
+		F.gate = (enum s10c_gate)g;
+		s10c_host_frame(&F.host, S10C_LINK_NORDIC, 0x31, 0x0D, begin, sizeof(begin));
+		CHECK(F.gate_asks == 1u && F.starts == 0u, "gate %d: Nordic link asked", g);
 		/* the PSoC's link: never asked, served */
 		fake_boot(true, true);
 		F.gate = (enum s10c_gate)g;
@@ -1247,6 +1257,8 @@ static void test_gate(void)
 	fake_boot(true, true);
 	s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x0D, begin, sizeof(begin));
 	CHECK(F.gate_asks == 1u && F.starts == 1u && F.frames[0].p[0] == 0x54, "consent: begun");
+	s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0xB0, (const uint8_t[]){ 0xA2, 0x03 }, 2);
+	CHECK(F.log_configs == 1u, "consent: the log's configuration taken");
 }
 
 /* ---- the OP-1F (S-18.030, S-18.020) ---- */

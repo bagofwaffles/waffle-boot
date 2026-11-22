@@ -743,7 +743,7 @@ static void run_job(struct opxy_master *m)
 		break;
 	case HL_A_OS_WRITE:
 		opxy_osw_path = job_path.full;
-		if (!s15_menu_os_write(&m->sv.menu, &e)) {
+		if (!s15_menu_os_write(&m->sv.menu, job_path.full, &e)) {
 			e.result = S15_OSW_FAILED;
 			e.why = S15_OSW_WHY_NONE;
 		}
@@ -781,6 +781,33 @@ static void run_job(struct opxy_master *m)
 
 /* ---- the board's side ---- */
 
+/* SPEC-Q: S-06.050's forwards from a host (to the PSoC, the Nordic or the
+ * slave) need the session's approval, but for a ping or an info request,
+ * which read; the coprocessors' own frames to the host are not asked. */
+static OPXY_TESTOS_UNUSED bool forward_ok(void *ctx, unsigned link, uint8_t dst,
+					  const uint8_t *wire, size_t n)
+{
+	uint8_t raw[3];
+	size_t i = 0, k = 0;
+
+	(void)dst;
+	if (link != S06_LINK_CDC && link != S06_LINK_MIDI)
+		return true;
+	/* the route, sequence and id bytes, COBS-decoded */
+	while (k < sizeof raw && i < n && wire[i] != 0u) {
+		const unsigned code = wire[i++];
+
+		for (unsigned j = 1; j < code && k < sizeof raw && i < n; j++)
+			raw[k++] = wire[i++];
+		if (code != 0xFFu && k < sizeof raw)
+			raw[k++] = 0u;
+	}
+	if (k == sizeof raw && (raw[2] == 0x01u || raw[2] == 0x09u))
+		return true;
+	return opxy_hostlink_gate(ctx, link == S06_LINK_CDC ? S10C_LINK_CDC :
+							      S10C_LINK_MIDI) == S10C_GATE_OK;
+}
+
 void opxy_hostlink_start(struct opxy_master *m)
 {
 	struct hl_ops *o = &m->sv.hl_ops;
@@ -805,6 +832,9 @@ void opxy_hostlink_start(struct opxy_master *m)
 	o->run = run;
 	o->set = set;
 	hl_init(&m->sv.hl, o);
+	/* the test OS serves no host link, so it keeps S-06.050's forwards */
+	m->sv.node_ops.forward_ok = OPXY_TESTOS_OR(NULL, forward_ok);
+	m->node.obs.forward_ok = m->sv.node_ops.forward_ok;
 	m->sv.hl_link = S06_LINK_CDC;
 	m->sv.hl_route = s06_route(S06_ADDR_MASTER, S06_ADDR_HOST);
 }
@@ -873,6 +903,9 @@ void opxy_hostlink_poll(struct opxy_master *m)
 		opxy_menu_show(m);
 	}
 	hl_poll(h);
+	/* SPEC-Q: the log goes to a host only in an approved session */
+	if (m->sv.log.cdc_on && !opxy_hostlink_approved(m))
+		m->sv.log.cdc_on = false;
 	if (h->job.state == HL_J_QUEUED)
 		run_job(m);
 }

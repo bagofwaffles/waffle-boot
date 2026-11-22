@@ -65,6 +65,7 @@
  "settings_host_link_off": ["", "item:1 Developer mode\tOn", "item:2 Protected writes\tOff", "item:3 Color\tOff", "item:5 MTP target\tmacOS", "item:6 Start in boot menu\tOff", "item:7 Host link\tOff", "", "back:8 Back to Main Menu"],
  "approve": ["", "head:Allow this computer?", "dim:Files, installs, restarts. Until restart.", "", "item:1 Allow\tHold `1` for 5 s", "back:8 Cancel"],
  "approve_held": ["", "head:Allow this computer?", "dim:Files, installs, restarts. Until restart.", "", "armed:1 Allow\tHold `1` for 5 s", "back:8 Cancel", "step-run:Release to cancel\t0%\t5 s"],
+ "oswrite_host_ok": ["Looking for /firmware/os-2.ldr...", "step-ok:Read file\t1843200 bytes", "step-ok:Check image\tFits: 3601 of 8192 sectors", "step-ok:Target\tBoot partition 2", "step-ok:Erase\tDone", "step-ok:Write\tDone", "step-ok:Verify\tDone", "step-ok:Activate\tBoot partition 2 active", "ok:OS written.", "item:6 Restart", "back:8 Back to Settings"],
  "continue_restarting": ["warn:Restarting into the OS..."],
  "main_bare": ["", "item:1 Install firmware", "item:2 Settings", "item:3 Developer menu", "item:4 Device info", "item:5 System", "", "item:7 Continue to OS"],
  "upgrade_done_tail": ["ok:Done!", "item:6 Restart"],

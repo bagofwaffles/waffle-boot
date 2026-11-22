@@ -177,7 +177,14 @@ the restarts `0D 18`, `0D 19` and `0D EE`, factory unlock and set metadata all n
 approved session. Without it they are refused with `84` and a text (`host link off`, or `not allowed: hold
 1 on the unit`), or status `01` and the text in the TE form, and they change nothing; a refused one also
 puts the approval screen up, so a tool that tries again after the hold goes on. An install that comes
-that way still asks for its parts on the unit. The coprocessors' links are not asked.
+that way still asks for its parts on the unit. The same holds for these asked for through the Nordic's
+link; the PSoC's link, the unit's own, is not asked.
+
+The log (S-14) goes to the serial port only after the log-configuration request `B0`, which needs Host
+link on and the approved session like the changes above (without it the request is not taken); the log
+stops when the session ends. Frames a computer sends past the master, to the PSoC, the Nordic or the
+second processor (S-06.050's forwarding), are dropped without the approved session, but for a ping
+(`01`) or an info request (`09`), which only read; what those send back to the computer is not held.
 
 ## A site installs a package
 
@@ -243,8 +250,8 @@ outside the drive can be reached, and the bootloader's own files on it (`os.ldr`
 | `dev-shot OUT.png` | The frame buffer as a PNG |
 | `dev-start` | Why this start's OS start failed ([below](#why-the-os-did-not-start)) |
 | `dev-stream` | How this start sent the slave its boot stream ([below](#the-slaves-boot-stream)) |
-| `log [S]` | The log for S seconds (default 10), including an install's failed step and cause |
-| `nordic-info` | The Nordic's `mode`, `sw_version`, `bl_version`, `boot_slot`; changes nothing |
+| `log [S]` | The log for S seconds (default 10), including an install's failed step and cause; asks for the approval first |
+| `nordic-info` | The Nordic's `mode`, `sw_version`, `bl_version`, `boot_slot`; changes nothing, needs no approval |
 | `continue-os` | Restart the unit so that its next start boots the OS (S-10c.076), even with Start in boot menu on. Needs Host link and the approval; `continue-os --sysex` prints it as a MIDI SysEx message for a unit without a serial port |
 | `dev-bench`, `dev-check`, `dev-extract` | Time the firmware package check and extraction ([below](#timing-the-package-check)) |
 | `dev-link-record`, `dev-link-test [N]` | The bridge link's record and its bench ([below](#the-bridge-link)) |

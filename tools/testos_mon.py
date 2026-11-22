@@ -122,8 +122,9 @@ found by name alone, so an OP-1F's (USB product 0x0102) is found as the OP-XY's 
     continue-os --sysex  print the same request as one MIDI carrier SysEx message (S-10c.020), in hex,
                          for any MIDI sender: a unit with developer mode off has no serial port
     log [S]              the bootloader's or the test OS's log on this port for S seconds (default
-                         10): the log-configuration request turns its sink on (S-14.013). A
-                         BOOT_TIMING=1 build repeats its timing report there in held mode
+                         10): the log-configuration request turns its sink on (S-14.013). The boot
+                         menu sends it only to an approved host link session: hold 1 on the unit when
+                         it asks. A BOOT_TIMING=1 build repeats its timing report there in held mode
     nordic-info          the Nordic's own info text (mode, versions and, where it gives them, the
                          boot slot), asked through the bootloader's forwarding in held mode
                          (S-06.050). Sends one info request; changes nothing
@@ -458,7 +459,10 @@ LOG_IDS = (0x03, 0x04)  # S-14.021: a log line, an error line
 
 def show_log(mon, seconds):
     """Threshold 3 and both link sinks on, then each log line as it comes: the
-    timestamp (S-14.001, u32 big-endian, microseconds) and the body."""
+    timestamp (S-14.001, u32 big-endian, microseconds) and the body. The boot
+    menu sends its log only in an approved session of its host link: asked
+    for first; the test OS, which has no host link, sends it as asked."""
+    host_approved(mon, required=False)
     mon.seq += 1
     os.write(mon.fd, frame(bytes([0xA2, 0x03]), mon.seq, LOG_CONFIG))
     end = time.monotonic() + seconds
@@ -1080,6 +1084,25 @@ class FdPort:
         return os.read(self.mon.fd, 4096) if ready else b''
 
 
+def host_approved(mon, required=True):
+    """The host link's session approved, asking the unit when it is not. With
+    required False, a unit with no host link (the test OS) goes on unasked."""
+    import hostlink
+    hl = hostlink.Client(FdPort(mon))
+    try:
+        state = hostlink.SESSIONS[hl.call(hostlink.SESSION, timeout=1.0)[1][0]]
+    except SystemExit:
+        if required:
+            raise
+        return
+    except hostlink.HostLinkError as e:
+        raise SystemExit('host link: %s' % e)
+    if state != 'approved':
+        print('hold 1 on the unit for 5 s to allow this computer')
+        if hl.approve() != 'approved':
+            raise SystemExit('not approved on the unit')
+
+
 def host_file(mon, c, a):
     """dev-put and dev-get, by the host link's file calls under /yaffs2."""
     import hashlib
@@ -1092,11 +1115,8 @@ def host_file(mon, c, a):
     if c == 'dev-get' and a:
         name = a[0]
     path = '/yaffs2/' + name
+    host_approved(mon)
     try:
-        if hl.session() != 'approved':
-            print('hold 1 on the unit for 5 s to allow this computer')
-            if hl.approve() != 'approved':
-                raise SystemExit('not approved on the unit')
         if c == 'dev-put':
             with open(a[0], 'rb') as fh:
                 data = fh.read()
