@@ -138,6 +138,12 @@ what is built.
   (`src/board/opxy_crc.c`).
 - **yaffs2** is built without yaffs1 (`CONFIG_YAFFS_NO_YAFFS1`,
   `src/glue/yaffs2/yaffs_port.h`): every device is a yaffs2 one.
+- **yaffs2** is built without `yaffs_tagscompat.c`, `yaffs_ecc.c`,
+  `yaffs_nameval.c`, `yaffs_endian.c` and `yaffs_verify.c`: with in-band
+  tags, no tags ECC, no extended attributes, the CPU's byte order and a
+  zero trace mask, which every device has, they do nothing or are never
+  reached. `src/glue/yaffs2/yaffs_fixed.c` defines their functions for
+  that configuration; a call that needs the real code is a `BUG()`.
 - **micro-ecc** verifies against an unchecked public key; check Q0 with
   `uECC_valid_public_key()` once when it is read. It truncates a SHA-256
   digest to the leftmost 224 bits, as S-11.012 requires.
