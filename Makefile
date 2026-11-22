@@ -108,12 +108,10 @@ COMMON := -std=c11 $(WARNINGS) -Isrc/include -Isrc -g -fdebug-prefix-map=$(CURDI
 # The image spans L1, L2 and DDR, beyond a CALL's reach (S-01.011;
 # bf703.ld). A function called across regions carries WB_FAR_CALL, and the
 # link fails on a call that cannot reach; the rest are plain calls.
-# TARGET_SIZE: smaller code at a small cost in speed (no jump tables, no
-# copied loop headers, small functions inlined only when declared inline).
-# The files built for speed take TARGET_SPEED, which is -O2 as it was.
-TARGET_SIZE := -fno-jump-tables -fno-tree-ch -fno-inline-small-functions
-TARGET_SPEED := -O2 $(patsubst -fno-%,-f%,$(TARGET_SIZE))
-TARGET_CFLAGS := $(COMMON) -mcpu=bf703-none -Os $(TARGET_SIZE) -ffreestanding \
+# The image is built for size (-Os); the files built for speed take
+# TARGET_SPEED.
+TARGET_SPEED := -O2
+TARGET_CFLAGS := $(COMMON) -mcpu=bf703-none -Os -ffreestanding \
 	-fno-common -ffunction-sections -fdata-sections
 TARGET_ASFLAGS := -mcpu=bf703-none -Isrc/include
 # The bootloader's build number (S-17.032), default 0.

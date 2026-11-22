@@ -158,25 +158,25 @@ what is built.
 
 ## Target sizes
 
-`make size`, archive totals under `-Os` with the Makefile's `TARGET_SIZE`
-(`-O2` for crc, zlib but `adler32.c`, and picolibc's `memcpy` and `memset`,
-which copy by words; `-mcpu=bf703-none`, `-ffunction-sections`); a linked
-image keeps only what it uses. The stub (`src/stub/`) links its own copy of zlib's inflate and
+`make size`, archive totals under `-Os` (`-O2` for crc, zlib but
+`adler32.c`, and picolibc's `memcpy` and `memset`, which copy by words;
+`-mcpu=bf703-none`, `-ffunction-sections`); a linked image keeps only what
+it uses. The stub (`src/stub/`) links its own copy of zlib's inflate and
 CRC-32 at `-O2`, `adler32.c` at `-Os`, built with `Z_SOLO` and `NO_GZIP`;
 `make size` shows its sections.
 
 | Component | text | data | bss |
 | --- | ---: | ---: | ---: |
-| picolibc | 5,000 | 0 | 16 |
+| picolibc | 5,052 | 0 | 16 |
 | crc (ours) | 940 | 0 | 0 |
 | blockdev (ours) | 316 | 0 | 0 |
-| fatfs (with glue) | 15,867 | 0 | 522 |
-| yaffs2 (with glue) | 46,099 | 9 | 80,136 |
+| fatfs (with glue) | 15,975 | 0 | 522 |
+| yaffs2 (with glue) | 46,111 | 9 | 80,136 |
 | zlib | 14,726 | 0 | 2,196 |
 | minizip (with glue) | 7,716 | 0 | 0 |
-| micro-ecc | 8,260 | 0 | 4 |
+| micro-ecc | 8,256 | 0 | 4 |
 | BearSSL | 5,568 | 0 | 0 |
-| TinyUSB | 7,812 | 29 | 366 |
+| TinyUSB | 7,892 | 29 | 366 |
 
 ## Tests
 
