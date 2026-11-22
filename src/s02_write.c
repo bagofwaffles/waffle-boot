@@ -185,7 +185,7 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
 		return S02_ERR_IO;
 
 	/* Classes 2 and 3: the record (S-02.046). */
-	rec.crc32 = env->crc32(0u, image, n);
+	rec.crc32 = env->crc32(0u, image, n);	/* software: the value written */
 	rec.length = n;
 	rec.tag = S02_RECORD_TAG;
 	s02_record_encode(&rec, raw);

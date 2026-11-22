@@ -31,6 +31,7 @@ bool s02_store_decode(const uint8_t *p, size_t n, uint32_t stamp, struct s02_sto
 	if (len < 1u || len > S02_STORE_PAYLOAD_MAX ||
 	    n < S02_STORE_HEADER + len + S02_STORE_CRC)
 		return false;
+	/* software: a record of a few bytes */
 	if (wire_crc32(0u, p, S02_STORE_HEADER + len) !=
 	    wb_get_le32(p + S02_STORE_HEADER + len))
 		return false;
@@ -64,7 +65,7 @@ size_t s02_store_encode(const struct s02_store *s, uint32_t stamp, uint8_t *buf,
 	wb_put_le16(buf + 6, 1u);
 	wb_put_le32(buf + 8, stamp);
 	buf[S02_STORE_HEADER] = f;
-	wb_put_le32(buf + S02_STORE_HEADER + 1u,
+	wb_put_le32(buf + S02_STORE_HEADER + 1u,	/* software, as above */
 		    wire_crc32(0u, buf, S02_STORE_HEADER + 1u));
 	return S02_STORE_WRITTEN;
 }

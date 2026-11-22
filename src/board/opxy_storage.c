@@ -700,7 +700,7 @@ void opxy_storage_init(struct opxy_storage *st, struct opxy_hw *hw,
 	opxy_storage_start(st, bring_up && opxy_storage_up(st));
 	st->emmc_notified = false;
 	st->emmc.ops = &st->emmc_ops;
-	st->emmc.crc32 = wire_crc32;
+	st->emmc.crc32 = wire_crc32;	/* software: the reference behind crc32_fast */
 	st->emmc.crc32_fast = opxy_crc32_check_quiet;	/* S-03.044, at the release */
 	st->emmc.scratch = emmc_scratch;
 	st->emmc.scratch_len = sizeof(emmc_scratch);

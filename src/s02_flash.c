@@ -96,6 +96,7 @@ int s02_flash_crc(const struct s02_env *env, uint32_t off, uint32_t len, uint32_
 
 		if (env->flash->read(env->flash->ctx, off, env->scratch, chunk) != 0)
 			return S02_ERR_IO;
+		/* software: sector pieces whose SPI read costs more than the CRC */
 		c = env->crc32(c, env->scratch, chunk);
 		off += chunk;
 		len -= chunk;
@@ -699,6 +700,7 @@ bool s02_stream_is_waffle(int (*read)(void *ctx, uint32_t off, uint8_t *buf, uin
 		fill = (code & S05_FLAG_FILL) != 0u;
 		data = !fill && (code & S05_FLAG_IGNORE) == 0u;
 		if (data && target == FR_DESC_ADDR && count >= FR_DESC_HEAD + 4u) {
+			/* its CRC in software (crc32): too few bytes for the peripheral */
 			uint8_t d[FR_DESC_HEAD + 8u * FR_DESC_REGIONS + 4u];
 			const uint32_t k = count < sizeof d ? count : (uint32_t)sizeof d;
 			uint32_t size, nreg;

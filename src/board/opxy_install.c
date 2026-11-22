@@ -455,16 +455,16 @@ static enum s11_result staged_check(const struct opxy_master *m,
 				    uint32_t len)
 {
 	const struct opxy_services *sv = &m->sv;
-	const struct s11_staged_read read = { true, len,
-					      opxy_crc32_long(0u, image, len) };
 	const struct s11_staged_read stated = { sv->extracted,
 						sv->extracted_sizes.size[c],
 						sv->extracted_sizes.crc32[c] };
+	struct s11_staged_read read = { true, len, 0u };
 
 	/* A run always follows its own extraction; without the stated
 	 * values there is nothing to check against. */
 	if (!stated.ok)
 		return S11_INTERNAL;
+	read.crc32 = opxy_crc32_known(image, len, stated.crc32, opxy_usb_breathe);
 	return s11_staged_result(s11_staged_check(&stated, &read));
 }
 
@@ -618,7 +618,7 @@ static bool already_written(const struct opxy_master *m,
 	    S02_OK)
 		return false;
 	return s02_tag_ok(rec.tag) && rec.length == len &&
-	       rec.crc32 == m->flash.crc32(0u, image, len);
+	       rec.crc32 == opxy_crc32_known(image, len, rec.crc32, opxy_usb_breathe);
 }
 
 /* S-11.068, S-02.042-S-02.053. S-11 runs the step only with the option
@@ -974,6 +974,7 @@ static void select_info(struct opxy_master *m, const struct s11_step_env *env,
 /* The staged bootloader is waffle-boot's (S-11.091), for the screen. */
 static bool sel_waffle;
 
+/* Software: the descriptor's CRC covers too few bytes for the peripheral. */
 static uint32_t crc_of(uint32_t crc, const uint8_t *p, size_t n)
 {
 	return wire_crc32(crc, p, (uint32_t)n);

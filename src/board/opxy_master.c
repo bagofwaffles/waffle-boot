@@ -137,6 +137,7 @@ static void bringup(void *ctx)
 	opxy_flash_writer(&m->hw, false);
 	m->flash_ops = opxy_flash_ops(&m->hw);
 	m->flash.flash = &m->flash_ops;
+	/* software: the reference behind crc32_fast, and the CRCs written */
 	m->flash.crc32 = opxy_crc32_long;
 	m->flash.crc32_fast = opxy_crc32_check;	/* S-02.016's slot check */
 	m->flash.scratch = flash_scratch;
@@ -427,6 +428,7 @@ static void emmc_client(struct opxy_master *m, uint32_t boot_size)
 {
 	m->emmc_ops = opxy_bridge_emmc(&m->bridge);
 	m->emmc.ops = &m->emmc_ops;
+	/* software: the reference behind crc32_fast, and the CRCs written */
 	m->emmc.crc32 = opxy_crc32_long;
 	m->emmc.crc32_fast = opxy_crc32_check;	/* S-03.044 */
 	m->emmc.boot_size = boot_size;
@@ -548,7 +550,7 @@ static void early_logo_hook(void *ctx)
 
 static void psoc_link_init(struct opxy_master *m)
 {
-	s06_node_init(&m->node, wire_crc8_frame, &m->clock);
+	s06_node_init(&m->node, wire_crc8_frame, &m->clock);	/* software: short frames */
 	s06_link_init(&m->link[S06_LINK_PSOC], &opxy_port_ops,
 		      &m->hw.uart[OPXY_UART_PSOC], S06_ADDR_MASTER,
 		      S06_ADDR_PSOC);
@@ -563,7 +565,7 @@ static void psoc_link_init(struct opxy_master *m)
 	m->psoc_ops.early_logo = early_logo_hook;
 	m->psoc_ops.service = psoc_service;
 	m->psoc_ops.common = psoc_common;
-	m->psoc_ops.crc16 = wire_crc16_x25;
+	m->psoc_ops.crc16 = wire_crc16_x25;	/* software: short frames */
 	s07_init(&m->psoc, opxy_dev(m), &m->node, S06_LINK_PSOC, &m->psoc_ops);
 }
 
@@ -756,6 +758,7 @@ static enum s05_fail stage_os_file(struct opxy_master *m, uint32_t *length)
 	opxy_bridge_fast(m);
 	ok = s09_files_os_read(&m->sv.files, staging, S03_OS_MAX, &stage_file, &len);
 	opxy_bridge_plain(m);
+	/* software: the slave judges its copy by this value, known to nothing here */
 	stage_file_crc = ok ? m->emmc.crc32(0u, staging, len) : 0u;
 	stage_load.length = len;	/* S-05.024's check and the account */
 	*length = len;

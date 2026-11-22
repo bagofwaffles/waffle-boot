@@ -406,6 +406,11 @@ uint32_t opxy_crc32(void *ctx, uint32_t crc, const uint8_t *p, size_t n);
 void opxy_crc_begin(struct opxy_master *m);
 bool opxy_crc_engine(unsigned which);
 void opxy_crc_end(void);
+/* A CRC-32 from 0 checked against want during that use: a result other
+ * than want that the peripheral took part in is computed again in
+ * software, idle (when not NULL) between its pieces. */
+uint32_t opxy_crc32_known(const uint8_t *p, uint32_t n, uint32_t want,
+			  void (*idle)(void));
 /* A CRC-32 for a check against a known value (src/board/opxy_crc.c): a
  * result equal to that value is the verdict, any other is computed again
  * in software by the caller. */
