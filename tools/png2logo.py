@@ -218,7 +218,7 @@ def c_source(data, name):
         lines.append('\t' + ' '.join('0x%02X,' % b for b in data[k:k + 12]))
     lines += ['};', '',
               'const struct wb_display_image wb_display_boot_image = {',
-              '\tdata, sizeof data', '};', '']
+              '\tdata, sizeof data, NULL', '};', '']
     return '\n'.join(lines)
 
 

@@ -26,6 +26,7 @@
 #include "front/fr_start.h"
 #include "waffle/device.h"
 #include "waffle/display.h"
+#include "waffle/logo.h"
 #include "waffle/s15_menu.h"
 
 /* This tree's version, from tools/ui-shots.sh: the pictures show it, slot 2
@@ -98,10 +99,63 @@ static enum s15_store_save e_clear(void *c)
 	return S15_STORE_SAVED;
 }
 
+/* The boot logo: none stored, or one; a picture dropped on the disk, made
+ * here and converted as the unit converts one (waffle/logo.h). */
+static bool logo_stored;
+static struct wb_logo_work g_work;	/* the conversion's working memory */
+static uint16_t logo_pic[300u * 120u], logo_px[480u * 222u];
+static uint8_t logo_data[WB_LOGO_DATA_MAX];
+static struct wb_logo logo;
+
+static void e_logo_state(void *c, struct s15_logo *out)
+{
+	(void)c;
+	out->state = logo_stored ? S15_LOGO_CUSTOM : S15_LOGO_BUILTIN;
+	out->room = 126976u;
+	out->stored = logo_stored ? 3911u : 0u;
+}
+
+/* Rows of amber squares, a waffle, on black, with a gray rule under them. */
+static void e_logo_load(void *c, struct s15_logo_pic *out)
+{
+	enum wb_logo_way way;
+	uint32_t need;
+
+	(void)c;
+	for (unsigned y = 0; y < 120u; y++)
+		for (unsigned x = 0; x < 300u; x++) {
+			const bool sq = x % 30u >= 4u && x % 30u < 26u && y % 30u >= 4u && y % 30u < 26u &&
+					y < 90u;
+			const bool rule = y >= 104u && y < 108u;
+
+			logo_pic[y * 300u + x] = sq ? ((x / 30u + y / 30u) % 3u == 0u ? 0xFFFFu : 0xFD84u) :
+						 rule ? 0x8C71u : 0x0000u;
+		}
+	memset(out, 0, sizeof *out);
+	out->room = 126976u;
+	if (!wb_logo_convert(&g_work, logo_pic, 300u, 120u, out->room, logo_data, sizeof logo_data, &logo,
+			     &way, &need) ||
+	    !wb_logo_draw(&logo, logo_data, logo_px)) {
+		out->result = S15_LOGO_BIG;
+		out->size = need;
+		return;
+	}
+	out->result = S15_LOGO_READY;
+	out->size = logo.len;
+	out->px = logo_px;
+}
+
+static enum s15_store_save e_logo_save(void *c)
+{
+	(void)c;
+	return S15_STORE_SAVED;
+}
+
 static const struct s15_env_ops env = {
 	e_usb, e_none, e_leds, e_refused, e_dir, e_pack, e_manifest,
 	e_remove, e_none, e_format, e_osw, e_none, e_none, e_none, e_option,
-	e_settings, NULL, e_lost, e_continue, NULL, NULL, e_clear,
+	e_settings, NULL, e_lost, e_continue, NULL, NULL, e_clear, NULL, NULL,
+	e_logo_state, e_none, e_logo_load, e_logo_save, e_logo_save,
 };
 
 /* S-15.163: the image read lost the slave, as on a unit. */
@@ -141,6 +195,7 @@ static void setup(void)
 	boot.running_slot = 1;
 	npacks = 0;
 	lost = false;
+	logo_stored = false;
 }
 
 static uint32_t now_ms;		/* the menu's clock (S-15.015) */
@@ -472,6 +527,19 @@ int main(int argc, char **argv)
 		front_shot(&rs);
 		bad |= write_raw(d, "recovery-keep");
 	}
+
+	/* the boot logo: System's 6 with one stored, the disk's screen; a
+	 * picture dropped and released, shown for its save */
+	setup(); logo_stored = true; start();
+	press(0x12); press(0x13);
+	bad |= shot(d, "logo");
+	setup(); start();
+	press(0x12); press(0x13);
+	s15_up_released(&menu, now_ms);
+	now_ms += 2000u;
+	s15_menu_tick(&menu, now_ms);
+	s15_up_tick(&menu, now_ms);
+	bad |= shot(d, "logo-view");
 
 	/* S-13c.025: the line under the logo on the way into recovery */
 	{

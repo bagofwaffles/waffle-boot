@@ -330,7 +330,8 @@ FAT_ERASE = {'xy': True, '1f': False}
 
 def factory_reset(tree, dev='xy', refused=False):
     """S-15.052 with device.reset_removes (S-18.030): tree {path under /yaffs2: bytes}. Returns (tree after,
-    the operations in order: ('remove', path), ('erase_os_fat',), ('clear_settings',))."""
+    the operations in order: ('remove', path), ('erase_os_fat',), ('clear_settings',), ('remove_logo',)): the
+    running slot's boot logo goes with its settings (SPEC-Q)."""
     ops, t = [], dict(tree)
     if not refused:
         for d in RESET_REMOVES[dev]:
@@ -339,6 +340,7 @@ def factory_reset(tree, dev='xy', refused=False):
     if FAT_ERASE[dev]:
         ops.append(('erase_os_fat',))
     ops.append(('clear_settings',))
+    ops.append(('remove_logo',))
     return t, ops
 
 

@@ -323,6 +323,7 @@ $(eval $(call VEC_HEADER,s17_vectors.h,tests/vectors/s17/gen_s17_vectors.py))
 $(eval $(call VEC_HEADER,s18_vectors.h,tests/vectors/s18/gen_s18_vectors.py))
 $(eval $(call VEC_HEADER,wire_vectors.h,tests/vectors/wire/gen_wire_vectors.py))
 $(eval $(call VEC_HEADER,pack_vectors.h,tests/vectors/pack/gen_pack_vectors.py))
+$(eval $(call VEC_HEADER,logo_vectors.h,tests/vectors/logo/gen_logo_vectors.py))
 
 # A test's own dependency file names the headers it includes once it has
 # been built; before that, every test waits for every header.
@@ -331,7 +332,7 @@ $(HOST_TESTS): | $(VEC_HEADERS)
 
 check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check/layering check/mtpcp \
 	check/testos_mon check/hostlink check/wbrecover check/web check/bump_version check/generated check/leak \
-	check/wiki_links check/ui_version
+	check/wiki_links check/ui_version check/wblogo
 
 # The screenshots in docs/ui/ are drawn at this tree's version (tools/ui_shots.py
 # --check): after make bump-version, redraw them (wiki/Screen-Style-Guide.md).
@@ -339,6 +340,11 @@ check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check
 check/ui_version:
 	$(PYTHON) -I -B tests/tools/test_ui_shots.py
 	$(PYTHON) -I -B tools/ui_shots.py --check docs/ui
+
+# The boot logo's reference tool (tests/tools/test_wblogo.py).
+.PHONY: check/wblogo
+check/wblogo:
+	$(PYTHON) -I -B tests/tools/test_wblogo.py
 
 # The image tools' own tests (tests/tools/test_image_tools.py).
 .PHONY: check/image_tools

@@ -499,6 +499,7 @@ const char s15_settings_this_start[] = "Not saved: this start only";
 const char s15_settings_failed[] = "Not saved: flash write failed";
 const char s15_settings_unusable[] = "Not saved: slot can't keep settings";
 const char s15_reset_settings_failed[] = "Settings not cleared: flash write failed";
+const char s15_reset_logo_failed[] = "Boot logo not removed: flash write failed";
 
 void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects)
 {

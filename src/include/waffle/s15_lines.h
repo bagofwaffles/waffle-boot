@@ -285,6 +285,7 @@ extern const char s15_settings_this_start[];
 extern const char s15_settings_failed[];
 extern const char s15_settings_unusable[];
 extern const char s15_reset_settings_failed[];	/* S15_ST_WARN: the clear of S-02.105 */
+extern const char s15_reset_logo_failed[];	/* S15_ST_WARN: the boot logo's removal */
 /* S-15.192: Device Info 2's Files value for a way of enum s15_files. */
 void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects);
 extern const char s15_os_reinstall[];         /* exact text, S-15.161 */

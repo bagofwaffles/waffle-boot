@@ -1,4 +1,4 @@
-Reference for recovery in front version 22: every write, refusal and result. Step-by-step guides are in
+Reference for recovery in front version 23: every write, refusal and result. Step-by-step guides are in
 [How to Recover](How-to-Recover); the safety rules are in [The Front](The-Front#the-failsafes). This page is
 also the reference for the recovery round on a unit that a changed front needs before it is committed to a
 slot ([The Front](The-Front#changing-it)).
@@ -11,7 +11,8 @@ slot ([The Front](The-Front#changing-it)).
 | By itself | The rest of the image fails its check |
 | By itself | Three starts in a row ended before the boot menu or the OS (S-02.095). The next start is normal |
 
-On every way in, `Loading recovery menu...` shows under the logo until the menu draws.
+On every way in, `Loading recovery menu...` shows under the logo (a stored [Boot Logo](Boot-Logo), or the
+built-in one) until the menu draws.
 
 <img src="../docs/ui/recovery-loading.png" width="480" alt="Loading recovery menu... under the logo">
 
@@ -36,7 +37,7 @@ Some failures leave a unit that only an external SPI flash programmer brings bac
 
 It shows each slot's bootloader type and state (`checked`, `check failed`, `tried`, `tried, started`),
 which slot runs (`running`) and which the selector names (`boot slot`), and what a write would replace. The status bar shows `USB` and the image and front
-versions (`v1.0.10 F22`). No key acts until every key has been released once; an unreadable key counts as
+versions (`v1.0.10 F23`). No key acts until every key has been released once; an unreadable key counts as
 not pressed.
 
 ### Bootloader type
@@ -145,7 +146,9 @@ before sending.
 - The tool and the unit take an image of at most `0x76000` bytes, which leaves the slot its settings sector
   and its start log (S-02.104); a front before version 17 takes up to `0x77000`. Every recovery write of an
   image erases the slot's settings sector after its start log, so the new image starts with its settings at
-  their defaults (S-02.103). `try`, `switch`, `keep`, `select` and `put-back` erase neither.
+  their defaults (S-02.103), and from front 23 on, between them, the boot logo's header sector where the image
+  leaves it free, so the new image starts on the built-in logo. `try`, `switch`, `keep`, `select` and
+  `put-back` erase none of them.
 - The file must be a stream the boot ROM can start (S-02.091), with a waffle-boot front whose pin is its
   own and matches the unit's (else `--new-front`). The tool compares the read-back with the file afterwards.
 

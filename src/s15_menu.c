@@ -4,6 +4,8 @@
  */
 #include "waffle/s15_menu.h"
 
+#include <string.h>
+
 #include "waffle/bytes.h"
 
 #define DLC "/yaffs2/content/dlc"
@@ -227,6 +229,7 @@ static void set_option(struct s15_menu *m, bool on)
 }
 
 static void draw_settings(struct s15_menu *m);
+static void logo_item(struct s15_menu *m);
 
 /* The option's screen: what it allows, its item, the way back; the item
  * held in place, its hold's row to follow. */
@@ -350,6 +353,221 @@ static void option_item(struct s15_menu *m)
 		sline(m, S15_ST_ITEM_ON, s15_option_item_on);
 	else
 		sline(m, S15_ST_ITEM, s15_option_item_off);
+}
+
+/* ---- the boot logo (waffle/logo.h) ---------------------------------- */
+
+/* SPEC-Q: the Boot logo item, its screens and keys have no label yet. */
+
+/* n bytes in KiB, one decimal, rounded down. */
+static void kib(struct s15_buf *b, uint32_t n)
+{
+	s15_buf_dec(b, n / 1024u);
+	s15_buf_str(b, ".");
+	s15_buf_dec(b, n % 1024u * 10u / 1024u);
+	s15_buf_str(b, " KiB");
+}
+
+/* System's item 6, its state read again as System is drawn. */
+static void logo_item(struct s15_menu *m)
+{
+	static const char *const hint[] = { "Built-in", "Custom", "No room", "Unavailable" };
+	struct s15_buf b;
+
+	if (m->env->logo_state == NULL)
+		return;
+	m->env->logo_state(m->env->ctx, &m->logo);
+	if (m->logo.state > S15_LOGO_UNAVAILABLE)
+		m->logo.state = S15_LOGO_UNAVAILABLE;
+	s15_buf_init(&b);
+	s15_buf_str(&b, "6 Boot logo\t");
+	s15_buf_str(&b, hint[m->logo.state]);
+	sline(m, S15_ST_ITEM, b.s);
+}
+
+/* The disk's screen: what to drop, the room, and the removal while one is
+ * stored, held in place (its hold's row to follow). */
+static void draw_logo(struct s15_menu *m, bool armed)
+{
+	struct s15_buf b;
+
+	enter(m, S15_SCR_LOGO, "Boot Logo");
+	blank(m);
+	sline(m, S15_ST_HEAD, "Drop one PNG on the disk, then eject");
+	s15_buf_init(&b);
+	s15_buf_str(&b, "Up to 480 x 222. ");
+	kib(&b, m->logo.room);
+	s15_buf_str(&b, " free");
+	sline(m, S15_ST_DIM, b.s);
+	blank(m);
+	if (armed) {
+		held_item(m, 5u, "Remove");
+		blank(m);
+	} else if (m->logo.state == S15_LOGO_CUSTOM) {
+		sline(m, S15_ST_ITEM, "5 Remove\tBack to built-in");
+		sline(m, S15_ST_DIM, s15_hold_line);
+		blank(m);
+	}
+	sline(m, S15_ST_BACK, "8 Back to System");
+}
+
+/* System's 6: a blank disk offered, its screen. */
+static void open_logo(struct s15_menu *m)
+{
+	m->logo_due = false;
+	m->pic.px = NULL;
+	m->env->logo_disk(m->env->ctx);
+	m->usb = S15_USB_DISK;
+	m->changes++;
+	draw_logo(m, false);
+}
+
+/* A picture to approve: the screen as the front will draw it (s15_menu_render()),
+ * its lines logged. */
+static void draw_logo_view(struct s15_menu *m)
+{
+	struct s15_buf b;
+
+	enter(m, S15_SCR_LOGO_VIEW, "Boot Logo");
+	m->changes++;
+	s15_buf_init(&b);
+	kib(&b, m->pic.size);
+	s15_buf_str(&b, " of ");
+	kib(&b, m->pic.room);
+	sline(m, S15_ST_TEXT, b.s);
+	sline(m, S15_ST_KEYS, "Hold `1` to save, `8` to cancel");
+}
+
+/* The released disk read: the picture to approve, or why not and the
+ * disk's screen again. */
+static void logo_read(struct s15_menu *m)
+{
+	struct s15_buf b;
+
+	sline(m, S15_ST_DIM, "Reading...");
+	memset(&m->pic, 0, sizeof m->pic);
+	m->env->logo_load(m->env->ctx, &m->pic);
+	if (m->pic.result == S15_LOGO_READY && m->pic.px != NULL) {
+		draw_logo_view(m);
+		return;
+	}
+	m->pic.px = NULL;
+	draw_logo(m, false);
+	s15_buf_init(&b);
+	switch (m->pic.result) {
+	case S15_LOGO_NONE:
+		s15_buf_str(&b, "No PNG file on the disk");
+		break;
+	case S15_LOGO_MANY:
+		s15_buf_str(&b, "More than one file: drop one");
+		break;
+	case S15_LOGO_BIG:
+		s15_buf_str(&b, "Too big: ");
+		kib(&b, m->pic.size);
+		s15_buf_str(&b, ", ");
+		kib(&b, m->pic.room);
+		s15_buf_str(&b, " free");
+		break;
+	case S15_LOGO_REFUSED:
+	default:
+		s15_buf_str(&b, "Not taken: ");
+		s15_buf_str(&b, m->pic.why != NULL ? m->pic.why : "unreadable");
+		break;
+	}
+	sline(m, S15_ST_ERROR, b.s);
+}
+
+/* A save's or a removal's result, left with 8 alone; the disk withdrawn. */
+static void logo_done(struct s15_menu *m, enum s15_store_save r, bool saved)
+{
+	usb(m, S15_USB_MAIN);
+	m->pic.px = NULL;
+	enter(m, S15_SCR_LOGO_DONE, "Boot Logo");
+	blank(m);
+	if (r == S15_STORE_SAVED)
+		sline(m, S15_ST_OK, saved ? "Saved: shown from the next start" :
+					     "Removed: built-in from the next start");
+	else if (r == S15_STORE_UNUSABLE)
+		sline(m, S15_ST_ERROR, "Not saved: slot can't keep it now");
+	else
+		sline(m, S15_ST_ERROR, "Not saved: flash write failed");
+	blank(m);
+	sline(m, S15_ST_BACK, "8 Back to System");
+}
+
+static void logo_key(struct s15_menu *m, unsigned key)
+{
+	const unsigned d = s15_digit(m->dev, key);
+
+	if (d == 8u) {
+		m->logo_due = false;
+		usb(m, S15_USB_MAIN);
+		open_system(m);
+	} else if (d == 5u && m->logo.state == S15_LOGO_CUSTOM && !knob_click(m, key) &&
+		   !m->host_event) {
+		draw_logo(m, true);
+		hold_begin(m, S15_ARM_LOGO_REMOVE, key);
+	}
+}
+
+/* Only a key on the unit saves: never a host's, never a knob click. */
+static void logo_view_key(struct s15_menu *m, unsigned key)
+{
+	const unsigned d = s15_digit(m->dev, key);
+
+	if (d == 8u) {
+		open_logo(m);
+	} else if (d == 1u && !knob_click(m, key) && !m->host_event) {
+		hold_begin(m, S15_ARM_LOGO_SAVE, key);
+		m->changes++;
+	}
+}
+
+/* The view's line over its picture's bottom rows: the sizes and keys, or
+ * the hold's time left. */
+static void render_logo_view(const struct s15_menu *m, const struct s15_geometry *g,
+			     const struct s15_draw_ops *d)
+{
+	const unsigned y = g->status_y;
+	struct s15_buf b;
+	unsigned x;
+
+	for (unsigned r = 0; r < S15_HANDOVER_ROWS; r++) {
+		const uint16_t *col = m->pic.px + (size_t)r * S15_HANDOVER_VISIBLE;
+		const uint16_t sx = (uint16_t)(S15_HANDOVER_ROWS - 1u - r);
+
+		for (unsigned c = 0; c < S15_HANDOVER_VISIBLE;) {
+			unsigned n = 1;
+
+			while (c + n < S15_HANDOVER_VISIBLE && col[c + n] == col[c])
+				n++;
+			d->fill(d->ctx, sx, (uint16_t)c, 1, (uint16_t)n, col[c]);
+			c += n;
+		}
+	}
+	d->fill(d->ctx, 0, (uint16_t)y, g->width, (uint16_t)(g->height - y), S15_BLACK);
+	s15_buf_init(&b);
+	if (m->armed == S15_ARM_LOGO_SAVE) {
+		s15_buf_str(&b, "Saving in ");
+		s15_buf_dec(&b, m->arm_left);
+		s15_buf_str(&b, " s: release to cancel");
+	} else {
+		kib(&b, m->pic.size);
+		s15_buf_str(&b, " of ");
+		kib(&b, m->pic.room);
+		s15_buf_str(&b, "   Hold 1: save   8: cancel");
+	}
+	x = (g->width - (unsigned)b.n * g->glyph_w) / 2u;
+	d->text(d->ctx, (uint16_t)x, (uint16_t)s15_status_text_y(g), b.s, b.n, S15_TEXT, S15_BLACK);
+}
+
+static void logo_tick(struct s15_menu *m, uint32_t now_ms)
+{
+	if (m->logo_due && m->screen == S15_SCR_LOGO && m->armed == S15_ARM_NONE &&
+	    (int32_t)(now_ms - m->logo_due_ms) >= 0) {
+		m->logo_due = false;
+		logo_read(m);
+	}
 }
 
 /* S-15.170 */
@@ -485,6 +703,12 @@ static void clear_settings(struct s15_menu *m)
 	default:
 		break;
 	}
+	/* SPEC-Q: the reset removes a stored boot logo too, its header erased
+	 * under the logo's own rule and range check; a failure is said as the
+	 * settings' is and stops nothing. */
+	if (m->env->logo_remove != NULL &&
+	    m->env->logo_remove(m->env->ctx) == S15_STORE_FAILED)
+		sline(m, S15_ST_WARN, s15_reset_logo_failed);
 }
 
 /* S-15.052: what the reset removes, device.reset_removes (S-18.030): the
@@ -814,6 +1038,22 @@ static void open_info2(struct s15_menu *m)
 		s15_first_stage_text(&v, b->first_stage_n, b->first_stage_c);
 		info_row(m, "First stage", v.s, NULL, NULL);
 	}
+	if (m->env->logo_state != NULL) {		/* SPEC-Q: the boot logo's room */
+		m->env->logo_state(m->env->ctx, &m->logo);
+		s15_buf_init(&v);
+		if (m->logo.state == S15_LOGO_NO_ROOM) {
+			s15_buf_str(&v, "No room");
+		} else {
+			s15_buf_str(&v, m->logo.state == S15_LOGO_CUSTOM ? "Custom, " : "Built-in, ");
+			if (m->logo.state == S15_LOGO_CUSTOM) {
+				s15_buf_dec(&v, m->logo.stored);
+				s15_buf_str(&v, " of ");
+			}
+			s15_buf_dec(&v, m->logo.room);
+			s15_buf_str(&v, m->logo.state == S15_LOGO_CUSTOM ? " bytes" : " bytes free");
+		}
+		info_row(m, "Boot logo", v.s, NULL, NULL);
+	}
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Device Info");
 }
@@ -830,6 +1070,7 @@ static void draw_system(struct s15_menu *m, bool armed)
 	if (m->packs_item)
 		sline(m, S15_ST_ITEM, "3 Remove content packs");
 	sline(m, S15_ST_ITEM, "5 Format drive\tErases all: reinstall after");
+	logo_item(m);
 	if (armed) {
 		held_item(m, 7u, "Factory reset");
 	} else {
@@ -891,6 +1132,10 @@ static void system_key(struct s15_menu *m, unsigned key)
 		break;
 	case 5:
 		open_format(m);
+		break;
+	case 6:
+		if (m->env->logo_state != NULL && m->logo.state <= S15_LOGO_CUSTOM)
+			open_logo(m);
 		break;
 	case 7:
 		/* SPEC-Q: never from a host, the factory reset */
@@ -1508,12 +1753,20 @@ static void upgrade_key(struct s15_menu *m, unsigned key)
 void s15_up_acquired(struct s15_menu *m)
 {
 	m->scan_due_set = false;                    /* not released now */
+	m->logo_due = false;
 }
 
-/* S-15.105: 2 s after the release, not before 5 s of uptime. */
+/* S-15.105: 2 s after the release, not before 5 s of uptime. The boot
+ * logo's disk is read 2 s after its release, as well. */
 void s15_up_released(struct s15_menu *m, uint32_t now_ms)
 {
 	uint32_t due = now_ms + 2000u;
+
+	if (m->screen == S15_SCR_LOGO) {
+		m->logo_due = true;
+		m->logo_due_ms = due;
+		return;
+	}
 
 	if (!can_scan(m))
 		return;
@@ -1525,6 +1778,7 @@ void s15_up_released(struct s15_menu *m, uint32_t now_ms)
 
 void s15_up_tick(struct s15_menu *m, uint32_t now_ms)
 {
+	logo_tick(m, now_ms);
 	if (m->scan_due_set && can_scan(m) &&
 	    (int32_t)(now_ms - m->scan_due_ms) >= 0)
 		start_scan(m);
@@ -1899,6 +2153,12 @@ static void hold_cancel(struct s15_menu *m)
 	case S15_ARM_APPROVE:
 		draw_approve(m, false);
 		break;
+	case S15_ARM_LOGO_SAVE:
+		m->changes++;		/* the view's line, as it was */
+		break;
+	case S15_ARM_LOGO_REMOVE:
+		draw_logo(m, false);
+		break;
 	case S15_ARM_NONE:
 	default:
 		break;
@@ -1930,6 +2190,12 @@ static void hold_run(struct s15_menu *m)
 		break;
 	case S15_ARM_APPROVE:
 		approve_end(m, S15_APPROVE_ALLOWED);
+		break;
+	case S15_ARM_LOGO_SAVE:
+		logo_done(m, m->env->logo_save(m->env->ctx), true);
+		break;
+	case S15_ARM_LOGO_REMOVE:
+		logo_done(m, m->env->logo_remove(m->env->ctx), false);
 		break;
 	case S15_ARM_NONE:
 	default:
@@ -2000,6 +2266,16 @@ static void key_down(struct s15_menu *m, unsigned key)
 		upgrade_key(m, key);
 		break;
 	case S15_SCR_RESULT:
+		if (s15_digit(m->dev, key) == 8u)
+			open_system(m);
+		break;
+	case S15_SCR_LOGO:
+		logo_key(m, key);
+		break;
+	case S15_SCR_LOGO_VIEW:
+		logo_view_key(m, key);
+		break;
+	case S15_SCR_LOGO_DONE:
 		if (s15_digit(m->dev, key) == 8u)
 			open_system(m);
 		break;
@@ -2202,6 +2478,10 @@ void s15_menu_render(struct s15_menu *m, const struct s15_geometry *g,
 	s15_menu_frame(m, &f);
 	if (m->keytest) {
 		s15_render_keytest(&m->kt, g, d, &f);
+		return;
+	}
+	if (m->screen == S15_SCR_LOGO_VIEW && m->pic.px != NULL) {
+		render_logo_view(m, g, d);
 		return;
 	}
 	if (m->black_once) {

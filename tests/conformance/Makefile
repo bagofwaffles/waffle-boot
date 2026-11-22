@@ -86,7 +86,8 @@ H_s13c_SRCS := src/s13c_panel.c src/div64.c src/display_draw.c src/display_font.
 H_s13cf_SRCS := src/front/fr_start.c src/front/fr_recovery.c src/front/fr_recscreen.c \
 	src/front/fr_recui.c src/front/fr_panel.c src/front/fr_draw.c src/front/fr_font.c \
 	src/front/fr_psoc.c src/front/fr_proto.c src/front/fr_slots.c src/front/fr_image.c \
-	src/front/fr_startlog.c src/front/fr_util.c src/front/fr_device.c src/s06_frame.c src/s06_rx.c
+	src/front/fr_startlog.c src/front/fr_util.c src/front/fr_device.c src/front/fr_logo.c \
+	src/s06_frame.c src/s06_rx.c
 H_s13cf_CPPFLAGS := -Isrc
 H_s14_SRCS := src/s14_line.c src/s14_log.c src/s14_export.c
 H_s11_SRCS := $(sort $(wildcard src/s11_*.c)) src/s17_revisions.c src/wire_crc.c src/s01_memmap.c src/s05_handoff.c \

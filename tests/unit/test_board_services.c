@@ -14,6 +14,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "ff.h"
+#include "waffle/logo.h"
 #include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
@@ -2710,6 +2711,41 @@ static void test_menu_env(void)
 		wire_n = 0;
 		CHECK(e.settings_clear(e.ctx) == S15_STORE_SAVED && flash_mem[0xFE000u] == 0xFFu);
 		CHECK(wire_has("cleared") && m.sv.files.err == 0u);
+		/* the boot logo the factory reset removes with them (SPEC-Q): a
+		 * stored one, its header erased, none read after, so the next
+		 * start draws the front's own; nothing else of the slot written */
+		{
+			static const uint8_t data[8] = { 0x00, 0x00, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x01 };
+			struct wb_logo l, got;
+			struct s15_logo st_logo;
+			static uint8_t buf[WB_LOGO_DATA_MAX];
+
+			memset(&l, 0, sizeof l);
+			l.width = 1;
+			l.height = 1;
+			l.bits = 1;
+			l.colors = 2;
+			l.len = sizeof data;
+			l.crc = wire_crc32(0u, data, sizeof data);
+			l.image = m.store_slot.rec.crc32;
+			wb_logo_header(&l, flash_mem + 0xFD000u);
+			memcpy(flash_mem + 0xFD000u - sizeof data, data, sizeof data);
+			CHECK(wb_logo_read(&m.flash, 1u, &got, buf));
+			e.logo_state(e.ctx, &st_logo);
+			CHECK(st_logo.state == S15_LOGO_CUSTOM && st_logo.stored == sizeof data);
+			CHECK(e.logo_remove(e.ctx) == S15_STORE_SAVED);
+			s15_menu_release(&m.sv.menu);
+			for (uint32_t i = 0; i < 0x1000u; i++)
+				if (flash_mem[0xFD000u + i] != 0xFFu) {
+					CHECK(0);
+					break;
+				}
+			CHECK(memcmp(flash_mem + 0xFD000u - sizeof data, data, sizeof data) == 0);
+			CHECK(!wb_logo_read(&m.flash, 1u, &got, buf));
+			e.logo_state(e.ctx, &st_logo);
+			CHECK(st_logo.state == S15_LOGO_BUILTIN);
+			CHECK(flash_mem[0x75000u] == 0xFFu);	/* slot 0's header untouched */
+		}
 		/* a running slot not established: refused, logged */
 		m.store_slot.established = false;
 		wire_n = 0;
