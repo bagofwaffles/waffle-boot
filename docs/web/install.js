@@ -358,6 +358,7 @@ export function describeInstall(s, hello = null, tests = null) {
         if (d.image && d.image.breadcrumb)
             L.push(IW.BREADCRUMB);
         A.push(`Hold ${key} on the unit for 5 s to keep the new bootloader.`);
+        A.push(IW.RETRIAL);
         break;
     case IW.COMMITTING:
         L.push('Writing: keeping the new bootloader.');

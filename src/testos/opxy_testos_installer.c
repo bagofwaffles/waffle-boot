@@ -286,19 +286,6 @@ static enum inst_phase settle(const struct opxy_installer_ctx *c)
 	return in.st.trial == INST_TRIAL_NONE ? INST_READY : INST_TRIAL_FAILED;
 }
 
-/* The digits each phase lets a hold start: 8 only while an OS waits to be
- * made active, since leaving otherwise changes nothing. */
-static uint16_t holds_for(enum inst_phase p, bool os_ok)
-{
-	const uint16_t back = os_ok ? 1u << 8 : 0u;
-
-	if (p == INST_READY || p == INST_COMMIT_READY || p == INST_FAILED || p == INST_TRIAL_FAILED)
-		return (uint16_t)(1u << 1 | back);
-	if (p == INST_LOCKED || p == INST_DONE || p == INST_SURVEYED)
-		return back;
-	return 0;
-}
-
 static bool os_ok(const struct opxy_installer_ctx *c)
 {
 	return c->sw->result == TCHK_SW_READY;
@@ -342,8 +329,8 @@ static void enter(const struct opxy_installer_ctx *c, enum inst_phase p, uint32_
 {
 	in.st.phase = (uint8_t)p;
 	in.st.os = (uint8_t)inst_os_state(c->sw);
-	in.st.next_digit = (holds_for(p, os_ok(c)) & 1u << 1) != 0u ? 1u : 0u;
-	inst_hold_offer(&in.hold, holds_for(p, os_ok(c)));
+	in.st.next_digit = (inst_holds_for(p, os_ok(c)) & 1u << 1) != 0u ? 1u : 0u;
+	inst_hold_offer(&in.hold, inst_holds_for(p, os_ok(c)));
 	c->report(c->m);
 	draw(c, now);
 }
@@ -382,21 +369,26 @@ static enum inst_phase act(const struct opxy_installer_ctx *c, unsigned digit)
 {
 	const enum inst_phase p = (enum inst_phase)in.st.phase;
 
-	if (digit == 8u) {
+	switch (inst_act_of(p, digit)) {
+	case INST_ACT_LEAVE:
 		leave(c);
 		if (p == INST_SURVEYED) {
 			in.survey.os = (uint8_t)inst_os_state(c->sw);
 			return INST_SURVEYED;
 		}
 		return p == INST_DONE ? INST_DONE : INST_LEFT;
-	}
-	if (p == INST_READY || p == INST_TRIAL_FAILED)
+	case INST_ACT_TRIAL:
+		/* the first trial, or the same trial again over a slot this image
+		 * holds: the engine's checks and gate either way */
 		return write_form(c, OPXY_INSTALL_TRIAL);
-	if (p == INST_COMMIT_READY)
+	case INST_ACT_COMMIT:
 		return write_form(c, OPXY_INSTALL_COMMIT);
-	if (p == INST_FAILED)
+	case INST_ACT_RETRY:
 		return write_form(c, in.last_form);
-	return p;
+	case INST_ACT_NONE:
+	default:
+		return p;
+	}
 }
 
 bool opxy_installer_trial_back(struct opxy_master *m)

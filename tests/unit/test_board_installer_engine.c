@@ -425,6 +425,57 @@ static void test_trial_and_commit(void)
 	CHECK(only_allowed_changed(1u));
 }
 
+/*
+ * The commit screen's 2 (inst_act_of()): the same trial written again over a
+ * trial that reached the boot menu, by the same form and checks as the
+ * first. A first trial start spent on recovery leaves the entry started
+ * without the boot menu's mark; a second, on the boot menu, then lets the
+ * commit go. The selected slot, the way back, is never written, on the
+ * OP-XY and on the OP-1F, where the unit's own bootloader stays in it.
+ */
+static void test_second_trial(void)
+{
+	uint8_t out[OPXY_INSTALL_REPLY];
+
+	for (unsigned d = 0; d < 2u; d++) {
+		setup(0u, true);
+		m.dev = d == 0u ? NULL : &wb_device_op1f;
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+		CHECK(out[0] == S02_OK && out[6] == 1u);
+		/* the first trial start reaches the boot menu: the commit is offered */
+		mem[S02_SELECTOR_OFF] = 0x00u;
+		mem[S02_SELECTOR_OFF + 1u] = 0x01u;
+		trial_start(1u);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_STATUS, true, out);
+		CHECK(inst_trial_of(out[5]) == INST_TRIAL_REACHED);
+		/* the trial again instead: slot 1 alone, a trial pending again */
+		memcpy(before, mem, sizeof mem);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+		CHECK(out[0] == S02_OK && out[6] == 1u && out[7] == 0u);
+		CHECK(out[2] == 0xFFu && out[3] == 0xFFu);
+		CHECK(out[5] == (OPXY_INSTALL_SLOT_TRIAL | OPXY_INSTALL_SLOT_PENDING));
+		CHECK(inst_trial_of(out[5]) == INST_TRIAL_WAITING);
+		CHECK(log_pending(1u) && only_allowed_changed(1u));
+		CHECK(memcmp(mem + s02_slot_base(0), before + s02_slot_base(0), S02_SLOT_CAPACITY) == 0);
+		CHECK(memcmp(mem + s02_record_off(0), before + s02_record_off(0), S02_SECTOR_SIZE) == 0);
+		/* that start goes to recovery: the front's mark, no boot menu */
+		mem[S02_SELECTOR_OFF] = 0x00u;
+		mem[S02_SELECTOR_OFF + 1u] = 0x01u;
+		front_trial_start(1u);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
+		CHECK(out[0] == OPXY_INSTALL_REFUSED_UNREACHED);
+		/* once more, and that start reaches the boot menu: kept */
+		(void)opxy_installer_write(&m, OPXY_INSTALL_TRIAL, true, out);
+		CHECK(out[0] == S02_OK && log_pending(1u));
+		mem[S02_SELECTOR_OFF] = 0x00u;
+		mem[S02_SELECTOR_OFF + 1u] = 0x01u;
+		trial_start(1u);
+		(void)opxy_installer_write(&m, OPXY_INSTALL_COMMIT, true, out);
+		CHECK(out[0] == S02_OK && out[2] == 1u && out[3] == 0x00u);
+		CHECK((out[5] & OPXY_INSTALL_SLOT_COMMITTED) != 0u);
+	}
+}
+
 /* Commit with each trial entry: refused, writing nothing, unless started and
  * the boot menu's mark after it. */
 static void test_commit_needs_start(void)
@@ -1558,6 +1609,7 @@ int main(void)
 	RUN(test_image);
 	RUN(test_gate);
 	RUN(test_trial_and_commit);
+	RUN(test_second_trial);
 	RUN(test_trial_slot0);
 	RUN(test_commit_needs_start);
 	RUN(test_trial_same_image);

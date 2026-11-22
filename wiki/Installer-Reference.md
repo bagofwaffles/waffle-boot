@@ -50,6 +50,11 @@ key).
 - **The commit:** only after both marks: the record with the right CRC, read back with the slot's bytes,
   then the selector `{slot, 0x00}`.
   Then the active byte of the two boot partitions' headers, your OS's first.
+- **The trial again:** the commit screen offers it too, on 2 held for 5 s. It is the trial above, written
+  the same way with the same checks over the same slot, never the slot the selector names (on the OP-1F
+  never the last slot of the unit's own bootloader). So one trial start can go to the recovery menu (Power
+  + M4; on the OP-1F Power and the recovery key) and another to the boot menu before you keep it. The
+  commit still needs a trial start that reached the boot menu.
 - **Never:** the first stage, the metadata, or the slot the selector names.
 
 A breadcrumb build (`BOOT_CRUMBS=1`) runs only as a trial: the commit is refused, and `check.txt` lists its
@@ -167,7 +172,7 @@ While it writes, and in some long checks, the installer does not service the por
 | `0x44` SURVEY | none | a survey build, once its checks end: 76 bytes, `src/include/waffle/board/installer.h` lists them; any other build answers `FF` |
 
 - **Phase:** 0 starting, 1 checking, 2 the key check, 3 locked, 4 ready (the trial offered), 5 writing the
-  trial, 6 the trial written, 7 the commit offered, 8 committing, 9 done, 10 a write failed, 11 the trial
+  trial, 6 the trial written, 7 the commit offered (hold 1, or 2 for the trial again), 8 committing, 9 done, 10 a write failed, 11 the trial
   failed, 12 left without installing, 13 the survey's end.
 - **Flags:** bit 0 the checks done, bit 1 the install offered, bit 2 the carried image passed its check, bit 3
   a breadcrumb build, bit 4 a survey build.

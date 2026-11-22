@@ -266,6 +266,38 @@ unsigned inst_hold_fill(const struct inst_hold *h, uint32_t now_ms)
 	return held >= S15_HOLD_MS ? 1000u : (unsigned)(held * 1000u / S15_HOLD_MS);
 }
 
+/* --- what a completed hold starts --- */
+
+uint16_t inst_holds_for(enum inst_phase p, bool os_ok)
+{
+	const uint16_t back = os_ok ? 1u << INST_DIGIT_LEAVE : 0u;
+
+	if (p == INST_COMMIT_READY)
+		return (uint16_t)(1u << INST_DIGIT_WRITE | 1u << INST_DIGIT_RETRIAL | back);
+	if (p == INST_READY || p == INST_FAILED || p == INST_TRIAL_FAILED)
+		return (uint16_t)(1u << INST_DIGIT_WRITE | back);
+	if (p == INST_LOCKED || p == INST_DONE || p == INST_SURVEYED)
+		return back;
+	return 0;
+}
+
+enum inst_act inst_act_of(enum inst_phase p, unsigned digit)
+{
+	if (digit == INST_DIGIT_LEAVE)
+		return INST_ACT_LEAVE;
+	if (digit == INST_DIGIT_WRITE) {
+		if (p == INST_READY || p == INST_TRIAL_FAILED)
+			return INST_ACT_TRIAL;
+		if (p == INST_COMMIT_READY)
+			return INST_ACT_COMMIT;
+		if (p == INST_FAILED)
+			return INST_ACT_RETRY;
+	}
+	if (digit == INST_DIGIT_RETRIAL && p == INST_COMMIT_READY)
+		return INST_ACT_TRIAL;
+	return INST_ACT_NONE;
+}
+
 /* --- the carried image --- */
 
 static bool meets(uint32_t a, uint32_t n, uint32_t lo, uint32_t hi)
@@ -872,6 +904,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "as the unit's bootloader.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Keep the new bootloader");
+		item(&o, s, 2u, "Write the trial again");
 		if (os_ok)
 			item(&o, s, 8u, "Leave, keep the old one");
 		hold_line(&o, s);

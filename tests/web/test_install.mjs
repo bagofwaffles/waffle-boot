@@ -122,7 +122,8 @@ test('describeInstall: the words for the state above', () => {
     assert.deepEqual(d.slots[1].words, ['holds this image for a trial', 'trial started',
         'trial reached the boot menu']);
     assert.deepEqual(d.lines, ['The trial start reached the boot menu.', 'Holding 1: 64 %.']);
-    assert.deepEqual(d.advice, ['Hold 1 on the unit for 5 s to keep the new bootloader.', inst.LEAVE]);
+    assert.deepEqual(d.advice, ['Hold 1 on the unit for 5 s to keep the new bootloader.', inst.RETRIAL,
+        inst.LEAVE]);
     assert.equal(inst.describeInstall({ ...s, os: 6 }).leave, false, 'leave only while the OS can be made active');
     assert.equal(d.checks[18].stateText, 'FAIL');
     // each lock reason and failure code has words, and unknown ones are named

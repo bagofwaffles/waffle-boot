@@ -46,7 +46,7 @@ enum inst_phase {
 	INST_READY,		/* the trial offered (hold 1) */
 	INST_WRITING_TRIAL,
 	INST_TRIAL_WRITTEN,	/* switch off and on for the trial start */
-	INST_COMMIT_READY,	/* the trial reached the boot menu (hold 1) */
+	INST_COMMIT_READY,	/* the trial reached the boot menu (hold 1, or 2 again) */
 	INST_COMMITTING,
 	INST_DONE,
 	INST_FAILED,		/* a write failed */
@@ -162,6 +162,29 @@ void inst_hold_key(struct inst_hold *h, unsigned key, unsigned digit, bool down,
 unsigned inst_hold_tick(struct inst_hold *h, uint32_t now_ms);
 /* The bar, 0 to 1000; 0 while no key is held. */
 unsigned inst_hold_fill(const struct inst_hold *h, uint32_t now_ms);
+
+/* --- What a completed hold starts --- */
+
+/*
+ * The digits a phase lets a hold start (bit d), and what each starts. In
+ * INST_COMMIT_READY 1 keeps the new bootloader and 2 writes the same trial
+ * again, so that one trial start can go to recovery (Power + the recovery
+ * key) and another to the boot menu before it is kept. 8 leaves while an
+ * OS waits to be made active (os_ok), since leaving otherwise changes
+ * nothing. Every write is the engine's, under its own checks.
+ */
+#define INST_DIGIT_WRITE   1u	/* the trial, the commit, or the failed write again */
+#define INST_DIGIT_RETRIAL 2u	/* INST_COMMIT_READY: the trial again */
+#define INST_DIGIT_LEAVE   8u
+enum inst_act {
+	INST_ACT_NONE,
+	INST_ACT_TRIAL,		/* the trial write */
+	INST_ACT_COMMIT,	/* the commit */
+	INST_ACT_RETRY,		/* the write that failed, again */
+	INST_ACT_LEAVE		/* an OS found made active, nothing else */
+};
+uint16_t inst_holds_for(enum inst_phase p, bool os_ok);
+enum inst_act inst_act_of(enum inst_phase p, unsigned digit);
 
 /* --- The carried image's check, before any write --- */
 

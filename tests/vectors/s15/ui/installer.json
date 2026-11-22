@@ -92,8 +92,20 @@
     "as the unit's bootloader.",
     "",
     "item:1 Keep the new bootloader",
+    "item:2 Write the trial again",
     "item:8 Leave, keep the old one",
     "dim:   Hold key to make selection"]},
+  {"name": "commit_ready_retrial_held", "phase": 7, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 2, "hold_digit": 2, "hold_fill": 400, "hold_left_s": 3,
+   "lines": [
+    "head:The trial reached the boot menu",
+    "kv:Keeps\tSlot 2",
+    "Keep waffle-boot v1.0.3",
+    "as the unit's bootloader.",
+    "",
+    "item:1 Keep the new bootloader",
+    "armed:2 Write the trial again\tHold `2` for 5 s",
+    "item:8 Leave, keep the old one",
+    "step-run:Release to cancel\t40%\t3 s"]},
   {"name": "commit_ready_no_os", "phase": 7, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 3, "trial": 2, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0,
    "lines": [
     "head:The trial reached the boot menu",
@@ -102,6 +114,7 @@
     "as the unit's bootloader.",
     "",
     "item:1 Keep the new bootloader",
+    "item:2 Write the trial again",
     "dim:   Hold key to make selection"]},
   {"name": "committing", "phase": 8, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 2, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0,
    "lines": [
