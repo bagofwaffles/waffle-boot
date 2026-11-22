@@ -411,7 +411,7 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 2:
-		/* never from a host: Protected writes */
+		/* SPEC-Q: never from a host, Protected writes */
 		if (!m->host_event)
 			option_key(m);      /* S-15.140 */
 		break;
@@ -892,7 +892,7 @@ static void system_key(struct s15_menu *m, unsigned key)
 		open_format(m);
 		break;
 	case 7:
-		/* never from a host: the factory reset */
+		/* SPEC-Q: never from a host, the factory reset */
 		if (m->host_event)
 			break;
 		draw_system(m, true);                 /* S-15.050 */

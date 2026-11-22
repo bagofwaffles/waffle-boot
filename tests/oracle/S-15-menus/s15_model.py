@@ -176,6 +176,23 @@ def settings_of_flags(f):
     return {k: bool(f >> i & 1) for i, (k, _) in enumerate(SETTINGS_KEYS)}
 
 
+# The Host link setting (Settings 7), on by default: payload byte 1's bit 0 set when it is off, and that
+# byte written only then (S-02.096's record takes any payload length from 1).
+SETTINGS_DEFAULTS['host_link'] = True
+
+
+def settings_payload(settings):
+    """The record's payload a writer writes for these settings."""
+    return bytes([settings_flags(settings)]) + (b'' if settings.get('host_link', True) else b'\x01')
+
+
+def settings_of_payload(p):
+    """The settings a record's payload gives: byte 0's flags, byte 1's bit 0 the host link off."""
+    out = settings_of_flags(p[0])
+    out['host_link'] = not (len(p) >= 2 and p[1] & 1)
+    return out
+
+
 # ---------- S-15.173 the color setting ----------
 def gray(c):
     """S-15.173: the RGB565 gray a color is drawn in while the color is off."""

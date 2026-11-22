@@ -77,7 +77,7 @@ static void from_stat(const struct s09_stat *s, struct hl_stat *st)
 
 /* ---- the installed OS's copies (root os) ---- */
 
-static uint8_t os_sector[S03_SECTOR];
+static _Alignas(32) uint8_t os_sector[S03_SECTOR];
 static int os_part = -1;
 static uint32_t os_at;
 
@@ -90,7 +90,7 @@ static int os_read(struct opxy_master *m, unsigned part, uint32_t n)
 	if ((int)part == os_part && n == os_at)
 		return HL_OK;
 	os_part = -1;
-	if (s09_files_slave_lost(&m->sv.files))
+	if (e == NULL || s09_files_slave_lost(&m->sv.files))
 		return HL_E_UNREACHABLE;
 	rc = e->select(e->ctx, part) == 0 && e->read(e->ctx, n, 1u, os_sector) == 0 ?
 	     HL_OK : HL_E_IO;
@@ -138,6 +138,8 @@ static int user_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
 	uint8_t *b = buf;
 
 	(void)ctx;
+	if (e == NULL)
+		return -1;
 	while (count > 0u) {
 		const uint32_t to = lba < S03_FAT_FIRST ? S03_FAT_FIRST : S03_FAT_SECTORS;
 		uint32_t k = to - lba < count ? to - lba : count;
@@ -601,8 +603,15 @@ static int run(void *ctx, uint8_t action, uint8_t arg, const struct hl_path *p)
 	switch (action) {
 	case HL_A_CONTINUE_OS:
 		return s15_menu_continue_check(&m->sv.menu) == S15_CONT_BUSY ? HL_E_BUSY : HL_OK;
-	case HL_A_OS_ONCE:
-		return m->sv.env.os_once == NULL ? HL_E_UNKNOWN : HL_OK;
+	case HL_A_OS_ONCE: {
+		/* S-15.194's check first: a start that cannot be taken is no job */
+		struct s15_os_file file;
+
+		if (m->sv.env.os_once == NULL || m->sv.env.os_once_check == NULL)
+			return HL_E_UNKNOWN;
+		return m->sv.env.os_once_check(m, &file) == S15_ONCE_STARTED ? HL_OK :
+		       HL_E_REFUSED;
+	}
 	default:
 		return HL_OK;
 	}

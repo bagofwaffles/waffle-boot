@@ -280,7 +280,8 @@ static int req(uint8_t call, const void *args, size_t n)
 
 	r[0] = call;
 	r[1] = 0x5A;
-	memcpy(r + 2, args, n);
+	if (n != 0u)
+		memcpy(r + 2, args, n);
 	out_n = hl_request(&H, r, n + 2u, out);
 	CHECK(out_n >= 3u && out[0] == call && out[1] == 0x5A);
 	return out[2];
