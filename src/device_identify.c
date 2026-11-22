@@ -79,6 +79,8 @@ struct wb_dev_decision wb_first_stage_identify_n(wb_flash_read_fn read, void *ct
 {
 	struct wb_dev_decision d = { WB_DEV_DEFAULT, WB_DEV_UNKNOWN };
 
+	*n = 0;			/* as with no try */
+	*c = 0;
 	for (unsigned t = 0; t < tries; t++) {
 		const int rc = fingerprint(read, ctx, n, c);
 
