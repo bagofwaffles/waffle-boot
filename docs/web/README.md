@@ -14,6 +14,10 @@ The wiki's [Recovery Reference](https://github.com/bagofwaffles/waffle-boot/wiki
 - `mtp.js`, `usb.js`: the Install tab's send of the installer file over MTP (below): `mtp.js` is a port
   of `tools/mtpcp.py`'s `put` and `verify`, with no DOM and no WebUSB; `usb.js` is its WebUSB transport
   and names each way of failing to open the unit.
+- `hostlink.js`: a client of the boot menu's host link ([Developer Host Link](https://github.com/bagofwaffles/waffle-boot/wiki/Developer-Host-Link)),
+  over Web Serial or Web MIDI, in one file with no dependencies, for any page to copy. The recovery page
+  does not use it. `tests/web/test_hostlink.mjs` holds its framing to `tools/testos_mon.py`'s and runs each
+  call against the host link's own C through `tests/web/hl_bridge.py`.
 - `sim.js`: a simulated unit in place of Web Serial or WebUSB, from localhost only (below).
 - `assets/`: the Bag of Waffles logo and background.
 - `release/`: the latest release's `waffle-install.ldr` and `waffle-boot.ldr`, and `latest.json` (the

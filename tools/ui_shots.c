@@ -509,6 +509,13 @@ int main(int argc, char **argv)
 	hold_for(0x07, 2000);	/* 2 of the 5 s */
 	bad |= shot(d, "option-held");
 
+	/* the host link's approval over the main screen, then 1 held 2 of the 5 s */
+	setup(); start();
+	(void)s15_menu_approve_open(&menu);
+	bad |= shot(d, "approve");
+	hold_for(0x06, 2000);
+	bad |= shot(d, "approve-held");
+
 	/* S-15.173: Settings with the color on, the one shot in color */
 	setup(); boot.settings.color = true; start();
 	press(0x07);

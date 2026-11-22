@@ -1,21 +1,222 @@
-With **developer mode** on, the boot menu answers requests from a computer on its USB serial port (S-10c.110,
-id `0x7D`), sent with `tools/testos_mon.py`. They are part of the standard image. With developer mode off,
-every request is refused and changes nothing. `ping`, `rd` and `wr` work as with the test OS's monitor
-([Test OS](Test-OS#the-usb-monitor)).
+The boot menu's **host link**: a small, versioned protocol that lets a computer or a web page read and write
+the unit's files, install a package and restart the unit, after one hold on the unit approves it. Any site
+or tool may use it; `docs/web/hostlink.js` (Web Serial or Web MIDI) and `tools/hostlink.py` are clients.
+The developer requests (memory, the second processor, hand-overs) are [below](#developer-requests).
+
+- **Host link** is a setting, on by default: Boot menu → **2 Settings → 7 Host link**. Off, the unit
+  answers only HELLO, saying it is off, and refuses every change asked for over USB.
+- **One hold approves a computer for the session.** The session ends at the next restart, when Host link
+  is turned off, or when the computer ends it. It does not end when USB is unplugged: the code cannot
+  tell that apart from the unit's own USB changes.
+- **Safe reads need no approval**; changes and the reads of files' contents need it.
+- **Never from a computer**, approved or not: the factory reset and Protected writes. Protected writes
+  applies to what a computer asks for exactly as at the unit.
+
+## The approval
+
+A computer asks with APPROVE. The unit shows, over the screen it was on (Main Menu, Settings, System,
+Device Info or the developer menu, with nothing under way):
+
+```
+Host Link
+  Allow this computer?
+  Files, installs, restarts. Until restart.
+
+  1 Allow                         Hold 1 for 5 s
+  8 Cancel
+```
+
+Only the unit's own keys answer it: **1 held for 5 s** allows, **8** refuses, and 60 s with no key is
+a timeout. A knob click starts no hold. The screen it covered comes back after the answer. The computer
+reads the answer with SESSION. Until then every call that needs approval answers status 2, so a page can
+say "hold 1 on your device".
+
+## Framing
+
+A request is one S-06 frame: route `0x21` (host to master), a sequence byte, the id **`0x7C`**, the
+payload's length, the payload and a CRC-8 over the four header bytes and the payload (reflected
+polynomial `0x4D`, each input byte XORed with `0xA5` first), the whole COBS-encoded and ended by a zero
+byte. Replies come on route `0x12`. Frames of other ids share the port (the log): skip them. The most
+payload is 249 bytes.
+
+On the USB serial port the frames are the port's bytes. On the USB MIDI port (with no serial port, as
+with developer mode off) each run of up to 245 frame bytes, the zero byte included, is one SysEx message:
+`F0 00 20 76 <device> 66`, the bytes packed seven to eight (a byte of bit 7s, then the seven bytes'
+low bits), `F7`. The device byte is `21` on the OP-XY and `02` on the OP-1 Field.
+
+The payload is **call:1 tag:1** and the call's arguments; the reply is **call:1 tag:1 status:1** and its
+data. The tag is the host's own: the reply carries it back. Numbers are little-endian. Paths are UTF-8,
+with no NUL, to the end of the request.
+
+## Versions
+
+HELLO always answers, with the protocol's version and the oldest client version the unit serves. A
+client whose version is outside that range stops there. A newer client finds out what this unit has from
+HELLO's lists of calls, actions and roots; a call it does not have answers status 5.
+
+## Calls
+
+| Call | Id | Request after call and tag | Reply data | Class |
+| --- | --- | --- | --- | --- |
+| HELLO | `00` | `version:1` (the client's) | below | safe |
+| SESSION | `01` | | `state:1` | safe |
+| APPROVE | `02` | | `state:1`: pending, or approved | safe |
+| END | `03` | | | safe |
+| INFO | `04` | | the 24 bytes below | safe |
+| SET | `05` | `setting:1 value:1` | | needs approval; setting 2 never |
+| JOB | `06` | `job:1` | a job record | safe |
+| STAT | `10` | `path` | `type:1 size:4 mtime:4` | safe on `/yaffs2`, else needs approval |
+| LIST | `11` | `index:2 path` | `next:2`, then entries `type:1 size:4 len:1 name` | safe on `/yaffs2`, else needs approval |
+| GET | `12` | `offset:4 length:1 path` | `offset:4`, up to 224 bytes; fewer: the end | needs approval |
+| HASH | `13` | `path` | `size:4 sha256:32` | needs approval |
+| PUT_OPEN | `14` | `size:4 sha256:32 path` | `have:4` | needs approval |
+| PUT_DATA | `15` | `offset:4`, up to 224 bytes | `have:4` | needs approval |
+| PUT_END | `16` | | | needs approval |
+| REMOVE | `17` | `path` (a file, or an empty directory) | | needs approval |
+| MKDIR | `18` | `path` | | needs approval |
+| RENAME | `19` | `from`, `00`, `to` (one root; no name in the way) | | needs approval |
+| RUN | `20` | `action:1`, its arguments | a job record | by its action |
+| EVENT | `7F` | (the unit's own) | `status 0`, a job record | |
+
+Never from a host: the actions `10` (factory reset) and `11` (Protected writes), and SET's setting 2
+(Protected writes), approved or not. The developer requests (id `0x7D`) need developer mode and the
+approval. One table in the code holds this (`hl_calls`, `hl_actions` and `hl_settings` in
+`src/hostlink.c`); a unit test holds every id there once.
+
+`type` is 1 a file, 2 a directory. LIST's `next` is the index to ask from next, `FFFF` once the
+directory has no more. SET's setting 7 value 0 turns Host link off for this start, as a computer's key
+on Settings would; it is not saved.
+
+**HELLO**'s reply: `57 42 48 4C` ("WBHL"), `version:1 oldest:1 on:1`; with Host link off, nothing more.
+On: `session:1 max_payload:1 chunk:1`, INFO's 24 bytes, `n:1` and the calls, `n:1` and the actions
+(not the never ones), `n:1` and the roots, each `id:1 flags:1 name 00` (flags: 1 read, 2 write, 4 list
+and stat open).
+
+**INFO**: the bootloader's version (4 × u16), the front's version (u16), the device (0 OP-XY, 1 OP-1 Field),
+the running slot (0 Slot 1, 1 Slot 2, `FF` not established), this start's reason (u16), flags (u16: 1
+Protected writes, 2 developer mode, 4 color, 8 MTP target macOS, 16 Start in boot menu, 32 Host link, 64
+the second processor answering, 128 the drive mounted), and the OS version in the metadata (4 × u16).
+
+**Session** states: 0 none, 1 pending, 2 approved, 3 refused, 4 timed out.
+
+## Status codes
+
+| Status | Meaning |
+| --- | --- |
+| 0 | ok |
+| 1 | Host link is off |
+| 2 | needs the session's approval: hold 1 on the unit |
+| 3 | never from a host |
+| 4 | malformed |
+| 5 | no such call, action or setting in this build |
+| 6 | the path is refused |
+| 7 | not found |
+| 8 | exists |
+| 9 | I/O error |
+| 10 | busy, or the approval screen cannot show now |
+| 11 | the whole file's SHA-256 is not the one declared |
+| 12 | not the offset the unit holds; the data is `have:4` |
+| 13 | the volume does not answer (the second processor is lost: restart) |
+| 14 | the root takes no write |
+| 15 | the unit's own checks refused it |
+
+## Files
+
+A path starts with a root. One function checks every path (`hl_path_parse()`): a root's name, then
+components of 1 to 255 bytes, none `.` or `..`, none empty, no trailing `/`, no byte below `0x20`, `0x7F`,
+`\` or `:`, at most 192 bytes in all. A rename stays in one root. No file call reaches the SPI flash,
+memory or a raw sector of the drive.
+
+| Root | What it is | Read | Write | List and stat | OP-XY | OP-1 Field |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/yaffs2` | the drive, as MTP offers it | approval | approval | open | through the second processor | on the one processor |
+| `/os` | the installed OS: `boot1` and `boot2`, each boot partition's header sector and the image it states (the header alone when it states none) | approval | never: the OS write action | approval | through the second processor | on the one processor |
+| `/user` | the OS's FAT volume on the eMMC's user area, read with FatFs | approval | none | approval | yes | not offered: the OP-1 Field has no FAT region |
+
+GET reads by offset, so a broken transfer goes on where it stopped. A put writes to `<path>.wbpart`,
+from PUT_OPEN's offset 0: each PUT_DATA's offset must be the unit's `have`, which every reply gives. A
+PUT_OPEN of the same path, size and SHA-256 while that put is open goes on from where it stands. PUT_END
+puts the file on the eMMC (not its cache), reads it back whole, and renames it into place only when its
+size and SHA-256 are those declared; otherwise the temporary file is removed and the old one stays.
+`lost+found` cannot be removed or renamed. Every change is on the eMMC before the reply.
+
+The OS FAT volume is a FAT volume only as far as FatFs reads one (FAT12, 16 or 32; this build has no
+exFAT). A write there would need FatFs's writes enabled on that volume, the eMMC flushed after each
+change, and a rule for a volume the OS keeps open; none of that is built.
+
+## Actions
+
+| Action | Id | Arguments | What runs |
+| --- | --- | --- | --- |
+| install | `01` | `parts:1 path` | the package on the drive, as the upgrade screen installs a file: its checks, the parts chosen, Protected writes as at the unit |
+| OS write | `02` | `path` | the developer menu's OS write, from that file: its checks, into the boot partition the OS is not in |
+| start once | `03` | | the developer menu's 3: restart once into `/yaffs2/os.ldr`, writing nothing |
+| restart | `04` | | the plain restart |
+| continue to OS | `05` | | Continue to the OS (as 7 on the main screen) |
+| restart into a mode | `06` | `mode:1` | as the firmware command's `EE`: 1 the upgrade screen's disk, 2 the serial port, 4 reason 50, else the upgrade screen over MIDI |
+| factory reset | `10` | | never |
+| Protected writes | `11` | | never |
+
+`parts` is one bit per part of the install's list: 1 content, 2 OS, 4 bootloader, 8 BLE, 16 BLE
+bootloader, 32 keyboard; `FF` every part the unit would offer. A part the list would not let the unit's
+keys pick (the bootloader with Protected writes off, a part that is up to date or switched off) is not
+run. A package whose signature does not match still asks on the unit first, as at the unit.
+
+One job runs at a time. RUN answers a job record at once (state queued); the job starts when the unit's
+loop comes round, and while it runs the unit sends an EVENT each time its record changes. Requests sent
+during a job are answered after it. JOB asks for the record at any time.
+
+**Job record**: `id:1 action:1 state:1 step:1 percent:1 error:1`, then a short text and `00`. States: 1
+queued, 2 running, 3 done, 4 failed. Percent `FF`: not known. Error: a status code. A restart's record is
+done with the text `restarting` just before the unit goes.
+
+## The older paths
+
+The firmware command's transfers (`0D 02`, `03`, `05`) on CDC and over MIDI, the MIDI firmware transfer,
+the restarts `0D 18`, `0D 19` and `0D EE`, factory unlock and set metadata all need Host link on and the
+approved session. Without it they are refused with `84` and a text (`host link off`, or `not allowed: hold
+1 on the unit`), or status `01` and the text in the TE form, and they change nothing; a refused one also
+puts the approval screen up, so a tool that tries again after the hold goes on. An install that comes
+that way still asks for its parts on the unit. The coprocessors' links are not asked.
+
+## A site installs a package
+
+The page has the package as bytes, and the unit shows the boot menu.
+
+1. HELLO: `05 21 01 7c 03 04 01 01 d1 00` (call `00`, tag `01`, version 1). The reply says Host link is on,
+   version 1, the device, and lists the calls, the install action and the root `/yaffs2`.
+2. APPROVE: `08 21 02 7c 02 02 02 28 00`. The reply's state is 1, pending: the page shows "hold 1 on your
+   device". The page asks SESSION (`08 21 03 7c 02 01 03 63 00`) every quarter second until the state is
+   2, approved (3 refused, 4 timed out).
+3. PUT_OPEN `/yaffs2/pkg.bin` with its size and SHA-256, then PUT_DATA in 224-byte pieces from offset 0,
+   each at the offset the last reply gave, then PUT_END. Status 11: the file did not arrive whole; put it
+   again.
+4. RUN install, parts `FF`: `19 21 09 7c 13 20 09 01 ff 2f 79 61 66 66 73 32 2f 70 6b 67 2e 62 69 6e 63
+   00` (call `20`, tag `09`, action `01`, parts `FF`, the path). The reply is the job's record, queued.
+5. EVENTs follow: `copying` with its percent, `installing`, the package's phases, then `done` with
+   `[done]` or `[nothing to do]`, or `failed` with the reason. The unit's screen shows the install as
+   for a package from the computer.
+6. END, or leave the session to end at the restart.
+
+`docs/web/hostlink.js` does each step: `hello()`, `requestApproval()`, `put()`, `runAction(A.INSTALL, {
+path, parts, onProgress })`. From a terminal: `tools/hostlink.py approve`, `put pkg.bin /yaffs2/pkg.bin`,
+`install /yaffs2/pkg.bin`.
+
+## Developer requests
+
+With **developer mode** on and the session approved, the boot menu also answers the developer requests
+(S-10c.110, id `0x7D`), sent with `tools/testos_mon.py`. Without developer mode every one is refused; with
+it but without the approval every one but `ping` answers status 4 (`not approved`) and changes nothing.
+`ping`, `rd` and `wr` work as with the test OS's monitor ([Test OS](Test-OS#the-usb-monitor)).
 
 > **Warning.** A hand-over with options can leave a unit that only the other slot brings back. Try
 > hand-overs only with a working bootloader in the other slot, and start that slot from the recovery menu
 > (Power + M4, then 1, Change the boot slot; [How to Recover](How-to-Recover#start-the-other-slot-once-and-keep-it)).
 
-## Turning it on
+Developer mode: Boot menu → **2 Settings → 1 Developer mode: On** (S-15.172). The serial port is then in
+every USB set, MTP included (S-10a.010). Turning MTP on or off re-enumerates the device: reopen the port.
 
-1. Put waffle-boot on the unit ([How to Install](How-to-Install)).
-2. Boot menu → **2 Settings → 1 Developer mode: On** (S-15.172).
-
-The serial port is in every USB set while developer mode is on, MTP included (S-10a.010). Turning MTP on or
-off re-enumerates the device: reopen the port.
-
-## Files over MTP
+### Files over MTP
 
 The developer menu's **2 MTP file transfer** shares the internal drive read-write (S-10b, level W). A
 computer's file manager, or `tools/mtpcp.py` (`ls`, `put`, `verify`, `rm`, `mkdir`, `mv`, `tree`), can copy,
@@ -24,7 +225,7 @@ computer is answered. `lost+found` cannot be deleted, moved or renamed; a name t
 replaced, so a copy over an existing file is refused (delete it first, as `mtpcp.py put` does). Nothing
 outside the drive can be reached, and the bootloader's own files on it (`os.ldr`, `upgrade/`) are not protected.
 
-## Requests
+### Requests
 
 | Request | What it does |
 | --- | --- |
@@ -32,8 +233,8 @@ outside the drive can be reached, and the bootloader's own files on it (`os.ldr`
 | `dev-srd ADDR`, `dev-swr ADDR VALUE` | Read or write a slave register over the bridge |
 | `dev-l1rd ADDR [WORDS]` | Read L1 instruction memory (`0x11A00000`…) through ENX |
 | `dev-flags [MASK]`, `dev-handover [MASK]` | Read or set the hand-over options, then hand over the OS with them ([below](#trying-a-hand-over)) |
-| `dev-put FILE [--as NAME]` | Write FILE to `/yaffs2/os.ldr` (the only name allowed) and verify its SHA-256; safe from a power cut once it answers. The developer menu's OS write (5) then uses it |
-| `dev-get [NAME]` | The file's SHA-256 and size |
+| `dev-put FILE [--as NAME]` | Write FILE to `/yaffs2/os.ldr` (or NAME) by the host link's put, checked whole before it takes the name; asks for the approval first. The developer menu's OS write (5) then uses it |
+| `dev-get [NAME]` | The file's SHA-256 and size, by the host link |
 | `dev-yscan OUT.json [--obj ID]...` | Read the yaffs2 volume's tags and the root's headers; read-only, no file contents |
 | `yshow OUT.json [--obj ID]...` | A saved scan's summary, offline |
 | `dev-cal-start` | Restart into one OS start with the calibration screen where the OS draws its first screen (S-04.012, S-05.016) |
@@ -44,7 +245,7 @@ outside the drive can be reached, and the bootloader's own files on it (`os.ldr`
 | `dev-stream` | How this start sent the slave its boot stream ([below](#the-slaves-boot-stream)) |
 | `log [S]` | The log for S seconds (default 10), including an install's failed step and cause |
 | `nordic-info` | The Nordic's `mode`, `sw_version`, `bl_version`, `boot_slot`; changes nothing |
-| `continue-os` | Restart the unit so that its next start boots the OS (S-10c.076), even with Start in boot menu on. If the slave does not answer, the restart is a plain one and Start in boot menu applies. Needs no developer mode; `continue-os --sysex` prints it as a MIDI SysEx message for a unit without a serial port |
+| `continue-os` | Restart the unit so that its next start boots the OS (S-10c.076), even with Start in boot menu on. Needs Host link and the approval; `continue-os --sysex` prints it as a MIDI SysEx message for a unit without a serial port |
 | `dev-bench`, `dev-check`, `dev-extract` | Time the firmware package check and extraction ([below](#timing-the-package-check)) |
 | `dev-link-record`, `dev-link-test [N]` | The bridge link's record and its bench ([below](#the-bridge-link)) |
 | `dev-quad-data` | How this start's OS copy used quad data replies ([below](#quad-data-replies)) |
@@ -53,11 +254,16 @@ outside the drive can be reached, and the bootloader's own files on it (`os.ldr`
 - A file request while the slave is not answering fails with status 3 (`the slave is not answering`), not
   1 (refused volume): restart the unit.
 - `continue-os` refuses during an install or OS write, and before the boot menu is up.
-- `dev-key` cannot answer an install's list of parts, which reads the unit's own keys. Nothing else is
-  filtered: `dev-key 5 7:down`, then `dev-key 7:up` after 5 s, opens System and runs a factory reset; what
+- `dev-key` cannot answer an install's list of parts or the approval screen, which read the unit's own
+  keys. A key a computer sends never starts the factory reset and never changes Protected writes; what else
   erases still waits for its key to be held 5 s.
 
-## Hand-over options
+The requests' payload is an opcode byte and its little-endian arguments in frames of id `0x7D`, framed as
+[above](#framing); the reply's payload starts with a status byte: 0 ok, 1 refused (developer mode off, or
+the access refused), 2 malformed, 3 the slave is not answering, 4 not approved. `frame()` and `crc8()` in
+`tools/testos_mon.py` are the reference; opcodes and reply layouts are in `src/include/waffle/devhost.h`.
+
+### Hand-over options
 
 A bitmask. **Zero is the normal hand-over**, as a boot does it (S-05.023). Each bit changes one step of it,
 to find which piece an OS needs.
@@ -84,9 +290,9 @@ to find which piece an OS needs.
 | `0x20000` | The slave pulses PA4 at each step; with `0x10000` (`0x30000`) printed as `slave steps: 1 teardown, 2 MSI done, 3 SEC done, 4 entry set, 5 delay over, 6 first load call, 7 kernel returned, 8 before the jump` |
 | `0x40000` | SPI0 off with the `OPXY_HO_SPI0_*` values; `SPI2_CTL` is `0x2` in every hand-over (S-05.016) |
 
-## Trying a hand-over
+### Trying a hand-over
 
-Needs developer mode, a valid plaintext OS in the active partition, and the boot menu (hold com or the
+Needs developer mode, the approved session (`tools/hostlink.py approve`), a valid plaintext OS in the active partition, and the boot menu (hold com or the
 white knob while switching on, or a start whose load failed).
 
 1. `tools/testos_mon.py dev-flags` shows the options (`ping` first confirms the port).
@@ -100,7 +306,7 @@ white knob while switching on, or a start whose load failed).
 If the slave's OS does not start within `T_OSSTART`, the hand-over returns to held mode with code 5, the
 bridge gone (S-05.032). Nothing survives the recovery reset, so read a trace live.
 
-## Why the OS did not start
+### Why the OS did not start
 
 `dev-start` (request 37) prints the same account as the main screen and Device Info's `OS start` row
 (S-15.163), at any time later in that start:
@@ -120,7 +326,7 @@ A refused image adds `refusal` (S-05.024), a failed release adds `release`. A st
 `the last plain start did not fail, or none was tried`. Layout: `opxy_start_report()` in
 `src/include/waffle/board/opxy_services.h`.
 
-## The slave's boot stream
+### The slave's boot stream
 
 `dev-stream` (request 40) prints how this start sent the slave its boot stream, at any time in that start,
 in every build but a byte-by-byte one, `BOOT_LINK_FC=0`, which answers `bad request`
@@ -139,7 +345,7 @@ this start's stream: by the controller under flow control, fed by DMA
 After a fall-back it names the cause, the session and the byte, and the driver's account of the part that
 failed. Layout: `opxy_stream_report()` in `src/include/waffle/board/opxy_boot.h`.
 
-## Timing the package check
+### Timing the package check
 
 | Request | What it times |
 | --- | --- |
@@ -156,7 +362,7 @@ the fastest rung below it that works. It lowers it to plain mode at the end (S-0
 slave is absent, installs are refused until a restart; restart too if it says the slave could not be told
 the link is plain.
 
-## The bridge link
+### The bridge link
 
 | Request | What it does |
 | --- | --- |
@@ -169,7 +375,7 @@ An install raises the link no higher than rung 2; the quad I/O rungs 3 and 4 are
 refused as the timing requests are, and without the slave. If the slave could not be told the link is
 plain at the end, restart. Reply formats: `src/include/waffle/devhost.h`.
 
-## The quad reply test
+### The quad reply test
 
 Replies over the bridge travel in single I/O, but for the sector data of a start's OS copy
 ([below](#quad-data-replies)). `dev-quad-reply` tries the candidate ends on the unit itself (S-09.080,
@@ -215,7 +421,7 @@ I/O after each reply, and the run ends with the link plain and the slave answeri
 tool says the slave stopped answering, or did not answer after a cell, restart the unit. It is
 refused as `dev-link-test` is. Reply format: `OPXY_DEV_QUAD_REPLY` in `src/include/waffle/devhost.h`.
 
-## Quad data replies
+### Quad data replies
 
 A start copies the OS image with its sector data in quad I/O at 50 MHz when the quad reply test passes
 first in that start (S-09.081): eight test replies of 1 KiB and 64 KiB under the transmit-finished flag
@@ -237,12 +443,3 @@ this start's quad data replies: taken up, ended with the link
 
 Reply format: `OPXY_DEV_QUAD_DATA` in `src/include/waffle/devhost.h`.
 
-## Wire format
-
-A request is one frame on the USB serial port: route `0x21` (host to master), a sequence byte, the id
-`0x7D`, the payload's length, the payload and a CRC-8 over the four header bytes and the payload (reflected
-polynomial `0x4D`, each input byte XORed with `0xA5` first), the whole COBS-encoded and ended by a zero
-byte. The payload is an opcode byte and its little-endian arguments; the reply's payload starts with a
-status byte: 0 ok, 1 refused (developer mode off, or the access refused), 2 malformed, 3 the slave is not
-answering. The log shares the port, so skip frames of other ids. `frame()` and `crc8()` in
-`tools/testos_mon.py` are the reference; opcodes and reply layouts are in `src/include/waffle/devhost.h`.

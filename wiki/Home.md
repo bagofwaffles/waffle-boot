@@ -42,7 +42,7 @@ unit, in Chrome or Edge over USB.
 - [Test OS](Test-OS): the boot menu built as an OS image.
 - [Building Custom OS Updates (.tfw)](Building-Custom-OS-Updates): a firmware package with your own OS
   image, unsigned and in plaintext.
-- [Developer Host Link](Developer-Host-Link): USB requests the boot menu answers with developer mode on.
+- [Developer Host Link](Developer-Host-Link): the boot menu's host link, for files, installs and restarts from a computer or a page after one hold on the unit, and the developer requests.
 - [Screen Style Guide](Screen-Style-Guide): how the screens look and read.
 - [Requirement Labels](Specification): the `S-NN.NNN` labels code and tests cite.
 - [Clean-Room Rules and Contributing](Clean-Room-Rules-and-Contributing).
