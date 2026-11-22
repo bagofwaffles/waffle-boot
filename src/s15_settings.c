@@ -8,4 +8,5 @@ void s15_settings_defaults(struct s15_settings *s)
 	s->color = false;
 	s->mtp_macos = true;
 	s->start_menu = false;
+	s->host_link = true;
 }

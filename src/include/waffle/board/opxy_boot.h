@@ -473,6 +473,10 @@ struct opxy_master {
 	struct boot_master_ops ops;
 };
 
+/* The frozen front's own version, as its recovery HELLO gives it; outside
+ * the front's boundary, so tests/unit/test_board_devhost.c holds it equal. */
+#define OPXY_FRONT_VERSION 22u
+
 /*
  * The front's hand-off record (front/fr_handoff.h) at FR_HANDOFF_ADDR, whole:
  * its magic, version, size and CRC, copied out; the magic in L2 is then

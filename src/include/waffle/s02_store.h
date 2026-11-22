@@ -14,8 +14,11 @@
  *
  * Payload version 1: byte 0 holds the flags, bit 0 developer mode, bit 1
  * color, bit 2 MTP target macOS, bit 3 start in boot menu; bits 4 to 7 are
- * written 0 and ignored when read. A writer writes N = 1; a reader takes any
- * N from 1 up, uses the bytes it knows and ignores the rest.
+ * written 0 and ignored when read. Byte 1, bit 0: the host link is off (its
+ * other bits written 0 and ignored); with no byte 1 the host link is on.
+ * A writer writes N = 1 while the host link is on, N = 2 when it is off; a
+ * reader takes any N from 1 up, uses the bytes it knows and ignores the
+ * rest. SPEC-Q: byte 1 has no label yet.
  *
  * A page is used when any of its bytes is not 0xFF. The sector reads valid
  * when its used pages are its first ones, with no erased page before a used
@@ -52,14 +55,18 @@
 #define S02_STORE_FLAG_COLOR      0x02u
 #define S02_STORE_FLAG_MTP_MACOS  0x04u
 #define S02_STORE_FLAG_START_MENU 0x08u
-/* The record a writer writes: one payload byte. */
+#define S02_STORE_FLAG2_HOST_OFF  0x01u	/* payload byte 1 */
+/* The record a writer writes: one payload byte, or two with the host link
+ * off. */
 #define S02_STORE_WRITTEN     (S02_STORE_HEADER + 1u + S02_STORE_CRC)
+#define S02_STORE_WRITTEN_MAX (S02_STORE_WRITTEN + 1u)
 
 struct s02_store {
 	bool dev_mode;		/* developer mode */
 	bool color;		/* S-15.173 */
 	bool mtp_macos;		/* S-15.174 */
 	bool start_menu;	/* S-15.175 */
+	bool host_link;		/* the host link answers */
 };
 
 /* The running slot as this start found it (S-01.002, S-02.054): its index,
@@ -83,7 +90,7 @@ enum s02_store_rc {
 /* The settings sector of slot `slot` (0 or 1). */
 uint32_t s02_store_off(unsigned slot);
 /* The defaults: developer mode off, color off, MTP for macOS, start in boot
- * menu off. */
+ * menu off, host link on. */
 void s02_store_defaults(struct s02_store *s);
 /* The record at p, n bytes from a page's start, with the stamp it must
  * hold. False, with the defaults, when it is not a valid record. */

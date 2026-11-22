@@ -93,6 +93,9 @@ struct fake {
 	unsigned continued;
 	enum s10c_link cont_link;
 	size_t frames_at_cont;		/* the reply was out before it */
+	/* the host link's consent, and how often it was asked */
+	enum s10c_gate gate;
+	unsigned gate_asks;
 };
 
 static struct fake F;
@@ -319,13 +322,22 @@ static void f_continue(void *ctx, enum s10c_link link)
 	f->frames_at_cont = f->nframes;
 }
 
+static enum s10c_gate f_gate(void *ctx, enum s10c_link link)
+{
+	struct fake *f = ctx;
+
+	(void)link;
+	f->gate_asks++;
+	return f->gate;
+}
+
 static const struct s10c_ops fake_ops = {
 	f_send_frame, f_send_sysex, f_cdc_open, f_cdc_restart, f_rx_restart,
 	f_rx_feed,
 	f_option, f_read_info, f_write_metadata, f_read_fsn, f_log_config,
 	f_log_relay, f_reboot_os, f_reboot_mode, f_reboot_dfu,
 	f_screen, f_refused, f_start, f_append, f_discard, f_submit, f_offer,
-	f_cont_check, f_continue,
+	f_cont_check, f_continue, f_gate,
 };
 
 static void fake_boot(bool option, bool fsn_ok)
@@ -1174,6 +1186,69 @@ static void test_continue(void)
 	      "before held mode: 84");
 }
 
+/*
+ * The host link's consent: with it off, or not approved, every change a
+ * host asks for on CDC or MIDI is refused with a text and has no effect;
+ * reads are not asked, and a coprocessor's link is never asked.
+ */
+static void test_gate(void)
+{
+	static const uint8_t begin[14] = { 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					   0x00, 0x08, 0x40, 0x00 };
+	static const uint8_t subs[6][2] = { { 0x02, 0 }, { 0x03, 0xAA }, { 0x05, 0 },
+					    { 0x18, 0 }, { 0x19, 0 }, { 0xEE, 1 } };
+	static const uint8_t te_begin[] = {
+		0xF0, 0x00, 0x20, 0x76, 0x21, 0x40, 0x60, 0x01, 0x03, 0x00,
+		0x02, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x00, 0x04,
+		0x00, 0x00, 0x08, 0x40, 0x00, 0x08, 0x00, 0x00, 0x0F, 0x20,
+		0xF7 };
+	static const uint8_t unlock[4] = { 0xCA, 0xFE, 0xBA, 0xBE };
+
+	for (int g = S10C_GATE_OFF; g <= S10C_GATE_ASK; g++) {
+		for (unsigned k = 0; k < 6u; k++) {
+			for (unsigned l = 0; l < 2u; l++) {
+				fake_boot(true, true);
+				F.cont = S10C_CONT_GO;
+				F.gate = (enum s10c_gate)g;
+				s10c_host_frame(&F.host, l ? S10C_LINK_MIDI : S10C_LINK_CDC, 0x21,
+						0x0D, k == 0u ? begin : subs[k],
+						k == 0u ? sizeof(begin) : 2u);
+				CHECK(F.starts == 0u && F.submits == 0u && F.reboots_os == 0u &&
+				      F.reboots_mode == 0u && F.continued == 0u && F.screens == 0u,
+				      "gate %d sub %02x: no effect", g, subs[k][0]);
+				CHECK(F.nframes == 1u && F.frames[0].p[0] == 0x84 &&
+				      F.frames[0].len > 1u, "gate %d sub %02x: 84 and a text",
+				      g, subs[k][0]);
+			}
+		}
+		fake_boot(true, true);
+		F.gate = (enum s10c_gate)g;
+		s10c_host_midi_message(&F.host, te_begin, sizeof(te_begin));
+		CHECK(F.starts == 0u && F.screens == 0u && F.nmsgs == 1u &&
+		      F.msgs[0].m[9] == 0x01, "gate %d: TE begin refused", g);
+		/* factory unlock: refused, so no set metadata either */
+		fake_boot(true, true);
+		F.gate = (enum s10c_gate)g;
+		s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x07, unlock, 4);
+		CHECK(!F.host.factory && F.frames[0].p[0] == 0x04, "gate %d: no factory mode", g);
+		/* a read is not asked */
+		fake_boot(true, true);
+		F.gate = (enum s10c_gate)g;
+		s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x09, NULL, 0);
+		CHECK(F.gate_asks == 0u && F.nframes == 1u && F.frames[0].id == 0x0A,
+		      "gate %d: info served", g);
+		/* the PSoC's link: never asked, served */
+		fake_boot(true, true);
+		F.gate = (enum s10c_gate)g;
+		s10c_host_frame(&F.host, S10C_LINK_PSOC, 0x41, 0x0D, begin, sizeof(begin));
+		CHECK(F.gate_asks == 0u && F.starts == 1u, "gate %d: PSoC link served", g);
+	}
+	/* consent given: served as before */
+	fake_boot(true, true);
+	s10c_host_frame(&F.host, S10C_LINK_CDC, 0x21, 0x0D, begin, sizeof(begin));
+	CHECK(F.gate_asks == 1u && F.starts == 1u && F.frames[0].p[0] == 0x54, "consent: begun");
+}
+
 /* ---- the OP-1F (S-18.030, S-18.020) ---- */
 
 static void fake_boot_1f(enum wb_dev_how how)
@@ -1334,6 +1409,7 @@ static void test_product_1f(void)
 
 int main(void)
 {
+	test_gate();
 	test_pack();
 	test_usbmidi();
 	test_classify();

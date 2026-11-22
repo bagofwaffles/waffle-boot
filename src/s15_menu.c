@@ -271,7 +271,7 @@ static void option_screen_key(struct s15_menu *m, unsigned key)
 
 	if (d == 8u) {
 		draw_settings(m);
-	} else if (d == 2u && !knob_click(m, key)) {
+	} else if (d == 2u && !knob_click(m, key) && !m->host_event) {
 		draw_option(m, true);
 		hold_begin(m, S15_ARM_OPTION, key);
 	}
@@ -367,6 +367,7 @@ static void draw_settings(struct s15_menu *m)
 	if (m->env->settings_save != NULL)                 /* S-15.175 */
 		sline(m, S15_ST_ITEM, m->start_menu ? "6 Start in boot menu\tOn" :
 						       "6 Start in boot menu\tOff");
+	sline(m, S15_ST_ITEM, m->host_link ? "7 Host link\tOn" : "7 Host link\tOff");
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Main Menu");
 }
@@ -385,6 +386,7 @@ static void settings_changed(struct s15_menu *m)
 	s.color = m->color;
 	s.mtp_macos = m->mtp_macos;
 	s.start_menu = m->start_menu;
+	s.host_link = m->host_link;
 	if (m->env->settings_save != NULL && !m->host_event) {
 		now = s;
 		r = m->env->settings_save(m->env->ctx, &s, &now);
@@ -409,7 +411,9 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 2:
-		option_key(m);              /* S-15.140 */
+		/* never from a host: Protected writes */
+		if (!m->host_event)
+			option_key(m);      /* S-15.140 */
 		break;
 	case 3:
 		m->color = !m->color;
@@ -429,6 +433,11 @@ static void settings_key(struct s15_menu *m, unsigned key)
 			m->start_menu = !m->start_menu;
 			settings_changed(m);
 		}
+		break;
+	case 7:
+		/* SPEC-Q: the Host link setting, saved as the others are */
+		m->host_link = !m->host_link;
+		settings_changed(m);
 		break;
 	case 8:
 		open_main(m);
@@ -466,6 +475,7 @@ static void clear_settings(struct s15_menu *m)
 		m->color = d.color;
 		m->mtp_macos = d.mtp_macos;
 		m->start_menu = d.start_menu;
+		m->host_link = d.host_link;
 		break;
 	case S15_STORE_FAILED:
 		sline(m, S15_ST_WARN, s15_reset_settings_failed);
@@ -882,6 +892,9 @@ static void system_key(struct s15_menu *m, unsigned key)
 		open_format(m);
 		break;
 	case 7:
+		/* never from a host: the factory reset */
+		if (m->host_event)
+			break;
 		draw_system(m, true);                 /* S-15.050 */
 		hold_begin(m, S15_ARM_RESET, key);
 		break;
@@ -1070,6 +1083,7 @@ static void os_write(struct s15_menu *m)
 	m->osw_step = -1;
 	line(m, "Looking for /os.ldr...");
 	m->env->os_write(m->env->ctx, &e);
+	m->osw_end = e;
 	osw_outcome(m, &e);
 	m->osw_written = e.result == S15_OSW_OK;
 	m->osw = S15_OSW_VIEW_DONE;
@@ -1167,6 +1181,110 @@ static void factory_key(struct s15_menu *m, unsigned key)
 	default:
 		break;
 	}
+}
+
+/* ---- the host link's approval ------------------------------------- */
+
+/* SPEC-Q: the approval screen and its keys have no label yet. */
+static void draw_approve(struct s15_menu *m, bool armed)
+{
+	struct s15_buf b, h;
+
+	enter(m, S15_SCR_APPROVE, "Host Link");
+	blank(m);
+	sline(m, S15_ST_HEAD, "Allow this computer?");
+	sline(m, S15_ST_DIM, "Files, installs, restarts. Until restart.");
+	blank(m);
+	if (armed) {
+		held_item(m, 1u, "Allow");
+	} else {
+		s15_buf_init(&b);
+		s15_buf_str(&b, "1 Allow\t");
+		s15_hold_hint(&h, 1u);
+		s15_buf_str(&b, h.s);
+		sline(m, S15_ST_ITEM, b.s);
+	}
+	sline(m, S15_ST_BACK, "8 Cancel");
+}
+
+static bool approve_from(const struct s15_menu *m)
+{
+	const enum s15_screen s = m->screen;
+
+	if (s == S15_SCR_FACTORY)
+		return m->mtp == S15_MTP_OFF && m->osw == S15_OSW_VIEW_NONE;
+	return s == S15_SCR_MAIN || s == S15_SCR_SETTINGS || s == S15_SCR_SYSTEM ||
+	       s == S15_SCR_INFO || s == S15_SCR_INFO2;
+}
+
+bool s15_menu_approve_open(struct s15_menu *m)
+{
+	if (m->screen == S15_SCR_APPROVE)
+		return true;
+	if (m->busy || m->hold || m->keytest || m->armed != S15_ARM_NONE ||
+	    m->activity != S15_ACT_IDLE || !approve_from(m))
+		return false;
+	m->approve_back = m->screen;
+	m->approve_ms = m->now_ms;
+	m->approve = S15_APPROVE_PENDING;
+	draw_approve(m, false);
+	return true;
+}
+
+/* The answer, and the screen it came from drawn again. */
+static void approve_end(struct s15_menu *m, enum s15_approve a)
+{
+	const enum s15_screen back = m->approve_back;
+
+	m->approve = a;
+	if (back == S15_SCR_SETTINGS)
+		draw_settings(m);
+	else if (back == S15_SCR_SYSTEM)
+		draw_system(m, false);
+	else if (back == S15_SCR_INFO)
+		open_info(m);
+	else if (back == S15_SCR_INFO2)
+		open_info2(m);
+	else if (back == S15_SCR_FACTORY)
+		draw_factory(m);
+	else
+		draw_main(m);
+}
+
+enum s15_approve s15_menu_approve_result(struct s15_menu *m)
+{
+	const enum s15_approve a = m->approve;
+
+	if (a != S15_APPROVE_PENDING)
+		m->approve = S15_APPROVE_NONE;
+	return a;
+}
+
+/* 1 held for 5 s allows, 8 refuses; a knob click starts no hold. */
+static void approve_key(struct s15_menu *m, unsigned key)
+{
+	const unsigned d = s15_digit(m->dev, key);
+
+	if (d == 8u) {
+		approve_end(m, S15_APPROVE_REFUSED);
+	} else if (d == 1u && !knob_click(m, key)) {
+		draw_approve(m, true);
+		hold_begin(m, S15_ARM_APPROVE, key);
+	}
+}
+
+bool s15_menu_os_write(struct s15_menu *m, struct s15_osw_end *e)
+{
+	if (m->busy || m->hold || m->activity != S15_ACT_IDLE)
+		return false;
+	os_write(m);
+	*e = m->osw_end;
+	return true;
+}
+
+void s15_menu_os_once(struct s15_menu *m)
+{
+	os_once(m);
 }
 
 /* ---- the upgrade screen: S-15.100 - S-15.115 ------------------------ */
@@ -1675,6 +1793,9 @@ static void hold_cancel(struct s15_menu *m)
 	case S15_ARM_OPTION:
 		draw_option(m, false);
 		break;
+	case S15_ARM_APPROVE:
+		draw_approve(m, false);
+		break;
 	case S15_ARM_NONE:
 	default:
 		break;
@@ -1704,6 +1825,9 @@ static void hold_run(struct s15_menu *m)
 		set_option(m, true);                /* S-15.140 */
 		draw_settings(m);
 		break;
+	case S15_ARM_APPROVE:
+		approve_end(m, S15_APPROVE_ALLOWED);
+		break;
 	case S15_ARM_NONE:
 	default:
 		break;
@@ -1713,6 +1837,9 @@ static void hold_run(struct s15_menu *m)
 void s15_menu_tick(struct s15_menu *m, uint32_t now_ms)
 {
 	m->now_ms = now_ms;
+	if (m->screen == S15_SCR_APPROVE && m->armed == S15_ARM_NONE &&
+	    now_ms - m->approve_ms >= S15_APPROVE_MS)
+		approve_end(m, S15_APPROVE_TIMEOUT);
 	if (m->armed == S15_ARM_NONE)
 		return;
 	if (now_ms - m->arm_ms >= HOLD_MS)
@@ -1757,6 +1884,9 @@ static void key_down(struct s15_menu *m, unsigned key)
 	case S15_SCR_OPTION:
 		option_screen_key(m, key);  /* S-15.140 */
 		break;
+	case S15_SCR_APPROVE:
+		approve_key(m, key);
+		break;
 	case S15_SCR_FORMAT:
 		format_key(m, key);
 		break;
@@ -1782,6 +1912,9 @@ void s15_menu_key(struct s15_menu *m, unsigned key, bool down)
 	bool was_down;
 
 	if (key >= m->dev->keys.count)        /* S-15.014 */
+		return;
+	/* the approval reads the unit's own keys alone */
+	if (m->host_event && m->screen == S15_SCR_APPROVE)
 		return;
 	was_down = bit(m->down, key);
 	set_bit(m->down, key, down);
@@ -1871,6 +2004,10 @@ void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
 	m->color = false;
 	m->mtp_macos = true;
 	m->start_menu = false;
+	m->host_link = true;
+	m->approve = S15_APPROVE_NONE;
+	m->approve_back = S15_SCR_MAIN;
+	m->approve_ms = 0;
 	m->packs_item = false;
 	m->armed = S15_ARM_NONE;
 	m->arm_key = 0;
@@ -1921,6 +2058,7 @@ void s15_menu_start(struct s15_menu *m)
 	m->color = m->boot->settings.color;          /* S-15.173 */
 	m->mtp_macos = m->boot->settings.mtp_macos;  /* S-15.174 */
 	m->start_menu = m->boot->settings.start_menu; /* S-15.175 */
+	m->host_link = m->boot->settings.host_link;
 	for (unsigned i = 0; i < sizeof m->down; i++)
 		m->stale[i] = m->down[i];         /* S-15.013 */
 	m->hold = false;	/* here: s15_menu_init() runs before the key read */

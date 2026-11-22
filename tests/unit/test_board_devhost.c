@@ -12,6 +12,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
+#include "front/fr_proto.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/devhost.h"
 #include "waffle/drivers/bf70x_coremmr.h"
@@ -346,10 +347,15 @@ static uint8_t reply_status(size_t *plen)
 	return dn >= 5u ? dec[4] : 0xEEu;
 }
 
+/* The host link's session, approved unless a test says otherwise. */
+static bool approved = true;
+
 static void dev_frame(uint8_t op, const uint8_t *extra, size_t en)
 {
 	struct s06_frame f;
 
+	m.sv.menu.host_link = true;
+	m.sv.hl.session = approved ? HL_S_APPROVED : HL_S_NONE;
 	memset(&f, 0, sizeof(f));
 	f.id = OPXY_DEV_REQ_ID;
 	f.route = s06_route(S06_ADDR_HOST, S06_ADDR_MASTER);
@@ -848,33 +854,69 @@ static void host_reset(void)
 }
 
 /*
- * Every file request while the slave is not answering says so
- * (OPXY_DEV_NO_SLAVE), with no bridge traffic; a malformed one is still
- * malformed, and with developer mode off each is refused.
+ * The old file requests are served no more: files go by the host link.
+ * A raw read while the slave is not answering says so (OPXY_DEV_NO_SLAVE).
  */
 static void test_files_no_slave(void)
 {
-	static const uint8_t open[] = { OPXY_DEV_PUT_OPEN, 'o', 's', '.', 'l', 'd', 'r' };
-	static const uint8_t data[] = { OPXY_DEV_PUT_DATA, 1, 2, 3 };
-	static const uint8_t close[] = { OPXY_DEV_PUT_CLOSE };
-	static const uint8_t bad[] = { OPXY_DEV_PUT_OPEN, 'x' };
+	static const uint8_t open[] = { 0, 'o', 's', '.', 'l', 'd', 'r' };
 	static const uint8_t name[] = { 'o', 's', '.', 'l', 'd', 'r' };
+	uint8_t req[9] = { 0 };
 	size_t plen;
 
 	host_reset();
 	dev_frame(OPXY_DEV_PUT, open, sizeof(open));
-	CHECK(reply_status(&plen) == OPXY_DEV_NO_SLAVE && plen == 1u);
-	dev_frame(OPXY_DEV_PUT, data, sizeof(data));
-	CHECK(reply_status(&plen) == OPXY_DEV_NO_SLAVE);
-	dev_frame(OPXY_DEV_PUT, close, sizeof(close));
-	CHECK(reply_status(&plen) == OPXY_DEV_NO_SLAVE);
+	CHECK(reply_status(&plen) == OPXY_DEV_BAD && plen == 1u);
 	dev_frame(OPXY_DEV_SHA, name, sizeof(name));
-	CHECK(reply_status(&plen) == OPXY_DEV_NO_SLAVE && plen == 1u);
-	dev_frame(OPXY_DEV_PUT, bad, sizeof(bad));
-	CHECK(reply_status(&plen) == OPXY_DEV_BAD);
+	CHECK(reply_status(&plen) == OPXY_DEV_BAD && plen == 1u);
+	req[8] = 1u;
+	dev_frame(OPXY_DEV_YTAGS, req, 9);
+	CHECK(reply_status(&plen) == OPXY_DEV_NO_SLAVE);
 	m.sv.menu.dev_mode = false;
-	dev_frame(OPXY_DEV_SHA, name, sizeof(name));
+	dev_frame(OPXY_DEV_YTAGS, req, 9);
 	CHECK(reply_status(&plen) == OPXY_DEV_REFUSED);
+}
+
+/*
+ * Developer mode alone serves nothing but ping: every other request needs
+ * the host link's approved session, and the Host link setting on. A write
+ * then changes nothing.
+ */
+static void test_approval_gate(void)
+{
+	uint8_t wr[8] = { 0x00, 0x40, 0x00, 0x20, 0x5A, 0, 0, 0 };	/* 0x20004000 */
+	size_t plen;
+
+	host_reset();
+	approved = false;
+	dev_frame(OPXY_DEV_PING, NULL, 0);
+	CHECK(reply_status(&plen) == OPXY_DEV_OK && plen == 5u);
+	dev_frame(OPXY_DEV_WRITE, wr, 8);
+	CHECK(reply_status(&plen) == OPXY_DEV_NOT_APPROVED && plen == 1u);
+	CHECK(!written(0x20004000u));
+	dev_frame(OPXY_DEV_KEY, wr, 2);
+	CHECK(reply_status(&plen) == OPXY_DEV_NOT_APPROVED);
+	dev_frame(OPXY_DEV_SCREEN, NULL, 0);
+	CHECK(reply_status(&plen) == OPXY_DEV_NOT_APPROVED);
+	/* approved, but the setting turned off: refused all the same */
+	approved = true;
+	{
+		struct s06_frame f;
+
+		memset(&f, 0, sizeof(f));
+		f.id = OPXY_DEV_REQ_ID;
+		f.route = s06_route(S06_ADDR_HOST, S06_ADDR_MASTER);
+		memcpy(f.payload, (const uint8_t[]){ OPXY_DEV_WRITE }, 1);
+		memcpy(f.payload + 1, wr, 8);
+		f.len = 9;
+		m.sv.hl.session = HL_S_APPROVED;
+		m.sv.menu.host_link = false;
+		wire_n = 0;
+		CHECK(opxy_dev_host(&m, &f));
+		CHECK(reply_status(&plen) == OPXY_DEV_NOT_APPROVED && !written(0x20004000u));
+	}
+	dev_frame(OPXY_DEV_WRITE, wr, 8);
+	CHECK(reply_status(&plen) == OPXY_DEV_OK && fake_mmr_get(0x20004000u) == 0x5Au);
 }
 
 /*
@@ -1011,8 +1053,15 @@ static void test_no_slave(void)
 	CHECK(fake_mmr_get(0x20004000u) == 0x77u);
 }
 
+/* The host link reports the front's version: the one this tree pins. */
+static void test_front_version(void)
+{
+	CHECK(OPXY_FRONT_VERSION == FR_FRONT_VERSION);
+}
+
 int main(void)
 {
+	RUN(test_front_version);
 	RUN(test_normal);
 	RUN(test_cache_table);
 	RUN(test_os_wait);
@@ -1029,6 +1078,7 @@ int main(void)
 	RUN(test_ydump);
 	RUN(test_ydump_gate);
 	RUN(test_files_no_slave);
+	RUN(test_approval_gate);
 	RUN(test_boot_start);
 	RUN(test_quad_reply_gate);
 	RUN(test_cal_start);

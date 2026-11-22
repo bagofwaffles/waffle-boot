@@ -108,11 +108,15 @@ int32_t s09_files_close(struct s09_files *f, int32_t fd);
  * memory. The eMMC's cache is on (S-03.009), so a closed file alone does not
  * survive a power cut (S-03.068). */
 int32_t s09_files_close_sync(struct s09_files *f, int32_t fd);
+/* 0x04 alone: 0 once the eMMC's cache is in its nonvolatile memory. */
+int32_t s09_files_flush(struct s09_files *f);
 /* S-09.035: up to n bytes; the count read, or -1. */
 int32_t s09_files_read(struct s09_files *f, int32_t fd, uint8_t *buf, uint32_t n);
 /* 0x2B in pieces of at most 0x1000: n, or -1 when a piece failed or was
  * written short. */
 int32_t s09_files_write(struct s09_files *f, int32_t fd, const uint8_t *buf, uint32_t n);
+/* 0x2C from the start: 0 at off, or -1. */
+int32_t s09_files_seek(struct s09_files *f, int32_t fd, uint32_t off);
 int32_t s09_files_unlink(struct s09_files *f, const char *path);
 int32_t s09_files_mkdir(struct s09_files *f, const char *path);
 int32_t s09_files_rmdir(struct s09_files *f, const char *path);
@@ -244,6 +248,11 @@ enum s15_os_write s09_files_os_write(struct s09_files *f, const struct s03_env *
 				     uint8_t *image, uint32_t cap,
 				     const struct s15_osw_report *rep,
 				     struct s15_osw_end *end);
+/* The same from another file of the volume. */
+enum s15_os_write s09_files_os_write_from(struct s09_files *f, const char *path,
+					  const struct s03_env *env, uint8_t *image,
+					  uint32_t cap, const struct s15_osw_report *rep,
+					  struct s15_osw_end *end);
 
 /* ---- the eMMC (S-09.040) ---- */
 

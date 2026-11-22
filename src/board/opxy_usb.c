@@ -543,14 +543,16 @@ static bool take_frames(struct opxy_master *m)
 	while (s06_link_take(&m->link[S06_LINK_CDC], &f)) {
 		any = true;
 		OPXY_TESTOS(if (!opxy_testos_monitor(m, &f)))
-		if (!OPXY_TESTOS_OR(false, opxy_dev_host(m, &f)))
+		if (!OPXY_TESTOS_OR(false, opxy_dev_host(m, &f) ||
+				    opxy_hostlink_frame(m, S06_LINK_CDC, &f)))
 			s10c_host_frame(&m->sv.host, S10C_LINK_CDC, f.route, f.id,
 					f.payload, f.len);
 	}
 	while (s06_link_take(&m->link[S06_LINK_MIDI], &f)) {
 		any = true;
-		s10c_host_frame(&m->sv.host, S10C_LINK_MIDI, f.route, f.id,
-				f.payload, f.len);
+		if (!OPXY_TESTOS_OR(false, opxy_hostlink_frame(m, S06_LINK_MIDI, &f)))
+			s10c_host_frame(&m->sv.host, S10C_LINK_MIDI, f.route, f.id,
+					f.payload, f.len);
 	}
 	return any;
 }

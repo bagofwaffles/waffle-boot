@@ -119,7 +119,7 @@ static void test_file_operations(void)
 	struct s15_env_ops e;
 	struct s15_osw_end end = { S15_OSW_FAILED, S15_OSW_WHY_NONE,
 				   S15_OSW_EMMC_UNTOUCHED, 0, 0, 0, 0, false };
-	struct s15_settings st = { false, false, false, false };
+	struct s15_settings st = { false, false, false, false, true };
 	uint32_t w;
 
 	setup();

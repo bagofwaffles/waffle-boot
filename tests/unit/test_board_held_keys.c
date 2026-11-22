@@ -381,6 +381,9 @@ static size_t host(uint8_t op, const uint8_t *p, size_t n, uint8_t *r)
 	f.len = (uint8_t)(1u + n);
 	cdc_n = 0;
 	memset(r, 0, S06_MAX_PAYLOAD);
+	/* the host link's session approved, as every developer request needs */
+	m.sv.menu.host_link = true;
+	m.sv.hl.session = HL_S_APPROVED;
 	CHECK(opxy_dev_host(&m, &f));
 	s06_rx_init(&dec, S06_ADDR_HOST);
 	for (i = 0; i < cdc_n; i++)
@@ -469,7 +472,8 @@ static uint8_t queue(const uint8_t *pairs, size_t n)
 }
 
 /* The host walks to System and holds the factory reset as a person would
- * (S-15.015): the white knob only cancels, 7 held for 5 s runs it once. */
+ * (S-15.015): a host's key never starts it, held however long, approved
+ * or not; the white knob changes nothing. */
 static void test_host_keys_reset(void)
 {
 	static const uint8_t system[] = { 0x12 }, white[] = { 0x0D },
@@ -489,23 +493,20 @@ static void test_host_keys_reset(void)
 	CHECK(queue(down, 1) == OPXY_DEV_OK);
 	run_keys();
 	screen(name, rows, &flags);
-	CHECK((flags & OPXY_SCREEN_ARMED) != 0u && removes == 0u);
+	CHECK((flags & OPXY_SCREEN_ARMED) == 0u && removes == 0u);
 	CHECK(rows_shown(rows));
+	later(S15_HOLD_MS * 2u);
+	CHECK(removes == 0u && m.sv.menu.screen == S15_SCR_SYSTEM);
 	CHECK(keys(white, 1) == OPXY_DEV_OK);
 	run_keys();
-	later(S15_HOLD_MS);
-	screen(name, rows, &flags);
-	CHECK((flags & OPXY_SCREEN_ARMED) == 0u && removes == 0u);
 	CHECK(queue(up, 1) == OPXY_DEV_OK && queue(down, 1) == OPXY_DEV_OK);
 	run_keys();
-	later(S15_HOLD_MS - 1u);
-	CHECK(removes == 0u);
-	later(1u);
-	CHECK(removes == 3u);
+	later(S15_HOLD_MS);
 	CHECK(queue(up, 1) == OPXY_DEV_OK);
 	run_keys();
-	later(S15_HOLD_MS);
-	CHECK(removes == 3u && m.sv.menu.screen == S15_SCR_RESULT);
+	screen(name, rows, &flags);
+	CHECK(removes == 0u && (flags & OPXY_SCREEN_ARMED) == 0u &&
+	      m.sv.menu.screen == S15_SCR_SYSTEM);
 }
 
 /* Keys queued behind a hold whose time runs a long operation wait for its

@@ -2044,13 +2044,15 @@ SET_MAX_PAYLOAD = PAGE - SET_HEADER - 4      # 240
 SET_PAGES = SECTOR // PAGE                   # 16
 SET_SLOT_MAX = SLOT_MAX - 2 * SECTOR         # 0x76000: S-02.099, S-02.104
 SET_SECTOR = tuple(SLOT[k] + SET_SLOT_MAX for k in (0, 1))   # 0x86000, 0xfe000
-SET_FLAGS = ("developer_mode", "color", "mtp_macos", "start_in_boot_menu")
-SET_DEFAULTS = 0x04                          # developer mode off, color off, MTP macOS, start in boot menu off
+SET_FLAGS = ("developer_mode", "color", "mtp_macos", "start_in_boot_menu", "host_link_off")
+SET_DEFAULTS = 0x04                          # developer mode off, color off, MTP macOS, start in boot menu off,
+                                             # host link on (bit 4, 0x10, is payload byte 1's bit 0: off)
 
 
 def set_record(flags, stamp, payload=None, version=1, length=None, magic=SET_MAGIC, crc=None):
-    """S-02.096: magic, version u16, length u16, stamp u32, payload, CRC-32 over all before it."""
-    pl = bytes([flags]) if payload is None else payload
+    """S-02.096: magic, version u16, length u16, stamp u32, payload, CRC-32 over all before it. The
+    payload a writer writes: byte 0's flags, and with the host link off (0x10) byte 1, 0x01."""
+    pl = (bytes([flags & 0x0F]) + (b"\x01" if flags & 0x10 else b"")) if payload is None else payload
     n = len(pl) if length is None else length
     head = magic + version.to_bytes(2, "little") + n.to_bytes(2, "little") + stamp.to_bytes(4, "little") + pl
     c = zlib.crc32(head) if crc is None else crc
@@ -2070,7 +2072,8 @@ def set_decode(page, stamp):
         return None, "crc"
     if int.from_bytes(page[8:12], "little") != stamp:
         return None, "stamp"
-    return page[SET_HEADER] & 0x0F, "valid"
+    host_off = 0x10 if n >= 2 and page[SET_HEADER + 1] & 0x01 else 0
+    return (page[SET_HEADER] & 0x0F) | host_off, "valid"
 
 
 def set_pages(sector):
@@ -2245,7 +2248,10 @@ def settings_sector():
         ("old_record_then_new", set_sector_of({0: b"WBST\x01\x00\x01\x00\x01" +
                                                zlib.crc32(b"WBST\x01\x00\x01\x00\x01").to_bytes(4, "little"),
                                                1: menu})),
-        ("flag_bits_4_to_7", set_sector_of({0: set_record(0xF8, st)})),
+        ("flag_bits_4_to_7", set_sector_of({0: set_record(0xF8 & 0x0F, st, payload=b"\xf8")})),
+        ("host_link_off", set_sector_of({0: set_record(0x14, st)})),
+        ("host_link_byte_other_bits", set_sector_of({0: set_record(0, st, payload=b"\x0e\xfe")})),
+        ("host_link_off_then_on", set_sector_of({0: set_record(0x14, st), 1: dflt})),
         ("longer_unknown_bytes", set_sector_of({0: longer})),
         ("longest", set_sector_of({0: longest})),
         ("wrong_magic", set_sector_of({0: set_record(0x0E, st, magic=b"WBSU")})),
@@ -2303,6 +2309,11 @@ def settings_sector():
               ("not_valid_gap", set_sector_of({0: dflt, 2: menu})),
               ("image_bytes", pattern(SECTOR, 9))]
     for slot in (0, 1):
+        ops, after, used = set_save_ops(slot, set_sector_of({0: dflt}), 0x17, st)
+        saves.append({"name": "host_link_off", "slot": slot, "stamp": "0x%08x" % st, "flags": 0x17,
+                      "before": set_hex_pages(set_sector_of({0: dflt})), "before_pattern": None,
+                      "ops": ops, "page": used, "after": set_hex_pages(after),
+                      "footprint": ["0x%05x" % SET_SECTOR[slot], "0x%05x" % (SET_SECTOR[slot] + SECTOR)]})
         for name, sec in starts:
             ops, after, used = set_save_ops(slot, sec, 0x07, st)
             saves.append({"name": name, "slot": slot, "stamp": "0x%08x" % st, "flags": 0x07,

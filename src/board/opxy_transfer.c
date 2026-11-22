@@ -160,7 +160,7 @@ void opxy_transfer_discard(struct opxy_master *m)
  * S-11.050: the bytes as one body-form package, forced over the firmware
  * command (S-10c.075). S-10c offers the disk again after its final reply.
  */
-static void submit(struct opxy_master *m, bool fw_command,
+static void submit(struct opxy_master *m, bool fw_command, const char *name,
 		   struct s11_outcome *out)
 {
 	struct opxy_services *sv = &m->sv;
@@ -182,10 +182,10 @@ static void submit(struct opxy_master *m, bool fw_command,
 		wipe(m, false);
 		return;
 	}
-	in.form = S11_FORM_BODY;
+	in.form = name != NULL ? S11_FORM_FILE : S11_FORM_BODY;
 	in.size = size;
 	in.option = sv->option;		/* S-11.090: as the checks begin */
-	in.file_name = NULL;
+	in.file_name = name;
 	in.fw_command = fw_command;
 	in.dev = opxy_dev(m);
 	opxy_install_source(m, &src, &in, &res);
@@ -200,6 +200,16 @@ void opxy_transfer_submit(struct opxy_master *m, bool fw_command,
 			  struct s11_outcome *out)
 {
 	opxy_host_hold_begin(m);
-	submit(m, fw_command, out);
+	submit(m, fw_command, NULL, out);
+	opxy_host_hold_end(m);
+}
+
+/* A host link's install of a file from the drive, as the scan's of a
+ * RAM-disk file: its preamble, and its name for S-11.047. */
+void opxy_transfer_submit_file(struct opxy_master *m, const char *name,
+			       struct s11_outcome *out)
+{
+	opxy_host_hold_begin(m);
+	submit(m, false, name, out);
 	opxy_host_hold_end(m);
 }
