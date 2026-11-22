@@ -2328,10 +2328,13 @@ class Front11(PtyCase):
                       out.text)
         self.assertIn('Keep:     refused: no slot is tried where a keep can take it', out.text)
         self.assertIn('Put back: refused: Slot 2 is not tried', out.text)
+        self.assertNotIn('keep is the action', out.text)
         m.tried, m.started = {1}, {1}
         m.phase, m.count, m.act = w.COUNTING, 7, w.ACT_KEEP
         out = Lines()
         w.cmd_info(self.link, out)
+        # Slot 2 came up from its trial: its keep, not the switch, is the action
+        self.assertRegex(out.text, r'Switch: .*; after its trial, keep is the action\n')
         self.assertIn(':   tried, started, ', out.text)
         self.assertIn('State:    counting down: 7 s left before the first erase of the keep of Slot 2. '
                       'Switching the unit off or unplugging USB now stops it, with nothing written',

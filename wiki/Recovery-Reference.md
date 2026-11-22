@@ -1,4 +1,4 @@
-Reference for recovery in front version 17: every write, refusal and result. Step-by-step guides are in
+Reference for recovery in front version 22: every write, refusal and result. Step-by-step guides are in
 [How to Recover](How-to-Recover); the safety rules are in [The Front](The-Front#the-failsafes). This page is
 also the reference for the recovery round on a unit that a changed front needs before it is committed to a
 slot ([The Front](The-Front#changing-it)).
@@ -36,7 +36,7 @@ Some failures leave a unit that only an external SPI flash programmer brings bac
 
 It shows each slot's bootloader type and state (`checked`, `check failed`, `tried`, `tried, started`),
 which slot runs (`running`) and which the selector names (`boot slot`), and what a write would replace. The status bar shows `USB` and the image and front
-versions (`v1.0.10 F21`). No key acts until every key has been released once; an unreadable key counts as
+versions (`v1.0.10 F22`). No key acts until every key has been released once; an unreadable key counts as
 not pressed.
 
 ### Bootloader type
@@ -70,12 +70,13 @@ an unknown TE build shows `??`.
 
 ### The slot menu (key 1, `Change the boot slot (optional)`)
 
-N is the slot the unit does not run from. Only items that apply are shown. Key 8 goes back.
+N is the slot the unit does not run from. Only items that apply are shown, and where `3` keeps slot N,
+`2` is left out: the keep makes it the boot slot. Key 8 goes back.
 
 | Item | Does |
 | --- | --- |
 | `1  Try slot N once (suggested)` | The next start runs slot N once, then the current slot again. Writes only N's record |
-| `2  Make slot N the boot slot` | The unit starts slot N from now on |
+| `2  Make slot N the boot slot` | The unit starts slot N from now on. Not shown while `3` is |
 | `3  Keep slot N` | For a tried slot that came up: start it from now on. In a trial start, the tried slot's own recovery offers this for itself |
 | `4  Put slot N's record back` | A tried, unkept slot reads `checked` again; also cancels a try not yet started |
 
@@ -151,7 +152,7 @@ before sending.
 ### The countdown
 
 After accepting `write`, `try`, `switch`, `keep`, `select` or `put-back`, the unit shows
-`Switch the unit off within 15 s to stop`. **Switching off or unplugging USB then leaves the flash
+`Switch off within 15 s to stop`. **Switching off or unplugging USB then leaves the flash
 untouched.** Stopping the tool does not stop it. `info`, `restart` and repair writes after a failed write
 of the running slot have no countdown.
 

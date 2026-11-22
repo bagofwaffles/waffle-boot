@@ -22,7 +22,7 @@ It also opens by itself:
 | The screen says | Why |
 | --- | --- |
 | `This image failed its check` | The rest of the running image is damaged |
-| `Three starts in a row did not finish` | Three starts in a row ended before the boot menu or the OS came up. Quickly switching off three times during start-up does it too |
+| `3 starts in a row did not finish` | Three starts in a row ended before the boot menu or the OS came up. Quickly switching off three times during start-up does it too |
 
 The top two lines show each slot: which bootloader it holds (`WB` and the version for waffle-boot, `TE`
 for a TE bootloader, with its version when it is a known build, or `??`), its state (`checked`,
@@ -43,7 +43,7 @@ To leave, switch off and on with no key held: the unit starts normally.
 | Dark screen, on USB, switch off | The unit is only charging. Switch it on |
 | The logo, then nothing, every time | Open the recovery menu and try the other slot ([below](#start-the-other-slot-once-and-keep-it)) |
 | Red **Recovery** screen, `This image failed its check` | The running slot's image is damaged. Try the other slot, or [write a slot from a computer](#write-a-slot-from-a-computer) |
-| Red **Recovery** screen, `Three starts in a row did not finish` | The slot starts but never comes up. Same as above. Switching off and on with no key gives it one more go |
+| Red **Recovery** screen, `3 starts in a row did not finish` | The slot starts but never comes up. Same as above. Switching off and on with no key gives it one more go |
 | Boot menu: `The OS could not be started.` and a reason | Switch off and on once. If it stays, open 4 Device info for the failed step, and see [Getting Logs Off the Unit](Getting-Logs-Off-the-Unit) |
 | Boot menu: `Can't start the OS: DSP2 is not answering` | The second processor stopped. Switch off and on |
 | Boot menu: `OS needs reinstalling: install a TE firmware update` | The OS on the eMMC is stored in a form waffle-boot cannot load. See [Updating the OS](Updating-the-OS) |
@@ -91,13 +91,13 @@ Or hold M4 (4 under the display) during the trial start itself: the screen says
 
 | Key | Item | What it does |
 | --- | --- | --- |
-| 2 | `Make slot N the boot slot` | Slot N starts from now on, with no trial |
+| 2 | `Make slot N the boot slot` | Slot N starts from now on, with no trial. Not shown after a trial that came up: use 3 |
 | 4 | `Put slot N's record back` | Undoes a try that was not kept: slot N reads `checked` again, nothing else changes |
 
 Each asks you to hold 1 for 5 s. **8** goes back.
 
 > **Warning.** Read the red lines before you make a slot the boot slot. `Its check failed`,
-> `It is not a waffle-boot image` or `There may be no way back without a flash programmer` mean the unit may
+> `Not waffle-boot` or `There may be no way back without a flash programmer` mean the unit may
 > never start again from that slot. Try it once first: 8, then 1.
 
 ## Write a slot from a computer
@@ -139,7 +139,7 @@ tool checks images against the repository's own files and history. For a write, 
 that clone, `build/bf703/waffle-boot.ldr` ([Building and Testing](Building-and-Testing)).
 
 1. Open the recovery menu, and connect USB. The status bar shows `USB`, and the screen
-   `Connected: a write from the computer replaces slot N`.
+   `Connected: the computer writes slot N`.
 2. From the repository's root, see what the unit reports and what each command would do:
 
        python3 tools/wbrecover.py info
@@ -150,7 +150,7 @@ that clone, `build/bf703/waffle-boot.ldr` ([Building and Testing](Building-and-T
        python3 tools/wbrecover.py write build/bf703/waffle-boot.ldr
 
 4. Read what the tool says it will do, and type `yes`.
-5. The unit shows what it is about to write and `Switch the unit off within 15 s to stop`. Switching off or
+5. The unit shows what it is about to write and `Switch off within 15 s to stop`. Switching off or
    unplugging USB in that time stops it with nothing written. Stopping the tool does not.
 6. Wait for `Verified: Slot N holds this file`. Then restart, with no key held:
 
@@ -161,13 +161,13 @@ Every command is in [Recovery Reference](Recovery-Reference#the-host-tool).
 ## If it does not work
 
 - **The normal start happens instead of recovery.** M4 (4 under the display) must be the only key held. Try again.
-- **`Slot N holds nothing the unit can start`.** Write an image to it first, from a computer.
-- **`No write: the unit cannot tell which slot is running`.** Recovery can neither write nor choose: the
+- **`Slot N holds nothing that starts`.** Write an image to it first, from a computer.
+- **`No write: running slot unknown`.** Recovery can neither write nor choose: the
   image in memory matches neither slot whole, or the flash could not be read. Restart and try again.
 - **`no serial port named "OP-XY Recovery" found` (or `OP-1 Recovery`), or no such port on the page.** Is the red Recovery
   screen up, and USB connected? Try another cable or port; a cable may carry power only. With the tool, or
   more than one unit, give `--port PORT`.
-- **`the selector is not settled`**, or the screen says `No write yet: restart the unit once first`.
+- **`the selector is not settled`**, or the screen says `No write yet: restart once first`.
   Switch off and on with no key held, then open recovery again.
 - **The screen says `Restart before another write`.** One write per visit: restart, then open recovery
   again.

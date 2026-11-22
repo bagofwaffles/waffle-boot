@@ -30,7 +30,8 @@ select   keeps a slot written with --new-front: from that slot's own recovery in
 try      (front version 11 or later) has the next start run the other slot's image once, as it
          lies; no image is sent. The starts after it boot the running slot again, until a keep
 switch   (front 11) makes the other slot the boot slot, after a warning by what it
-         holds and a typed phrase; no image is sent
+         holds and a typed phrase; no image is sent. After a trial start of it that came up,
+         keep is the action
 keep     (front 11) keeps a tried slot with no image sent: the other slot once its trial start has
          run, or the running slot in its own trial start
 put-back (front 11) makes the tried other slot's record good again, as before its trial
@@ -871,6 +872,12 @@ def act_goal(i, act):
             ACT_PUT_BACK: "would make %s's record good again, with no selector write" % k}[act]
 
 
+def keep_after_trial(i):
+    """A keep would start now, of the slot a switch names: the slot came up from its trial, and the
+    recovery menu offers its keep in place of the switch."""
+    return i['acts'][ACT_KEEP - 1] == 0 and act_slot(i, ACT_KEEP) == act_slot(i, ACT_SWITCH)
+
+
 def action_lines(i):
     """Front 11: the other slot's tier, and what each action would do now, unforced and forced."""
     if not i['v11'] or other_of(i) == NO_SLOT:
@@ -886,6 +893,8 @@ def action_lines(i):
             words = 'with --force only (%s): %s' % (act_text(act, un, i, False), act_goal(i, act))
         else:
             words = 'refused: %s' % act_text(act, fo, i, False)
+        if act == ACT_SWITCH and keep_after_trial(i):
+            words += '; after its trial, keep is the action'
         out.append('%-10s%s' % (ACT_LABELS[act], words))
     return out
 
@@ -2479,7 +2488,8 @@ def main(argv=None):
     s.add_argument('--force', **force)
     s.add_argument('image')
     for name, words in (('try', 'start the other slot once, as it lies (front version 11 or later)'),
-                        ('switch', 'make the other slot the boot slot (front version 11 or later)'),
+                        ('switch', 'make the other slot the boot slot; after its trial, keep (front version 11 or '
+                         'later)'),
                         ('keep', 'keep a tried slot, with no image sent (front version 11 or later)')):
         sub.add_parser(name, help=words).add_argument('--force', **force)
     sub.add_parser('put-back', help="make the tried other slot's record good again (front version "
