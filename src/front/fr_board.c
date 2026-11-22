@@ -9,6 +9,7 @@
 #include "fr.h"
 #include "fr_device.h"
 #include "fr_handoff.h"
+#include "fr_cache.h"
 #include "fr_hw.h"
 #include "fr_image.h"
 #include "fr_start.h"
@@ -147,6 +148,9 @@ uint32_t fr_main(void)
 		struct fr_start_hw h = hw;
 		enum fr_next next;
 
+		/* the caches on, the INIT stage's clocks and DDR up; off again at
+		 * the one exit below */
+		fr_cache_on();
 		ho->role_master = 1u;
 		if (role.by_strap)
 			ho->flags |= FR_HO_ROLE_BY_STRAP;
@@ -178,5 +182,8 @@ uint32_t fr_main(void)
 	}
 	ho->stamps[FR_STAMP_HANDOFF] = wb_core_cycles();
 	fr_handoff_seal(ho);
+	/* the state the stream's entry left: the CPLBs and caches off, so that
+	 * no line of the image just read as data survives the jump */
+	fr_cache_off();
 	return d.main_entry;
 }
