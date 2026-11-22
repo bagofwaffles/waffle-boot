@@ -1,47 +1,63 @@
 {
  "own": [
   [
-   "0x88000000",
-   "0x88100000"
+   "0x08030000",
+   "0x08030800"
+  ],
+  [
+   "0x882BD000",
+   "0x8833D000"
   ]
  ],
  "cases": [
   {
-   "name": "own code in DDR",
-   "target": "0x88000000",
-   "count": "0x00001000",
+   "name": "the descriptor",
+   "target": "0x08030000",
+   "count": "0x00000120",
    "compared": [
     [
-     "0x88000000",
-     "0x88001000"
+     "0x08030000",
+     "0x08030120"
     ]
    ]
   },
   {
-   "name": "own initial data, the end of the range",
-   "target": "0x880FF000",
-   "count": "0x00001000",
+   "name": "the packed block, whole",
+   "target": "0x882BD000",
+   "count": "0x0003E000",
    "compared": [
     [
-     "0x880FF000",
-     "0x88100000"
+     "0x882BD000",
+     "0x882FB000"
     ]
    ]
   },
   {
-   "name": "straddles the end: only the part inside",
-   "target": "0x880FF800",
+   "name": "straddles the packed block's end: only the part inside",
+   "target": "0x8833C800",
    "count": "0x00001000",
    "compared": [
     [
-     "0x880FF800",
-     "0x88100000"
+     "0x8833C800",
+     "0x8833D000"
     ]
    ]
+  },
+  {
+   "name": "the image's own code in DDR, which the stream does not load and the stub writes",
+   "target": "0x8803D000",
+   "count": "0x00001000",
+   "compared": []
   },
   {
    "name": "DDR outside the image: another image may have left it",
    "target": "0x88200000",
+   "count": "0x00001000",
+   "compared": []
+  },
+  {
+   "name": "the stub, in L2, which is not this image's",
+   "target": "0x08031000",
    "count": "0x00001000",
    "compared": []
   },
@@ -58,7 +74,7 @@
    "compared": []
   },
   {
-   "name": "L2",
+   "name": "L2, the front's",
    "target": "0x08010000",
    "count": "0x00001000",
    "compared": []
@@ -67,8 +83,15 @@
  "own_ranges": [
   {
    "range": [
-    "0x88000000",
-    "0x88100000"
+    "0x08030000",
+    "0x08030800"
+   ],
+   "ok": true
+  },
+  {
+   "range": [
+    "0x882BD000",
+    "0x8833D000"
    ],
    "ok": true
   },

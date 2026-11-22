@@ -3,7 +3,8 @@
 """Size, placement and layout checks of the linked bootloader.
 
     layout.py IMAGE.elf --ld LDSCRIPT --board OPXY_H --flash S02_H
-              --memmap S01_H [--stream STREAM.ldr] [--json LAYOUT.json]
+              --memmap S01_H [--stream STREAM.ldr] [--stub STUB.elf]
+              [--json LAYOUT.json]
 
 Prints the use of each MEMORY region of LDSCRIPT and fails (exit 1) when:
   - a region is overrun, a DDR section lies outside the image's range
@@ -21,7 +22,12 @@ Prints the use of each MEMORY region of LDSCRIPT and fails (exit 1) when:
   - a section meets the ROM's L2 boot reserve (S-01.008, S01_BOOT_RESERVE_*
     in S01_H), loaded or not: the ROM is running on it while the INIT
     stage runs. The stream's blocks are check_stream.py's rule
-    rom_boot_reserve.
+    rom_boot_reserve;
+  - with --stub, a section of the stub (src/stub/stub.ld) lies outside its
+    region, below its record (STUB_AT, STUB_RECORD in tools/mkldr.py), or a
+    section of the image meets it, and with --stream too, the stream loads
+    no packed block, or one longer than its place (OPXY_PACK_START-END);
+  - a section of the image meets the packed block's place.
 The relocation checks need the image linked with --emit-relocs (-q).
 
 With --json, writes the layout in tests/oracle/S-01-boot-chain/
@@ -37,6 +43,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import elf32  # noqa: E402
+import mkldr  # noqa: E402
 from mkldr import FR_FRAME  # noqa: E402
 
 # S-01.012: the L1 spaces; the boot ROM; core and system MMRs.
@@ -78,6 +85,14 @@ def meets(lo, hi, r):
     return lo < r[1] and r[0] < hi
 
 
+def check_stream_blocks(data):
+    """The stream's blocks, by S-01's own parser (tests/oracle/S-01-boot-chain)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, os.path.join(here, '..', 'tests', 'oracle', 'S-01-boot-chain'))
+    import check_stream  # noqa: E402
+    return check_stream.ldr.parse(data)
+
+
 def reloc_check(elf, prefix, allowed):
     """Every relocation in an output section named PREFIX* resolves into
     ALLOWED (or the ROM or MMRs). Returns a list of failures."""
@@ -106,7 +121,7 @@ def reloc_check(elf, prefix, allowed):
 def main(argv):
     args = argv[1:]
     opts = {}
-    for k in ('--ld', '--board', '--flash', '--memmap', '--stream', '--json'):
+    for k in ('--ld', '--board', '--flash', '--memmap', '--stream', '--stub', '--json'):
         if k in args:
             i = args.index(k)
             opts[k] = args[i + 1]
@@ -174,6 +189,43 @@ def main(argv):
             fails.append('the stream is %d bytes, a slot holds %d before its settings sector '
                          '(S-02.104)' % (n, cap))
 
+    pack = (board['OPXY_PACK_START'], board['OPXY_PACK_END'])
+    for s in secs:
+        if meets(s.addr, s.end, pack):
+            fails.append('%s at 0x%08x-0x%08x meets the packed block\'s place' %
+                         (s.name, s.addr, s.end))
+    packed = None
+    if '--stream' in opts and '--stub' in opts:
+        with open(opts['--stream'], 'rb') as f:
+            blocks = check_stream_blocks(f.read())
+        hits = [b for b in blocks if b['target'] == pack[0] and b['count']]
+        if len(hits) != 1:
+            fails.append('%d stream blocks load the packed block' % len(hits))
+        else:
+            packed = (pack[0], pack[0] + hits[0]['count'])
+            print('%-10s 0x%08x 0x%08x %10d %10d' % ('packed', pack[0], pack[1],
+                                                     hits[0]['count'], pack[1] - pack[0]))
+            if packed[1] > pack[1]:
+                fails.append('the packed block is %d bytes, its place holds %d'
+                             % (hits[0]['count'], pack[1] - pack[0]))
+    stub_secs = []
+    if '--stub' in opts:
+        stub = elf32.read(opts['--stub'])
+        stub_secs = [s for s in stub.sections if s.alloc and s.size]
+        used = sum(s.size for s in stub_secs)
+        print('%-10s 0x%08x 0x%08x %10d %10d' % ('stub', mkldr.STUB_AT[0], mkldr.STUB_RECORD,
+                                                 used, mkldr.STUB_RECORD - mkldr.STUB_AT[0]))
+        for s in stub_secs:
+            print('  %-20s 0x%08x %8d%s' % (s.name, s.addr, s.size,
+                                            '' if s.type != elf32.SHT_NOBITS else ' (not loaded)'))
+            if not (mkldr.STUB_AT[0] <= s.addr and s.end <= mkldr.STUB_RECORD):
+                fails.append('the stub\'s %s at 0x%08x-0x%08x is outside its region' %
+                             (s.name, s.addr, s.end))
+        for s in secs:
+            if meets(s.addr, s.end, mkldr.STUB_AT):
+                fails.append('%s at 0x%08x-0x%08x meets the stub\'s region' %
+                             (s.name, s.addr, s.end))
+
     reserve = [(lo, hi) for name, lo, hi in regions if name == 'handover']
     reserve.append((s01['S01_RESERVE_DDR_START'], s01['S01_RESERVE_DDR_END']))
     fails += ['handover: ' + b for b in reloc_check(elf, '.handover.', reserve)]
@@ -196,6 +248,14 @@ def main(argv):
             v, n = hits[0]
             ranges.append({'name': sym, 'start': '0x%08x' % v, 'end': '0x%08x' % (v + n),
                            'kind': kind, 'handover': True, 'role': role})
+        for s in stub_secs:
+            kind = 'code' if s.flags & elf32.SHF_EXECINSTR else \
+                'stack' if s.name.endswith('stack') else 'data'
+            ranges.append({'name': 'stub' + s.name, 'start': '0x%08x' % s.addr,
+                           'end': '0x%08x' % s.end, 'kind': kind, 'handover': False})
+        if packed is not None:
+            ranges.append({'name': 'packed_block', 'start': '0x%08x' % packed[0],
+                           'end': '0x%08x' % packed[1], 'kind': 'data', 'handover': False})
         ranges.append({'name': 'heap', 'start': '0x%08x' % heap[0], 'end': '0x%08x' % heap[1],
                        'kind': 'heap', 'handover': False})
         for name, lo, hi in held:

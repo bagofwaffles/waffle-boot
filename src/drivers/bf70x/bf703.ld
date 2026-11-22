@@ -17,20 +17,23 @@
  *     section or a stream block that meets it;
  *   - the L2 handover reserve, up to the fatal record at 0x0803DFD4
  *     (S-16.104): the code and data that run from the kernel call on;
- *   - the first 3 MiB of the DDR handover reserve, from 0x8803D000
+ *   - the first 2.5 MiB of the DDR handover reserve, from 0x8803D000
  *     (S-01.013): the main image, its data and its stack (S-13a, Terms).
- *     The rest of DDR is the heap, the RAM disk and the frame buffers
- *     (waffle/board/opxy.h, S-01.016); the region's end keeps the image
- *     out of them.
+ *     The next 512 KiB, to 0x8833D000, hold the packed block the stream
+ *     loads and the stub unpacks (waffle/pack.h); the rest of DDR is the
+ *     heap, the RAM disk and the frame buffers (waffle/board/opxy.h,
+ *     S-01.016). The region's end keeps the image out of them.
  *
  * The frozen front (src/front/fr_handoff.h, front.ld) owns L1 code
  * 0x11A04000-0x11A0C000, L1 data A 0x11802000-0x11804000 and L2
  * 0x08002000-0x08031000: the regions here stop short of them, and
  * tools/mkldr.py refuses an image that meets them. The front holds the INIT
- * stage (S-01.010) and the stream's entry; this image is entered at
- * _wb_reset by the front's jump, with the hand-off record written.
+ * stage (S-01.010) and the stream's entry. It enters the stub
+ * (src/stub/stub.ld, in the L2 left free here), which unpacks this image
+ * and enters it at _wb_reset, with the front's hand-off record written.
  *
- * The loader stream places each section at its run address, so nothing is
+ * The stream loads the L1 sections at their run addresses, and the stub
+ * inflates every other loaded section to its run address, so nothing is
  * copied at start-up; .bss and .l1.bss are cleared by wb_start_c(), .noinit
  * is not.
  */
@@ -46,7 +49,7 @@ MEMORY
 	l1_data_b  (rw)  : ORIGIN = 0x11900000, LENGTH = 0x4000
 	l2         (rwx) : ORIGIN = 0x08031000, LENGTH = 0xB000
 	handover   (rwx) : ORIGIN = 0x0803C000, LENGTH = 0x1FD4
-	ddr        (rwx) : ORIGIN = 0x8803D000, LENGTH = 0x00300000
+	ddr        (rwx) : ORIGIN = 0x8803D000, LENGTH = 0x00280000
 }
 
 /* The main stack, in DDR after .bss. */
@@ -111,16 +114,13 @@ SECTIONS
 
 	.rodata :
 	{
-		/* read by tools/mkldr.py; the running-slot inference compares
-		 * these bytes first (src/board/opxy_master.c) */
+		/* read by tools/mkldr.py for the descriptor's version */
 		KEEP(*(.rodata.opxy_bl_version))
 		*(.rodata .rodata.*)
 	} > ddr
 
 	.data :
 	{
-		/* the end of what the running-slot comparison reads */
-		_wb_data_start = .;
 		. = ALIGN(4);
 		*(.data .data.*)
 		*(.sdata .sdata.*)
@@ -155,9 +155,13 @@ SECTIONS
 		_wb_stack_end = .;
 	} > ddr
 
-	_wb_ddr_image_start = ORIGIN(ddr);
+	/* The packed block, which the running-slot inference compares
+	 * (src/board/opxy_master.c, waffle/pack.h). */
+	_wb_pack_start = ORIGIN(ddr) + LENGTH(ddr);
+	_wb_pack_end = 0x8833D000;
 
-	/* L2 below the reserve: free for later use (DMA buffers). */
+	/* L2 below the reserve: the stub's (src/stub/stub.ld) while it runs,
+	 * nothing of this image's. */
 	_wb_l2_free = ORIGIN(l2);
 
 	/DISCARD/ :

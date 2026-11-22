@@ -140,7 +140,10 @@ what is built.
   `BUILDFIXED`, inflate builds its fixed-code tables in RAM on first use;
   with `Z_TESTW` empty, `crc32()` works byte by byte from one 1 KiB table,
   without the braid tables. The bulk CRC-32s run on the CRC peripheral
-  (`src/board/opxy_crc.c`).
+  (`src/board/opxy_crc.c`). The stub (`src/stub/`) builds the same six
+  files into its own link, with `Z_SOLO` (no C library, no allocator) and
+  `NO_GZIP`, and keeps the fixed-code tables as constants
+  (`inffixed.h`).
 - **yaffs2** is built without yaffs1 (`CONFIG_YAFFS_NO_YAFFS1`,
   `src/glue/yaffs2/yaffs_port.h`): every device is a yaffs2 one.
 - **yaffs2** is built without `yaffs_tagscompat.c`, `yaffs_ecc.c`,
@@ -158,7 +161,9 @@ what is built.
 `make size`, archive totals under `-Os` with the Makefile's `TARGET_SIZE`
 (`-O2` for crc, zlib but `adler32.c`, and picolibc's `memcpy` and `memset`,
 which copy by words; `-mcpu=bf703-none`, `-ffunction-sections`); a linked
-image keeps only what it uses.
+image keeps only what it uses. The stub (`src/stub/`) links its own copy of zlib's inflate and
+CRC-32 at `-O2`, `adler32.c` at `-Os`, built with `Z_SOLO` and `NO_GZIP`;
+`make size` shows its sections.
 
 | Component | text | data | bss |
 | --- | ---: | ---: | ---: |

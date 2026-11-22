@@ -7,7 +7,7 @@ Run them from the repository root. The Python tools need only the standard libra
 | Tool | What it does | Used by |
 | --- | --- | --- |
 | **Build and image** | | |
-| `mkldr.py` | Writes the LDR boot stream (front and main image) from the linked ELF files | `make image`, `make cross` |
+| `mkldr.py` | Writes the LDR boot stream (front, stub and the main image, packed) from the linked ELF files, and checks the stub's own unpack of it | `make image`, `make cross` |
 | `elf32.py` | Reads ELF32 files: sections, symbols, relocations, load addresses | the other image tools |
 | `layout.py` | Checks the image's size, placement and layout | `make image`, `make cross` |
 | `front_image.py` | The frozen front's checks: pin, include boundary, init, stack | `make cross`, [The Front](https://github.com/bagofwaffles/waffle-boot/wiki/The-Front) |

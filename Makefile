@@ -45,6 +45,9 @@
 #   BOOT_TIMING_INFER=1  with BOOT_TIMING=1, the running slot also inferred
 #                 from both slots' streams after the front named it, timed for
 #                 the report; it lengthens the start, so it is off by default
+#   PACK_SPOIL=1  an image whose packed block the stub refuses after inflating
+#                 it (tools/mkldr.py --spoil): the stub's refusal on a unit's
+#                 trial slot; never a release
 #   BOOT_LINK_SETTLE_US=<n>  microseconds between a byte of the slave's boot
 #                 stream and the sample of PA6 that decides the next (S-13b.022),
 #                 default 2; 0 for none
@@ -321,6 +324,7 @@ $(eval $(call VEC_HEADER,s15_vectors.h,tests/vectors/s15/gen_s15_vectors.py))
 $(eval $(call VEC_HEADER,s17_vectors.h,tests/vectors/s17/gen_s17_vectors.py))
 $(eval $(call VEC_HEADER,s18_vectors.h,tests/vectors/s18/gen_s18_vectors.py))
 $(eval $(call VEC_HEADER,wire_vectors.h,tests/vectors/wire/gen_wire_vectors.py))
+$(eval $(call VEC_HEADER,pack_vectors.h,tests/vectors/pack/gen_pack_vectors.py))
 
 # A test's own dependency file names the headers it includes once it has
 # been built; before that, every test waits for every header.
@@ -446,7 +450,7 @@ STREAM := $(IMAGE:.elf=.ldr)
 LAYOUT := $(IMAGE:.elf=.layout.json)
 LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/opxy.h \
 	--flash src/include/waffle/s02_flash.h --memmap src/include/waffle/s01_memmap.h \
-	--stream $(STREAM)
+	--stream $(STREAM) --stub $(BUILD)/bf703/stub.elf
 
 # S-01.009: the stack the factory first stage calls the ROM's boot entry on,
 # which no block of the stream may meet (S-02.091 rule 4).
@@ -508,7 +512,62 @@ $(FRONT_STREAM): $(FRONT_ELF) $(FRONT_OK) tools/mkldr.py tools/elf32.py
 front-pin: $(FRONT_ELF)
 	$(PYTHON) -I -B tools/front_image.py pin $(FRONT_ELF) $(FRONT_PIN) --write
 
-image: $(STREAM) $(LAYOUT)
+# The stub (src/stub/, waffle/pack.h): linked alone by stub.ld from its own
+# objects, its own copy of zlib's inflate and CRC-32 (Z_SOLO: no C library;
+# NO_GZIP: raw deflate only) and libgcc, into the L2 the image leaves free.
+# The front enters it; it unpacks the image's packed block and enters the
+# image. Built for speed, apart from every build option of the image.
+STUB_LD   := src/stub/stub.ld
+STUB_SRCS := src/stub/stub.c src/stub/unpack.c src/stub/stub_libc.c
+STUB_ZLIB := $(addprefix src/third_party/zlib/,inflate.c inffast.c inftrees.c zutil.c \
+	crc32.c adler32.c)
+STUB_OBJS := $(STUB_SRCS:src/stub/%.c=$(BUILD)/bf703/stub/%.o) \
+	$(STUB_ZLIB:src/third_party/zlib/%.c=$(BUILD)/bf703/stub/zlib/%.o) \
+	$(BUILD)/bf703/stub/stub_entry.o
+STUB_ELF  := $(BUILD)/bf703/stub.elf
+STUB_ZFLAGS := -DZ_SOLO -DNO_GZIP -DZ_TESTW=
+STUB_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -Isrc/stub -isystem src/third_party/zlib \
+	-g -fdebug-prefix-map=$(CURDIR)=. -mcpu=bf703-none -O2 -ffreestanding -fno-common \
+	-ffunction-sections -fdata-sections -fno-tree-loop-distribute-patterns $(STUB_ZFLAGS)
+STUB_TP_CFLAGS := -std=gnu11 -mcpu=bf703-none -O2 -fno-common -ffunction-sections \
+	-fdata-sections -fno-tree-loop-distribute-patterns -ffreestanding $(TP_COMMON) \
+	$(LIBC_INCLUDES) $(TP_WARN) $(STUB_ZFLAGS)
+
+$(BUILD)/bf703/stub/%.o: src/stub/%.c
+	@mkdir -p $(@D)
+	$(CROSS_CC) $(STUB_CFLAGS) -MD -MP -c $< -o $@
+
+$(BUILD)/bf703/stub/zlib/%.o: src/third_party/zlib/%.c
+	@mkdir -p $(@D)
+	$(CROSS_CC) $(STUB_TP_CFLAGS) -MD -MP -c $< -o $@
+
+$(BUILD)/bf703/stub/%.o: src/stub/%.S
+	@mkdir -p $(@D)
+	$(CROSS_CC) -mcpu=bf703-none -MD -MP -c $< -o $@
+
+# adler32() is linked for inflate's zlib wrapper, which raw deflate never reaches.
+$(BUILD)/bf703/stub/zlib/adler32.o: STUB_TP_CFLAGS += -Os
+
+$(STUB_ELF): $(STUB_OBJS) $(STUB_LD)
+	$(CROSS_CC) -mcpu=bf703-none -nostartfiles -nostdlib -T $(STUB_LD) \
+		-Wl,--orphan-handling=error -Wl,--gc-sections -Wl,-Map,$(@:.elf=.map) \
+		-Wl,-u,_wb_stub_entry $(STUB_OBJS) -lgcc -o $@
+
+# The stub's unpack on the host, over the build's stream: it must give back
+# the image's packed runs (mkldr.py --unpacked).
+UNPACK_HOST := $(BUILD)/host/unpack-host
+$(UNPACK_HOST): src/stub/unpack_host.c src/stub/unpack.c src/stub/unpack.h \
+		src/include/waffle/pack.h $(BUILD)/host/libzlib.a
+	@mkdir -p $(@D)
+	$(CC) $(COMMON) -O2 $(TP_CPPFLAGS) src/stub/unpack_host.c src/stub/unpack.c \
+		$(BUILD)/host/libzlib.a -o $@
+UNPACK_CHECK := $(BUILD)/bf703/waffle-boot.unpacked
+$(UNPACK_CHECK): $(STREAM) $(UNPACK_HOST) $(IMAGE) tools/mkldr.py
+	$(UNPACK_HOST) $(STREAM) $@.tmp
+	$(PYTHON) -I -B tools/mkldr.py $(IMAGE) $@.tmp --unpacked
+	@mv $@.tmp $@
+
+image: $(STREAM) $(LAYOUT) $(if $(PACK_SPOIL),,$(UNPACK_CHECK))
 
 # S-15.132: a build-time image for the hand-over frame, a 480 x 222 PNG.
 # Its object is linked beside libwaffle, and its wb_display_boot_image
@@ -545,14 +604,24 @@ $(IMAGE): $(CROSS_LIB) $(TP_TARGET_LIBS) $(LDSCRIPT) $(LOGO_STAMP) \
 		-Wl,--whole-archive $(CROSS_LIB) -Wl,--no-whole-archive \
 		-Wl,--start-group $(TP_TARGET_LIBS) -lgcc -Wl,--end-group -o $@
 
-$(STREAM): $(IMAGE) $(FRONT_ELF) $(FRONT_OK) tools/mkldr.py tools/elf32.py $(INIT_STACK)
-	$(PYTHON) -I -B tools/mkldr.py $< $@.tmp --front $(FRONT_ELF)
+# PACK_SPOIL=1: a packed block the stub refuses after inflating every run
+# (mkldr.py --spoil), to try the refusal on a unit's trial slot. Never a release.
+# The stamp writes the stream again when the option is given or dropped.
+PACK_STAMP := $(BUILD)/bf703/pack.stamp
+$(PACK_STAMP): FORCE
+	@mkdir -p $(@D)
+	@printf '%s\n' '$(PACK_SPOIL)' | cmp -s - $@ || printf '%s\n' '$(PACK_SPOIL)' > $@
+
+$(STREAM): $(IMAGE) $(FRONT_ELF) $(FRONT_OK) $(STUB_ELF) $(PACK_STAMP) tools/mkldr.py tools/elf32.py \
+		$(INIT_STACK)
+	$(PYTHON) -I -B tools/mkldr.py $< $@.tmp --front $(FRONT_ELF) --stub $(STUB_ELF) \
+		$(if $(PACK_SPOIL),--spoil)
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_stack.py $(INIT_STACK)
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_stream.py bootloader $@.tmp \
 		--first-stage-stack $(FIRST_STAGE_STACK)
 	@mv $@.tmp $@
 
-$(LAYOUT): $(IMAGE) $(STREAM) tools/layout.py tools/elf32.py
+$(LAYOUT): $(IMAGE) $(STREAM) $(STUB_ELF) tools/layout.py tools/elf32.py tools/mkldr.py
 	$(PYTHON) -I -B tools/layout.py $< $(LAYOUT_ARGS) --json $@.tmp
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $@.tmp
 	@mv $@.tmp $@
@@ -773,6 +842,12 @@ $(BUILD)/host/tests/test_front_%: tests/unit/test_front_%.c $(TEST_SUPPORT_LIB) 
 	$(CC) $(HOST_TEST_CFLAGS) -MMD -MP $< $(FRONT_HOST_LIB) $(TEST_SUPPORT_LIB) $(HOST_LIB) \
 		-Wl,--start-group $(TP_HOST_LIBS) -Wl,--end-group -o $@
 
+# The stub's tests: its portable unpack (src/stub/unpack.c) and the host's zlib.
+$(BUILD)/host/tests/test_stub_%: tests/unit/test_stub_%.c src/stub/unpack.c $(TEST_SUPPORT_LIB) $(TP_HOST_LIBS)
+	@mkdir -p $(@D)
+	$(CC) $(HOST_TEST_CFLAGS) -MMD -MP $< src/stub/unpack.c $(TEST_SUPPORT_LIB) \
+		-Wl,--start-group $(TP_HOST_LIBS) -Wl,--end-group -o $@
+
 $(BUILD)/host/tests/%: tests/unit/%.c $(TEST_SUPPORT_LIB) $(HOST_LIB) $(TP_HOST_LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(HOST_TEST_CFLAGS) -MMD -MP $< $(TEST_SUPPORT_LIB) $(HOST_LIB) \
@@ -794,7 +869,8 @@ $(CROSS_LIB): $(CROSS_OBJS)
 # them side by side; the output of each comes out in one piece. The files
 # with a test-OS variant (waffle/testos.h) are analyzed in it as well.
 CHECKS  := $(TESTS:tests/unit/%.c=check/%)
-ANALYZE := $(addprefix analyze/,$(SRCS) $(FRONT_SRCS) $(TP_GLUE) $(TESTS) $(TEST_SUPPORT) \
+ANALYZE := $(addprefix analyze/,$(SRCS) $(FRONT_SRCS) $(STUB_SRCS) src/stub/unpack_host.c \
+	$(TP_GLUE) $(TESTS) $(TEST_SUPPORT) \
 	$(filter %.c,$(LOCAL_SRCS)))
 TESTOS_VARIANT := $(sort $(shell grep -l 'OPXY_TEST_OS\|OPXY_TESTOS' src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
 ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
@@ -879,5 +955,5 @@ clean:
 	rm -rf $(BUILD)
 
 -include $(HOST_OBJS:.o=.d) $(HOST_TESTS:=.d) $(TEST_SUPPORT_OBJS:.o=.d) \
-	$(FRONT_HOST_OBJS:.o=.d) $(FRONT_OBJS:.o=.d) \
+	$(FRONT_HOST_OBJS:.o=.d) $(FRONT_OBJS:.o=.d) $(STUB_OBJS:.o=.d) \
 	$(CROSS_OBJS:.o=.d) $(TESTOS_ALL_OBJS:.o=.d) $(VEC_HEADERS:=.d)
