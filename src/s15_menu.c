@@ -506,7 +506,7 @@ static void factory_reset(struct s15_menu *m)
 
 	enter(m, S15_SCR_RESULT, "Factory Reset");
 	check_files(m);
-	line(m, "Removing user data...");
+	line(m, "Removing...");
 	if (refused(m) || slave_lost(m)) {
 		/* S-12.052: nothing removed or erased on the yaffs2 volume;
 		 * S-15.052: the OS FAT volume's erase and the settings' clear
@@ -645,7 +645,7 @@ static void remove_pack(struct s15_menu *m, unsigned n)
 		return;
 	}
 	(void)m->env->remove_tree(m->env->ctx, DLC);
-	sline(m, S15_ST_OK, "All content packs removed.");
+	sline(m, S15_ST_OK, "All packs removed.");
 	s15_restart_line(m->dev, &b);
 	line(m, b.s);
 	m->packs_item = false;
@@ -818,11 +818,11 @@ static void draw_system(struct s15_menu *m, bool armed)
 	sline(m, S15_ST_ITEM, "2 Reset volume calibration");
 	if (m->packs_item)
 		sline(m, S15_ST_ITEM, "3 Remove content packs");
-	sline(m, S15_ST_ITEM, "5 Format drive\tWipes the drive: reinstall after");
+	sline(m, S15_ST_ITEM, "5 Format drive\tErases all: reinstall after");
 	if (armed) {
 		held_item(m, 7u, "Factory reset");
 	} else {
-		sline(m, S15_ST_ITEM, "7 Factory reset\tRemoves your data only");
+		sline(m, S15_ST_ITEM, "7 Factory reset\tYour data only");
 		sline(m, S15_ST_DIM, s15_hold_line);
 	}
 	/* No pack item then: dir_exists() does not answer. */
@@ -908,7 +908,7 @@ static void draw_format(struct s15_menu *m, bool armed, bool offer)
 	if (armed)
 		held_item(m, 1u, "Format drive");
 	else
-		sline(m, S15_ST_ITEM, "1 Format drive\tWipes the drive: reinstall after");
+		sline(m, S15_ST_ITEM, "1 Format drive\tErases all: reinstall after");
 	if (!armed && offer)
 		sline(m, S15_ST_DIM, s15_hold_line);
 	blank(m);
@@ -928,11 +928,11 @@ static void run_format(struct s15_menu *m)
 	bool ok;
 
 	draw_format(m, false, false);
-	line(m, "Formatting the drive. Please wait...");
+	line(m, "Formatting...");
 	ok = m->env->format(m->env->ctx);
 	m->refused = refused(m);
 	if (!ok) {
-		sline(m, S15_ST_ERROR, "The drive could not be formatted");
+		sline(m, S15_ST_ERROR, "Format failed");
 		return;
 	}
 	sline(m, S15_ST_OK, "Done.");
@@ -985,7 +985,7 @@ static void mtp_on(struct s15_menu *m, enum s15_mtp mtp)
 	usb(m, mtp == S15_MTP_VENDOR ? S15_USB_MTP_VENDOR : S15_USB_MTP);
 	enter(m, S15_SCR_FACTORY, "MTP File Transfer");
 	blank(m);
-	line(m, "The drive is shared with the computer over USB.");
+	line(m, "Drive shared over USB.");
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Developer");
 }
@@ -1180,7 +1180,7 @@ static void draw_upgrade(struct s15_menu *m)
 	m->restart_ok = false;
 	if (m->midi) {                                     /* S-15.102 */
 		interrupted(m);
-		line(m, "Preparing the update. Please wait.");
+		line(m, "Preparing...");
 		return;
 	}
 	if (m->boot->interrupted)                          /* S-11.080 */
@@ -1192,9 +1192,9 @@ static void draw_upgrade(struct s15_menu *m)
 	s15_buf_str(&b, m->dev->ident.product_text);
 	s15_buf_str(&b, " to a computer");
 	line(m, b.s);
-	line(m, "2. Copy the firmware to the disk that appears");
+	line(m, "2. Copy the firmware to the new disk");
 	line(m, "3. Eject the disk");
-	sline(m, S15_ST_DIM, "Waiting for the package...");
+	sline(m, S15_ST_DIM, "Waiting...");
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Main Menu");
 }
@@ -1259,7 +1259,7 @@ static void prepare(struct s15_menu *m)
 {
 	make_upgrade_current(m);
 	m->prog_key = -1;
-	sline(m, S15_ST_HEAD, "Preparing the installation");
+	sline(m, S15_ST_HEAD, "Preparing");
 }
 
 static void start_scan(struct s15_menu *m)
@@ -1348,7 +1348,7 @@ static void ended(struct s15_menu *m)
 	}
 }
 
-static const char *const no_package = "No valid package found";
+static const char *const no_package = "No valid package";
 
 void s15_up_not_found(struct s15_menu *m)
 {
@@ -1360,7 +1360,7 @@ void s15_up_not_found(struct s15_menu *m)
  * the not-found line nor a reason line. */
 void s15_up_no_transfer(struct s15_menu *m)
 {
-	sline(m, S15_ST_ERROR, "The transfer could not start");
+	sline(m, S15_ST_ERROR, "Transfer did not start");
 	ended(m);
 }
 

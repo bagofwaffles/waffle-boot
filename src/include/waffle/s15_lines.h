@@ -258,7 +258,7 @@ void s15_start_info(struct s15_buf *out, const struct s15_start *s);
 
 /* S-15.140: the option's screen: these rows, then its item on digit 2
  * with the hold's hint (s15_hold_hint()), then the way back. */
-#define S15_OPTION_PROMPT_LINES 6u
+#define S15_OPTION_PROMPT_LINES 5u
 extern const char *const s15_option_prompt[S15_OPTION_PROMPT_LINES];
 extern const enum s15_style s15_option_prompt_style[S15_OPTION_PROMPT_LINES];
 extern const char s15_option_turn_on[];	/* the item's label */

@@ -47,7 +47,7 @@ To leave, switch off and on with no key held: the unit starts normally.
 | Boot menu: `The OS could not be started.` and a reason | Switch off and on once. If it stays, open 4 Device info for the failed step, and see [Getting Logs Off the Unit](Getting-Logs-Off-the-Unit) |
 | Boot menu: `Can't start the OS: DSP2 is not answering` | The second processor stopped. Switch off and on |
 | Boot menu: `OS needs reinstalling: install a TE firmware update` | The OS on the eMMC is stored in a form waffle-boot cannot load. See [Updating the OS](Updating-the-OS) |
-| Boot menu: `The last install did not finish.` | Install the firmware again: [Updating the OS](Updating-the-OS) |
+| Boot menu: `Last install did not finish.` | Install the firmware again: [Updating the OS](Updating-the-OS) |
 | Boot menu every time, no message | Settings → 6 **Start in boot menu** may be on. Turn it off, then switch off and on. Check that no key is stuck |
 | Recovery keys do nothing | Use a computer: [write a slot from a computer](#write-a-slot-from-a-computer). It can do everything the keys do |
 | Recovery: `Keep the power on until a write has finished` | Do not switch off. Write again from the computer until it ends well |

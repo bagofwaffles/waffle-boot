@@ -328,7 +328,7 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | System while the second processor does not answer | the selection canceled: nothing installed, 6 restarts, 8 goes back |
 | <img src="../docs/ui/upgrade-sig-prompt.png" width="480" alt="The signature does not match"> | <img src="../docs/ui/upgrade-signed.png" width="480" alt="A valid package's parts"> |
 | a package whose signature does not match: 1 held for 5 s goes on to its parts, 8 cancels | a package with a valid signature: `Signed by TE` under the list |
-| <img src="../docs/ui/oswrite-run.png" width="480" alt="Write OS"> | <img src="../docs/ui/continue-restarting.png" width="480" alt="Restarting to start the OS"> |
+| <img src="../docs/ui/oswrite-run.png" width="480" alt="Write OS"> | <img src="../docs/ui/continue-restarting.png" width="480" alt="Restarting into the OS"> |
 | Write OS (developer menu, 5), the write running | Continue to the OS |
 | <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |
 | the OS written, 8 back to the developer menu | the OS write failed: the step, the reason, what the eMMC was left with |

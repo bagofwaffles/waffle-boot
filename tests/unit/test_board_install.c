@@ -1827,7 +1827,7 @@ static void canceled(const struct s11_install_result *res, bool back)
 	CHECK(memcmp(flash_mem, flash_before, sizeof flash_before) == 0);
 	CHECK(!cdc_has("[bootloader]") && !cdc_has("[skipped]") &&
 	      !cdc_has("Upgrading to"));
-	CHECK(cdc_has("Nothing was installed."));
+	CHECK(cdc_has("Nothing installed."));
 	CHECK(cdc_has("[nothing to do]") || !cdc_has("[failed]"));
 	/* S-15.103: nothing written, so the screen goes back with 8, and the
 	 * zip does not count as read */
@@ -1883,8 +1883,8 @@ static void test_whole_hold(void)
 	 * with the option on: a return to the factory bootloader, warned of
 	 * on the selection and the run's screen */
 	CHECK(res.stock && !res.bootloader_waffle);
-	CHECK(cdc_has("This run replaces waffle-boot: back to stock") &&
-	      !cdc_has("Slot 2 is replaced"));
+	CHECK(cdc_has("Replaces waffle-boot: back to stock") &&
+	      !cdc_has("Replaces Slot 2"));
 	CHECK(cdc_has("install: installing by a 5 s hold, steps selected 0x04"));
 	/* S-11.021, S-15.197: valid, so no prompt; shown as TE's */
 	CHECK(res.sig == S11_SIG_VALID && cdc_has("install: signature valid") &&
@@ -1935,7 +1935,7 @@ static void test_whole_hold_waffle(void)
 	CHECK_EQ(res.selected, S11_STEP_BIT(S11_STEP_BOOTLOADER));
 	CHECK(res.bootloader_waffle && !res.stock);
 	CHECK(cdc_has("install: the bootloader image is waffle-boot's"));
-	CHECK(cdc_has("Slot 2 is replaced. Recovery remains.") &&
+	CHECK(cdc_has("Replaces Slot 2; recovery stays.") &&
 	      !cdc_has("back to stock"));
 	CHECK(slot1_holds_image() && first_stage_untouched());
 	whole_end();
@@ -2029,7 +2029,7 @@ static void test_whole_timeout(void)
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 59900u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 61000u);
 	canceled(&res, true);
-	CHECK(cdc_has("8 Cancel (cancels in 60 s)") && cdc_has("6 Restart"));
+	CHECK(cdc_has("8 Cancel (60 s)") && cdc_has("6 Restart"));
 	whole_end();
 }
 
@@ -2077,7 +2077,7 @@ static void test_whole_option_off(void)
 	whole_install(false, false, &res);
 	CHECK_EQ(ks.asks, 1u);
 	CHECK(cdc_has("7 Bootloader  Protected writes off"));
-	CHECK(!cdc_has("Slot 2 is replaced"));
+	CHECK(!cdc_has("Replaces Slot 2"));
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 7000u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 8000u);
 	CHECK(cdc_has("install: canceled with key 8, steps selected 0x00"));
@@ -2108,13 +2108,13 @@ static void test_whole_signature(void)
 	CHECK(res.reason == S11_REASON_NONE && res.sig == S11_SIG_INVALID);
 	CHECK_EQ(ks.asks, 2u);
 	CHECK(cdc_has("install: signature invalid"));
-	CHECK(cdc_has("The firmware's signature does not match.") &&
+	CHECK(cdc_has("Signature does not match.") &&
 	      cdc_has("1 Install anyway (hold for 5 s)"));
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 6000u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 6500u);
 	CHECK(cdc_has("install: the prompt held 5 s"));
 	CHECK(cdc_has("7 Bootloader  0.9.40 > 1234.0.0  Yes") &&
-	      cdc_has("Slot 2 is replaced") && !cdc_has("Signed by TE") &&
+	      cdc_has("Replaces Slot 2") && !cdc_has("Signed by TE") &&
 	      !cdc_has("back to stock"));
 	CHECK(cdc_has("install: canceled with key 8, steps selected 0x04"));
 	CHECK(!res.stock && !res.bootloader_waffle);
@@ -2152,7 +2152,7 @@ static void test_whole_signature(void)
 	CHECK_EQ(ks.asks, 1u);
 	CHECK(!cdc_has("does not match") && !cdc_has("Signed by TE"));
 	CHECK(cdc_has("7 Bootloader  0.9.40 > 1234.0.0  Yes") &&
-	      cdc_has("Slot 2 is replaced") && !cdc_has("back to stock"));
+	      cdc_has("Replaces Slot 2") && !cdc_has("back to stock"));
 	CHECK(cdc_has("install: canceled with key 8, steps selected 0x04"));
 	canceled(&res, true);
 	whole_end();

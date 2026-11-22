@@ -199,7 +199,7 @@ def volume_refused(mount_result):
 
 
 # The lines of format_runs.json: waffle-boot's wording, and the required information of a failure.
-FORMAT_RUN = ['Formatting the drive. Please wait...', 'ok:Done.']
+FORMAT_RUN = ['Formatting...', 'ok:Done.']
 FORMAT_FAILED_LINE = 'error:{INFO:the drive could not be formatted}'
 VOLUME_BLOCKS = 0x1200                           # S-12.042: blocks 0 to 0x11FF, one erase group each
 

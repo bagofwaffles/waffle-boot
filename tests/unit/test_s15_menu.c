@@ -1287,7 +1287,7 @@ static void test_files_scan(void)
 	press(0x12);
 	hold(0x14);
 	CHECK(F.files_scans == 1u && F.files_line && F.removed_at_files == 0u &&
-	      F.n_removed == 3u && app_at(s15_checking_files) < app_at("Removing user data..."),
+	      F.n_removed == 3u && app_at(s15_checking_files) < app_at("Removing..."),
 	      "S-15.191 factory reset: the scan before the removals");
 
 	/* a pack's removal */
@@ -2447,7 +2447,7 @@ static void test_reset_and_system(void)
 	press(0x12);
 	hold(0x14);
 	CHECK(F.n_removed == 0u && appended(s15_reset_unreadable) &&
-	      !appended("User data removed. Please restart your OP-XY."),
+	      !appended("User data removed. Restart the OP-XY."),
 	      "S-15.052 refused volume");
 	CHECK(F.erase_fat == 1u, "S-15.052 the OS FAT erase made all the same");
 
@@ -2457,7 +2457,7 @@ static void test_reset_and_system(void)
 	hold(0x14);
 	CHECK(F.n_removed == 3u && F.erase_fat == 1u &&
 	      appended(s15_reset_incomplete) &&
-	      !appended("User data removed. Please restart your OP-XY.") &&
+	      !appended("User data removed. Restart the OP-XY.") &&
 	      M.screen == S15_SCR_RESULT, "S-15.052 a removal fails");
 	clear_records();
 	press(0x07);
@@ -2521,7 +2521,7 @@ static void test_format(void)
 	tick(1u);
 	ev(0x06, false);
 	CHECK(F.format == 1u && M.screen == S15_SCR_UPGRADE &&
-	      appended("Formatting the drive. Please wait...") && appended("Done."),
+	      appended("Formatting...") && appended("Done."),
 	      "S-15.072 format then the upgrade screen");
 
 	reset_fake(); default_boot(); F.refused = true; start();
@@ -2557,7 +2557,7 @@ static void test_format(void)
 	F.refused_after = true;
 	hold(0x06);
 	CHECK(F.format == 1u && M.screen == S15_SCR_FORMAT &&
-	      appended("The drive could not be formatted") && !appended("Done."),
+	      appended("Format failed") && !appended("Done."),
 	      "S-15.072 a failed format stays in the format menu");
 	ev(0x06, true);
 	CHECK(F.format == 1u && M.armed == S15_ARM_FORMAT,
@@ -3144,13 +3144,13 @@ static void test_select_screen(void)
 	expect_screen("upgrade_select_open");
 	expect_title("upgrade");
 	CHECK(appended("1 Install selected  Nothing selected") &&
-	      appended("8 Cancel (cancels in 60 s)"), "S-15.004 its lines logged");
+	      appended("8 Cancel (60 s)"), "S-15.004 its lines logged");
 	nlogged = n_app;
 	/* the time: the 8 row replaced, not logged */
 	s15_up_select_time(&M, &sel_info, &sl, 9000u);
 	CHECK(n_app == nlogged, "S-15.004 the time's rows not logged");
 	n = rows(got, before);
-	CHECK(n == 8u && strcmp(got[7], "back:8 Cancel (cancels in 52 s)") == 0,
+	CHECK(n == 8u && strcmp(got[7], "back:8 Cancel (52 s)") == 0,
 	      "the seconds left: '%s'", got[7]);
 	/* the menus' keys add or change nothing, leave nothing */
 	clear_records();
@@ -3174,7 +3174,7 @@ static void test_select_screen(void)
 	sel_press(&sl, 0x14u, 1000u);
 	s15_up_select(&M, &sel_info, &sl, 9000u);
 	expect_screen("upgrade_select_picked");
-	CHECK(appended("Slot 2 is replaced. Recovery remains."), "the warning logged");
+	CHECK(appended("Replaces Slot 2; recovery stays."), "the warning logged");
 	/* the hold: the bar in the warning's row, its fill not logged */
 	s15_select_key(&sl, 0x06u, true, 10000u);
 	s15_up_select(&M, &sel_info, &sl, 10000u);
@@ -3210,7 +3210,7 @@ static void test_select_screen(void)
 	s15_up_select(&M, &sel_info, &sl, 1000u);
 	expect_screen("upgrade_sig_prompt");
 	expect_title("upgrade");
-	CHECK(appended("The firmware's signature does not match."),
+	CHECK(appended("Signature does not match."),
 	      "S-15.004 the prompt logged");
 	s15_select_key(&sl, 0x06u, true, 10000u);
 	s15_up_select(&M, &sel_info, &sl, 10000u);

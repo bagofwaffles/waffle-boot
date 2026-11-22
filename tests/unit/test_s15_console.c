@@ -744,10 +744,10 @@ static void test_render_row(void)
 
 	/* item: the digit's badge in column 0, the label from 3, the hint
 	 * right-aligned to column 55 */
-	row(3, S15_ST_ITEM, "7 Factory reset\tRemoves your data only");
+	row(3, S15_ST_ITEM, "7 Factory reset\tYour data only");
 	CHECK(n_texts == 4u && badge(col(0), y, "7", S15_AMBER) &&
 	      drawn(col(3), y, "Factory reset", S15_TEXT, B) &&
-	      drawn(col(S15_COLS - 22u), y, "Removes your data only", S15_DIM, B),
+	      drawn(col(S15_COLS - 14u), y, "Your data only", S15_DIM, B),
 	      "item");
 	row(3, S15_ST_ITEM, "5 System");
 	CHECK(n_texts == 3u && badge(col(0), y, "5", S15_AMBER) &&
@@ -1133,8 +1133,8 @@ static void test_boxes(void)
 	}
 
 	CHECK(strcmp(s15_keytest_lines[0],
-		     "Press every key and knob, one at a time.") == 0 &&
-	      strcmp(s15_keytest_lines[1], "`Shift` + `8`   Back to System Menu") == 0,
+		     "Press each key and knob.") == 0 &&
+	      strcmp(s15_keytest_lines[1], "`Shift` + `8`   Back to System") == 0,
 	      "S-15.062 the key test's lines");
 	s15_keytest_start(&kt, &wb_device_opxy);
 	(void)s15_keytest_event(&kt, 5, true);
