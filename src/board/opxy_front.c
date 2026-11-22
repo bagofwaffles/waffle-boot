@@ -91,6 +91,10 @@ bool opxy_front_device(const struct fr_handoff *ho, enum wb_dev_id *id, enum wb_
 	/* S-18.005: a device and a way of deciding that exist */
 	if (ho->device > FR_HO_DEV_OP1F || ho->device_how > FR_HO_HOW_UNKNOWN)
 		return false;
+	/* and that hold together: only the OP-XY has a second CPU */
+	if (ho->device != FR_HO_DEV_OPXY &&
+	    (ho->role_master == 0u || ho->device_how == FR_HO_HOW_SECOND))
+		return false;
 	*id = (enum wb_dev_id)ho->device;
 	*how = (enum wb_dev_how)ho->device_how;
 	return true;

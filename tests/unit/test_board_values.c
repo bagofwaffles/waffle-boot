@@ -606,6 +606,24 @@ static void test_device_pick(void)
 	CHECK(p.decided && !p.master && p.dev == &wb_device_opxy && p.how == WB_DEV_SECOND_CPU);
 	CHECK(reads == 0u && sf.samples == 1u);
 	sf.samples = 0u;
+	/* the OP-1F on a CPU that is not the master cannot hold: decided as
+	 * without a record, as the slave above */
+	ho.device = FR_HO_DEV_OP1F;
+	ho.device_how = FR_HO_HOW_TABLE;
+	opxy_device_pick(&ho, 2u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.decided && !p.master && p.dev == &wb_device_opxy && p.how == WB_DEV_SECOND_CPU);
+	CHECK(reads == 0u && sf.samples == 1u);
+	sf.samples = 0u;
+	/* nor the OP-1F decided as the second CPU, on the master: the
+	 * master decides from the first stage */
+	ho.role_master = 1u;
+	ho.device_how = FR_HO_HOW_SECOND;
+	memset(stage, 0xFF, sizeof stage);
+	opxy_device_pick(&ho, 2u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.decided && p.master && reads != 0u && sf.samples == 0u && p.how == WB_DEV_UNKNOWN);
+	reads = 0u;
+	ho.role_master = 0u;
+	ho.device = 7u;
 	/* its master: the device from the first stage, whatever the boot mode */
 	ho.role_master = 1u;
 	memset(stage, 0xFF, sizeof stage);

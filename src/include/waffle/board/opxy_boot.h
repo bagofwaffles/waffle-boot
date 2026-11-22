@@ -486,7 +486,8 @@ bool opxy_front_take(struct fr_handoff *out);
  */
 bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out);
 /* S-18.005: the device the front decided and how, from an accepted record;
- * false when either code names none. */
+ * false when either code names none, or for a device other than the OP-XY
+ * on a CPU that is not the master or decided as the second CPU. */
 bool opxy_front_device(const struct fr_handoff *ho, enum wb_dev_id *id, enum wb_dev_how *how);
 /*
  * S-18.001 to S-18.005, the main image's side: the device and the role.

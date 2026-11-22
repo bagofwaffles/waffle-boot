@@ -185,6 +185,8 @@ static void test_accept(void)
 	unsigned slot = 9;
 
 	ho_bytes(rec, 3, FR_HO_SIZE, FR_HO_RUNNING | FR_HO_START_LOGGED, 1);
+	rec[14] = 1u;			/* role_master */
+	ff_put32(rec + FR_HO_SIZE - 4u, wire_crc32(0, rec, FR_HO_SIZE - 4u));
 	CHECK(opxy_front_accept(rec, &ho));
 	CHECK(ho.version == 3u && ho.size == FR_HO_SIZE && ho.log_slot == 1u &&
 	      ho.log_entry == 0x1234u && ho.stamps[0] == 0x77u);
@@ -213,22 +215,26 @@ static void test_accept(void)
 		rec[i] ^= 0x40u;
 		CHECK(!opxy_front_accept(rec, &ho));
 	}
-	/* every device and how code: the record is whole, the codes known or not */
-	for (unsigned d = 0; d < 4u; d++)
-		for (unsigned h = 0; h < 4u; h++) {
-			const bool known = d <= 1u && h <= 2u;
+	/* every device and how code on either role: the record is whole, the
+	 * codes known or not; the OP-1F only on the master, never decided as
+	 * the second CPU */
+	for (unsigned k = 0; k < 32u; k++) {
+		const unsigned d = k % 4u, h = (k / 4u) % 4u, master = k / 16u;
+		const bool known = d <= 1u && h <= 2u &&
+				   (d == 0u || (master != 0u && h != 1u));
 
-			ho_bytes(rec, 3, FR_HO_SIZE, 0, 0);
-			rec[152] = (uint8_t)d;
-			rec[153] = (uint8_t)h;
-			ff_put32(rec + FR_HO_SIZE - 4u, wire_crc32(0, rec, FR_HO_SIZE - 4u));
-			CHECK(opxy_front_accept(rec, &ho));
-			id = WB_DEV_OP1F;
-			how = WB_DEV_SECOND_CPU;
-			CHECK(opxy_front_device(&ho, &id, &how) == known);
-			if (known)
-				CHECK(id == (enum wb_dev_id)d && how == (enum wb_dev_how)h);
-		}
+		ho_bytes(rec, 3, FR_HO_SIZE, 0, 0);
+		rec[14] = (uint8_t)master;
+		rec[152] = (uint8_t)d;
+		rec[153] = (uint8_t)h;
+		ff_put32(rec + FR_HO_SIZE - 4u, wire_crc32(0, rec, FR_HO_SIZE - 4u));
+		CHECK(opxy_front_accept(rec, &ho));
+		id = WB_DEV_OP1F;
+		how = WB_DEV_SECOND_CPU;
+		CHECK(opxy_front_device(&ho, &id, &how) == known);
+		if (known)
+			CHECK(id == (enum wb_dev_id)d && how == (enum wb_dev_how)h);
+	}
 	/* the flag with no slot that exists; the trial mark */
 	ho_bytes(rec, 3, FR_HO_SIZE, FR_HO_RUNNING, 2);
 	CHECK(opxy_front_accept(rec, &ho) && !opxy_front_running(&ho, &slot));
