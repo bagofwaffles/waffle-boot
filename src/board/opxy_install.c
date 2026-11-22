@@ -1069,7 +1069,8 @@ static const char *select_end(const char *held)
 /*
  * S-11.096: the steps to run, chosen on the unit before the run's first
  * write; for an invalid package (S-11.021) S-15.197's prompt comes first,
- * and canceling it installs nothing. The start-up key read tells whether
+ * and canceling it installs nothing. With no step to pick, no selection is
+ * shown and the run goes on with none. The start-up key read tells whether
  * the keys can be read (S-07.032); when they cannot, nothing is shown or
  * asked, and an invalid package, which nobody can confirm, is canceled.
  */
@@ -1098,6 +1099,14 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 		s14_log_text(&m->sv.log, S14_INFO, S14_NO_TAG, &t);
 		if (sel.choice != S15_SELECT_INSTALL)
 			return S11_ANSWER_CANCEL;
+	}
+	/* Nothing to pick: no screen that only 8 or the time could end; the
+	 * run reports each step as it would after any selection. */
+	if (s11_pickable(env) == 0u) {
+		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
+			    "install: nothing to select, nothing asked");
+		*selected = 0;
+		return S11_ANSWER_INSTALL;
 	}
 	select_wait(m, false, s11_pickable(env));
 	*selected = sel.selected;
