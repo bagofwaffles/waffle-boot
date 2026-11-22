@@ -40,6 +40,7 @@ bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out)
 	if (wb_get_le32(rec) != FR_HO_MAGIC || wb_get_le16(rec + 4u) != FR_HO_VERSION ||
 	    wb_get_le16(rec + 6u) != FR_HO_SIZE)
 		return false;
+	/* software: 156 bytes, too few for the CRC peripheral */
 	if (wire_crc32(0, rec, n) != wb_get_le32(rec + n))
 		return false;
 	memcpy(out, rec, FR_HO_SIZE);

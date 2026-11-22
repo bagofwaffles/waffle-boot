@@ -243,7 +243,7 @@ void opxy_held(void *ctx, const struct boot_held *h)
 	s06_node_master_routes(&m->node, opxy_dev(m));
 
 	opxy_nordic_ops(m, &m->nordic_ops);
-	m->nordic_ops.crc16 = wire_crc16_xmodem;
+	m->nordic_ops.crc16 = wire_crc16_xmodem;	/* software: frames too short for the CRC peripheral */
 	s08_init(&m->nordic, &m->node, S06_LINK_NORDIC, &m->nordic_ops,
 		 (int)m->meta.state);
 	/* S-08.045: the sku read at start-up; the word is 0 when the record

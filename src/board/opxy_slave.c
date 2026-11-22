@@ -878,7 +878,7 @@ void opxy_slave_main(struct opxy_slave *s)
 	s->clock = opxy_clock(&s->hw);
 
 	/* The CPU link to the master, over channel 0 of the tunnel. */
-	s06_node_init(&s->node, wire_crc8_frame, &s->clock);
+	s06_node_init(&s->node, wire_crc8_frame, &s->clock);	/* software: short frames */
 	s06_link_init(&s->cpu_link, &s09_slave_tunnel_port, &s->server,
 		      S06_ADDR_SLAVE, S06_ADDR_MASTER);
 	s->node.link[S06_LINK_CPU] = &s->cpu_link;

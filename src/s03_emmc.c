@@ -564,7 +564,7 @@ static enum s03_write_result write_body(struct wrun *r, const uint8_t *image, ui
 	_Alignas(32) uint8_t hdr[S03_SECTOR];
 	_Alignas(32) uint8_t inactive[S03_SECTOR];
 	struct s03_header h1;
-	uint32_t n, groups, g;
+	uint32_t n, groups, g, crc;
 	unsigned other;
 	int rc;
 
@@ -600,8 +600,10 @@ static enum s03_write_result write_body(struct wrun *r, const uint8_t *image, ui
 
 	/* Steps 4 to 7: the inactive copy, then the active header (S-03.067). */
 	w_stage(r, S03_WS_HEADER);
-	s03_header_encode(length, env->crc32(0u, image, length), 0x00u, inactive);
-	s03_header_encode(length, env->crc32(0u, image, length), 0x01u, hdr);
+	/* In software: the value written, with nothing known to check it by. */
+	crc = env->crc32(0u, image, length);
+	s03_header_encode(length, crc, 0x00u, inactive);
+	s03_header_encode(length, crc, 0x01u, hdr);
 	rc = header_step(r, inactive);
 	if (rc == 0) {
 		/* S-03.068: the image and the inactive copy, before the active byte. */

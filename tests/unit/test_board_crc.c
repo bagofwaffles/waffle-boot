@@ -1048,6 +1048,63 @@ static void test_fast(void)
 	CHECK(opxy_crc_fast_used && hw.ops > 3u + 1u);
 }
 
+/*
+ * A CRC-32 checked against a known value inside an install's use (the
+ * staged image, the selected slot's record): right for every length and
+ * alignment, the peripheral taking part; a want that is not the CRC gets
+ * the software's CRC; a wrong answer on a piece that is not compared is
+ * computed again in software, so the result is right; a failed operation
+ * leaves it right with the peripheral off; outside a use, the software's.
+ */
+static void test_known(void)
+{
+	static const size_t lens[] = { 0, 3, LEAST, LEAST + 1u, 0x1003, 0x10003, BIG };
+	unsigned ops;
+	uint32_t want;
+
+	start(plain, true);
+	for (size_t i = 0; i < ARRAY_LEN(lens); i++) {
+		for (size_t off = 0; off < 4u; off++) {
+			const uint32_t n = (uint32_t)lens[i];
+			const uint32_t head = (uint32_t)((4u - off) & 3u);
+
+			want = ref(OPXY_CRC32, 0u, data + off, n);
+			ops = hw.ops;
+			CHECK(opxy_crc32_known(data + off, n, want, idle_count) == want);
+			CHECK((hw.ops > ops) == (n >= head + LEAST));
+			CHECK(opxy_crc32_known(data + off, n, want ^ 1u, idle_count) == want);
+		}
+	}
+	CHECK(opxy_crc_engine(OPXY_CRC32) && hw.bad == 0u && hw.foreign == 0u);
+	opxy_crc_end();
+
+	/* a fresh use: the first piece compared, the second of its size not */
+	start(plain, true);
+	(void)opxy_crc32(NULL, 0u, data, LEAST);
+	idles = 0;
+	want = ref(OPXY_CRC32, 0u, data, 0x8000);
+	hw.wrong_at = hw.ops + 1u;
+	CHECK(opxy_crc32_known(data, 0x8000, want, idle_count) == want);
+	CHECK(hw.ops == hw.wrong_at && idles == 1u && opxy_crc_engine(OPXY_CRC32));
+
+	/* a failed operation: right, and the CRC-32 off */
+	hw.silent_at = hw.ops + 1u;
+	CHECK(opxy_crc32_known(data, BIG, ref(OPXY_CRC32, 0u, data, BIG), NULL) ==
+	      ref(OPXY_CRC32, 0u, data, BIG));
+	CHECK(!opxy_crc_engine(OPXY_CRC32) && (opxy_crc_off & 1u << OPXY_CRC32) != 0u);
+	ops = hw.ops;
+	CHECK(opxy_crc32_known(data, BIG, 0u, NULL) == ref(OPXY_CRC32, 0u, data, BIG));
+	CHECK(hw.ops == ops);
+	opxy_crc_end();
+
+	/* outside a use: the software's, nothing touched */
+	bare(plain, true);
+	want = ref(OPXY_CRC32, 0u, data + 1, BIG);
+	CHECK(opxy_crc32_known(data + 1, BIG, want, NULL) == want);
+	CHECK(opxy_crc32_known(data + 1, BIG, ~want, NULL) == want);
+	CHECK(hw.ops == 0u && fake_mmr_count() == 0u);
+}
+
 /* The driver: its stream is MDMA1's source, not the display's MDMA2, and
  * it refuses what it cannot run without a register written. */
 static void test_driver(void)
@@ -1111,6 +1168,7 @@ int main(void)
 	RUN(test_check6);
 	RUN(test_end);
 	RUN(test_fast);
+	RUN(test_known);
 	RUN(test_driver);
 	return check_summary("test_board_crc");
 }
