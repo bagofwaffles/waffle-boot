@@ -1,17 +1,21 @@
-# waffle-boot
+# Waffle Boot
 
 An open-source bootloader for the Teenage Engineering OP-XY and OP-1 Field. It brings up the device's
 processors, loads the OS from the eMMC, and adds its own menus for installs, settings and recovery. Support
 for the OP-1 Field is initial.
 
+## Status
+
+This project is still in heavy development. While it is working on the maintainer's units, there is still much to do to make the overall experience more friendly.
+
 ## Why use waffle-boot?
 
-- **Recovery options.** Several [failsafes](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Recover) bring a unit back
-  over USB, and they run apart from the rest of the code.
 - **Upgrade or downgrade.** Install the firmware version you choose, older or newer, or a
   [package with your own OS image](https://github.com/bagofwaffles/waffle-boot/wiki/Building-Custom-OS-Updates).
 - **For developers.** MTP file transfer, a log over USB, and a way to script changes from a computer. See
   the [Developer Host Link](https://github.com/bagofwaffles/waffle-boot/wiki/Developer-Host-Link).
+- **Recovery options.** Several [failsafes](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Recover) bring a unit back
+  over USB, and they run apart from the rest of the code.
 - **Open source.** The code is here to read, build and change.
 
 waffle-boot is a clean-room implementation, not a decompilation. Its code is written from scratch, from
@@ -36,28 +40,6 @@ and package installs.
 [Status and roadmap](https://github.com/bagofwaffles/waffle-boot/wiki/Status-and-Roadmap) covers open work and what is out of scope.
 
 <img src="docs/ui/tour.gif" width="480" alt="waffle-boot's screens on the OP-XY's display: the frame shown while the OS loads, the main menu, Settings, the developer menu, System, Device Info, an install running, the line under the logo on the way into recovery, and the recovery menu">
-
-## What it does
-
-- **Boot menu.** Hold **com**, or the white knob, while switching the unit on. It installs firmware and
-  holds the settings, device information, and a System screen with a key test, format and factory reset.
-  Anything that erases asks first.
-- **Recovery menu.** Hold **M4** (on an OP-1 Field, the recovery key the installer's key check asks for),
-  and no other key, while switching the unit on. From it you can try the other slot for one start, make the other slot the boot slot, or write a new image sent from a computer over USB.
-  Recovery is part of the front, the small first part of every image, so it still runs when the rest of the
-  image is damaged. It opens by itself when the rest of the image fails its check, or after three starts in
-  a row that did not finish.
-- **Developer menu.** Developer mode is a setting. With it on, the boot menu gains a developer menu, and
-  the unit adds MTP file transfer to its storage and a USB serial port that carries the log and takes
-  requests from a computer.
-- **Firmware installs.** Choose Install firmware and the unit offers a USB disk. Copy a firmware package to
-  it and eject it; the bootloader checks the package, lists its parts, and installs the ones you choose.
-- **Diagnostics.** When the OS cannot be started, the boot menu opens by itself, and its main screen and
-  Device Info say why.
-- **Two slots, so a write has a way back.** The SPI flash holds two bootloader images, Slot 1 and Slot 2. A
-  new image is written to the slot the unit is not starting from, read back, and only then made the boot slot, so a
-  power cut before that leaves the unit starting as it did. A new slot is checked at its first start, and
-  one that fails gives way to the other slot from the next start on.
 
 ## Where things are stored
 
