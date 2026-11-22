@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
-# The tests of docs/web/core.js, install.js, mtp.js and usb.js: node --test over tests/web/, which runs the
+# The tests of docs/web/core.js, install.js, mtp.js, usb.js and hostlink.js: node --test over tests/web/, which runs the
 # Python tools' scenarios (gen_cases.py), the simulated units (unit_bridge.py) and the MTP responders
 # (mtp_bridge.py) itself.
 # Exit status 0 when every test passed, or when node is not installed (said, and skipped).
@@ -25,4 +25,5 @@ node --check docs/web/install.js
 node --check docs/web/install_words.js
 node --check docs/web/mtp.js
 node --check docs/web/usb.js
-exec node --test tests/web/test_core.mjs tests/web/test_install.mjs tests/web/test_mtp.mjs
+node --check docs/web/hostlink.js
+exec node --test tests/web/test_core.mjs tests/web/test_install.mjs tests/web/test_mtp.mjs tests/web/test_hostlink.mjs
