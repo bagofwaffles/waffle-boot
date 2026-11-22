@@ -291,10 +291,11 @@ static unsigned infer_slot(struct opxy_master *m, const struct opxy_stream_src *
 	return slot;
 }
 
-#if OPXY_BOOT_TIMING
-/* The timing build alone: with the running slot taken from the front's
- * record, the inference from the slots' streams is run once more, after
- * that decision, so that its time can be shown beside the front's. Its
+#if OPXY_BOOT_TIMING && defined(OPXY_BOOT_TIMING_INFER_ON)
+/* A timing build with BOOT_TIMING_INFER=1 alone (it lengthens the start):
+ * with the running slot taken from the front's record, the inference from
+ * the slots' streams is run once more, after that decision, so that its
+ * time can be shown beside the front's. Its
  * answer goes to the report only, and the stream buffer is emptied, so the
  * start then reads the running slot as a normal build does. It writes
  * nothing. */
@@ -325,8 +326,10 @@ unsigned opxy_stream_slot(struct opxy_master *m, const struct opxy_stream_src *s
 	 * slave (S-09.002) */
 	if (m->front && opxy_front_running(&m->ho, &slot)) {
 		OPXY_TIME(BOOT_TIME_SLOT_FOUND);
-#if OPXY_BOOT_TIMING
+#if OPXY_BOOT_TIMING && defined(OPXY_BOOT_TIMING_INFER_ON)
 		infer_slot_timed(m, src, slot);
+#elif OPXY_BOOT_TIMING
+		opxy_timing_slot_given(slot);
 #endif
 		s02_image_init(im, slot_stream, sizeof(slot_stream), src->fast, src->fast_ctx);
 		(void)s02_image_read(&m->flash, slot, im); OPXY_TIME(BOOT_TIME_SLOT_READ); OPXY_TIMING_SLOT_READ(im);
@@ -731,6 +734,7 @@ static uint8_t release_reply;
  * release (S-09.082) */
 static struct s15_os_file stage_file;
 static uint32_t stage_file_crc;
+static bool stage_crc_peripheral;	/* stage_file_crc is the CRC peripheral's */
 
 /* S-04.014: this start reads the OS from /yaffs2/os.ldr */
 static bool file_start(const struct opxy_master *m)
@@ -759,8 +763,11 @@ static enum s05_fail stage_os_file(struct opxy_master *m, uint32_t *length)
 	opxy_bridge_fast(m);
 	ok = s09_files_os_read(&m->sv.files, staging, S03_OS_MAX, &stage_file, &len);
 	opxy_bridge_plain(m);
-	/* software: the slave judges its copy by this value, known to nothing here */
-	stage_file_crc = ok ? m->emmc.crc32(0u, staging, len) : 0u;
+	/* the slave judges its copy by this value, known to nothing here: the
+	 * CRC peripheral's where it serves, the software's after any fault of
+	 * it; a value the slave refuses is computed again at the release */
+	stage_file_crc = ok ? m->emmc.crc32_fast(0u, staging, len) : 0u;
+	stage_crc_peripheral = ok && opxy_crc_fast_used;
 	stage_load.length = len;	/* S-05.024's check and the account */
 	*length = len;
 	if (!ok)
@@ -817,9 +824,20 @@ static int release(void *ctx, uint8_t *reply)
 	opxy_start_finished(m);
 	opxy_start_log_tidy(m); OPXY_TIME(BOOT_TIME_RELEASE_SENT);
 	/* S-09.082: a file start's release names its copy */
-	v = file_start(m) ? s09_master_release_file(&m->bridge, stage_load.length,
-						    stage_file_crc) :
-			    s09_master_release(&m->bridge);
+	if (file_start(m)) {
+		const uint32_t sent = stage_file_crc;
+
+		v = opxy_bridge_release_file(&m->bridge, (const uint8_t *)(uintptr_t)OPXY_STAGING,
+					     stage_load.length, &stage_file_crc,
+					     stage_crc_peripheral, m->emmc.crc32);
+		stage_crc_peripheral = false;
+		if (stage_file_crc != sent)
+			s14_log_str(&m->sv.log, S14_WARNING, S14_TAG("boot"),
+				    "release: the CRC peripheral's crc refused, "
+				    "sent again with the software's");
+	} else {
+		v = s09_master_release(&m->bridge);
+	}
 
 	OPXY_CRUMB(19u); OPXY_TIME(BOOT_TIME_RELEASED);
 	release_replied = v >= 0;

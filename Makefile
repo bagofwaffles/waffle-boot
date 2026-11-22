@@ -40,6 +40,9 @@
 #                 make image LOG_DEBUG=1 BUILD=build/debug
 #   BOOT_CRUMBS=1 a trial boot's breadcrumbs (src/board/opxy_crumbs.c)
 #   BOOT_TIMING=1 the boot's milestones timed (src/board/opxy_timing.c)
+#   BOOT_TIMING_INFER=1  with BOOT_TIMING=1, the running slot also inferred
+#                 from both slots' streams after the front named it, timed for
+#                 the report; it lengthens the start, so it is off by default
 #   BOOT_LINK_SETTLE_US=<n>  microseconds between a byte of the slave's boot
 #                 stream and the sample of PA6 that decides the next (S-13b.022),
 #                 default 2; 0 for none
@@ -137,6 +140,9 @@ endif
 # make installer test-os-mon BOOT_TIMING=1 BUILD=build/timing
 ifneq ($(BOOT_TIMING),)
 TARGET_CFLAGS += -DOPXY_BOOT_TIMING_ON=1
+endif
+ifneq ($(BOOT_TIMING_INFER),)
+TARGET_CFLAGS += -DOPXY_BOOT_TIMING_INFER_ON=1
 endif
 # BOOT_LINK_SETTLE_US=n: the time between a byte of the slave's boot stream and
 # the sample of PA6 that decides the next byte (OPXY_BOOT_LINK_SETTLE_US,

@@ -87,9 +87,10 @@ void opxy_timing_stream_end(void);
  * s02_image_check(). */
 void opxy_timing_slot_read(const struct s02_image *im);
 void opxy_timing_slot_check(const struct s02_image *im);
-/* The running slot the front's record gave, and the inference from the
- * slots' streams run once for comparison: its cycles and its answer (2:
- * none). */
+/* The running slot the front's record gave; with BOOT_TIMING_INFER=1 also
+ * the inference from the slots' streams run once for comparison: its
+ * cycles and its answer (2: none). */
+void opxy_timing_slot_given(unsigned given);
 void opxy_timing_slot_inferred(unsigned given, uint64_t cycles, unsigned inferred);
 #ifndef OPXY_BOOT_TIMING_WINDOW_US
 #define OPXY_BOOT_TIMING_WINDOW_US OPXY_BOOT_LINK_SETTLE_US

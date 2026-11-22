@@ -1160,6 +1160,50 @@ static void test_file_start(void)
 	CHECK(!sv.released && sl_file == WIRE_OS_FILE_CRC && !ms.absent);
 	CHECK_EQ(s09_master_release_file(&ms, len + 1u, crc), 1);
 	CHECK(sl_file == WIRE_OS_FILE_LENGTH && !ms.absent);
+
+	/* a CRC the master's peripheral gave wrong: refused, computed again
+	 * in software and sent once more, accepted */
+	t_case = "file start, the peripheral's crc wrong";
+	put_os(742764u, 11u);
+	fresh();
+	put_os_file(742764u, false);
+	start_up();
+	s09_files_init(&F, &ms);
+	CHECK(s09_files_os_read(&F, staging, S03_OS_MAX, &out, &len));
+	crc = opxy_crc32_long(0u, staging, len) ^ 0x10u;
+	{
+		const unsigned before = sv.execs[S09_RELEASE];
+		uint32_t sent = crc;
+
+		CHECK_EQ(opxy_bridge_release_file(&ms, staging, len, &sent, false,
+						  opxy_crc32_long), 1);
+		CHECK(sent == crc && sv.execs[S09_RELEASE] == before + 1u);
+		CHECK_EQ(opxy_bridge_release_file(&ms, staging, len, &sent, true,
+						  opxy_crc32_long), 0);
+		CHECK(sent == (crc ^ 0x10u) && sv.execs[S09_RELEASE] == before + 3u);
+		CHECK(sv.released && sl_file == WIRE_OS_FILE_OK);
+	}
+
+	/* the copy itself not the slave's: the software's value is the one
+	 * sent, so no second release */
+	t_case = "file start, the peripheral right, the copy not";
+	put_os(742764u, 11u);
+	fresh();
+	put_os_file(742764u, false);
+	start_up();
+	s09_files_init(&F, &ms);
+	CHECK(s09_files_os_read(&F, staging, S03_OS_MAX, &out, &len));
+	staging[1000] ^= 0x40u;
+	crc = opxy_crc32_long(0u, staging, len);
+	{
+		const unsigned before = sv.execs[S09_RELEASE];
+		uint32_t sent = crc;
+
+		CHECK_EQ(opxy_bridge_release_file(&ms, staging, len, &sent, true,
+						  opxy_crc32_long), 1);
+		CHECK(sent == crc && sv.execs[S09_RELEASE] == before + 1u);
+		CHECK(!sv.released && !ms.absent);
+	}
 }
 
 /* S-05.035's refusals before any release: each with its reason. */

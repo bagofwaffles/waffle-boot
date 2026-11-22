@@ -408,12 +408,18 @@ void opxy_timing_slot_check(const struct s02_image *im)
 		opxy_boot_time.slot_reread_good++;
 }
 
-void opxy_timing_slot_inferred(unsigned given, uint64_t cycles, unsigned inferred)
+void opxy_timing_slot_given(unsigned given)
 {
 	opxy_boot_time.slot_given = given;
+	opxy_boot_time.flags |= BOOT_TIME_SLOT_GIVEN;
+}
+
+void opxy_timing_slot_inferred(unsigned given, uint64_t cycles, unsigned inferred)
+{
+	opxy_timing_slot_given(given);
 	opxy_boot_time.slot_infer = cycles;
 	opxy_boot_time.slot_inferred = inferred;
-	opxy_boot_time.flags |= BOOT_TIME_SLOT_GIVEN | BOOT_TIME_SLOT_TIMED;
+	opxy_boot_time.flags |= BOOT_TIME_SLOT_TIMED;
 }
 
 void opxy_timing_battery(bool on)
