@@ -131,7 +131,7 @@ static void test_forms_refused(void)
 	CHECK(out[4] == OPXY_INSTALL_SLOT_GOOD);
 	CHECK(writes == 0u);
 	CHECK(strcmp(inst_rc_words(OPXY_INSTALL_REFUSED_SURVEY),
-		     "A survey build writes nothing to the SPI flash.") == 0);
+		     "Survey build: writes nothing") == 0);
 }
 
 static void test_gate_refuses(void)

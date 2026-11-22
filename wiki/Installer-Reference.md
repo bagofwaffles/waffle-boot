@@ -44,7 +44,7 @@ key).
   selector naming that slot unverified. The way back is the old slot, untouched: a power cut at any point
   leaves a selected slot that starts. If the selector step fails, the installer puts the selector back on
   the old slot with programs alone, never an erase. When it cannot do that safely, it leaves the selector as
-  it is and refuses every further write until the unit restarts ("Restart the unit before another write.").
+  it is and refuses every further write until the unit restarts ("Restart before another write").
 - **The trial start:** the new slot's front marks the start (`0xFD` to `0xFC`), and its main image marks
   the boot menu reached (`0xFC` to `0xF0`, entry 1 of the log finished, S-02.095). Nothing else.
 - **The commit:** only after both marks: the record with the right CRC, read back with the slot's bytes,
@@ -89,7 +89,7 @@ would be offered.
 
 **The installer** writes as on the OP-XY (above), with one rule more: it never writes over the last slot
 whose image is not a waffle-boot stream, so the bootloader the unit came with stays in one slot. A trial
-that would is not offered ("It would write over the unit's own bootloader.").
+that would is not offered ("Would overwrite the unit's own bootloader").
 
 ### Putting the image on an OP-1F
 

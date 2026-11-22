@@ -335,7 +335,7 @@ export function describeInstall(s, hello = null, tests = null) {
         break;
     case IW.READY:
         d.tone = 'act';
-        L.push('Every check passed.' + (target ? ` The trial goes into ${target}.` : ''));
+        L.push('Checks passed.' + (target ? ` The trial goes into ${target}.` : ''));
         L.push('Nothing is written until you hold the key on the unit.');
         if (d.image && d.image.breadcrumb)
             L.push(IW.BREADCRUMB);

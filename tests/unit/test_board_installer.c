@@ -878,7 +878,7 @@ static void test_report_device(void)
 	(void)inst_report_append(buf, 0u, sizeof buf, &h, &s, &img_r, NULL);
 	CHECK(strstr(buf, "\ninstall\ndevice: not identified, first stage n 34000, c 12345678\n"
 		     "image built for: OP-XY\n") != NULL);
-	CHECK(strstr(buf, "locked: The device is not identified by its first stage.\n") != NULL);
+	CHECK(strstr(buf, "locked: Device unknown (first stage)\n") != NULL);
 	h.how = WB_DEV_BY_TABLE;
 	h.device = WB_DEV_OP1F;
 	h.image_device = WB_DEV_OP1F;

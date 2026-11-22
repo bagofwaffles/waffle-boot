@@ -386,7 +386,7 @@ test('pass: checks, trial, restart, commit, done', needPython, () => withBridge(
         ['done']);
     assert.deepEqual(phases(r), ['checking', 'guided', 'ready', 'writing trial', 'trial written',
         'commit ready', 'committing', 'done']);
-    assert.deepEqual(at(r, 'ready').lines, ['Every check passed. The trial goes into Slot 2.',
+    assert.deepEqual(at(r, 'ready').lines, ['Checks passed. The trial goes into Slot 2.',
         'Nothing is written until you hold the key on the unit.']);
     assert.deepEqual(at(r, 'ready').advice, ['Hold 1 on the unit for 5 s to write the trial.', inst.LEAVE]);
     assert.ok(r.busy > 0, 'the port was quiet while the unit wrote');

@@ -38,11 +38,11 @@ SPI flash, and its `check.txt` says whether an install would be offered. See
 
 | The unit shows | It means | What to do |
 | --- | --- | --- |
-| The install is not offered | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Save `check.txt` (on the page, or from the unit's USB disk). Hold 8 to leave. A wrong check is fixed in the installer; nothing overrides it |
-| The trial did not reach the boot menu | The trial start ran, or did not run, the new bootloader, but its boot menu did not show | Nothing was kept: the unit starts the bootloader it had. Hold 1 to write the trial again, or 8 to leave |
-| The write did not complete | A write or its read-back failed | The unit keeps a bootloader that starts. Hold 1 to try again, or 8 to leave |
+| Install not offered | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Save `check.txt` (on the page, or from the unit's USB disk). Hold 8 to leave. A wrong check is fixed in the installer; nothing overrides it |
+| Trial did not reach the boot menu | The trial start ran, or did not run, the new bootloader, but its boot menu did not show | Nothing was kept: the unit starts the bootloader it had. Hold 1 to write the trial again, or 8 to leave |
+| Write failed | A write or its read-back failed | The unit keeps a bootloader that starts. Hold 1 to try again, or 8 to leave |
 
-<img src="../docs/ui/installer-locked.png" width="480" alt="The install is not offered">
+<img src="../docs/ui/installer-locked.png" width="480" alt="Install not offered">
 
 `check.txt` lists every check. It holds no serial number or key.
 
