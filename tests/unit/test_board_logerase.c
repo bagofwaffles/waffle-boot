@@ -512,8 +512,8 @@ static int tries_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t l
 static void test_store_tries(void)
 {
 	static struct s02_flash_ops ops;
-	const struct s02_store on = { true, false, true, true };
-	struct s02_store now = { false, true, true, false };
+	const struct s02_store on = { true, false, true, true, true };
+	struct s02_store now = { false, true, true, false, true };
 
 	for (unsigned s = 0; s < 2u; s++) {
 		flash(s);

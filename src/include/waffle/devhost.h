@@ -119,13 +119,14 @@ enum {
 	OPXY_DEV_QUAD_REPLY = 39, OPXY_DEV_STREAM = 40, OPXY_DEV_QUAD_DATA = 41,
 	OPXY_DEV_CKPT = 42,
 };
-/* OPXY_DEV_PUT sub-ops: open (then the name), write (then the bytes), close. */
-enum { OPXY_DEV_PUT_OPEN = 0, OPXY_DEV_PUT_DATA = 1, OPXY_DEV_PUT_CLOSE = 2 };
+/* OPXY_DEV_PUT and OPXY_DEV_SHA are served no more (malformed): files go
+ * by the host link (waffle/hostlink.h). */
 /* The reply's status byte, as other refused host requests carry one. */
 #define OPXY_DEV_OK       0u
 #define OPXY_DEV_REFUSED  1u	/* developer mode off, or the access was refused */
 #define OPXY_DEV_BAD      2u	/* a malformed request */
-/* A file request (PUT, SHA, YTAGS, YMETA) while the slave is not answering
+#define OPXY_DEV_NOT_APPROVED 4u	/* the host link's session is not approved */
+/* A file request (YTAGS, YMETA) while the slave is not answering
  * (S-09.008): absent for the rest of the boot, so no request reaches its
  * volume, refused or not. */
 #define OPXY_DEV_NO_SLAVE 3u

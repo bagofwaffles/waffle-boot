@@ -207,6 +207,7 @@ void opxy_held_service(void *ctx, const struct boot_held *h)
 		/* S-09.046: again each time the clock's value changes */
 		opxy_clock_to_slave(m);
 		opxy_services_poll(m); OPXY_TIMING_HELD(m);
+		OPXY_TESTOS_OR((void)0, opxy_hostlink_poll(m));
 	}
 	/* S-07.051: the PSoC removes the power. */
 	opxy_powered_off(m);

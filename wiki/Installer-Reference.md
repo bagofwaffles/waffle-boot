@@ -137,10 +137,10 @@ every build.
 
 ## Sending it from the page
 
-On a unit already on waffle-boot with developer mode on, the page's Install tab can send the file over the
-boot menu's USB serial port, as `/yaffs2/os.ldr` (as `tools/testos_mon.py dev-put` does,
-[Developer Host Link](Developer-Host-Link)), and checks its size and SHA-256. Nothing is written to a boot
-partition until 5 is pressed in the developer menu. That file is the only thing the page sends.
+On a unit already on waffle-boot, the file can go onto the drive as `/yaffs2/os.ldr` by the boot menu's host
+link once the hold on the unit approves the computer (`tools/hostlink.py put`, or `tools/testos_mon.py
+dev-put`; [Developer Host Link](Developer-Host-Link)), which checks its size and SHA-256 before it takes the
+name. Nothing is written to a boot partition until 5 is pressed in the developer menu.
 
 ## Building it
 

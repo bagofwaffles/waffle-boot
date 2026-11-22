@@ -118,6 +118,13 @@ static struct {
 	uint32_t pct;
 } sent;
 
+static int host_parts = -1;
+
+void opxy_install_host_parts(int parts)
+{
+	host_parts = parts;
+}
+
 static void host_progress(struct opxy_master *m, uint32_t done,
 			  uint32_t total, const char *label)
 {
@@ -128,6 +135,7 @@ static void host_progress(struct opxy_master *m, uint32_t done,
 	sent.label = label;
 	sent.pct = pct;
 	s10c_host_progress(&m->sv.host, done, total, label);
+	opxy_hostlink_progress(m, done, total, label);
 }
 
 /* A version as text, NUL-terminated, into out[S11_VERSION_TEXT_MAX + 1]. */
@@ -1075,7 +1083,7 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 
 	const bool invalid = env->sig == S11_SIG_INVALID;
 
-	if (!m->key_status.replied) {
+	if (!m->key_status.replied && (invalid || host_parts < 0)) {
 		s14_text_init(&t);
 		s14_text_str(&t, "install: keys not readable, ");
 		s14_text_str(&t, invalid ? "not confirmed: canceled" :
@@ -1084,7 +1092,7 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 		return invalid ? S11_ANSWER_CANCEL : S11_ANSWER_UNASKED;
 	}
 	select_info(m, env, sel_waffle);
-	if (invalid) {
+	if (invalid && m->key_status.replied) {
 		select_wait(m, true, 0u);
 		s14_text_init(&t);
 		s14_text_str(&t, "install: the prompt ");
@@ -1092,6 +1100,16 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 		s14_log_text(&m->sv.log, S14_INFO, S14_NO_TAG, &t);
 		if (sel.choice != S15_SELECT_INSTALL)
 			return S11_ANSWER_CANCEL;
+	}
+	/* SPEC-Q: the parts a host chose for an approved session's install,
+	 * those the selection would let it pick and no other: Protected
+	 * writes and the switched-off steps apply as at the unit. */
+	if (host_parts >= 0) {
+		sel.selected = (uint8_t)((unsigned)host_parts & s11_pickable(env));
+		*selected = sel.selected;
+		select_log(m, "parts chosen by the host");
+		return *selected != 0u || s11_pickable(env) == 0u ? S11_ANSWER_INSTALL :
+								    S11_ANSWER_CANCEL;
 	}
 	/* Nothing to pick: no screen that only 8 or the time could end; the
 	 * run reports each step as it would after any selection. */

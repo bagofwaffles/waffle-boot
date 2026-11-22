@@ -173,101 +173,88 @@ parts removed, and each separating tab written as two spaces.
 
 ## Menus and keys
 
-These rules are fixed: only the maintainer changes them.
+These rules are fixed: only the maintainer changes them. A new item, screen or setting that follows
+them and their exclusions needs no sign-off.
 
-- Items are numbered with the digit that chooses them (S-15.011), in digit
-  order. Gaps are fine: a digit keeps its meaning wherever it is shown.
-- Digit 8 leaves a screen. Every screen below the main screen that a key
-  leaves is left with 8: as `8 Back to <the screen it returns to>`, or as
-  `8 Cancel` where it declines what the screen asks; no screen is left with
-  "any key". The main screen has nothing to go back to, so 8 is no item there. Its
-  items keep fixed numbers from 1; an item that is hidden (the developer menu,
-  3, while developer mode is off) leaves its number unused. The upgrade screen goes back only while
-  nothing is under way (S-15.103).
-- Whatever removes, erases, formats or overwrites, and turning protected
-  writes on, is always confirmed by one rule: the item's own key held for
-  5 s. Its key down starts the hold: its row turns `armed` with
-  `Hold <digit> for 5 s` as its hint, and the last row is a bar that fills,
-  with the seconds left (`Release to cancel`). Held the whole 5 s, the
-  action runs once, and the key's release does nothing more. Released
-  earlier, or any other key down, only cancels and draws the screen as it
-  was. The selection of an install's parts is held the same way, on key 1
-  with no other key down and a part at `Yes` (S-15.116); there the item
-  names its hold in its label, `1 Install selected (hold for 5 s)`, with no
-  hint, armed or not. A knob click
-  never starts a hold, and the white knob confirms nothing. A factory reset
-  is always confirmed, from every menu that offers it.
+### Rules
+
+- Items are numbered with the digit that chooses them (S-15.011), in digit order. Gaps are fine, and a
+  digit keeps its meaning wherever it is shown.
+- Digit 8 leaves a screen: every screen below the main screen that a key leaves is left with 8, as
+  `8 Back to <the screen it returns to>`, or `8 Cancel` where it declines what the screen asks. No screen
+  is left with "any key". A screen with something under way goes back only once nothing is (the upgrade
+  screen, S-15.103).
+- Whatever removes, erases, formats or overwrites, and turning Protected writes on, is confirmed by one
+  rule: the item's own key held for 5 s. Its key down starts the hold: its row turns `armed` with
+  `Hold <digit> for 5 s` as its hint, and the last row is a bar that fills, with the seconds left
+  (`Release to cancel`). Held the whole 5 s, the action runs once, and the key's release does nothing
+  more. Released earlier, or any other key down, only cancels and draws the screen as it was. A knob
+  click never starts a hold, and the white knob confirms nothing. Where the item names its hold in its
+  label (`1 Install selected (hold for 5 s)`, S-15.116), it has no hint, armed or not.
+- A factory reset is always confirmed, from every menu that offers it.
 - Keys pressed before the boot menu's first screen, while `Loading boot menu...` shows among them, do
   nothing, and a key still down when it opens acts only after it has been let go and pressed again
   (S-15.013).
 - The result of a removal or a reset is a view of its own, left with 8 alone.
-- A setting shows its state as the item's hint (`Protected writes` `Off`,
-  or `On` in red; `Developer mode` `On` or `Off`). Settings live on
-  the Settings screen.
-- The main screen holds no destructive item and no setting. Whatever
-  removes, erases or formats lives under System, on a digit that only a
-  sound key gives (5 to 7), never on digit 4, which the white knob also
-  gives.
-- Keys that are not items are named in a `keys` line on the screen that
-  reads them, not in the status bar.
-- The main screen: 1 Install firmware, 2 Settings, 3 Developer menu (while
-  developer mode is on), 4 and the help key Device Info, 5 System, right
-  under the others; then 7 Continue to OS at the bottom, set apart from
-  them by a blank row, or by the failed-start notice when it shows. Digit
-  6 is no item there.
-- Settings: 1 Developer mode, 2 Protected writes, 3 Color, 5 MTP target,
-  6 Start in boot menu; never a digit the white knob also gives.
-- Start in boot menu is off by default. On, every start that would boot
-  the OS opens the boot menu instead (S-15.175), but the one start after
-  Continue to the OS or after the developer menu's 3 Start /os.ldr once
-  (does not write). It is kept with the
-  other settings in the running slot's settings sector in the SPI flash;
-  when it cannot be saved, Settings says
-  so and the item shows what the next start will read.
-- 6 Restart after an install that completed, after a canceled selection
-  and after an OS write that succeeded is Continue to the OS; elsewhere on the developer menu it is
-  the plain restart, which repeats this boot's reason.
-- Continue to the OS restarts the unit, and that one start boots the OS
-  even with Start in boot menu on (S-15.190). Those two keys, the main
-  screen's 7 and a host's request (`continue-os`, S-10c.076) start it. Its screen says that the
-  unit is restarting to start the OS.
-- 3 Start /os.ldr once (does not write) on the developer menu restarts the
-  unit, and that one start boots the OS from the drive's `/os.ldr` even
-  with Start in boot menu on (S-15.194, S-04.014); it writes nothing to
-  the eMMC. Its screen says that the unit is restarting to start it.
-- System holds the key test, the volume calibration reset, the content
-  packs, the format and the factory reset. The format is shown on every
-  unit, whatever developer mode is; the developer menu offers no reset.
-- Developer mode is off by default, and the Settings item alone sets it. It
-  shows the developer menu and adds the USB serial port.
-- The protected-writes item is on Settings alone. While it is off, 2 opens
-  its screen, Protected Writes, where 2 held for 5 s turns it on; while it
-  is on, 2 turns it off at once. A host install after reason 40, whose
-  screen has no way back, runs with it off.
-- One MTP item, whose interface follows the MTP target setting; 8 turns
-  MTP off.
-- The OS write has its own screen: its steps and their progress, and on a
-  failure the reason and what the eMMC was left with. 8 goes back to the
-  developer menu; after a success 6 restarts into the OS.
-- The upgrade screen's disk form has a back line, and no key there sets
-  the protected writes or starts a scan: a scan starts only when the host
-  releases the disk.
-- Shift + 8 leaves the key test.
-- Recovery's slot menu (its main screen's 1): 1 Try slot N once, 2 Make slot N
-  the boot slot, 3 Keep slot N, 4 Put slot N's record back, each only where
-  it applies, and each confirmed by key 1 held for 5 s on the screen after it.
-  While 3 is shown, 2 is not: after a trial that came up, the keep is what
-  makes that slot the boot slot. 8 goes back.
+- A setting shows its state as the item's hint (`Off`, or `On`, in red where it needs care). Settings
+  live on the Settings screen.
+- Keys that are not items are named in a `keys` line on the screen that reads them, not in the status
+  bar.
+
+### Exclusions
+
+- The main screen holds no destructive item and no setting.
+- Whatever removes, erases or formats lives under System, on a digit only a sound key gives (5 to 7),
+  never on digit 4, which the white knob also gives.
+- No setting sits on a digit the white knob also gives.
+- 8 is never an item.
+- Developer mode is set only by its item on Settings.
+- Protected writes is set only on Settings, and never from a host.
+- A host never starts a factory reset.
+
+## Current layout
+
+A description of the screens as they are now, free to change within the rules above.
+
+| Screen | Items |
+| --- | --- |
+| Main Menu | 1 Install firmware, 2 Settings, 3 Developer menu (while developer mode is on), 4 and the help key Device Info, 5 System; then 7 Continue to OS at the bottom, set apart by a blank row or by the failed-start notice. 6 is no item |
+| Settings | 1 Developer mode, 2 Protected writes, 3 Color, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link |
+| Protected Writes | 2 Turn on (held 5 s), 8 Back to Settings; while it is on, Settings' 2 turns it off at once |
+| System | 1 Key test, 2 Reset volume calibration, 3 Remove content packs (when there are packs), 5 Format drive, 7 Factory reset; the format is shown on every unit, whatever developer mode is |
+| Developer | 2 MTP file transfer (one item, its interface the MTP target's; 8 turns MTP off), 3 Start /os.ldr once (does not write), 5 Write /os.ldr to boot partition, 6 Restart; it offers no reset |
+| Host Link | 1 Allow (held 5 s), 8 Cancel; 60 s with no key cancels; the unit's own keys alone |
+| Key Test | Shift + 8 leaves it |
+| Recovery's slot menu (its main screen's 1) | 1 Try slot N once, 2 Make slot N the boot slot, 3 Keep slot N, 4 Put slot N's record back, each only where it applies and each confirmed by key 1 held for 5 s on the screen after it; while 3 is shown, 2 is not; 8 goes back |
+
+## Behavior
+
+- Start in boot menu is off by default. On, every start that would boot the OS opens the boot menu
+  instead (S-15.175), but the one start after Continue to the OS or after the developer menu's start
+  of `/os.ldr` once. It is kept with the other settings in the running slot's settings sector in the SPI
+  flash; when it cannot be saved, Settings says so and the item shows what the next start will read.
+- Continue to the OS restarts the unit, and that one start boots the OS even with Start in boot menu on
+  (S-15.190). The main screen's 7, the 6 Restart offered after an install that completed, after a
+  canceled selection and after an OS write that succeeded, and a host's request (`continue-os`,
+  S-10c.076) start it; elsewhere on the developer menu 6 is the plain restart, which repeats this boot's
+  reason. Its screen says that the unit is restarting to start the OS.
+- Start `/os.ldr` once restarts the unit, and that one start boots the OS from the drive's `/os.ldr`
+  even with Start in boot menu on (S-15.194, S-04.014); it writes nothing to the eMMC. Its screen says
+  that the unit is restarting to start it.
+- The OS write has its own screen: its steps and their progress, and on a failure the reason and what
+  the eMMC was left with. 8 goes back to where it began (the developer menu, or for a host's write the
+  screen it began on); after a success 6 restarts into the OS.
+- The upgrade screen's disk form has a back line, and no key there sets Protected writes or starts a
+  scan: a scan starts only when the host releases the disk. A host install after reason 40, whose screen
+  has no way back, runs with Protected writes off.
+- Developer mode is off by default. It shows the developer menu and adds the USB serial port.
 - The color setting is off by default; off draws in gray (S-15.173).
-- The settings are kept per slot in the SPI flash, each at its default
-  when the slot's settings sector holds no valid record for the image it
-  runs (S-15.172).
-- The main screen shows the failed-start notice only when this boot's start
-  of the OS failed (S-15.163): under items 1 to 5 and above 7, `The OS
-  could not be started.` and a `   Reason: …` line; for an image marked encrypted the
-  OS-reinstall line is its reason (S-15.161). Device Info then gives the
-  failed step on its `OS start` row, in place of the blank row above
-  `8 Back to Main Menu`.
+- The settings are kept per slot in the SPI flash, each at its default when the slot's settings sector
+  holds no valid record for the image it runs (S-15.172).
+- The main screen shows the failed-start notice only when this boot's start of the OS failed (S-15.163):
+  under items 1 to 5 and above 7, `The OS could not be started.` and a `   Reason: …` line; for an image
+  marked encrypted the OS-reinstall line is its reason (S-15.161). Device Info then gives the failed step
+  on its `OS start` row, in place of the blank row above `8 Back to Main Menu`.
 
 ## The key test
 
@@ -327,6 +314,8 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | a run failed | the parts of a package, as the list opens: every row at `No` |
 | <img src="../docs/ui/upgrade-picked.png" width="480" alt="Parts chosen"> | <img src="../docs/ui/upgrade-held.png" width="480" alt="Install selected held"> |
 | two parts at `Yes`, the bootloader among them; a row that cannot be picked, up to date | 1 held for 2 of the 5 s |
+| <img src="../docs/ui/approve.png" width="480" alt="Host Link"> | <img src="../docs/ui/approve-held.png" width="480" alt="Host Link, 1 held"> |
+| Host Link: a computer asks for the session (APPROVE) | its 1 held for 2 of the 5 s |
 | <img src="../docs/ui/main-failed.png" width="480" alt="The OS not started"> | <img src="../docs/ui/info-failed.png" width="480" alt="Device Info after it"> |
 | Main Menu: the start failed when the second processor stopped answering | Device Info: the step, the request and where it broke |
 | <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | <img src="../docs/ui/upgrade-canceled.png" width="480" alt="Nothing installed"> |

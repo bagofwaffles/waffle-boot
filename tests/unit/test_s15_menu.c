@@ -1487,6 +1487,7 @@ static void test_rules(void)
 					case S15_SCR_UPGRADE:   /* R_UPGRADE_EXIT */
 					case S15_SCR_STARTING:
 					case S15_SCR_NONE:
+					case S15_SCR_APPROVE:
 					default:
 						break;
 					}
@@ -4115,6 +4116,171 @@ static void test_op1f(void)
 	expect_screen("info2_unknown");
 }
 
+/*
+ * The Host link setting (digit 7 on Settings, saved as the others), the
+ * host link's approval screen (the unit's keys alone: 1 held for 5 s
+ * allows, 8 refuses, 60 s with no key times out), and what a host's keys
+ * can never do: start the factory reset, or change Protected writes.
+ */
+static void test_host_link(void)
+{
+	reset_fake(); default_boot(); BOOT.settings.host_link = true; start();
+	press(0x07);
+	expect_screen("settings");
+	CHECK(M.host_link, "host link on");
+	press(0x14);
+	expect_screen("settings_host_link_off");
+	CHECK(!M.host_link && F.saves == 1u && !F.saved.host_link, "7: off, saved");
+	press(0x14);
+	CHECK(M.host_link && F.saves == 2u && F.saved.host_link, "7: on again, saved");
+	s15_menu_host_event(&M, 0x14, true);
+	s15_menu_host_event(&M, 0x14, false);
+	CHECK(!M.host_link && F.saves == 2u && appended(s15_settings_host),
+	      "a host's 7: this start only");
+	reset_fake(); default_boot(); BOOT.settings.host_link = false; start();
+	CHECK(!M.host_link, "the setting as the start read it");
+
+	/* the approval, over Settings and back to it */
+	reset_fake(); default_boot(); BOOT.settings.host_link = true; start();
+	press(0x07);
+	CHECK(s15_menu_approve_open(&M) && M.screen == S15_SCR_APPROVE, "approval open");
+	expect_screen("approve");
+	expect_title("approve");
+	CHECK(s15_menu_approve_result(&M) == S15_APPROVE_PENDING, "pending");
+	CHECK(s15_menu_approve_open(&M), "open again: the same screen");
+	s15_menu_host_event(&M, 0x06, true);
+	tick(S15_HOLD_MS * 2u);
+	s15_menu_host_event(&M, 0x06, false);
+	s15_menu_host_event(&M, 0x15, true);
+	s15_menu_host_event(&M, 0x15, false);
+	CHECK(M.screen == S15_SCR_APPROVE && M.armed == S15_ARM_NONE &&
+	      s15_menu_approve_result(&M) == S15_APPROVE_PENDING, "a host's keys do nothing");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_SETTINGS && s15_menu_approve_result(&M) == S15_APPROVE_REFUSED,
+	      "8 refuses");
+	expect_screen("settings");
+	CHECK(s15_menu_approve_result(&M) == S15_APPROVE_NONE, "an answer is read once");
+	CHECK(s15_menu_approve_open(&M), "asked again");
+	ev(0x06, true);
+	expect_screen("approve_held");
+	tick(S15_HOLD_MS - 1u);
+	ev(0x06, false);
+	CHECK(M.armed == S15_ARM_NONE && s15_menu_approve_result(&M) == S15_APPROVE_PENDING,
+	      "released early: still asked");
+	expect_screen("approve");
+	ev(0x0A, true);		/* a knob click starts no hold */
+	tick(S15_HOLD_MS);
+	CHECK(M.armed == S15_ARM_NONE && s15_menu_approve_result(&M) == S15_APPROVE_PENDING,
+	      "a knob click allows nothing");
+	ev(0x0A, false);
+	ev(0x06, true);
+	tick(S15_HOLD_MS);
+	CHECK(M.screen == S15_SCR_SETTINGS && s15_menu_approve_result(&M) == S15_APPROVE_ALLOWED,
+	      "1 held for 5 s allows");
+	ev(0x06, false);
+	CHECK(M.screen == S15_SCR_SETTINGS && M.dev_mode && F.saves == 0u,
+	      "the release after it does nothing");
+	/* no key: timed out, back to the main screen it came from */
+	press(0x15);
+	CHECK(s15_menu_approve_open(&M), "from the main screen");
+	tick(S15_APPROVE_MS - 1u);
+	CHECK(s15_menu_approve_result(&M) == S15_APPROVE_PENDING, "not before 60 s");
+	tick(1u);
+	CHECK(M.screen == S15_SCR_MAIN && s15_menu_approve_result(&M) == S15_APPROVE_TIMEOUT,
+	      "60 s: timed out");
+	expect_screen("main_bare");
+	/* not over a hold or the upgrade screen */
+	press(0x12);
+	ev(0x14, true);
+	CHECK(!s15_menu_approve_open(&M) && M.armed == S15_ARM_RESET, "not during a hold");
+	ev(0x14, false);
+	press(0x15);
+	press(0x06);
+	CHECK(M.screen == S15_SCR_UPGRADE && !s15_menu_approve_open(&M), "not over Install");
+
+	/* never from a host: the factory reset */
+	reset_fake(); default_boot(); start();
+	press(0x12);
+	clear_records();
+	s15_menu_host_event(&M, 0x14, true);
+	tick(S15_HOLD_MS * 2u);
+	s15_menu_host_event(&M, 0x14, false);
+	CHECK(M.armed == S15_ARM_NONE && F.n_removed == 0u && F.clears == 0u &&
+	      M.screen == S15_SCR_SYSTEM, "a host's 7 starts no factory reset");
+	/* nor Protected writes, on or off */
+	press(0x15);
+	press(0x07);
+	s15_menu_host_event(&M, 0x07, true);
+	s15_menu_host_event(&M, 0x07, false);
+	CHECK(M.screen == S15_SCR_SETTINGS && F.option == -1, "a host's 2 opens nothing");
+	press(0x07);
+	s15_menu_host_event(&M, 0x07, true);
+	tick(S15_HOLD_MS * 2u);
+	s15_menu_host_event(&M, 0x07, false);
+	CHECK(M.screen == S15_SCR_OPTION && !M.option_on && F.option == -1,
+	      "a host's 2 held turns nothing on");
+	ev(0x07, true);
+	tick(S15_HOLD_MS);
+	ev(0x07, false);
+	CHECK(M.option_on && M.screen == S15_SCR_SETTINGS, "the unit's 2 held: on");
+	s15_menu_host_event(&M, 0x07, true);
+	s15_menu_host_event(&M, 0x07, false);
+	CHECK(M.option_on, "a host's 2 leaves it on");
+
+	/* a host's OS write with developer mode off: its file named, and 8
+	 * back to the screen it began on, never the developer menu */
+	{
+		struct s15_osw_end e;
+
+		reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+		for (size_t i = 0; i < S15V_N(s15v_osws); i++)
+			if (strcmp(s15v_osws[i].name, "ok") == 0)
+				F.osw_case = &s15v_osws[i];
+		press(0x07);
+		n_app = 0;
+		CHECK(s15_menu_os_write(&M, "/yaffs2/firmware/os-2.ldr", &e) &&
+		      e.result == S15_OSW_OK && F.os_write == 1u, "host OS write: done");
+		s15_menu_release(&M);	/* the board's pass after the long call */
+		CHECK(appended("Looking for /firmware/os-2.ldr...") &&
+		      !appended("Looking for /os.ldr..."), "host OS write: its file named");
+		expect_last_lines("oswrite_host_ok", screen_vec("oswrite_host_ok")->lines);
+		press(0x15);
+		CHECK(M.screen == S15_SCR_SETTINGS && M.osw == S15_OSW_VIEW_NONE && !M.dev_mode,
+		      "host OS write: 8 back to Settings");
+		expect_screen("settings_devmode_off");
+		/* unreadable: the error names the file; from the main screen,
+		 * back to it */
+		reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+		F.osw = S15_OSW_UNREADABLE;
+		n_app = 0;
+		CHECK(s15_menu_os_write(&M, "/yaffs2/x.ldr", &e), "host OS write: run");
+		s15_menu_release(&M);
+		CHECK(appended("Can't read /x.ldr") && !appended(s15_os_ldr_unreadable),
+		      "host OS write: the file it could not read");
+		press(0x15);
+		CHECK(M.screen == S15_SCR_MAIN, "host OS write: 8 back to the main screen");
+		expect_screen("main_devmode_off");
+		/* the developer menu's own write is as it was */
+		reset_fake(); default_boot(); start();
+		press(0x08);
+		press(0x12);
+		press(0x15);
+		CHECK(M.screen == S15_SCR_FACTORY, "the unit's write: back to Developer");
+	}
+	/* a host's start once that is not taken: the screen it began on drawn
+	 * again under the reason, never the developer menu */
+	reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+	press(0x07);
+	n_app = 0;
+	s15_menu_os_once(&M);
+	CHECK(M.screen == S15_SCR_SETTINGS && appended(s15_once_not_started) &&
+	      F.once == 0u, "host start once refused: on Settings");
+	reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+	s15_menu_os_once(&M);
+	CHECK(M.screen == S15_SCR_MAIN && appended(s15_once_not_started),
+	      "host start once refused: on the main screen");
+}
+
 int main(void)
 {
 	test_rules();
@@ -4142,5 +4308,6 @@ int main(void)
 	test_keytest_end_draws();
 	test_gray();
 	test_op1f();
+	test_host_link();
 	return check_done("test_s15_menu");
 }

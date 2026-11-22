@@ -19,6 +19,7 @@
 #include "blockdev.h"
 
 #include "waffle/boot.h"
+#include "waffle/hostlink.h"
 #include "waffle/s02_store.h"
 #include "waffle/s04_records.h"
 #include "waffle/s06_link.h"
@@ -163,6 +164,11 @@ struct opxy_services {
 	/* S-02.097: the running slot's settings as this start read them, and
 	 * as the last save left them (opxy_store.c) */
 	struct s02_store store;
+	/* the host link (opxy_hostlink.c): its session, its put, its job */
+	struct hostlink hl;
+	struct hl_ops hl_ops;
+	uint8_t hl_link;			/* the link the last job came on */
+	uint8_t hl_route;
 };
 
 /* The log and the menus' console, from the PSoC link's start on (S-14.011,
@@ -315,6 +321,33 @@ bool opxy_transfer_append(struct opxy_master *m, const uint8_t *p, size_t n);
 void opxy_transfer_discard(struct opxy_master *m);
 void opxy_transfer_submit(struct opxy_master *m, bool fw_command,
 			  struct s11_outcome *out);
+/* The same as a RAM-disk file of that name (S11_FORM_FILE, S-11.047). */
+void opxy_transfer_submit_file(struct opxy_master *m, const char *name,
+			       struct s11_outcome *out);
+
+/*
+ * The host link (src/board/opxy_hostlink.c, waffle/hostlink.h). The frame's
+ * reply on its link; false for a frame of another id.
+ */
+void opxy_hostlink_start(struct opxy_master *m);
+bool opxy_hostlink_frame(struct opxy_master *m, unsigned link, const struct s06_frame *f);
+/* Once a pass: the approval screen's answer, the setting, a queued job. */
+void opxy_hostlink_poll(struct opxy_master *m);
+/* Volume sectors of the OS's FAT volume at their user-area sectors, read or
+ * written; -1, with nothing done, for a range not wholly inside it. */
+int opxy_user_sectors(struct opxy_master *m, bool write, uint32_t lba, uint8_t *buf,
+		      uint32_t count);
+/* The session is approved and the setting on. */
+bool opxy_hostlink_approved(const struct opxy_master *m);
+/* S-10c's consent (struct s10c_ops gate). */
+enum s10c_gate opxy_hostlink_gate(void *ctx, enum s10c_link link);
+/* A job's progress, from the install's and the OS write's reports. */
+void opxy_hostlink_progress(struct opxy_master *m, uint32_t done, uint32_t total,
+			    const char *label);
+/* The file the next OS write reads (the developer menu's: /yaffs2/os.ldr). */
+extern const char *opxy_osw_path;
+/* The parts a host chose for the next install's selection; -1: the unit's. */
+void opxy_install_host_parts(int parts);
 
 /*
  * Weak builders, one per feature owner. Each fills its part of an ops

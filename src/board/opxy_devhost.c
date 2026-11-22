@@ -4,8 +4,9 @@
  * writes, slave peek and poke over the bridge, the hand-over options, a
  * hand-over of the active-partition OS, and held mode's screen and keys.
  * Part of the standard image, served
- * from held mode's USB serial loop while developer mode is on (S-15.172);
- * with it off every request is refused and changes nothing. They are
+ * from held mode's USB serial loop while developer mode is on (S-15.172)
+ * and the host link's session is approved (waffle/hostlink.h); otherwise
+ * every request is refused and changes nothing. Files go by the host link. They are
  * another way to boot an OS and to recover a unit.
  *
  * The frames are tools/testos_mon.py's, id OPXY_DEV_REQ_ID. Registers and
@@ -30,7 +31,6 @@
 #include "waffle/s09_bridge.h"
 #include "waffle/s09_files.h"
 #include "waffle/s13c_panel.h"
-#include "bearssl_hash.h"
 
 #if !defined(OPXY_TEST_OS)
 
@@ -262,61 +262,12 @@ static uint32_t do_handover(struct opxy_master *m, uint32_t flags,
 	return why;
 }
 
-/*
- * S-10c.110: write a file to the top of /yaffs2 from the host over USB, so a
- * file swap skips TE's MTP (the developer menu's OS write then picks it up).
- * Only the names the bootloader itself reads and that are safe to overwrite are
- * allowed; everything else is refused. The put is a session: open with the
- * name, then write the bytes in frames, then close.
- */
-static int32_t dev_put_fd = -1;
-
 /* A file request that failed: the slave not answering is said apart from a
  * refusal (OPXY_DEV_NO_SLAVE). */
 static uint8_t file_refused(const struct opxy_master *m)
 {
 	return s09_files_slave_lost(&m->sv.files) ? OPXY_DEV_NO_SLAVE :
 						    OPXY_DEV_REFUSED;
-}
-
-/* The allowed names, each already under /yaffs2 (S-16.117). Only os.ldr for
- * now: the OS write reads it (S-15.094), and it is not bootloader state. */
-static const char *dev_put_path(const uint8_t *name, size_t n)
-{
-	static const char os_ldr[] = "/yaffs2/os.ldr";
-
-	if (n == 6u && name[0] == 'o' && name[1] == 's' && name[2] == '.' &&
-	    name[3] == 'l' && name[4] == 'd' && name[5] == 'r')
-		return os_ldr;
-	return NULL;
-}
-
-/* SHA-256 of /yaffs2/<name>: out gets the 32-byte digest then the u32 size. */
-static uint8_t dev_sha(struct opxy_master *m, const uint8_t *name, size_t n,
-		       uint8_t *out)
-{
-	static uint8_t buf[256];
-	const char *path = dev_put_path(name, n);
-	br_sha256_context c;
-	int32_t fd, r;
-	uint32_t total = 0;
-
-	if (path == NULL)
-		return OPXY_DEV_BAD;
-	fd = s09_files_open(&m->sv.files, path, S09_O_RDONLY);
-	if (fd < 0)
-		return file_refused(m);
-	br_sha256_init(&c);
-	while ((r = s09_files_read(&m->sv.files, fd, buf, sizeof(buf))) > 0) {
-		br_sha256_update(&c, buf, (size_t)r);
-		total += (uint32_t)r;
-	}
-	(void)s09_files_close(&m->sv.files, fd);
-	if (r < 0)
-		return file_refused(m);
-	br_sha256_out(&c, out);
-	wr32(out + 32, total);
-	return OPXY_DEV_OK;
 }
 
 /*
@@ -480,9 +431,11 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 	if (f->id != OPXY_DEV_REQ_ID || f->len < 1u)
 		return false;
 	out[0] = OPXY_DEV_OK;
-	/* S-15.172: off unless developer mode is on. Refused, nothing changed. */
-	if (!m->sv.menu.dev_mode) {
-		out[0] = OPXY_DEV_REFUSED;
+	/* S-15.172: off unless developer mode is on. Refused, nothing changed.
+	 * SPEC-Q: and every request but ping needs the host link's approval. */
+	if (!m->sv.menu.dev_mode ||
+	    (f->payload[0] != OPXY_DEV_PING && !opxy_hostlink_approved(m))) {
+		out[0] = m->sv.menu.dev_mode ? OPXY_DEV_NOT_APPROVED : OPXY_DEV_REFUSED;
 		(void)s06_send(&m->node, S06_LINK_CDC, s06_swap_route(f->route),
 			       f->id, out, 1u);
 		return true;
@@ -551,50 +504,6 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 			dev_options = rd32(f->payload + 2);
 		wr32(out + 1, dev_options);
 		n = 5u;
-		break;
-	case OPXY_DEV_PUT: {
-		/* sub:1, then (open) the name or (write) the bytes. */
-		const uint8_t sub = f->len >= 2u ? f->payload[1] : 0xFFu;
-
-		if (sub == OPXY_DEV_PUT_OPEN) {
-			const char *path = dev_put_path(f->payload + 2, f->len - 2u);
-
-			if (dev_put_fd >= 0) {
-				(void)s09_files_close(&m->sv.files, dev_put_fd);
-				dev_put_fd = -1;
-			}
-			if (path == NULL) {
-				out[0] = OPXY_DEV_BAD;
-			} else {
-				/* S-12.062: the scan first, the host waiting */
-				s15_check_files(&m->sv.menu);
-				dev_put_fd = s09_files_open(&m->sv.files, path,
-					S09_O_WRONLY | S09_O_CREAT | S09_O_TRUNC);
-				if (dev_put_fd < 0)
-					out[0] = file_refused(m);
-			}
-		} else if (sub == OPXY_DEV_PUT_DATA) {
-			const uint32_t k = f->len >= 2u ? (uint32_t)f->len - 2u : 0u;
-
-			if (dev_put_fd < 0 ||
-			    s09_files_write(&m->sv.files, dev_put_fd,
-					    f->payload + 2, k) != (int32_t)k)
-				out[0] = file_refused(m);
-		} else if (sub == OPXY_DEV_PUT_CLOSE) {
-			/* OK only once the file is on flash, not in the eMMC's cache */
-			if (dev_put_fd < 0 ||
-			    s09_files_close_sync(&m->sv.files, dev_put_fd) != 0)
-				out[0] = file_refused(m);
-			dev_put_fd = -1;
-		} else {
-			out[0] = OPXY_DEV_BAD;
-		}
-		break;
-	}
-	case OPXY_DEV_SHA:
-		out[0] = dev_sha(m, f->payload + 1, f->len - 1u, out + 1);
-		if (out[0] == OPXY_DEV_OK)
-			n = 1u + 32u + 4u;
 		break;
 	case OPXY_DEV_YTAGS: {
 		struct s03_emmc_ops emmc;

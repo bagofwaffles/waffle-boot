@@ -173,6 +173,11 @@ static int32_t flush_emmc(struct s09_files *f)
 	return r == 0 && f->err == 0 ? 0 : -1;
 }
 
+int32_t s09_files_flush(struct s09_files *f)
+{
+	return flush_emmc(f);
+}
+
 int32_t s09_files_close_sync(struct s09_files *f, int32_t fd)
 {
 	if (s09_files_close(f, fd) != 0 || f->err != 0)
@@ -206,6 +211,13 @@ int32_t s09_files_write(struct s09_files *f, int32_t fd, const uint8_t *buf, uin
 		done += k;
 	}
 	return (int32_t)n;
+}
+
+int32_t s09_files_seek(struct s09_files *f, int32_t fd, uint32_t off)
+{
+	int32_t r = call(f, S09_LSEEK, (uint32_t)fd, off, NULL, 0, NULL, 0, NULL);
+
+	return r == (int32_t)off && f->err == 0 ? 0 : -1;
 }
 
 int32_t s09_files_unlink(struct s09_files *f, const char *path)
@@ -1009,11 +1021,11 @@ static enum s15_os_write osw_unread(const struct s09_files *f, struct s15_osw_en
 }
 
 /* /yaffs2/os.ldr, of size bytes, into image in pieces, each reported. */
-static bool osw_read(struct s09_files *f, uint8_t *image, uint32_t size,
-		     const struct s15_osw_report *rep)
+static bool osw_read(struct s09_files *f, const char *path, uint8_t *image,
+		     uint32_t size, const struct s15_osw_report *rep)
 {
 	uint32_t got = 0, err;
-	int32_t fd = s09_files_open(f, OS_LDR, S09_O_RDONLY);
+	int32_t fd = s09_files_open(f, path, S09_O_RDONLY);
 
 	if (fd < 0)
 		return false;
@@ -1039,12 +1051,13 @@ static bool osw_read(struct s09_files *f, uint8_t *image, uint32_t size,
  * and the file ended there, 0 when they differ, -1 when a request failed
  * (f->err set). */
 #define OSW_CMP 0x1000u
-static int osw_same(struct s09_files *f, const uint8_t *image, uint32_t size)
+static int osw_same(struct s09_files *f, const char *path, const uint8_t *image,
+		    uint32_t size)
 {
 	static uint8_t piece[OSW_CMP];
 	uint32_t got = 0, err;
 	int same = 1;
-	int32_t fd = s09_files_open(f, OS_LDR, S09_O_RDONLY);
+	int32_t fd = s09_files_open(f, path, S09_O_RDONLY);
 
 	if (fd < 0)
 		return -1;
@@ -1125,7 +1138,7 @@ bool s09_files_os_read(struct s09_files *f, uint8_t *buf, uint32_t cap,
 	*len = 0;
 	if (!s09_files_os_check(f, cap, out, &n))
 		return false;
-	if (!osw_read(f, buf, n, NULL))
+	if (!osw_read(f, OS_LDR, buf, n, NULL))
 		return os_file_unread(f, out);
 	*len = n;
 	return true;
@@ -1175,6 +1188,14 @@ enum s15_os_write s09_files_os_write(struct s09_files *f, const struct s03_env *
 				     const struct s15_osw_report *rep,
 				     struct s15_osw_end *end)
 {
+	return s09_files_os_write_from(f, OS_LDR, env, image, cap, rep, end);
+}
+
+enum s15_os_write s09_files_os_write_from(struct s09_files *f, const char *path,
+					  const struct s03_env *env, uint8_t *image,
+					  uint32_t cap, const struct s15_osw_report *rep,
+					  struct s15_osw_end *end)
+{
 	static const enum s15_osw_why why_of[] = {
 		[S03_FAIL_NONE] = S15_OSW_WHY_NONE,
 		[S03_FAIL_LENGTH] = S15_OSW_WHY_NONE,
@@ -1204,7 +1225,7 @@ enum s15_os_write s09_files_os_write(struct s09_files *f, const struct s03_env *
 		end->why = S15_OSW_WHY_REFUSED;
 		return end->result;
 	}
-	if (s09_files_stat(f, OS_LDR, &st) != 0)
+	if (s09_files_stat(f, path, &st) != 0)
 		return osw_unread(f, end);
 	if (is_dir(&st)) {
 		end->result = S15_OSW_UNREADABLE;
@@ -1219,13 +1240,13 @@ enum s15_os_write s09_files_os_write(struct s09_files *f, const struct s03_env *
 		end->limit = cap;
 		return end->result;
 	}
-	if (!osw_read(f, image, st.size, rep))
+	if (!osw_read(f, path, image, st.size, rep))
 		return osw_unread(f, end);
 	/* Step 1's checks, before any eMMC operation: a second read the same
 	 * as the first, whose bytes are those written, and S-05.024's check
 	 * of them, so a file damaged on the bridge or one the hand-over would
 	 * refuse never becomes the active OS */
-	switch (osw_same(f, image, st.size)) {
+	switch (osw_same(f, path, image, st.size)) {
 	case -1:
 		return osw_unread(f, end);
 	case 0:

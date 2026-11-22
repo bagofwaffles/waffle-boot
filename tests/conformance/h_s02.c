@@ -461,7 +461,8 @@ static unsigned long store_flags(const struct s02_store *s)
 {
 	return (s->dev_mode ? S02_STORE_FLAG_DEV : 0u) | (s->color ? S02_STORE_FLAG_COLOR : 0u) |
 	       (s->mtp_macos ? S02_STORE_FLAG_MTP_MACOS : 0u) |
-	       (s->start_menu ? S02_STORE_FLAG_START_MENU : 0u);
+	       (s->start_menu ? S02_STORE_FLAG_START_MENU : 0u) |
+	       (s->host_link ? 0u : 0x10u);	/* payload byte 1's bit 0 */
 }
 
 static void cmd_startlog(void)
@@ -605,6 +606,7 @@ static void flash_command(const struct h_cmd *c)
 		s.color = (f & S02_STORE_FLAG_COLOR) != 0u;
 		s.mtp_macos = (f & S02_STORE_FLAG_MTP_MACOS) != 0u;
 		s.start_menu = (f & S02_STORE_FLAG_START_MENU) != 0u;
+		s.host_link = (f & 0x10u) == 0u;
 		h_putu((unsigned long)s02_store_write(&env, &run, &s));
 	} else if (strcmp(k, "storeclear") == 0) {
 		struct s02_store_slot run;

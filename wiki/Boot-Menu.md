@@ -54,14 +54,15 @@ the items, the screen says when the OS could not be started, and why.
 | 3 Color | Off, the default, draws every screen in gray |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
 | 6 Start in boot menu | Every start opens this menu |
+| 7 Host link | On by default. On: a computer or a page may use the [host link](Developer-Host-Link) once the unit approves it (1 held for 5 s on the screen it asks with). Off: it is answered only that the link is off, and nothing over USB changes the unit |
 
 ### Where they are kept
 
-All four are kept in the SPI flash, in the settings sector of the slot the unit is running
+All five are kept in the SPI flash, in the settings sector of the slot the unit is running
 ([Flash Layout](Flash-Layout-and-Write-Safety#the-areas)), and belong to that slot's image: the other slot
 has its own, and a new image starts on the defaults (Developer mode off, Color off, MTP target macOS, Start in
-boot menu off). A change is saved at once, and only by a key pressed on the unit. A key a computer sends
-(a developer request) changes Developer mode, Color or the MTP target until the next start and saves
+boot menu off, Host link on). A change is saved at once, and only by a key pressed on the unit. A key a computer sends
+(a developer request) changes Developer mode, Color, the MTP target or Host link until the next start and saves
 nothing, and leaves Start in boot menu as it is. Nothing is written to the internal drive: a format leaves
 the settings, and a settings file on the drive (`bootloader.settings`) is not read or written.
 

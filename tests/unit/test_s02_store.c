@@ -124,7 +124,7 @@ static unsigned count(char kind)
 
 static struct s02_store st(bool dev, bool color, bool mtp, bool menu)
 {
-	const struct s02_store s = { dev, color, mtp, menu };
+	const struct s02_store s = { dev, color, mtp, menu, true };
 
 	return s;
 }
@@ -132,7 +132,8 @@ static struct s02_store st(bool dev, bool color, bool mtp, bool menu)
 static bool eq(const struct s02_store *a, const struct s02_store *b)
 {
 	return a->dev_mode == b->dev_mode && a->color == b->color &&
-	       a->mtp_macos == b->mtp_macos && a->start_menu == b->start_menu;
+	       a->mtp_macos == b->mtp_macos && a->start_menu == b->start_menu &&
+	       a->host_link == b->host_link;
 }
 
 static bool is_default(const struct s02_store *a)
@@ -208,15 +209,20 @@ static void test_decode(void)
 	memset(p, 0, sizeof(p));
 	p[0] = 0x08u;
 	n = build(b, S02_STORE_MAGIC, 1u, 1u, 9u, p, 0u);
-	CHECK(s02_store_decode(b, n, 9u, &s) && eq(&s, &(struct s02_store){ false, false, false, true }));
+	CHECK(s02_store_decode(b, n, 9u, &s) && eq(&s, &(struct s02_store){ false, false, false, true, true }));
 	/* the stamp: another image's record, so the defaults */
 	s.start_menu = true;
 	CHECK(!s02_store_decode(b, n, 10u, &s) && is_default(&s));
-	/* the bytes it does not know: flag bits 4 to 7 and a longer payload */
+	/* the bytes it does not know: flag bits 4 to 7, byte 1's bits 1 to 7
+	 * and a longer payload; byte 1's bit 0 turns the host link off */
 	p[0] = 0xF1u;
 	p[1] = 0x55u;
 	n = build(b, S02_STORE_MAGIC, 1u, 5u, 9u, p, 0u);
-	CHECK(s02_store_decode(b, n, 9u, &s) && eq(&s, &(struct s02_store){ true, false, false, false }));
+	CHECK(s02_store_decode(b, n, 9u, &s) && eq(&s, &(struct s02_store){ true, false, false, false, false }));
+	p[1] = 0xFEu;
+	n = build(b, S02_STORE_MAGIC, 1u, 5u, 9u, p, 0u);
+	CHECK(s02_store_decode(b, n, 9u, &s) && s.host_link);
+	p[1] = 0x55u;
 	n = build(b, S02_STORE_MAGIC, 1u, (uint16_t)S02_STORE_PAYLOAD_MAX, 9u, p, 0u);
 	CHECK(n == S02_PAGE_SIZE && s02_store_decode(b, n, 9u, &s));
 	/* not valid: the defaults */
@@ -687,8 +693,32 @@ static void test_clear(void)
 	}
 }
 
+/*
+ * The Host link setting: on by default, and while on a writer writes the
+ * one payload byte as before; off, a second byte with bit 0 set. Each reads
+ * back as written, and an old one-byte record reads with it on.
+ */
+static void test_host_link(void)
+{
+	uint8_t b[S02_PAGE_SIZE];
+	struct s02_store s = st(true, false, true, false), out;
+	size_t n;
+
+	s02_store_defaults(&out);
+	CHECK(out.host_link);
+	n = s02_store_encode(&s, 7u, b, sizeof(b));
+	CHECK(n == S02_STORE_HEADER + 1u + S02_STORE_CRC && b[6] == 1u);
+	CHECK(s02_store_decode(b, n, 7u, &out) && eq(&out, &s));
+	s.host_link = false;
+	n = s02_store_encode(&s, 7u, b, sizeof(b));
+	CHECK(n == S02_STORE_WRITTEN_MAX && b[6] == 2u && b[13] == S02_STORE_FLAG2_HOST_OFF);
+	CHECK(s02_store_decode(b, n, 7u, &out) && eq(&out, &s) && !out.host_link);
+	CHECK(s02_store_encode(&s, 7u, b, S02_STORE_WRITTEN) == 0u);
+}
+
 int main(void)
 {
+	RUN(test_host_link);
 	RUN(test_place);
 	RUN(test_encode);
 	RUN(test_decode);

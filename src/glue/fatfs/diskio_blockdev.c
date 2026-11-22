@@ -12,6 +12,11 @@ void wb_fatfs_attach(const struct wb_blockdev *dev)
 	drive = dev;
 }
 
+const struct wb_blockdev *wb_fatfs_drive(void)
+{
+	return drive;
+}
+
 static const struct wb_blockdev *get_drive(BYTE pdrv)
 {
 	return pdrv == 0 ? drive : NULL;

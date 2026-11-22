@@ -2689,7 +2689,7 @@ static void test_menu_env(void)
 		 * so nothing of the eMMC is read or written */
 		static const uint8_t rec[S02_RECORD_SIZE] = {
 			0x44, 0x33, 0x22, 0x11, 0x00, 0x00, 0x04, 0x00, 0x04, 0xB0, 0x00, 0x00 };
-		struct s15_settings st = { true, false, false, true }, now, back;
+		struct s15_settings st = { true, false, false, true, true }, now, back;
 
 		flash_setup();
 		memcpy(flash_mem + S02_RECORD1_OFF, rec, sizeof rec);
