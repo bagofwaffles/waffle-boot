@@ -66,6 +66,10 @@ static const struct opxy_stream_src g_src = {
 /* The log: the lines that say the running slot was not established. */
 static unsigned g_warned;
 
+/* And every line's bytes, as they went out. */
+static uint8_t g_log[1024];
+static size_t g_log_n;
+
 static bool log_send(void *ctx, uint8_t route, uint8_t id, const uint8_t *p, size_t n)
 {
 	static const char text[] = "running slot not established";
@@ -75,7 +79,19 @@ static bool log_send(void *ctx, uint8_t route, uint8_t id, const uint8_t *p, siz
 	(void)id;
 	for (size_t i = 0; i + sizeof text - 1u <= n; i++)
 		g_warned += memcmp(p + i, text, sizeof text - 1u) == 0 ? 1u : 0u;
+	for (size_t i = 0; i < n && g_log_n < sizeof g_log; i++)
+		g_log[g_log_n++] = p[i];
 	return true;
+}
+
+static bool log_has(const char *s)
+{
+	const size_t n = strlen(s);
+
+	for (size_t i = 0; i + n <= g_log_n; i++)
+		if (memcmp(g_log + i, s, n) == 0)
+			return true;
+	return false;
 }
 
 static uint32_t log_now(void *ctx)
@@ -344,6 +360,68 @@ static void test_from_record(void)
 	CHECK(established && slot == 1u && g_mem_reads != 0u);
 }
 
+/* S-18.004 to S-14: a first stage the table does not hold, with n and c;
+ * S-18.002: a master by the fallback sample, and a main CPU whose PA2
+ * read 0. None of them: no line. */
+static void test_device_log(void)
+{
+	memset(&m, 0, sizeof m);
+	s14_log_init(&m.sv.log, S14_MASTER, &log_clock, NULL, &log_link, NULL);
+	m.sv.log.cdc_on = true;
+	m.dev_how = WB_DEV_UNKNOWN;
+	m.fs_n = 0x8600u;
+	m.fs_c = 0x0049267Eu;
+	g_log_n = 0;
+	opxy_device_log(&m);
+	CHECK(log_has("first stage not known: n 34304, c 0049267e"));
+	CHECK(!log_has("pa2"));
+	m.dev_how = WB_DEV_BY_TABLE;
+	m.role_fallback = true;
+	g_log_n = 0;
+	opxy_device_log(&m);
+	CHECK(log_has("pa2 fallback: master") && !log_has("first stage"));
+	m.role_disagrees = true;
+	g_log_n = 0;
+	opxy_device_log(&m);
+	CHECK(log_has("pa2 fallback: master") && !log_has("still the master"));
+	m.role_fallback = false;
+	g_log_n = 0;
+	opxy_device_log(&m);
+	CHECK(log_has("pa2 reads 0: still the master") && !log_has("fallback"));
+	m.role_disagrees = false;
+	g_log_n = 0;
+	opxy_device_log(&m);
+	CHECK(g_log_n == 0u);
+}
+
+static unsigned fp_reads;
+
+static int fp_read(void *ctx, uint32_t off, uint8_t *buf, uint32_t len)
+{
+	(void)ctx;
+	(void)off;
+	fp_reads++;
+	memset(buf, 0xFF, len);
+	return 0;
+}
+
+/* S-18.004: bringup()'s second read of the first stage, only for a device
+ * the front did not identify and only while no n is known. */
+static void test_device_fingerprint(void)
+{
+	memset(&m, 0, sizeof(m));
+	m.dev_how = WB_DEV_BY_TABLE;
+	fp_reads = 0;
+	opxy_device_fingerprint(&m, fp_read, NULL);
+	CHECK(fp_reads == 0u && m.fs_n == 0u);
+	m.dev_how = WB_DEV_UNKNOWN;
+	opxy_device_fingerprint(&m, fp_read, NULL);
+	CHECK(fp_reads != 0u && m.fs_n == 0xFFFFFFFFu && m.fs_c == 0u);
+	fp_reads = 0;
+	opxy_device_fingerprint(&m, fp_read, NULL);	/* n known: no read */
+	CHECK(fp_reads == 0u && m.fs_n == 0xFFFFFFFFu);
+}
+
 int main(void)
 {
 	const uint8_t *stream = NULL;
@@ -493,5 +571,7 @@ int main(void)
 	/* the two steps write nothing */
 	for (unsigned i = 0; i < g_f.nlog && i < FF_LOG_MAX; i++)
 		CHECK(g_f.log[i].kind == FF_READ);
+	test_device_log();
+	test_device_fingerprint();
 	return finish("test_board_stream");
 }

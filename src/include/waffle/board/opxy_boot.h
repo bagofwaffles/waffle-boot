@@ -630,6 +630,10 @@ static inline const struct wb_device *opxy_dev(const struct opxy_master *m)
 	return m->dev != NULL ? m->dev : &wb_device_opxy;
 }
 
+/* S-18.004: a device the front did not identify shows its n and c; the
+ * record has no field for them, so bringup() reads the first stage again
+ * through read, after the pins (no write), when it has no n yet. */
+void opxy_device_fingerprint(struct opxy_master *m, wb_flash_read_fn read, void *ctx);
 /* S-18.002, S-18.004 to S-14: the device's log lines (psoc_start()). */
 void opxy_device_log(struct opxy_master *m);
 /* S-01.003: the entry after start-up, both roles. */

@@ -147,6 +147,38 @@ static void record_stale(void)
 	memset(opxy_display_record(), 0xA5, S13C_RECORD_SIZE);
 }
 
+/* The master's log on a sink of its own, its last lines kept as text. */
+static char log_buf[512];
+static size_t log_n;
+
+static bool log_send(void *ctx, uint8_t route, uint8_t id, const uint8_t *p, size_t n)
+{
+	(void)ctx;
+	(void)route;
+	(void)id;
+	for (size_t i = 0; i < n && log_n + 1u < sizeof log_buf; i++)
+		log_buf[log_n++] = p[i] >= 0x20u && p[i] < 0x7Fu ? (char)p[i] : '.';
+	log_buf[log_n] = '\0';
+	return true;
+}
+
+static uint32_t log_now(void *ctx)
+{
+	(void)ctx;
+	return 0u;
+}
+
+static const struct s14_link_ops log_link = { log_send, NULL };
+static const struct s14_clock_ops log_clock = { log_now, NULL };
+
+static void log_on(void)
+{
+	s14_log_init(&opxy_master.sv.log, S14_MASTER, &log_clock, NULL, &log_link, NULL);
+	opxy_master.sv.log.cdc_on = true;
+	log_n = 0;
+	log_buf[0] = '\0';
+}
+
 static void test_held(void)
 {
 	struct opxy_master *m = &opxy_master;
@@ -392,9 +424,11 @@ static void test_record_1f(void)
 	opxy_display_handshake(S13C_HANDSHAKE_MAGIC, 2);
 	clear();
 	record_stale();
+	log_on();
 	CHECK(!opxy_display_boot_logo());
 	CHECK(has(S13C_DISPON) && !has(S13C_DGR) && last() == S13C_RAMWR);
 	CHECK(record_is(2));
+	CHECK(strstr(log_buf, "display record") == NULL);
 
 	/* the hand-over frame refused (the panel powered off): no record,
 	 * and a stale one cleared */
@@ -405,9 +439,11 @@ static void test_record_1f(void)
 	opxy_display_power_off(&opxy_master);
 	clear();
 	record_stale();
+	log_on();
 	CHECK(!opxy_display_boot_logo());
 	CHECK(ncmds == 0 && starts == 0);
 	CHECK(record_zero());
+	CHECK(strstr(log_buf, "display record not written") != NULL);
 }
 
 /* S-01.023, S-05.004: the panel taken on from the front, which sent the

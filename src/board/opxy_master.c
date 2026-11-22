@@ -143,12 +143,7 @@ static void bringup(void *ctx)
 	m->flash.scratch = flash_scratch;
 	m->flash.scratch_len = sizeof(flash_scratch); OPXY_CRUMB(2u);
 	m->flash.meta_size = (uint8_t)s04_meta_size(dev);	/* S-04.040 */
-	/* S-18.004: a device the front did not identify shows its n and c;
-	 * the record has no field for them, so the first stage is read
-	 * again here, after the pins (no write) */
-	if (m->dev_how == WB_DEV_UNKNOWN && m->fs_n == 0u)
-		(void)wb_first_stage_identify(wb_spiflash_read, &m->hw.flash, &m->fs_n,
-					      &m->fs_c);
+	opxy_device_fingerprint(m, wb_spiflash_read, &m->hw.flash);
 	/* S-02.097: the defaults until the slave's start reads the running
 	 * slot's settings */
 	s02_store_defaults(&m->sv.store);
@@ -567,6 +562,12 @@ static void psoc_link_init(struct opxy_master *m)
 	m->psoc_ops.common = psoc_common;
 	m->psoc_ops.crc16 = wire_crc16_x25;	/* software: short frames */
 	s07_init(&m->psoc, opxy_dev(m), &m->node, S06_LINK_PSOC, &m->psoc_ops);
+}
+
+void opxy_device_fingerprint(struct opxy_master *m, wb_flash_read_fn read, void *ctx)
+{
+	if (m->dev_how == WB_DEV_UNKNOWN && m->fs_n == 0u)
+		(void)wb_first_stage_identify(read, ctx, &m->fs_n, &m->fs_c);
 }
 
 /*
