@@ -450,14 +450,12 @@ void s15_handover_frame(void (*put)(void *ctx, uint16_t pixel), void *ctx)
 /* S-15.140: the option's screen, its question and every effect; its item's
  * hint names the hold. */
 const char *const s15_option_prompt[S15_OPTION_PROMPT_LINES] = {
-	"Allow until the next reset?",
-	"- Installs write the bootloader slots",
-	"- Any but waffle-boot returns the unit to stock",
-	"- Computer: factory mode, serial and identity",
-	"- The first stage is never written",
+	"Allow writes to the following? (until restart)",
+	"- Bootloader",
+	"- Factory metadata (serial, etc)",
 };
 const enum s15_style s15_option_prompt_style[S15_OPTION_PROMPT_LINES] = {
-	S15_ST_HEAD, S15_ST_TEXT, S15_ST_TEXT, S15_ST_TEXT, S15_ST_TEXT,
+	S15_ST_HEAD, S15_ST_TEXT, S15_ST_TEXT,
 };
 const char s15_option_turn_on[] = "Turn on";
 const char s15_option_item_on[] = "2 Protected writes\tOn";
@@ -545,19 +543,10 @@ const char s15_nothing_skipped[] = "Nothing installed.";
 const char s15_stock_line[] = "Replaces waffle-boot: back to stock";
 const char s15_signed_line[] = "Signed by TE";
 
-/* S-15.015: under the items a hold chooses, while none is held. */
-const char s15_hold_line[] = "   Hold key to make selection";
-
-/* S-15.015: the held item's hint. */
-void s15_hold_hint(struct s15_buf *out, unsigned digit)
-{
-	s15_buf_init(out);
-	s15_buf_str(out, "Hold `");
-	s15_buf_dec(out, digit);
-	s15_buf_str(out, "` for ");
-	s15_buf_dec(out, S15_HOLD_MS / 1000u);
-	s15_buf_str(out, " s");
-}
+/* S-15.015: under the items a hold chooses, while none is held, and in
+ * the label of an item that names its hold. */
+const char s15_hold_line[] = "   Hold to select";
+const char s15_hold_named[] = " (hold to select)";
 
 /* S-15.015: the hold's last row. */
 void s15_hold_bar(struct s15_buf *out, unsigned fill, unsigned left_s)

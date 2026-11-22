@@ -24,8 +24,10 @@
 #define S15_STEP_LABEL_MAX 18u
 #define S15_STEP_COL (3u + S15_STEP_LABEL_MAX + 1u)
 #define S15_LINE 80u     /* characters a line keeps, tabs included */
-/* A pick row's digit column, its label's and its detail's. */
-#define S15_PICK_INDENT 4u
+/* A pick row's state column (Yes or No, left of the digit), its digit's,
+ * its label's and its detail's. */
+#define S15_PICK_STATE_COL 3u
+#define S15_PICK_INDENT 8u
 #define S15_PICK_LABEL_COL (S15_PICK_INDENT + 3u)
 #define S15_PICK_DETAIL_COL (S15_PICK_LABEL_COL + S15_STEP_LABEL_MAX - 2u)
 
@@ -84,9 +86,9 @@ enum s15_style {
 	S15_ST_STEP_SKIP,
 	S15_ST_STEP_FAIL,
 	/* S-15.116's rows, indented S15_PICK_INDENT columns:
-	 * "D Label\tDetail\tState" with the digit's key badge, the state at
-	 * the right (PICK_ON: on a solid block), and "D Label\tWhy" dim, the
-	 * digit with no badge */
+	 * "D Label\tDetail\tState" with the digit's key badge, the state left
+	 * of it in S15_PICK_STATE_COL (PICK_ON: on a solid block), and
+	 * "D Label\tWhy" dim, the digit with no badge and no state */
 	S15_ST_PICK,
 	S15_ST_PICK_ON,
 	S15_ST_PICK_OFF,

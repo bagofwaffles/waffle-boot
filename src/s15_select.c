@@ -253,9 +253,8 @@ static size_t prompt_lines(const struct s15_select *s, uint32_t now_ms,
 	s15_buf_str(&out[n], "Signature does not match.");
 	style[n++] = S15_ST_WARN;
 	s15_buf_init(&out[n]);
-	s15_buf_str(&out[n], "1 Install anyway (hold for ");
-	s15_buf_dec(&out[n], S15_HOLD_MS / 1000u);
-	s15_buf_str(&out[n], " s)");
+	s15_buf_str(&out[n], "1 Install anyway");
+	s15_buf_str(&out[n], s15_hold_named);
 	style[n++] = s->holding ? S15_ST_ARMED : S15_ST_ITEM;
 	cancel_row(s, now_ms, &out[n]);
 	style[n++] = S15_ST_BACK;
@@ -282,9 +281,7 @@ size_t s15_select_lines(const struct s15_select_info *info,
 	if (s->selected == 0u) {
 		s15_buf_str(&out[n], "\tNothing selected");
 	} else {
-		s15_buf_str(&out[n], " (hold for ");
-		s15_buf_dec(&out[n], S15_HOLD_MS / 1000u);
-		s15_buf_str(&out[n], " s)");
+		s15_buf_str(&out[n], s15_hold_named);
 	}
 	style[n++] = s->holding ? S15_ST_ARMED : S15_ST_ITEM;
 	for (unsigned i = 0; i < ROWS; i++) {

@@ -137,9 +137,9 @@ body's left edge (x 16).
 | `item-on` | as `item` | the hint red (a setting that is on and needs care) |
 | `armed` | as `item` | the whole row red, its badges too: an item whose key is being held to confirm it |
 | `back` | `8 Back to <Screen>` | the digit's key badge, the label gray |
-| `pick` | `D Label\tDetail\tNo` | indented: the digit's key badge in column 4, the label white from column 7, the detail white from column 23, the state gray, right-aligned |
+| `pick` | `D Label\tDetail\tNo` | indented: the state gray in column 3, left of the digit's key badge in column 8, the label white from column 11, the detail white from column 27 |
 | `pick-on` | as `pick`, `Yes` | the state black on a solid red block, so that it stands apart from `No` in gray too |
-| `pick-off` | `D Label\tWhy` | indented, all gray: the digit plain in column 4, the label from column 7, why it cannot be picked from column 23 |
+| `pick-off` | `D Label\tWhy` | indented, all gray, no state: the digit plain in column 8, the label from column 11, why it cannot be picked from column 27 |
 | `ok` | a sentence | a green `+` in column 0, the sentence green from column 3 |
 | `warn` | a sentence | an amber `!` in column 0, the sentence amber from column 3 |
 | `error` | a sentence | a red `!` in column 0, the sentence red from column 3 |
@@ -163,7 +163,7 @@ parts removed, and each separating tab written as two spaces.
   Abbreviations stay in capitals (DSP, BLE, USB, MTP, OS, TE, OP-XY);
   `waffle-boot` is always written so.
 - **Key names** are lower case inside a sentence and set in amber, a
-  digit as a key badge: `` Hold `2` for 5 s to turn it on ``.
+  digit as a key badge: `` `1` Save (hold to select)   `8` Cancel ``.
 - **Length.** A line is at most 56 characters; an item's label and hint
   together at most 51. Shorter is better: say one thing per line.
 - **Punctuation.** Items, hints and headings carry no full stop; sentences
@@ -185,12 +185,14 @@ them and their exclusions needs no sign-off.
   is left with "any key". A screen with something under way goes back only once nothing is (the upgrade
   screen, S-15.103).
 - Whatever removes, erases, formats or overwrites, and turning Protected writes on, is confirmed by one
-  rule: the item's own key held for 5 s. Its key down starts the hold: its row turns `armed` with
-  `Hold <digit> for 5 s` as its hint, and the last row is a bar that fills, with the seconds left
-  (`Release to cancel`). Held the whole 5 s, the action runs once, and the key's release does nothing
-  more. Released earlier, or any other key down, only cancels and draws the screen as it was. A knob
-  click never starts a hold, and the white knob confirms nothing. Where the item names its hold in its
-  label (`1 Install selected (hold for 5 s)`, S-15.116), it has no hint, armed or not.
+  rule: the item's own key held for 5 s. The items it confirms carry one hint, `Hold to select`, on a
+  `dim` line under them. Its key down starts the hold: its row turns `armed`, with no hint, and the last
+  row is a bar that fills, with the seconds left (`Release to cancel`). Held the whole 5 s, the action
+  runs once, and the key's release does nothing more. Released earlier, or any other key down, only
+  cancels and draws the screen as it was. A knob click never starts a hold, and the white knob confirms
+  nothing. Where the item names its hold in its label as `(hold to select)` (`1 Install selected (hold to
+  select)`, S-15.116, `2 Turn on (hold to select)`, `1 Allow (hold to select)`), it has no hint and no
+  line under it, armed or not.
 - A factory reset is always confirmed, from every menu that offers it.
 - Keys pressed before the boot menu's first screen, while `Loading boot menu...` shows among them, do
   nothing, and a key still down when it opens acts only after it has been let go and pressed again
@@ -220,11 +222,11 @@ A description of the screens as they are now, free to change within the rules ab
 | --- | --- |
 | Main Menu | 1 Install firmware, 2 Settings, 3 Developer menu (while developer mode is on), 4 and the help key Device Info, 5 System; then 7 Continue to OS at the bottom, set apart by a blank row or by the failed-start notice. 6 is no item |
 | Settings | 1 Developer mode, 2 Protected writes, 3 Color, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link |
-| Protected Writes | 2 Turn on (held 5 s), 8 Back to Settings; while it is on, Settings' 2 turns it off at once |
+| Protected Writes | 2 Turn on (hold to select, 5 s), 8 Back to Settings; off again after every restart; while it is on, Settings' 2 turns it off at once |
 | System | 1 Key test, 2 Reset volume calibration, 3 Remove content packs (when there are packs), 5 Format drive, 6 Boot logo (its state as the hint: `Built-in`, `Custom`, `No room`, `Unavailable`; the last two open nothing), 7 Factory reset; the format is shown on every unit, whatever developer mode is |
 | Boot Logo | 5 Remove (held 5 s, while one is stored), 8 Back to System; the disk offered, a picture dropped and ejected opens its view: 1 held for 5 s saves it, 8 cancels; the result is a view left with 8 alone |
 | Developer | 2 MTP file transfer (one item, its interface the MTP target's; 8 turns MTP off), 3 Start /os.ldr once (does not write), 5 Write /os.ldr to boot partition, 6 Restart; it offers no reset |
-| Host Link | 1 Allow (held 5 s), 8 Cancel; 60 s with no key cancels; the unit's own keys alone |
+| Host Link | 1 Allow (hold to select, 5 s), 8 Cancel; 60 s with no key cancels; the unit's own keys alone |
 | Key Test | Shift + 8 leaves it |
 | Recovery's slot menu (its main screen's 1) | 1 Try slot N once, 2 Make slot N the boot slot, 3 Keep slot N, 4 Put slot N's record back, each only where it applies and each confirmed by key 1 held for 5 s on the screen after it; while 3 is shown, 2 is not; 8 goes back |
 
@@ -238,7 +240,8 @@ A description of the screens as they are now, free to change within the rules ab
   (S-15.190). The main screen's 7, the 6 Restart offered after an install that completed, after a
   canceled selection and after an OS write that succeeded, and a host's request (`continue-os`,
   S-10c.076) start it; elsewhere on the developer menu 6 is the plain restart, which repeats this boot's
-  reason. Its screen says that the unit is restarting to start the OS.
+  reason. It opens no screen of its own: a line under the screen it was chosen on says that the unit
+  is restarting to start the OS, and from then no key acts.
 - Start `/os.ldr` once restarts the unit, and that one start boots the OS from the drive's `/os.ldr`
   even with Start in boot menu on (S-15.194, S-04.014); it writes nothing to the eMMC. Its screen says
   that the unit is restarting to start it.
@@ -330,7 +333,7 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | <img src="../docs/ui/upgrade-sig-prompt.png" width="480" alt="The signature does not match"> | <img src="../docs/ui/upgrade-signed.png" width="480" alt="A valid package's parts"> |
 | a package whose signature does not match: 1 held for 5 s goes on to its parts, 8 cancels | a package with a valid signature: `Signed by TE` under the list |
 | <img src="../docs/ui/oswrite-run.png" width="480" alt="Write OS"> | <img src="../docs/ui/continue-restarting.png" width="480" alt="Restarting into the OS"> |
-| Write OS (developer menu, 5), the write running | Continue to the OS |
+| Write OS (developer menu, 5), the write running | Continue to the OS: the restarting line under the screen it was chosen on |
 | <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |
 | the OS written, 8 back to the developer menu | the OS write failed: the step, the reason, what the eMMC was left with |
 | <img src="../docs/ui/info2.png" width="480" alt="Device Info 2"> | <img src="../docs/ui/recovery-loading.png" width="480" alt="Loading recovery menu..."> |

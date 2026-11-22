@@ -632,30 +632,20 @@ static const char *slot_name(uint8_t t)
 }
 
 /* An item, its label perhaps with a hint after a tab; armed while its digit
- * is held, the hint then naming the hold. */
+ * is held, its label alone then (the bar on the last row says the rest). */
 static void item(struct lines *o, const struct inst_screen *s, unsigned digit, const char *label)
 {
 	const char d[3] = { (char)('0' + digit), ' ', '\0' };
 	char row[S15_LINE];
+	const size_t len = strcspn(label, "\t");
 
 	if (s->hold_digit != digit) {
 		add(o, S15_ST_ITEM, d, label);
 		return;
 	}
-	{
-		struct s15_buf hint;
-		size_t n = 2;
-		const size_t len = strcspn(label, "\t");
-
-		s15_hold_hint(&hint, digit);
-		memcpy(row, d, 2);
-		memcpy(row + n, label, len);
-		n += len;
-		row[n++] = '\t';
-		memcpy(row + n, hint.s, hint.n);
-		n += hint.n;
-		row[n] = '\0';
-	}
+	memcpy(row, d, 2);
+	memcpy(row + 2, label, len);
+	row[2 + len] = '\0';
 	add(o, S15_ST_ARMED, row, NULL);
 }
 
@@ -839,6 +829,25 @@ static void surveyed(struct lines *o, const struct inst_screen *s)
 		add(o, S15_ST_TEXT, "No OS made active: the survey runs again", NULL);
 }
 
+/* Why no install is offered, and that nothing changed: one error line, or
+ * two where the width needs them. */
+static void locked_words(struct lines *o, const char *why)
+{
+	static const char tail[] = ", no changes made.";
+	char row[S15_LINE];
+	const size_t n = strlen(why);
+
+	if (3u + n + sizeof tail - 1u <= S15_COLS) {
+		add(o, S15_ST_ERROR, why, tail);
+		return;
+	}
+	memcpy(row, why, n);
+	row[n] = ',';
+	row[n + 1u] = '\0';
+	add(o, S15_ST_ERROR, row, NULL);
+	add(o, S15_ST_ERROR, "No changes made.", NULL);
+}
+
 unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15_ROWS])
 {
 	struct lines o = { out, 0 };
@@ -854,16 +863,14 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		key_check(&o, s);
 		break;
 	case INST_LOCKED:
-		add(&o, S15_ST_HEAD, "Install not offered", NULL);
-		add(&o, S15_ST_ERROR, inst_lock_words((enum inst_lock)s->lock), NULL);
+		locked_words(&o, inst_lock_words((enum inst_lock)s->lock));
 		if (s->lock == INST_LOCK_DEVICE) {
 			struct fmt f = { "", 0 };
 
 			f_fingerprint(&f, s->fs_n, s->fs_c);
 			add(&o, S15_ST_KV, "First stage\t", f.s);
 		}
-		add(&o, S15_ST_TEXT, "SPI flash untouched", NULL);
-		add(&o, S15_ST_TEXT, "Results: check.txt on the USB disk", NULL);
+		add(&o, S15_ST_TEXT, "See check.txt on USB disk for details.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		if (os_ok) {
 			item(&o, s, 8u, "Leave");
@@ -873,11 +880,9 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		}
 		break;
 	case INST_READY:
-		add(&o, S15_ST_HEAD, "Install waffle-boot v", s->version);
 		add(&o, S15_ST_OK, "Checks passed", NULL);
 		add(&o, S15_ST_KV, "Writes\t", slot_name(s->target));
 		add(&o, S15_ST_TEXT, "Trial: the new bootloader starts once.", NULL);
-		add(&o, S15_ST_TEXT, "Yours stays selected until you keep it.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Write the trial");
 		if (os_ok)
@@ -894,7 +899,6 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_OK, "It starts once, at the next start.", NULL);
 		add(&o, S15_ST_TEXT, "1. Switch off and on: its boot menu shows.", NULL);
 		add(&o, S15_ST_TEXT, "2. Switch off and on again: keep it here.", NULL);
-		add(&o, S15_ST_DIM, "Until then, yours stays selected.", NULL);
 		break;
 	case INST_COMMIT_READY:
 		add(&o, S15_ST_HEAD, "Trial reached the boot menu", NULL);
@@ -917,13 +921,6 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_OK, "waffle-boot installed", NULL);
 		os_line(&o, s->os);
 		add(&o, S15_ST_TEXT, "Switch off and on.", NULL);
-		if (s->device == WB_DEV_OPXY) {
-			add(&o, S15_ST_DIM, "Boot menu: hold com at power-on", NULL);
-			add(&o, S15_ST_DIM, "Recovery menu: hold Power + M4", NULL);
-		} else {
-			add(&o, S15_ST_DIM, "Boot menu: hold com at power-on", NULL);
-			add(&o, S15_ST_DIM, "Recovery menu: hold Power + recovery key", NULL);
-		}
 		if (os_ok) {
 			add(&o, S15_ST_TEXT, "", NULL);
 			item(&o, s, 8u, "Leave");

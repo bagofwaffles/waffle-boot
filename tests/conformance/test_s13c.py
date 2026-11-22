@@ -671,8 +671,9 @@ class Screen(Base):
 
     @requirement('S-15.190')
     def test_continue_frames(self):
-        """S-15.190 with the lines of src/s15_lines.c, as drawn: the restarting view, the last frame before
-        MARK poweroff, carries `continue:restarting` (info_tokens.json). Every line fits its row."""
+        """S-15.190 with the lines of src/s15_lines.c, as drawn: the screen that was showing with the
+        restarting line under it, the last frame before MARK poweroff, carries `continue:restarting`
+        (info_tokens.json). Every line fits its row."""
         lines, _, _ = trace('cont_screen', 'held', frames=2, cont=1)
         c = self.check(lines, ['held', 'poweroff'])
         view = self.frames(c)[-1]

@@ -544,7 +544,7 @@ static void test_lines(void)
 	press(K7, T0);
 	n = lines(b, st, T0);
 	CHECK(n == 9u, "nine rows: %zu", n);
-	CHECK(strcmp(b[0].s, "1 Install selected (hold for 5 s)") == 0 &&
+	CHECK(strcmp(b[0].s, "1 Install selected (hold to select)") == 0 &&
 	      st[0] == S15_ST_ITEM, "row 1 with a selection: '%s'", b[0].s);
 	CHECK(strcmp(b[1].s, "2 Main DSP\t1.1.4 > 1.1.5\tYes") == 0 &&
 	      st[1] == S15_ST_PICK_ON && st[2] == S15_ST_PICK &&
@@ -571,7 +571,7 @@ static void test_lines(void)
 	s15_select_key(&s, K1, true, T0 + 1000u);
 	n = lines(b, st, T0 + 3000u);
 	CHECK(n == 9u && st[0] == S15_ST_ARMED &&
-	      strcmp(b[0].s, "1 Install selected (hold for 5 s)") == 0 &&
+	      strcmp(b[0].s, "1 Install selected (hold to select)") == 0 &&
 	      strcmp(b[7].s, "8 Cancel") == 0 &&
 	      strcmp(b[8].s, "Release to cancel\t40%\t3 s") == 0 && st[8] == S15_ST_STEP_RUN,
 	      "held: '%s', '%s'", b[7].s, b[8].s);
@@ -668,7 +668,7 @@ static void test_signature_lines(void)
 	for (size_t i = 0; i < n; i++)
 		r[i] = b[i].s;
 	CHECK(n == 3u && st[0] == S15_ST_WARN && st[1] == S15_ST_ITEM &&
-	      strcmp(b[1].s, "1 Install anyway (hold for 5 s)") == 0 &&
+	      strcmp(b[1].s, "1 Install anyway (hold to select)") == 0 &&
 	      strcmp(b[2].s, "8 Cancel (51 s)") == 0 && st[2] == S15_ST_BACK,
 	      "the prompt: '%s', '%s'", b[1].s, b[2].s);
 	CHECK(s15t_match_named("sig:mismatch", r, n, NULL) &&

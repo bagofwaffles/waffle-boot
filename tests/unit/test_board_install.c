@@ -2141,7 +2141,7 @@ static void test_whole_signature(void)
 	CHECK_EQ(ks.asks, 2u);
 	CHECK(cdc_has("install: signature invalid"));
 	CHECK(cdc_has("Signature does not match.") &&
-	      cdc_has("1 Install anyway (hold for 5 s)"));
+	      cdc_has("1 Install anyway (hold to select)"));
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 6000u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 6500u);
 	CHECK(cdc_has("install: the prompt held 5 s"));

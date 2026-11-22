@@ -555,16 +555,16 @@ static void test_required_info(void)
 	      fits(S15_ST_ITEM, s15_option_item_off),
 	      "S-15.140 option item off");
 
-	/* The option's screen: the rows, its item with the hold's hint, the
-	 * way back; held, the same item armed and the hold's row: nine rows at most. */
+	/* The option's screen: the rows, its item naming its hold, the way
+	 * back; held, the same item armed and the hold's row: nine rows at
+	 * most, with a blank row before the rows and one before the item. */
 	for (n = 0; n < S15_OPTION_PROMPT_LINES; n++) {
 		rows[n] = s15_option_prompt[n];
 		CHECK(fits(s15_option_prompt_style[n], rows[n]),
 		      "S-15.140 prompt row %zu fits in %s", n,
 		      s15_style_names[s15_option_prompt_style[n]]);
 	}
-	s15_hold_hint(&b, 2u);
-	snprintf(item, sizeof item, "2 %s\t%s", s15_option_turn_on, b.s);
+	snprintf(item, sizeof item, "2 %s%s", s15_option_turn_on, s15_hold_named);
 	CHECK(fits(S15_ST_ITEM, item) && fits(S15_ST_ARMED, item),
 	      "S-15.140 the item fits");
 	rows[n++] = item;
@@ -572,7 +572,7 @@ static void test_required_info(void)
 	CHECK(s15t_match_named("option prompt", rows, n, NULL),
 	      "S-15.140 the screen names every effect and the hold");
 	CHECK(s15_option_prompt_style[0] == S15_ST_HEAD &&
-	      n + 1u <= S15_ROWS, "S-15.140 a question first; held, every row shown");
+	      n + 3u <= S15_ROWS, "S-15.140 a question first; held, every row shown");
 
 	/* The title bar's indicator */
 	CHECK(row_matches("indicator", s15_indicator_text, NULL) &&
@@ -634,14 +634,14 @@ static void test_required_info(void)
 	      fits(S15_ST_ERROR, s15_interrupted[0]) &&
 	      fits(S15_ST_ERROR, s15_interrupted[1]), "interrupted");
 
-	/* S-15.015: the hold's hint names its key and time; its row fits
-	 * with the bar at its widest */
-	s15_hold_hint(&b, 7);
-	CHECK(strcmp(b.s, "Hold `7` for 5 s") == 0, "S-15.015 hint '%s'", b.s);
-	snprintf(row, sizeof row, "1 Format drive\t%.40s", b.s);
-	CHECK(fits(S15_ST_ARMED, row), "format: the hold as the item's hint");
-	snprintf(row, sizeof row, "7 Factory reset\t%.40s", b.s);
-	CHECK(fits(S15_ST_ARMED, row), "factory reset: the hold as the item's hint");
+	/* S-15.015: one hint for every hold, under its items or in a label
+	 * that names it; a held row has none, and the bar on the last row
+	 * gives the time left */
+	CHECK(strcmp(s15_hold_line, "   Hold to select") == 0 &&
+	      strcmp(s15_hold_named, " (hold to select)") == 0 &&
+	      fits(S15_ST_DIM, s15_hold_line), "S-15.015 hint");
+	snprintf(row, sizeof row, "1 Install selected%s", s15_hold_named);
+	CHECK(fits(S15_ST_ARMED, row), "the hold named in a label");
 	s15_hold_bar(&b, 100, 5);
 	/* the label short of the bar (S15_STEP_LABEL_MAX), the seconds in the
 	 * columns after it */

@@ -205,18 +205,29 @@ static void hold_begin(struct s15_menu *m, enum s15_arm a, unsigned key)
 	hold_row(m, true);
 }
 
-/* The held item's row: its label, the hold as its hint. */
-static void held_item(struct s15_menu *m, unsigned digit, const char *label)
+/* An item whose label names its hold: armed while it is held. */
+static void named_item(struct s15_menu *m, unsigned digit, const char *label, bool armed)
 {
-	struct s15_buf b, h;
+	struct s15_buf b;
 
 	s15_buf_init(&b);
 	s15_buf_dec(&b, digit);
 	s15_buf_str(&b, " ");
 	s15_buf_str(&b, label);
-	s15_buf_str(&b, "\t");
-	s15_hold_hint(&h, digit);
-	s15_buf_str(&b, h.s);
+	s15_buf_str(&b, s15_hold_named);
+	sline(m, armed ? S15_ST_ARMED : S15_ST_ITEM, b.s);
+}
+
+/* The held item's row: its label alone; the bar on the last row says the
+ * rest. */
+static void held_item(struct s15_menu *m, unsigned digit, const char *label)
+{
+	struct s15_buf b;
+
+	s15_buf_init(&b);
+	s15_buf_dec(&b, digit);
+	s15_buf_str(&b, " ");
+	s15_buf_str(&b, label);
 	sline(m, S15_ST_ARMED, b.s);
 }
 
@@ -235,22 +246,12 @@ static void logo_item(struct s15_menu *m);
  * held in place, its hold's row to follow. */
 static void draw_option(struct s15_menu *m, bool armed)
 {
-	struct s15_buf b, h;
-
 	enter(m, S15_SCR_OPTION, "Protected Writes");
+	blank(m);
 	for (size_t i = 0; i < S15_OPTION_PROMPT_LINES; i++)
 		sline(m, s15_option_prompt_style[i], s15_option_prompt[i]);
-	if (armed) {
-		held_item(m, 2u, s15_option_turn_on);
-	} else {
-		s15_buf_init(&b);
-		s15_buf_str(&b, "2 ");
-		s15_buf_str(&b, s15_option_turn_on);
-		s15_buf_str(&b, "\t");
-		s15_hold_hint(&h, 2u);
-		s15_buf_str(&b, h.s);
-		sline(m, S15_ST_ITEM, b.s);
-	}
+	blank(m);
+	named_item(m, 2u, s15_option_turn_on, armed);
 	sline(m, S15_ST_BACK, "8 Back to Settings");
 }
 
@@ -435,7 +436,7 @@ static void draw_logo_view(struct s15_menu *m)
 	s15_buf_str(&b, " of ");
 	kib(&b, m->pic.room);
 	sline(m, S15_ST_TEXT, b.s);
-	sline(m, S15_ST_KEYS, "Hold `1` to save, `8` to cancel");
+	sline(m, S15_ST_KEYS, "`1` Save (hold to select)   `8` Cancel");
 }
 
 /* The released disk read: the picture to approve, or why not and the
@@ -555,7 +556,7 @@ static void render_logo_view(const struct s15_menu *m, const struct s15_geometry
 		kib(&b, m->pic.size);
 		s15_buf_str(&b, " of ");
 		kib(&b, m->pic.room);
-		s15_buf_str(&b, "   Hold 1: save   8: cancel");
+		s15_buf_str(&b, "  1 Save (hold to select)  8 Cancel");
 	}
 	x = (g->width - (unsigned)b.n * g->glyph_w) / 2u;
 	d->text(d->ctx, (uint16_t)x, (uint16_t)s15_status_text_y(g), b.s, b.n, S15_TEXT, S15_BLACK);
@@ -988,7 +989,7 @@ static void open_info(struct s15_menu *m)
 		sline(m, S15_ST_WARN, s15_device_unknown);
 	else
 		blank(m);
-	sline(m, S15_ST_ITEM, "1 More\tStart log");
+	sline(m, S15_ST_ITEM, "1 More");
 	if (b->start.why != S15_START_OK) {                /* S-15.163 */
 		s15_start_info(&start, &b->start);
 		info_row(m, "OS start", start.s, NULL, NULL);
@@ -1549,22 +1550,13 @@ static void factory_key(struct s15_menu *m, unsigned key)
 /* SPEC-Q: the approval screen and its keys have no label yet. */
 static void draw_approve(struct s15_menu *m, bool armed)
 {
-	struct s15_buf b, h;
 
 	enter(m, S15_SCR_APPROVE, "Host Link");
 	blank(m);
 	sline(m, S15_ST_HEAD, "Allow this computer?");
 	sline(m, S15_ST_DIM, "Files, installs, restarts. Until restart.");
 	blank(m);
-	if (armed) {
-		held_item(m, 1u, "Allow");
-	} else {
-		s15_buf_init(&b);
-		s15_buf_str(&b, "1 Allow\t");
-		s15_hold_hint(&h, 1u);
-		s15_buf_str(&b, h.s);
-		sline(m, S15_ST_ITEM, b.s);
-	}
+	named_item(m, 1u, "Allow", armed);
 	sline(m, S15_ST_BACK, "8 Cancel");
 }
 
@@ -2101,9 +2093,12 @@ enum s15_continue s15_menu_continue(struct s15_menu *m)
 
 	if (c == S15_CONT_BUSY)
 		return c;
-	/* the view whole on the panel before the shutdown begins (the
-	 * board's continue_os sends the frame first) */
-	enter(m, S15_SCR_STARTING, s15_cont_title);
+	/* the line under the screen that was showing, whole on the panel
+	 * before the shutdown begins (the board's continue_os sends the frame
+	 * first); from here no key acts */
+	leave(m);
+	m->screen = S15_SCR_STARTING;
+	m->changes++;
 	sline(m, S15_ST_WARN, s15_cont_restarting);
 	m->env->continue_os(m->env->ctx);
 	return c;

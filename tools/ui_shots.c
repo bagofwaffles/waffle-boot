@@ -658,7 +658,8 @@ int main(int argc, char **argv)
 	s15_up_run_end(&menu, S15_OUT_FAILED, 0);
 	bad |= shot(d, "upgrade-failed");
 
-	/* S-15.190: Continue to the OS at the host's request (S-10c.076) */
+	/* S-15.190: Continue to the OS at the host's request (S-10c.076): the
+	 * restarting line under the main screen */
 	setup(); start();
 	(void)s15_menu_continue(&menu);
 	bad |= shot(d, "continue-restarting");

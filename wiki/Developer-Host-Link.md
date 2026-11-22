@@ -22,7 +22,7 @@ Host Link
   Allow this computer?
   Files, installs, restarts. Until restart.
 
-  1 Allow                         Hold 1 for 5 s
+  1 Allow (hold to select)
   8 Cancel
 ```
 

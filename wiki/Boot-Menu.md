@@ -23,9 +23,9 @@ pack's removal) scans first, under `Checking files...`. A format and a settings 
 Items are chosen by digit. Digits 1 to 4 are M1 to M4, the knob 1 to 4 clicks, or sound keys 1 to 4.
 Digits 5 to 8 are sound keys 5 to 8 only. **8 goes back** on every screen below the main one.
 
-Whatever erases asks first: press and hold the item's own key. Its row turns red with `Hold 7 for 5 s` (its
-digit), and a bar fills along the bottom row. Held for 5 s, it runs once; letting go earlier, or any other
-key, cancels. A knob click never starts it.
+Whatever erases asks first: press and hold the item's own key (`Hold to select` under the items says
+so). Its row turns red, and a bar fills along the bottom row with the seconds left. Held for 5 s, it runs
+once; letting go earlier, or any other key, cancels. A knob click never starts it.
 
 ## Main Menu
 
@@ -107,8 +107,8 @@ unit. To erase everything instead, use **5 Format drive**.
 1. Charge the unit, or keep it on USB.
 2. Open the boot menu: hold **com** or the white knob while you switch on.
 3. Press **5** (sound key 5): **System**.
-4. Press and hold **7** (sound key 7). The **Factory reset** row turns red, shows `Hold 7 for 5 s`, and a
-   bar fills along the bottom row.
+4. Press and hold **7** (sound key 7). The **Factory reset** row turns red, and a bar fills along the
+   bottom row.
 5. Keep holding for 5 s; the reset starts then. Letting go earlier, or pressing any other key, cancels and
    nothing is removed.
 6. Wait for `User data removed. Restart the OP-XY.`

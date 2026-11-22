@@ -530,8 +530,8 @@ static bool on_screen(const char *s)
 }
 
 /* S-15.140: the option's item, idle and held. */
-#define OPTION_IDLE "item:2 Turn on\tHold `2` for 5 s"
-#define OPTION_ARMED "armed:2 Turn on\tHold `2` for 5 s"
+#define OPTION_IDLE "item:2 Turn on (hold to select)"
+#define OPTION_ARMED "armed:2 Turn on (hold to select)"
 
 /* ---- the OS write the fake plays (S-15.094) ---------------------------- */
 
@@ -967,9 +967,9 @@ static void observe(struct toks *t, const struct rstate *st,
 	char want[48], b[ROWLEN];
 	bool reset_ran = removed("/yaffs2/user");
 	bool armed_now = M.armed == S15_ARM_RESET;
-	/* armed by its key (a redraw of an armed screen is not an arming) */
-	bool arm = armed_now && key == 0x14u &&
-		   appended("7 Factory reset  Hold 7 for 5 s");
+	/* armed by its key (a redraw of an armed screen is not an arming):
+	 * the held row is its label alone */
+	bool arm = armed_now && key == 0x14u && appended("7 Factory reset");
 
 	(void)st;
 	t->n = 0;
@@ -1023,8 +1023,14 @@ static void observe(struct toks *t, const struct rstate *st,
 	if (F.saves != 0u && F.saved.mtp_macos != BOOT.settings.mtp_macos)
 		add(t, F.saved.mtp_macos ? "mtp_macos" : "mtp_windows");
 	for (unsigned n = 1; n <= 7; n++) {
-		snprintf(want, sizeof want, "%u p%u  Hold %u for 5 s", n, n, n);
-		if (appended(want))
+		/* drawn now, and drawn held */
+		snprintf(want, sizeof want, "%u p%u", n, n);
+		if (appended(want)) {
+			snprintf(want, sizeof want, "armed:%u p%u", n, n);
+			if (!on_screen(want))
+				want[0] = '\0';
+		}
+		if (want[0] == 'a')
 			snprintf(t->t[t->n < MAXTOK ? t->n++ : 0], 24, "pending:%u", n);
 		snprintf(want, sizeof want, "/yaffs2/content/dlc/p%u", n);
 		if (removed(want))
@@ -1037,7 +1043,7 @@ static void observe(struct toks *t, const struct rstate *st,
 	if (pack_before && M.armed != S15_ARM_PACK && F.n_removed == 0u &&
 	    M.screen == S15_SCR_PACKS)
 		add(t, "pack_cancel");
-	if (appended("1 Format drive  Hold 1 for 5 s"))
+	if (appended("1 Format drive"))
 		add(t, "format_confirm");
 	if (F.format)
 		add(t, "format");
@@ -2798,7 +2804,7 @@ static void test_os_write(void)
 			press(0x13);
 			CHECK(F.cont == 1u && F.cont_view && F.reset_w7 == 0u &&
 			      M.screen == S15_SCR_STARTING, "%s: 6 continues", c->name);
-			expect_screen("continue_restarting");
+			expect_tail("continue_restarting");
 		}
 	}
 	/* A board with no continue_os: digit 6 there is the restart W7. */
@@ -3479,7 +3485,8 @@ static void test_continue(void)
 	press(0x14);
 	CHECK(F.cont == 1u && F.cont_view && F.reset_w7 == 0u && M.screen == S15_SCR_STARTING,
 	      "S-15.190 main: digit 7 continues to the OS");
-	expect_screen("continue_restarting");
+	expect_screen("main_continuing");
+	expect_title("main");
 	/* also with the developer menu hidden, and with a failed start shown */
 	reset_fake(); default_boot(); BOOT.settings.dev_mode = false;
 	BOOT.start.why = S15_START_NO_ACTIVE; start();
@@ -3498,8 +3505,8 @@ static void test_continue(void)
 	/* The host's request: the restarting view, then the board. */
 	CHECK(s15_menu_continue(&M) == S15_CONT_STARTED && F.cont == 1u &&
 	      F.cont_view && M.screen == S15_SCR_STARTING, "S-15.190 the host continues");
-	expect_screen("continue_restarting");
-	expect_title("restarting");
+	expect_screen("main_continuing");
+	expect_title("main");
 	CHECK(appended(s15_cont_restarting), "S-15.004 the line is logged");
 	/* No key acts on the restarting view. */
 	before = s15_menu_changes(&M);
