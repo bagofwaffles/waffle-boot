@@ -73,11 +73,12 @@ image bytes, every setting reads at its default and a save is refused. Over `0x7
   whichever logo the start drew.
 - **Caches for its own work, none at its exit.** On the main processor the front turns the L1 caches on once
   its INIT stage has the clocks and DDR up: the instruction cache for its code in L2, the data cache
-  (write-through, in the upper half of L1 data A) for L2 and the DDR range that holds the main image's DDR part
-  and recovery's buffer. Every other address keeps CPLB defaults that raise no exception and cache nothing,
-  the panel's frame buffer, the one buffer a DMA reads, among them. Before its one exit, the jump to the main
-  image, it turns both off again and puts back every register it changed, so the main image starts as it
-  always has. The second processor's front leaves the caches off.
+  (write-through, in the upper half of L1 data A) for L2 and the DDR that holds the main image's DDR part and
+  recovery's buffer. It writes all sixteen CPLB pairs of each side, as the main image does, so no pair the
+  boot ROM left can match an address too; every address it touches has a page of its own, L1 uncached and the
+  panel's frame buffer, the one buffer a DMA reads, in an uncached DDR page. The default descriptors stay as
+  found. Before its one exit, the jump to the main image, it turns both off again and puts back every pair as
+  it found it, so the main image starts as it always has. The second processor's front leaves the caches off.
 - **The running slot, quickly.** Once the main image's check has passed, the front first reads only each
   slot's image descriptor. When one slot's is the loaded one and the other's differs, as with two builds,
   or the other slot's whole stream carries no descriptor, as with another bootloader, that slot is the
