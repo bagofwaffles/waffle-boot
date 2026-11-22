@@ -164,6 +164,9 @@ $(foreach c,$(TP_COMPONENTS),$(eval $(call TP_COMPONENT,$(c))))
 
 # The CRCs and zlib are built for speed on the target (their -O2 above).
 $(TP_crc_TARGET_OBJS) $(TP_zlib_TARGET_OBJS): TP_CFLAGS += $(TARGET_SPEED)
+# Except adler32(): only a zlib-wrapped stream checks it, and the
+# bootloader inflates raw deflate (src/wire_zip.c).
+$(call tp_obj,bf703,src/third_party/zlib/adler32.c): TP_CFLAGS += -Os $(TARGET_SIZE)
 
 # memcpy and memset move every sector, chunk and window: they copy by words
 # (src/glue/libc/picolibc.h), on the host too, where their test runs.

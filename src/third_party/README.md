@@ -133,7 +133,8 @@ what is built.
   encryption flag from the file information, reads every member to its
   end, and compares the length read with the stated size.
 - **zlib**: the inflate subset is `adler32.c`, `crc32.c`, `inffast.c`,
-  `inflate.c`, `inftrees.c` and `zutil.c`. `src/wire_zip.c` reads each
+  `inflate.c`, `inftrees.c` and `zutil.c`; `adler32.c` is built for size,
+  as only a zlib-wrapped stream calls it. `src/wire_zip.c` reads each
   member raw from minizip and inflates it itself, step for step as
   minizip's read did, so minizip computes no CRC-32 of it. Built with
   `BUILDFIXED`, inflate builds its fixed-code tables in RAM on first use;
@@ -155,9 +156,9 @@ what is built.
 ## Target sizes
 
 `make size`, archive totals under `-Os` with the Makefile's `TARGET_SIZE`
-(`-O2` for crc, zlib, and picolibc's `memcpy` and `memset`, which copy by
-words; `-mcpu=bf703-none`, `-ffunction-sections`); a linked image keeps only
-what it uses.
+(`-O2` for crc, zlib but `adler32.c`, and picolibc's `memcpy` and `memset`,
+which copy by words; `-mcpu=bf703-none`, `-ffunction-sections`); a linked
+image keeps only what it uses.
 
 | Component | text | data | bss |
 | --- | ---: | ---: | ---: |
@@ -165,8 +166,8 @@ what it uses.
 | crc (ours) | 940 | 0 | 0 |
 | blockdev (ours) | 316 | 0 | 0 |
 | fatfs (with glue) | 15,867 | 0 | 522 |
-| yaffs2 (with glue) | 50,731 | 9 | 80,180 |
-| zlib | 15,086 | 0 | 2,196 |
+| yaffs2 (with glue) | 46,099 | 9 | 80,136 |
+| zlib | 14,726 | 0 | 2,196 |
 | minizip (with glue) | 7,716 | 0 | 0 |
 | micro-ecc | 8,260 | 0 | 4 |
 | BearSSL | 5,568 | 0 | 0 |
