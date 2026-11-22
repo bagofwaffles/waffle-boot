@@ -156,6 +156,7 @@ static void d_bold(void *ctx, uint16_t x, uint16_t y, const char *s,
 
 void wb_display_init(struct wb_display *d, uint8_t *fb)
 {
+	wb_display_title_font_build();
 	memset(d, 0, sizeof *d);
 	d->panel.state = S13C_IDLE;
 	d->fb = fb;

@@ -79,7 +79,7 @@ H_s10c_SRCS += src/s10c_host.c
 H_s10a_SRCS := src/s10a_desc.c src/s10a_ch9.c src/s10a_scsi.c src/s10a_bot.c
 H_s10b_SRCS := src/s10b_mtp.c src/s10b_text.c src/s04_records.c src/s10c_text.c src/s11_common.c \
 	src/s11_version.c
-H_s13c_SRCS := src/s13c_panel.c src/display_draw.c src/display_font.c src/s15_console.c src/s15_lines.c \
+H_s13c_SRCS := src/s13c_panel.c src/display_draw.c src/display_font.c src/display_title.c src/s15_console.c src/s15_lines.c \
 	src/s15_prompt.c src/s14_log.c src/s14_line.c src/s17_revisions.c src/s11_common.c src/s11_version.c
 # The front's start and recovery (src/front/'s portable code) and the model
 # PSoC's S-06 framing.
