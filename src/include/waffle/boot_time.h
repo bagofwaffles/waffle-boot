@@ -93,6 +93,10 @@ enum boot_time_id {
 	BOOT_TIME_NORDIC_INFO,		/* S-17.021's Nordic info exchange done */
 	BOOT_TIME_MENU_FRAME,		/* the first menu frame started on the panel */
 	BOOT_TIME_MENU_SHOWN,		/* and ended: its last byte on the panel */
+	/* Between the front's hand-off and BOOT_TIME_MAIN; the report is in
+	 * time order. */
+	BOOT_TIME_UNPACKED,		/* the stub: the main image unpacked and checked
+					 * (waffle/pack.h), its jump next */
 	BOOT_TIME_COUNT
 };
 

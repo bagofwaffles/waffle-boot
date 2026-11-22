@@ -30,7 +30,8 @@
 	X("usb started")                                                                     \
 	X("nordic greeting done") X("psoc info done") X("nordic info done")                  \
 	X("first menu frame")                                                                \
-	X("first menu frame ended")
+	X("first menu frame ended")                                                          \
+	X("unpacked")
 #define NAME_TEXT(s) s "\0"
 #define NAME_ONE(s) + 1u
 

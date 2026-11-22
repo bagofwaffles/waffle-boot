@@ -93,8 +93,8 @@ int opxy_timing_startup(struct s07_psoc *p, struct s07_key_status *ks)
 }
 
 /* The front stamps its entry, where it greets, lights the logo and reads the
- * keys, and its hand-off, in every build: the timing build reads the same
- * points as the normal one. */
+ * keys, and its hand-off, in every build, and the stub the end of its unpack:
+ * the timing build reads the same points as the normal one. */
 void opxy_timing_front(const struct fr_handoff *ho)
 {
 	static const struct { unsigned from, to; } map[] = {
@@ -111,9 +111,16 @@ void opxy_timing_front(const struct fr_handoff *ho)
 	};
 	unsigned i;
 
+	const volatile struct wb_stub_record *stub =
+		(const volatile struct wb_stub_record *)(uintptr_t)WB_STUB_RECORD;
+
 	for (i = 0; i < sizeof map / sizeof map[0]; i++)
 		if (ho->stamps[map[i].from] != 0u)
 			boot_time_mark(&opxy_boot_time, map[i].to, ho->stamps[map[i].from]);
+	/* the stub's record, written at this start after the front's jump */
+	if (stub->magic == WB_STUB_RECORD_MAGIC && stub->result == 0u && stub->unpacked != 0u &&
+	    stub->entered >= ho->stamps[FR_STAMP_HANDOFF])
+		boot_time_mark(&opxy_boot_time, BOOT_TIME_UNPACKED, stub->unpacked);
 	for (i = 0; i < sizeof flag / sizeof flag[0]; i++)
 		if ((ho->flags & flag[i].from) != 0u)
 			opxy_boot_time.flags |= flag[i].to;
