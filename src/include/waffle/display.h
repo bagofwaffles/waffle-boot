@@ -39,13 +39,10 @@
 #define WB_FONT_H     16u
 extern const uint8_t wb_display_font[WB_FONT_COUNT][WB_FONT_H];
 /* The title bar's font: the same glyphs bold, each 17 rows of 10 pixels,
- * bit 9 the leftmost; the last column stays clear. Built in RAM from
- * wb_display_font by wb_display_title_font_build(), which
- * wb_display_init() calls (src/display_title.c). */
+ * bit 9 the leftmost; the last column stays clear. */
 #define WB_TITLE_W    10u
 #define WB_TITLE_H    17u
-extern uint16_t wb_display_title_font[WB_FONT_COUNT][WB_TITLE_H];
-void wb_display_title_font_build(void);
+extern const uint16_t wb_display_title_font[WB_FONT_COUNT][WB_TITLE_H];
 
 /* The frame (S-15.002): the title bar y 0 - 23, 9 body rows 19
  * apart from y 27 (the last ends at 195), x from 16 (56 glyphs end at
