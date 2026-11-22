@@ -22,6 +22,7 @@
 #include "waffle/drivers/bf70x_spi.h"
 #include "waffle/drivers/bf70x_time.h"
 #include "waffle/drivers/bf70x_uart.h"
+#include "waffle/pack.h"
 #include "waffle/device.h"
 
 enum opxy_role { OPXY_SLAVE = 0, OPXY_MASTER = 1 };
@@ -275,7 +276,9 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
  *   0x80000000  disk part 0, up to the reserve
  *   0x8803D000  the DDR handover reserve (to 0x88A65000), which the
  *               handover path does not use: the main image, its data and
- *               its stack (bf703.ld), at most 3 MiB, then
+ *               its stack (bf703.ld), at most 2.5 MiB, then
+ *   0x882BD000  the packed block the stream loads and the stub unpacks,
+ *               512 KiB (waffle/pack.h), then
  *   0x8833D000  the heap (picolibc's malloc, used by yaffs2), on through
  *               the rest of the reserve up to the staging area (S-01.014);
  *   0x8A000000  disk part 1, over the staging area (S-01.016 allows it);
@@ -285,7 +288,9 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
  * tools/layout.py declares these to S-01's check_layout.py.
  */
 #define OPXY_IMAGE_START  0x8803D000u	/* S01_RESERVE_DDR_START */
-#define OPXY_IMAGE_END    0x8833D000u	/* bf703.ld's ddr region */
+#define OPXY_IMAGE_END    0x882BD000u	/* bf703.ld's ddr region */
+#define OPXY_PACK_START   0x882BD000u	/* WB_PACK_START */
+#define OPXY_PACK_END     0x8833D000u
 /*
  * The test OS (wiki/Test-OS.md, waffle/testos.h) is loaded by another
  * bootloader, so it may not load into the handover reserve (S-01.017,
@@ -373,12 +378,15 @@ _Static_assert((OPXY_DISK0_END - OPXY_DISK0_START) % 512u == 0u &&
  * the OP-XY their own disk parts (the assertions below). */
 #if !defined(OPXY_TESTOS_SHARED)
 _Static_assert(OPXY_DISK0_END <= OPXY_IMAGE_START &&
-	       OPXY_IMAGE_END <= OPXY_HEAP_START &&
+	       OPXY_IMAGE_END <= OPXY_PACK_START && OPXY_PACK_END <= OPXY_HEAP_START &&
 	       OPXY_HEAP_END <= OPXY_DISK1_START &&
 	       OPXY_DISK1_END <= OPXY_FRAMES_START &&
 	       OPXY_FRAMES_END <= 0x8FFFFF00u,
 	       "the DDR ranges are in order and apart");
 #endif
+_Static_assert(OPXY_IMAGE_START == WB_IMAGE_DDR_START && OPXY_IMAGE_END == WB_IMAGE_DDR_END &&
+	       OPXY_PACK_START == WB_PACK_START && OPXY_PACK_END == WB_PACK_END,
+	       "the image's DDR and the packed block as the stub has them");
 _Static_assert(OPXY_OS_FRAME_START >= OPXY_DISK1_START &&
 	       OPXY_OS_FRAME_END <= OPXY_DISK1_END,
 	       "the OS's frame lies in held mode's disk");

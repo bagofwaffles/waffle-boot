@@ -107,6 +107,21 @@ static void test_first_has_no_step(void)
 	CHECK(line_empty(&t, 1u));
 }
 
+/* The stub's stamp, numbered last, between the front's jump and the main
+ * image's entry. */
+static void test_unpacked(void)
+{
+	struct boot_time t = fresh();
+
+	boot_time_mark(&t, BOOT_TIME_FRONT_HANDOFF, US(1000));
+	boot_time_mark(&t, BOOT_TIME_UNPACKED, US(1030));
+	boot_time_mark(&t, BOOT_TIME_MAIN, US(1031));
+	CHECK(line_is(&t, 0u, "04 front hand-off: 1.000 ms"));
+	CHECK(line_is(&t, 1u, "59 unpacked: 1.030 ms, +0.030 ms"));
+	CHECK(line_is(&t, 2u, "05 main: 1.031 ms, +0.001 ms"));
+	CHECK(line_empty(&t, 3u));
+}
+
 /* The front's stamps are earlier than the main image's first, whatever
  * their numbers: the lines follow the stamps, and no step is negative. */
 static void test_time_order(void)
@@ -682,7 +697,7 @@ static void test_record(void)
 	unsigned i;
 
 	CHECK(BOOT_TIME_RECORD == 189u * 4u + 8u * BOOT_TIME_COUNT + 4u);
-	CHECK(BOOT_TIME_COUNT == 59u);
+	CHECK(BOOT_TIME_COUNT == 60u);
 	for (i = 0; i < BOOT_TIME_COUNT; i += 3u)
 		boot_time_mark(&t, i, 0x0102030405060708ull * (i + 1u));
 	t.bytes = 603112u;
@@ -1277,6 +1292,7 @@ int main(void)
 	RUN(test_split);
 	RUN(test_split_fc);
 	RUN(test_record);
+	RUN(test_unpacked);
 	RUN(test_dma_lines);
 	RUN(test_power);
 	RUN(test_os_start);

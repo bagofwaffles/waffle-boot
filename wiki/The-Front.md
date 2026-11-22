@@ -1,6 +1,7 @@
 The front is the small first part of every waffle-boot image. On every start it brings up the clocks and
 memory, draws the logo, opens the PSoC link (power and keys) and reads the keys once. Then it enters
-recovery ([Recovery Reference](Recovery-Reference)), or checks the rest of its image and starts it (S-01.023).
+recovery ([Recovery Reference](Recovery-Reference)), or checks the rest of its image and starts it (S-01.023):
+the stub, which unpacks the main image ([Boot Chain](Boot-Chain#the-steps)).
 
 It runs in memory of its own, is linked alone, and shares only the hand-off record's header with the main
 image, so it still runs when the rest of the image is damaged. The rule behind every failsafe: no write
@@ -20,8 +21,9 @@ Every cross build also checks (`tools/front_image.py` and the stream tools):
   record's, and its link fails on any outside symbol or unplaced section;
 - the INIT stage touches only on-chip L1 memory (S-01.010);
 - every stack frame is fixed and at most 1 KiB, and twice their sum fits the 16 KiB stack;
-- the image and the front alone pass the boot ROM's rules (S-02.091), no main-image byte lands in the
-  front's memory, and the image is at most `0x76000` bytes.
+- the image and the front alone pass the boot ROM's rules (S-02.091), no main-image or stub byte lands
+  in the front's memory, and the image is at most `0x76000` bytes;
+- the packed main image inflates back to the linked image, in Python and with the stub's own code.
 
 ## The flash
 

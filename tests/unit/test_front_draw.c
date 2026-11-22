@@ -55,7 +55,6 @@ static void test_font_copy(void)
 	      FR_FONT_H == WB_FONT_H && FR_TITLE_W == WB_TITLE_W &&
 	      FR_TITLE_H == WB_TITLE_H && FR_FONT_FIRST == WB_FONT_FIRST);
 	CHECK(memcmp(fr_font, wb_display_font, sizeof fr_font) == 0);
-	wb_display_title_font_build();
 	CHECK(memcmp(fr_title_font, wb_display_title_font, sizeof fr_title_font) == 0);
 }
 

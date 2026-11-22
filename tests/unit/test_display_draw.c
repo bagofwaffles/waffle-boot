@@ -13,7 +13,6 @@
 #include "s15_sha256.h"
 #include "waffle/device.h"
 #include "waffle/display.h"
-#include "display_title_ref.h"
 
 /* tests/oracle/S-15-menus/vectors/handover_frame.json: the logo alone */
 #define HANDOVER_SHA "9e50c21e72a8979051e31a3046e98383f6bf81db56a907a210847efd4455c717"
@@ -255,24 +254,6 @@ static void test_font(void)
 	      s15_status_text_y(geo) == 205u &&
 	      s15_status_text_y(geo) + geo->glyph_h <= WB_DISPLAY_H);
 	CHECK(geo->margin + S15_COLS * geo->glyph_w == 464u);
-}
-
-/* S-15.003: the title font is empty until wb_display_init() builds it, and
- * then exactly the table tools/bdf2c.py derives; a second build changes
- * nothing. */
-static void test_font_title_built(void)
-{
-	static const uint16_t zero[WB_FONT_COUNT][WB_TITLE_H];
-	struct wb_display d;
-
-	CHECK(sizeof display_title_ref == sizeof wb_display_title_font);
-	CHECK(memcmp(wb_display_title_font, zero, sizeof zero) == 0);
-	wb_display_init(&d, fb);
-	CHECK(memcmp(wb_display_title_font, display_title_ref,
-		     sizeof display_title_ref) == 0);
-	wb_display_title_font_build();
-	CHECK(memcmp(wb_display_title_font, display_title_ref,
-		     sizeof display_title_ref) == 0);
 }
 
 /* S-15.003: the title bar's glyphs: pairwise distinct, the space the only
@@ -720,7 +701,6 @@ static void test_settle_timeout(void)
 int main(void)
 {
 	RUN(test_font);
-	RUN(test_font_title_built);
 	RUN(test_font_title);
 	RUN(test_text);
 	RUN(test_orientation);

@@ -22,7 +22,8 @@ core or board header. The board and the test OS may include anything. An
 include is resolved as the compiler does, against the including file's
 directory (quoted only), then src/include; one that resolves to neither (a
 system or vendored header) is not checked. src/front/ has its own check (tools/front_image.py
-boundary), and src/glue/ and src/third_party/ are not checked.
+boundary), src/stub/ is linked alone (src/stub/stub.ld), and src/glue/ and src/third_party/ are
+not checked.
 
 ALLOWED lists the crossings that remain, each with its reason; one that no
 longer occurs fails too, so that the list only shrinks. Exit status 1 on a

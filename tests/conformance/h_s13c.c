@@ -883,7 +883,6 @@ static void font(void)
 	h_putu(g->title_y);
 	h_putu(s15_status_text_y(g));
 	h_puthex(&wb_display_font[0][0], sizeof wb_display_font);
-	wb_display_title_font_build();
 	h_putu(WB_TITLE_H);
 	h_putu(WB_TITLE_W);
 	for (size_t c = 0, n = 0; c < WB_FONT_COUNT; c++)

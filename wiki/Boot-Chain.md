@@ -8,6 +8,7 @@ Power switch on
        Power + M4  ------> Recovery menu
        image damaged ---> Recovery menu
        3 unfinished ----> Recovery menu
+  -> Stub                unpacks the main image
   -> Main image          the rest of waffle-boot
        boots the slave, decides: OS or boot menu
        keys held, failed start, setting on -> Boot menu
@@ -27,13 +28,18 @@ Power switch on
    - M4 alone held: **recovery** (Power + M4);
    - the rest of its image fails its check: recovery;
    - three starts in a row did not finish: recovery;
-   - otherwise it marks this start in the slot's **start log** and starts the main image.
-4. **Main image.** Streams the running slot's image to the slave (by DMA under the SPI
+   - otherwise it marks this start in the slot's **start log** and starts the stub.
+4. **Stub.** The slot stores the main image deflated. A small stub, loaded with the front, checks the
+   packed image's CRCs, inflates it to its place in memory with the caches on, checks what it wrote and
+   starts the main image. Nothing of it runs before the front's key read and image check, so a damaged
+   packed image cannot take recovery with it. A start that stops in the stub counts as unfinished. The
+   slave gets the same stream and runs the same stub.
+5. **Main image.** Streams the running slot's image to the slave (by DMA under the SPI
    controller's flow control; a build option sends it byte by byte, [Test OS](Test-OS)), reads that slot's
    settings, and takes the boot decision. It enters the **boot menu** when the boot keys are held, when the OS asked for the bootloader,
    after an interrupted install, when **Start in boot menu** is on, or when the OS cannot be loaded.
    Otherwise it loads the OS.
-5. **OS.** The master reads the OS image from the eMMC's active boot partition through the slave, shows
+6. **OS.** The master reads the OS image from the eMMC's active boot partition through the slave, shows
    the hand-over frame, and hands both processors to the OS.
 
 The main image clears the start log's mark once it is up: at its menus, its battery wait, or an OS image

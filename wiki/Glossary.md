@@ -15,7 +15,8 @@
 | **Running slot** | The slot this start came from. Usually the boot slot |
 | **Front** | The small first part of every waffle-boot image: start-up to the key read, and recovery. Frozen and pinned |
 | **Front pin** | The SHA-256 of the front's bytes, kept in `src/front/front.pin` |
-| **Main image** | The rest of a waffle-boot image: the boot menu, the OS load, installs |
+| **Main image** | The rest of a waffle-boot image: the boot menu, the OS load, installs. Stored deflated in the slot |
+| **Stub** | The small part after the front that inflates the main image into memory and starts it |
 | **Try, trial start** | A slot started once without being trusted. If it does not come up, the next start boots the old slot |
 | **Tried, started** | A slot under trial; `started` once its front has come up in that trial |
 | **Keep** | Make a tried slot that started the boot slot |

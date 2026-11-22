@@ -153,8 +153,8 @@ static void bringup(void *ctx)
 }
 
 /* bf703.ld; weak for the host build, where they are 0 and nothing is compared. */
-extern char wb_ddr_image_start[] __attribute__((weak));
-extern char wb_data_start[] __attribute__((weak));
+extern char wb_pack_start[] __attribute__((weak));
+extern char wb_pack_end[] __attribute__((weak));
 
 /* S-13a.021: with interrupts off, so nothing else meets the probe. */
 static bool ddr_check(void *ctx)
@@ -228,21 +228,29 @@ static uint16_t reboot_reason(void *ctx)
 
 #if !defined(OPXY_TEST_OS)
 /*
- * The memory this image was loaded into, for the running slot's inference:
- * only its own DDR code and constant data, which no other image's run can
- * have left there, this run has not written, and which is always mapped. Its
- * initial data is not compared: this run may have written it. L1 is not
+ * The memory the stream loaded, for the running slot's inference: only the
+ * descriptor and the packed block (waffle/pack.h), which no other image's
+ * run can have left there, nothing has written since the stream, and which
+ * are always mapped; together they stand for every byte of the image, the
+ * descriptor's CRC covering the rest. The stub's and the front's memory are
+ * not compared (this image is not theirs), nor this image's own run
+ * addresses, which the stream does not load but the stub writes. L1 is not
  * compared: this image runs part of L1 data as cache, a load from which
  * faults (EXCAUSE 0x23, seen on a unit), and L1 code takes no data loads. A
  * block elsewhere is simply not compared.
+ * SPEC-Q: S-01.002 and S-02.054's comparison of memory with a slot's stream,
+ * over the descriptor and the packed block in place of the image's code.
  */
 static bool loaded_read(void *ctx, uint32_t addr, uint8_t *buf, uint32_t len)
 {
 	const uint64_t end = (uint64_t)addr + len;
+	const bool desc = addr >= FR_DESC_ADDR && end <= FR_HANDOFF_ADDR;
+	const bool pack = addr >= (uint32_t)(uintptr_t)wb_pack_start &&
+			  end <= (uint32_t)(uintptr_t)wb_pack_end;
 
 	(void)ctx;
-	if (addr < (uint32_t)(uintptr_t)wb_ddr_image_start ||
-	    end > (uint32_t)(uintptr_t)wb_data_start)
+	/* cppcheck-suppress knownConditionTrueFalse ; weak: NULL in the host build */
+	if (wb_pack_start == NULL || (!desc && !pack))
 		return false;
 	OPXY_CRUMB_READ(addr); memcpy(buf, (const void *)(uintptr_t)addr, len);
 	return true;
@@ -252,9 +260,9 @@ static bool loaded_read(void *ctx, uint32_t addr, uint8_t *buf, uint32_t len)
  * S-01.002, S-02.054, S-09.002: the slot this image was booted from, inferred
  * from memory against both slots' streams (S-01 question 10), with that
  * slot's stream read once into slot_stream: checked there (S-02.016),
- * compared from there, and sent from there. The slot whose bootloader version
- * matches the loaded one is read first; the other is ruled out by those
- * bytes, or compared whole when they match. A failed slot can start once
+ * compared from there, and sent from there. The slot whose descriptor's head
+ * (its version and CRCs) matches the loaded one is read first; the other is
+ * ruled out by those bytes, or compared whole when they match. A failed slot can start once
  * while the selector names the other (S-02.023). Where both slots hold
  * this image it is the slot later starts settle on (S-02.054's tie-break),
  * as the front names it. When the slot is not established (neither slot
@@ -367,14 +375,14 @@ bool opxy_stream_checked(struct opxy_master *m, unsigned slot, bool running,
 	return *len != 0u;
 }
 
-/* The running slot by this image's own memory and version, the stream read
- * at 50 MHz. */
+/* The running slot by the memory the stream loaded, the descriptor's head
+ * first, the stream read at 50 MHz. */
 static unsigned running_slot(struct opxy_master *m, bool *established)
 {
 	static const struct s02_mem_ops loaded = { NULL, loaded_read };
 	const struct opxy_stream_src src = {
 		&loaded,
-		{ (uint32_t)(uintptr_t)opxy_bl_version, sizeof(opxy_bl_version) },
+		{ FR_DESC_ADDR, FR_DESC_HEAD },
 		opxy_flash_read_stream, &m->hw.flash,
 	};
 
