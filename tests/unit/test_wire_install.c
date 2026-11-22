@@ -191,6 +191,17 @@ static uint8_t *load(const char *rel, size_t *len)
 	return tl_read_file(path, len);
 }
 
+/* An answer on the unit: install what runs when nobody is asked, every
+ * open step but the bootloader, an invalid package's prompt held through
+ * (S-15.197). */
+static enum s11_answer confirm(void *ctx, const struct s11_step_env *env,
+			       uint8_t *selected)
+{
+	(void)ctx;
+	*selected = s11_unasked(env);
+	return S11_ANSWER_INSTALL;
+}
+
 static void check_input(const struct s11v_package *v,
 			const struct wire_source *src, uint32_t len,
 			const char *file_name, struct s11_install_result *out)
@@ -200,11 +211,11 @@ static void check_input(const struct s11v_package *v,
 	struct s11_package_ops pkg;
 	struct s11_zip_ops zip;
 	struct s11_fs_ops fs;
-	/* no confirmation answers (S-11.096), so the bootloader is never
-	 * selected and its kind is not asked (S-11.091); every step switched
-	 * on */
+	/* the selection answered by confirm() (S-11.096), so the bootloader
+	 * is never selected and its kind is not asked (S-11.091); every step
+	 * switched on */
 	struct s11_install_ops ops = { &pkg, &zip, &fs, &run_ops, &step_ops,
-				       NULL, NULL, NULL, NULL, 0 };
+				       confirm, NULL, NULL, NULL, 0 };
 	struct s11_check_in in;
 	struct s17_copro copro;
 
