@@ -19,6 +19,8 @@
 
 #include "vectors/logo_vectors.h"
 
+/* the conversion's working memory */
+static struct wb_logo_work g_work;
 static struct fake_flash g_f;
 static struct s02_flash_ops g_ops;
 static struct s02_env g_env;
@@ -82,7 +84,7 @@ static void test_cases(void)
 		CHECK(wb_png_decode(mem_read, &m, c->png_len, g_px, &w, &h) == WB_PNG_READ);
 		m.fail_at = 0;
 		(void)wb_png_decode(mem_read, &m, c->png_len, g_px, &w, &h);
-		fits = wb_logo_convert(g_px, w, h, c->room, g_data, sizeof g_data, &l, &way, &need);
+		fits = wb_logo_convert(&g_work, g_px, w, h, c->room, g_data, sizeof g_data, &l, &way, &need);
 		if (fits != (c->fits != 0))
 			printf("  %s: fits %d, the reference %d (need %u)\n", c->name, fits, c->fits,
 			       (unsigned)need);
@@ -100,10 +102,10 @@ static void test_cases(void)
 		CHECK(wb_logo_draw(&l, g_data, g_screen));
 		CHECK(crc16s(g_screen, WB_LOGO_W * WB_LOGO_H) == c->screen_crc);
 		/* a room of a byte less takes the next way, or none */
-		if (wb_logo_convert(g_px, w, h, c->len - 1u, g_data, sizeof g_data, &l, &way, &need))
+		if (wb_logo_convert(&g_work, g_px, w, h, c->len - 1u, g_data, sizeof g_data, &l, &way, &need))
 			CHECK(l.len < c->len && way == WB_LOGO_DITHERED);
 		/* the data's cap counts as the room */
-		CHECK(!wb_logo_convert(g_px, w, h, c->room, g_data, c->len - 1u, &l, &way, &need) ||
+		CHECK(!wb_logo_convert(&g_work, g_px, w, h, c->room, g_data, c->len - 1u, &l, &way, &need) ||
 		      l.len < c->len);
 	}
 	/* sizes out of range are not converted */
@@ -112,9 +114,9 @@ static void test_cases(void)
 		enum wb_logo_way way;
 		uint32_t need;
 
-		CHECK(!wb_logo_convert(g_px, 0, 1, 0x40000u, g_data, sizeof g_data, &l, &way, &need));
-		CHECK(!wb_logo_convert(g_px, 481, 1, 0x40000u, g_data, sizeof g_data, &l, &way, &need));
-		CHECK(!wb_logo_convert(g_px, 1, 223, 0x40000u, g_data, sizeof g_data, &l, &way, &need));
+		CHECK(!wb_logo_convert(&g_work, g_px, 0, 1, 0x40000u, g_data, sizeof g_data, &l, &way, &need));
+		CHECK(!wb_logo_convert(&g_work, g_px, 481, 1, 0x40000u, g_data, sizeof g_data, &l, &way, &need));
+		CHECK(!wb_logo_convert(&g_work, g_px, 1, 223, 0x40000u, g_data, sizeof g_data, &l, &way, &need));
 	}
 	/* an empty file, and one shorter than a signature */
 	{

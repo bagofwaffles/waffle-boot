@@ -102,6 +102,7 @@ static enum s15_store_save e_clear(void *c)
 /* The boot logo: none stored, or one; a picture dropped on the disk, made
  * here and converted as the unit converts one (waffle/logo.h). */
 static bool logo_stored;
+static struct wb_logo_work g_work;	/* the conversion's working memory */
 static uint16_t logo_pic[300u * 120u], logo_px[480u * 222u];
 static uint8_t logo_data[WB_LOGO_DATA_MAX];
 static struct wb_logo logo;
@@ -132,7 +133,7 @@ static void e_logo_load(void *c, struct s15_logo_pic *out)
 		}
 	memset(out, 0, sizeof *out);
 	out->room = 20480u;
-	if (!wb_logo_convert(logo_pic, 300u, 120u, out->room, logo_data, sizeof logo_data, &logo,
+	if (!wb_logo_convert(&g_work, logo_pic, 300u, 120u, out->room, logo_data, sizeof logo_data, &logo,
 			     &way, &need) ||
 	    !wb_logo_draw(&logo, logo_data, logo_px)) {
 		out->result = S15_LOGO_BIG;

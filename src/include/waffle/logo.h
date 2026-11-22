@@ -60,14 +60,33 @@ enum wb_logo_way {
 	WB_LOGO_DITHERED	/* reduced to 16, dithered */
 };
 
+/* The conversion's working memory, the caller's (about 580 KiB): each
+ * color's count, the colors grouped by box, each color's palette entry,
+ * each pixel's, the dithering's errors and median cut's boxes. Every byte
+ * is written before it is read. */
+struct wb_logo_box {
+	uint32_t lo, hi;	/* cols[lo, hi) */
+	uint32_t range;
+	unsigned ch;		/* the widest component: 0 red, 1 green, 2 blue */
+};
+
+struct wb_logo_work {
+	uint32_t hist[65536];
+	uint16_t cols[65536];
+	uint8_t lut[65536];
+	uint8_t idx[WB_LOGO_W * WB_LOGO_H];
+	int32_t err[2][(WB_LOGO_W + 2u) * 3u];
+	struct wb_logo_box boxes[256];
+};
+
 /*
  * A w x h picture (px row by row, RGB565) as stored data in room bytes at
- * most (and data's cap): its colors kept or reduced to 256, then, if that
- * does not fit, 16 dithered. *out gets every field but image. False when
- * nothing fits, *need then the smallest size tried.
+ * most (and data's cap), with k's memory: its colors kept or reduced to
+ * 256, then, if that does not fit, 16 dithered. *out gets every field but
+ * image. False when nothing fits, *need then the smallest size tried.
  */
-bool wb_logo_convert(const uint16_t *px, unsigned w, unsigned h, uint32_t room,
-		     uint8_t *data, uint32_t cap, struct wb_logo *out,
+bool wb_logo_convert(struct wb_logo_work *k, const uint16_t *px, unsigned w, unsigned h,
+		     uint32_t room, uint8_t *data, uint32_t cap, struct wb_logo *out,
 		     enum wb_logo_way *way, uint32_t *need);
 
 /*

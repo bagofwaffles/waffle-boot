@@ -128,18 +128,16 @@ bool wb_logo_draw(const struct wb_logo *l, const uint8_t *data, uint16_t *px)
 
 /* ---- conversion ---- */
 
-static uint32_t hist[NCOLOR];		/* each RGB565 color's count */
-static uint16_t cols[NCOLOR];		/* the colors, grouped by box */
-static uint8_t lut[NCOLOR];		/* a color's palette entry */
-static uint8_t idx[WB_LOGO_W * WB_LOGO_H];
-static int32_t err[2][(WB_LOGO_W + 2u) * 3u];
-
-struct box {
-	uint32_t lo, hi;	/* cols[lo, hi) */
-	uint32_t range;
-	unsigned ch;		/* the widest component: 0 red, 1 green, 2 blue */
-};
-static struct box boxes[256];
+/* The working memory of the conversion under way (wb_logo_convert()'s k). */
+#define ERR_N (2u * (WB_LOGO_W + 2u) * 3u)
+static uint32_t *hist;		/* each RGB565 color's count */
+static uint16_t *cols;		/* the colors, grouped by box */
+static uint8_t *lut;		/* a color's palette entry */
+static uint8_t *idx;		/* each pixel's */
+static int32_t *err;		/* two rows of the dithering's errors */
+static struct wb_logo_box *boxes;
+_Static_assert(sizeof(((struct wb_logo_work *)0)->err) == ERR_N * sizeof(int32_t),
+	       "two rows of errors");
 
 static unsigned comp(uint16_t c, unsigned k)
 {
@@ -152,7 +150,7 @@ static unsigned scaled(uint16_t c, unsigned k)
 	return k == 1u ? comp(c, k) : 2u * comp(c, k);
 }
 
-static void widest(struct box *b)
+static void widest(struct wb_logo_box *b)
 {
 	unsigned lo[3] = { 255u, 255u, 255u }, hi[3] = { 0u, 0u, 0u }, rr, gr, br;
 
@@ -229,7 +227,7 @@ static unsigned median_cut(uint32_t ncols, unsigned target, uint16_t *pal)
 	while (nb < target) {
 		unsigned bi = nb;
 		uint32_t best = 0, total = 0, cum = 0, k;
-		struct box *b;
+		struct wb_logo_box *b;
 
 		for (unsigned i = 0; i < nb; i++)
 			if (boxes[i].hi - boxes[i].lo >= 2u && boxes[i].range > best) {
@@ -290,11 +288,11 @@ static int32_t clamp(int32_t v, int32_t lo, int32_t hi)
 static void dither(const uint16_t *px, unsigned w, unsigned h, const uint16_t *pal, unsigned n)
 {
 	static const int32_t top[3] = { 31, 63, 31 };
-	int32_t *cur = err[0], *nxt = err[1], *t;
+	int32_t *cur = err, *nxt = err + ERR_N / 2u, *t;
 
-	memset(err, 0, sizeof err);
+	memset(err, 0, ERR_N * sizeof err[0]);
 	for (unsigned y = 0; y < h; y++) {
-		memset(nxt, 0, sizeof err[0]);
+		memset(nxt, 0, ERR_N / 2u * sizeof err[0]);
 		for (unsigned x = 0; x < w; x++) {
 			const uint16_t c = px[y * w + x];
 			int32_t want[3], q[3];
@@ -424,8 +422,8 @@ static uint32_t stored(unsigned w, unsigned h, const uint16_t *pal, unsigned n, 
 	return o.full ? cap + 1u : o.n;
 }
 
-bool wb_logo_convert(const uint16_t *px, unsigned w, unsigned h, uint32_t room,
-		     uint8_t *data, uint32_t cap, struct wb_logo *out,
+bool wb_logo_convert(struct wb_logo_work *k, const uint16_t *px, unsigned w, unsigned h,
+		     uint32_t room, uint8_t *data, uint32_t cap, struct wb_logo *out,
 		     enum wb_logo_way *way, uint32_t *need)
 {
 	uint16_t pal[256];
@@ -436,7 +434,13 @@ bool wb_logo_convert(const uint16_t *px, unsigned w, unsigned h, uint32_t room,
 	*need = 0;
 	if (w < 1u || w > WB_LOGO_W || h < 1u || h > WB_LOGO_H)
 		return false;
-	memset(hist, 0, sizeof hist);
+	hist = k->hist;
+	cols = k->cols;
+	lut = k->lut;
+	idx = k->idx;
+	err = &k->err[0][0];
+	boxes = k->boxes;
+	memset(hist, 0, sizeof k->hist);
 	for (uint32_t i = 0; i < w * h; i++)
 		hist[px[i]]++;
 	for (uint32_t c = 0; c < NCOLOR; c++)

@@ -31,8 +31,10 @@
 #include "waffle/s06_rx.h"
 #include "waffle/wire_crc.h"
 
-/* ---- time: 1 us per look, and whatever a delay asks ---- */
+/* the stored logo's conversion's working memory */
+static struct wb_logo_work g_work;
 
+/* ---- time: 1 us per look, and whatever a delay asks ---- */
 static uint64_t t_us;
 
 static uint64_t now_us(void *ctx)
@@ -751,7 +753,7 @@ static void test_stored_logo(void)
 
 	for (unsigned i = 0; i < ARRAY_LEN(pic); i++)
 		pic[i] = (i / 40u + i % 40u) % 3u != 0u ? 0xF800u : 0x001Fu;
-	CHECK(wb_logo_convert(pic, 40, 20, 0x10000u, data, sizeof data, &l, &way, &need));
+	CHECK(wb_logo_convert(&g_work, pic, 40, 20, 0x10000u, data, sizeof data, &l, &way, &need));
 	CHECK(wb_logo_draw(&l, data, px));
 	fr_screen_logo(&own);
 	fr_paint(ref, &own);

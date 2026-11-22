@@ -14,6 +14,7 @@
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_ops.h"
 #include "waffle/display.h"
+#include "waffle/drivers/bf70x_core.h"
 #include "waffle/logo.h"
 #include "waffle/logo_png.h"
 #include "waffle/s10a_msc.h"
@@ -21,16 +22,18 @@
 
 #define PIXELS (WB_LOGO_W * WB_LOGO_H)
 
-/* the hand-over frame's picture, as the front drew it */
-static uint16_t shown[PIXELS];
+/* the hand-over frame's picture, as the front drew it; the big buffers are
+ * written before they are read, so start-up does not clear them */
+static WB_NOINIT uint16_t shown[PIXELS];
 static struct wb_display_image shown_image;
 static bool shown_read, shown_ok;
 /* the stored data: the front's logo read again, or a dropped picture's */
-static uint8_t data[WB_LOGO_DATA_MAX];
+static WB_NOINIT uint8_t data[WB_LOGO_DATA_MAX];
 #if !defined(OPXY_TEST_OS)
 /* a dropped picture: the file's pixels, then, once it is converted, the
  * screen it gives */
-static uint16_t picture[PIXELS];
+static WB_NOINIT uint16_t picture[PIXELS];
+static WB_NOINIT struct wb_logo_work work;
 static struct wb_logo pending;
 static bool pending_ok;
 #endif
@@ -183,7 +186,7 @@ static void load(struct opxy_master *m, struct s15_logo_pic *out)
 		out->why = wb_png_why(rc);
 		return;
 	}
-	if (!wb_logo_convert(picture, w, h, out->room, data, sizeof data, &pending, &way, &need)) {
+	if (!wb_logo_convert(&work, picture, w, h, out->room, data, sizeof data, &pending, &way, &need)) {
 		out->result = S15_LOGO_BIG;
 		out->size = need;
 		return;
