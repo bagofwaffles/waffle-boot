@@ -1898,7 +1898,7 @@ static void test_whole_hold(void)
 	      cdc_at("[backplane]") < cdc_at("[skipped] backplane: not selected"));
 	CHECK(!cdc_has("[skipped] bootloader") && !cdc_has("spiboot") &&
 	      !cdc_has("install: first stage") && !cdc_has("First stage"));
-	CHECK(!cdc_has("no PSoC unlock") && !cdc_has("not in update mode"));
+	CHECK(!cdc_has("not in update mode"));
 	CHECK(!cdc_has("Not updated:"));	/* S-15.115: left out by choice */
 	CHECK(cdc_has("Done!"));
 	/* S-11.061: no Nordic step selected: nothing to the Nordic but the

@@ -753,31 +753,24 @@ static int step_nordic_slot(void *ctx)
 
 /*
  * S-11.071, S-07.080-S-07.085: the staged .cyacd text through the PSoC
- * programmer. Without a PSoC unlock (S-07.081) the programmer fails the
- * step before entry, sends nothing and reports why; the image is not
- * read for it. The OP-1F's PSoC is updated the same way, with the same
- * unlock (S-18.040, S-07.081).
+ * programmer, with the PSoC unlock (S-07.081) sent at its entry. The
+ * OP-1F's PSoC is updated the same way, with the same unlock (S-18.040).
  */
 static bool step_psoc(void *ctx)
 {
 	struct opxy_master *m = ctx;
 	uint8_t unlock[S07_CY_UNLOCK_LEN];
-	const bool has_unlock = opxy_psoc_unlock(unlock);
 	uint32_t len = 0;
-	uint8_t *image = NULL;
+	uint8_t *image;
 	bool ok = false;
 	int r;
 
-	if (has_unlock) {
-		image = staged(m, S11_C_BACKPLANE, &len);
-		if (image == NULL)
-			return false;
-	}
-	r = s07_program(&m->psoc, (const char *)image, len,
-			has_unlock ? unlock : NULL, &ok);
+	(void)opxy_psoc_unlock(unlock);		/* always built in */
+	image = staged(m, S11_C_BACKPLANE, &len);
+	if (image == NULL)
+		return false;
+	r = s07_program(&m->psoc, (const char *)image, len, unlock, &ok);
 	free(image);
-	if (!has_unlock)
-		cause("no PSoC unlock");		/* S-07.081 */
 	/*
 	 * S-11.058: a step a power-off interrupts has no
 	 * result. The power-off of S-07.051 has run; nothing more of the run
