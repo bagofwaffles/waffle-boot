@@ -79,7 +79,8 @@ ask the PSoC for its keys and battery without the ping, and the key check asks f
 recovery key, by their roles; the screen shows the number of each key pressed.
 
 **The survey** runs on either device; it writes nothing to the SPI flash: its write engine refuses every step, its write gate refuses
-every erase and program, and its link sends the flash driver's erase and program to functions that refuse.
+every erase and program, and its link sends the flash driver's erase and program to functions that refuse, and its build fails when the
+linked image still holds the driver's own erase or program.
 It makes the OS in the other boot partition active again as soon as it has looked. It shows, and saves in
 `check.txt` and over USB (type `0x44`), what an install would depend on: the first stage's `n` and `c`, the
 boot mode, the selector's two bytes, each slot's record and whether it verifies and is a waffle-boot stream,

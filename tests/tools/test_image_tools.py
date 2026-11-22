@@ -922,7 +922,7 @@ TESTOS_1F_LD = os.path.join(TOP, 'src', 'testos', 'bf703_installer.ld')
 STUB = bytes(range(0x40, 0x98))                 # 88 bytes, eleven 8-byte words
 
 
-def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000):
+def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000, symbols_extra=()):
     """An installer image (bf703_installer.ld): the entry stub loaded at 0x11A00000, its one L1
     block, and the test OS's DDR run at 0x8D000000 with .l1.text loaded in it."""
     sections = [
@@ -939,6 +939,7 @@ def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000):
     symbols = [('_wb_testos_l1_entry', 0x11A00000, '.l1.entry'), ('_wb_testos_entry', ddr_at, '.text'),
                ('_main', ddr_at + 8, '.text'), ('_opxy_testos_entry', ddr_at + 0x24, '.data'),
                ('_wb_cplb_setup', 0x11A00100, '.l1.text')]
+    symbols += [(n, ddr_at + 0x10 + 2 * i, '.text') for i, n in enumerate(symbols_extra)]
     relocs = {'.text': [(ddr_at + 4, '_opxy_testos_entry', 0)]}
     return build_elf(sections, symbols, relocs, entry, lma={'.l1.text': ddr_at + 0x34})
 
@@ -1003,6 +1004,24 @@ class TestOs1F(unittest.TestCase):
         # the OP-XY's --no-init form keeps the entry as the FINAL argument
         self.assertEqual(testos_layout.stream_entries(mkldr.stream(elf32.Elf(testos_1f_image()), None))[2],
                          0x11A00000)
+
+    def test_survey_holds_no_flash_write(self):
+        """--survey (make installer-survey): the flash driver's real erase and program gone from the
+        link; the refusing wraps may be there or gone."""
+        wraps = ('___wrap_wb_spiflash_erase', '___wrap_wb_spiflash_program')
+        real = ('_wb_spiflash_erase', '_wb_spiflash_program')
+        with Tmp() as t:
+            for extra in ((), wraps):
+                rc, out = run_testos_layout_1f(t.write('good.elf', testos_1f_image(symbols_extra=extra)),
+                                               '--survey')
+                self.assertEqual(rc, 0, out)
+            # the plain installer keeps both and is not held to it
+            self.assertEqual(run_testos_layout_1f(t.write('plain.elf', testos_1f_image(symbols_extra=real)))[0], 0)
+            for name in real:
+                bad = t.write('real.elf', testos_1f_image(symbols_extra=wraps + (name,)))
+                rc, out = run_testos_layout_1f(bad, '--survey')
+                self.assertEqual(rc, 1)
+                self.assertIn('FAIL the survey still holds %s' % name, out)
 
     def test_main_mode(self):
         with Tmp() as t:

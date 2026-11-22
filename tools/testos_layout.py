@@ -3,7 +3,7 @@
 """Placement and stream checks of the linked test OS (wiki/Test-OS.md).
 
     testos_layout.py IMAGE.elf --ld LDSCRIPT --board OPXY_H --memmap S01_H
-                     [--stream STREAM.ldr] [--json LAYOUT.json] [--device both]
+                     [--stream STREAM.ldr] [--json LAYOUT.json] [--device both] [--survey]
 
 The test OS is an OS image another bootloader loads (S-05.008 to S-05.014), so it is checked against
 S-01.017 and S-05.024 rather than layout.py's rules. Prints the use of each MEMORY region of LDSCRIPT
@@ -45,6 +45,12 @@ destination lies inside one of OS 1.7.3's ranges
 each device against the board header: the OP-XY's parts hold S-12.001's disk (OPXY_DISK_SECTORS), the
 OP-1F's region S-12.008's (OPXY_1F_DISK_SECTORS); check_layout.py --device xy and --device 1f check the
 same layout against S-18's device.ramdisk_blocks and device.ramdisk_regions.
+With --survey, the survey's image (make installer-survey), which must not be able to write the SPI
+flash: it fails when the ELF still defines the flash driver's _wb_spiflash_erase or
+_wb_spiflash_program. The link's --wrap sends every call of them to refusing functions and
+--gc-sections drops a function no call reaches, so either one left means some call still reaches
+the real write (a call --wrap does not redirect, such as one from inside the driver's own file).
+The refusing ___wrap_ functions may be gone too, when no call of the two is left at all.
 With --json, writes the layout in tests/oracle/S-01-boot-chain/check_layout.py's form: one range per
 section, the heap and the held-mode buffers, none of them a handover range. Python 3, standard library
 only.
@@ -343,6 +349,16 @@ def check_entry(elf, stream_path, image):
     return fails + check_blocks(data, image)
 
 
+SURVEY_WRAPPED = ('wb_spiflash_erase', 'wb_spiflash_program')
+
+
+def check_survey(elf):
+    """The survey's link left no way to the flash's erase and program: the driver's functions are
+    gone."""
+    return ['the survey still holds _%s: a call reaches the real flash write' % name
+            for name in SURVEY_WRAPPED if elf.symbol('_' + name) is not None]
+
+
 def layout_json(secs, heap, held):
     ranges = []
     for s in secs:
@@ -360,6 +376,8 @@ def layout_json(secs, heap, held):
 def main(argv):
     args = argv[1:]
     opts = {}
+    survey = '--survey' in args
+    args = [a for a in args if a != '--survey']
     for k in ('--ld', '--board', '--memmap', '--stream', '--json', '--device'):
         if k in args:
             i = args.index(k)
@@ -402,6 +420,8 @@ def main(argv):
             fails.append('the image range 0x%08x-0x%08x is in none of OS 1.7.3\'s ranges' % image)
     else:
         fails += check_entry(elf, opts.get('--stream'), image)
+    if survey:
+        fails += check_survey(elf)
     if '--json' in opts:
         with open(opts['--json'], 'w') as f:
             json.dump(layout_json(secs, heap, held), f, indent=1, sort_keys=True)

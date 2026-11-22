@@ -644,7 +644,7 @@ $$(TESTOS_$(1)_STREAM): $$(TESTOS_$(1)_IMAGE) tools/mkldr.py tools/elf32.py
 $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testos_layout.py tools/layout.py tools/elf32.py
 	$(PYTHON) -I -B tools/testos_layout.py $$< --ld $$(TESTOS_$(1)_LD) $(TESTOS_DEVICE_$(1)) \
 		--board src/include/waffle/board/opxy.h --memmap src/include/waffle/s01_memmap.h \
-		--stream $$(TESTOS_$(1)_STREAM) --json $$@.tmp
+		--stream $$(TESTOS_$(1)_STREAM) $(TESTOS_LAYOUT_FLAGS_$(1)) --json $$@.tmp
 	$(foreach d,$(or $(TESTOS_LAYOUT_DEVICES_$(1)),xy),\
 		$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp --device $(d) &&) true
 	@mv $$@.tmp $$@
@@ -667,6 +667,8 @@ TESTOS_FLAGS_installer-survey := $(TESTOS_FLAGS_installer) -DOPXY_TESTOS_SURVEY=
 TESTOS_COMMA := ,
 TESTOS_SURVEY_WRAPS := wb_spiflash_erase wb_spiflash_program
 TESTOS_LDFLAGS_installer-survey := $(foreach f,$(TESTOS_SURVEY_WRAPS),-Wl$(TESTOS_COMMA)--wrap=$(f))
+# The linked survey is checked to hold no real erase or program (testos_layout.py --survey).
+TESTOS_LAYOUT_FLAGS_installer-survey := --survey
 $(foreach v,$(TESTOS_INSTALLER),$(eval TESTOS_LD_$(v) := src/testos/bf703_installer.ld)\
 	$(eval TESTOS_MKLDR_$(v) := --os-1f)$(eval TESTOS_DEVICE_$(v) := --device both)\
 	$(eval TESTOS_LAYOUT_DEVICES_$(v) := xy 1f)$(eval TESTOS_KEEP_$(v) := -Wl,-u,_wb_testos_l1_entry))
