@@ -5,6 +5,7 @@ a timer of its own and on the controls a person would use on the unit:
 
     act('hold')      the step's key held for 5 s (the hold bar fills, then the step runs)
     act('leave')     8 held for 5 s: leave without installing, where it is offered
+    act('retrial')   2 held for 5 s on the commit screen: the same trial written again
     act('release')   the key let go before the 5 s
     act('restart')   switched off and on: the port closes, and is gone for a moment
     act('reset')     the unit as it was at the start
@@ -179,10 +180,9 @@ class InstallerUnit:
         self.current = NONE
         hw = self.tests[1:]
         self.verdict = 2 if FAIL in hw else 1 if NOT_TESTED in hw else 0
+        # what the other boot partition holds plays no part (S-16.027); lock 5 is never set
         lock = 0
-        if self.os not in (1, 2):
-            lock = 5
-        elif FAIL in hw:
+        if FAIL in hw:
             lock = 1
         elif self.tests[KEYS] != PASS:
             lock = 6
@@ -252,6 +252,10 @@ class InstallerUnit:
         if key == 8:
             self.os = 6
             self.enter(LEFT)
+        elif key == 2 and self.phase == COMMIT_READY:
+            # the first trial's write again, over the same slot
+            self.enter(WRITING_TRIAL)
+            self.write_for(3.0)
         elif self.phase in (READY, TRIAL_FAILED):
             self.enter(WRITING_TRIAL)
             self.write_for(3.0)
@@ -281,6 +285,8 @@ class InstallerUnit:
                 self.holding, self.hold_key, self.hold = True, self.next_key(), 0
             elif what == 'leave' and self.can_leave():
                 self.holding, self.hold_key, self.hold = True, 8, 0
+            elif what == 'retrial' and self.phase == COMMIT_READY:
+                self.holding, self.hold_key, self.hold = True, 2, 0
             elif what == 'release':
                 self.holding, self.hold_key, self.hold = False, 0, 0
             elif what == 'reset':

@@ -463,6 +463,60 @@ static void make_image(uint8_t pin[32], unsigned bad)
 	block(S05_FLAG_FINAL | 0x0010u, 0x11A00000u, NULL, 0u);
 }
 
+/* The phases' holds and what each starts: the commit screen offers 1 to keep
+ * the new bootloader and 2 to write the same trial again; no other screen
+ * gives 2 a meaning. */
+static void test_holds_and_acts(void)
+{
+	struct inst_hold h;
+	unsigned p;
+
+	CHECK(inst_holds_for(INST_COMMIT_READY, true) == (1u << 1 | 1u << 2 | 1u << 8));
+	CHECK(inst_holds_for(INST_COMMIT_READY, false) == (1u << 1 | 1u << 2));
+	CHECK(inst_holds_for(INST_READY, true) == (1u << 1 | 1u << 8));
+	CHECK(inst_holds_for(INST_TRIAL_FAILED, false) == 1u << 1);
+	CHECK(inst_holds_for(INST_FAILED, true) == (1u << 1 | 1u << 8));
+	CHECK(inst_holds_for(INST_LOCKED, true) == 1u << 8 && inst_holds_for(INST_DONE, false) == 0u);
+	CHECK(inst_holds_for(INST_SURVEYED, true) == 1u << 8);
+	CHECK(inst_holds_for(INST_TRIAL_WRITTEN, true) == 0u && inst_holds_for(INST_CHECKING, true) == 0u);
+
+	CHECK(inst_act_of(INST_COMMIT_READY, 1u) == INST_ACT_COMMIT);
+	CHECK(inst_act_of(INST_COMMIT_READY, 2u) == INST_ACT_TRIAL);
+	CHECK(inst_act_of(INST_COMMIT_READY, 8u) == INST_ACT_LEAVE);
+	CHECK(inst_act_of(INST_READY, 1u) == INST_ACT_TRIAL);
+	CHECK(inst_act_of(INST_TRIAL_FAILED, 1u) == INST_ACT_TRIAL);
+	CHECK(inst_act_of(INST_FAILED, 1u) == INST_ACT_RETRY);
+	for (p = INST_STARTING; p <= INST_SURVEYED; p++) {
+		/* 2 means something on the commit screen alone, and a digit a phase
+		 * does not offer starts nothing there */
+		if (p != INST_COMMIT_READY)
+			CHECK(inst_act_of((enum inst_phase)p, 2u) == INST_ACT_NONE);
+		for (unsigned d = 1; d <= 8u; d++)
+			if ((inst_holds_for((enum inst_phase)p, true) >> d & 1u) == 0u && d != 8u)
+				CHECK(inst_act_of((enum inst_phase)p, d) == INST_ACT_NONE);
+	}
+	CHECK(inst_act_of(INST_DONE, 1u) == INST_ACT_NONE);
+
+	/* held 5 s on a key that gives 2, the commit screen's offer: the trial */
+	memset(&h, 0, sizeof h);
+	inst_hold_offer(&h, inst_holds_for(INST_COMMIT_READY, true));
+	CHECK(s15_digit(&wb_device_opxy, 0x07u) == 2u);
+	key(&h, 0x07u, true, 1000u);
+	CHECK(h.holding && h.digit == 2u);
+	CHECK(inst_hold_tick(&h, 5999u) == 0u);
+	CHECK(inst_act_of(INST_COMMIT_READY, inst_hold_tick(&h, 6000u)) == INST_ACT_TRIAL);
+	/* released early: nothing */
+	inst_hold_offer(&h, inst_holds_for(INST_COMMIT_READY, true));
+	key(&h, 0x07u, false, 6100u);
+	key(&h, 0x07u, true, 7000u);
+	key(&h, 0x07u, false, 9000u);
+	CHECK(inst_hold_tick(&h, 12000u) == 0u);
+	/* the same key on the ready screen starts no hold */
+	inst_hold_offer(&h, inst_holds_for(INST_READY, true));
+	key(&h, 0x07u, true, 13000u);
+	CHECK(!h.holding && inst_hold_tick(&h, 19000u) == 0u);
+}
+
 static void test_image_check(void)
 {
 	struct s15_sha256 sh;
@@ -824,7 +878,7 @@ static void test_report_device(void)
 	(void)inst_report_append(buf, 0u, sizeof buf, &h, &s, &img_r, NULL);
 	CHECK(strstr(buf, "\ninstall\ndevice: not identified, first stage n 34000, c 12345678\n"
 		     "image built for: OP-XY\n") != NULL);
-	CHECK(strstr(buf, "locked: The device is not identified by its first stage.\n") != NULL);
+	CHECK(strstr(buf, "locked: Device unknown (first stage)\n") != NULL);
 	h.how = WB_DEV_BY_TABLE;
 	h.device = WB_DEV_OP1F;
 	h.image_device = WB_DEV_OP1F;
@@ -934,6 +988,7 @@ int main(void)
 	RUN(test_stream_is_waffle);
 	RUN(test_os_and_trial);
 	RUN(test_hold);
+	RUN(test_holds_and_acts);
 	RUN(test_image_check);
 	RUN(test_proto);
 	RUN(test_report);

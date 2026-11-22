@@ -1096,6 +1096,11 @@ async function sendInstaller() {
 			step('iwrite', 'fail', 'not sent');
 			return;
 		}
+		if (IW.isOp1f(d)) {
+			sendResult('bad', 'Not sent', [IW.NOT_FOR_1F[0]], IW.NOT_FOR_1F.slice(1));
+			step('iwrite', 'fail', 'not sent');
+			return;
+		}
 		const t = opened.transport;
 		t.onLost = () => log('The unit went away.', 'warn');
 		const shown = { n: 0 };

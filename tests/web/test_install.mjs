@@ -15,6 +15,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
+import { readFileSync } from 'node:fs';
 import * as core from '../../docs/web/core.js';
 import * as inst from '../../docs/web/install.js';
 
@@ -122,16 +123,46 @@ test('describeInstall: the words for the state above', () => {
     assert.deepEqual(d.slots[1].words, ['holds this image for a trial', 'trial started',
         'trial reached the boot menu']);
     assert.deepEqual(d.lines, ['The trial start reached the boot menu.', 'Holding 1: 64 %.']);
-    assert.deepEqual(d.advice, ['Hold 1 on the unit for 5 s to keep the new bootloader.', inst.LEAVE]);
+    assert.deepEqual(d.advice, ['Hold 1 on the unit for 5 s to keep the new bootloader.', inst.RETRIAL,
+        inst.LEAVE]);
     assert.equal(inst.describeInstall({ ...s, os: 6 }).leave, false, 'leave only while the OS can be made active');
     assert.equal(d.checks[18].stateText, 'FAIL');
     // each lock reason and failure code has words, and unknown ones are named
-    for (const r of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+    for (const r of [1, 2, 3, 4, 6, 7, 8, 9, 10, 11])
         assert.ok(inst.LOCK[r] && inst.LOCK_ADVICE[r]);
+    assert.ok(inst.LOCK[inst.LOCK_RESERVED] && !inst.LOCK_ADVICE[inst.LOCK_RESERVED]);
     assert.equal(inst.failureText(0x42), 'failure code 0x42');
     assert.equal(inst.describeInstall({ ...s, phase: 11, trial: 4 }).lines[0],
         'The trial failed: the trial start did not run the new bootloader.');
     assert.equal(inst.describeInstall({ ...s, phase: 3, lock: 12, os: 6 }).lines[1], 'Why: lock reason 12.');
+});
+
+// STATE's lock codes as installer.h's enum inst_lock numbers them, each with the page's words
+test('the lock codes are the header\'s', () => {
+    const h = readFileSync(here('../../src/include/waffle/board/installer.h'), 'utf8');
+    const body = h.match(/enum inst_lock \{([^}]*)\}/)[1];
+    const names = [...body.matchAll(/INST_LOCK_([A-Z_]+)/g)].map((m) => m[1]);
+    assert.equal(names[0], 'NONE');
+    assert.equal(names.indexOf('RESERVED'), inst.LOCK_RESERVED);
+    assert.equal(names.indexOf('SURVEY'), inst.LOCK_SURVEY);
+    assert.equal(inst.LOCK_NONE, 0);
+    assert.deepEqual(Object.keys(inst.LOCK).map(Number), names.slice(1).map((_, k) => k + 1));
+    assert.match(inst.lockText(inst.LOCK_RESERVED), /never sets/);
+    assert.equal(inst.LOCK_ADVICE[inst.LOCK_RESERVED], undefined);
+    assert.equal(inst.lockText(2), 'an automatic check could not run');
+});
+
+// The Install tab sends to an OP-XY only: an OP-1F is refused before anything is sent
+test('an OP-1 Field is told apart from an OP-XY', () => {
+    assert.equal(inst.isOp1f({ name: 'teenage engineering OP-XY', vendorId: 0x2367, productId: 0x0021 }), false);
+    assert.equal(inst.isOp1f({ name: 'a USB device', vendorId: 0x2367, productId: 0x0102 }), true);
+    assert.equal(inst.isOp1f({ name: 'a USB device', vendorId: 0x2367, productId: 0x8102 }), true);
+    assert.equal(inst.isOp1f({ name: 'teenage engineering OP-1 Field', vendorId: 0x2367, productId: 0x1234 }), true);
+    assert.equal(inst.isOp1f({ name: 'OP-12', vendorId: 0x2367, productId: 0x1234 }), false);
+    assert.equal(inst.isOp1f(null), false);
+    assert.match(inst.NOT_FOR_1F[0], /Nothing was sent/);
+    assert.ok(inst.NOT_FOR_1F[1].includes(inst.HOW_TO_INSTALL_1F));
+    assert.match(inst.HOW_TO_INSTALL_1F, /How-to-Install#on-an-op-1-field$/);
 });
 
 // S-18: HELLO's device bytes, the survey's reply and its phase, the OP-1F's key check
@@ -350,8 +381,10 @@ async function walk(bridge, kase, acts, end) {
                 advice: d.advice, desc: d });
         if (end.includes(d.phase.name))
             return { seen, last: d, link, hello, tests, busy };
-        const what = acts[d.phase.name];
-        const key = d.phase.name + ':' + s.trial;
+        // an act per phase, or a list of them, one for each time the phase is entered
+        const visits = seen.filter((x) => x.phase === d.phase.name).length;
+        const what = Array.isArray(acts[d.phase.name]) ? acts[d.phase.name][visits - 1] : acts[d.phase.name];
+        const key = d.phase.name + ':' + s.trial + ':' + visits;
         if (what && !done.has(key) && !d.hold) {
             done.add(key);
             await bridge.act(what);
@@ -385,7 +418,7 @@ test('pass: checks, trial, restart, commit, done', needPython, () => withBridge(
         ['done']);
     assert.deepEqual(phases(r), ['checking', 'guided', 'ready', 'writing trial', 'trial written',
         'commit ready', 'committing', 'done']);
-    assert.deepEqual(at(r, 'ready').lines, ['Every check passed. The trial goes into Slot 2.',
+    assert.deepEqual(at(r, 'ready').lines, ['Checks passed. The trial goes into Slot 2.',
         'Nothing is written until you hold the key on the unit.']);
     assert.deepEqual(at(r, 'ready').advice, ['Hold 1 on the unit for 5 s to write the trial.', inst.LEAVE]);
     assert.ok(r.busy > 0, 'the port was quiet while the unit wrote');
@@ -406,6 +439,17 @@ test('pass: checks, trial, restart, commit, done', needPython, () => withBridge(
     await sleep(1600 * TICK + 50);
     const after = await b.reconnect();
     await assert.rejects(inst.installerHello(after, { timeout: 150, retries: 1 }), { kind: 'link' });
+}));
+
+test('retrial: 2 on the commit screen writes the same trial again, then the commit', needPython, () => withBridge(async (b) => {
+    const r = await walk(b, 'pass', { ready: 'hold', 'trial written': 'restart',
+        'commit ready': ['retrial', 'hold'] }, ['done']);
+    assert.deepEqual(phases(r), ['checking', 'guided', 'ready', 'writing trial', 'trial written',
+        'commit ready', 'writing trial', 'trial written', 'commit ready', 'committing', 'done']);
+    const commits = r.seen.filter((x) => x.phase === 'commit ready');
+    assert.ok(commits.every((x) => x.advice.includes(inst.RETRIAL)));
+    assert.deepEqual(r.last.lines, ['Done: the new bootloader is kept in Slot 2.',
+        'The OS is active again: switch the unit off and on and it starts its OS.']);
 }));
 
 test('check-fail: a check fails, the install is locked, the OS is active again', needPython, () => withBridge(async (b) => {
@@ -440,15 +484,13 @@ test('trial-fail: the trial start did not reach the boot menu', needPython, () =
     assert.deepEqual(d.slots[1].words, ['holds this image for a trial', 'trial started', 'trial spent']);
 }));
 
-test('no-os: the OS was not found, so the install is locked', needPython, () => withBridge(async (b) => {
-    const r = await walk(b, 'no-os', {}, ['locked']);
+test('no-os: no OS in the other partition does not lock the install, and there is no leaving', needPython,
+    () => withBridge(async (b) => {
+    const r = await walk(b, 'no-os', {}, ['ready']);
     const d = r.last;
-    assert.equal(d.lock.code, 5);
+    assert.equal(d.lock, null);
     assert.equal(d.verdict.text, 'PASS');
-    assert.deepEqual(d.lines, ['A check did not pass: nothing was written, and the install is not offered.',
-        "Why: the unit's OS was not found, or fails its check.",
-        'The installer is still the active OS: the unit starts it again at the next start.']);
-    assert.deepEqual(d.advice, [inst.LOCK_ADVICE[5], inst.SAVE_REPORT]);
+    assert.ok(!d.advice.includes(inst.LEAVE));
     assert.equal(d.leave, false, 'no leave: there is no OS to make active');
     assert.deepEqual(d.checks[0].detail, 'no OS in the other boot partition');
 }));

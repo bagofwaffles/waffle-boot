@@ -23,23 +23,28 @@ installing, hold **8** for 5 s.
 A unit that already runs waffle-boot does not need the installer: choose **Upgrade / Recover** on the page
 ([How to Recover](How-to-Recover)).
 
-**On an OP-1 Field (OP-1F):** initial support, from 0.9.48, run on one unit. The page does not install
-it. Its installer, `waffle-install-1f.ldr`, goes on as the OS by the unit's own OS write, after
-`tools/mtpcp.py prepare-1f` has made the volume ready for it; that tool takes the unit's bootloader 1000.2.0
-or 1000.1.1 only ([Putting the image on an OP-1F](Installer-Reference#putting-the-image-on-an-op-1f)). You
-can run the survey (`waffle-install-1f-survey.ldr`, built from the source) first: it writes nothing to the
+## On an OP-1 Field
+
+The OP-1 Field (OP-1F) has initial support, from 0.9.48, run on one unit. The page does not install
+it, and refuses to send the installer to an OP-1F. The same installer, `waffle-install.ldr`, goes on as
+the OS by the unit's own OS write, after `tools/mtpcp.py prepare-1f` has made the volume ready for it;
+that tool takes the unit's bootloader 1000.2.0 or 1000.1.1 only ([Putting the image on an OP-1F](Installer-Reference#putting-the-image-on-an-op-1f)). You
+can run the survey (`waffle-install-survey.ldr`, built from the source) first: it writes nothing to the
 SPI flash, and its `check.txt` says whether an install would be offered. See
 [Installer Reference](Installer-Reference#on-an-op-1f).
+
+> **One installer for both devices:** built from the current source, `waffle-install.ldr` is one image
+> for the OP-XY and the OP-1F that decides the device itself. That image has not yet run on either unit.
 
 ## When something does not pass
 
 | The unit shows | It means | What to do |
 | --- | --- | --- |
-| The install is not offered | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Save `check.txt` (on the page, or from the unit's USB disk). Hold 8 to leave. A wrong check is fixed in the installer; nothing overrides it |
-| The trial did not reach the boot menu | The trial start ran, or did not run, the new bootloader, but its boot menu did not show | Nothing was kept: the unit starts the bootloader it had. Hold 1 to write the trial again, or 8 to leave |
-| The write did not complete | A write or its read-back failed | The unit keeps a bootloader that starts. Hold 1 to try again, or 8 to leave |
+| Install not offered | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Save `check.txt` (on the page, or from the unit's USB disk). Hold 8 to leave. A wrong check is fixed in the installer; nothing overrides it |
+| Trial did not reach the boot menu | The trial start ran, or did not run, the new bootloader, but its boot menu did not show | Nothing was kept: the unit starts the bootloader it had. Hold 1 to write the trial again, or 8 to leave |
+| Write failed | A write or its read-back failed | The unit keeps a bootloader that starts. Hold 1 to try again, or 8 to leave |
 
-<img src="../docs/ui/installer-locked.png" width="480" alt="The install is not offered">
+<img src="../docs/ui/installer-locked.png" width="480" alt="Install not offered">
 
 `check.txt` lists every check. It holds no serial number or key.
 

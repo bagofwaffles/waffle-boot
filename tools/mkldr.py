@@ -35,12 +35,12 @@ byte of its one DDR block, where bf703_testos.ld puts the entry shim
 (tools/testos_layout.py checks it). The argument of a block without FILL,
 INIT or CALLBACK is not used by the kernel.
 
-With --os-1f, an OS image for the OP-1F's own loader, shaped like the
-OP-1F's OS 1.7.3 (S-05.040): as --no-init, but the FINAL block's argument
-is 0, as that OS's is, and a run longer than S-05.041's block limits
-(0xC000 bytes in L1, 0xACAB8 in DDR) is split into blocks no longer. The
-entry, the FIRST and FINAL blocks' target, is the ELF entry, which
-src/testos/bf703_testos_1f.ld puts at 0x11A00000.
+With --os-1f, an OS image shaped like the OP-1F's OS 1.7.3 (S-05.040),
+which both devices' own loaders take (S-05.043): as --no-init, but the
+FINAL block's argument is 0, as that OS's is, and a run longer than
+S-05.041's block limits (0xC000 bytes in L1, 0xACAB8 in DDR) is split into
+blocks no longer. The entry, the FIRST and FINAL blocks' target, is the ELF
+entry, which src/testos/bf703_installer.ld puts at 0x11A00000.
 
 With --front, the bootloader's stream carries the frozen front
 (src/front/fr_handoff.h): the front's blocks join the image's in the same

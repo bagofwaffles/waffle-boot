@@ -3,8 +3,8 @@
 """Host tests of tools/mkldr.py and tools/layout.py on a synthetic ELF32 file
 laid out like the bootloader image (bf703.ld), and of tools/testos_layout.py
 and mkldr.py --no-init on one laid out like the test OS (bf703_testos.ld,
-wiki/Test-OS.md), and --os-1f and --device 1f on one laid out like the OP-1F's
-installer (bf703_testos_1f.ld). The streams and layouts they write are
+wiki/Test-OS.md), and --os-1f and --device both on one laid out like the installer, one
+image for both devices (bf703_installer.ld). The streams and layouts they write are
 judged by tests/oracle/S-01-boot-chain's checkers. Also tools/png2logo.py on PNG files made here
 (S-15.132). Python 3, standard library only.
 
@@ -918,12 +918,12 @@ class TestOs(unittest.TestCase):
         self.assertEqual((tr1[5], tr1[6], tr1[7]), ('in', 1, 1560))
 
 
-TESTOS_1F_LD = os.path.join(TOP, 'src', 'testos', 'bf703_testos_1f.ld')
+TESTOS_1F_LD = os.path.join(TOP, 'src', 'testos', 'bf703_installer.ld')
 STUB = bytes(range(0x40, 0x98))                 # 88 bytes, eleven 8-byte words
 
 
-def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000):
-    """An OP-1F installer image (bf703_testos_1f.ld): the entry stub loaded at 0x11A00000, its one L1
+def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000, symbols_extra=()):
+    """An installer image (bf703_installer.ld): the entry stub loaded at 0x11A00000, its one L1
     block, and the test OS's DDR run at 0x8D000000 with .l1.text loaded in it."""
     sections = [
         ('.l1.entry', elf32.SHT_PROGBITS, AX, 0x11A00000, stub),
@@ -936,9 +936,10 @@ def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000):
     ]
     if extra:
         sections += extra
-    symbols = [('_wb_testos_entry_1f', 0x11A00000, '.l1.entry'), ('_wb_testos_entry', ddr_at, '.text'),
+    symbols = [('_wb_testos_l1_entry', 0x11A00000, '.l1.entry'), ('_wb_testos_entry', ddr_at, '.text'),
                ('_main', ddr_at + 8, '.text'), ('_opxy_testos_entry', ddr_at + 0x24, '.data'),
                ('_wb_cplb_setup', 0x11A00100, '.l1.text')]
+    symbols += [(n, ddr_at + 0x10 + 2 * i, '.text') for i, n in enumerate(symbols_extra)]
     relocs = {'.text': [(ddr_at + 4, '_opxy_testos_entry', 0)]}
     return build_elf(sections, symbols, relocs, entry, lma={'.l1.text': ddr_at + 0x34})
 
@@ -947,7 +948,7 @@ def run_testos_layout_1f(elf_path, *extra):
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = testos_layout.main(['testos_layout.py', elf_path, '--ld', TESTOS_1F_LD, '--board', BOARD,
-                                 '--memmap', MEMMAP, '--device', '1f'] + list(extra))
+                                 '--memmap', MEMMAP, '--device', 'both'] + list(extra))
     return rc, out.getvalue()
 
 
@@ -963,8 +964,9 @@ def fix_header(h):
 
 
 class TestOs1F(unittest.TestCase):
-    """The OP-1F's installer images (make installer-1f): mkldr.py --os-1f and testos_layout.py --device 1f
-    against S-05.040's shape of the OP-1F's OS 1.7.3, S-01's os profile and S-05.024."""
+    """The installer's images, one for both devices (make installer, S-05.043): mkldr.py --os-1f and
+    testos_layout.py --device both against S-05.040's shape of the OP-1F's OS 1.7.3, S-01's os profile,
+    S-05.024 and both devices' RAM disks."""
 
     def test_stream_shape(self):
         data = mkldr.stream(elf32.Elf(testos_1f_image()), None, 0, mkldr.OS_1F_SPLIT)
@@ -1003,6 +1005,24 @@ class TestOs1F(unittest.TestCase):
         self.assertEqual(testos_layout.stream_entries(mkldr.stream(elf32.Elf(testos_1f_image()), None))[2],
                          0x11A00000)
 
+    def test_survey_holds_no_flash_write(self):
+        """--survey (make installer-survey): the flash driver's real erase and program gone from the
+        link; the refusing wraps may be there or gone."""
+        wraps = ('___wrap_wb_spiflash_erase', '___wrap_wb_spiflash_program')
+        real = ('_wb_spiflash_erase', '_wb_spiflash_program')
+        with Tmp() as t:
+            for extra in ((), wraps):
+                rc, out = run_testos_layout_1f(t.write('good.elf', testos_1f_image(symbols_extra=extra)),
+                                               '--survey')
+                self.assertEqual(rc, 0, out)
+            # the plain installer keeps both and is not held to it
+            self.assertEqual(run_testos_layout_1f(t.write('plain.elf', testos_1f_image(symbols_extra=real)))[0], 0)
+            for name in real:
+                bad = t.write('real.elf', testos_1f_image(symbols_extra=wraps + (name,)))
+                rc, out = run_testos_layout_1f(bad, '--survey')
+                self.assertEqual(rc, 1)
+                self.assertIn('FAIL the survey still holds %s' % name, out)
+
     def test_main_mode(self):
         with Tmp() as t:
             e = t.write('t.elf', testos_1f_image())
@@ -1015,7 +1035,15 @@ class TestOs1F(unittest.TestCase):
             self.assertIn('entry      0x11a00000', out)
             with open(t.path('t.json')) as f:
                 names = [r['name'] for r in json.load(f)['ranges']]
-            self.assertEqual(names[-3:], ['ramdisk', 'os_frame', 'frame_buffers'])
+            self.assertEqual(names[-6:], ['ramdisk_0', 'ramdisk_1', 'ramdisk_2', 'ramdisk_1f', 'os_frame',
+                                          'frame_buffers'])
+            # the one layout passes S-01's rules for each device's RAM disk (S-01.016, S-18.030)
+            with open(t.path('t.json')) as f:
+                lay = json.load(f)
+            for device in ('xy', '1f'):
+                res = check_layout.check(lay, device)
+                self.assertTrue(all(ok for rule, ok, _ in res if rule not in check_layout.INFORMATIVE),
+                                (device, res))
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(mkldr.main(['mkldr.py', e, t.path('u.ldr'), '--os-1f', '--no-init']), 2)
 
@@ -1024,15 +1052,23 @@ class TestOs1F(unittest.TestCase):
         self.assertEqual([r[0] for r in regions], ['l1_entry', 'l1_code', 'ddr'])
         board = layout.defines(BOARD)
         ddr = [r for r in regions if r[0] == 'ddr'][0]
-        self.assertEqual((ddr[1], ddr[2]), (board['OPXY_TESTOS_1F_IMAGE_START'],
-                                            board['OPXY_TESTOS_1F_IMAGE_END']))
+        self.assertEqual((ddr[1], ddr[2]), (board['OPXY_TESTOS_SHARED_IMAGE_START'],
+                                            board['OPXY_TESTOS_SHARED_IMAGE_END']))
         self.assertEqual(regions[0][1], 0x11A00000)
         # inside OS 1.7.3's second DDR range, above the OS frame, clear of the OP-1F's RAM disk
         lo, hi = testos_layout.os_1f_ranges()[-1]
-        self.assertTrue(lo <= board['OPXY_TESTOS_1F_IMAGE_START'] and board['OPXY_TESTOS_1F_IMAGE_END'] <= hi)
-        self.assertGreaterEqual(board['OPXY_TESTOS_1F_IMAGE_START'], board['OPXY_OS_FRAME_END'])
-        self.assertGreaterEqual(board['OPXY_TESTOS_1F_IMAGE_START'], board['OPXY_1F_DISK_END'])
-        self.assertLessEqual(board['OPXY_TESTOS_1F_HEAP_END'], board['OPXY_FRAMES_START'])
+        self.assertTrue(lo <= board['OPXY_TESTOS_SHARED_IMAGE_START'] and board['OPXY_TESTOS_SHARED_IMAGE_END'] <= hi)
+        self.assertGreaterEqual(board['OPXY_TESTOS_SHARED_IMAGE_START'], board['OPXY_OS_FRAME_END'])
+        self.assertGreaterEqual(board['OPXY_TESTOS_SHARED_IMAGE_START'], board['OPXY_1F_DISK_END'])
+        self.assertLessEqual(board['OPXY_TESTOS_SHARED_HEAP_END'], board['OPXY_FRAMES_START'])
+        # S-05.043: on the OP-XY the RAM disk stays clear of 0x8D000000-0x8E000000 and still holds
+        # S-12.001's sectors
+        self.assertEqual((board['OPXY_TESTOS_SHARED_IMAGE_START'], board['OPXY_TESTOS_SHARED_HEAP_END']),
+                         (0x8D000000, 0x8E000000))
+        parts = testos_layout.xy_shared_disk(board)
+        self.assertFalse(any(layout.meets(lo, hi, (0x8D000000, 0x8E000000)) for _, lo, hi in parts))
+        self.assertEqual(sum(hi - lo for _, lo, hi in parts), 454656 * 512)
+        self.assertGreaterEqual(parts[1][1], layout.defines(MEMMAP)['S01_RESERVE_DDR_END'])
 
     def test_refusals(self):
         with Tmp() as t:

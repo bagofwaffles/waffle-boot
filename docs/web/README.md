@@ -131,8 +131,8 @@ simulated unit takes. `sim.js` does this only when the page is opened from local
 
 `?sim=installer:CASE` opens the Install tab on a simulated installer: `pass` (checks, trial,
 restart, commit, done), `check-fail` (a check fails: locked), `trial-fail` (the trial start does not
-reach the boot menu), `no-os` (no OS to make active again: lock reason 5), `write-fail` (the trial
-write fails), `breadcrumb` (the commit is refused) and `keys-ended` (the key check ended with 8: lock
+reach the boot menu), `no-os` (no OS to make active again: the install is offered, with no
+leaving), `write-fail` (the trial write fails), `breadcrumb` (the commit is refused) and `keys-ended` (the key check ended with 8: lock
 reason 6). It moves on its own timer, keeps its state
 across connections as a unit does across a restart, and the page's Simulator buttons stand for
 what a person does on the unit (`/sim/act?unit=installer:CASE&do=hold|leave|release|restart|reset`).

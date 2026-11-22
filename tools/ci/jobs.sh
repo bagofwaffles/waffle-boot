@@ -66,8 +66,8 @@ job_toolchain() {
 # The disassembly CI prints goes to a file here; it is only the check that
 # objdump reads the library. The reproducibility check is repro:cross.
 # Besides the release image and the test OS's panel variants, the build
-# variants no other job compiles: the test OS's monitor, the installers (the
-# OP-XY's, the OP-1F's and its survey), and a
+# variants no other job compiles: the test OS's monitor, the installer (one
+# image for both devices) and its survey, and a
 # development image with breadcrumbs, timing and debug logging, carried by
 # its own installer, and an image that sends the slave's stream byte by byte.
 job_cross() {
@@ -79,7 +79,7 @@ job_cross() {
 	make cross "${cc[@]}"
 	"$bin/bfin-elf-objdump" -d build/bf703/libwaffle.a > build/bf703/libwaffle.objdump
 	make size
-	make test-os test-os-mon installer installer-1f installer-1f-survey "${cc[@]}"
+	make test-os test-os-mon installer installer-survey "${cc[@]}"
 	make image installer test-os-mon BOOT_CRUMBS=1 BOOT_TIMING=1 LOG_DEBUG=1 \
 		BUILD=build/dev "${cc[@]}"
 	make image BOOT_LINK_FC=0 BOOT_L1_CHECK=1 BUILD=build/bytes "${cc[@]}"

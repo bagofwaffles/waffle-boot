@@ -2304,6 +2304,14 @@ class Front11(PtyCase):
         m.device, m.dev_how = 1, 0
         self.assertEqual(w.device_line(w.parse_info(m.info())),
                          'Device:   OP-1F, identified by its first stage')
+        # each defined way by its name (fr_handoff.h's FR_HO_HOW_*), and one it does not know
+        m.dev_how = 1
+        self.assertEqual(w.device_line(w.parse_info(m.info())),
+                         'Device:   OP-1F, identified by the second CPU (first stage n 34000, c 12345678)')
+        m.dev_how = 7
+        self.assertEqual(w.device_line(w.parse_info(m.info())),
+                         'Device:   OP-1F, decided by way 7, which this tool does not know (first stage '
+                         'n 34000, c 12345678)')
         # an older front: no line
         m.front = 11
         self.assertIsNone(w.parse_info(m.info())['device'])

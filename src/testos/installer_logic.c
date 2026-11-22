@@ -119,18 +119,18 @@ bool inst_keeps_factory(const struct wb_device *dev, unsigned target, uint8_t st
 const char *inst_lock_words(enum inst_lock l)
 {
 	static const char *const w[] = {
-		[INST_LOCK_NONE] = "Every check passed.",
-		[INST_LOCK_FAILED] = "A check failed.",
-		[INST_LOCK_NOT_TESTED] = "A check could not run.",
-		[INST_LOCK_IMAGE] = "The image it carries does not pass its check.",
-		[INST_LOCK_SELECTED] = "The unit's bootloader slot is not settled.",
+		[INST_LOCK_NONE] = "Checks passed",
+		[INST_LOCK_FAILED] = "A check failed",
+		[INST_LOCK_NOT_TESTED] = "A check could not run",
+		[INST_LOCK_IMAGE] = "Carried image fails its check",
+		[INST_LOCK_SELECTED] = "Bootloader slot not settled",
 		[INST_LOCK_RESERVED] = "",
-		[INST_LOCK_GUIDED] = "The key check was ended with 8.",
-		[INST_LOCK_EMMC] = "The eMMC could not be reached.",
-		[INST_LOCK_DEVICE] = "The device is not identified by its first stage.",
-		[INST_LOCK_OTHER_DEVICE] = "This installer is built for another device.",
-		[INST_LOCK_FACTORY] = "It would write over the unit's own bootloader.",
-		[INST_LOCK_SURVEY] = "A survey: it writes nothing to the SPI flash.",
+		[INST_LOCK_GUIDED] = "Key check canceled with 8",
+		[INST_LOCK_EMMC] = "eMMC not reachable",
+		[INST_LOCK_DEVICE] = "Device unknown (first stage)",
+		[INST_LOCK_OTHER_DEVICE] = "Built for another device",
+		[INST_LOCK_FACTORY] = "Would overwrite the unit's own bootloader",
+		[INST_LOCK_SURVEY] = "Survey build: writes nothing",
 	};
 
 	return (unsigned)l < sizeof w / sizeof w[0] ? w[l] : "";
@@ -142,33 +142,33 @@ const char *inst_rc_words(uint8_t rc)
 	case 0:
 		return "Done.";
 	case S02_ERR_IO:
-		return "A read, erase or program of the flash failed.";
+		return "Flash read, erase or program failed";
 	case S02_ERR_SIZE:
-		return "The image does not fit the slot.";
+		return "Image too big for the slot";
 	case S02_ERR_VERIFY:
-		return "What was written does not read back the same.";
+		return "Read-back does not match";
 	case S02_ERR_START:
-		return "The unit's bootloader slot is not settled.";
+		return "Bootloader slot not settled";
 	case S02_ERR_NOT_GOOD:
-		return "The slot written does not pass its check.";
+		return "Written slot fails its check";
 	case S02_ERR_STREAM:
-		return "The image is not one the unit can start.";
+		return "Not an image the unit can start";
 	case OPXY_INSTALL_REFUSED_CRUMBS:
-		return "A breadcrumb build is never kept.";
+		return "Breadcrumb builds are never kept";
 	case OPXY_INSTALL_REFUSED_UNSTARTED:
-		return "The trial has not started the new bootloader.";
+		return "Trial has not run yet";
 	case OPXY_INSTALL_REFUSED_IMAGE:
-		return "The image it carries does not pass its check.";
+		return "Carried image fails its check";
 	case OPXY_INSTALL_REFUSED_UNREACHED:
-		return "The trial did not reach the new boot menu.";
+		return "Trial did not reach the boot menu";
 	case OPXY_INSTALL_REFUSED_HELD:
-		return "Restart the unit before another write.";
+		return "Restart before another write";
 	case OPXY_INSTALL_REFUSED_FACTORY:
-		return "It would write over the unit's own bootloader.";
+		return "Would overwrite the unit's own bootloader";
 	case OPXY_INSTALL_REFUSED_SURVEY:
-		return "A survey build writes nothing to the SPI flash.";
+		return "Survey build: writes nothing";
 	default:
-		return "The write failed.";
+		return "Cause unknown";
 	}
 }
 
@@ -264,6 +264,38 @@ unsigned inst_hold_fill(const struct inst_hold *h, uint32_t now_ms)
 	if (!h->holding)
 		return 0;
 	return held >= S15_HOLD_MS ? 1000u : (unsigned)(held * 1000u / S15_HOLD_MS);
+}
+
+/* --- what a completed hold starts --- */
+
+uint16_t inst_holds_for(enum inst_phase p, bool os_ok)
+{
+	const uint16_t back = os_ok ? 1u << INST_DIGIT_LEAVE : 0u;
+
+	if (p == INST_COMMIT_READY)
+		return (uint16_t)(1u << INST_DIGIT_WRITE | 1u << INST_DIGIT_RETRIAL | back);
+	if (p == INST_READY || p == INST_FAILED || p == INST_TRIAL_FAILED)
+		return (uint16_t)(1u << INST_DIGIT_WRITE | back);
+	if (p == INST_LOCKED || p == INST_DONE || p == INST_SURVEYED)
+		return back;
+	return 0;
+}
+
+enum inst_act inst_act_of(enum inst_phase p, unsigned digit)
+{
+	if (digit == INST_DIGIT_LEAVE)
+		return INST_ACT_LEAVE;
+	if (digit == INST_DIGIT_WRITE) {
+		if (p == INST_READY || p == INST_TRIAL_FAILED)
+			return INST_ACT_TRIAL;
+		if (p == INST_COMMIT_READY)
+			return INST_ACT_COMMIT;
+		if (p == INST_FAILED)
+			return INST_ACT_RETRY;
+	}
+	if (digit == INST_DIGIT_RETRIAL && p == INST_COMMIT_READY)
+		return INST_ACT_TRIAL;
+	return INST_ACT_NONE;
 }
 
 /* --- the carried image --- */
@@ -599,7 +631,8 @@ static const char *slot_name(uint8_t t)
 	return t == 0u ? "Slot 1" : t == 1u ? "Slot 2" : "the other slot";
 }
 
-/* An item; armed while its digit is held, the hint then naming the hold. */
+/* An item, its label perhaps with a hint after a tab; armed while its digit
+ * is held, the hint then naming the hold. */
 static void item(struct lines *o, const struct inst_screen *s, unsigned digit, const char *label)
 {
 	const char d[3] = { (char)('0' + digit), ' ', '\0' };
@@ -612,7 +645,7 @@ static void item(struct lines *o, const struct inst_screen *s, unsigned digit, c
 	{
 		struct s15_buf hint;
 		size_t n = 2;
-		const size_t len = strlen(label);
+		const size_t len = strcspn(label, "\t");
 
 		s15_hold_hint(&hint, digit);
 		memcpy(row, d, 2);
@@ -651,7 +684,7 @@ static void bar(struct lines *o, const struct inst_screen *s)
 static void os_line(struct lines *o, uint8_t os)
 {
 	if (os == INST_OS_WRITE_FAILED)
-		add(o, S15_ST_ERROR, "A write to the eMMC's boot partitions failed.", NULL);
+		add(o, S15_ST_ERROR, "eMMC boot partition write failed", NULL);
 }
 
 /* Small formatters for the screens and the report, into a fixed buffer. */
@@ -713,8 +746,7 @@ static void key_check(struct lines *o, const struct inst_screen *s)
 	const bool usb = (s->keys_seen & 1u) != 0u, rec = (s->keys_seen & 2u) != 0u;
 
 	if (s->device == WB_DEV_OPXY) {
-		add(o, S15_ST_HEAD, "Press com, then M4, to go on", NULL);
-		add(o, S15_ST_TEXT, "These two presses are the key check.", NULL);
+		add(o, S15_ST_HEAD, "Press com, then M4", NULL);
 		add(o, S15_ST_TEXT, "", NULL);
 		add(o, usb ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com", usb ? "\tpressed" : "\twaiting");
 		add(o, rec ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "M4 (under display)",
@@ -724,18 +756,18 @@ static void key_check(struct lines *o, const struct inst_screen *s)
 		struct fmt f = { "", 0 };
 
 		add(o, S15_ST_HEAD, "Press com, then the recovery key", NULL);
-		add(o, S15_ST_TEXT, "com: held at power-on, it opens the boot menu.", NULL);
-		add(o, S15_ST_TEXT, "Recovery key: held with Power, the recovery menu.", NULL);
+		add(o, S15_ST_TEXT, "com: boot menu (hold at power-on)", NULL);
+		add(o, S15_ST_TEXT, "Recovery key: recovery menu (with Power)", NULL);
 		add(o, usb ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com", usb ? "\tpressed" : "\twaiting");
 		add(o, rec ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "Recovery key",
 		    rec ? "\tpressed" : "\twaiting");
 		if (s->last_key != 0xFFu) {
-			f_str(&f, "Last key pressed: 0x");
+			f_str(&f, "Last key: 0x");
 			f_hex(&f, s->last_key, 2u);
 		}
 		add(o, S15_ST_DIM, f.s, NULL);
 	}
-	add(o, S15_ST_ITEM, "8 End: the install is then not offered", NULL);
+	add(o, S15_ST_ITEM, "8 Cancel", "\tNo install");
 }
 
 /* A slot as the survey found it, in a few words. */
@@ -756,7 +788,7 @@ static void surveyed(struct lines *o, const struct inst_screen *s)
 	struct fmt f = { "", 0 };
 	unsigned k;
 
-	add(o, S15_ST_HEAD, "Survey: nothing written to the SPI flash", NULL);
+	add(o, S15_ST_HEAD, "Survey: SPI flash untouched", NULL);
 	if (sv == NULL)
 		return;
 	f_str(&f, sv->how == WB_DEV_BY_TABLE ? device_name(sv->device) : "not identified");
@@ -796,15 +828,15 @@ static void surveyed(struct lines *o, const struct inst_screen *s)
 	}
 	add(o, S15_ST_KV, "eMMC\t", f.s);
 	if (s->lock == INST_LOCK_SURVEY)
-		add(o, S15_ST_OK, "An install would be offered.", NULL);
+		add(o, S15_ST_OK, "Install possible", NULL);
 	else
 		add(o, S15_ST_WARN, inst_lock_words((enum inst_lock)s->lock), NULL);
 	if (s->os == INST_OS_ACTIVE)
-		add(o, S15_ST_TEXT, "Your OS is active again: switch off, then on.", NULL);
+		add(o, S15_ST_TEXT, "OS active again: switch off and on.", NULL);
 	else if (s->os == INST_OS_WRITE_FAILED)
 		os_line(o, s->os);
 	else
-		add(o, S15_ST_TEXT, "No OS made active: the survey starts again.", NULL);
+		add(o, S15_ST_TEXT, "No OS made active: the survey runs again", NULL);
 }
 
 unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15_ROWS])
@@ -815,14 +847,14 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 	switch ((enum inst_phase)s->phase) {
 	case INST_STARTING:
 	case INST_CHECKING:
-		add(&o, S15_ST_HEAD, "Checking the hardware", NULL);
+		add(&o, S15_ST_HEAD, "Checking...", NULL);
 		break;
 	case INST_GUIDED:
 		/* the one guided test: reading this shows the panel works */
 		key_check(&o, s);
 		break;
 	case INST_LOCKED:
-		add(&o, S15_ST_HEAD, "The install is not offered", NULL);
+		add(&o, S15_ST_HEAD, "Install not offered", NULL);
 		add(&o, S15_ST_ERROR, inst_lock_words((enum inst_lock)s->lock), NULL);
 		if (s->lock == INST_LOCK_DEVICE) {
 			struct fmt f = { "", 0 };
@@ -830,103 +862,102 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 			f_fingerprint(&f, s->fs_n, s->fs_c);
 			add(&o, S15_ST_KV, "First stage\t", f.s);
 		}
-		add(&o, S15_ST_TEXT, "Nothing was written to the SPI flash.", NULL);
-		add(&o, S15_ST_TEXT, "Results: check.txt on the USB disk, or the page.", NULL);
+		add(&o, S15_ST_TEXT, "SPI flash untouched", NULL);
+		add(&o, S15_ST_TEXT, "Results: check.txt on the USB disk", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		if (os_ok) {
-			item(&o, s, 8u, "Leave the installer");
+			item(&o, s, 8u, "Leave");
 			hold_line(&o, s);
 		} else {
-			add(&o, S15_ST_TEXT, "To leave, write an OS from the developer menu.", NULL);
+			add(&o, S15_ST_TEXT, "No OS: write one from the developer menu.", NULL);
 		}
 		break;
 	case INST_READY:
 		add(&o, S15_ST_HEAD, "Install waffle-boot v", s->version);
-		add(&o, S15_ST_OK, "Every check passed.", NULL);
+		add(&o, S15_ST_OK, "Checks passed", NULL);
 		add(&o, S15_ST_KV, "Writes\t", slot_name(s->target));
-		add(&o, S15_ST_TEXT, "A trial first: the new bootloader starts once.", NULL);
-		add(&o, S15_ST_TEXT, "Your bootloader stays selected until you keep it.", NULL);
+		add(&o, S15_ST_TEXT, "Trial: the new bootloader starts once.", NULL);
+		add(&o, S15_ST_TEXT, "Yours stays selected until you keep it.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Write the trial");
 		if (os_ok)
-			item(&o, s, 8u, "Leave without installing");
+			item(&o, s, 8u, "Leave");
 		hold_line(&o, s);
 		break;
 	case INST_WRITING_TRIAL:
-		add(&o, S15_ST_HEAD, "Writing the trial", NULL);
+		add(&o, S15_ST_HEAD, "Writing...", NULL);
 		add(&o, S15_ST_STEP_RUN, slot_name(s->target), "\tWriting");
-		add(&o, S15_ST_WARN, "Do not switch off.", NULL);
+		add(&o, S15_ST_WARN, "Keep the power on", NULL);
 		break;
 	case INST_TRIAL_WRITTEN:
 		add(&o, S15_ST_HEAD, "Trial written to ", slot_name(s->target));
-		add(&o, S15_ST_OK, "The new bootloader starts once, at the next start.", NULL);
-		add(&o, S15_ST_TEXT, "1. Switch off, then on: its boot menu shows.", NULL);
-		add(&o, S15_ST_TEXT, "2. Switch off, then on again: this installer", NULL);
-		add(&o, S15_ST_TEXT, "   comes back to keep it.", NULL);
-		add(&o, S15_ST_DIM, "Until then your bootloader stays selected.", NULL);
+		add(&o, S15_ST_OK, "It starts once, at the next start.", NULL);
+		add(&o, S15_ST_TEXT, "1. Switch off and on: its boot menu shows.", NULL);
+		add(&o, S15_ST_TEXT, "2. Switch off and on again: keep it here.", NULL);
+		add(&o, S15_ST_DIM, "Until then, yours stays selected.", NULL);
 		break;
 	case INST_COMMIT_READY:
-		add(&o, S15_ST_HEAD, "The trial reached the boot menu", NULL);
+		add(&o, S15_ST_HEAD, "Trial reached the boot menu", NULL);
 		add(&o, S15_ST_KV, "Keeps\t", slot_name(s->target));
-		add(&o, S15_ST_TEXT, "Keep waffle-boot v", s->version);
-		add(&o, S15_ST_TEXT, "as the unit's bootloader.", NULL);
+		add(&o, S15_ST_KV, "Version\twaffle-boot v", s->version);
 		add(&o, S15_ST_TEXT, "", NULL);
-		item(&o, s, 1u, "Keep the new bootloader");
+		item(&o, s, 1u, "Keep it");
+		item(&o, s, 2u, "Write the trial again");
 		if (os_ok)
-			item(&o, s, 8u, "Leave, keep the old one");
+			item(&o, s, 8u, "Leave\tOld one stays");
 		hold_line(&o, s);
 		break;
 	case INST_COMMITTING:
-		add(&o, S15_ST_HEAD, "Keeping the new bootloader", NULL);
+		add(&o, S15_ST_HEAD, "Keeping...", NULL);
 		add(&o, S15_ST_STEP_RUN, slot_name(s->target), "\tWriting");
-		add(&o, S15_ST_WARN, "Do not switch off.", NULL);
+		add(&o, S15_ST_WARN, "Keep the power on", NULL);
 		break;
 	case INST_DONE:
 		add(&o, S15_ST_HEAD, "Done!", NULL);
-		add(&o, S15_ST_OK, "waffle-boot is the unit's bootloader.", NULL);
+		add(&o, S15_ST_OK, "waffle-boot installed", NULL);
 		os_line(&o, s->os);
-		add(&o, S15_ST_TEXT, "Switch off, then on.", NULL);
+		add(&o, S15_ST_TEXT, "Switch off and on.", NULL);
 		if (s->device == WB_DEV_OPXY) {
-			add(&o, S15_ST_DIM, "Boot menu: hold com while switching on.", NULL);
-			add(&o, S15_ST_DIM, "Recovery menu: hold Power + M4 while switching on.", NULL);
+			add(&o, S15_ST_DIM, "Boot menu: hold com at power-on", NULL);
+			add(&o, S15_ST_DIM, "Recovery menu: hold Power + M4", NULL);
 		} else {
-			add(&o, S15_ST_DIM, "Boot menu: hold com while switching on.", NULL);
-			add(&o, S15_ST_DIM, "Recovery menu: Power and the recovery key.", NULL);
+			add(&o, S15_ST_DIM, "Boot menu: hold com at power-on", NULL);
+			add(&o, S15_ST_DIM, "Recovery menu: hold Power + recovery key", NULL);
 		}
 		if (os_ok) {
 			add(&o, S15_ST_TEXT, "", NULL);
-			item(&o, s, 8u, "Leave the installer");
+			item(&o, s, 8u, "Leave");
 			hold_line(&o, s);
 		}
 		break;
 	case INST_FAILED:
-		add(&o, S15_ST_HEAD, "The write did not complete", NULL);
+		add(&o, S15_ST_HEAD, "Write failed", NULL);
 		add(&o, S15_ST_ERROR, inst_rc_words(s->last_rc), NULL);
 		add(&o, S15_ST_TEXT, s->trial == INST_TRIAL_REACHED ?
-				     "Both slots hold a bootloader that starts." :
-				     "The unit keeps its bootloader selected.", NULL);
+				     "Both slots start." :
+				     "Your bootloader stays selected.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Try again");
 		if (os_ok)
-			item(&o, s, 8u, "Leave without installing");
+			item(&o, s, 8u, "Leave");
 		hold_line(&o, s);
 		break;
 	case INST_TRIAL_FAILED:
-		add(&o, S15_ST_HEAD, "The trial did not reach the boot menu", NULL);
+		add(&o, S15_ST_HEAD, "Trial did not reach the boot menu", NULL);
 		add(&o, S15_ST_ERROR, s->trial == INST_TRIAL_SPENT ?
-				      "The trial start did not run the new bootloader." :
-				      "The new bootloader started; no boot menu showed.", NULL);
-		add(&o, S15_ST_TEXT, "Nothing was kept: your bootloader stays selected.", NULL);
+				      "The new bootloader did not run" :
+				      "It started, but no boot menu showed", NULL);
+		add(&o, S15_ST_TEXT, "Nothing kept: yours stays selected.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Write the trial again");
 		if (os_ok)
-			item(&o, s, 8u, "Leave without installing");
+			item(&o, s, 8u, "Leave");
 		hold_line(&o, s);
 		break;
 	case INST_LEFT:
-		add(&o, S15_ST_HEAD, "Left without installing", NULL);
+		add(&o, S15_ST_HEAD, "Not installed", NULL);
 		os_line(&o, s->os);
-		add(&o, S15_ST_TEXT, "Switch off, then on.", NULL);
+		add(&o, S15_ST_TEXT, "Switch off and on.", NULL);
 		break;
 	case INST_SURVEYED:
 		surveyed(&o, s);
@@ -1130,7 +1161,7 @@ size_t inst_report_append(char *out, size_t len, size_t cap, const struct inst_h
 	return r.n;
 }
 
-/* --- the survey (make installer-1f-survey) --- */
+/* --- the survey (make installer-survey) --- */
 
 size_t inst_survey_bytes(const struct inst_survey *sv, uint8_t *out)
 {
