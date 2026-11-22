@@ -54,8 +54,9 @@ ALLOWED = {
     ('src/s13c_panel.c', 'src/include/waffle/testos.h'),
 }
 
-# Headers for every layer: the shared byte and string helpers.
-NEUTRAL = ('src/include/waffle/bytes.h',)
+# Headers for every layer: the shared byte and string helpers, and the
+# 64-bit division without the compiler's.
+NEUTRAL = ('src/include/waffle/bytes.h', 'src/include/waffle/div64.h')
 
 # What each layer may not include.
 FORBIDDEN = {'core': ('board', 'driver', 'testos'), 'driver': ('core', 'board'),

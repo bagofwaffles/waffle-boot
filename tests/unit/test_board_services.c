@@ -21,6 +21,7 @@
 #include "waffle/drivers/bf70x_usb.h"
 #include "waffle/s06_frame.h"
 #include "waffle/s10a_msc.h"
+#include "waffle/s04_records.h"
 #include "waffle/s11_version.h"
 #include "waffle/s17_revisions.h"
 #include "waffle/wire_crc.h"
@@ -2758,10 +2759,26 @@ void opxy_rtc_board_start(const struct wb_time *t)
 	(void)t;
 }
 
+/* The 64-bit form of opxy_rtc.c's days_from_civil(), the reference. */
+static int64_t ref_days(int64_t y, unsigned mo, unsigned d)
+{
+	int64_t era, yoe, doy;
+
+	y -= mo <= 2u;
+	era = (y >= 0 ? y : y - 399) / 400;
+	yoe = y - era * 400;
+	doy = (153 * (int64_t)(mo > 2u ? mo - 3u : mo + 9u) + 2) / 5 +
+	      (int64_t)d - 1;
+	return era * 146097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719468;
+}
+
 /* S-12.016's stamps from S-04.070's count. */
 static void test_rtc_utc(void)
 {
+	static const uint32_t tod[] = { 0u, 1u, 0x3Bu | 0x3Bu << 6 | 23u << 12,
+					0x1FFFFu };
 	uint64_t utc = 0;
+	unsigned bad = 0;
 
 	rtc_ok = false;
 	CHECK(!opxy_rtc_utc(&m, &utc));
@@ -2770,6 +2787,18 @@ static void test_rtc_utc(void)
 	CHECK(opxy_rtc_utc(&m, &utc) && utc == 1793536496u);
 	CHECK(s04_rtc_encode(2000u, 2u, 29u, 0u, 0u, 0u, &rtc_clk));
 	CHECK(opxy_rtc_utc(&m, &utc) && utc == 951782400u);
+	/* every day the count holds, at the least and greatest time fields */
+	for (uint32_t n = 0; n <= 0x7FFFu; n++)
+		for (size_t k = 0; k < sizeof tod / sizeof tod[0]; k++) {
+			struct s04_datetime t;
+
+			rtc_clk = n << 17 | tod[k];
+			s04_rtc_decode(rtc_clk, &t);
+			bad += !opxy_rtc_utc(&m, &utc) ||
+			       utc != (uint64_t)(ref_days(t.year, t.month, t.day) * 86400 +
+						 t.hour * 3600 + t.minute * 60 + t.second);
+		}
+	CHECK(bad == 0);
 	rtc_ok = false;
 }
 

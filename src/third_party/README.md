@@ -11,7 +11,7 @@ under `src/glue/`.
 | --- | --- | --- | --- | --- |
 | picolibc (subset) | <https://github.com/picolibc/picolibc> | 1.8.12, `2ae376c6cdf4fef90ca2388ecf7a07457fa63cff` | BSD-3-Clause and other permissive notices of newlib (`COPYING.picolibc`) | none; configured by `src/glue/libc/picolibc.h` |
 | FatFs | <http://elm-chan.org/fsw/ff/>, from the release mirror <https://github.com/abbrev/fatfs> | R0.16 with patches 1–3 (2026-07-10), `ab992fcf2926b8a1ee3f0a8f9cefb6584174100d` | FatFs license (BSD-style, 1 clause) | `ffconf.h` configured (S-12 §3) |
-| yaffs2 | <https://github.com/Aleph-One-Ltd/yaffs2> | master of 2026-06-29, `474b3acb927d27b2305618aaf24456b9d33fe91b` | GPL-2.0 (its `direct/` headers LGPL-2.1) | zero-erased media; lazy checkpoint erase; checkpoint erased first; fuzzing fixes (below) |
+| yaffs2 | <https://github.com/Aleph-One-Ltd/yaffs2> | master of 2026-06-29, `474b3acb927d27b2305618aaf24456b9d33fe91b` | GPL-2.0 (its `direct/` headers LGPL-2.1) | zero-erased media; lazy checkpoint erase; checkpoint erased first; fuzzing fixes; `st_blocks` division (below) |
 | zlib (inflate) | <https://github.com/madler/zlib> | 1.3.2, `da607da739fa6047df13e66a2af6b8bec7c2a498` | Zlib | none; built with `BUILDFIXED` and an empty `Z_TESTW` (below) |
 | minizip (unzip) | <https://github.com/madler/zlib>, `contrib/minizip` | 1.3.2, as zlib | Zlib (`crypt.h`: Info-ZIP, not built) | `ioapi.c` builds without stdio; built with `NOUNCRYPT`, `MINIZIP_NO_STDIO` and `IOAPI_NO_64` |
 | micro-ecc | <https://github.com/kmackay/micro-ecc> | 1.2, `541b3a78026420a3e369c4c9281c396b5e531113` | BSD-2-Clause | none; P-224 only, by `-D` options |
@@ -102,6 +102,10 @@ what is built.
   block order for sequence numbers of 0x80000000 and above; signed shifts
   (two in `yaffs_packedtags2.c`, one in `FSIZE_COMBINE`, `yaffs_guts.h`);
   symbolic-link strings leaked at unmount.
+- **yaffs2** `yaffsfs.c`, `yaffsfs_DoStat()`: `st_blocks` is divided by
+  `wb_yaffs_div()` (`src/glue/yaffs2/yaffs_port.h`), which rounds as C's
+  division does, in place of a 64-bit signed division, so that the image
+  carries no `__divdi3`.
 - **minizip** `ioapi.c`: with `MINIZIP_NO_STDIO`, opening an archive by name
   fails instead of calling `fopen()`; archives are read from memory
   (`src/glue/minizip`).
