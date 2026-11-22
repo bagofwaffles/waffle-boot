@@ -20,9 +20,12 @@ The master's SPI flash holds everything the unit needs to start: 1 MiB in 256 se
 | `0x0D000` | 1 sector | The selector: the slot to start, and `verified` (`0x01` means "start it without a check") | The first stage; a slot write; recovery's try, switch and keep | After a slot has been read back; once by the first stage at the start after it |
 | `0x0E000`, `0x0F000` | 1 sector each | Record 0 and record 1, one per slot: the image's CRC-32, its length and a tag | A write of that slot; recovery's try, keep and put back | After the slot's last program |
 | `0x10000` | `0x76000` | Slot 1's image | The package's bootloader step; recovery; the installer | On request only: for a package, with Protected writes on and the bootloader chosen on the unit |
+| below `0x85000` | the image's end to `0x85000` | Slot 1's boot logo data: its palette and packed lines, ending at `0x85000` ([Boot Logo](Boot-Logo)) | Settings' Boot logo | When a picture is saved on the unit |
+| `0x85000` | 1 sector | Slot 1's boot logo header: an erased one means the built-in logo | Settings' Boot logo; a slot write erases it | Erased first and written last by a save; erased by a removal |
 | `0x86000` | 1 sector | Slot 1's settings: Developer mode, Color, MTP target, Start in boot menu | The Settings screen; the factory reset; a slot write erases it | One page when a setting is changed on the unit, an erase once in 16 changes; the factory reset erases it |
 | `0x87000` | 1 sector | Slot 1's start log | The front and the main image; a slot write erases it | One bit at each start, a second when the main image is up; in a trial start, the front's mark and the boot menu's. The main image erases it once 256 or more entries are used, and when it reads full or not valid |
 | `0x88000` | `0x76000` | Slot 2's image | As Slot 1 | On request only |
+| below `0xFD000`, `0xFD000` | | Slot 2's boot logo data and header | As Slot 1's | As Slot 1's |
 | `0xFE000` | 1 sector | Slot 2's settings | As Slot 1's | As Slot 1's |
 | `0xFF000` | 1 sector | Slot 2's start log | As Slot 1's | As Slot 1's |
 
@@ -34,7 +37,9 @@ sectors to its settings and its start log (S-02.104): the installer, `wbrecover.
 (`make cross`) refuse a longer image, and so does recovery in the front (a front before version 17 takes up
 to `0x77000` bytes). A slot whose image is
 longer than `0x76000` bytes has its settings sector filled with image bytes: it has no settings, every one reads
-at its default, and a save is refused. Over `0x77000` bytes it has no start log either.
+at its default, and a save is refused. Over `0x77000` bytes it has no start log either. The boot logo lives in
+the room an image leaves below the settings sector: the image, rounded up to a sector, to `0x75000`. An image
+that reaches `0x75000` leaves it none; its bytes there are its own, and no logo writer touches them.
 
 A normal start programs two bits, in the last sector of the slot the selector names, and erases nothing but
 that sector, when the main image finds its log due (below). A trial start programs two bits too, in the tried slot's last sector: the front's mark, and the main image's
@@ -66,6 +71,9 @@ longer busy, bounded at 2 s. A part that stays busy fails the operation.
 
 **A footprint for each writer.** Recovery can reach only the slot it writes, that slot's record and the
 selector. A settings save or the factory reset's clear can reach only the running slot's settings sector. A
+boot logo save or removal can reach only the running slot's sectors from its image's end, rounded up to a
+sector, to the end of the logo's header sector: never the image, the settings sector, the start log, a
+record or the selector. One function checks every erase and program of it against that range. A
 package step or the installer reaches the slot it writes (its settings sector and start log included), that
 slot's record and the selector. A metadata write reaches only the mirror and
 the record. Nothing writes below `0xB000`, whatever Protected writes says: no install has a first-stage
@@ -75,8 +83,8 @@ step.
 starts only when the selector reads `verified` = `0x01` and, for a package step, the boot slot reads
 checked.
 
-**One order.** The image, the slot's last sector and, for an image of at most `0x76000` bytes, its settings
-sector (S-02.103), the record's erase, the record, a read-back of the whole
+**One order.** The image, the slot's last sector, for an image of at most `0x75000` bytes the boot logo's
+header sector and, for one of at most `0x76000` bytes, its settings sector (S-02.103), the record's erase, the record, a read-back of the whole
 slot, and only then the selector. A failure anywhere before the selector leaves the selector as it was. A
 power cut before the selector's erase leaves the unit starting as before; from that erase on both slots are
 checked, so any selector value starts a checked one.
@@ -112,6 +120,15 @@ passed its check at this start and its record's length is at most `0x76000` byte
 nothing. A save programs one page and erases the sector only when its 16 pages are used or it does not read
 valid. A cut during a program leaves the old value or the new one; a cut during an erase leaves an earlier
 value or the defaults. The factory reset erases the running slot's sector under the same rule.
+
+**The boot logo belongs to one slot's image.** Its header, in the sector below the settings sector, holds
+the CRC-32 of the image it was saved for, as the slot's record has it, and the CRC-32 of the data below it.
+The front draws it only when every field, both CRCs and the room check out, else its own logo. A save takes
+the settings' rule (a key on the unit, the running slot established and its image good at this start, a
+trial start saving nothing; Protected writes plays no part, as for the settings), then erases the header's
+sector first, so that a cut leaves no logo, erases and programs the data's sectors, reads them back with
+their CRC, and programs the header last and reads it back. A removal erases the header's sector alone. Every
+slot write erases the header's sector, where the image does not reach it.
 
 **Destructive requests are confirmed.** The host tool asks for a typed phrase; the unit then counts down
 15 s, and switching it off in that time leaves the flash untouched. On the unit, an action needs key 1 held
@@ -153,13 +170,15 @@ main image's erase of the start log keeps that at 512 one-bit programs.
 | A normal start | 0 | Two one-bit programs in the boot slot's last sector |
 | A setting changed | 0, and 1 once in 16 changes | One page program in the running slot's settings sector |
 | A factory reset | 1 | The running slot's settings sector, when it holds anything |
+| A boot logo saved | 1, and one for each 4 KiB of its data | The running slot's logo header sector and the sectors below it |
+| A boot logo removed | 1 | The running slot's logo header sector, when it holds anything |
 | Protected writes turned on | 0 | Kept in memory only |
 | Install, content only, or canceled on the unit | 0 | None |
 | Install that does not write the OS | 6 | `0xB000` four times and `0xC000` twice: the state set, then cleared |
 | A normal start, once in 256 or more | 1 | The boot slot's last sector: its start log |
 | Install that writes the OS | 9 | `0xB000` six times and `0xC000` three times: each of three metadata writes erases the mirror twice |
 | An install that was interrupted, at the next start | 3 | `0xB000` twice, `0xC000` once |
-| A bootloader image written (package or recovery) | One for each 4 KiB of the image, plus the slot's last sector, its settings sector, its record and the selector; one more of the selector by the first stage at the next start | The slot written, its record, `0xD000` |
+| A bootloader image written (package or recovery) | One for each 4 KiB of the image, plus the slot's last sector, its logo header sector, its settings sector, its record and the selector; one more of the selector by the first stage at the next start | The slot written, its record, `0xD000` |
 | Try a slot once | Up to 3, and 1 by the first stage | The slot's last sector, its record, `0xD000` |
 | Switch slots | 1, and 1 by the first stage | `0xD000` |
 | Keep a tried slot | 2, and 1 by the first stage | Its record, `0xD000` |

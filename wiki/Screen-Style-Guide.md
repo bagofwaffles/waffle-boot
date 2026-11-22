@@ -288,6 +288,12 @@ menu's and the recovery menu's bars.
 
 <img src="../docs/ui/handover.png" width="480" alt="Hand-over frame">
 
+A boot logo stored on the unit ([Boot Logo](Boot-Logo)) takes the frame's
+place, as the front drew it at that start: the picture centered on its
+background, nothing over it. Its view on the unit, before a save, is the
+same picture with one line over its last rows: the sizes and the keys, or
+the hold's time left.
+
 A build can show its own picture instead: `make image LOGO=<file>.png`,
 with a PNG of exactly 480 × 222 pixels, shown alone with nothing drawn
 over it. Colors convert as in the table above; translucent pixels blend
@@ -347,8 +353,10 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | an image for slot 2 arriving | slot 2 being written |
 | <img src="../docs/ui/recovery-te.png" width="480" alt="A TE slot"> | <img src="../docs/ui/recovery-unknown.png" width="480" alt="An unknown slot"> |
 | slot 2 holds `TE v1000.0.20` | slot 2 holds `??` |
-| <img src="../docs/ui/recovery-keep.png" width="480" alt="Recovery: slots after a trial"> | |
-| the slot menu after slot 2's trial start came up: 3 keeps it, no 2 | |
+| <img src="../docs/ui/recovery-keep.png" width="480" alt="Recovery: slots after a trial"> | <img src="../docs/ui/logo.png" width="480" alt="Boot Logo"> |
+| the slot menu after slot 2's trial start came up: 3 keeps it, no 2 | Boot Logo (Settings, 7) with a logo stored: the disk offered, 5 held removes it |
+| <img src="../docs/ui/logo-view.png" width="480" alt="A picture before its save"> | |
+| a picture dropped on the disk, as the start will show it: 1 held for 5 s saves it, 8 cancels | |
 
 ## Adding a screen
 

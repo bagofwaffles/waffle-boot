@@ -6,6 +6,7 @@
 
 **Using a unit**
 - [Boot Menu](Boot-Menu)
+- [Boot Logo](Boot-Logo)
 - [Updating the OS from the boot menu](Updating-the-OS)
 - [Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)
 - [FAQ](FAQ)

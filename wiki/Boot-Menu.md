@@ -36,7 +36,7 @@ key, cancels. A knob click never starts it.
 | 1 Install firmware | Offers a USB disk for a firmware package ([Updating the OS](Updating-the-OS)). Once the package is checked, the unit lists its parts: choose them with their digits and hold 1 for 5 s, or cancel with 8; after a cancel 8 goes back here. Hold **shift** while pressing 1 to also copy system information and logs to the disk ([Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)) |
 | 2 Settings | The settings below |
 | 3 Developer menu | Shown only while developer mode is on |
-| 4 Device info | Serial numbers, versions, the second processor's state, and why the OS did not start. The help key opens it too. Its `1 More` opens a second page: the selected slot's start log, with the starts it holds, the unfinished ones at its end and the count it is erased at, read again each time the page opens |
+| 4 Device info | Serial numbers, versions, the second processor's state, and why the OS did not start. The help key opens it too. Its `1 More` opens a second page: the selected slot's start log, with the starts it holds, the unfinished ones at its end and the count it is erased at, read again each time the page opens, and the boot logo: built-in or custom, and the bytes this image leaves for one |
 | 5 System | Key test, volume calibration, content packs, format, factory reset |
 | 7 Continue to OS | At the bottom, apart from the others. Restarts the unit into the OS from the eMMC's boot partition, also with Start in boot menu on. Nothing is written. With DSP2 not answering, the restart is the one that restarts DSP2 too, after which Start in boot menu applies |
 
@@ -54,6 +54,7 @@ the items, the screen says when the OS could not be started, and why.
 | 3 Color | Off, the default, draws every screen in gray |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
 | 6 Start in boot menu | Every start opens this menu |
+| 7 Boot logo | Your own picture at the start in place of the built-in logo ([Boot Logo](Boot-Logo)). Its state: `Built-in`, `Custom`, `No room` when this image leaves no room for one, `Unavailable` when this start may not save one (as for the settings) |
 
 ### Where they are kept
 
