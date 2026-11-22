@@ -25,8 +25,8 @@ static struct fr_ui ui;
 static uint64_t now;
 
 /* Slot 0 runs and is selected {00 01}; slot 1 holds a waffle-boot image
- * with the same front, tried, and its trial start marked: every action is
- * offered. */
+ * with the same front, tried, and its trial start marked: every action but
+ * the switch is offered, the keep making slot 1 the boot slot. */
 static void base(void)
 {
 	memset(&rst, 0, sizeof rst);
@@ -52,6 +52,17 @@ static void base(void)
 	fr_rec_target(&rst);
 	fr_ui_reset(&ui);
 	now = 1000000u;
+}
+
+/* base(), then for a switch slot 1's trial start not marked, so that no
+ * keep is offered and the switch is: every action offered. */
+static void base_for(uint8_t act)
+{
+	base();
+	if (act == FR_ACT_SWITCH) {
+		rst.slot[1].started = false;
+		fr_rec_target(&rst);
+	}
 }
 
 /* One reading, GAP after the last; true when an action was confirmed. */
@@ -192,7 +203,7 @@ static void test_hold(void)
 		uint8_t got = FR_ACT_NONE;
 		uint64_t from;
 
-		base();
+		base_for(act);
 		CHECK(fr_ui_offers(&rst, act));
 		to_confirm(act);
 		CHECK(!rd(FR_KEY_1, NULL));
@@ -212,7 +223,7 @@ static void test_hold(void)
 		CHECK(ui.screen == FR_UI_MAIN);
 	}
 	/* the readings' gap does not matter: one reading 5 s on */
-	base();
+	base_for(FR_ACT_SWITCH);
 	to_confirm(FR_ACT_SWITCH);
 	CHECK(!rd(FR_KEY_1, NULL));
 	{
@@ -227,7 +238,7 @@ static void test_hold(void)
 		static const unsigned others[] = { FR_KEY_2, FR_KEY_3, FR_KEY_4, 0x00u };
 
 		for (unsigned i = 0; i < ARRAY_LEN(others); i++) {
-			base();
+			base_for(act);
 			to_confirm(act);
 			CHECK(!rd(others[i], NULL));
 			CHECK(!rd_n(others[i], 120, NULL));
@@ -266,12 +277,12 @@ static void test_hold_broken(void)
 		CHECK(ui.screen == FR_UI_CONFIRM);
 	}
 	/* key 8: back to the menu, with a release first */
-	base();
+	base_for(FR_ACT_SWITCH);
 	to_confirm(FR_ACT_SWITCH);
 	CHECK(!rd(FR_KEY_8, NULL));
 	CHECK(ui.screen == FR_UI_SLOTS);
 	/* and from the hold: the break, then 8 after a release */
-	base();
+	base_for(FR_ACT_SWITCH);
 	to_confirm(FR_ACT_SWITCH);
 	CHECK(!rd_n(FR_KEY_1, 30, NULL));
 	CHECK(!rd(FR_KEY_8, NULL));
@@ -281,18 +292,22 @@ static void test_hold_broken(void)
 	CHECK(ui.screen == FR_UI_SLOTS);
 }
 
-/* The menu offers an action where its forced plan would start, and a keep
- * only of a slot that started or of the running slot. */
+/* The menu offers an action where its forced plan would start, a keep
+ * only of a slot that started or of the running slot, and no switch to the
+ * slot a keep is offered for. */
 static void test_offers(void)
 {
 	struct fr_act_plan p;
 
 	base();
 	for (uint8_t act = FR_ACT_TRY; act <= FR_ACT_PUT_BACK; act++)
-		CHECK(fr_ui_offers(&rst, act));
+		CHECK(fr_ui_offers(&rst, act) == (act != FR_ACT_SWITCH));
+	fr_rec_act(&rst, FR_ACT_SWITCH, true, &p);
+	CHECK(p.status == FR_WR_OK);
 	rst.slot[1].started = false;
 	fr_rec_act(&rst, FR_ACT_KEEP, true, &p);
 	CHECK(p.status == FR_WR_OK && !fr_ui_offers(&rst, FR_ACT_KEEP));
+	CHECK(fr_ui_offers(&rst, FR_ACT_SWITCH));
 	/* a trial start: slot 1 tried and runs, slot 0 trusted */
 	base();
 	rst.running.slot = 1;
@@ -318,12 +333,38 @@ static void test_offers(void)
 		rst.home.moved = (v & 32u) != 0u;
 		fr_rec_target(&rst);
 		for (uint8_t act = FR_ACT_TRY; act <= FR_ACT_PUT_BACK; act++) {
+			struct fr_act_plan k;
+			bool keep;
+
+			fr_rec_act(&rst, FR_ACT_KEEP, true, &k);
+			keep = k.status == FR_WR_OK && (k.target == 0u || rst.slot[1].started);
 			fr_rec_act(&rst, act, true, &p);
 			CHECK(fr_ui_offers(&rst, act) ==
 			      (p.status == FR_WR_OK &&
-			       (act != FR_ACT_KEEP || p.target == 0u || rst.slot[1].started)));
+			       (act != FR_ACT_KEEP || p.target == 0u || rst.slot[1].started) &&
+			       (act != FR_ACT_SWITCH || !keep || k.target != p.target)));
 		}
 	}
+}
+
+/* After a trial start that came up, the keep is the way to make that slot
+ * the boot slot: key 2 on the slot menu does nothing, and does where no
+ * keep is offered. */
+static void test_no_switch_with_keep(void)
+{
+	base();
+	CHECK(fr_ui_offers(&rst, FR_ACT_KEEP) && !fr_ui_offers(&rst, FR_ACT_SWITCH));
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(FR_KEY_1, NULL));
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(FR_KEY_2, NULL));
+	CHECK(ui.screen == FR_UI_SLOTS);
+	CHECK(!rd(FR_KEYS_NONE, NULL));
+	CHECK(!rd(FR_KEY_3, NULL));
+	CHECK(ui.screen == FR_UI_CONFIRM && ui.act == FR_ACT_KEEP);
+	base_for(FR_ACT_SWITCH);
+	CHECK(!fr_ui_offers(&rst, FR_ACT_KEEP) && fr_ui_offers(&rst, FR_ACT_SWITCH));
+	to_confirm(FR_ACT_SWITCH);
 }
 
 /* The OP-1F (S-18.030): keys 1 to 4 are the same keys; 8 (Back) is 0x14,
@@ -348,8 +389,8 @@ static void test_op1f_keys(void)
 	CHECK(!rd(FR_KEYS_NONE, NULL));
 	CHECK(!rd(FR_KEY_1, NULL));
 	CHECK(!rd(FR_KEYS_NONE, NULL));
-	CHECK(!rd(FR_KEY_2, NULL));
-	CHECK(ui.screen == FR_UI_CONFIRM && ui.act == FR_ACT_SWITCH);
+	CHECK(!rd(FR_KEY_3, NULL));
+	CHECK(ui.screen == FR_UI_CONFIRM && ui.act == FR_ACT_KEEP);
 	CHECK(!rd(FR_KEYS_NONE, NULL));
 	CHECK(!rd(0x14u, NULL));
 	CHECK(ui.screen == FR_UI_SLOTS);
@@ -372,6 +413,7 @@ int main(void)
 	RUN(test_hold);
 	RUN(test_hold_broken);
 	RUN(test_offers);
+	RUN(test_no_switch_with_keep);
 	RUN(test_op1f_keys);
 	return check_summary("test_front_recui");
 }

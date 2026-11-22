@@ -563,6 +563,12 @@ export function actGoal(i, act) {
     }[act];
 }
 
+// A keep would start now, of the slot a switch names: the slot came up from its trial, and the
+// recovery menu offers its keep in place of the switch.
+function keepAfterTrial(i) {
+    return i.acts[ACT_KEEP - 1] === 0 && actSlot(i, ACT_KEEP) === actSlot(i, ACT_SWITCH);
+}
+
 // Front 11: the other slot's tier, and what each action would do now, unforced and forced.
 export function actionLines(i) {
     if (!i.v11 || otherOf(i) === NO_SLOT)
@@ -579,6 +585,8 @@ export function actionLines(i) {
             words = `with --force only (${actText(act, un, i, false)}): ${actGoal(i, act)}`;
         else
             words = `refused: ${actText(act, fo, i, false)}`;
+        if (act === ACT_SWITCH && keepAfterTrial(i))
+            words += '; after its trial, keep is the action';
         out.push(ACT_LABELS[act].padEnd(10) + words);
     }
     return out;

@@ -22,7 +22,7 @@ So that a new bootloader is written beside the running one. If the new one fails
 
 **Recovery opened by itself. Why?**
 Either the image failed its check (`This image failed its check`), or three starts in a row did not finish
-(`Three starts in a row did not finish`). Quickly switching off three times during start-up does it too.
+(`3 starts in a row did not finish`). Quickly switching off three times during start-up does it too.
 Switching off and on with no key held starts normally again.
 
 **Does opening the recovery menu change anything?**
@@ -49,7 +49,7 @@ or Linux, with Python 3 and a clone of this repository, for `tools/wbrecover.py`
 [How to Recover](How-to-Recover#write-a-slot-from-a-computer).
 
 **How do I tell two builds apart on screen?**
-The status bar shows the version, and in recovery the front's too (`v0.9.13 F21`). Run `make bump-version`
+The status bar shows the version, and in recovery the front's too (`v0.9.13 F22`). Run `make bump-version`
 before each build you put on a unit.
 
 **Where do I report a problem?**

@@ -253,6 +253,11 @@ These rules are fixed: only the maintainer changes them.
   the protected writes or starts a scan: a scan starts only when the host
   releases the disk.
 - Shift + 8 leaves the key test.
+- Recovery's slot menu (its main screen's 1): 1 Try slot N once, 2 Make slot N
+  the boot slot, 3 Keep slot N, 4 Put slot N's record back, each only where
+  it applies, and each confirmed by key 1 held for 5 s on the screen after it.
+  While 3 is shown, 2 is not: after a trial that came up, the keep is what
+  makes that slot the boot slot. 8 goes back.
 - The color setting is off by default; off draws in gray (S-15.173).
 - The settings are kept per slot in the SPI flash, each at its default
   when the slot's settings sector holds no valid record for the image it
@@ -342,6 +347,8 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | an image for slot 2 arriving | slot 2 being written |
 | <img src="../docs/ui/recovery-te.png" width="480" alt="A TE slot"> | <img src="../docs/ui/recovery-unknown.png" width="480" alt="An unknown slot"> |
 | slot 2 holds `TE v1000.0.20` | slot 2 holds `??` |
+| <img src="../docs/ui/recovery-keep.png" width="480" alt="Recovery: slots after a trial"> | |
+| the slot menu after slot 2's trial start came up: 3 keeps it, no 2 | |
 
 ## Adding a screen
 

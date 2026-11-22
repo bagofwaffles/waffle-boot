@@ -3061,9 +3061,9 @@ static void test_rec_trial(void)
 		CHECK(fmem[FR_LOG_OFF(1)] == 0xFDu);
 		CHECK(!wrote_in(FR_SLOT_BASE(0), FR_SLOT_BASE(0) + FR_SLOT_CAP));
 		CHECK(!wrote_in(FR_RECORD_OFF(0), FR_RECORD_OFF(0) + FR_SECTOR));
-		CHECK(screen_says(&st.screen, "Done: slot 2 is written for one trial start"));
+		CHECK(screen_says(&st.screen, "Done: slot 2 written for one trial"));
 		CHECK(screen_says(&st.screen, "If it does not start, switch off and on: slot 1 boots"));
-		CHECK(strcmp(st.screen.status_right, "v1.0.0 F21") == 0);
+		CHECK(strcmp(st.screen.status_right, "v1.0.0 F22") == 0);
 
 		/* the trial start */
 		CHECK(first_stage() == 1u);
@@ -3092,7 +3092,7 @@ static void test_rec_trial(void)
 			CHECK(host.begin_st == FR_WR_NOT_STARTED && host.begin_way == FR_WAY_NONE);
 			CHECK((host.info[FR_INFO_O_SLOT(1) + FR_INFO_S_FLAGS] & FR_SLOT_F_STARTED) == 0u);
 			CHECK(!wrote_in(0, FLASH_SIZE));
-			CHECK(screen_says(&st.screen, "Failed: the tried slot has not started; restart first"));
+			CHECK(screen_says(&st.screen, "Failed: tried slot not started; restart first"));
 			/* the trial start, slot 2's own front, no key: the mark */
 			start_again(0x66, d_t, &ho);
 			CHECK(fmem[FR_LOG_OFF(1)] == 0xFCu);
@@ -3121,7 +3121,7 @@ static void test_rec_trial(void)
 		CHECK(fmem[FR_LOG_OFF(1)] == 0xFCu);
 		CHECK(!wrote_in(FR_RECORD_OFF(0), FR_RECORD_OFF(0) + FR_SECTOR));
 		CHECK(wrote_in(FR_RECORD_OFF(1), FR_RECORD_OFF(1) + FR_SECTOR));
-		CHECK(screen_says(&st.screen, "Done: slot 2 is kept as the boot slot"));
+		CHECK(screen_says(&st.screen, "Done: slot 2 kept as the boot slot"));
 		/* the next start checks slot 2 and trusts it */
 		CHECK(first_stage() == 1u);
 		CHECK(fmem[FR_SELECTOR_OFF] == 0x01u && fmem[FR_SELECTOR_OFF + 1u] == 0x01u);
@@ -3343,15 +3343,15 @@ static unsigned leds_of(unsigned len, uint8_t p0, unsigned *all)
 	return n;
 }
 
-/* S-18.005: the device and how it was decided, in the record; the
- * default device with no ident. The rest of a normal start as before. */
+/* S-18.005: the device and how it was decided, in the record; with no
+ * ident, the default device, not identified. The rest of a normal start as before. */
 static void test_dev_record(void)
 {
 	static const struct fr_ident xy = { &fr_dev_opxy, FR_HO_HOW_TABLE, 0x86C0u, 0xF3C93780u },
 				     f = { &fr_dev_op1f, FR_HO_HOW_TABLE, 0x8600u, 0x49267EB8u },
 				     unk = { &fr_dev_opxy, FR_HO_HOW_UNKNOWN, 0x8600u, 0x12345678u };
 	static const struct { const struct fr_ident *id; uint16_t strap; uint8_t dev, how; } c[] = {
-		{ NULL, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_TABLE },
+		{ NULL, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_UNKNOWN },
 		{ &xy, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_TABLE },
 		{ &f, 0u, FR_HO_DEV_OP1F, FR_HO_HOW_TABLE },
 		{ &unk, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_UNKNOWN },

@@ -379,8 +379,8 @@ int main(int argc, char **argv)
 
 	/* recovery (S-02.084): the main screen, the slot menu (key 1), the
 	 * confirm screen of a try with key 1 held 3 s, the countdown before
-	 * a host's write of slot 2, that write received and written, and the
-	 * slot line's other kinds */
+	 * a host's write of slot 2, that write received and written, the
+	 * slot line's other kinds, and the slot menu after a trial start */
 	{
 		static struct fr_screen rs;
 		struct fr_ui ui;
@@ -456,6 +456,21 @@ int main(int argc, char **argv)
 		recovery_shot(&rs, NULL);
 		front_shot(&rs);
 		bad |= write_raw(d, "recovery-unknown");
+
+		/* the slot menu after slot 2's trial start came up: its keep,
+		 * and no switch to it */
+		recovery_unit();
+		rec_st.slot[1].good = false;
+		rec_st.slot[1].tried = true;
+		rec_st.slot[1].started = true;
+		rec_st.slot[1].has_log = true;
+		rec_st.slot[1].log0 = FR_LOG0_MARKED;
+		fr_rec_target(&rec_st);
+		fr_ui_reset(&ui);
+		ui.screen = FR_UI_SLOTS;
+		recovery_shot(&rs, &ui);
+		front_shot(&rs);
+		bad |= write_raw(d, "recovery-keep");
 	}
 
 	/* S-13c.025: the line under the logo on the way into recovery */

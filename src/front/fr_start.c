@@ -78,7 +78,7 @@ enum fr_next fr_start_run(struct fr_start *s, const struct fr_start_hw *hw,
 	s->dev = fr_dev_or_default(hw->ident != NULL ? hw->ident->dev : NULL);
 	/* S-18.005 */
 	ho->device = s->dev->id;
-	ho->device_how = hw->ident != NULL ? hw->ident->how : FR_HO_HOW_TABLE;
+	ho->device_how = hw->ident != NULL ? hw->ident->how : FR_HO_HOW_UNKNOWN;
 	s->panel_up = false;
 	s->lit = false;
 	s->drawn_ok = false;
