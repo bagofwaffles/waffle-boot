@@ -51,7 +51,7 @@ struct opxy_master;
 #ifndef OPXY_BL_VERSION_MAJOR
 #define OPXY_BL_VERSION_MAJOR 0u
 #define OPXY_BL_VERSION_MINOR 9u
-#define OPXY_BL_VERSION_PATCH 49u
+#define OPXY_BL_VERSION_PATCH 50u
 #endif
 /* A test build may give slot 0 another build number, so that the
  * two slots differ and S-01.002 finds the running one (Makefile
