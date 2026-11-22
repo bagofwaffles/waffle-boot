@@ -503,8 +503,6 @@ static int u_flush(void *c)
 /* /user's volume built afresh: FAT, or (blank) none FatFs reads. */
 int sim_user(int blank)
 {
-	static uint8_t work[4096];
-	const MKFS_PARM opt = { FM_FAT, 1, 1, 512, 0 };
 	FRESULT r = FR_OK;
 
 	memset(user_disk, 0, sizeof user_disk);
@@ -513,6 +511,9 @@ int sim_user(int blank)
 	U.flush = u_flush;
 	flushes = 0;
 	if (!blank) {
+		static uint8_t work[4096];
+		const MKFS_PARM opt = { FM_FAT, 1, 1, 512, 0 };
+
 		wb_fatfs_attach(&user_dev);
 		r = f_mkfs("", &opt, work, sizeof work);
 		wb_fatfs_attach(NULL);

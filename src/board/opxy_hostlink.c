@@ -257,12 +257,12 @@ static int stat_(void *ctx, const struct hl_path *p, struct hl_stat *st)
 {
 	struct opxy_master *m = ctx;
 	struct s09_stat s;
-	int rc;
 
 	st->type = 2u;
 	st->size = st->mtime = 0u;
 	if (p->root == HL_ROOT_DRIVE) {
-		rc = drive_ok(m);
+		int rc = drive_ok(m);
+
 		if (rc == HL_OK && s09_files_stat(&m->sv.files, p->full, &s) != 0)
 			rc = err_of(&m->sv.files);
 		if (rc == HL_OK)

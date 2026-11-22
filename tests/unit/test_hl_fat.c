@@ -22,7 +22,7 @@ static bool busy_now;
 
 static int d_read(void *ctx, uint32_t lba, void *buf, uint32_t n)
 {
-	uint8_t *d = ctx;
+	const uint8_t *d = ctx;
 
 	memcpy(buf, d + (size_t)lba * 512u, (size_t)n * 512u);
 	return 0;
