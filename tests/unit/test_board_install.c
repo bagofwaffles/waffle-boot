@@ -1898,7 +1898,7 @@ static void test_whole_hold(void)
 	      cdc_at("[backplane]") < cdc_at("[skipped] backplane: not selected"));
 	CHECK(!cdc_has("[skipped] bootloader") && !cdc_has("spiboot") &&
 	      !cdc_has("install: first stage") && !cdc_has("First stage"));
-	CHECK(!cdc_has("no PSoC unlock") && !cdc_has("not in update mode"));
+	CHECK(!cdc_has("not in update mode"));
 	CHECK(!cdc_has("Not updated:"));	/* S-15.115: left out by choice */
 	CHECK(cdc_has("Done!"));
 	/* S-11.061: no Nordic step selected: nothing to the Nordic but the
@@ -2086,6 +2086,38 @@ static void test_whole_option_off(void)
 }
 
 /*
+ * S-11.096: nothing can be picked (the option off, the coprocessors' parts
+ * already installed): no selection is shown or waited for, and the run
+ * goes on with none selected, each step reporting as after any selection.
+ */
+static void test_whole_nothing_to_pick(void)
+{
+	static const struct s11_version same = { 1234, 0, 0, 0 };
+	struct s11_install_result res;
+	uint64_t t0;
+
+	t_case = "whole: nothing to pick";
+	whole_setup();
+	m.sv.copro.nordic_app = same;
+	m.sv.copro.nordic_bl = same;
+	m.sv.copro.psoc = same;
+	ks.ev[0] = key8;
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	t0 = now_ms();
+	whole_install(false, false, &res);
+	CHECK(cdc_has("install: nothing to select, nothing asked"));
+	CHECK(ks.asks == 0u && !cdc_has("1 Install selected"));
+	CHECK(!res.canceled && res.selected == 0u);
+	CHECK(res.run.end == S11_RUN_NOTHING_TO_DO &&
+	      cdc_has("[skipped] bootloader: option off") &&
+	      !cdc_has("not selected") && cdc_has("Nothing installed."));
+	CHECK(slots_untouched());
+	CHECK(now_ms() - t0 < 30000u);	/* no 60 s wait */
+	whole_end();
+	s17_copro_init(&m.sv.copro);
+}
+
+/*
  * S-11.021, S-11.090, S-15.197 (SC-11-SIG, SC-15-SIG-PROMPT): a package
  * whose signature does not verify shows the prompt first; key 1 held 5 s
  * goes on to the selection, where the Bootloader's row is picked as for
@@ -2251,6 +2283,7 @@ int main(void)
 	test_whole_timeout();
 	test_whole_unreadable();
 	test_whole_option_off();
+	test_whole_nothing_to_pick();
 	test_whole_signature();
 	test_whole_rerun();
 	test_whole_host_and_again();

@@ -71,14 +71,14 @@ struct wb_display *opxy_testos_display(void)
 }
 #endif
 
-/* S-13c.004: the reset decision, from the entry's DMA9 values and the PA8
- * strap sample (S-13b.001). Before any DMA9 write. */
 /* S-13c.001: the panel's pins on the device (D/C, S-18.030). */
 static const struct wb_lcd_config *lcd_of(const struct wb_device *dev)
 {
 	return dev->id == WB_DEV_OP1F ? &wb_lcd_op1f : &wb_lcd_opxy;
 }
 
+/* S-13c.004: the reset decision, from the entry's DMA9 values and the PA8
+ * strap sample (S-13b.001). Before any DMA9 write. */
 void opxy_display_handshake(uint32_t xmod, uint32_t ymod)
 {
 	struct opxy_master *m = &opxy_master;

@@ -33,39 +33,6 @@
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/mmr.h"
 
-#define PA(n) WB_PIN(WB_PORT_A, n)
-
-/* S-13c.001's pins; the SMC fields are kept for the interface and unused. */
-const struct wb_lcd_config wb_lcd_opxy = {
-	.dc = PA(5),
-	.rd = PA(13),
-	.cs = PA(15),
-	.reset = PA(8),
-	.te = PA(7),
-	.wr = PA(14),
-	.data_port = WB_PORT_B,
-	.bank = WB_LCD_SMC_BANK0,
-	.b0tim = WB_LCD_B0TIM,
-	.b0etim = WB_LCD_B0ETIM,
-	.mdma = 2,	/* S-05.016: DMA20/DMA21; the ROM and the hand-over use MDMA0 */
-	.read_strobe_us = 1,
-};
-
-const struct wb_lcd_config wb_lcd_op1f = {
-	.dc = PA(11),	/* S-13c.001 on the OP-1F: device.panel_dc */
-	.rd = PA(13),
-	.cs = PA(15),
-	.reset = PA(8),
-	.te = PA(7),
-	.wr = PA(14),
-	.data_port = WB_PORT_B,
-	.bank = WB_LCD_SMC_BANK0,
-	.b0tim = WB_LCD_B0TIM,
-	.b0etim = WB_LCD_B0ETIM,
-	.mdma = 2,	/* S-05.016: DMA20/DMA21; the ROM and the hand-over use MDMA0 */
-	.read_strobe_us = 1,
-};
-
 #define DATA_PINS 0xFFu
 
 /* rev8[b] has b's bits in the other order: PORTB bit n carries D(7-n). */

@@ -60,14 +60,22 @@ static uint16_t board_strap(void *ctx)
 }
 
 /* S-18.002's fallback sample, when opxy_device_pick() asks for it: PA2's
- * INEN alone, at S-13b.001's settling time; PA0 and PA8 not released. */
+ * INEN alone, at S-13b.001's settling time; PA0 and PA8 not released. The
+ * read fails only on a bad pin table, never on the pin: 0 then. */
 static OPXY_TESTOS_UNUSED uint16_t board_pa2(void *ctx)
 {
+	static const struct wb_strap pa2 = {
+		.port = WB_PORT_A,
+		.pins = OPXY_STRAP_ROLE,
+		.settle_us = OPXY_STRAP_SETTLE_US,
+		.inen_us = 0u,
+	};
+	uint16_t v = 0;
+
 	(void)ctx;
-	wb_mmr_write32(PORT_INEN_SET(WB_PORT_A), OPXY_STRAP_ROLE);
-	wb_mmr_sync();
-	wb_delay_us(&opxy_time, 20u);	/* opxy_strap.settle_us */
-	return (uint16_t)(wb_mmr_read32(PORT_DATA(WB_PORT_A)) & OPXY_STRAP_ROLE);
+	if (wb_strap_inen_read(&pa2, &opxy_time, &v) != 0)
+		v = 0;
+	return v;
 }
 
 void opxy_main(void)

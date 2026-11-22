@@ -494,6 +494,57 @@ static void test_op1f_pins(void)
 	CHECK(wb_lcd_op1f.reset == wb_lcd_opxy.reset && wb_lcd_op1f.te == wb_lcd_opxy.te);
 }
 
+/* The profile's kind of a board GPIO direction. */
+static unsigned kind_of(uint8_t dir)
+{
+	return dir == OPXY_IN ? WB_GPIO_IN : dir == OPXY_OUT_LOW ? WB_GPIO_OUT_LOW :
+	       dir == OPXY_OUT_HIGH ? WB_GPIO_OUT_HIGH : WB_GPIO_OUT_KEEP;
+}
+
+/*
+ * S-18.030's pins of the OP-XY's main CPU against the board's: the
+ * profile's list holds what the board sets at the start (PA7 before PA6,
+ * the display's TE first) and the bridge's two, PC11 a high output and
+ * PC5 an input, which the bridge sets (S-13b.040); each pin once, of the
+ * profile's kind, the master's inputs-first pins apart (S-13b.004).
+ */
+static void test_opxy_pins(void)
+{
+	static const struct opxy_gpio bridge[] = {
+		{ OPXY_PC11, OPXY_OUT_HIGH }, { OPXY_PC5, OPXY_IN },
+	};
+	const struct wb_device *d = &wb_device_opxy;
+	const struct opxy_gpio *g;
+	unsigned n, i, j, at6 = 99, at7 = 99;
+
+	g = opxy_gpio_main(d, &n);
+	CHECK(g == opxy_gpio_master && n + ARRAY_LEN(bridge) == d->pins.gpio_n);
+	for (i = 0; i < d->pins.gpio_n; i++) {
+		const struct wb_dev_gpio *p = &d->pins.gpio[i];
+		unsigned found = 0;
+
+		for (j = 0; j < n; j++)
+			if (g[j].pin == p->pin) {
+				found++;
+				CHECK(kind_of(g[j].dir) == p->kind);
+				if (p->pin == WB_PIN(WB_PORT_A, 6))
+					at6 = j;
+				if (p->pin == WB_PIN(WB_PORT_A, 7))
+					at7 = j;
+			}
+		for (j = 0; j < ARRAY_LEN(bridge); j++)
+			if (bridge[j].pin == p->pin) {
+				found++;
+				CHECK(kind_of(bridge[j].dir) == p->kind);
+			}
+		CHECK(found == 1u);
+	}
+	CHECK(at7 < at6 && at6 < n);
+	for (i = 0; i < opxy_pinmux_master.n_inputs_first; i++)
+		for (j = 0; j < d->pins.gpio_n; j++)
+			CHECK(opxy_pinmux_master.inputs_first[i] != d->pins.gpio[j].pin);
+}
+
 /* S-13b.061, S-05.038, S-12.008: the OP-1F's other board values. */
 static void test_op1f_values(void)
 {
@@ -606,6 +657,24 @@ static void test_device_pick(void)
 	CHECK(p.decided && !p.master && p.dev == &wb_device_opxy && p.how == WB_DEV_SECOND_CPU);
 	CHECK(reads == 0u && sf.samples == 1u);
 	sf.samples = 0u;
+	/* the OP-1F on a CPU that is not the master cannot hold: decided as
+	 * without a record, as the slave above */
+	ho.device = FR_HO_DEV_OP1F;
+	ho.device_how = FR_HO_HOW_TABLE;
+	opxy_device_pick(&ho, 2u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.decided && !p.master && p.dev == &wb_device_opxy && p.how == WB_DEV_SECOND_CPU);
+	CHECK(reads == 0u && sf.samples == 1u);
+	sf.samples = 0u;
+	/* nor the OP-1F decided as the second CPU, on the master: the
+	 * master decides from the first stage */
+	ho.role_master = 1u;
+	ho.device_how = FR_HO_HOW_SECOND;
+	memset(stage, 0xFF, sizeof stage);
+	opxy_device_pick(&ho, 2u, strap_sample, &sf, stage_read, &reads, &p);
+	CHECK(p.decided && p.master && reads != 0u && sf.samples == 0u && p.how == WB_DEV_UNKNOWN);
+	reads = 0u;
+	ho.role_master = 0u;
+	ho.device = 7u;
 	/* its master: the device from the first stage, whatever the boot mode */
 	ho.role_master = 1u;
 	memset(stage, 0xFF, sizeof stage);
@@ -663,6 +732,7 @@ int main(void)
 	RUN(test_otp);
 	RUN(test_slave_emmc);
 	RUN(test_op1f_pins);
+	RUN(test_opxy_pins);
 	RUN(test_op1f_values);
 	RUN(test_device_pick);
 	return check_summary("test_board_values");

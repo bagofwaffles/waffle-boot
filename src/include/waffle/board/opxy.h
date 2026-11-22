@@ -65,6 +65,7 @@ extern uint32_t opxy_init_dflt;
  * enable (twice each here, for margin). */
 extern const struct wb_strap opxy_strap;
 #define OPXY_STRAP_ROLE  (1u << 2)	/* PA2: 1 master, 0 slave */
+#define OPXY_STRAP_SETTLE_US 20u	/* opxy_strap's drivers released to sample */
 #define OPXY_STRAP_REV0  (1u << 0)	/* PA0, revision bit 0 (S-17) */
 #define OPXY_STRAP_REV1  (1u << 8)	/* PA8, revision bit 1 (S-17) */
 

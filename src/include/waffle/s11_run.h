@@ -213,7 +213,8 @@ typedef enum s11_answer (*s11_ask_fn)(void *ctx, const struct s11_step_env *env,
  * S-11.096: the steps to run, asked for on the unit before the run's first
  * write, into env->selected: an answer's selection as far as the steps are
  * open, or s11_unasked() when nothing was asked (ask NULL included). False:
- * the answer canceled, and env->selected is 0.
+ * the answer canceled, or nothing was asked about an invalid package
+ * (S-15.197), and env->selected is 0.
  */
 bool s11_select(struct s11_step_env *env, s11_ask_fn ask, void *ctx);
 
@@ -236,7 +237,8 @@ struct s11_install_ops {
 	const struct s11_fs_ops *fs;		/* the staging area */
 	const struct s11_run_ops *run;
 	const struct s11_step_ops *steps;
-	/* S-11.096: the selection on the unit; NULL: nothing is asked. */
+	/* S-11.096: the selection on the unit; NULL: nothing is asked, and
+	 * an invalid package is not installed (S-15.197). */
 	s11_ask_fn select;
 	void *select_ctx;
 	/* S-11.091: the staged bootloader image is a waffle-boot build

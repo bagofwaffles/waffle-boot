@@ -338,7 +338,8 @@ static int32_t emmc_sectors(struct opxy_storage *st, uint8_t cmd, uint32_t arg0,
 	const bool many = cmd == S09_READ_SECTORS || cmd == S09_WRITE_SECTORS ||
 			  cmd == S09_WRITE_RELIABLE;
 	const bool rd = cmd <= S09_READ_SECTORS;
-	const uint32_t bytes = (many ? arg1 : 1u) * S03_SECTOR;
+	const uint32_t sectors = many ? arg1 : 1u;
+	uint32_t bytes = 0;
 	uint8_t *p = data;
 	int32_t rc;
 
@@ -346,9 +347,11 @@ static int32_t emmc_sectors(struct opxy_storage *st, uint8_t cmd, uint32_t arg0,
 		       S09_READ_SECTORS < S09_WRITE_RELIABLE && S09_WRITE_RELIABLE < S09_ERASE &&
 		       S09_ERASE < S09_WRITE_SECTOR && S09_WRITE_SECTOR < S09_WRITE_SECTORS,
 		       "the sector requests' codes");
+	/* the count against the bounce buffer first: no product that wraps */
 	if (cmd >= S09_READ_SECTOR && cmd <= S09_WRITE_SECTORS && cmd != S09_ERASE &&
 	    ((uintptr_t)data & (WB_MSI_BUF_ALIGN - 1u)) != 0u &&
-	    bytes <= sizeof(bounce) && bytes <= n) {
+	    sectors <= sizeof(bounce) / S03_SECTOR && sectors * S03_SECTOR <= n) {
+		bytes = sectors * S03_SECTOR;
 		p = bounce;
 		if (!rd)
 			memcpy(bounce, data, bytes);

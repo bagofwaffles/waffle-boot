@@ -249,6 +249,38 @@ static void test_strap(void)
 	CHECK(fake_mmr_count() == 0);
 }
 
+/* S-18.002's fallback sample: PA2's INEN set, 20 us, read; no DIR write,
+ * INEN left set, the other pins' DATA bits masked. */
+static void test_strap_inen(void)
+{
+	static const struct wb_strap s = { WB_PORT_A, 0x0004u, 20u, 0u };
+	struct port_model pm;
+	uint16_t v = 0xFFFFu;
+
+	reset(&pm, NULL);
+	fake_core_set_cycle_step(13);
+	fake_mmr_set(PORT_DIR(WB_PORT_A), 0x0105u);
+	fake_mmr_set(PORT_DATA(WB_PORT_A), 0xF0F4u);
+	CHECK(wb_strap_inen_read(&s, &cclk400, &v) == WB_PORT_OK);
+	CHECK(v == 0x0004u);
+	CHECK(fake_mmr_get(PORT_DIR(WB_PORT_A)) == 0x0105u);
+	CHECK(fake_mmr_get(PORT_INEN(WB_PORT_A)) == 0x0004u);
+	CHECK(pm.cycles_read - pm.cycles_inen_set >= 20u * 400u);
+	CHECK(pm.mux_writes == 0);
+	CHECK(fake_mmr_get(PORT_FER(WB_PORT_A)) == 0);
+	/* PA2 low */
+	reset(&pm, NULL);
+	fake_mmr_set(PORT_DATA(WB_PORT_A), 0xFFFBu);
+	CHECK(wb_strap_inen_read(&s, &cclk400, &v) == WB_PORT_OK && v == 0u);
+	/* no port or no pin: refused, nothing touched */
+	reset(&pm, NULL);
+	CHECK(wb_strap_inen_read(&(struct wb_strap){ 3u, 1u, 0, 0 }, &cclk400,
+				 &v) == WB_PORT_ERR_ARG);
+	CHECK(wb_strap_inen_read(&(struct wb_strap){ WB_PORT_A, 0u, 0, 0 },
+				 &cclk400, &v) == WB_PORT_ERR_ARG);
+	CHECK(fake_mmr_count() == 0);
+}
+
 static void test_gpio(void)
 {
 	static const struct fake_mmr_access seq[] = {
@@ -315,6 +347,7 @@ int main(void)
 	RUN(test_pinmux_idempotent);
 	RUN(test_pinmux_bad_pin);
 	RUN(test_strap);
+	RUN(test_strap_inen);
 	RUN(test_gpio);
 	RUN(test_gpio_keep);
 	return check_summary("test_drv_port");
