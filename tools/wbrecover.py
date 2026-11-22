@@ -92,11 +92,12 @@ BEGIN_REPLY_LEN, DATA_REPLY_LEN, END_REPLY_LEN, ACT_REPLY_LEN = 3, 5, 2, 4
 HELLO_LEN, HELLO_O_VERSION, HELLO_O_PIN = 47, 7, 15
 INFO_V5, INFO_V6, INFO_V11 = 199, 219, 232      # INFO's length from a version 5, 6 and 11 front
 INFO_V20 = 242                                  # and from a version 20 front: the device (S-18)
-# version 20: the device (0 OP-XY, 1 OP-1F), how it was decided (0 the first stage's table, 2 not
-# identified: the default, the OP-XY), and the first stage's n and c (S-18.003, S-18.004)
+# version 20: the device (0 OP-XY, 1 OP-1F), how it was decided (0 the first stage's table, 1 the
+# second CPU, 2 not identified: the default, the OP-XY), and the first stage's n and c (S-18.002 to
+# S-18.004)
 INFO_O_DEVICE, INFO_O_DEV_HOW, INFO_O_FS_N, INFO_O_FS_C = 232, 233, 234, 238
 DEVICES = ('OP-XY', 'OP-1F')
-HOW_TABLE, HOW_UNKNOWN = 0, 2
+HOW_TABLE, HOW_SECOND, HOW_UNKNOWN = 0, 1, 2
 INFO_O_VERSION, INFO_O_PIN, INFO_O_READBACK = 21, 29, 61
 INFO_O_SLOT, INFO_SLOT_LEN = 93, 53                     # slot k at INFO_O_SLOT + INFO_SLOT_LEN * k
 INFO_S_VERSION, INFO_S_FRONT_CRC, INFO_S_PIN = 9, 17, 21
@@ -1450,12 +1451,17 @@ def cmd_info(link, out=print):
 
 
 def device_line(i):
-    """INFO's device (front 20, S-18.004): the device and how, with n and c when not identified."""
+    """INFO's device (front 20, S-18.004): the device and how, with n and c when not by the table."""
     name = DEVICES[i['device']] if i['device'] < len(DEVICES) else 'device %d' % i['device']
-    if i['dev_how'] == HOW_TABLE:
+    fs = 'first stage n %d, c %08x' % (i['fs_n'], i['fs_c'])
+    how = i['dev_how']
+    if how == HOW_TABLE:
         return 'Device:   %s, identified by its first stage' % name
-    return 'Device:   not identified (first stage n %d, c %08x): recovery runs as on the %s' % (
-        i['fs_n'], i['fs_c'], name)
+    if how == HOW_SECOND:
+        return 'Device:   %s, identified by the second CPU (%s)' % (name, fs)
+    if how == HOW_UNKNOWN:
+        return 'Device:   not identified (%s): recovery runs as on the %s' % (fs, name)
+    return 'Device:   %s, decided by way %d, which this tool does not know (%s)' % (name, how, fs)
 
 
 def progress(out, what, done, total):

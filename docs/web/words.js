@@ -31,6 +31,8 @@ export const INFO_V5 = 199, INFO_V6 = 219, INFO_V11 = 232;
 // identified, the OP-XY's default) and the first stage's n and c (S-18.003, S-18.004)
 export const INFO_V20 = 242;
 export const DEVICES = ['OP-XY', 'OP-1F'];
+// INFO's dev_how: how the device was decided (S-18.002 to S-18.004, fr_handoff.h's FR_HO_HOW_*)
+export const HOW_TABLE = 0, HOW_SECOND = 1, HOW_UNKNOWN = 2;
 export const BATT_MAX = 16;
 export const F_ESTABLISHED = 1, F_SELECTOR = 2, F_OWN_DESC = 4, F_MOVED = 8, F_SPOILED = 16,
     F_HELD = 32, F_READ_ERROR = 64, F_UNSETTLED = 128;
@@ -827,10 +829,14 @@ export function triedLines(i, failedTrial = false) {
 // INFO's device (front 20, S-18.004), as the Python tool's device_line() says it.
 export function deviceLine(i) {
     const name = DEVICES[i.device] || `device ${i.device}`;
-    if (i.dev_how === 0)
+    const fs = `first stage n ${i.fs_n}, c ${(i.fs_c >>> 0).toString(16).padStart(8, '0')}`;
+    if (i.dev_how === HOW_TABLE)
         return `Device:   ${name}, identified by its first stage`;
-    return `Device:   not identified (first stage n ${i.fs_n}, c ${(i.fs_c >>> 0).toString(16).padStart(8, '0')}): ` +
-        `recovery runs as on the ${name}`;
+    if (i.dev_how === HOW_SECOND)
+        return `Device:   ${name}, identified by the second CPU (${fs})`;
+    if (i.dev_how === HOW_UNKNOWN)
+        return `Device:   not identified (${fs}): recovery runs as on the ${name}`;
+    return `Device:   ${name}, decided by way ${i.dev_how}, which this tool does not know (${fs})`;
 }
 
 // INFO as lines a person reads: the Python tool's info, line for line.

@@ -393,7 +393,7 @@ export function describeInstall(s, hello = null, tests = null) {
     case IW.SURVEYED:
         d.tone = 'ok';
         L.push(IW.SURVEY_DONE);
-        L.push(s.lock === 11 ? 'An install by the installer would be offered on this unit.' :
+        L.push(s.lock === IW.LOCK_SURVEY ? 'An install by the installer would be offered on this unit.' :
             `An install would not be offered: ${d.lock ? d.lock.text : 'the checks'}.`);
         L.push(osLine(s.os));
         A.push(IW.SAVE_REPORT);

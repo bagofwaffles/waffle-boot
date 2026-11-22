@@ -23,10 +23,12 @@ installing, hold **8** for 5 s.
 A unit that already runs waffle-boot does not need the installer: choose **Upgrade / Recover** on the page
 ([How to Recover](How-to-Recover)).
 
-**On an OP-1 Field (OP-1F):** initial support, from 0.9.48, run on one unit. The page does not install
-it. The same installer, `waffle-install.ldr`, goes on as the OS by the unit's own OS write, after
-`tools/mtpcp.py prepare-1f` has made the volume ready for it; that tool takes the unit's bootloader 1000.2.0
-or 1000.1.1 only ([Putting the image on an OP-1F](Installer-Reference#putting-the-image-on-an-op-1f)). You
+## On an OP-1 Field
+
+The OP-1 Field (OP-1F) has initial support, from 0.9.48, run on one unit. The page does not install
+it, and refuses to send the installer to an OP-1F. The same installer, `waffle-install.ldr`, goes on as
+the OS by the unit's own OS write, after `tools/mtpcp.py prepare-1f` has made the volume ready for it;
+that tool takes the unit's bootloader 1000.2.0 or 1000.1.1 only ([Putting the image on an OP-1F](Installer-Reference#putting-the-image-on-an-op-1f)). You
 can run the survey (`waffle-install-survey.ldr`, built from the source) first: it writes nothing to the
 SPI flash, and its `check.txt` says whether an install would be offered. See
 [Installer Reference](Installer-Reference#on-an-op-1f).

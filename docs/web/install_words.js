@@ -61,12 +61,14 @@ export const VERDICT = { 0: 'PASS', 1: 'PASS WITH GAPS', 2: 'FAIL', 0xFF: 'not y
 export const TEST_STATE = ['not run', 'pass', 'FAIL', 'not tested', 'not passed', 'n/a'];
 export const TEST_KIND = ['OS', 'automatic', 'guided'];
 
+// STATE byte 4, the lock: installer.h's enum inst_lock, code for code
+export const LOCK_NONE = 0, LOCK_RESERVED = 5, LOCK_SURVEY = 11;
 export const LOCK = {
     1: 'a check failed',
-    2: 'a check was not tested',
+    2: 'an automatic check could not run',
     3: 'the installer did not verify the image it carries (CRC-32 or front pin)',
     4: 'the slot the selector names is not verified or not good',
-    5: "the unit's OS was not found, or fails its check",
+    5: 'lock code 5, which the installer never sets',
     6: 'the key check was ended with 8',
     7: 'the eMMC could not be reached',
     8: 'the device is not identified by its first stage',
@@ -81,8 +83,6 @@ export const LOCK_ADVICE = {
     2: 'Start the installer again so that every check runs: check.txt says which one was not tested.',
     3: `The installer file may be damaged: get ${INSTALLER_FILE} again and write it once more.`,
     4: 'The bootloader slots are not in a state the installer writes over.',
-    5: "The installer needs the unit's OS in the other boot partition, checked, so that it can " +
-        'make it active again. Write the OS from the developer menu, then the installer again.',
     6: 'Start the installer again and press com, then M4 (4 under the display), on the unit.',
     7: 'Switch off and on and start the installer again. Save check.txt if it happens again.',
     8: "The unit's first stage is not one this project knows: nothing is installed on it. " +
@@ -160,6 +160,17 @@ export const SURVEY_DONE = 'The survey wrote nothing to the SPI flash. Save chec
     'holds what an install on this unit would depend on.';
 export const NOT_IDENTIFIED = 'The device is not identified by its first stage: nothing is ' +
     'installed on it.';
+
+// The Install tab sends the installer to an OP-XY only. An OP-1F takes the same file by its own OS
+// write, after tools/mtpcp.py prepare-1f has arranged its volume (S-05.042), which this page does not
+// do. It is known by S-18's USB products for it (device.usb_pid, device.midi_pid) or a product name
+// that says OP-1.
+export const PIDS_1F = [0x0102, 0x8102];
+export const HOW_TO_INSTALL_1F = 'https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install#on-an-op-1-field';
+export const isOp1f = (d) => !!d && (PIDS_1F.includes(d.productId) || /\bOP-1(?![0-9A-Za-z])/i.test(d.name || ''));
+export const NOT_FOR_1F = ['This is an OP-1 Field: this page does not send the installer to it. Nothing was sent.',
+    'On an OP-1 Field the installer goes on by the unit\'s own OS write, after tools/mtpcp.py prepare-1f. ' +
+    `Follow How to Install, On an OP-1 Field: ${HOW_TO_INSTALL_1F}`];
 
 export const NAMES = ['Slot 1', 'Slot 2'];
 export const deviceName = (d) => DEVICES[d] || `device ${d}`;
