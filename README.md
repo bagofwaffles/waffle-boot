@@ -6,7 +6,9 @@ for the OP-1 Field is initial.
 
 ## Status
 
-This project is still in heavy development. While it is working on the maintainer's units, there is still much to do to make the overall experience more friendly.
+This project is still in heavy development. While it is working on the maintainer's units, there is still much to do to make the overall experience more friendly. See
+[Status and Roadmap](https://github.com/bagofwaffles/waffle-boot/wiki/Status-and-Roadmap) for what has
+been run on each device, open work and what is out of scope.
 
 ## Why use waffle-boot?
 
@@ -31,13 +33,6 @@ Teenage Engineering.
 **Install with the guided page: https://bagofwaffles.github.io/waffle-boot/?mode=install** (OP-XY). An
 OP-1 Field takes its installer by the unit's own OS write: see
 [How to Install](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install).
-
-**Status:** on an OP-XY: a start from a committed slot through to the unit's own OS, writing a slot over
-USB from recovery, and the installer's trial and commit. On one OP-1 Field: the installer, put on with
-`tools/mtpcp.py prepare-1f` (the unit's bootloader 1000.2.0 or 1000.1.1 only) and the unit's own OS write,
-recovery, and starting the OS. Not yet run on an OP-1 Field: the Bluetooth (BLE) and backplane updates,
-and package installs.
-[Status and roadmap](https://github.com/bagofwaffles/waffle-boot/wiki/Status-and-Roadmap) covers open work and what is out of scope.
 
 <img src="docs/ui/tour.gif" width="480" alt="waffle-boot's screens on the OP-XY's display: the frame shown while the OS loads, the main menu, Settings, the developer menu, System, Device Info, an install running, the line under the logo on the way into recovery, and the recovery menu">
 
