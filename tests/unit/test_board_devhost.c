@@ -884,7 +884,7 @@ static void test_files_no_slave(void)
  */
 static void test_approval_gate(void)
 {
-	uint8_t wr[8] = { 0x00, 0x40, 0x00, 0x20, 0x5A, 0, 0, 0 };	/* 0x20004000 */
+	const uint8_t wr[8] = { 0x00, 0x40, 0x00, 0x20, 0x5A, 0, 0, 0 };	/* 0x20004000 */
 	size_t plen;
 
 	host_reset();

@@ -395,11 +395,12 @@ static int read_(void *ctx, const struct hl_path *p, uint32_t off, uint8_t *buf,
 	struct opxy_master *m = ctx;
 	struct s09_files *f = &m->sv.files;
 	uint32_t size;
-	int32_t fd, r;
 	int rc;
 
 	*got = 0;
 	if (p->root == HL_ROOT_DRIVE) {
+		int32_t fd, r;
+
 		rc = drive_ok(m);
 		if (rc != HL_OK)
 			return rc;
@@ -586,12 +587,12 @@ static int run(void *ctx, uint8_t action, uint8_t arg, const struct hl_path *p)
 {
 	struct opxy_master *m = ctx;
 	struct hl_stat st;
-	int rc;
 
 	if (unit_busy(m))
 		return HL_E_BUSY;
 	if (p != NULL) {
-		rc = stat_(ctx, p, &st);
+		const int rc = stat_(ctx, p, &st);
+
 		if (rc != HL_OK)
 			return rc;
 		if (st.type != 1u)
@@ -678,7 +679,7 @@ static void job_install(struct opxy_master *m)
 	char text[S10C_TEXT_MAX];
 	const char *name = strrchr(job_path.full, '/') + 1;
 	uint32_t at = 0;
-	int32_t fd, r = 0;
+	int32_t fd;
 
 	if (stat_(m, &job_path, &st) != HL_OK || st.type != 1u) {
 		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_NOT_FOUND, "no package");
@@ -695,7 +696,8 @@ static void job_install(struct opxy_master *m)
 	s15_up_transfer_started(&m->sv.menu);
 	fd = s09_files_open(f, job_path.full, S09_O_RDONLY);
 	while (fd >= 0 && at < st.size) {
-		r = s09_files_read(f, fd, buf, sizeof(buf));
+		const int32_t r = s09_files_read(f, fd, buf, sizeof(buf));
+
 		if (r <= 0 || !opxy_transfer_append(m, buf, (size_t)r))
 			break;
 		at += (uint32_t)r;

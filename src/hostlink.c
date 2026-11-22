@@ -416,7 +416,7 @@ static int call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
 	const struct hl_ops *o = h->ops;
 	struct hl_path p, q;
 	struct hl_stat st;
-	uint32_t off, got = 0;
+	uint32_t got = 0;
 	uint8_t cls = hl_class_of(hl_calls, hl_ncalls, op);
 	int rc = HL_OK;
 
@@ -511,9 +511,10 @@ static int call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
 	case HL_GET: {
 		uint32_t k = a[4] == 0u || a[4] > HL_CHUNK ? HL_CHUNK : a[4];
 
+		const uint32_t off = wb_get_le32(a);
+
 		if ((hl_roots[p.root].flags & HL_RF_READ) == 0u)
 			return HL_E_REFUSED;
-		off = wb_get_le32(a);
 		rc = o->read(o->ctx, &p, off, d + 4, k, &got);
 		if (rc == HL_OK) {
 			wb_put_le32(d, off);
