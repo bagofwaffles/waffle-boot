@@ -333,6 +333,10 @@ void opxy_hostlink_start(struct opxy_master *m);
 bool opxy_hostlink_frame(struct opxy_master *m, unsigned link, const struct s06_frame *f);
 /* Once a pass: the approval screen's answer, the setting, a queued job. */
 void opxy_hostlink_poll(struct opxy_master *m);
+/* Volume sectors of the OS's FAT volume at their user-area sectors, read or
+ * written; -1, with nothing done, for a range not wholly inside it. */
+int opxy_user_sectors(struct opxy_master *m, bool write, uint32_t lba, uint8_t *buf,
+		      uint32_t count);
 /* The session is approved and the setting on. */
 bool opxy_hostlink_approved(const struct opxy_master *m);
 /* S-10c's consent (struct s10c_ops gate). */

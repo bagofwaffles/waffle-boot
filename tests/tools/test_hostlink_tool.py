@@ -47,7 +47,7 @@ class Tool(unittest.TestCase):
         self.assertIn(hl.RUN, h['calls'])
         self.assertEqual(sorted(h['actions']), [1, 2, 3, 4, 5, 6])
         self.assertEqual([(r['name'], r['flags']) for r in h['roots']],
-                         [('yaffs2', ['read', 'write', 'open list']), ('os', ['read']), ('user', ['read'])])
+                         [('yaffs2', ['read', 'write', 'open list']), ('os', ['read']), ('user', ['read', 'write'])])
         # without the user drive, two roots
         self.assertEqual([r['name'] for r in self.client().hello()['roots']], ['yaffs2', 'os'])
 
@@ -110,6 +110,50 @@ class Tool(unittest.TestCase):
         with self.assertRaises(hl.HostLinkError) as e:
             c.get('/yaffs2/../os/boot1')
         self.assertEqual(e.exception.status, 6)
+
+    def test_user_drive(self):
+        c = self.client(user=True)
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.ls('/user')
+        self.assertEqual(e.exception.status, 2)     # even a listing needs the approval
+        c.approve(1.0)
+        data = bytes((i * 31) & 0xFF for i in range(5000))
+        c.mkdir('/user/samples')
+        c.put('/user/samples/kick.wav', data)
+        self.assertEqual(c.ls('/user/samples'), [{'type': 'file', 'size': 5000, 'name': 'kick.wav'}])
+        self.assertEqual(c.get('/user/samples/kick.wav'), data)
+        self.assertEqual(c.hash('/user/samples/kick.wav'), (hashlib.sha256(data).digest(), 5000))
+        self.assertGreater(LIB.sim_user_flushes(), 0)
+        # a put over a file replaces it; a byte wrong on the way leaves the old one
+        c.put('/user/samples/kick.wav', b'short')
+        LIB.sim_corrupt()
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.put('/user/samples/kick.wav', data)
+        self.assertEqual(e.exception.status, 11)
+        self.assertEqual(c.get('/user/samples/kick.wav'), b'short')
+        self.assertEqual([x['name'] for x in c.ls('/user/samples')], ['kick.wav'])
+        # a put cut short: at most its temporary file, which can be removed
+        c.call(hl.PUT_OPEN, struct.pack('<I', len(data)) + hashlib.sha256(data).digest()
+               + b'/user/half.wav')
+        c.call(hl.PUT_DATA, struct.pack('<I', 0) + data[:224])
+        self.assertIn('half.wav.wbpart', [x['name'] for x in c.ls('/user')])
+        c.rm('/user/half.wav.wbpart')
+        c.mv('/user/samples/kick.wav', '/user/kick.wav')
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.mv('/user/kick.wav', '/yaffs2/kick.wav')
+        self.assertEqual(e.exception.status, 6)
+        c.rm('/user/kick.wav')
+        c.rm('/user/samples')
+        self.assertEqual(c.ls('/user'), [])
+
+    def test_user_unreadable(self):
+        c = self.client(user=True)
+        c.approve(1.0)
+        LIB.sim_user(1)     # no volume FatFs reads (exFAT is one)
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.ls('/user')
+        self.assertEqual(e.exception.status, 16)
+        self.assertIn('not readable by this build', str(e.exception))
 
     def test_many_entries(self):
         c = self.client()

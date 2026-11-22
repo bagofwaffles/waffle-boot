@@ -3,14 +3,17 @@
  * The host link's protocol (src/hostlink.c) over volumes in memory, as a
  * shared library for the host tools' tests (tests/tools/hl_sim.py): the
  * drive (/yaffs2, read-write), the installed OS's two copies (/os/boot1
- * and boot2) and the OS's FAT volume (/user, when turned on), an approval
+ * and boot2) and the OS's FAT volume (/user, when turned on: src/hl_fat.c
+ * on a FAT volume sim_user() builds in memory with f_mkfs), an approval
  * the test answers, and jobs the test moves on.
  */
 #include <stdlib.h>
 #include <string.h>
 
+#include "waffle/hl_fat.h"
 #include "waffle/hostlink.h"
 #include "bearssl_hash.h"
+#include "wb_fatfs.h"
 
 #define NFILES 64
 
@@ -32,6 +35,32 @@ static struct {
 } S;
 
 static struct hostlink H;
+
+/* /user: 8 MiB of memory, formatted by sim_user() */
+#define USER_SECTORS 16384u
+static uint8_t user_disk[USER_SECTORS * 512u];
+
+static int u_read(void *c, uint32_t lba, void *buf, uint32_t n)
+{
+	(void)c;
+	if (lba >= USER_SECTORS || n > USER_SECTORS - lba)
+		return -1;
+	memcpy(buf, user_disk + (size_t)lba * 512u, (size_t)n * 512u);
+	return 0;
+}
+
+static int u_write(void *c, uint32_t lba, const void *buf, uint32_t n)
+{
+	(void)c;
+	if (lba >= USER_SECTORS || n > USER_SECTORS - lba)
+		return -1;
+	memcpy(user_disk + (size_t)lba * 512u, buf, (size_t)n * 512u);
+	return 0;
+}
+
+static const struct wb_blockdev user_dev = { .ctx = NULL, .n_sectors = USER_SECTORS,
+					     .read = u_read, .write = u_write };
+static struct hl_fat U;
 
 static struct sfile *find(const char *p)
 {
@@ -118,6 +147,8 @@ static int o_stat(void *c, const struct hl_path *p, struct hl_stat *st)
 	st->mtime = 0;
 	st->size = 0;
 	st->type = 2;
+	if (p->root == HL_ROOT_USER)
+		return hlfat_stat(&U, p->rest, st);
 	if (*p->rest == '\0')
 		return HL_OK;
 	if (p->root == HL_ROOT_OS) {
@@ -143,6 +174,8 @@ static int o_list(void *c, const struct hl_path *p, uint32_t start, hl_each_fn e
 
 	(void)c;
 	*end = false;
+	if (p->root == HL_ROOT_USER)
+		return hlfat_list(&U, p->rest, start, each, arg, end);
 	if (p->root == HL_ROOT_OS) {
 		static const char *const names[] = { "boot1", "boot2" };
 
@@ -181,6 +214,8 @@ static int o_read(void *c, const struct hl_path *p, uint32_t off, uint8_t *buf, 
 
 	(void)c;
 	*got = 0;
+	if (p->root == HL_ROOT_USER)
+		return hlfat_read(&U, p->rest, off, buf, n, got);
 	if (p->root == HL_ROOT_OS) {
 		if (os_part(p) == 0u)
 			return HL_E_NOT_FOUND;
@@ -219,11 +254,16 @@ static int o_hash(void *c, const struct hl_path *p, uint8_t sha[32], uint32_t *s
 	return rc;
 }
 
+static int put_user;
+
 static int o_create(void *c, const struct hl_path *p)
 {
 	struct sfile *f = find(p->full);
 
 	(void)c;
+	put_user = p->root == HL_ROOT_USER;
+	if (put_user)
+		return hlfat_create(&U, p->rest);
 	if (f == NULL)
 		f = make(p->full, 0);
 	if (f == NULL)
@@ -239,6 +279,17 @@ static int o_write(void *c, const uint8_t *b, uint32_t n)
 	int rc;
 
 	(void)c;
+	if (put_user) {
+		if (S.corrupt && n > 0u) {
+			uint8_t t[HL_CHUNK];
+
+			memcpy(t, b, n);
+			t[n - 1u] ^= 0x01u;
+			S.corrupt = 0;
+			return hlfat_write(&U, t, n);
+		}
+		return hlfat_write(&U, b, n);
+	}
 	if (S.writing < 0)
 		return HL_E_BAD;
 	f = &S.f[S.writing];
@@ -253,6 +304,8 @@ static int o_write(void *c, const uint8_t *b, uint32_t n)
 static int o_finish(void *c)
 {
 	(void)c;
+	if (put_user)
+		return hlfat_finish(&U);
 	S.writing = -1;
 	return HL_OK;
 }
@@ -260,6 +313,8 @@ static int o_finish(void *c)
 static void o_abandon(void *c)
 {
 	(void)c;
+	if (put_user)
+		hlfat_abandon(&U);
 	S.writing = -1;
 }
 
@@ -269,6 +324,8 @@ static int o_remove(void *c, const struct hl_path *p)
 	const size_t n = strlen(p->full);
 
 	(void)c;
+	if (p->root == HL_ROOT_USER)
+		return hlfat_remove(&U, p->rest);
 	if (f == NULL)
 		return HL_E_NOT_FOUND;
 	for (int i = 0; f->dir && i < NFILES; i++)
@@ -281,6 +338,8 @@ static int o_remove(void *c, const struct hl_path *p)
 static int o_mkdir(void *c, const struct hl_path *p)
 {
 	(void)c;
+	if (p->root == HL_ROOT_USER)
+		return hlfat_mkdir(&U, p->rest);
 	if (find(p->full) != NULL)
 		return HL_E_EXISTS;
 	return make(p->full, 1) != NULL ? HL_OK : HL_E_IO;
@@ -291,6 +350,8 @@ static int o_rename(void *c, const struct hl_path *from, const struct hl_path *t
 	struct sfile *f = find(from->full), *t = find(to->full);
 
 	(void)c;
+	if (from->root == HL_ROOT_USER)
+		return hlfat_rename(&U, from->rest, to->rest);
 	if (f == NULL)
 		return HL_E_NOT_FOUND;
 	if (t != NULL)
@@ -341,6 +402,8 @@ int sim_put(const char *path, const uint8_t *d, size_t n, int dir);
 long sim_get(const char *path, uint8_t *buf, size_t cap);
 void sim_os(unsigned part, const uint8_t *d, size_t n);
 void sim_corrupt(void);
+int sim_user(int blank);
+unsigned sim_user_flushes(void);
 void sim_fail_next(void);
 int sim_last_run(uint8_t *action, uint8_t *arg, char *path, size_t cap);
 int sim_session(void);
@@ -426,6 +489,40 @@ void sim_os(unsigned part, const uint8_t *d, size_t n)
 		return;
 	memcpy(S.os[part - 1u], d, n);
 	S.os_len[part - 1u] = (uint32_t)n;
+}
+
+static unsigned flushes;
+
+static int u_flush(void *c)
+{
+	(void)c;
+	flushes++;
+	return 0;
+}
+
+/* /user's volume built afresh: FAT, or (blank) none FatFs reads. */
+int sim_user(int blank)
+{
+	static uint8_t work[4096];
+	const MKFS_PARM opt = { FM_FAT, 1, 1, 512, 0 };
+	FRESULT r = FR_OK;
+
+	memset(user_disk, 0, sizeof user_disk);
+	memset(&U, 0, sizeof U);
+	U.dev = &user_dev;
+	U.flush = u_flush;
+	flushes = 0;
+	if (!blank) {
+		wb_fatfs_attach(&user_dev);
+		r = f_mkfs("", &opt, work, sizeof work);
+		wb_fatfs_attach(NULL);
+	}
+	return (int)r;
+}
+
+unsigned sim_user_flushes(void)
+{
+	return flushes;
 }
 
 void sim_corrupt(void)

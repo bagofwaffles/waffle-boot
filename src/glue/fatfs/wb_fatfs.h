@@ -23,6 +23,8 @@
  * access then fails as "not ready". The caller keeps dev alive.
  */
 void wb_fatfs_attach(const struct wb_blockdev *dev);
+/* The device drive 0 is attached to now, or NULL. */
+const struct wb_blockdev *wb_fatfs_drive(void);
 
 /*
  * Formats drive 0 as the RAM disk of S-12.003 to S-12.006 (S-12.008 on the

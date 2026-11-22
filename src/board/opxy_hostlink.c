@@ -6,8 +6,9 @@
  *   yaffs2  the drive, as MTP offers it: read, write, list and stat open
  *   os      the installed OS's two copies on the eMMC's boot partitions,
  *           boot1 and boot2: the header sector and the image, read only
- *   user    the OS's FAT volume on the eMMC's user area, read only, with
- *           FatFs on the sectors; fat-region devices alone (the OP-XY)
+ *   user    the OS's FAT volume on the eMMC's user area, read and written
+ *           with FatFs (waffle/hl_fat.h) within that volume's sectors alone;
+ *           fat-region devices alone (the OP-XY)
  *
  * No file call reaches the SPI flash, memory or a raw sector of the drive.
  * SPEC-Q: reading the FAT region and the boot partitions as files is new;
@@ -23,7 +24,7 @@
 #include "waffle/s03_emmc.h"
 #include "waffle/s15_lines.h"
 #include "bearssl_hash.h"
-#include "wb_fatfs.h"
+#include "waffle/hl_fat.h"
 
 static struct opxy_master *me;	/* the ops' ctx */
 
@@ -128,77 +129,72 @@ static int os_size(struct opxy_master *m, unsigned part, uint32_t *size)
 
 /* ---- the OS's FAT volume (root user) ---- */
 
-static FATFS ufs;
-static FIL ufil;
-
-/* Volume sector s at its user-area sector (S-03.072), read only. */
-static int user_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
+/*
+ * Volume sectors [lba, lba + count) at their user-area sectors (S-03.072):
+ * the one bound on what the root's FatFs reaches. A range that is not
+ * wholly inside the volume reads or writes nothing.
+ */
+int opxy_user_sectors(struct opxy_master *m, bool write, uint32_t lba, uint8_t *buf,
+		      uint32_t count)
 {
-	const struct s03_emmc_ops *e = me->emmc.ops;
-	uint8_t *b = buf;
+	const struct s03_emmc_ops *e = m->emmc.ops;
 
-	(void)ctx;
-	if (e == NULL)
+	if (e == NULL || count == 0u || lba >= S03_FAT_SECTORS ||
+	    count > S03_FAT_SECTORS - lba)
 		return -1;
 	while (count > 0u) {
 		const uint32_t to = lba < S03_FAT_FIRST ? S03_FAT_FIRST : S03_FAT_SECTORS;
-		uint32_t k = to - lba < count ? to - lba : count;
+		const uint32_t k = to - lba < count ? to - lba : count;
+		const uint32_t at = s03_fat_volume_to_user(lba);
 
-		if (lba >= S03_FAT_SECTORS ||
-		    e->read(e->ctx, s03_fat_volume_to_user(lba), k, b) != 0)
+		if (write ? e->write(e->ctx, at, k, buf) != 0 : e->read(e->ctx, at, k, buf) != 0)
 			return -1;
 		lba += k;
-		b += k * S03_SECTOR;
+		buf += k * S03_SECTOR;
 		count -= k;
 	}
 	return 0;
 }
 
+static int user_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
+{
+	(void)ctx;
+	return opxy_user_sectors(me, false, lba, buf, count);
+}
+
 static int user_write(void *ctx, uint32_t lba, const void *buf, uint32_t count)
 {
 	(void)ctx;
-	(void)lba;
-	(void)buf;
-	(void)count;
-	return -1;
+	return opxy_user_sectors(me, true, lba, (uint8_t *)(uintptr_t)buf, count);
 }
 
 static const struct wb_blockdev user_dev = {
 	.ctx = NULL, .n_sectors = S03_FAT_SECTORS, .read = user_read, .write = user_write,
 };
 
-/* FatFs's one drive, while the RAM disk does not hold it. */
-static int user_mount(struct opxy_master *m)
+/* The eMMC's cache to its nonvolatile memory (S-03.068). */
+static int user_flush(void *ctx)
 {
-	if (m->sv.fat.mounted)
-		return HL_E_BUSY;
-	if (s09_files_slave_lost(&m->sv.files))
-		return HL_E_UNREACHABLE;
-	wb_fatfs_attach(&user_dev);
-	if (f_mount(&ufs, "", 1) == FR_OK)
-		return HL_OK;
-	wb_fatfs_attach(NULL);
-	return HL_E_REFUSED;		/* no FAT volume FatFs reads */
+	const struct opxy_master *m = ctx;
+	const struct s03_emmc_ops *e = m->emmc.ops;
+
+	return e != NULL && e->switch_byte(e->ctx, 32u, 1u) == 0 ? 0 : -1;
 }
 
-static void user_unmount(void)
+/* FatFs's one drive is the RAM disk's while a scan or a transfer has it. */
+static bool user_busy(void *ctx)
 {
-	(void)f_mount(NULL, "", 0);
-	wb_fatfs_attach(NULL);
+	const struct opxy_master *m = ctx;
+
+	return m->sv.fat.mounted;
 }
 
-static int fr_err(FRESULT r)
-{
-	return r == FR_OK ? HL_OK :
-	       r == FR_NO_FILE || r == FR_NO_PATH ? HL_E_NOT_FOUND :
-	       r == FR_INVALID_NAME ? HL_E_PATH : HL_E_IO;
-}
+static struct hl_fat ufat = { .dev = &user_dev, .flush = user_flush, .busy = user_busy };
 
-static void from_fno(const FILINFO *f, struct hl_stat *st)
+static struct hl_fat *user(struct opxy_master *m)
 {
-	st->type = (f->fattrib & AM_DIR) != 0u ? 2u : 1u;
-	st->size = st->type == 2u ? 0u : (uint32_t)f->fsize;
-	st->mtime = (uint32_t)f->fdate << 16 | f->ftime;	/* FAT's date and time */
+	ufat.ctx = m;
+	return s09_files_slave_lost(&m->sv.files) ? NULL : &ufat;
 }
 
 /* ---- the ops ---- */
@@ -261,7 +257,6 @@ static int stat_(void *ctx, const struct hl_path *p, struct hl_stat *st)
 {
 	struct opxy_master *m = ctx;
 	struct s09_stat s;
-	FILINFO fno;
 	int rc;
 
 	st->type = 2u;
@@ -274,20 +269,12 @@ static int stat_(void *ctx, const struct hl_path *p, struct hl_stat *st)
 			from_stat(&s, st);
 		return rc;
 	}
+	if (p->root == HL_ROOT_USER)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_stat(user(m), p->rest, st);
 	if (*p->rest == '\0')
 		return HL_OK;
-	if (p->root == HL_ROOT_OS) {
-		st->type = 1u;
-		return os_which(p) == 0u ? HL_E_NOT_FOUND : os_size(m, os_which(p), &st->size);
-	}
-	rc = user_mount(m);
-	if (rc != HL_OK)
-		return rc;
-	rc = fr_err(f_stat(p->rest, &fno));
-	if (rc == HL_OK)
-		from_fno(&fno, st);
-	user_unmount();
-	return rc;
+	st->type = 1u;
+	return os_which(p) == 0u ? HL_E_NOT_FOUND : os_size(m, os_which(p), &st->size);
 }
 
 /* The drive's listing: entries from skip on, each one stat'ed. */
@@ -366,27 +353,8 @@ static int list(void *ctx, const struct hl_path *p, uint32_t start, hl_each_fn e
 		*end = true;
 		return HL_OK;
 	}
-	rc = user_mount(m);
-	if (rc == HL_OK) {
-		static DIR dir;
-		static FILINFO fno;
-		uint32_t i = 0;
-
-		rc = fr_err(f_opendir(&dir, p->rest));
-		while (rc == HL_OK) {
-			rc = fr_err(f_readdir(&dir, &fno));
-			if (rc != HL_OK || fno.fname[0] == '\0') {
-				*end = rc == HL_OK;
-				break;
-			}
-			from_fno(&fno, &st);
-			if (i++ >= start && !each(arg, fno.fname, &st))
-				break;
-		}
-		(void)f_closedir(&dir);
-		user_unmount();
-	}
-	return rc;
+	return user(m) == NULL ? HL_E_UNREACHABLE :
+	       hlfat_list(user(m), p->rest, start, each, arg, end);
 }
 
 static int read_(void *ctx, const struct hl_path *p, uint32_t off, uint8_t *buf,
@@ -434,21 +402,8 @@ static int read_(void *ctx, const struct hl_path *p, uint32_t off, uint8_t *buf,
 		}
 		return rc;
 	}
-	rc = user_mount(m);
-	if (rc == HL_OK) {
-		UINT br = 0;
-
-		rc = fr_err(f_open(&ufil, p->rest, FA_READ));
-		if (rc == HL_OK) {
-			rc = fr_err(f_lseek(&ufil, off));
-			if (rc == HL_OK)
-				rc = fr_err(f_read(&ufil, buf, n, &br));
-			*got = (uint32_t)br;
-			(void)f_close(&ufil);
-		}
-		user_unmount();
-	}
-	return rc;
+	return user(m) == NULL ? HL_E_UNREACHABLE :
+	       hlfat_read(user(m), p->rest, off, buf, n, got);
 }
 
 /* The whole file's SHA-256 and size, read as GET reads it. */
@@ -472,11 +427,17 @@ static int hash(void *ctx, const struct hl_path *p, uint8_t sha[32], uint32_t *s
 }
 
 static int32_t put_fd = -1;
+static bool put_user;		/* the put under way is on /user */
 
 static int create(void *ctx, const struct hl_path *p)
 {
 	struct opxy_master *m = ctx;
-	int rc = drive_ok(m);
+	int rc;
+
+	put_user = p->root == HL_ROOT_USER;
+	if (put_user)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_create(user(m), p->rest);
+	rc = drive_ok(m);
 
 	if (rc != HL_OK)
 		return rc;
@@ -490,6 +451,8 @@ static int write_(void *ctx, const uint8_t *b, uint32_t n)
 {
 	struct opxy_master *m = ctx;
 
+	if (put_user)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_write(user(m), b, n);
 	if (put_fd < 0)
 		return HL_E_BAD;
 	return s09_files_write(&m->sv.files, put_fd, b, n) == (int32_t)n ? HL_OK :
@@ -502,6 +465,8 @@ static int finish(void *ctx)
 	struct opxy_master *m = ctx;
 	const int32_t fd = put_fd;
 
+	if (put_user)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_finish(user(m));
 	put_fd = -1;
 	if (fd < 0)
 		return HL_E_BAD;
@@ -512,6 +477,10 @@ static void abandon(void *ctx)
 {
 	struct opxy_master *m = ctx;
 
+	if (put_user) {
+		hlfat_abandon(&ufat);
+		return;
+	}
 	if (put_fd >= 0)
 		(void)s09_files_close(&m->sv.files, put_fd);
 	put_fd = -1;
@@ -521,8 +490,11 @@ static int remove_(void *ctx, const struct hl_path *p)
 {
 	struct opxy_master *m = ctx;
 	struct s09_stat s;
-	int rc = drive_ok(m);
+	int rc;
 
+	if (p->root == HL_ROOT_USER)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_remove(user(m), p->rest);
+	rc = drive_ok(m);
 	if (rc != HL_OK)
 		return rc;
 	if (kept(p))
@@ -539,7 +511,11 @@ static int remove_(void *ctx, const struct hl_path *p)
 static int mkdir_(void *ctx, const struct hl_path *p)
 {
 	struct opxy_master *m = ctx;
-	int rc = drive_ok(m);
+	int rc;
+
+	if (p->root == HL_ROOT_USER)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_mkdir(user(m), p->rest);
+	rc = drive_ok(m);
 
 	if (rc != HL_OK)
 		return rc;
@@ -553,8 +529,12 @@ static int rename_(void *ctx, const struct hl_path *from, const struct hl_path *
 	struct opxy_master *m = ctx;
 	struct s09_files *f = &m->sv.files;
 	struct s09_stat s;
-	int rc = drive_ok(m);
+	int rc;
 
+	if (from->root == HL_ROOT_USER)
+		return user(m) == NULL ? HL_E_UNREACHABLE :
+		       hlfat_rename(user(m), from->rest, to->rest);
+	rc = drive_ok(m);
 	if (rc != HL_OK)
 		return rc;
 	if (kept(from) || kept(to))

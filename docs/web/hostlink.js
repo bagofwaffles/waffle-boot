@@ -23,11 +23,12 @@ export const C = {
 export const A = { INSTALL: 1, OS_WRITE: 2, OS_ONCE: 3, RESTART: 4, CONTINUE_OS: 5, RESTART_MODE: 6 };
 export const E = {
 	OK: 0, OFF: 1, APPROVAL: 2, NEVER: 3, BAD: 4, UNKNOWN: 5, PATH: 6, NOT_FOUND: 7, EXISTS: 8,
-	IO: 9, BUSY: 10, CHECKSUM: 11, OFFSET: 12, UNREACHABLE: 13, READ_ONLY: 14, REFUSED: 15,
+	IO: 9, BUSY: 10, CHECKSUM: 11, OFFSET: 12, UNREACHABLE: 13, READ_ONLY: 14, REFUSED: 15, FS: 16,
 };
 export const STATUS_TEXT = ['ok', 'host link off', 'hold 1 on your device to allow', 'never from a host',
 	'malformed', 'not in this build', 'path refused', 'not found', 'exists', 'I/O error', 'busy',
-	'checksum mismatch', 'offset', 'volume not answering', 'read only', 'refused by the unit'];
+	'checksum mismatch', 'offset', 'volume not answering', 'read only', 'refused by the unit',
+	'volume not readable by this build'];
 export const SESSIONS = ['none', 'pending', 'approved', 'refused', 'timed out'];
 export const JOB_STATES = ['none', 'queued', 'running', 'done', 'failed'];
 export const CHUNK = 224;

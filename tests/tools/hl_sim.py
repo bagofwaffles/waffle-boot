@@ -24,6 +24,7 @@ from testos_mon import frame, unframe  # noqa: E402
 ID = 0x7C
 REPLY_ROUTE = 0x12
 BEARSSL = os.path.join(TOP, 'src', 'third_party', 'bearssl')
+FATFS = os.path.join(TOP, 'src', 'third_party', 'fatfs', 'source')
 
 
 def build(d):
@@ -34,9 +35,13 @@ def build(d):
     srcs = [os.path.join(TOP, 'tests', 'tools', 'hl_sim.c'), os.path.join(TOP, 'src', 'hostlink.c'),
             os.path.join(BEARSSL, 'src', 'hash', 'sha2small.c'),
             os.path.join(BEARSSL, 'src', 'codec', 'dec32be.c'),
-            os.path.join(BEARSSL, 'src', 'codec', 'enc32be.c')]
+            os.path.join(BEARSSL, 'src', 'codec', 'enc32be.c'), os.path.join(TOP, 'src', 'hl_fat.c'),
+            os.path.join(FATFS, 'ff.c'), os.path.join(FATFS, 'ffunicode.c'),
+            os.path.join(TOP, 'src', 'glue', 'fatfs', 'diskio_blockdev.c')]
     subprocess.check_call([cc, '-std=c11', '-O1', '-shared', '-fPIC', '-I', os.path.join(TOP, 'src', 'include'),
-                           '-I', os.path.join(BEARSSL, 'inc'), '-I', os.path.join(BEARSSL, 'src')]
+                           '-I', os.path.join(BEARSSL, 'inc'), '-I', os.path.join(BEARSSL, 'src'),
+                           '-I', FATFS, '-I', os.path.join(TOP, 'src', 'glue', 'fatfs'),
+                           '-I', os.path.join(TOP, 'src', 'glue', 'blockdev')]
                           + srcs + ['-o', out])
     lib = ctypes.CDLL(out)
     lib.sim_request.restype = ctypes.c_size_t
@@ -61,6 +66,8 @@ class Unit:
         self.seq = 0
         self.requests = []
         lib.sim_reset(1 if on else 0, 1 if user else 0)
+        if user:
+            lib.sim_user(0)     # a FAT volume built here, in memory
 
     def request(self, payload):
         out = ctypes.create_string_buffer(256)

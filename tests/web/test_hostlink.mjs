@@ -87,7 +87,7 @@ test('hello, approval, files and jobs against the unit\'s own code', { skip: !ha
 		assert.ok(c.has(hl.C.PUT_OPEN) && c.has(hl.C.RUN) && !c.has(0x6e));
 		assert.deepEqual(h.actions.sort(), [1, 2, 3, 4, 5, 6]);
 		assert.deepEqual(h.roots.map((r) => [r.name, r.read, r.write, r.openList]),
-			[['yaffs2', true, true, true], ['os', true, false, false], ['user', true, false, false]]);
+			[['yaffs2', true, true, true], ['os', true, false, false], ['user', true, true, false]]);
 		// unapproved: list on the drive is open, a change is not
 		assert.deepEqual((await c.list('/yaffs2')).map((e) => e.name).sort(), ['lost+found', 'pkg.bin']);
 		await assert.rejects(c.mkdir('/yaffs2/d'), (e) => e.status === hl.E.APPROVAL);
@@ -117,6 +117,15 @@ test('hello, approval, files and jobs against the unit\'s own code', { skip: !ha
 		assert.equal(new TextDecoder().decode(os.subarray(512)), 'OS one');
 		await assert.rejects(c.put('/os/boot1', data), (e) => e.status === hl.E.READ_ONLY);
 		await assert.rejects(c.get('/yaffs2/../os/boot1'), (e) => e.status === hl.E.PATH);
+		// the user drive: written, read back, removed
+		await c.mkdir('/user/s');
+		await c.put('/user/s/a.wav', data);
+		assert.deepEqual(await c.get('/user/s/a.wav'), data);
+		assert.deepEqual(await c.list('/user/s'), [{ type: 'file', size: 1000, name: 'a.wav' }]);
+		await c.rename('/user/s/a.wav', '/user/b.wav');
+		await c.remove('/user/b.wav');
+		await c.remove('/user/s');
+		assert.deepEqual(await c.list('/user'), []);
 		// a job with its progress
 		const progress = [];
 		const rec = await c.runAction(hl.A.INSTALL, { path: '/yaffs2/pkg.bin', parts: 0x03,

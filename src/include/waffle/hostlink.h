@@ -65,6 +65,7 @@ enum hl_status {
 	HL_E_UNREACHABLE = 13,	/* the volume does not answer */
 	HL_E_READ_ONLY = 14,	/* the root takes no write */
 	HL_E_REFUSED = 15,	/* the unit's own checks refused it */
+	HL_E_FS = 16,		/* no volume this build reads there (exFAT, say) */
 };
 
 enum hl_class { HL_SAFE = 0, HL_NEEDS = 1, HL_NEVER_C = 2, HL_BY_ROOT = 3 };

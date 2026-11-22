@@ -393,10 +393,10 @@ static void test_table(void)
 	for (size_t i = 0; i < hl_nactions; i++)
 		CHECK(hl_actions[i].cls == HL_NEVER_C ||
 		      hl_actions[i].cls == HL_NEEDS);
-	/* the roots: only the drive lists openly, only the drive is written */
+	/* the roots: only the drive lists openly; the OS copies take no write */
 	CHECK(hl_roots[HL_ROOT_DRIVE].flags == (HL_RF_READ | HL_RF_WRITE | HL_RF_OPEN));
 	CHECK(hl_roots[HL_ROOT_OS].flags == HL_RF_READ);
-	CHECK(hl_roots[HL_ROOT_USER].flags == HL_RF_READ);
+	CHECK(hl_roots[HL_ROOT_USER].flags == (HL_RF_READ | HL_RF_WRITE));
 }
 
 /* ---- the session ---- */
@@ -610,6 +610,11 @@ static void test_put(void)
 	/* to the temporary name; the old file stays until the rename */
 	CHECK(put_open("/yaffs2/os.ldr", 500, sha) == HL_OK && out_n == 7u);
 	CHECK(find("/yaffs2/os.ldr" HL_PUT_SUFFIX) != NULL);
+	/* the put's own paths, their rests inside them */
+	CHECK(strcmp(H.put.path.rest, "os.ldr") == 0 && H.put.path.rest > H.put.path.full &&
+	      H.put.path.rest < H.put.path.full + sizeof H.put.path.full);
+	CHECK(strcmp(H.put.tmp.rest, "os.ldr" HL_PUT_SUFFIX) == 0 &&
+	      H.put.tmp.rest > H.put.tmp.full && H.put.tmp.rest < H.put.tmp.full + sizeof H.put.tmp.full);
 	CHECK(put_data(0, data, 200) == HL_OK && out[3] == 200u);
 	/* a wrong offset: the offset held, for a resume */
 	CHECK(put_data(100, data, 10) == HL_E_OFFSET && out[3] == 200u && out_n == 7u);
@@ -644,10 +649,12 @@ static void test_put(void)
 	CHECK(req(HL_PUT_END, NULL, 0) == HL_E_CHECKSUM && find("/yaffs2/new") == NULL &&
 	      find("/yaffs2/new" HL_PUT_SUFFIX) == NULL);
 
-	/* only the drive takes a write; never a root itself */
+	/* the OS copies take no write; the user drive does; never a root itself */
 	CHECK(put_open("/os/boot1", 500, sha) == HL_E_READ_ONLY);
 	V.user_root = true;
-	CHECK(put_open("/user/x", 500, sha) == HL_E_READ_ONLY);
+	CHECK(put_open("/user/x", 500, sha) == HL_OK && find("/user/x" HL_PUT_SUFFIX) != NULL);
+	hl_end(&H);
+	approve();
 	CHECK(put_open("/yaffs2", 500, sha) == HL_E_PATH);
 	CHECK(put_open("/yaffs2/../os/boot1", 500, sha) == HL_E_PATH);
 	/* the session's end abandons a put under way and removes its file */
@@ -677,13 +684,16 @@ static void test_changes(void)
 	memcpy(a, "/yaffs2/c\0/os/boot1", 19);
 	CHECK(req(HL_RENAME, a, 19) == HL_E_PATH);
 	V.user_root = true;
+	make("/user/x", false);
 	memcpy(a, "/user/x\0/user/y", 15);
-	CHECK(req(HL_RENAME, a, 15) == HL_E_READ_ONLY);
+	CHECK(req(HL_RENAME, a, 15) == HL_OK && find("/user/y") != NULL);
+	memcpy(a, "/user/y\0/yaffs2/y", 17);
+	CHECK(req(HL_RENAME, a, 17) == HL_E_PATH);		/* never across roots */
 	memcpy(a, "/yaffs2/c/yaffs2/e", 18);
 	CHECK(req(HL_RENAME, a, 18) == HL_E_BAD);		/* no NUL */
 	memcpy(a, "/yaffs2/c\0/yaffs2/../os", 23);
 	CHECK(req(HL_RENAME, a, 23) == HL_E_PATH);
-	CHECK(V.renames == 1u);
+	CHECK(V.renames == 2u);
 }
 
 /* ---- jobs ---- */

@@ -1066,17 +1066,22 @@ static void test_forwards_and_log(void)
 	const size_t nl = s06_frame_encode(0x24, 2, 0x45, (const uint8_t[]){ 1, 2, 3 }, 3,
 					   crc8, led);
 
+	bool (*ok)(void *, unsigned, uint8_t, const uint8_t *, size_t);
+
 	host_reset();
 	opxy_hostlink_start(&m);
-	CHECK(m.node.obs.forward_ok != NULL);
+	ok = m.node.obs.forward_ok;
+	CHECK(ok != NULL);
+	if (ok == NULL)
+		return;
 	m.sv.menu.host_link = false;
-	CHECK(m.node.obs.forward_ok(&m, S06_LINK_CDC, 3, info, ni));
-	CHECK(!m.node.obs.forward_ok(&m, S06_LINK_CDC, 4, led, nl));
-	CHECK(!m.node.obs.forward_ok(&m, S06_LINK_MIDI, 5, led, nl));
-	CHECK(m.node.obs.forward_ok(&m, S06_LINK_PSOC, 2, led, nl));
+	CHECK(ok(&m, S06_LINK_CDC, 3, info, ni));
+	CHECK(!ok(&m, S06_LINK_CDC, 4, led, nl));
+	CHECK(!ok(&m, S06_LINK_MIDI, 5, led, nl));
+	CHECK(ok(&m, S06_LINK_PSOC, 2, led, nl));
 	m.sv.menu.host_link = true;
 	m.sv.hl.session = HL_S_APPROVED;
-	CHECK(m.node.obs.forward_ok(&m, S06_LINK_CDC, 4, led, nl));
+	CHECK(ok(&m, S06_LINK_CDC, 4, led, nl));
 	/* the log: on only in an approved session */
 	m.sv.log.cdc_on = true;
 	opxy_hostlink_poll(&m);
@@ -1084,6 +1089,58 @@ static void test_forwards_and_log(void)
 	m.sv.hl.session = HL_S_NONE;
 	opxy_hostlink_poll(&m);
 	CHECK(!m.sv.log.cdc_on);
+}
+
+/* The /user root's one bound: volume sectors at their user-area sectors,
+ * the two halves of S-03.072's mapping each in its piece, and nothing read
+ * or written for a range not wholly inside the volume. */
+static uint32_t ub_at[8], ub_n[8];
+static unsigned ub_count;
+
+static int ub_io(void *ctx, uint32_t sector, uint32_t count, uint8_t *buf)
+{
+	(void)ctx;
+	(void)buf;
+	if (ub_count < 8u) {
+		ub_at[ub_count] = sector;
+		ub_n[ub_count] = count;
+	}
+	ub_count++;
+	return 0;
+}
+
+static int ub_write(void *ctx, uint32_t sector, uint32_t count, const uint8_t *buf)
+{
+	return ub_io(ctx, sector, count, (uint8_t *)(uintptr_t)buf);
+}
+
+static void test_user_bounds(void)
+{
+	static uint8_t buf[4u * 512u];
+	static struct s03_emmc_ops ops;
+
+	host_reset();
+	ops.read = ub_io;
+	ops.write = ub_write;
+	m.emmc.ops = &ops;
+	ub_count = 0;
+	CHECK(opxy_user_sectors(&m, true, 0, buf, 2) == 0 && ub_count == 1u &&
+	      ub_at[0] == s03_fat_volume_to_user(0) && ub_n[0] == 2u);
+	ub_count = 0;
+	CHECK(opxy_user_sectors(&m, false, S03_FAT_FIRST - 1u, buf, 2) == 0 && ub_count == 2u &&
+	      ub_at[0] == S03_FAT_LAST && ub_n[0] == 1u && ub_at[1] == S03_FAT_FIRST &&
+	      ub_n[1] == 1u);
+	ub_count = 0;
+	CHECK(opxy_user_sectors(&m, true, S03_FAT_SECTORS - 4u, buf, 4) == 0 && ub_count == 1u);
+	CHECK(ub_at[0] + ub_n[0] - 1u <= S03_FAT_LAST && ub_at[0] >= S03_FAT_FIRST);
+	ub_count = 0;
+	CHECK(opxy_user_sectors(&m, true, S03_FAT_SECTORS - 1u, buf, 2) == -1);
+	CHECK(opxy_user_sectors(&m, true, S03_FAT_SECTORS, buf, 1) == -1);
+	CHECK(opxy_user_sectors(&m, true, 5u, buf, 0xFFFFFFFFu) == -1);
+	CHECK(opxy_user_sectors(&m, true, 5u, buf, 0) == -1);
+	CHECK(ub_count == 0u);
+	m.emmc.ops = NULL;
+	CHECK(opxy_user_sectors(&m, false, 0, buf, 1) == -1);
 }
 
 /* The host link reports the front's version: the one this tree pins. */
@@ -1096,6 +1153,7 @@ int main(void)
 {
 	RUN(test_front_version);
 	RUN(test_forwards_and_log);
+	RUN(test_user_bounds);
 	RUN(test_normal);
 	RUN(test_cache_table);
 	RUN(test_os_wait);

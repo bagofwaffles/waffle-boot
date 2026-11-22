@@ -10,11 +10,12 @@ menu's serial port, and a command line over it.
     session               the session: none, pending, approved, refused, timed out
     approve [S]           ask the unit; wait up to S seconds (default 70) for the hold on it
     end                   end the session
-    ls PATH               a directory: /yaffs2/..., /os, /user/...
+    ls PATH               a directory: /yaffs2/... (the drive), /os (the OS copies, read only),
+                          /user/... (the OS's FAT volume, on the OP-XY)
     stat PATH             one entry
     get PATH OUT          a file to OUT, resumed from OUT's length when it is shorter
     hash PATH             a file's SHA-256 and size, read on the unit
-    put FILE PATH         FILE to PATH on the drive, checked whole before it takes the name
+    put FILE PATH         FILE to PATH on /yaffs2 or /user, checked whole before it takes the name
     rm PATH, mkdir PATH, mv FROM TO
     install PATH [PARTS]  install the package PATH on the drive; PARTS the steps' bits (default
                           0xFF: every part the unit would offer). Protected writes applies
@@ -48,7 +49,8 @@ SET_HOST_LINK = 7
 CHUNK = 224
 STATUS = ['ok', 'host link off', 'not approved: hold 1 on the unit', 'never from a host', 'malformed',
           'not in this build', 'path refused', 'not found', 'exists', 'I/O error', 'busy',
-          'checksum mismatch', 'offset', 'volume not answering', 'read only', 'refused by the unit']
+          'checksum mismatch', 'offset', 'volume not answering', 'read only', 'refused by the unit',
+          'volume not readable by this build']
 SESSIONS = ['none', 'pending', 'approved', 'refused', 'timed out']
 JOB_STATES = ['none', 'queued', 'running', 'done', 'failed']
 DEVICES = {0: 'OP-XY', 1: 'OP-1 Field'}

@@ -119,6 +119,7 @@ the second processor answering, 128 the drive mounted), and the OS version in th
 | 13 | the volume does not answer (the second processor is lost: restart) |
 | 14 | the root takes no write |
 | 15 | the unit's own checks refused it |
+| 16 | the volume is not one this build reads (exFAT, or no FAT volume): "not readable by this build" |
 
 ## Files
 
@@ -131,7 +132,7 @@ memory or a raw sector of the drive.
 | --- | --- | --- | --- | --- | --- | --- |
 | `/yaffs2` | the drive, as MTP offers it | approval | approval | open | through the second processor | on the one processor |
 | `/os` | the installed OS: `boot1` and `boot2`, each boot partition's header sector and the image it states (the header alone when it states none) | approval | never: the OS write action | approval | through the second processor | on the one processor |
-| `/user` | the OS's FAT volume on the eMMC's user area, read with FatFs | approval | none | approval | yes | not offered: the OP-1 Field has no FAT region |
+| `/user` | the OS's FAT volume on the eMMC's user area, read and written with FatFs | approval | approval | approval | yes | not offered: the OP-1 Field has no FAT region |
 
 GET reads by offset, so a broken transfer goes on where it stopped. A put writes to `<path>.wbpart`,
 from PUT_OPEN's offset 0: each PUT_DATA's offset must be the unit's `have`, which every reply gives. A
@@ -140,9 +141,15 @@ puts the file on the eMMC (not its cache), reads it back whole, and renames it i
 size and SHA-256 are those declared; otherwise the temporary file is removed and the old one stays.
 `lost+found` cannot be removed or renamed. Every change is on the eMMC before the reply.
 
-The OS FAT volume is a FAT volume only as far as FatFs reads one (FAT12, 16 or 32; this build has no
-exFAT). A write there would need FatFs's writes enabled on that volume, the eMMC flushed after each
-change, and a rule for a volume the OS keeps open; none of that is built.
+`/user` is the OS's FAT volume as FatFs reads it: FAT12, 16 or 32. This build has no exFAT, and a volume
+it does not read answers status 16. A put there, a removal, a directory and a rename each reach the
+eMMC, its cache flushed, before the reply; a put cut short leaves at most its `.wbpart` file, which a
+later session lists and removes. Nothing formats the volume or writes its partition table, and its
+sectors are the only ones reached: one bound in the block device under FatFs refuses any range outside
+it. While the host link is up the bootloader is the only thing running, so the volume is not shared with
+the OS and needs no rule for that. Protected writes covers the bootloader slots and the unit's identity,
+not files on a drive (MTP's writes to the drive do not look at it either), so it does not apply to
+`/user`.
 
 ## Actions
 

@@ -32,12 +32,13 @@ const struct hl_entry hl_settings[] = {
 };
 const size_t hl_nsettings = sizeof hl_settings / sizeof hl_settings[0];
 
-/* The drive (yaffs2) is read-write and lists openly; the installed OS's
- * copies and the OS's own FAT volume are read only, behind the approval. */
+/* The drive (yaffs2) is read-write and lists openly; the OS's own FAT
+ * volume is read-write and the installed OS's copies read only, both behind
+ * the approval even to list. */
 const struct hl_root_info hl_roots[HL_ROOTS] = {
 	[HL_ROOT_DRIVE] = { "yaffs2", HL_RF_READ | HL_RF_WRITE | HL_RF_OPEN },
 	[HL_ROOT_OS] = { "os", HL_RF_READ },
-	[HL_ROOT_USER] = { "user", HL_RF_READ },
+	[HL_ROOT_USER] = { "user", HL_RF_READ | HL_RF_WRITE },
 };
 
 uint8_t hl_class_of(const struct hl_entry *t, size_t n, uint8_t id)
@@ -296,6 +297,7 @@ static int put_open(struct hostlink *h, const uint8_t *a, size_t n, uint8_t *d, 
 	if (k + sizeof(HL_PUT_SUFFIX) - 1u > HL_PATH_MAX)
 		return HL_E_PATH;
 	h->put.path = p;
+	h->put.path.rest = h->put.path.full + (p.rest - p.full);
 	h->put.tmp = p;
 	wb_copy((uint8_t *)h->put.tmp.full + k, (const uint8_t *)HL_PUT_SUFFIX,
 		sizeof(HL_PUT_SUFFIX));
