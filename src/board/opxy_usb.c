@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "waffle/board/opxy_boot.h"
+#include "waffle/div64.h"
 #include "waffle/s10a_msc.h"
 #include "waffle/s10c_sysex.h"
 
@@ -38,7 +39,7 @@ bool opxy_usb_up(void)
 #define BREATH_US 1000u		/* about a millisecond between two */
 
 /* The board clock's cycles in a microsecond, as the gap meter counts. */
-static uint64_t cycles_per_us(void)
+static uint32_t cycles_per_us(void)
 {
 	return opxy_time.cycles_per_us != 0u ? opxy_time.cycles_per_us : 1u;
 }
@@ -73,7 +74,7 @@ static void usb_task(void)
  */
 void opxy_usb_breathe(void)
 {
-	if (in_task || wb_core_cycles() - served < BREATH_US * cycles_per_us())
+	if (in_task || wb_core_cycles() - served < (uint64_t)BREATH_US * cycles_per_us())
 		return;
 	if (up) {
 		usb_task();
@@ -96,7 +97,7 @@ void opxy_usb_gap_begin(void)
 
 uint32_t opxy_usb_gap_end(void)
 {
-	const uint64_t us = gap / cycles_per_us();
+	const uint64_t us = wb_udiv64(gap, cycles_per_us());
 
 	metered = false;
 	return us > UINT32_MAX ? UINT32_MAX : (uint32_t)us;

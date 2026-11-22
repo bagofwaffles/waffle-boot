@@ -211,6 +211,19 @@ static uint16_t bit16(unsigned n)
 	return (uint16_t)(1u << n);
 }
 
+/* The lowest set bit of a v other than 0. A loop: the BF70x has no
+ * instruction for it, and libgcc's __ctzsi2 brings a 256-byte table. */
+static unsigned low_bit(uint16_t v)
+{
+	unsigned n = 0;
+
+	while (!(v & 1u)) {
+		v >>= 1;
+		n++;
+	}
+	return n;
+}
+
 /* --- Interrupts -------------------------------------------------------- */
 
 void dcd_int_enable(uint8_t rhport)
@@ -717,7 +730,7 @@ void dcd_int_handler(uint8_t rhport)
 		dcd_event_bus_signal(rhport, DCD_EVENT_SUSPEND, true);
 
 	while (tx) {
-		const unsigned n = (unsigned)__builtin_ctz(tx);
+		const unsigned n = low_bit(tx);
 
 		if (n == 0)
 			process_ep0_isr(rhport);
@@ -728,7 +741,7 @@ void dcd_int_handler(uint8_t rhport)
 		tx = (uint16_t)(tx | (wb_mmr_read16(USB0_INTRTX) & txe_shadow));
 	}
 	while (rx) {
-		const unsigned n = (unsigned)__builtin_ctz(rx);
+		const unsigned n = low_bit(rx);
 
 		process_epout_isr(rhport, n, true);
 		rx = (uint16_t)(rx & ~bit16(n));

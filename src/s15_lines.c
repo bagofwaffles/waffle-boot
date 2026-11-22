@@ -5,6 +5,8 @@
 #include "waffle/s15_lines.h"
 #include "waffle/s15_menu.h"
 
+#include "waffle/div64.h"
+
 /* ---- keys ------------------------------------------------------------ */
 
 /* S-15.011, S-15.016: the device's digit keys (device.key.digit1 to
@@ -69,7 +71,7 @@ unsigned s15_progress(uint32_t done, uint32_t total)
 {
 	if (total == 0u)
 		return 100;
-	return (unsigned)(((uint64_t)done * 200u + total) / (2u * (uint64_t)total));
+	return wb_percent32(done, total);
 }
 
 static const struct {

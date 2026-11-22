@@ -24,6 +24,7 @@
 
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
+#include "waffle/div64.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/s07_program.h"
 #include "waffle/s11_content.h"
@@ -120,8 +121,7 @@ static struct {
 static void host_progress(struct opxy_master *m, uint32_t done,
 			  uint32_t total, const char *label)
 {
-	const uint32_t pct = total == 0u ? 100u :
-		(uint32_t)(((uint64_t)done * 200u + total) / (2u * (uint64_t)total));
+	const uint32_t pct = total == 0u ? 100u : wb_percent32(done, total);
 
 	if (label == sent.label && pct == sent.pct)
 		return;

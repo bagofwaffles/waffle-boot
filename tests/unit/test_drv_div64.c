@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The 64-bit divisions done without the compiler's: wb_udiv64_32()
- * (waffle/div64.h), the time it gives (wb_time_us(), wb_time_ms()), and
+ * The 64-bit divisions done without the compiler's: wb_udiv64_32() and
+ * wb_udiv64() (waffle/div64.h), the progress percent wb_percent32(), the
+ * time they give (wb_time_us(), wb_time_ms()), and
  * yaffs2's wb_yaffs_div() (yaffs_port.h), each against the host's own
  * 64-bit division at the edges of every step and on random values.
  */
@@ -72,10 +73,76 @@ static void check_udiv(void)
 		if (d == 0u)
 			d = 1u;
 		bad += wb_udiv64_32(n, d) != n / d;
+		bad += wb_udiv64(n, d) != n / d;
 		bad += wb_udiv64_32(n, (uint32_t)(y >> 40) % 0xFFFFu + 1u) !=
 		       n / ((uint32_t)(y >> 40) % 0xFFFFu + 1u);
 	}
 	CHECK(bad == 0, "random: %u wrong", bad);
+}
+
+/* The 64-bit formula the progress callers used: the reference. */
+static uint32_t percent_ref(uint32_t done, uint32_t total)
+{
+	return (uint32_t)(((uint64_t)done * 200u + total) / (2u * (uint64_t)total));
+}
+
+/*
+ * wb_percent32() over every 32-bit done and total other than 0: the bound
+ * is the callers' own types, a uint32_t byte count of a file or partition
+ * (at most 4 GiB - 1), so no total they pass is out of range. Done above
+ * total too, which host_progress() and s15_progress() do not clamp.
+ */
+static void check_percent(void)
+{
+	static const uint32_t ts[] = {
+		1u, 2u, 3u, 7u, 99u, 100u, 101u, 199u, 200u, 201u, 1000u,
+		0xFFFFu, 0x10000u, 0x28F5C28u, 0x28F5C29u, 0x51EB851u, 0x51EB852u,
+		0x7FFFFFFFu, 0x80000000u, 0x80000001u, 0xFFFFFFFEu, 0xFFFFFFFFu,
+	};
+	unsigned bad = 0;
+
+	for (size_t i = 0; i < sizeof ts / sizeof ts[0]; i++) {
+		const uint32_t t = ts[i];
+
+		/* each percent's rounding edge: done x 200 + t crossing 2 t k */
+		for (uint32_t k = 0; k <= 101u; k++) {
+			const uint64_t edge = ((uint64_t)2u * t * k - t) / 200u;
+
+			for (int j = -2; j <= 2; j++) {
+				const uint64_t d = edge + (uint64_t)(int64_t)j;
+
+				if (d <= UINT32_MAX)
+					bad += wb_percent32((uint32_t)d, t) != percent_ref((uint32_t)d, t);
+			}
+		}
+		static const uint32_t fixed[] = {
+			0u, 1u, 0x7FFFFFFFu, 0x80000000u, 0xFFFFFFFEu, 0xFFFFFFFFu,
+		};
+		for (size_t j = 0; j < sizeof fixed / sizeof fixed[0]; j++) {
+			bad += wb_percent32(fixed[j], t) != percent_ref(fixed[j], t);
+			bad += wb_percent32(t - fixed[j] % t, t) != percent_ref(t - fixed[j] % t, t);
+		}
+	}
+	CHECK(bad == 0, "percent edges: %u wrong", bad);
+
+	bad = 0;
+	for (unsigned i = 0; i < 2000000u; i++) {
+		uint64_t x = next(), y = next();
+		uint32_t t = (uint32_t)x >> (y & 31u), d;
+
+		if (t == 0u)
+			t = 1u;
+		/* done within total mostly, beyond it sometimes */
+		d = (y & 0x20u) ? (uint32_t)(y >> 32) >> ((y >> 6) & 31u)
+				: (uint32_t)((uint64_t)(uint32_t)(y >> 32) * t >> 32);
+		bad += wb_percent32(d, t) != percent_ref(d, t);
+	}
+	CHECK(bad == 0, "percent random: %u wrong", bad);
+	CHECK(wb_percent32(0u, 1u) == 0u && wb_percent32(1u, 1u) == 100u &&
+	      wb_percent32(1u, 200u) == 1u && wb_percent32(1u, 201u) == 0u &&
+	      wb_percent32(0xFFFFFFFFu, 0xFFFFFFFFu) == 100u &&
+	      wb_percent32(0x7FFFFFFFu, 0xFFFFFFFFu) == 50u,
+	      "percent: fixed values");
 }
 
 /* The core counter's whole range at the nominal CCLK and others. */
@@ -135,6 +202,7 @@ static void check_yaffs_div(void)
 int main(void)
 {
 	check_udiv();
+	check_percent();
 	check_time();
 	check_yaffs_div();
 	return tl_done("drv_div64");

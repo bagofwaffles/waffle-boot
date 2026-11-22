@@ -50,4 +50,17 @@ static inline uint64_t wb_udiv64_32(uint64_t n, uint32_t d)
 	return ((uint64_t)qhi << 32) | qlo;
 }
 
+/* wb_udiv64_32() out of line (src/div64.c), one copy for the image. */
+uint64_t wb_udiv64(uint64_t n, uint32_t d);
+
+/*
+ * (200 x done + total) / (2 x total), done x 100 / total rounded half up,
+ * for a total other than 0 and any 32-bit done, without a 64-bit divisor
+ * (src/div64.c). With done = q x total + r it is 100 q + (200 r + total) /
+ * (2 total), and the second term is (100 r + total / 2) / total: for an odd
+ * total the half dropped cannot carry the quotient past a multiple of total.
+ * Above 100 the result is that quotient modulo 2^32.
+ */
+uint32_t wb_percent32(uint32_t done, uint32_t total);
+
 #endif /* WAFFLE_DIV64_H */

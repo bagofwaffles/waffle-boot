@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#include "waffle/div64.h"
 #include "waffle/s06_bytes.h"
 #include "waffle/testos.h"
 
@@ -1901,7 +1902,7 @@ static bool gate(struct s09_master *m, unsigned rung, struct s09_rec_rung *e)
 		if (m->session_us < least)
 			least = m->session_us;
 	}
-	e->plain_us = (uint32_t)((words * m->plain_word_ns + 999u) / 1000u);
+	e->plain_us = (uint32_t)wb_udiv64(words * m->plain_word_ns + 999u, 1000u);
 	if ((uint64_t)least * 16u > (uint64_t)e->plain_us * 15u) {
 		e->result = S09_RR_GATE;
 		return false;

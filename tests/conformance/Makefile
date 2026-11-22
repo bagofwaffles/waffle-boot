@@ -57,29 +57,29 @@ H_s02_CPPFLAGS := -Isrc
 H_s02_SRCS += src/s02_store.c src/wire_crc.c
 H_s02_TP := $(call tp_o,$(TP_crc_SRCS) $(TP_crc_GLUE) $(TP_zlib_SRCS) $(TP_zlib_GLUE))
 H_s03_SRCS := src/s03_emmc.c src/device.c
-H_s04_SRCS := src/s04_records.c src/s10c_text.c src/s11_common.c src/s11_version.c src/device.c
+H_s04_SRCS := src/s04_records.c src/s10c_text.c src/div64.c src/s11_common.c src/s11_version.c src/device.c
 H_s05_SRCS := src/s05_handoff.c src/s01_memmap.c src/device.c
 # The boot flow's order (S-05.001, S-15.175); built with the boot prompt's op
 # (S-05.025), which a run leaves NULL to stand for a build without it.
 H_s05_SRCS += src/boot_flow.c
 H_s05_CPPFLAGS := -DOPXY_BOOT_PROMPT=1
 H_s06_SRCS := src/s06_frame.c src/s06_rx.c src/s06_link.c src/device.c
-H_s07_SRCS := src/s07_rules.c src/s07_cypress.c src/device.c
+H_s07_SRCS := src/s07_rules.c src/div64.c src/s07_cypress.c src/device.c
 # The PSoC link on the unit tests' clock and port (tests/unit/s07_test.h).
-H_s07p_SRCS := src/s07_psoc.c src/s07_program.c src/s07_cypress.c src/s07_rules.c \
+H_s07p_SRCS := src/s07_psoc.c src/div64.c src/s07_program.c src/s07_cypress.c src/s07_rules.c \
 	src/s06_frame.c src/s06_rx.c src/s06_link.c \
 	src/s15_prompt.c src/s15_console.c src/s15_lines.c src/s14_log.c src/s14_line.c \
 	src/s17_revisions.c src/s11_common.c src/s11_version.c
 H_s08_SRCS := src/s08_rules.c src/device.c
-H_s09_SRCS := src/s09_bridge.c src/s09_master.c src/s09_slave.c src/s09_fast.c src/s06_frame.c src/s06_rx.c \
+H_s09_SRCS := src/s09_bridge.c src/div64.c src/s09_master.c src/s09_slave.c src/s09_fast.c src/s06_frame.c src/s06_rx.c \
 	src/s06_link.c
-H_s10c_SRCS := src/s10c_sysex.c src/s10c_text.c src/s11_common.c src/s11_version.c
+H_s10c_SRCS := src/s10c_sysex.c src/div64.c src/s10c_text.c src/s11_common.c src/s11_version.c
 # The command server (S-10c.070, S-10c.076).
 H_s10c_SRCS += src/s10c_host.c
 H_s10a_SRCS := src/s10a_desc.c src/s10a_ch9.c src/s10a_scsi.c src/s10a_bot.c
-H_s10b_SRCS := src/s10b_mtp.c src/s10b_text.c src/s04_records.c src/s10c_text.c src/s11_common.c \
+H_s10b_SRCS := src/s10b_mtp.c src/div64.c src/s10b_text.c src/s04_records.c src/s10c_text.c src/s11_common.c \
 	src/s11_version.c
-H_s13c_SRCS := src/s13c_panel.c src/display_draw.c src/display_font.c src/display_title.c src/s15_console.c src/s15_lines.c \
+H_s13c_SRCS := src/s13c_panel.c src/div64.c src/display_draw.c src/display_font.c src/display_title.c src/s15_console.c src/s15_lines.c \
 	src/s15_prompt.c src/s14_log.c src/s14_line.c src/s17_revisions.c src/s11_common.c src/s11_version.c
 # The front's start and recovery (src/front/'s portable code) and the model
 # PSoC's S-06 framing.
@@ -94,8 +94,8 @@ H_s11_SRCS := $(sort $(wildcard src/s11_*.c)) src/s17_revisions.c src/wire_crc.c
 	src/wire_package.c src/wire_zip.c src/wire_yaffs.c src/wire_ckpt.c src/wire_fat.c \
 	src/s09_files.c src/s09_master.c src/s09_slave.c src/s09_bridge.c src/wire_s09.c src/s15_settings.c \
 	src/s06_frame.c src/s06_rx.c src/s06_link.c src/s03_emmc.c src/s04_records.c \
-	src/s10c_text.c
-H_s12_SRCS := src/s04_records.c src/s10c_text.c src/s11_common.c src/s11_version.c \
+	src/s10c_text.c src/div64.c
+H_s12_SRCS := src/s04_records.c src/div64.c src/s10c_text.c src/s11_common.c src/s11_version.c \
 	src/s11_content.c src/s14_export.c src/wire_fat.c src/wire_package.c src/wire_yaffs.c src/wire_ckpt.c \
 	src/wire_crc.c src/wire_zip.c
 # Programs that link the vendored libraries.

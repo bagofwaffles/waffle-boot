@@ -5,6 +5,7 @@
 
 #include "waffle/bytes.h"
 #include "waffle/device.h"
+#include "waffle/div64.h"
 #include "waffle/wire_fat.h"
 
 #define LOGS "logs"
@@ -122,11 +123,11 @@ static bool path_ok(const char *path)
 
 bool wire_fat_stamp(uint64_t utc, uint16_t *date, uint16_t *time)
 {
-	uint64_t days = utc / 86400u;
+	uint64_t days = wb_udiv64(utc, 86400u);
 	uint32_t sec = (uint32_t)(utc - days * 86400u);	/* no 64-bit remainder */
 	/* the civil date of a day count (proleptic Gregorian, from 0000-03-01) */
 	uint64_t z = days + 719468u;
-	uint64_t era = z / 146097u;
+	uint64_t era = wb_udiv64(z, 146097u);
 	uint32_t doe = (uint32_t)(z - era * 146097u);
 	uint32_t yoe = (doe - doe / 1460u + doe / 36524u - doe / 146096u) / 365u;
 	uint32_t doy = doe - (365u * yoe + yoe / 4u - yoe / 100u);

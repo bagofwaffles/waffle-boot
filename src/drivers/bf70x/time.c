@@ -7,13 +7,13 @@
 
 uint64_t wb_time_us(const struct wb_time *t)
 {
-	return wb_udiv64_32(wb_core_cycles(), t->cycles_per_us);
+	return wb_udiv64(wb_core_cycles(), t->cycles_per_us);
 }
 
 /* floor(floor(c / a) / b) is floor(c / (a * b)). */
 uint64_t wb_time_ms(const struct wb_time *t)
 {
-	return wb_udiv64_32(wb_time_us(t), 1000u);
+	return wb_udiv64(wb_time_us(t), 1000u);
 }
 
 uint64_t wb_time_deadline(const struct wb_time *t, uint32_t us)
