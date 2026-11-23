@@ -1,11 +1,11 @@
 {
-  "version": "0.9.51",
+  "version": "0.9.52",
   "file": "waffle-install.ldr",
-  "size": 772492,
-  "sha256": "5c4b90586df34772bd2d2333123080b5e72f0bba96bb839b55af7cb608e3a2ba",
+  "size": 773632,
+  "sha256": "cc2b1f7c728a9f2bfcc7063fe288e299b7b7943077f714b2304f208f4666d340",
   "boot": {
     "file": "waffle-boot.ldr",
-    "size": 351508,
-    "sha256": "4d3648c3763d3a080a1dca2d4a068971feeb154a714f3c309c2c6a15788058c6"
+    "size": 351776,
+    "sha256": "4f3dde682bd33f5905b683b8a828702655c0cf23d489a96edd871bcf5e43d749"
   }
 }
