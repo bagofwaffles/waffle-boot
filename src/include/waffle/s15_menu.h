@@ -173,8 +173,8 @@ enum s15_store_save {
 	S15_STORE_UNUSABLE	/* the running slot keeps no settings (S-02.099) */
 };
 
-/* The boot logo (waffle/logo.h) as System shows it. SPEC-Q: the boot
- * logo's screens and keys have no requirement label yet. */
+/* The boot logo (waffle/logo.h) as System shows it (S-02.110,
+ * S-02.112). */
 enum s15_logo_state {
 	S15_LOGO_BUILTIN,	/* none stored: the front's own */
 	S15_LOGO_CUSTOM,	/* one stored for this image */

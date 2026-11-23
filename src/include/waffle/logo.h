@@ -5,7 +5,7 @@
  * the conversion of a picture to it, and its save and removal in the
  * running slot. A PNG file's decoding is waffle/logo_png.h's.
  *
- * SPEC-Q: the boot logo has no requirement label yet.
+ * S-02.109 - S-02.112.
  */
 #ifndef WAFFLE_LOGO_H
 #define WAFFLE_LOGO_H

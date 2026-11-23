@@ -431,7 +431,7 @@ bool s10c_host_frame(struct s10c_host *h, enum s10c_link link, uint8_t route,
 			fsn[i] = (uint8_t)(words[i / 4] >> (8 * (i % 4)));
 		send(h, link, ROUTE_TO_HOST, 0x20, fsn, ok ? sizeof(fsn) : 0);
 		break;
-	case 0xB0:	/* S-10c.059; SPEC-Q: the log to a host, with consent */
+	case 0xB0:	/* S-10c.059, S-10c.128: the log to a host, with consent */
 		if (gate(h, link) == S10C_GATE_OK)
 			h->ops->log_config(h->ctx, p, n);
 		break;

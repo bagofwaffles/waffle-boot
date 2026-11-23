@@ -6,7 +6,7 @@
  * removal in the running slot under the settings' rule, the factory reset's
  * among them.
  *
- * SPEC-Q: the boot logo has no requirement label yet.
+ * S-02.109 - S-02.112.
  */
 #include "waffle/board/opxy_services.h"
 

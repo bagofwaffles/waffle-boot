@@ -358,7 +358,7 @@ static void option_item(struct s15_menu *m)
 
 /* ---- the boot logo (waffle/logo.h) ---------------------------------- */
 
-/* SPEC-Q: the Boot logo item, its screens and keys have no label yet. */
+/* S-02.112: the save and the removal, by the unit's own keys alone. */
 
 /* n bytes in KiB, one decimal, rounded down. */
 static void kib(struct s15_buf *b, uint32_t n)
@@ -631,7 +631,7 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 2:
-		/* SPEC-Q: never from a host, Protected writes */
+		/* S-10c.127: never from a host, Protected writes */
 		if (!m->host_event)
 			option_key(m);      /* S-15.140 */
 		break;
@@ -655,7 +655,7 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		}
 		break;
 	case 7:
-		/* SPEC-Q: the Host link setting, saved as the others are */
+		/* S-15.176: the Host link setting, saved as the others are */
 		m->host_link = !m->host_link;
 		settings_changed(m);
 		break;
@@ -704,7 +704,7 @@ static void clear_settings(struct s15_menu *m)
 	default:
 		break;
 	}
-	/* SPEC-Q: the reset removes a stored boot logo too, its header erased
+	/* S-02.112: the reset removes a stored boot logo too, its header erased
 	 * under the logo's own rule and range check; a failure is said as the
 	 * settings' is and stops nothing. */
 	if (m->env->logo_remove != NULL &&
@@ -1039,7 +1039,7 @@ static void open_info2(struct s15_menu *m)
 		s15_first_stage_text(&v, b->first_stage_n, b->first_stage_c);
 		info_row(m, "First stage", v.s, NULL, NULL);
 	}
-	if (m->env->logo_state != NULL) {		/* SPEC-Q: the boot logo's room */
+	if (m->env->logo_state != NULL) {		/* S-02.110: the boot logo's room */
 		m->env->logo_state(m->env->ctx, &m->logo);
 		s15_buf_init(&v);
 		if (m->logo.state == S15_LOGO_NO_ROOM) {
@@ -1139,7 +1139,7 @@ static void system_key(struct s15_menu *m, unsigned key)
 			open_logo(m);
 		break;
 	case 7:
-		/* SPEC-Q: never from a host, the factory reset */
+		/* S-10c.127: never from a host, the factory reset */
 		if (m->host_event)
 			break;
 		draw_system(m, true);                 /* S-15.050 */
@@ -1551,7 +1551,7 @@ static void factory_key(struct s15_menu *m, unsigned key)
 
 /* ---- the host link's approval ------------------------------------- */
 
-/* SPEC-Q: the approval screen and its keys have no label yet. */
+/* S-15.198: the approval screen and its keys. */
 static void draw_approve(struct s15_menu *m, bool armed)
 {
 

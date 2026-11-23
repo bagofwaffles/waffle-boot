@@ -18,7 +18,7 @@
  * other bits written 0 and ignored); with no byte 1 the host link is on.
  * A writer writes N = 1 while the host link is on, N = 2 when it is off; a
  * reader takes any N from 1 up, uses the bytes it knows and ignores the
- * rest. SPEC-Q: byte 1 has no label yet.
+ * rest. Byte 1 is S-02.096's too.
  *
  * A page is used when any of its bytes is not 0xFF. The sector reads valid
  * when its used pages are its first ones, with no erased page before a used

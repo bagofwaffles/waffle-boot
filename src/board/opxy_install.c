@@ -1107,8 +1107,8 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 	struct s14_text t;
 
 	const bool invalid = env->sig == S11_SIG_INVALID;
-	/* SPEC-Q: an approved host link session's install of an invalid
-	 * package skips S-15.197's prompt, the session's approval taken as
+	/* S-15.197, S-11.022: an approved host link session's install of an
+	 * invalid package skips the prompt, the session's approval taken as
 	 * the consent; the log and the job's record still say invalid. */
 	const bool host_ok = host_parts >= 0 && opxy_hostlink_approved(m);
 	const bool ask = invalid && !host_ok;

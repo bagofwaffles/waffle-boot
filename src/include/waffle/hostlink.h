@@ -9,8 +9,8 @@
  * its reply is call:1 tag:1 status:1 and the reply's data. The unit also
  * sends HL_EVENT frames on its own: a job's record whenever it changes.
  *
- * SPEC-Q: the protocol, its calls, its classes and its approval are new
- * behavior with no requirement label yet.
+ * S-10c.120 - S-10c.129: the protocol, its calls, its classes and its
+ * approval.
  *
  * Every call has one class (hl_calls): safe, needs the session's approval,
  * or never from a host; the file calls take theirs from the path's root.
