@@ -11,7 +11,7 @@
  *           fat-region devices alone (the OP-XY)
  *
  * No file call reaches the SPI flash, memory or a raw sector of the drive.
- * The roots are the host link's (S-10c.120 - S-10c.129); S-03.075's
+ * The roots are the host link's (S-10c.125); S-03.075's
  * footprint names the yaffs2 region and the reset's group only.
  */
 #include "waffle/board/opxy_boot.h"

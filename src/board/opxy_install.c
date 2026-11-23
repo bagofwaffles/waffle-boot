@@ -1136,7 +1136,7 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 		if (sel.choice != S15_SELECT_INSTALL)
 			return S11_ANSWER_CANCEL;
 	}
-	/* SPEC-Q: the parts a host chose for an approved session's install,
+	/* S-11.096, S-10c.126: the parts a host chose for an approved session's install,
 	 * those the selection would let it pick and no other: Protected
 	 * writes and the switched-off steps apply as at the unit. */
 	if (host_parts >= 0) {

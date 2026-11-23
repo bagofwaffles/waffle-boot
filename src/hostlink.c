@@ -4,7 +4,7 @@
 
 #include "waffle/bytes.h"
 
-/* S-10c.120, S-10c.127: the classification; the doc's table mirrors it. */
+/* S-10c.123, S-10c.127: the classification; the doc's table mirrors it. */
 const struct hl_entry hl_calls[] = {
 	{ HL_HELLO, HL_SAFE },      { HL_SESSION, HL_SAFE },
 	{ HL_APPROVE, HL_SAFE },    { HL_END, HL_SAFE },
