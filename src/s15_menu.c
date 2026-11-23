@@ -669,10 +669,9 @@ static void settings_key(struct s15_menu *m, unsigned key)
 
 /* ---- the display: the color and the boot logo ---------------------- */
 
-/* Settings' 3: the color and the boot logo's item, 8 back to Settings.
- * SPEC-Q: the screen is this code's reading: the color (S-15.173) is set
- * here and saved as Settings' items are, and the boot logo's item
- * (S-02.112) is here, on digit 6. */
+/* S-15.177: Settings' 3: the color (S-15.173), set here and saved as
+ * Settings' items are, and the boot logo's item (S-02.112) on digit 6;
+ * 8 back to Settings. */
 static void open_display(struct s15_menu *m)
 {
 	enter(m, S15_SCR_DISPLAY, "Display");
