@@ -47,7 +47,7 @@ The installer, `waffle-install.ldr`, runs as an OS under whatever bootloader the
 written from that bootloader's developer menu into the boot partition the OS is not in. It runs the
 hardware checks, and only when every check passes does it offer the install: a trial write, a
 trial start, then a commit. The OS has to be installed again afterward. Each write is started and
-confirmed on the unit by holding the step's key for 5 s. The page guides and shows; it never sends
+confirmed on the unit by holding the key it names. The page guides and shows; it never sends
 the bootloader image and never asks for a write.
 
 The installer speaks recovery's framing over its USB serial port, with request types of its own:

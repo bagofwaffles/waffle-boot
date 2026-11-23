@@ -148,7 +148,7 @@ test('a refusal, and a unit with the host link off', { skip: !haveC && 'no pytho
 		await c.hello();
 		assert.equal(await c.requestApproval(), 'refused');
 		await assert.rejects(c.mkdir('/yaffs2/d'), (e) => e.status === hl.E.APPROVAL &&
-			/hold 1 on your device/.test(e.message));
+			/hold 1 on the unit/.test(e.message));
 	} finally {
 		t.close();
 	}

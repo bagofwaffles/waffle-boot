@@ -339,7 +339,7 @@ export function describeInstall(s, hello = null, tests = null) {
         L.push('Nothing is written until you hold the key on the unit.');
         if (d.image && d.image.breadcrumb)
             L.push(IW.BREADCRUMB);
-        A.push(`Hold ${key} on the unit for 5 s to write the trial.`);
+        A.push(`Hold ${key} on the unit to write the trial.`);
         break;
     case IW.WRITING_TRIAL:
         L.push('Writing the trial' + (target ? ` into ${target}.` : '.'));
@@ -357,7 +357,7 @@ export function describeInstall(s, hello = null, tests = null) {
         L.push('The trial start reached the boot menu.');
         if (d.image && d.image.breadcrumb)
             L.push(IW.BREADCRUMB);
-        A.push(`Hold ${key} on the unit for 5 s to keep the new bootloader.`);
+        A.push(`Hold ${key} on the unit to keep the new bootloader.`);
         A.push(IW.RETRIAL);
         break;
     case IW.COMMITTING:
@@ -383,7 +383,7 @@ export function describeInstall(s, hello = null, tests = null) {
         d.tone = 'bad';
         L.push(`The trial failed: ${d.trial.text}.`);
         L.push('Nothing was kept. ' + d.starts);
-        A.push(`Hold ${key} on the unit for 5 s to try again.`);
+        A.push(`Hold ${key} on the unit to write the trial again.`);
         A.push(IW.SAVE_REPORT);
         break;
     case IW.LEFT:

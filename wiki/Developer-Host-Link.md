@@ -29,7 +29,7 @@ Host Link
 Only the unit's own keys answer it: **1 held for 5 s** allows, **8** refuses, and 60 s with no key is
 a timeout. A knob click starts no hold. The screen it covered comes back after the answer. The computer
 reads the answer with SESSION. Until then every call that needs approval answers status 2, so a page can
-say "hold 1 on your device".
+say "hold 1 on the unit".
 
 ## Framing
 
@@ -199,8 +199,8 @@ The page has the package as bytes, and the unit shows the boot menu.
 
 1. HELLO: `05 21 01 7c 03 04 01 01 d1 00` (call `00`, tag `01`, version 1). The reply says Host link is on,
    version 1, the device, and lists the calls, the install action and the root `/yaffs2`.
-2. APPROVE: `08 21 02 7c 02 02 02 28 00`. The reply's state is 1, pending: the page shows "hold 1 on your
-   device". The page asks SESSION (`08 21 03 7c 02 01 03 63 00`) every quarter second until the state is
+2. APPROVE: `08 21 02 7c 02 02 02 28 00`. The reply's state is 1, pending: the page shows "hold 1 on the
+   unit". The page asks SESSION (`08 21 03 7c 02 01 03 63 00`) every quarter second until the state is
    2, approved (3 refused, 4 timed out).
 3. PUT_OPEN `/yaffs2/pkg.bin` with its size and SHA-256, then PUT_DATA in 224-byte pieces from offset 0,
    each at the offset the last reply gave, then PUT_END. Status 11: the file did not arrive whole; put it

@@ -41,10 +41,10 @@ export const PHASE = {
     1: ['checking', 'Running the checks'],
     2: ['guided', 'The key check: press com, then M4 (4 under the display), on the unit'],
     3: ['locked', 'A check did not pass: nothing was written'],
-    4: ['ready', 'Hold 1 on the unit for 5 s to write the trial'],
+    4: ['ready', 'Hold 1 on the unit to write the trial'],
     5: ['writing trial', 'Writing the trial'],
     6: ['trial written', 'Switch off, then on: the new bootloader starts once'],
-    7: ['commit ready', 'Hold 1 for 5 s to keep the new bootloader, or 2 to write the trial again'],
+    7: ['commit ready', 'Hold 1 on the unit to keep the new bootloader, or 2 to write the trial again'],
     8: ['committing', 'Writing'],
     9: ['done', 'Done: switch off and on'],
     10: ['failed', 'A write failed'],
@@ -55,7 +55,7 @@ export const PHASE = {
 
 // The commit screen's 2: the same trial again, for one more trial start (one can go to the recovery
 // menu, another to the boot menu, before the new bootloader is kept).
-export const RETRIAL = 'Or hold 2 for 5 s to write the trial again, for one more trial start.';
+export const RETRIAL = 'Or hold 2 to write the trial again, for one more trial start.';
 
 export const VERDICT = { 0: 'PASS', 1: 'PASS WITH GAPS', 2: 'FAIL', 0xFF: 'not yet' };
 export const TEST_STATE = ['not run', 'pass', 'FAIL', 'not tested', 'not passed', 'n/a'];
@@ -139,7 +139,7 @@ export const STEADY = 'Keep the unit on and the cable in.';
 export const LEAVE_KEY = 8;
 // the phases in which the installer offers to leave, when the OS can be made active again
 export const LEAVE_PHASES = [3, 4, 7, 9, 10, 11];
-export const LEAVE = 'To leave without installing, hold 8 on the unit for 5 s: the installer makes ' +
+export const LEAVE = 'To leave without installing, hold 8 on the unit: the installer makes ' +
     'the OS active again.';
 export const BUSY = 'The unit is busy and does not answer for now; this page keeps waiting. Keep the ' +
     'unit on and the cable in.';

@@ -6,7 +6,7 @@
 //     import { connectSerial, HostLink, A } from './hostlink.js';
 //     const hl = new HostLink(await connectSerial());
 //     const hello = await hl.hello();              // versions, calls, actions, roots
-//     if (await hl.requestApproval() !== 'approved') ...   // "hold 1 on your device"
+//     if (await hl.requestApproval() !== 'approved') ...   // "hold 1 on the unit"
 //     await hl.put('/yaffs2/pkg.bin', bytes, { onProgress });
 //     const rec = await hl.runAction(A.INSTALL, { path: '/yaffs2/pkg.bin', parts: 0xff, onProgress });
 //
@@ -25,7 +25,7 @@ export const E = {
 	OK: 0, OFF: 1, APPROVAL: 2, NEVER: 3, BAD: 4, UNKNOWN: 5, PATH: 6, NOT_FOUND: 7, EXISTS: 8,
 	IO: 9, BUSY: 10, CHECKSUM: 11, OFFSET: 12, UNREACHABLE: 13, READ_ONLY: 14, REFUSED: 15, FS: 16,
 };
-export const STATUS_TEXT = ['ok', 'host link off', 'hold 1 on your device to allow', 'never from a host',
+export const STATUS_TEXT = ['ok', 'host link off', 'hold 1 on the unit to allow', 'never from a host',
 	'malformed', 'not in this build', 'path refused', 'not found', 'exists', 'I/O error', 'busy',
 	'checksum mismatch', 'offset', 'volume not answering', 'read only', 'refused by the unit',
 	'volume not readable by this build'];
@@ -340,7 +340,7 @@ export class HostLink {
 	}
 
 	// Asks the unit, then waits for the hold: 'approved', 'refused', 'timed out' (or 'pending'
-	// after waitMs). onPending(): show "hold 1 on your device".
+	// after waitMs). onPending(): show "hold 1 on the unit".
 	async requestApproval({ waitMs = 70000, onPending = null } = {}) {
 		let state = SESSIONS[(await this.call(C.APPROVE))[1][0]];
 		if (state === 'pending' && onPending)

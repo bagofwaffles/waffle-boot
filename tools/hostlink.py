@@ -299,7 +299,7 @@ def command(c, a):
     elif cmd == 'session':
         print(c.session())
     elif cmd == 'approve':
-        print('hold 1 on the unit for 5 s to allow, 8 to cancel')
+        print('hold 1 on the unit to allow, 8 to cancel')
         state = c.approve(float(a[0]) if a else 70.0)
         print(state)
         return 0 if state == 'approved' else 1

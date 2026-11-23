@@ -123,7 +123,7 @@ test('describeInstall: the words for the state above', () => {
     assert.deepEqual(d.slots[1].words, ['holds this image for a trial', 'trial started',
         'trial reached the boot menu']);
     assert.deepEqual(d.lines, ['The trial start reached the boot menu.', 'Holding 1: 64 %.']);
-    assert.deepEqual(d.advice, ['Hold 1 on the unit for 5 s to keep the new bootloader.', inst.RETRIAL,
+    assert.deepEqual(d.advice, ['Hold 1 on the unit to keep the new bootloader.', inst.RETRIAL,
         inst.LEAVE]);
     assert.equal(inst.describeInstall({ ...s, os: 6 }).leave, false, 'leave only while the OS can be made active');
     assert.equal(d.checks[18].stateText, 'FAIL');
@@ -420,7 +420,7 @@ test('pass: checks, trial, restart, commit, done', needPython, () => withBridge(
         'commit ready', 'committing', 'done']);
     assert.deepEqual(at(r, 'ready').lines, ['Checks passed. The trial goes into Slot 2.',
         'Nothing is written until you hold the key on the unit.']);
-    assert.deepEqual(at(r, 'ready').advice, ['Hold 1 on the unit for 5 s to write the trial.', inst.LEAVE]);
+    assert.deepEqual(at(r, 'ready').advice, ['Hold 1 on the unit to write the trial.', inst.LEAVE]);
     assert.ok(r.busy > 0, 'the port was quiet while the unit wrote');
     assert.deepEqual(at(r, 'trial written').advice[0], 'Switch off, then on: the new bootloader starts once.');
     assert.deepEqual(at(r, 'commit ready').lines, ['The trial start reached the boot menu.']);
@@ -479,7 +479,7 @@ test('trial-fail: the trial start did not reach the boot menu', needPython, () =
     assert.equal(d.tone, 'bad');
     assert.deepEqual(d.lines, ['The trial failed: the trial start ran but did not reach the boot menu.',
         'Nothing was kept. The selector names Slot 1, settled.']);
-    assert.deepEqual(d.advice, ['Hold 1 on the unit for 5 s to try again.',
+    assert.deepEqual(d.advice, ['Hold 1 on the unit to write the trial again.',
         inst.SAVE_REPORT, inst.LEAVE]);
     assert.deepEqual(d.slots[1].words, ['holds this image for a trial', 'trial started', 'trial spent']);
 }));
