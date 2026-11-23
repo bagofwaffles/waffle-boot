@@ -198,16 +198,13 @@ them and their exclusions needs no sign-off.
   nothing, and a key still down when it opens acts only after it has been let go and pressed again
   (S-15.013).
 - The result of a removal or a reset is a view of its own, left with 8 alone.
-- A setting shows its state as the item's hint (`Off`, or `On`, in red where it needs care). Settings
-  live on the Settings screen.
+- A setting shows its state as the item's hint (`Off`, or `On`, in red where it needs care).
 - Keys that are not items are named in a `keys` line on the screen that reads them, not in the status
   bar.
 
 ### Exclusions
 
 - The main screen holds no destructive item and no setting.
-- Whatever removes, erases or formats lives under System, on a digit only a sound key gives (5 to 7),
-  never on digit 4, which the white knob also gives.
 - No setting sits on a digit the white knob also gives.
 - 8 is never an item.
 - Developer mode is set only by its item on Settings.
