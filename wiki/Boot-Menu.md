@@ -33,7 +33,7 @@ once; letting go earlier, or any other key, cancels. A knob click never starts i
 
 | Item | What it does |
 | --- | --- |
-| 1 Install firmware | Offers a USB disk for a firmware package ([Updating the OS](Updating-the-OS)). Once the package is checked, the unit lists its parts: choose them with their digits and hold 1 for 5 s, or cancel with 8; after a cancel 8 goes back here. Hold **shift** while pressing 1 to also copy system information and logs to the disk ([Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)) |
+| 1 Install firmware | Offers a USB disk for a firmware package ([Updating the OS](Updating-the-OS)). Once the package is checked, the unit lists its parts: choose them with their digits and hold 1 (`Install selected (hold to select)`), or cancel with 8; after a cancel 8 goes back here. Hold **shift** while pressing 1 to also copy system information and logs to the disk ([Getting Logs Off the Unit](Getting-Logs-Off-the-Unit)) |
 | 2 Settings | The settings below |
 | 3 Developer menu | Shown only while developer mode is on |
 | 4 Device info | Serial numbers, versions, the second processor's state, and why the OS did not start. The help key opens it too. Its `1 More` opens a second page: the selected slot's start log, with the starts it holds, the unfinished ones at its end and the count it is erased at, read again each time the page opens, and the boot logo: built-in or custom, and the bytes this image leaves for one |
@@ -50,11 +50,11 @@ the items, the screen says when the OS could not be started, and why.
 | Item | What it does |
 | --- | --- |
 | 1 Developer mode | Off by default. On: shows the developer menu and adds a USB serial port |
-| 2 Protected writes | Lets installs write the bootloader slots (the list of parts offers the bootloader only while it is on), and lets a computer change the unit's serial and identity. 2 opens its screen, which says what it allows; hold 2 there for 5 s to turn it on. While it is on, 2 turns it off. Lasts until the next restart. No install writes the first stage, with or without it |
+| 2 Protected writes | Lets installs write the bootloader slots (the list of parts offers the bootloader only while it is on), and lets a computer change the unit's serial and identity. 2 opens its screen, which says what it allows; hold 2 there (`Turn on (hold to select)`) to turn it on. While it is on, 2 turns it off. Lasts until the next restart. No install writes the first stage, with or without it |
 | 3 Display | The color and the boot logo ([below](#display)) |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
 | 6 Start in boot menu | Every start opens this menu |
-| 7 Host link | On by default. On: a computer or a page may use the [host link](Developer-Host-Link) once the unit approves it (1 held for 5 s on the screen it asks with). Off: it is answered only that the link is off, and nothing over USB changes the unit |
+| 7 Host link | On by default. On: a computer or a page may use the [host link](Developer-Host-Link) once the unit approves it (1 held on the screen it asks with). Off: it is answered only that the link is off, and nothing over USB changes the unit |
 
 ### Where they are kept
 
@@ -92,13 +92,13 @@ until the next start; Start in boot menu shows what the next start will read.
 | --- | --- |
 | 1 Key test | Press every key and knob. **Shift + 8** leaves it |
 | 2 Reset volume calibration | Resets the volume knob's calibration, then returns to the main menu |
-| 3 Remove content packs | Shown when packs are installed. Hold a pack's digit for 5 s to remove it |
-| 5 Format drive | Erases the whole internal drive. Hold M1 or sound key 1 for 5 s. After the format the unit opens **Install Firmware** |
+| 3 Remove content packs | Shown when packs are installed. Hold a pack's digit to remove it |
+| 5 Format drive | Erases the whole internal drive. Hold M1 or sound key 1 on its screen. After the format the unit opens **Install Firmware** |
 | 7 Factory reset | Removes user data ([below](#factory-reset)) |
 
 ### Factory reset
 
-Removes your user data. A factory reset always asks for confirmation: its key held for 5 s.
+Removes your user data. A factory reset always asks for confirmation: its key held until the bar is full.
 
 > **Warning.** This cannot be undone. Copy anything you want to keep first.
 
@@ -117,7 +117,7 @@ unit. To erase everything instead, use **5 Format drive**.
 3. Press **5** (sound key 5): **System**.
 4. Press and hold **7** (sound key 7). The **Factory reset** row turns red, and a bar fills along the
    bottom row.
-5. Keep holding for 5 s; the reset starts then. Letting go earlier, or pressing any other key, cancels and
+5. Keep holding until the bar is full; the reset starts then. Letting go earlier, or pressing any other key, cancels and
    nothing is removed.
 6. Wait for `User data removed. Restart the OP-XY.`
 7. Switch the unit off and on.

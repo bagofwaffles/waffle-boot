@@ -139,7 +139,7 @@ for 5 s.
 **An install writes only what is chosen on the unit.** After a package is checked and unpacked, and before
 the install's first write, the unit lists the package's parts, all at `No`. Only the parts set to `Yes`
 run; the others are skipped and touch nothing, and the bootloader can be chosen only with Protected writes
-on. Key 1 held for 5 s starts the install; 8, or 60 s with no key, cancels it with nothing written, the
+on. Key 1 held (`Install selected (hold to select)`) starts the install; 8, or 60 s with no key, cancels it with nothing written, the
 metadata included. The keys come from the PSoC alone, so no computer can answer. A unit whose keys cannot be
 read is not asked: it installs every part but the bootloader.
 

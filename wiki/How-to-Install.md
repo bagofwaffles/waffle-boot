@@ -17,8 +17,8 @@ install itself.
   nothing for that step.
 - The OS file, to install again when waffle-boot is on the unit ([Updating the OS](Updating-the-OS)).
 
-Every write is started on the unit: you hold the key it names for 5 s. To leave at any point without
-installing, hold **8** for 5 s.
+Every write is started on the unit: you hold the key it names (`Hold to select`). A hold takes 5 s, and
+the unit shows the seconds left. To leave at any point without installing, hold **8**.
 
 A unit that already runs waffle-boot does not need the installer: choose **Upgrade / Recover** on the page
 ([How to Recover](How-to-Recover)).

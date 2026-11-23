@@ -22,7 +22,8 @@ You need a USB cable, a computer, and the firmware package file (its name contai
 3. Eject the disk. After a short wait the unit checks and unpacks the package, then lists its parts. If the
    package's signature does not match, a warning comes first ([Signatures](#signatures)).
 4. Choose the parts to install: each part's digit switches it between `No` and `Yes`. Every part starts at
-   `No`. Then hold **1** for 5 s. **8**, or 60 s with no key, cancels: nothing is installed. Then **8** goes
+   `No`. Then hold **1** (`Install selected (hold to select)`): a hold takes 5 s, and the bar shows the
+   seconds left. **8**, or 60 s with no key, cancels: nothing is installed. Then **8** goes
    back to the boot menu and **6** restarts; you can also copy the package to the disk again.
 5. Do not switch off while it runs. Steps show as `Installed`, `Not included` or `Skipped`.
 6. At `Done!`, press **6** to restart into the OS, or switch off and on.
@@ -67,7 +68,7 @@ check has one of three results:
 | Signature | What happens |
 | --- | --- |
 | Valid | The list says `Signed by TE`, and so does the run. A bootloader that is not a waffle-boot build is called a return to stock |
-| Does not match (or the unit's key cannot be read) | A warning comes before the list: hold **1** for 5 s to go on to it, or press **8** to cancel (60 s with no key cancel too). Then every part installs as usual. An install a computer runs through an approved [host link](Developer-Host-Link) session has no warning: the computer is told instead |
+| Does not match (or the unit's key cannot be read) | A warning comes before the list: hold **1** (`Install anyway (hold to select)`) to go on to it, or press **8** to cancel (60 s with no key cancel too). Then every part installs as usual. An install a computer runs through an approved [host link](Developer-Host-Link) session has no warning: the computer is told instead |
 | None (the package carries none, or a blank one) | No warning. Every part installs as usual |
 
 The signature changes only these words and the warning: every part can be chosen from any package, the
@@ -81,7 +82,7 @@ bootloader too with Protected writes on.
 | --- | --- |
 | `No valid package` | No file with `tfw` in its name in the disk's top folder, or the package was refused. The reason line says why ([the reasons](Building-Custom-OS-Updates#refusal-reasons)) |
 | `Nothing installed.` after the list | The list, or the signature warning before it, was canceled with 8 or ran out of time. Copy the package to the disk again, press **8** to go back, or **6** to restart |
-| `Signature does not match.` | The package's signature does not verify, or the unit's key cannot be read ([Signatures](#signatures)). Hold **1** for 5 s to install its other parts anyway |
+| `Signature does not match.` | The package's signature does not verify, or the unit's key cannot be read ([Signatures](#signatures)). Hold **1** to install its other parts anyway |
 | `Upgrade failed.` or `Installation failed.` | A step failed; its row says which. Switch off and on, then install again |
 | `Last install did not finish.` | The unit stopped mid-install. Install the same package again |
 | `Bootloader  Skipped: written, runs on restart` | The same package was installed again before a restart: its bootloader is already in the other slot and starts after the next restart |

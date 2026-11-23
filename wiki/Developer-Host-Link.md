@@ -26,7 +26,7 @@ Host Link
   8 Cancel
 ```
 
-Only the unit's own keys answer it: **1 held for 5 s** allows, **8** refuses, and 60 s with no key is
+Only the unit's own keys answer it: **1 held** allows, **8** refuses, and 60 s with no key is
 a timeout. A knob click starts no hold. The screen it covered comes back after the answer. The computer
 reads the answer with SESSION. Until then every call that needs approval answers status 2, so a page can
 say "hold 1 on the unit".
@@ -272,7 +272,7 @@ outside the drive can be reached, and the bootloader's own files on it (`os.ldr`
 - `continue-os` refuses during an install or OS write, and before the boot menu is up.
 - `dev-key` cannot answer an install's list of parts or the approval screen, which read the unit's own
   keys. A key a computer sends never starts the factory reset and never changes Protected writes; what else
-  erases still waits for its key to be held 5 s.
+  erases still waits for its key to be held on the unit.
 
 The requests' payload is an opcode byte and its little-endian arguments in frames of id `0x7D`, framed as
 [above](#framing); the reply's payload starts with a status byte: 0 ok, 1 refused (developer mode off, or

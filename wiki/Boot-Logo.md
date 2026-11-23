@@ -10,7 +10,8 @@ firmware install removes it.
 2. Copy **one** PNG file to the disk and eject it. Files whose names start with a dot (a computer adds
    some) are left alone; anything that is not a `.png` is ignored.
 3. About 2 s later the unit shows the picture as the start will show it, with its size and the free space
-   on the last line. **Hold 1 for 5 s** to save it, or press **8** to try another file.
+   on the last line. **Hold 1** (`1 Save (hold to select)`) to save it, or press **8** to try another file.
+   A hold takes 5 s, and the line shows the seconds left.
 
 The next start shows it. Nothing is written until the hold ends; releasing 1 early, or any other key,
 saves nothing.
@@ -39,7 +40,7 @@ leaves none, and the item shows `No room`.
 
 ## Removing it
 
-**2 Settings**, **3 Display**, **6 Boot logo**, then **hold 5 for 5 s** (`Remove`). The next start shows the built-in logo. A
+**2 Settings**, **3 Display**, **6 Boot logo**, then **hold 5** (`Remove`, `Hold to select`). The next start shows the built-in logo. A
 factory reset (System, 7) removes it too, with the settings. Installing
 firmware to a slot (with the installer, recovery, `wbrecover.py`, the browser page or an install from the
 boot menu) removes that slot's picture as well; each slot keeps its own, and nothing carries over.
