@@ -145,8 +145,8 @@ static void bringup(void *ctx)
 	m->flash.meta_size = (uint8_t)s04_meta_size(dev);	/* S-04.040 */
 	opxy_device_fingerprint(m, wb_spiflash_read, &m->hw.flash);
 	/* S-02.097: the defaults until the slave's start reads the running
-	 * slot's settings */
-	s02_store_defaults(&m->sv.store);
+	 * slot's settings, the color's by device (S-15.173) */
+	opxy_store_defaults(m, &m->sv.store);
 
 	/* S-13b.070: the PSoC link. UART1 waits for held mode (S-08.001). */
 	(void)opxy_psoc_uart_open(m); OPXY_CRUMB(3u); OPXY_TIME(BOOT_TIME_BRINGUP);
@@ -466,7 +466,7 @@ static bool slave_start(void *ctx)
 	m->running_trial = OPXY_TESTOS_OR(false, established && opxy_stream_trial(slot));
 	/* S-02.097: the running slot's settings, once per start, before the
 	 * decision; the test OS (waffle/testos.h) keeps none */
-	OPXY_TESTOS_OR(s02_store_defaults(&m->sv.store), store_load(m, established, slot));
+	OPXY_TESTOS_OR(opxy_store_defaults(m, &m->sv.store), store_load(m, established, slot));
 	/* S-13b.020, .021: the boot link on SPI0, SEL3. */
 	(void)wb_spi_init(&m->hw.link_spi, OPXY_SPI_LINK, &opxy_spi_boot_link,
 			  &m->hw.time, OPXY_BOOT_LINK_WORD_US);
@@ -528,7 +528,7 @@ static void storage_start(void *ctx)
 	m->running_established = OPXY_TESTOS_OR(false, established);
 	m->running_slot = (uint8_t)slot;
 	m->running_trial = OPXY_TESTOS_OR(false, established && opxy_stream_trial(slot));
-	OPXY_TESTOS_OR(s02_store_defaults(&m->sv.store), store_load(m, established, slot));
+	OPXY_TESTOS_OR(opxy_store_defaults(m, &m->sv.store), store_load(m, established, slot));
 	opxy_storage_init(&m->st, &m->hw, opxy_dev(m), true);
 	s09_master_init(&m->bridge, &m->bus_ops, &m->clock);
 	s09_master_local(&m->bridge, &m->st.store);
@@ -917,11 +917,17 @@ static void load_failed(void *ctx, enum s05_fail cause)
 #if !defined(OPXY_TEST_OS)
 /* S-15.175: the setting as the slave's start read it. S-02.095: a
  * trial start opens the boot menu as the setting does, so that its mark is
- * made with the slave started too. */
+ * made with the slave started too; opened for the trial alone, it then goes
+ * on to the OS (opxy_trial_continue()).
+ * SPEC-Q: S-02.095, S-15.175 have a trial start stay in its boot menu; here
+ * one that the setting did not open goes on, by Continue to OS's restart,
+ * once the mark is made. Whether the contract wants that, and the moment
+ * the line shows (OPXY_TRIAL_SHOW_MS), is the maintainer's to confirm. */
 static bool start_in_menu(void *ctx)
 {
-	const struct opxy_master *m = ctx;
+	struct opxy_master *m = ctx;
 
+	m->trial_go = m->running_trial && !m->sv.store.start_menu;
 	return m->sv.store.start_menu || m->running_trial;
 }
 #endif

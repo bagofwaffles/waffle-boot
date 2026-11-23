@@ -76,10 +76,32 @@ static void test_marks_once(void)
 	opxy_trial_reached(&m);
 	CHECK(mem[FR_LOG_OFF(1)] == OPXY_TRIAL_REACHED_BYTE);
 	CHECK(programs == 1u && erases == 0u);
+	CHECK(m.trial_reached);	/* made and read back */
 	opxy_trial_reached(&m);
 	CHECK(programs == 1u);
 	/* slot 0's log untouched */
 	CHECK(mem[FR_LOG_OFF(0)] == 0xFFu);
+}
+
+/* A program that leaves the byte otherwise: no going on (opxy_trial_continue()) */
+static int bad_program(void *ctx, uint32_t off, const uint8_t *buf, uint32_t len)
+{
+	(void)ctx;
+	(void)buf;
+	(void)len;
+	programs++;
+	mem[off] &= 0xF8u;
+	return 0;
+}
+
+static void test_not_read_back(void)
+{
+	static const struct s02_flash_ops bad = { NULL, ram_read, ram_erase, bad_program };
+
+	setup();
+	m.flash.flash = &bad;
+	opxy_trial_reached(&m);
+	CHECK(programs == 1u && mem[FR_LOG_OFF(1)] != OPXY_TRIAL_REACHED_BYTE && !m.trial_reached);
 }
 
 static void test_not_a_trial_start(void)
@@ -87,7 +109,7 @@ static void test_not_a_trial_start(void)
 	setup();
 	m.running_trial = false;		/* the record is not tried */
 	opxy_trial_reached(&m);
-	CHECK(programs == 0u);
+	CHECK(programs == 0u && !m.trial_reached);
 
 	setup();
 	m.front = false;			/* no front's record */
@@ -177,6 +199,7 @@ int main(void)
 {
 	RUN(test_marks_once);
 	RUN(test_not_a_trial_start);
+	RUN(test_not_read_back);
 	RUN(test_slot0);
 	RUN(test_front_reads_it);
 	return check_summary("test_front_trial_mark");

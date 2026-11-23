@@ -191,9 +191,15 @@ void opxy_trial_reached(struct opxy_master *m)
 		return;
 	m->trial_marked = true;
 	if (opxy_trial_reached_at(&m->flash, m->running_slot, &off)) {
+		uint8_t back = 0xFFu;
+		int rc;
+
 		opxy_flash_writer(&m->hw, true);	/* S-13b.017 */
-		(void)m->flash.flash->program(m->flash.flash->ctx, off, &reached, 1u);
+		rc = m->flash.flash->program(m->flash.flash->ctx, off, &reached, 1u);
 		opxy_flash_writer(&m->hw, false);
+		m->trial_reached = rc == 0 &&
+				   m->flash.flash->read(m->flash.flash->ctx, off, &back, 1u) == 0 &&
+				   back == reached;
 	}
 }
 

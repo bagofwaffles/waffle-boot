@@ -724,7 +724,7 @@ static void clear_settings(struct s15_menu *m)
 		return;
 	switch (m->env->settings_clear(m->env->ctx)) {
 	case S15_STORE_SAVED:
-		s15_settings_defaults(&d);
+		s15_settings_defaults(&d, m->dev);
 		if (m->color != d.color)
 			m->changes++;	/* every pixel changes, not only the lines */
 		m->dev_mode = d.dev_mode;
@@ -2125,20 +2125,34 @@ enum s15_continue s15_menu_continue_check(const struct s15_menu *m)
 	return S15_CONT_STARTED;
 }
 
+/* The line under the screen that was showing, whole on the panel before
+ * the shutdown begins (the board's continue_os sends the frame first);
+ * from here no key acts. */
+static void starting(struct s15_menu *m, enum s15_style st, const char *line)
+{
+	leave(m);
+	m->screen = S15_SCR_STARTING;
+	m->changes++;
+	sline(m, st, line);
+}
+
 enum s15_continue s15_menu_continue(struct s15_menu *m)
 {
 	const enum s15_continue c = s15_menu_continue_check(m);
 
 	if (c == S15_CONT_BUSY)
 		return c;
-	/* the line under the screen that was showing, whole on the panel
-	 * before the shutdown begins (the board's continue_os sends the frame
-	 * first); from here no key acts */
-	leave(m);
-	m->screen = S15_SCR_STARTING;
-	m->changes++;
-	sline(m, S15_ST_WARN, s15_cont_restarting);
+	starting(m, S15_ST_WARN, s15_cont_restarting);
 	m->env->continue_os(m->env->ctx);
+	return c;
+}
+
+enum s15_continue s15_menu_trial_ok(struct s15_menu *m)
+{
+	const enum s15_continue c = s15_menu_continue_check(m);
+
+	if (c == S15_CONT_STARTED)
+		starting(m, S15_ST_OK, s15_trial_ok_line);
 	return c;
 }
 
@@ -2416,7 +2430,7 @@ void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
 	m->shift = false;
 	m->option_on = false;            /* Off after any reset */
 	m->dev_mode = false;
-	m->color = false;
+	m->color = s15_color_default(dev);	/* S-15.173 */
 	m->mtp_macos = true;
 	m->start_menu = false;
 	m->host_link = true;

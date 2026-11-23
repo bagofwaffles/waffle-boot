@@ -58,7 +58,9 @@ A **trial start** runs a new image once without trusting it:
    it, not trusted.
 2. At the next start the check fails: the first stage trusts the old slot again, but starts the new one
    this once.
-3. If the new front comes up, it marks the start in its own log. That slot can then be **kept**.
+3. If the new front comes up, it marks the start in its own log. That slot can then be **kept**. Its main
+   image marks its boot menu reached too and, unless the boot menu was asked for, restarts into the OS
+   after a moment: that start runs the old slot.
 4. If it does not come up, switch off and on: the old slot starts.
 
 The recovery menu's **Try** ([How to Recover](How-to-Recover#start-the-other-slot-once-and-keep-it)) and the host tool's `try` and `write --new-front` use it.

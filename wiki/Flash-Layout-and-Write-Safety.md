@@ -44,7 +44,8 @@ that reaches `0x75000` leaves it none; its bytes there are its own, and no logo 
 A normal start programs two bits, in the last sector of the slot the selector names, and erases nothing but
 that sector, when the main image finds its log due (below). A trial start programs two bits too, in the tried slot's last sector: the front's mark, and the main image's
 when its boot menu shows (`0xFD` to `0xFC` to `0xF0`, S-02.095); the installer
-([Installer Reference](Installer-Reference#what-it-writes)) keeps a trial only with both.
+([Installer Reference](Installer-Reference#what-it-writes)) keeps a trial only with both. The restart
+into the OS that follows the second mark writes nothing to the flash.
 
 ## What keeps a unit bootable
 

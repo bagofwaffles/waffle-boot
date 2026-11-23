@@ -188,7 +188,7 @@ static void setup(void)
 	boot.start_log_slot = 1;	/* the running slot, selected */
 	boot.start_log_used = 41;
 	boot.start_log_erase = 256;
-	s15_settings_defaults(&boot.settings);
+	s15_settings_defaults(&boot.settings, &wb_device_opxy);
 	boot.settings.color = false;	/* the shots are in gray (S-15.173), but settings-color */
 	boot.settings.dev_mode = true;	/* the shots show the developer menu */
 	boot.running_known = true;	/* the status bar names slot 2 */

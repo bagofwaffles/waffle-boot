@@ -51,7 +51,7 @@ struct opxy_master;
 #ifndef OPXY_BL_VERSION_MAJOR
 #define OPXY_BL_VERSION_MAJOR 0u
 #define OPXY_BL_VERSION_MINOR 9u
-#define OPXY_BL_VERSION_PATCH 51u
+#define OPXY_BL_VERSION_PATCH 52u
 #endif
 /* A test build may give slot 0 another build number, so that the
  * two slots differ and S-01.002 finds the running one (Makefile
@@ -404,6 +404,8 @@ bool opxy_meta_write(struct opxy_master *m);
  * read afterwards; _clear() is the factory reset's.
  */
 void opxy_boot_store_load(struct opxy_master *m, const struct s02_store_slot *run);
+/* S-02.097's defaults, with the color's of this device (S-15.173). */
+void opxy_store_defaults(const struct opxy_master *m, struct s02_store *s);
 enum s15_store_save opxy_boot_store_save(struct opxy_master *m,
 					 const struct s02_store *s,
 					 struct s02_store *now);

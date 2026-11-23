@@ -1527,6 +1527,28 @@ static void env_continue_os(void *ctx)
 	opxy_reboot(m, slave ? S04_W11 : S04_W2, 0u);
 }
 
+void opxy_trial_continue(struct opxy_master *m)
+{
+	if (!m->trial_go || !m->trial_reached)
+		return;
+	if (m->trial_until == 0u) {
+		/* a busy menu keeps the boot menu: nothing goes on */
+		if (s15_menu_trial_ok(&m->sv.menu) != S15_CONT_STARTED) {
+			m->trial_go = false;
+			return;
+		}
+		s14_log_str(&m->sv.log, S14_INFO, S14_TAG("boot"),
+			    "trial start: boot menu reached, going on to the OS");
+		opxy_menu_show_now(m);
+		m->trial_until = wb_time_deadline(&m->hw.time, OPXY_TRIAL_SHOW_MS * 1000u);
+		return;
+	}
+	if (!wb_time_passed(m->trial_until))
+		return;
+	m->trial_go = false;
+	env_continue_os(m);
+}
+
 /*
  * S-15.194: the slave answering, and /yaffs2/os.ldr there as the next
  * start will take it (S-05.035), by its stat alone; nothing is written. A

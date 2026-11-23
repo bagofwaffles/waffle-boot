@@ -173,8 +173,9 @@ of the running slot have no countdown.
   slot written. Until a start would reach a checked slot, the screen says
   `Keep the power on until a write has finished`, the power switch is held off and `restart` is refused
   (unless forced). Keep the cable in.
-- **A new front**: the next start runs the other slot once and the selector returns to the running slot. If
-  it does not come up, switch off and on. To keep it after its trial start: key 1 then `3`, `keep`, or
+- **A new front**: the next start runs the other slot once and the selector returns to the running slot. A
+  waffle-boot image there shows its boot menu for a moment, then restarts, and that start runs the running
+  slot again (hold com at power-on to keep that boot menu open). If it does not come up, switch off and on. To keep it after its trial start: key 1 then `3`, `keep`, or
   `select IMAGE.ldr`, or hold M4 (4 under the display) through the trial start and keep it from its own
   recovery. Not covered: a front that starts once and fails later, and, with the other slot as Slot 2, a
   power cut in the selector erase at the end of the write or the first instant of the trial start. The same

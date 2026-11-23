@@ -194,6 +194,13 @@ void opxy_installer_note(enum inst_phase phase, unsigned under_way)
 	in.st.under_way = (uint8_t)(under_way < TCHK_COUNT ? under_way : 0xFFu);
 }
 
+void opxy_installer_note_hold(uint8_t os, unsigned digit, unsigned fill)
+{
+	in.st.os = os;
+	in.st.hold_digit = (uint8_t)digit;
+	in.st.hold_fill = (uint16_t)fill;
+}
+
 void opxy_installer_table(const struct tchk_table *t, const char *report, size_t len)
 {
 	in.table = t;
@@ -404,7 +411,15 @@ void opxy_installer_run(const struct opxy_installer_ctx *c)
 
 	(void)opxy_installer_trial_back(c->m);
 	in.st.flags |= INST_F_CHECKS_DONE;
-	enter(c, settle(c), now_ms(c));
+	if (c->returned) {
+		/* 8 held in the key check: as INST_ACT_LEAVE, before any offer */
+		in.st.hold_digit = 0;
+		in.st.hold_fill = 0;
+		leave(c);
+		enter(c, INST_LEFT, now_ms(c));
+	} else {
+		enter(c, settle(c), now_ms(c));
+	}
 	for (;;) {
 		const uint32_t now = now_ms(c);
 		const bool was = in.hold.holding;

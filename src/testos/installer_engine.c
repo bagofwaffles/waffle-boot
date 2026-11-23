@@ -10,8 +10,9 @@
  *           slot k unverified: {0x00, 0xFE} for slot 0, the erased
  *           {0xFF, 0xFF} for slot 1. The first stage's check fails, it writes
  *           {other, 0x01} and boots slot k once (S-02.022, S-02.023); slot k's
- *           front marks that start, 0xFD to 0xFC (started). The next reset
- *           boots the other.
+ *           front marks that start, 0xFD to 0xFC (started). The next reset,
+ *           the trial start's own restart into the OS among them, boots the
+ *           other.
  *   commit  after a trial start that reached the boot menu: the same bytes
  *           still in slot k, its trial entry started and the boot menu's
  *           mark after it (byte 0 0xF0, S-02.095), the record made right,

@@ -13,13 +13,22 @@
 #define S15V_GRAY
 #include "vectors/s15_vectors.h"
 
-/* S-15.172: the defaults a start without saved settings takes */
+/* S-15.172: the defaults a start without saved settings takes; S-15.173:
+ * the color's by device, on for the OP-1F alone */
 static void test_defaults(void)
 {
-	struct s15_settings s = { true, true, false, true, true };
+	struct s15_settings s = { true, true, false, true, false };
 
-	s15_settings_defaults(&s);
-	CHECK(!s.dev_mode && !s.color && s.mtp_macos && !s.start_menu, "S-15.172 defaults");
+	s15_settings_defaults(&s, &wb_device_opxy);
+	CHECK(!s.dev_mode && !s.color && s.mtp_macos && !s.start_menu && s.host_link,
+	      "S-15.172 defaults");
+	s15_settings_defaults(&s, &wb_device_op1f);
+	CHECK(!s.dev_mode && s.color && s.mtp_macos && !s.start_menu && s.host_link,
+	      "S-15.173 the OP-1F's default: color on");
+	s15_settings_defaults(&s, NULL);
+	CHECK(!s.color, "S-15.173 no device: gray");
+	CHECK(!s15_color_default(&wb_device_opxy) && s15_color_default(&wb_device_op1f),
+	      "S-15.173 by device");
 }
 
 static void test_gray(void)

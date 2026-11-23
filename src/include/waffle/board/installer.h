@@ -41,7 +41,7 @@
 enum inst_phase {
 	INST_STARTING,
 	INST_CHECKING,		/* the automatic tests */
-	INST_GUIDED,		/* a guided test on the screen */
+	INST_GUIDED,		/* a guided test on the screen (hold 8: return to the old OS) */
 	INST_LOCKED,		/* a check did not pass: no write offered */
 	INST_READY,		/* the trial offered (hold 1) */
 	INST_WRITING_TRIAL,
@@ -68,7 +68,7 @@ enum inst_lock {
 	INST_LOCK_IMAGE,	/* the carried image did not verify */
 	INST_LOCK_SELECTED,	/* the selected slot is not verified or not good */
 	INST_LOCK_RESERVED,	/* never set; the numbers after it stay */
-	INST_LOCK_GUIDED,	/* a guided test skipped or not passed */
+	INST_LOCK_RESERVED_6,	/* never set: a key check ended with 8 offers no install */
 	INST_LOCK_EMMC,		/* the eMMC could not be reached */
 	INST_LOCK_DEVICE,	/* the first stage is in no row of S-18.003's table */
 	INST_LOCK_OTHER_DEVICE,	/* this image is built for the other device */
@@ -109,7 +109,8 @@ enum inst_trial inst_trial_of(uint8_t other_slot_state);
 /*
  * The device is known by its first stage (S-18.003, how 0) and is the one
  * this image is built for; every test of the table passes (guided ones
- * included; a test not on this device counts as passed), the carried image
+ * included, counted as not tested when they did not pass; a test not on
+ * this device counts as passed), the carried image
  * verified, and the selected slot is verified and good; on the OP-1F the
  * trial keeps a slot whose image is not a waffle-boot stream; and the
  * build is not the survey. What the other boot partition holds plays no
@@ -169,13 +170,14 @@ unsigned inst_hold_fill(const struct inst_hold *h, uint32_t now_ms);
  * The digits a phase lets a hold start (bit d), and what each starts. In
  * INST_COMMIT_READY 1 keeps the new bootloader and 2 writes the same trial
  * again, so that one trial start can go to recovery (Power + the recovery
- * key) and another to the boot menu before it is kept. 8 leaves while an
- * OS waits to be made active (os_ok), since leaving otherwise changes
- * nothing. Every write is the engine's, under its own checks.
+ * key) and another to the boot menu before it is kept. 8 returns to the
+ * old OS, on the key check too, while an OS waits to be made active
+ * (os_ok), since leaving otherwise changes nothing. Every write is the
+ * engine's, under its own checks.
  */
 #define INST_DIGIT_WRITE   1u	/* the trial, the commit, or the failed write again */
 #define INST_DIGIT_RETRIAL 2u	/* INST_COMMIT_READY: the trial again */
-#define INST_DIGIT_LEAVE   8u
+#define INST_DIGIT_LEAVE   8u	/* return to the old OS */
 enum inst_act {
 	INST_ACT_NONE,
 	INST_ACT_TRIAL,		/* the trial write */
@@ -376,11 +378,15 @@ struct opxy_installer_ctx {
 	void (*show)(struct opxy_master *m);
 	void (*report)(struct opxy_master *m);	/* check.txt rendered and written */
 	const struct tchk_facts *f;		/* the suite's facts, for the survey */
+	bool returned;		/* 8 held in the key check: the OS made active, nothing offered */
 };
 /* From the suite's start: the carried image checked, the USB port taken. */
 void opxy_installer_start(struct opxy_master *m);
 /* The suite's progress, for the protocol. */
 void opxy_installer_note(enum inst_phase phase, unsigned under_way);
+/* The key check's OS state and hold (digit 0 none, fill 0 to 1000), for
+ * the protocol. */
+void opxy_installer_note_hold(uint8_t os, unsigned digit, unsigned fill);
 /* The verdict and the report as they are now, for the protocol. */
 void opxy_installer_table(const struct tchk_table *t, const char *report, size_t len);
 /* After the suite: the install's screens until the power is removed. */

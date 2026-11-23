@@ -18,7 +18,10 @@ install itself.
 - The OS file, to install again when waffle-boot is on the unit ([Updating the OS](Updating-the-OS)).
 
 Every write is started on the unit: you hold the key it names (`Hold to select`). A hold takes 5 s, and
-the unit shows the seconds left. To leave at any point without installing, hold **8**.
+the unit shows the seconds left. The installer writes a trial first. Switch off and on: the new
+bootloader starts once, its boot menu shows for a moment, and the unit comes back to the installer by
+itself, which then asks whether to install. To go back to your OS at any point without installing, hold **8**
+(`Return to the old OS`).
 
 A unit that already runs waffle-boot does not need the installer: choose **Upgrade / Recover** on the page
 ([How to Recover](How-to-Recover)).
@@ -40,9 +43,9 @@ SPI flash, and its `check.txt` says whether an install would be offered. See
 
 | The unit shows | It means | What to do |
 | --- | --- | --- |
-| `A check failed, no changes made.` (or another reason, with `no changes made`) | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Save `check.txt` (on the page, or from the unit's USB disk). Hold 8 to leave. A wrong check is fixed in the installer; nothing overrides it |
-| Trial did not reach the boot menu | The trial start ran, or did not run, the new bootloader, but its boot menu did not show | Nothing was kept: the unit starts the bootloader it had. Hold 1 to write the trial again, or 8 to leave |
-| Write failed | A write or its read-back failed | The unit keeps a bootloader that starts. Hold 1 to try again, or 8 to leave |
+| `A check failed, no changes made.` (or another reason, with `no changes made`) | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Save `check.txt` (on the page, or from the unit's USB disk). Hold 8 to return to the old OS. A wrong check is fixed in the installer; nothing overrides it |
+| Trial did not reach the boot menu | The trial start ran, or did not run, the new bootloader, but its boot menu did not show | Nothing was kept: the unit starts the bootloader it had. Hold 1 to write the trial again, or 8 to return to the old OS |
+| Write failed | A write or its read-back failed | The unit keeps a bootloader that starts. Hold 1 to try again, or 8 to return to the old OS |
 
 <img src="../docs/ui/installer-locked.png" width="480" alt="A check failed, no changes made">
 

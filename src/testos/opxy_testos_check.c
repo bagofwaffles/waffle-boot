@@ -877,35 +877,32 @@ static void t_nordic(struct opxy_master *m)
 
 /* --- the guided tests --- */
 
-static bool wait_key(struct opxy_master *m, unsigned *key)
-{
-	bool down;
-
-	for (;;) {
-		while (next_key(key, &down))
-			if (down)
-				return true;
-		pass(m);
-	}
-}
-
 /*
  * The one guided test: com and the recovery key, in either order
  * (device.key.com and device.key.recovery; on the OP-XY com and M4). A
- * person who can read this screen has seen the panel work. 8 ends it
- * without them, and the install is then not offered.
+ * person who can read this screen has seen the panel work. Where an OS was
+ * found to make active again, 8 held returns to it, and the install is
+ * then not offered.
  */
-static void key_line(struct opxy_master *m, unsigned last)
+static void key_line(struct opxy_master *m, unsigned last, const struct inst_hold *h)
 {
+	const uint32_t now = (uint32_t)(now_us() / 1000u);
+	const uint32_t held = h->holding ? now - h->t0 : 0u;
 	struct inst_screen sc;
 	struct tchk_line l[S15_ROWS];
 	unsigned n, i;
 
 	memset(&sc, 0, sizeof sc);
 	sc.phase = INST_GUIDED;
+	sc.os = (uint8_t)inst_os_state(&ck.f.sw);
 	sc.keys_seen = ck.f.keys_seen;
 	sc.device = (uint8_t)opxy_dev(m)->id;
 	sc.last_key = (uint8_t)last;
+	sc.hold_digit = h->holding ? h->digit : 0u;
+	sc.hold_fill = inst_hold_fill(h, now);
+	sc.hold_left_s = h->holding ?
+		(S15_HOLD_MS - (held < S15_HOLD_MS ? held : S15_HOLD_MS) + 999u) / 1000u : 0u;
+	opxy_installer_note_hold(sc.os, sc.hold_digit, sc.hold_fill);
 	n = inst_screen_lines(&sc, l);
 	s15_console_clear(&ck.con);
 	for (i = 0; i < n; i++)
@@ -913,24 +910,51 @@ static void key_line(struct opxy_master *m, unsigned last)
 	show(m);
 }
 
-static void g_keys(struct opxy_master *m)
+/* True when 8 was held: return to the old OS. */
+static bool g_keys(struct opxy_master *m)
 {
 	const struct wb_device *dev = opxy_dev(m);
-	unsigned key;
+	const bool os_ok = ck.f.sw.result == TCHK_SW_READY;
+	struct inst_hold h;
+	unsigned key, last = 0xFFu;
+	uint32_t drawn = 0;
+	bool down;
 
+	memset(&h, 0, sizeof h);
+	h.dev = dev;
+	inst_hold_offer(&h, inst_holds_for(INST_GUIDED, os_ok));
 	opxy_installer_note(INST_GUIDED, TCHK_COUNT);
-	key_line(m, 0xFFu);
+	key_line(m, last, &h);
 	while (ck.f.keys_seen != 3u) {
-		(void)wait_key(m, &key);
-		if (key == tchk_key_com(dev))
-			ck.f.keys_seen |= 1u;
-		else if (key == tchk_key_recovery(dev))
-			ck.f.keys_seen |= 2u;
-		else if (s15_digit(dev, key) == 8u)
-			break;
-		key_line(m, key);
+		const bool was = h.holding;
+		uint32_t now;
+		bool changed = false;
+
+		pass(m);
+		while (next_key(&key, &down)) {
+			inst_hold_key(&h, key, s15_digit(dev, key), down, (uint32_t)(now_us() / 1000u));
+			if (!down)
+				continue;
+			if (key == tchk_key_com(dev))
+				ck.f.keys_seen |= 1u;
+			else if (key == tchk_key_recovery(dev))
+				ck.f.keys_seen |= 2u;
+			else
+				last = key;
+			changed = true;
+		}
+		now = (uint32_t)(now_us() / 1000u);
+		if (inst_act_of(INST_GUIDED, inst_hold_tick(&h, now)) == INST_ACT_LEAVE) {
+			ck.f.keys = TCHK_G_ENDED;
+			return true;
+		}
+		if (changed || was != h.holding || (h.holding && now - drawn >= 100u)) {
+			key_line(m, last, &h);
+			drawn = now;
+		}
 	}
-	ck.f.keys = ck.f.keys_seen == 3u ? TCHK_G_PASSED : TCHK_G_ENDED;
+	ck.f.keys = TCHK_G_PASSED;
+	return false;
 }
 
 /* PA2 as the survey reports it (tchk_facts.pa2): the strap where the
@@ -970,13 +994,9 @@ void opxy_testos_check_start(struct opxy_master *m)
 	ck.f.dev = opxy_dev(m);
 	ck.f.held_ms = (uint32_t)wb_time_ms(&m->hw.time);
 	version();
-	/* The installer draws in gray always; the check suite follows the color
-	 * setting, read as held mode's services started. */
-#if defined(OPXY_TESTOS_INSTALLER)
-	ck.gray = true;
-#else
+	/* The color setting as held mode's services read it: the test OS keeps
+	 * no settings, so the device's default (S-15.173), gray on the OP-XY */
 	ck.gray = !m->sv.settings.color;
-#endif
 	/* S-08.011 in state 0: a bootloader's greeting is told to start the
 	 * application, any other answered 0x06 {40}; the gate holds back every
 	 * other frame, every other 0x0D form above all */
@@ -1014,9 +1034,7 @@ void opxy_testos_check_start(struct opxy_master *m)
 void opxy_testos_check_service(void *ctx, const struct boot_held *h)
 {
 	struct opxy_master *m = ctx;
-	const struct opxy_installer_ctx ic = {
-		m, &ck.t, &ck.f.sw, &ck.env, &ck.con, pass, next_key, show, report, &ck.f,
-	};
+	bool returned = false;
 
 	(void)h;
 	ck.f.slave = slave_up(m);
@@ -1043,11 +1061,19 @@ void opxy_testos_check_service(void *ctx, const struct boot_held *h)
 	if (opxy_installer_trial_back(m))
 		ck.f.keys = TCHK_G_EARLIER;
 	else
-		g_keys(m);
+		returned = g_keys(m);
 	report(m);
 
-	/* the install, offered only when every check passed */
-	opxy_installer_run(&ic);
+	/* the install, offered only when every check passed; after 8 held in
+	 * the key check, the OS made active again and nothing offered */
+	{
+		const struct opxy_installer_ctx ic = {
+			m, &ck.t, &ck.f.sw, &ck.env, &ck.con, pass, next_key, show, report, &ck.f,
+			returned,
+		};
+
+		opxy_installer_run(&ic);
+	}
 }
 
 #else

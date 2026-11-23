@@ -89,6 +89,7 @@
  "info2_logo_builtin": ["kv:Start log\tSlot 1", "kv:Starts logged\t41 of 16384", "kv:Unfinished\t0 at the end", "kv:Erased at\t256 used", "kv:Boot logo\tBuilt-in, 36864 bytes free", "", "back:8 Back to Device Info"],
  "continue_restarting": ["warn:Restarting into the OS..."],
  "main_continuing": ["", "item:1 Install firmware", "item:2 Settings", "item:3 Developer menu", "item:4 Device info", "item:5 System", "", "item:7 Continue to OS", "warn:Restarting into the OS..."],
+ "main_trial_ok": ["", "item:1 Install firmware", "item:2 Settings", "item:3 Developer menu", "item:4 Device info", "item:5 System", "", "item:7 Continue to OS", "ok:Trial OK, restarting into the OS..."],
  "main_bare": ["", "item:1 Install firmware", "item:2 Settings", "item:3 Developer menu", "item:4 Device info", "item:5 System", "", "item:7 Continue to OS"],
  "upgrade_done_tail": ["ok:Done!", "item:6 Restart"],
  "upgrade_nothing_tail": ["ok:Up to date.", "item:6 Restart"],

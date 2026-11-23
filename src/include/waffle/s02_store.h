@@ -90,7 +90,8 @@ enum s02_store_rc {
 /* The settings sector of slot `slot` (0 or 1). */
 uint32_t s02_store_off(unsigned slot);
 /* The defaults: developer mode off, color off, MTP for macOS, start in boot
- * menu off, host link on. */
+ * menu off, host link on. The board takes the color's by device where no
+ * record gives it (opxy_store_defaults(), S-15.173). */
 void s02_store_defaults(struct s02_store *s);
 /* The record at p, n bytes from a page's start, with the stamp it must
  * hold. False, with the defaults, when it is not a valid record. */

@@ -109,15 +109,16 @@ are red. With the color off they draw as the grays below.
 
 ### Grayscale
 
-Display's `3 Color` (Settings, 3) turns color off (S-15.173). Every pixel is then drawn in the gray of its color's luma,
+Display's `3 Color` (Settings, 3) turns color off (S-15.173); with no saved setting it is off on the OP-XY and on on the
+OP-1F. Every pixel is then drawn in the gray of its color's luma,
 `Y = (77 R + 150 G + 29 B + 128) / 256` on the 8-bit components. The grays
 above (text, dim, faint, unlit, rule, the status bar) stay as they are.
 Amber becomes `BDD7` (BDBDBD), red `8430` (848484), green `A534`
 (A5A5A5), dark amber `5AEB` (5A5D5A) and dark red `39E7` (393C39).
 Lines, layout and keys do not change. The setting is kept in
-the running slot's settings sector with the others (S-15.172). The installer
-draws in gray always, all but its display check's strip of colors, which
-tests that the panel shows them.
+the running slot's settings sector with the others (S-15.172). The installer,
+which reads no saved setting, draws as the device's default: in gray on the OP-XY, in color on the OP-1F;
+its display check's strip of colors, which tests that the panel shows them, is in color on both.
 
 ## Line styles
 
@@ -251,7 +252,7 @@ A description of the screens as they are now, free to change within the rules ab
   scan: a scan starts only when the host releases the disk. A host install after reason 40, whose screen
   has no way back, runs with Protected writes off.
 - Developer mode is off by default. It shows the developer menu and adds the USB serial port.
-- The color setting is off by default; off draws in gray (S-15.173).
+- The color setting is off by default on the OP-XY and on by default on the OP-1F; off draws in gray (S-15.173).
 - The settings are kept per slot in the SPI flash, each at its default when the slot's settings sector
   holds no valid record for the image it runs (S-15.172).
 - The main screen shows the failed-start notice only when this boot's start of the OS failed (S-15.163):

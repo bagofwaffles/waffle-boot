@@ -62,7 +62,7 @@ enum inst_trial inst_trial_of(uint8_t st)
 enum inst_lock inst_lock_of(const struct tchk_table *t, const struct tchk_switch *sw,
 			    const struct inst_lock_in *in)
 {
-	bool failed = false, untested = false, guided = false;
+	bool failed = false, untested = false;
 	unsigned i;
 
 	/* the device first: nothing else is judged on an unknown one; an
@@ -76,9 +76,7 @@ enum inst_lock inst_lock_of(const struct tchk_table *t, const struct tchk_switch
 
 		if (i == TCHK_OS_PARTITION || state == TCHK_PASS || state == TCHK_NOT_ON_DEVICE)
 			continue;
-		if (tchk_tests[i].kind == TCHK_KIND_GUIDED)
-			guided = true;
-		else if (state == TCHK_FAIL)
+		if (state == TCHK_FAIL && tchk_tests[i].kind != TCHK_KIND_GUIDED)
 			failed = true;
 		else
 			untested = true;
@@ -87,10 +85,10 @@ enum inst_lock inst_lock_of(const struct tchk_table *t, const struct tchk_switch
 		return INST_LOCK_EMMC;
 	if (failed)
 		return INST_LOCK_FAILED;
+	/* a guided test not passed counts as one that could not run: the key
+	 * check ends only passed, or with 8 held, which offers no install */
 	if (untested)
 		return INST_LOCK_NOT_TESTED;
-	if (guided)
-		return INST_LOCK_GUIDED;
 	if (!in->image_ok)
 		return INST_LOCK_IMAGE;
 	if (!in->selected_ok)
@@ -125,7 +123,7 @@ const char *inst_lock_words(enum inst_lock l)
 		[INST_LOCK_IMAGE] = "Carried image fails its check",
 		[INST_LOCK_SELECTED] = "Bootloader slot not settled",
 		[INST_LOCK_RESERVED] = "",
-		[INST_LOCK_GUIDED] = "Key check canceled with 8",
+		[INST_LOCK_RESERVED_6] = "",
 		[INST_LOCK_EMMC] = "eMMC not reachable",
 		[INST_LOCK_DEVICE] = "Device unknown (first stage)",
 		[INST_LOCK_OTHER_DEVICE] = "Built for another device",
@@ -276,7 +274,7 @@ uint16_t inst_holds_for(enum inst_phase p, bool os_ok)
 		return (uint16_t)(1u << INST_DIGIT_WRITE | 1u << INST_DIGIT_RETRIAL | back);
 	if (p == INST_READY || p == INST_FAILED || p == INST_TRIAL_FAILED)
 		return (uint16_t)(1u << INST_DIGIT_WRITE | back);
-	if (p == INST_LOCKED || p == INST_DONE || p == INST_SURVEYED)
+	if (p == INST_GUIDED || p == INST_LOCKED || p == INST_DONE || p == INST_SURVEYED)
 		return back;
 	return 0;
 }
@@ -649,11 +647,33 @@ static void item(struct lines *o, const struct inst_screen *s, unsigned digit, c
 	add(o, S15_ST_ARMED, row, NULL);
 }
 
-/* Under the items a hold chooses, while none is held. */
+/* Under the items a hold chooses whose label does not name it, while
+ * none is held. */
 static void hold_line(struct lines *o, const struct inst_screen *s)
 {
 	if (s->hold_digit == 0u)
 		add(o, S15_ST_DIM, s15_hold_line, NULL);
+}
+
+/* An item whose label names its hold (wiki/Screen-Style-Guide.md): no
+ * hint under it, and its label whole when armed. */
+static void held_item(struct lines *o, const struct inst_screen *s, unsigned digit,
+		      const char *label)
+{
+	char row[S15_LINE];
+	const size_t h = strlen(s15_hold_named);
+	const size_t n = strlen(label) < sizeof row - 1u - h ? strlen(label) : sizeof row - 1u - h;
+
+	memcpy(row, label, n);
+	memcpy(row + n, s15_hold_named, h + 1u);
+	item(o, s, digit, row);
+}
+
+/* 8, where an OS was found to make active again: what leaving does. */
+static void return_item(struct lines *o, const struct inst_screen *s, bool os_ok)
+{
+	if (os_ok)
+		held_item(o, s, INST_DIGIT_LEAVE, "Return to the old OS");
 }
 
 /* The hold's bar on the last row, while a key is held. */
@@ -731,12 +751,12 @@ static const char *device_name(uint8_t id)
 }
 
 /* The key check, on the OP-XY by the keys' names, elsewhere by role. */
-static void key_check(struct lines *o, const struct inst_screen *s)
+static void key_check(struct lines *o, const struct inst_screen *s, bool os_ok)
 {
 	const bool usb = (s->keys_seen & 1u) != 0u, rec = (s->keys_seen & 2u) != 0u;
 
 	if (s->device == WB_DEV_OPXY) {
-		add(o, S15_ST_HEAD, "Press com, then M4", NULL);
+		add(o, S15_ST_HEAD, "Press com, then M4 to continue", NULL);
 		add(o, S15_ST_TEXT, "", NULL);
 		add(o, usb ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com", usb ? "\tpressed" : "\twaiting");
 		add(o, rec ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "M4 (under display)",
@@ -745,7 +765,7 @@ static void key_check(struct lines *o, const struct inst_screen *s)
 	} else {
 		struct fmt f = { "", 0 };
 
-		add(o, S15_ST_HEAD, "Press com, then the recovery key", NULL);
+		add(o, S15_ST_HEAD, "Press com, then the recovery key to continue", NULL);
 		add(o, S15_ST_TEXT, "com: boot menu (hold at power-on)", NULL);
 		add(o, S15_ST_TEXT, "Recovery key: recovery menu (with Power)", NULL);
 		add(o, usb ? S15_ST_STEP_OK : S15_ST_STEP_RUN, "com", usb ? "\tpressed" : "\twaiting");
@@ -757,7 +777,7 @@ static void key_check(struct lines *o, const struct inst_screen *s)
 		}
 		add(o, S15_ST_DIM, f.s, NULL);
 	}
-	add(o, S15_ST_ITEM, "8 Cancel", "\tNo install");
+	return_item(o, s, os_ok);
 }
 
 /* A slot as the survey found it, in a few words. */
@@ -848,6 +868,27 @@ static void locked_words(struct lines *o, const char *why)
 	add(o, S15_ST_ERROR, "No changes made.", NULL);
 }
 
+/* The commit's question with the version: one line, or broken before
+ * "waffle-boot" where the width needs two. */
+static void commit_question(struct lines *o, const struct inst_screen *s)
+{
+	static const char question[] = "Trial booted, do you wish to install";
+	struct fmt v = { "", 0 }, f = { "", 0 };
+
+	f_str(&v, "waffle-boot v");
+	f_str(&v, s->version != NULL ? s->version : "");
+	f_str(&v, "?");
+	f_str(&f, question);
+	f_str(&f, " ");
+	f_str(&f, v.s);
+	if (f.n <= S15_COLS) {
+		add(o, S15_ST_HEAD, f.s, NULL);
+		return;
+	}
+	add(o, S15_ST_HEAD, question, NULL);
+	add(o, S15_ST_HEAD, v.s, NULL);
+}
+
 unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15_ROWS])
 {
 	struct lines o = { out, 0 };
@@ -860,7 +901,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		break;
 	case INST_GUIDED:
 		/* the one guided test: reading this shows the panel works */
-		key_check(&o, s);
+		key_check(&o, s, os_ok);
 		break;
 	case INST_LOCKED:
 		locked_words(&o, inst_lock_words((enum inst_lock)s->lock));
@@ -872,22 +913,19 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		}
 		add(&o, S15_ST_TEXT, "See check.txt on USB disk for details.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
-		if (os_ok) {
-			item(&o, s, 8u, "Leave");
-			hold_line(&o, s);
-		} else {
+		if (os_ok)
+			return_item(&o, s, os_ok);
+		else
 			add(&o, S15_ST_TEXT, "No OS: write one from the developer menu.", NULL);
-		}
 		break;
 	case INST_READY:
-		add(&o, S15_ST_OK, "Checks passed", NULL);
-		add(&o, S15_ST_KV, "Writes\t", slot_name(s->target));
-		add(&o, S15_ST_TEXT, "Trial: the new bootloader starts once.", NULL);
+		add(&o, S15_ST_OK, "Every check passed.", NULL);
+		add(&o, S15_ST_TEXT, "A trial boot will be written, it will only last for", NULL);
+		add(&o, S15_ST_TEXT, "1 power cycle as a final test.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
-		item(&o, s, 1u, "Write the trial");
-		if (os_ok)
-			item(&o, s, 8u, "Leave");
-		hold_line(&o, s);
+		add(&o, S15_ST_TEXT, "", NULL);
+		held_item(&o, s, 1u, "Write the trial");
+		return_item(&o, s, os_ok);
 		break;
 	case INST_WRITING_TRIAL:
 		add(&o, S15_ST_HEAD, "Writing...", NULL);
@@ -897,19 +935,16 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 	case INST_TRIAL_WRITTEN:
 		add(&o, S15_ST_HEAD, "Trial written to ", slot_name(s->target));
 		add(&o, S15_ST_OK, "It starts once, at the next start.", NULL);
-		add(&o, S15_ST_TEXT, "1. Switch off and on: its boot menu shows.", NULL);
-		add(&o, S15_ST_TEXT, "2. Switch off and on again: keep it here.", NULL);
+		/* S-02.095: the trial start's boot menu goes on to the OS */
+		add(&o, S15_ST_TEXT, "Switch off and on: its boot menu shows for a moment,", NULL);
+		add(&o, S15_ST_TEXT, "then the installer comes back by itself.", NULL);
 		break;
 	case INST_COMMIT_READY:
-		add(&o, S15_ST_HEAD, "Trial reached the boot menu", NULL);
-		add(&o, S15_ST_KV, "Keeps\t", slot_name(s->target));
-		add(&o, S15_ST_KV, "Version\twaffle-boot v", s->version);
+		commit_question(&o, s);
 		add(&o, S15_ST_TEXT, "", NULL);
-		item(&o, s, 1u, "Keep it");
-		item(&o, s, 2u, "Write the trial again");
-		if (os_ok)
-			item(&o, s, 8u, "Leave\tOld one stays");
-		hold_line(&o, s);
+		held_item(&o, s, 1u, "Install waffle-boot");
+		held_item(&o, s, INST_DIGIT_RETRIAL, "Trial boot again");
+		return_item(&o, s, os_ok);
 		break;
 	case INST_COMMITTING:
 		add(&o, S15_ST_HEAD, "Keeping...", NULL);
@@ -923,8 +958,7 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "Switch off and on.", NULL);
 		if (os_ok) {
 			add(&o, S15_ST_TEXT, "", NULL);
-			item(&o, s, 8u, "Leave");
-			hold_line(&o, s);
+			return_item(&o, s, os_ok);
 		}
 		break;
 	case INST_FAILED:
@@ -935,9 +969,8 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 				     "Your bootloader stays selected.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Try again");
-		if (os_ok)
-			item(&o, s, 8u, "Leave");
 		hold_line(&o, s);
+		return_item(&o, s, os_ok);
 		break;
 	case INST_TRIAL_FAILED:
 		add(&o, S15_ST_HEAD, "Trial did not reach the boot menu", NULL);
@@ -947,9 +980,8 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 		add(&o, S15_ST_TEXT, "Nothing kept: yours stays selected.", NULL);
 		add(&o, S15_ST_TEXT, "", NULL);
 		item(&o, s, 1u, "Write the trial again");
-		if (os_ok)
-			item(&o, s, 8u, "Leave");
 		hold_line(&o, s);
+		return_item(&o, s, os_ok);
 		break;
 	case INST_LEFT:
 		add(&o, S15_ST_HEAD, "Not installed", NULL);

@@ -417,7 +417,7 @@ static void default_boot(void)
 	BOOT.start_log = S15_LOG_OK;
 	BOOT.start_log_used = 41;
 	BOOT.start_log_erase = 256;
-	s15_settings_defaults(&BOOT.settings);
+	s15_settings_defaults(&BOOT.settings, &wb_device_opxy);
 	BOOT.settings.dev_mode = true;	/* most tests use the developer menu */
 }
 
@@ -1811,7 +1811,7 @@ static void test_screens(void)
 	expect_screen("main_plain");    /* packs change nothing */
 	reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
 	expect_screen("main_devmode_off");
-	reset_fake(); default_boot(); s15_settings_defaults(&BOOT.settings);
+	reset_fake(); default_boot(); s15_settings_defaults(&BOOT.settings, &wb_device_opxy);
 	start();
 	expect_screen("main_devmode_off");	/* S-15.172: off by default */
 	reset_fake(); default_boot(); BOOT.start.why = S15_START_ENCRYPTED;
@@ -3550,6 +3550,27 @@ static void test_continue(void)
 	      s15_menu_continue(&M) == S15_CONT_BUSY && F.cont == 0u,
 	      "S-05.033 not started twice");
 
+	/* S-02.095, S-15.175: a trial start's boot menu going on to the OS:
+	 * the view with its line, no key acting, and the restart left to the
+	 * board */
+	reset_fake(); default_boot(); start();
+	clear_records();
+	CHECK(s15_menu_trial_ok(&M) == S15_CONT_STARTED && F.cont == 0u &&
+	      M.screen == S15_SCR_STARTING, "the trial's view, the restart the board's");
+	expect_screen("main_trial_ok");
+	expect_title("main");
+	before = s15_menu_changes(&M);
+	for (unsigned key = 0; key < S15_NKEYS; key++)
+		press(key);
+	CHECK(F.cont == 0u && F.n_usb == 0u && F.reset_w7 == 0u && M.screen == S15_SCR_STARTING &&
+	      s15_menu_changes(&M) == before, "no key on the trial's view");
+	CHECK(s15_menu_trial_ok(&M) == S15_CONT_BUSY && s15_menu_continue(&M) == S15_CONT_BUSY &&
+	      F.cont == 0u, "the trial's view once");
+	reset_fake(); default_boot(); start();
+	M.activity = S15_ACT_SCAN;
+	CHECK(s15_menu_trial_ok(&M) == S15_CONT_BUSY && M.screen == S15_SCR_MAIN,
+	      "busy: the boot menu stays");
+
 	/* The slave absent, lost at the start or stopped since: it restarts
 	 * all the same (the board picks the restart). */
 	for (int k = 0; k < 4; k++) {
@@ -4074,6 +4095,15 @@ static void test_op1f(void)
 	unsigned saves;
 
 	menu_dev = &wb_device_op1f;
+
+	/* S-15.173: the factory reset's clear gives the OP-1F's default, color on */
+	reset_fake(); default_boot();
+	F.clear_rc = S15_STORE_SAVED;
+	start();
+	CHECK(!M.color, "1F: the setting as the start read it");
+	press(0x11);
+	hold(0x13);
+	CHECK(F.clears == 1u && M.color && !M.start_menu, "1F: color on after a clear");
 
 	/* S-15.196: Settings has no MTP target; its digit 5 (0x11) does nothing */
 	reset_fake(); default_boot(); start();

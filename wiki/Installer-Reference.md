@@ -26,7 +26,9 @@ On a first stage it does not know it goes on as the OP-XY (S-18.004) and writes 
 ## The checks
 
 It tests the clocks and DDR, the SPI flash, the PSoC, the second processor and the bridge, the eMMC, the
-display, the clock and the Nordic chip. Then it asks for one guided step, the key check: press com, then M4 (4 under the display).
+display, the clock and the Nordic chip. Then it asks for one guided step, the key check: press com, then M4 (4 under the display), to continue.
+Where it found an OS to go back to, every screen from the key check on offers `8 Return to the old OS (hold to select)`:
+it makes that OS active again and installs nothing (`Not installed`, then switch off and on).
 A test of a part the device does not have reads `n/a` ("not on this device") and counts as passed.
 Reading the screen shows the panel works. USB is shown by the page connecting at all.
 
@@ -46,7 +48,12 @@ key).
   the old slot with programs alone, never an erase. When it cannot do that safely, it leaves the selector as
   it is and refuses every further write until the unit restarts ("Restart before another write").
 - **The trial start:** the new slot's front marks the start (`0xFD` to `0xFC`), and its main image marks
-  the boot menu reached (`0xFC` to `0xF0`, entry 1 of the log finished, S-02.095). Nothing else.
+  the boot menu reached (`0xFC` to `0xF0`, entry 1 of the log finished, S-02.095). Nothing else. The boot
+  menu then shows `Trial OK, restarting into the OS...` for a moment, with no key acting, and restarts as
+  Continue to OS does. In a trial start the selector already names the old slot again, so that restart
+  starts the old slot, and it starts the installer: the commit screen follows with no second switch-off.
+  The boot menu stays open instead when it was asked for (com held at power-on, Start in boot menu on), when
+  the OS load had failed, or when the mark could not be made or read back.
 - **The commit:** only after both marks: the record with the right CRC, read back with the slot's bytes,
   then the selector `{slot, 0x00}`.
   Then the active byte of the two boot partitions' headers, your OS's first.
@@ -172,20 +179,20 @@ While it writes, and in some long checks, the installer does not service the por
 | `0x43` REPORT | an offset (u32) | status (0), `check.txt`'s length (u32), then up to 1024 of its bytes from the offset. The text is rewritten as the checks run, so a reader starts again when the length changes |
 | `0x44` SURVEY | none | a survey build, once its checks end: 76 bytes, `src/include/waffle/board/installer.h` lists them; any other build answers `FF` |
 
-- **Phase:** 0 starting, 1 checking, 2 the key check, 3 locked, 4 ready (the trial offered), 5 writing the
+- **Phase:** 0 starting, 1 checking, 2 the key check (8 held returns to the old OS), 3 locked, 4 ready (the trial offered), 5 writing the
   trial, 6 the trial written, 7 the commit offered (hold 1, or 2 for the trial again), 8 committing, 9 done, 10 a write failed, 11 the trial
-  failed, 12 left without installing, 13 the survey's end.
+  failed, 12 returned to the old OS without installing, 13 the survey's end.
 - **Flags:** bit 0 the checks done, bit 1 the install offered, bit 2 the carried image passed its check, bit 3
   a breadcrumb build, bit 4 a survey build.
 - **Lock:** 0 none, 1 a check failed, 2 a check could not run, 3 the carried image, 4 the selected slot not
-  verified or not good, 5 not used, 6 the key check ended with 8, 7 the eMMC not reachable, 8 the device not
+  verified or not good, 5 and 6 not used, 7 the eMMC not reachable, 8 the device not
   identified by its first stage, 9 an image built for the other device (not set by the one image), 10 the trial would write over the
   last slot that is not waffle-boot's (OP-1F), 11 a survey build.
 - **Test state:** 0 not run, 1 pass, 2 fail, 3 not tested, 5 not on this device.
 - **Slot state:** bit 0 good, 1 this image under the trial mark, 2 this image committed, 3 trial pending, 4
   trial started, 5 trial spent, 6 trial entry odd, 7 the trial reached the boot menu.
 - **OS partition:** 0 not looked at, 1 found and checked, 2 found, stored encrypted, 3 not found, 4 fails its
-  check, 5 not read, 6 active again, 7 could not be made active again. Hold 8 is offered while it is 1 or 2.
+  check, 5 not read, 6 active again, 7 could not be made active again. Hold 8 (return to the old OS) is offered while it is 1 or 2.
 - **Trial:** 0 none, 1 written, 2 reached the boot menu, 3 started without reaching it, 4 used up without a
   start of the new bootloader.
 - **Write codes:** S-02's (2 I/O, 3 size, 4 verify, 5 start, 6 not good, 7 not a bootable stream), `40` a

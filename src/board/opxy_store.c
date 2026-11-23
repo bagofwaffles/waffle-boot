@@ -3,11 +3,24 @@
  * (waffle/board/opxy_services.h). */
 #include "waffle/board/opxy_boot.h"
 
+void opxy_store_defaults(const struct opxy_master *m, struct s02_store *s)
+{
+	s02_store_defaults(s);
+	s->color = s15_color_default(opxy_dev(m));
+}
+
+/* S-02.097: the defaults when unusable, unreadable or not valid, the
+ * color's by device (S-15.173); a stored record gives every setting. */
+static void store_read(struct opxy_master *m, struct s02_store *out)
+{
+	if (!s02_store_read(&m->flash, &m->store_slot, out))
+		opxy_store_defaults(m, out);
+}
+
 void opxy_boot_store_load(struct opxy_master *m, const struct s02_store_slot *run)
 {
 	m->store_slot = *run;
-	/* S-02.097: the defaults when unusable, unreadable or not valid */
-	(void)s02_store_read(&m->flash, &m->store_slot, &m->sv.store);
+	store_read(m, &m->sv.store);
 }
 
 static enum s15_store_save outcome(struct opxy_master *m, enum s02_store_rc rc,
@@ -43,7 +56,7 @@ enum s15_store_save opxy_boot_store_save(struct opxy_master *m,
 	opxy_flash_writer(&m->hw, false);
 
 	/* S-15.175: the items show what a start would read */
-	(void)s02_store_read(&m->flash, &m->store_slot, now);
+	store_read(m, now);
 	return outcome(m, rc, false);
 }
 

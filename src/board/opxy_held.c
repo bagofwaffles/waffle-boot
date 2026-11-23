@@ -195,6 +195,7 @@ void opxy_held_service(void *ctx, const struct boot_held *h)
 		/* S-02.095: alive at the start of the first pass; once per boot. */
 		opxy_start_finished(m); opxy_trial_reached(m);
 		opxy_start_log_tidy(m); opxy_start_log_view(m);
+		OPXY_TESTOS_OR((void)0, opxy_trial_continue(m));	/* S-02.095: after the mark */
 		s06_node_poll(&m->node);
 		if (s07_service_pass(&m->psoc) == S07_POWEROFF ||
 		    opxy_held_settle(m) == S07_POWEROFF ||
