@@ -55,6 +55,8 @@ H_s02_SRCS := src/s02_flash.c src/s02_write.c src/s01_memmap.c src/s05_handoff.c
 H_s02_CPPFLAGS := -Isrc
 # The settings sector (S-02.096-.100, S-02.105) and its CRC-32, zlib's (S-02.015).
 H_s02_SRCS += src/s02_store.c src/wire_crc.c
+# The boot logo (S-02.109 - S-02.112): the main image's and the front's.
+H_s02_SRCS += src/logo.c src/front/fr_logo.c
 H_s02_TP := $(call tp_o,$(TP_crc_SRCS) $(TP_crc_GLUE) $(TP_zlib_SRCS) $(TP_zlib_GLUE))
 H_s03_SRCS := src/s03_emmc.c src/device.c
 H_s04_SRCS := src/s04_records.c src/s10c_text.c src/div64.c src/s11_common.c src/s11_version.c src/device.c

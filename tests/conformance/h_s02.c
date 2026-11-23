@@ -58,6 +58,16 @@
  *                                                  flag bits, VALID whether a record gave them)
  *   storewrite SLOT EST GOOD FLAGS [REC] -> RC         (S-02.098: s02_store_write(), enum s02_store_rc)
  *   storeclear SLOT EST GOOD [REC] -> RC               (S-02.105: s02_store_clear())
+ *   logohead REC HEADER            -> USABLE LEN FUSABLE FLEN  (S-02.109, S-02.111: the header
+ *                                                  checked by wb_logo_parse() and by the front's
+ *                                                  fr_logo_head() for a slot with record REC;
+ *                                                  LEN the data's bytes, 0 when not usable)
+ *   logoroom REC                   -> ROOM             (S-02.110: wb_logo_room())
+ *   logoread SLOT                  -> FOUND LEN CRC FFOUND  (S-02.111: wb_logo_read() and the
+ *                                                  front's fr_logo_load(), which draws it too)
+ *   logosave SLOT EST GOOD BITS COLORS W H BG PATH [REC] -> RC  (S-02.112: wb_logo_save() of the
+ *                                                  data in PATH, enum wb_logo_rc)
+ *   logoremove SLOT EST GOOD [REC] -> RC               (S-02.112: wb_logo_remove())
  *
  * Write ops are erases and programs, counted from 1 in each command; a cut
  * prints "cut" in place of the result.  STATUS is the enum s02_status value.
@@ -68,10 +78,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "front/fr_draw.h"
+#include "front/fr_logo.h"
 #include "front/fr_proto.h"
 #include "front/fr_startlog.h"
 #include "waffle/s01_memmap.h"
 #include "waffle/s02_flash.h"
+#include "waffle/logo.h"
 #include "waffle/s02_store.h"
 #include "hlib.h"
 
@@ -536,6 +549,65 @@ static void cmd_fault(const struct h_cmd *c)
 	h_put("ok");
 }
 
+/* --- the boot logo --- */
+
+static uint8_t logo_data[WB_LOGO_DATA_MAX];
+static uint8_t logo_frame[FR_FRAME_BYTES];
+
+static void logo_record(const struct h_cmd *c, int i, struct s02_record *rec, struct fr_record *fr)
+{
+	uint8_t raw[S02_RECORD_SIZE];
+
+	if (h_hex(c, i, raw, sizeof raw) != sizeof raw)
+		h_error(c, "bad record");
+	s02_record_decode(raw, rec);
+	fr->crc32 = rec->crc32;
+	fr->length = rec->length;
+	fr->tag = rec->tag;
+}
+
+static void cmd_logohead(const struct h_cmd *c)
+{
+	uint8_t h[WB_LOGO_HEAD];
+	struct s02_record rec;
+	struct fr_record fr;
+	struct wb_logo l;
+	struct fr_logo fl;
+	bool ok, fok;
+
+	logo_record(c, 1, &rec, &fr);
+	if (h_hex(c, 2, h, sizeof h) != sizeof h)
+		h_error(c, "bad header");
+	ok = wb_logo_parse(h, &rec, &l);
+	fok = fr_logo_head(h, &fr, &fl);
+	h_putu(ok);
+	h_putx(ok ? l.len : 0u);
+	h_putu(fok);
+	h_putx(fok ? fl.len : 0u);
+}
+
+static void cmd_logosave(const struct h_cmd *c)
+{
+	struct s02_store_slot run;
+	struct wb_logo l;
+	size_t n;
+	uint8_t *data = load_file(c, 9, &n);
+
+	if (!data)
+		return;
+	store_run(c, &run, 10);
+	memset(&l, 0, sizeof l);
+	l.bits = (uint8_t)h_num(c, 4);
+	l.colors = (uint16_t)h_num(c, 5);
+	l.width = (uint16_t)h_num(c, 6);
+	l.height = (uint16_t)h_num(c, 7);
+	l.bg = (uint16_t)h_num(c, 8);
+	l.len = (uint32_t)n;
+	l.crc = h_crc32(0u, data, (uint32_t)n);
+	h_putu((unsigned long)wb_logo_save(&env, &run, &l, data));
+	free(data);
+}
+
 /* The commands that touch the flash; run under the cut's setjmp. */
 static void flash_command(const struct h_cmd *c)
 {
@@ -613,6 +685,31 @@ static void flash_command(const struct h_cmd *c)
 
 		store_run(c, &run, 4);
 		h_putu((unsigned long)s02_store_clear(&env, &run));
+	} else if (strcmp(k, "logohead") == 0) {
+		cmd_logohead(c);
+	} else if (strcmp(k, "logoroom") == 0) {
+		struct s02_record rec;
+		struct fr_record fr;
+
+		logo_record(c, 1, &rec, &fr);
+		h_putx(wb_logo_room(&rec));
+	} else if (strcmp(k, "logoread") == 0) {
+		static const struct fr_flash ff = { f_read, f_erase, f_program, NULL };
+		const unsigned slot = (unsigned)h_num(c, 1);
+		struct wb_logo l;
+		const bool ok = wb_logo_read(&env, slot, &l, logo_data);
+
+		h_putu(ok);
+		h_putx(ok ? l.len : 0u);
+		h_putx(ok ? l.crc : 0u);
+		h_putu(fr_logo_load(&ff, slot, logo_data, logo_frame));
+	} else if (strcmp(k, "logosave") == 0) {
+		cmd_logosave(c);
+	} else if (strcmp(k, "logoremove") == 0) {
+		struct s02_store_slot run;
+
+		store_run(c, &run, 4);
+		h_putu((unsigned long)wb_logo_remove(&env, &run));
 	} else {
 		h_error(c, "unknown command");
 	}

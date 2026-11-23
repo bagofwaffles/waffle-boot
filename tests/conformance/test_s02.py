@@ -9,6 +9,7 @@ import os
 import random
 import struct
 import unittest
+import zlib
 
 from harness import BUILD, hx, requirement, run, scenario, spec_module, spec_path
 from conformance.images import crc, ldr, spiflash, records
@@ -2791,6 +2792,254 @@ class SettingsSector(unittest.TestCase):
         for c in acts:
             self.assertFalse(sets & set(ref_writes(c['ops'])), c['act'])
         self.assertFalse([x for x in rv['actions'] if x['erases_settings']])
+
+
+def logo_vectors():
+    with open(vectors('boot_logo.json'), encoding='utf-8') as f:
+        return json.load(f)
+
+
+LOGO_SLOT = (0x10000, 0x88000)
+LOGO_AT = tuple(s + 0x75000 for s in LOGO_SLOT)     # each slot's header sector
+# enum wb_logo_rc
+LOGO_OK = 0
+
+
+def logo_pattern(n, p):
+    return bytes(((i * 7 + p) ^ (i >> 8)) & 0xFF for i in range(n))
+
+
+class BootLogo(unittest.TestCase):
+    """The stored boot logo: src/logo.c (wb_logo_parse(), wb_logo_room(), wb_logo_read(), wb_logo_save(),
+    wb_logo_remove()) and the front's check and read (src/front/fr_logo.c) through h_s02's flash, against
+    vectors/boot_logo.json, for both slots; the slot upgrade's erase of the header through s02_slot_upgrade().
+    System's Boot logo screen, the PNG's conversion and the factory reset's screen are not driven here."""
+
+    @staticmethod
+    def flash(slot, rec, place=None, fill=True):
+        """A flash with slot `slot`'s record `rec` (12 bytes), the slot's bytes from its image's end to its
+        settings sector holding a pattern (fill), then `place` ({offset: hex}) written over them, and
+        something in both slots' settings and start-log sectors to see them untouched."""
+        fl = bytearray(b'\xff' * 0x100000)
+        fl[SET_RECORD[slot]:SET_RECORD[slot] + 12] = rec
+        for k in (0, 1):
+            fl[SET_SECTOR[k]:SET_SECTOR[k] + 0x2000] = random.Random(k).randbytes(0x2000)
+        ln = struct.unpack('<I', rec[4:8])[0]
+        if fill and 1 <= ln <= 0x75000:
+            lo = LOGO_SLOT[slot] + (ln + 0xFFF) // 0x1000 * 0x1000
+            fl[lo:LOGO_AT[slot] + 0x1000] = logo_pattern(LOGO_AT[slot] + 0x1000 - lo, 11)
+        for off, hexb in (place or {}).items():
+            d = bytes.fromhex(hexb)
+            fl[int(off, 16):int(off, 16) + len(d)] = d
+        return bytes(fl)
+
+    @staticmethod
+    def want(ops):
+        return ['e:%x' % int(o[1], 16) if o[0] == 'erase' else 'p:%x:%x' % (int(o[1], 16), o[2]) for o in ops]
+
+    @requirement('S-02.109', 'S-02.110', 'S-02.111')
+    def test_headers(self):
+        """Every row of `headers`: the main image's check and the front's take the header for a slot with
+        the row's record exactly when the row says, with the row's data length."""
+        v = logo_vectors()
+        out = run('s02', ['logohead %s %s' % (b(h['record']).hex(), b(h['header']).hex()) for h in v['headers']])
+        names = {h['name'] for h in v['headers']}
+        self.assertTrue({'good', 'hcrc', 'other_image', 'record_room_exact', 'record_room_over',
+                         'record_0x75001'} <= names)
+        for line, h in zip(out, v['headers']):
+            res, _ = split(line)
+            n = h['length'] or 0
+            want = ['1', hex(n)] if h['usable'] else ['0', '0x0']
+            self.assertEqual(res, want + want, h['name'])
+
+    @requirement('S-02.110')
+    def test_room(self):
+        """Every row of `room`: the bytes a slot with that record leaves a logo."""
+        v = logo_vectors()
+        recs = [struct.pack('<III', 0x1D0C2B3A, int(r['length'], 16), int(r['tag'], 16)) for r in v['room']]
+        out = run('s02', ['logoroom ' + r.hex() for r in recs])
+        for line, r in zip(out, v['room']):
+            self.assertEqual(split(line)[0], [hex(int(r['room'], 16))], r)
+
+    @requirement('S-02.111')
+    def test_reads(self):
+        """Every row of `reads`: the main image and the front read a logo, its data checked whole, exactly
+        when the row says; nothing is erased or programmed."""
+        v = logo_vectors()
+        cmds = []
+        for r in v['reads']:
+            fl = self.flash(r['slot'], b(r['record']), r['bytes'])
+            cmds += ['load ' + save('logo_r_%d_%s.bin' % (r['slot'], r['name']), fl), 'logoread %d' % r['slot']]
+        out = run('s02', cmds)
+        for k, r in enumerate(v['reads']):
+            res, ops = split(out[2 * k + 1])
+            what = (r['slot'], r['name'])
+            self.assertEqual(writes(ops), [], what)
+            if r['gives']:
+                data = next(bytes.fromhex(x) for off, x in r['bytes'].items() if int(off, 16) != LOGO_AT[r['slot']])
+                self.assertEqual(res, ['1', hex(r['length']), hex(zlib.crc32(data)), '1'], what)
+            else:
+                self.assertEqual(res, ['0', '0x0', '0x0', '0'], what)
+
+    @requirement('S-02.112')
+    def test_saves(self):
+        """Every row of `saves`: the save makes the row's erases and programs in order, the header's sector
+        first and the header last; the slot then holds the data where the row says and the header, every
+        other byte unchanged, and the next read gives it."""
+        v = logo_vectors()
+        for r in v['saves']:
+            slot, rec = r['slot'], b(r['record'])
+            fl = self.flash(slot, rec)
+            data = logo_pattern(r['length'], r['data_pattern'])
+            cmds = ['load ' + save('logo_s_%d.bin' % slot, fl),
+                     'logosave %d 1 1 %d %d %d %d %s %s %s' % (slot, r['bits'], r['colors'], r['width'], r['height'],
+                                                            r['bg'], save('logo_s.dat', data), rec.hex()),
+                     'peek 0 0x100000', 'logoread %d' % slot]
+            # one run a row: the data file is read when its command runs
+            out = run('s02', cmds)
+            res, ops = split(out[1])
+            what = (slot, r['name'])
+            self.assertEqual(res, [str(LOGO_OK)], what)
+            self.assertEqual(writes(ops), self.want(r['ops']), what)
+            want = bytearray(fl)
+            for o in r['ops']:
+                if o[0] == 'erase':
+                    want[int(o[1], 16):int(o[1], 16) + 0x1000] = b'\xff' * 0x1000
+            at = int(r['data_at'], 16)
+            want[at:at + len(data)] = data
+            head = b(r['header'])
+            want[LOGO_AT[slot]:LOGO_AT[slot] + len(head)] = head
+            self.assertEqual(bytes.fromhex(out[2]), bytes(want), what)
+            self.assertEqual(split(out[3])[0][:3], ['1', hex(len(data)), hex(zlib.crc32(data))], what)
+
+    @requirement('S-02.112')
+    def test_removes(self):
+        """Every row of `removes`: a stored or a not valid header's sector is erased, alone; an erased one is
+        left; nothing else changes, and no logo is read after."""
+        v = logo_vectors()
+        cmds, rows = [], []
+        for r in v['removes']:
+            fl = self.flash(r['slot'], b(r['record']), r['bytes'], fill=False)
+            cmds += ['load ' + save('logo_rm_%d_%s.bin' % (r['slot'], r['name']), fl),
+                     'logoremove %d 1 1' % r['slot'], 'peek 0 0x100000', 'logoread %d' % r['slot']]
+            rows.append(fl)
+        out = run('s02', cmds)
+        for k, (r, fl) in enumerate(zip(v['removes'], rows)):
+            what = (r['slot'], r['name'])
+            res, ops = split(out[4 * k + 1])
+            self.assertEqual(res, [str(LOGO_OK)], what)
+            self.assertEqual(writes(ops), self.want(r['ops']), what)
+            want = bytearray(fl)
+            if r['ops']:
+                want[LOGO_AT[r['slot']]:LOGO_AT[r['slot']] + 0x1000] = b'\xff' * 0x1000
+            self.assertEqual(bytes.fromhex(out[4 * k + 2]), bytes(want), what)
+            self.assertEqual(split(out[4 * k + 3])[0][0], '0', what)
+
+    @requirement('S-02.112')
+    def test_guards(self):
+        """Every row of `guards`, for both slots: a save writes only when the running slot may be written and
+        the data fits its room, and is refused with nothing written otherwise; a removal under the same rule."""
+        v = logo_vectors()
+        names = {g['name'] for g in v['guards']}
+        self.assertTrue({'usable', 'length_0x74000', 'length_0x74001', 'length_0x75001', 'not_established',
+                         'not_good', 'record_changed', 'record_unreadable', 'over_room', 'over_max'} <= names)
+        for slot in (0, 1):
+            for g in v['guards']:
+                rec = b(g['record'])
+                now = rec if g['record_now'] in (None, 'unreadable') else b(g['record_now'])
+                fl = self.flash(slot, now)
+                fail = 'readfail 0x%x 12' % SET_RECORD[slot] if g['record_now'] == 'unreadable' else 'readfail -'
+                path = save('logo_g.bin', fl)
+                data = logo_pattern(g['length'], 7)
+                est, good = int(g['established']), int(g['good'])
+                out = run('s02', ['load ' + path, fail,
+                                  'logosave %d %d %d %d %d 100 50 0x18e3 %s %s' % (
+                                      slot, est, good, g['bits'], g['colors'], save('logo_g.dat', data), rec.hex()),
+                                  'peek 0 0x100000', 'load ' + path, fail,
+                                  'logoremove %d %d %d %s' % (slot, est, good, rec.hex()), 'peek 0 0x100000'])
+                what = (slot, g['name'])
+                sres, sops = split(out[2])
+                rres, rops = split(out[6])
+                if g['saved']:
+                    self.assertEqual(sres, [str(LOGO_OK)], what)
+                    self.assertTrue(writes(sops), what)
+                else:
+                    self.assertNotEqual(sres, [str(LOGO_OK)], what)
+                    self.assertEqual(writes(sops), [], what)
+                    self.assertEqual(bytes.fromhex(out[3]), fl, what)
+                if g['removal_allowed']:
+                    self.assertEqual(rres, [str(LOGO_OK)], what)
+                else:
+                    self.assertNotEqual(rres, [str(LOGO_OK)], what)
+                    self.assertEqual(writes(rops), [], what)
+                    self.assertEqual(bytes.fromhex(out[7]), fl, what)
+
+    @requirement('S-02.112')
+    def test_cuts(self):
+        """`cuts`: a save over a stored logo cut after each of its writes, or torn inside one (masks 00, FF
+        and two seeds), and a removal cut and torn: the next read gives the row's logo, the old one, none or
+        the new; the front never reads one the main image does not."""
+        v = logo_vectors()
+        c = v['save_cut_case']
+        slot, rec = c['slot'], b(c['record'])
+        start = self.flash(slot, rec, c['old'])
+        data = logo_pattern(c['length'], c['data_pattern'])
+        dpath = save('logo_c.dat', data)
+        path = save('logo_c.bin', start)
+        gives = {'old': c['old_length'], 'new': c['length'], 'none': None}
+        cmds, rows = [], []
+        for r in v['cuts']:
+            masks = [None] if r['at'] == 'after' else \
+                [bytes(0x1000), b'\xff' * 0x1000] + [random.Random(sd).randbytes(0x1000) for sd in (1, 2)]
+            for m in masks:
+                f = 'fault after %d' % r['write'] if m is None else 'fault tear %d %s' % (r['write'], m.hex())
+                op = 'logosave %d 1 1 %d %d 100 50 0x18e3 %s %s' % (slot, c['bits'], c['colors'], dpath, rec.hex()) \
+                    if r['op'] == 'save' else 'logoremove %d 1 1 %s' % (slot, rec.hex())
+                cmds += ['load ' + path, f, op, 'logoread %d' % slot]
+                rows.append(r)
+        out = run('s02', cmds)
+        seen = set()
+        for k, r in enumerate(rows):
+            res, _ = split(out[4 * k + 3])
+            got = int(res[1], 16) if res[0] == '1' else None
+            self.assertIn(got, [gives[x] for x in r['gives']], r)
+            self.assertFalse(res[3] == '1' and res[0] != '1', r)
+            seen.add(r['op'])
+        self.assertEqual(seen, {'save', 'remove'})
+
+    @requirement('S-02.113')
+    def test_upgrade(self):
+        """`upgrade`: the package's bootloader step erases the target's logo header, after its start log and
+        before its settings sector, exactly for an image of at most 0x75000 bytes; a logo stored for the old
+        image is not read after, whatever the length."""
+        gen = spec_module('S-02-spi-flash', 'gen_vectors')
+        v = logo_vectors()
+        t = 1
+        for row in v['upgrade']:
+            n = int(row['length'], 16)
+            fl = bytearray(spiflash.build_flash(selector=(0, 1), slots=('good', 'good'),
+                                                images=(spiflash.slot_image(0, size=0x2345),
+                                                        spiflash.slot_image(1, size=0x2345))))
+            f, data = gen.logo_picture(20, 10, 2, 1)
+            crc_old = struct.unpack('<I', bytes(fl[SET_RECORD[t]:SET_RECORD[t] + 4]))[0]
+            head = gen.logo_header(20, 10, 1, 2, f['bg'], data, crc_old)
+            for off, hexb in gen.logo_place(t, head, data).items():
+                d = bytes.fromhex(hexb)
+                fl[int(off, 16):int(off, 16) + len(d)] = d
+            out = run('s02', ['load ' + save('logo_u.bin', bytes(fl)), 'logoread %d' % t,
+                              'upgrade 1 ' + save('logo_u.ldr', padded('good', n)), 'logoread %d' % t])
+            self.assertEqual(split(out[1])[0][0], '1', row)
+            res, ops = split(out[2])
+            self.assertEqual(res, ['0', str(t)], row)
+            last = max(i for i, o in enumerate(ops) if o.startswith('p:') and int(o.split(':')[1], 16) >= LOGO_SLOT[t])
+            er = [o for o in ops[last + 1:ops.index('e:f000')] if o.startswith('e:')]   # after the image
+            logo, log, sec = 'e:%x' % LOGO_AT[t], 'e:%x' % (LOGO_SLOT[t] + 0x77000), 'e:%x' % SET_SECTOR[t]
+            self.assertEqual(logo in er, row['erases_logo_header'], row)
+            if row['erases_logo_header']:
+                self.assertLess(er.index(log), er.index(logo), row)
+                if sec in er:
+                    self.assertLess(er.index(logo), er.index(sec), row)
+            self.assertEqual(split(out[3])[0][0], '0', row)
 
 
 if __name__ == '__main__':

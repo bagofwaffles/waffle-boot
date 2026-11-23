@@ -10,6 +10,7 @@ import json
 import os
 import random
 import re
+import struct
 import sys
 import zlib
 
@@ -2619,6 +2620,239 @@ def act_data():
             "selector": hex(SELECTOR), "cases": cases}
 
 
+# ---------------------------------------------------------------- the boot logo (S-02.109 - S-02.113)
+
+LOGO_MAGIC = 0x474C4257                 # "WBLG", 57 42 4c 47
+LOGO_HEAD = 0x24
+LOGO_W, LOGO_H = 480, 222
+LOGO_DATA_MAX = 2 * 256 + 2 * LOGO_W * LOGO_H     # 213,632
+LOGO_STAMP = 0x1D0C2B3A                 # the running image's record CRC in these cases
+LOGO_OTHER = 0x5A5AA5A5
+
+
+def logo_rec(length, crc=LOGO_STAMP, tag=TAG):
+    """A slot record's 12 bytes: CRC-32, length, tag."""
+    return crc.to_bytes(4, "little") + length.to_bytes(4, "little") + tag.to_bytes(4, "little")
+
+
+def logo_header(w, h, bits, colors, bg, data, image, version=1, size=LOGO_HEAD, magic=LOGO_MAGIC,
+                pad1=0, pad2=0, length=None, crc=None, hcrc=None):
+    """S-02.109: the 36-byte header, its CRC-32 over the 32 bytes before it last."""
+    n = len(data) if length is None else length
+    c = zlib.crc32(data) if crc is None else crc
+    head = struct.pack("<IHHHHBBHHHIII", magic, version, size, w, h, bits, pad1, colors, bg, pad2, n, c, image)
+    return head + struct.pack("<I", zlib.crc32(head) if hcrc is None else hcrc)
+
+
+def logo_room(rec):
+    """S-02.110: the bytes from the image's end, rounded up to a sector, to the header's sector."""
+    ln, tag = int.from_bytes(rec[4:8], "little"), int.from_bytes(rec[8:12], "little")
+    if tag != TAG or not 1 <= ln <= LOGO_SECTOR:
+        return 0
+    return LOGO_SECTOR - (ln + SECTOR - 1) // SECTOR * SECTOR
+
+
+def logo_check(head, rec):
+    """S-02.111: the header's data length when the header is usable for a slot with this record, else None."""
+    if len(head) != LOGO_HEAD:
+        return None
+    (magic, version, size, w, h, bits, z1, colors, _bg, z2, n, _c, image, hcrc) = struct.unpack(
+        "<IHHHHBBHHHIIII", head)
+    if magic != LOGO_MAGIC or version != 1 or size != LOGO_HEAD or zlib.crc32(head[:32]) != hcrc:
+        return None
+    if z1 or z2 or not 1 <= w <= LOGO_W or not 1 <= h <= LOGO_H or bits not in (1, 2, 4, 8):
+        return None
+    if not 2 <= colors <= 1 << bits or image != int.from_bytes(rec[:4], "little"):
+        return None
+    room = logo_room(rec)
+    if room == 0 or not 2 * colors <= n <= min(LOGO_DATA_MAX, room):
+        return None
+    return n
+
+
+def logo_picture(w, h, colors, bits):
+    """Stored data the front draws: the palette, then each of the w lines (screen columns) as runs of one
+    color of at most 128 rows (S-02.109's run-length lines)."""
+    pal = b"".join(struct.pack("<H", (0x1111 * (i + 1) + 0x0841 * i) & 0xFFFF) for i in range(colors))
+    lines = bytearray()
+    for j in range(w):
+        y = 0
+        while y < h:
+            n = min(128, h - y)
+            lines += bytes([0x80 | (n - 1), (j + y) % colors])
+            y += n
+    return dict(width=w, height=h, bits=bits, colors=colors, bg=0x18E3), pal + bytes(lines)
+
+
+def logo_place(slot, head, data):
+    """The flash bytes of a stored logo: {offset: hex}, the data ending where the header's sector starts."""
+    at = SLOT[slot] + LOGO_SECTOR
+    return {"0x%05x" % (at - len(data)): data.hex(), "0x%05x" % at: head.hex()}
+
+
+def logo_save_writes(slot, n):
+    """S-02.112: a save's erases and programs: the header's sector first, the data's sectors, the data a page
+    at a time, the header last."""
+    at = SLOT[slot] + LOGO_SECTOR
+    start = at - n
+    ops = [["erase", "0x%05x" % at]]
+    ops += [["erase", "0x%05x" % s] for s in range(start // SECTOR * SECTOR, at, SECTOR)]
+    off = start
+    while off < at:
+        k = min(at - off, PAGE - off % PAGE)
+        ops.append(["program", "0x%05x" % off, k])
+        off += k
+    ops.append(["program", "0x%05x" % at, LOGO_HEAD])
+    return ops
+
+
+def _hx(b):
+    return b.hex(" ")
+
+
+def boot_logo():
+    hx_ = _hx
+    base_rec = logo_rec(0x2345)
+    f, data = logo_picture(100, 50, 4, 2)
+    good = logo_header(f["width"], f["height"], 2, 4, f["bg"], data, LOGO_STAMP)
+
+    def hdr(**kw):
+        a = dict(w=100, h=50, bits=2, colors=4, bg=f["bg"], data=data, image=LOGO_STAMP)
+        a.update(kw)
+        return logo_header(a.pop("w"), a.pop("h"), a.pop("bits"), a.pop("colors"), a.pop("bg"), a.pop("data"),
+                           a.pop("image"), **a)
+    heads = [
+        ("good", base_rec, good),
+        ("smallest", base_rec, hdr(w=1, h=1, bits=1, colors=2, data=bytes(4) + b"\x80\x00")),
+        ("largest_fields", base_rec, hdr(w=480, h=222, bits=8, colors=256, length=LOGO_DATA_MAX)),
+        ("bits_4_16_colors", base_rec, hdr(bits=4, colors=16, length=0x800)),
+        ("magic", base_rec, hdr(magic=LOGO_MAGIC ^ 1)),
+        ("version_0", base_rec, hdr(version=0)),
+        ("version_2", base_rec, hdr(version=2)),
+        ("size", base_rec, hdr(size=0x20)),
+        ("hcrc", base_rec, hdr(hcrc=zlib.crc32(good[:32]) ^ 1)),
+        ("width_0", base_rec, hdr(w=0)),
+        ("width_481", base_rec, hdr(w=481)),
+        ("height_0", base_rec, hdr(h=0)),
+        ("height_223", base_rec, hdr(h=223)),
+        ("bits_3", base_rec, hdr(bits=3)),
+        ("bits_16", base_rec, hdr(bits=16)),
+        ("colors_1", base_rec, hdr(colors=1)),
+        ("colors_over_bits", base_rec, hdr(colors=5)),
+        ("byte_after_bits", base_rec, hdr(pad1=1)),
+        ("word_after_bg", base_rec, hdr(pad2=1)),
+        ("length_under_palette", base_rec, hdr(length=7)),
+        ("length_over_max", base_rec, hdr(length=LOGO_DATA_MAX + 1)),
+        ("other_image", base_rec, hdr(image=LOGO_OTHER)),
+        ("record_bad_tag", logo_rec(0x2345, tag=0x0000B005), good),
+        ("record_length_0", logo_rec(0), good),
+        ("record_room_exact", logo_rec(0x74000), hdr(length=0x1000)),
+        ("record_room_over", logo_rec(0x74000), hdr(length=0x1001)),
+        ("record_rounds_up", logo_rec(0x74001), hdr(length=0x1000)),
+        ("record_0x75000", logo_rec(0x75000), hdr(length=8)),
+        ("record_0x75001", logo_rec(0x75001), hdr(length=8)),
+        ("record_0x76000", logo_rec(0x76000), hdr(length=8)),
+    ]
+    headers = [{"name": n, "record": hx_(r), "header": hx_(h), "usable": logo_check(h, r) is not None,
+                "length": logo_check(h, r)} for n, r, h in heads]
+    room = [{"length": "0x%x" % ln, "tag": "0x%08x" % tag, "room": "0x%x" % logo_room(logo_rec(ln, tag=tag))}
+            for ln, tag in ((1, TAG), (0x1000, TAG), (0x1001, TAG), (0x2345, TAG), (0x74000, TAG),
+                            (0x74001, TAG), (0x75000, TAG), (0x75001, TAG), (0x76000, TAG), (0x78000, TAG),
+                            (0, TAG), (0x2345, 0x0000B005))]
+    # reads: the slot's record, what the slot holds at the header and below it, and whether a logo is read
+    big_f, big = logo_picture(480, 222, 256, 8)
+    big_h = logo_header(480, 222, 8, 256, big_f["bg"], big, LOGO_STAMP)
+    bad = bytearray(data)
+    bad[len(bad) // 2] ^= 0x40
+    torn = bytearray(good)
+    torn[0x14] ^= 0x01
+    over = data + bytes(0x1001 - len(data))        # one byte more than a 0x74000-byte image leaves
+    reads = []
+    for slot in (0, 1):
+        for name, rec, place, gives in (
+                ("good", base_rec, logo_place(slot, good, data), True),
+                ("largest_picture", base_rec, logo_place(slot, big_h, big), True),
+                ("erased", base_rec, {}, False),
+                ("data_changed", base_rec, logo_place(slot, good, bytes(bad)), False),
+                ("header_changed", base_rec, logo_place(slot, bytes(torn), data), False),
+                ("other_image", logo_rec(0x2345, crc=LOGO_OTHER), logo_place(slot, good, data), False),
+                ("record_over_0x75000", logo_rec(0x75001), logo_place(slot, good, data), False),
+                ("data_reaches_image", logo_rec(0x74000), logo_place(slot, hdr(data=over), over), False)):
+            n = len(big) if name == "largest_picture" else len(data)
+            reads.append({"name": name, "slot": slot, "record": hx_(rec), "bytes": place, "gives": gives,
+                          "length": n if gives else None})
+    # saves: from a slot whose free bytes hold a pattern, data of the pattern below
+    saves = []
+    for slot in (0, 1):
+        for name, ln, n in (("mid_sector", 0x2345, 0x1234), ("sector_aligned", 0x2345, 0x3000),
+                            ("one_page", 0x2345, 0x100), ("room_exact", 0x74000, 0x1000),
+                            ("largest", 0x2345, LOGO_DATA_MAX)):
+            saves.append({"name": name, "slot": slot, "record": hx_(logo_rec(ln)), "width": 100, "height": 50,
+                          "bits": 1, "colors": 2, "bg": "0x18e3", "data_pattern": slot + 3, "length": n,
+                          "header": hx_(logo_header(100, 50, 1, 2, 0x18E3, pattern(n, slot + 3), LOGO_STAMP)),
+                          "data_at": "0x%05x" % (SLOT[slot] + LOGO_SECTOR - n),
+                          "ops": logo_save_writes(slot, n)})
+    removes = []
+    for slot in (0, 1):
+        at = SLOT[slot] + LOGO_SECTOR
+        for name, place, ops in (("stored", logo_place(slot, good, data), [["erase", "0x%05x" % at]]),
+                                 ("erased", {}, []),
+                                 ("not_valid", {"0x%05x" % at: "00" * 4}, [["erase", "0x%05x" % at]])):
+            removes.append({"name": name, "slot": slot, "record": hx_(base_rec), "bytes": place, "ops": ops})
+    guards = []
+    # S-02.112: a save under the settings' running-slot rule and within the room; refused with nothing written
+    for name, est, good_, rec, now, n, colors in (
+            ("usable", True, True, base_rec, None, 0x100, 2),
+            ("length_0x74000", True, True, logo_rec(0x74000), None, 0x1000, 2),
+            ("length_0x74001", True, True, logo_rec(0x74001), None, 0x100, 2),
+            ("length_0x75000", True, True, logo_rec(0x75000), None, 0x100, 2),
+            ("length_0x75001", True, True, logo_rec(0x75001), None, 0x100, 2),
+            ("length_0x76000", True, True, logo_rec(0x76000), None, 0x100, 2),
+            ("length_0", True, True, logo_rec(0), None, 0x100, 2),
+            ("bad_tag", True, True, logo_rec(0x2345, tag=0x0000B005), None, 0x100, 2),
+            ("not_established", False, True, base_rec, None, 0x100, 2),
+            ("not_good", True, False, base_rec, None, 0x100, 2),
+            ("record_changed", True, True, base_rec, logo_rec(0x2345, crc=LOGO_OTHER), 0x100, 2),
+            ("record_unreadable", True, True, base_rec, "unreadable", 0x100, 2),
+            ("over_room", True, True, logo_rec(0x74000), None, 0x1001, 2),
+            ("under_palette", True, True, base_rec, None, 0x1FF, 256),
+            ("over_max", True, True, base_rec, None, LOGO_DATA_MAX + 1, 2)):
+        ok = est and good_ and now is None and logo_room(rec) > 0 and \
+            2 * colors <= n <= min(LOGO_DATA_MAX, logo_room(rec))
+        rule = est and good_ and now is None and logo_room(rec) > 0
+        guards.append({"name": name, "established": est, "good": good_, "record": hx_(rec),
+                       "record_now": None if now is None else now if now == "unreadable" else hx_(now),
+                       "length": n, "colors": colors, "bits": 1 if colors == 2 else 8, "saved": ok,
+                       "removal_allowed": rule})
+    nsave = len(logo_save_writes(0, 0x1234))
+    cuts = [{"op": "save", "at": "after", "write": 0, "gives": ["old"]}]
+    cuts += [{"op": "save", "at": "after", "write": k, "gives": ["none"]} for k in range(1, nsave)]
+    cuts += [{"op": "save", "at": "torn", "write": 1, "gives": ["old", "none"]},
+             {"op": "save", "at": "torn", "write": 2, "gives": ["none"]},
+             {"op": "save", "at": "torn", "write": nsave - 1, "gives": ["none"]},
+             {"op": "save", "at": "torn", "write": nsave, "gives": ["none", "new"]},
+             {"op": "remove", "at": "after", "write": 0, "gives": ["old"]},
+             {"op": "remove", "at": "torn", "write": 1, "gives": ["old", "none"]}]
+    upgrade = [{"length": "0x%x" % n, "erases_logo_header": n <= LOGO_SECTOR, "gives": "none"}
+               for n in (0x2345, 0x74FFF, 0x75000, 0x75001, 0x76000)]
+    return {
+        "format": {"header_offset": "0x%x" % LOGO_SECTOR, "header_bytes": LOGO_HEAD, "magic": "57 42 4c 47",
+                   "version": 1, "width_max": LOGO_W, "height_max": LOGO_H, "data_max": LOGO_DATA_MAX,
+                   "slot_offsets": ["0x%05x" % s for s in SLOT],
+                   "data_pattern": "byte i of a pattern p: ((i * 7 + p) ^ (i >> 8)) & 0xff"},
+        "headers": headers,
+        "room": room,
+        "reads": reads,
+        "saves": saves,
+        "save_cut_case": {"slot": 1, "record": hx_(base_rec), "old": logo_place(1, good, data),
+                          "old_length": len(data), "length": 0x1234, "data_pattern": 4, "bits": 1, "colors": 2},
+        "removes": removes,
+        "guards": guards,
+        "cuts": cuts,
+        "upgrade": upgrade,
+    }
+
+
 def render():
     out = {}
     out["layout.json"] = json.dumps(layout(), indent=1) + "\n"
@@ -2651,6 +2885,7 @@ def render():
     out["recovery_actions.json"] = json.dumps(act_data(), indent=1) + "\n"
     out["settings_sector.json"] = json.dumps(settings_sector(), indent=1) + "\n"
     out["slot_kinds.json"] = json.dumps({"cases": slot_kind.cases()}, indent=1) + "\n"
+    out["boot_logo.json"] = json.dumps(boot_logo(), indent=1) + "\n"
     return out
 
 
