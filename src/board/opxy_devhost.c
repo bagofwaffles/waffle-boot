@@ -304,6 +304,7 @@ static const char *const screen_names[] = {
 	[S15_SCR_INFO2] = "info2",
 	[S15_SCR_OPTION] = "option",
 	[S15_SCR_NONE] = "none",
+	[S15_SCR_DISPLAY] = "display",
 };
 
 /* A NUL-terminated string at out[n], cut to fit max; the new length. */

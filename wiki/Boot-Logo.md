@@ -6,7 +6,7 @@ firmware install removes it.
 
 ## Putting one on
 
-1. Open the boot menu, then **5 System** and **6 Boot logo**. The unit offers an empty USB disk.
+1. Open the boot menu, then **2 Settings**, **3 Display** and **6 Boot logo**. The unit offers an empty USB disk.
 2. Copy **one** PNG file to the disk and eject it. Files whose names start with a dot (a computer adds
    some) are left alone; anything that is not a `.png` is ignored.
 3. About 2 s later the unit shows the picture as the start will show it, with its size and the free space
@@ -39,7 +39,7 @@ leaves none, and the item shows `No room`.
 
 ## Removing it
 
-**5 System**, **6 Boot logo**, then **hold 5 for 5 s** (`Remove`). The next start shows the built-in logo. A
+**2 Settings**, **3 Display**, **6 Boot logo**, then **hold 5 for 5 s** (`Remove`). The next start shows the built-in logo. A
 factory reset (System, 7) removes it too, with the settings. Installing
 firmware to a slot (with the installer, recovery, `wbrecover.py`, the browser page or an install from the
 boot menu) removes that slot's picture as well; each slot keeps its own, and nothing carries over.

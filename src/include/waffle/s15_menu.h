@@ -37,11 +37,12 @@ enum s15_screen {
 	S15_SCR_STARTING,   /* S-15.190: restarting for the OS; no key acts */
 	S15_SCR_INFO2,      /* S-15.082: Device Info's second page */
 	S15_SCR_OPTION,     /* S-15.140: the option's screen, from Settings */
-	S15_SCR_LOGO,       /* the boot logo's disk, from System */
+	S15_SCR_LOGO,       /* the boot logo's disk, from Display */
 	S15_SCR_LOGO_VIEW,  /* a dropped picture as the front will draw it */
 	S15_SCR_LOGO_DONE,  /* a save's or a removal's result: digit 8 alone acts */
 	S15_SCR_NONE,       /* before held mode's first screen */
-	S15_SCR_APPROVE     /* the host link's approval: the unit's keys alone */
+	S15_SCR_APPROVE,    /* the host link's approval: the unit's keys alone */
+	S15_SCR_DISPLAY     /* Settings' 3: the color and the boot logo */
 };
 
 /* The host link's approval screen, as the board reads it. */
@@ -173,7 +174,7 @@ enum s15_store_save {
 	S15_STORE_UNUSABLE	/* the running slot keeps no settings (S-02.099) */
 };
 
-/* The boot logo (waffle/logo.h) as System shows it (S-02.110,
+/* The boot logo (waffle/logo.h) as Display shows it (S-02.110,
  * S-02.112). */
 enum s15_logo_state {
 	S15_LOGO_BUILTIN,	/* none stored: the front's own */

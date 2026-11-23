@@ -485,7 +485,7 @@ void opxy_install_source(struct opxy_master *m, const struct wire_source *src,
 			 const struct s11_check_in *in,
 			 struct s11_install_result *res);
 void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env);
-/* The boot logo (src/board/opxy_logo.c): System's Boot logo item's
+/* The boot logo (src/board/opxy_logo.c): Display's Boot logo item's
  * operations into env; the stored logo the front drew at this start, read
  * again for the hand-over frame (NULL: none, the build's picture then,
  * S-15.132); and whether a picture is the one the front's frame showed. */

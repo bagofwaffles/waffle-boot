@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The boot logo on the master (waffle/logo.h): the picture the front drew
- * at this start, read again for the hand-over frame, and System's Boot
+ * at this start, read again for the hand-over frame, and Display's Boot
  * logo: a blank RAM disk for one PNG file, its conversion, and its save or
  * removal in the running slot under the settings' rule, the factory reset's
  * among them.
@@ -70,7 +70,7 @@ bool opxy_logo_as_front(const struct opxy_master *m, const struct wb_display_ima
 #if !defined(OPXY_TEST_OS)
 
 /* The settings' rule, as wb_logo_save() applies it, without a read of the
- * record: what System shows. */
+ * record: what Display shows. */
 static bool usable(const struct opxy_master *m)
 {
 	return m->store_slot.established && m->store_slot.good && m->store_slot.slot <= 1u;

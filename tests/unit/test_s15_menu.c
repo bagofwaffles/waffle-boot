@@ -768,7 +768,7 @@ enum { MTP_OFF, MTP_VENDOR, MTP_STANDARD };
 struct rstate {
 	const char *name; unsigned screen;
 	bool devmode, packs, armed; unsigned opt;      /* Main, system, settings, option, upgrade (opt) */
-	bool color;                                   /* Settings (S-15.173); true elsewhere */
+	bool color;                                   /* Display (S-15.173); true elsewhere */
 	unsigned pending;                              /* Packs; the option's screen: 1 while
 							  the key that opened it is down */
 	bool refused, fpend;                           /* Format */
@@ -805,6 +805,8 @@ static const struct rstate rstates[] = {
 	{ "color=0,devmode=1,macos=1,opt=on,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_ON, false, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "color=1,devmode=1,macos=0,opt=on,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_ON, true, 0u, false, false, MTP_OFF, false, false, false, false, false, false },
 	{ "color=1,devmode=1,macos=1,opt=on,screen=settings", S15_SCR_SETTINGS, true, false, false, OPT_ON, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
+	{ "color=0,screen=display", S15_SCR_DISPLAY, false, false, false, OPT_OFF, false, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
+	{ "color=1,screen=display", S15_SCR_DISPLAY, false, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "opener=up,screen=option", S15_SCR_OPTION, true, false, false, OPT_OFF, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "opener=down,screen=option", S15_SCR_OPTION, true, false, false, OPT_OFF, true, 1u, false, false, MTP_OFF, false, false, true, false, false, false },
 	{ "opt=pending,screen=option", S15_SCR_OPTION, true, false, false, OPT_PENDING, true, 0u, false, false, MTP_OFF, false, false, true, false, false, false },
@@ -896,6 +898,10 @@ static void setup_state(const struct rstate *st)
 		break;
 	case S15_SCR_SETTINGS:
 		press(0x07);
+		break;
+	case S15_SCR_DISPLAY:
+		press(0x07);
+		press(0x08);
 		break;
 	case S15_SCR_OPTION:
 		/* S-15.140: opened by 0x07, which stays down for opener=down;
@@ -1327,6 +1333,7 @@ static void test_files_scan(void)
 	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
 	press(0x07);
 	press(0x08);
+	press(0x08);
 	CHECK(F.saves == 1u && F.files_scans == 0u, "S-12.062 a setting saved: no scan");
 	reset_fake(); default_boot(); BOOT.files_way = S15_FILES_RESTORED; start();
 	press(0x08);
@@ -1397,7 +1404,8 @@ static void test_rules(void)
 				observe(&got, st, key, before, ab, pb, fb, ob, kb);
 				next = M.screen;
 
-				rule(R_SCREEN, next < S15_SCR_NONE, n, key, down, &got);
+				rule(R_SCREEN, next != S15_SCR_NONE && next != S15_SCR_APPROVE &&
+				     next <= S15_SCR_DISPLAY, n, key, down, &got);
 				/* any other key down, or the held key's release,
 				 * cancels; its repeated down and precomp do nothing */
 				if (armed_st && ((down && key != hk && key != 0x17u) ||
@@ -1475,10 +1483,14 @@ static void test_rules(void)
 					case S15_SCR_INFO2:
 						ok = next == S15_SCR_INFO;
 						break;
+					case S15_SCR_DISPLAY:
+						ok = next == S15_SCR_SETTINGS &&
+						     only(&got, "open");
+						break;
 					case S15_SCR_LOGO:      /* no logo item in this walk */
 					case S15_SCR_LOGO_VIEW:
 					case S15_SCR_LOGO_DONE:
-						ok = next == S15_SCR_SYSTEM;
+						ok = next == S15_SCR_DISPLAY;
 						break;
 					case S15_SCR_OPTION:    /* nothing changed */
 						ok = next == S15_SCR_SETTINGS &&
@@ -1540,12 +1552,20 @@ static void test_rules(void)
 						rule(R_OS_ONCE, next == S15_SCR_FACTORY &&
 						     only(&got, "once_check"), n, key, down, &got);
 				}
+				/* Settings' 3 opens Display, whose 3 alone sets the
+				 * color */
 				if (before == S15_SCR_SETTINGS && down && d == 3u && !armed_st)
-					rule(R_COLOR, next == S15_SCR_SETTINGS &&
-					     tok(&got, st->color ? "color_off" : "color_on"),
+					rule(R_COLOR, next == S15_SCR_DISPLAY && only(&got, "open"),
+					     n, key, down, &got);
+				if (before == S15_SCR_DISPLAY && down && d == 3u)
+					rule(R_COLOR, next == S15_SCR_DISPLAY &&
+					     only(&got, st->color ? "color_off" : "color_on"),
+					     n, key, down, &got);
+				if (before == S15_SCR_DISPLAY && down && d != 3u && d != 8u)
+					rule(R_COLOR, next == S15_SCR_DISPLAY && got.n == 0u,
 					     n, key, down, &got);
 				if (tok_has(&got, "color_"))
-					rule(R_COLOR, before == S15_SCR_SETTINGS && down &&
+					rule(R_COLOR, before == S15_SCR_DISPLAY && down &&
 					     d == 3u, n, key, down, &got);
 				if (before == S15_SCR_SETTINGS && down && d == 6u && !armed_st)
 					rule(R_START_MENU, next == S15_SCR_SETTINGS &&
@@ -1572,6 +1592,7 @@ static void test_rules(void)
 					     !tok(&got, "format"), n, key, down, &got);
 					if (!armed_st && (before == S15_SCR_SYSTEM ||
 							  before == S15_SCR_SETTINGS ||
+							  before == S15_SCR_DISPLAY ||
 							  before == S15_SCR_OPTION ||
 							  before == S15_SCR_PACKS ||
 							  before == S15_SCR_FORMAT))
@@ -1939,16 +1960,21 @@ static void test_screens(void)
 	press(0x06);
 	CHECK(F.saves == 1u && F.saved.dev_mode && M.dev_mode, "S-15.193 the unit's key saves");
 
-	/* S-15.173: digit 3 turns the color on and off, each change saved */
+	/* S-15.173: Settings' 3 opens Display, whose digit 3 turns the color
+	 * on and off, each change saved */
 	reset_fake(); default_boot(); start();
 	press(0x07);
 	CHECK(!M.color, "S-15.173 in gray by default");
 	press(0x08);
-	expect_screen("settings_color_on");
+	CHECK(M.screen == S15_SCR_DISPLAY && F.saves == 0u, "Settings' 3 opens Display");
+	expect_screen("display");
+	expect_title("display");
+	press(0x08);
+	expect_screen("display_color_on");
 	CHECK(M.color && F.saves == 1u && F.saved.color &&
 	      F.saved.dev_mode, "S-15.173 on, saved");
 	press(0x08);
-	expect_screen("settings");
+	expect_screen("display");
 	CHECK(!M.color && F.saves == 2u && !F.saved.color, "S-15.173 off again");
 	F.store_rc = S15_STORE_FAILED;
 	press(0x08);
@@ -1963,12 +1989,15 @@ static void test_screens(void)
 	s15_menu_host_event(&M, 0x08, true);
 	s15_menu_host_event(&M, 0x08, false);
 	CHECK(M.color && F.saves == 4u && appended(s15_settings_host), "S-15.193 color");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_SETTINGS, "Display: 8 back to Settings");
 	s15_menu_host_event(&M, 0x12, true);
 	s15_menu_host_event(&M, 0x12, false);
 	CHECK(!M.mtp_macos && F.saves == 4u && appended(s15_settings_host), "S-15.193 MTP");
 	reset_fake(); default_boot(); BOOT.settings.color = true; start();
 	press(0x07);
-	expect_screen("settings_color_on");
+	press(0x08);
+	expect_screen("display_color_on");
 
 	/* S-15.060, S-15.050 */
 	reset_fake(); default_boot(); start();
@@ -3685,6 +3714,7 @@ static void test_start_menu(void)
 	press(0x13);
 	CHECK(F.saves == 0u && M.screen == S15_SCR_SETTINGS, "no sector: nothing");
 	press(0x08);
+	press(0x08);
 	CHECK(M.color && F.saves == 0u && appended(s15_settings_this_start),
 	      "no sector: this start only");
 }
@@ -3898,14 +3928,16 @@ static void test_gray(void)
 	s15_menu_render(&M, &g, &d);
 	CHECK(color_px != 0u, "S-15.173 in color when on");
 
-	/* off: Settings, the main screen, the option's red bar, the key test */
+	/* off: Display, the main screen, the option's red bar, the key test */
 	press(0x07);
+	press(0x08);
 	press(0x08);
 	s15_menu_frame(&M, &f);
 	CHECK(f.gray, "S-15.173 the frame says gray");
 	color_px = gray_px = 0;
 	s15_menu_render(&M, &g, &d);
-	CHECK(color_px == 0u && gray_px != 0u, "S-15.173 Settings all gray");
+	CHECK(color_px == 0u && gray_px != 0u, "S-15.173 Display all gray");
+	press(0x15);
 	press(0x07);           /* protected writes on: the red bar */
 	hold(0x07);
 	press(0x15);
@@ -4353,7 +4385,8 @@ static void logo_start(uint8_t state)
 	T = 0;
 	s15_menu_tick(&M, T);
 	s15_menu_start(&M);
-	press(0x12);			/* System */
+	press(0x07);			/* Settings */
+	press(0x08);			/* Display */
 }
 
 /* The disk released, and read 2 s later. */
@@ -4398,24 +4431,31 @@ static void test_logo(void)
 
 	/* no logo ops: no item (the test OS) */
 	reset_fake(); default_boot(); start();
+	press(0x07);
+	press(0x08);
+	expect_screen("display");
+	press(0x13);
+	CHECK(M.screen == S15_SCR_DISPLAY, "logo: no item, 6 does nothing");
+
+	/* Display's item, and its states; none on System */
+	logo_start(S15_LOGO_BUILTIN);
+	expect_screen("display_logo");
+	press(0x15);
+	press(0x15);
 	press(0x12);
 	expect_screen("system");
 	press(0x13);
-	CHECK(M.screen == S15_SCR_SYSTEM, "logo: no item, 6 does nothing");
-
-	/* System's item, and its states */
-	logo_start(S15_LOGO_BUILTIN);
-	expect_screen("system_logo");
+	CHECK(M.screen == S15_SCR_SYSTEM && L.disks == 0u, "logo: System's 6 is no item");
 	logo_start(S15_LOGO_CUSTOM);
-	expect_screen("system_logo_custom");
+	expect_screen("display_logo_custom");
 	logo_start(S15_LOGO_NO_ROOM);
-	expect_screen("system_logo_no_room");
+	expect_screen("display_logo_no_room");
 	press(0x13);
-	CHECK(M.screen == S15_SCR_SYSTEM && L.disks == 0u, "logo: no room offers nothing");
+	CHECK(M.screen == S15_SCR_DISPLAY && L.disks == 0u, "logo: no room offers nothing");
 	logo_start(S15_LOGO_UNAVAILABLE);
-	expect_screen("system_logo_unavailable");
+	expect_screen("display_logo_unavailable");
 	press(0x13);
-	CHECK(M.screen == S15_SCR_SYSTEM && L.disks == 0u, "logo: unavailable offers nothing");
+	CHECK(M.screen == S15_SCR_DISPLAY && L.disks == 0u, "logo: unavailable offers nothing");
 
 	/* the disk's screen, and back */
 	logo_start(S15_LOGO_BUILTIN);
@@ -4432,11 +4472,11 @@ static void test_logo(void)
 	press(0x12);
 	CHECK(M.armed == S15_ARM_NONE && L.removes == 0u, "logo: no removal with none stored");
 	press(0x15);
-	CHECK(M.screen == S15_SCR_SYSTEM && usb_called(S15_USB_MAIN), "logo: 8 back, the disk withdrawn");
-	expect_screen("system_logo");
+	CHECK(M.screen == S15_SCR_DISPLAY && usb_called(S15_USB_MAIN), "logo: 8 back, the disk withdrawn");
+	expect_screen("display_logo");
 	/* the disk released elsewhere reads nothing */
 	logo_drop();
-	CHECK(L.loads == 0u, "logo: a release on System reads nothing");
+	CHECK(L.loads == 0u, "logo: a release on Display reads nothing");
 
 	/* a picture: its view, a hold of 1 saves it */
 	press(0x13);
@@ -4474,7 +4514,7 @@ static void test_logo(void)
 	press(0x06);
 	CHECK(M.screen == S15_SCR_LOGO_DONE, "logo: only 8 leaves the result");
 	press(0x15);
-	CHECK(M.screen == S15_SCR_SYSTEM, "logo: back to System");
+	CHECK(M.screen == S15_SCR_DISPLAY, "logo: back to Display");
 
 	/* a save that fails, or is refused */
 	logo_start(S15_LOGO_BUILTIN);
@@ -4548,11 +4588,17 @@ static void test_logo(void)
 	/* the factory reset (System, 7 held) removes the logo after the
 	 * settings' clear; a failed removal is said and stops nothing */
 	logo_start(S15_LOGO_CUSTOM);
+	press(0x15);
+	press(0x15);
+	press(0x12);
 	L.remove_rc = S15_STORE_SAVED;
 	hold(0x14);
 	CHECK(F.clears == 1u && L.removes == 1u && M.screen == S15_SCR_RESULT &&
 	      !appended(s15_reset_logo_failed), "logo: the reset removes it");
 	logo_start(S15_LOGO_CUSTOM);
+	press(0x15);
+	press(0x15);
+	press(0x12);
 	L.remove_rc = S15_STORE_FAILED;
 	hold(0x14);
 	CHECK(F.clears == 1u && L.removes == 1u && M.screen == S15_SCR_RESULT &&
@@ -4562,10 +4608,12 @@ static void test_logo(void)
 	/* Device Info 2 */
 	logo_start(S15_LOGO_CUSTOM);
 	press(0x15);
+	press(0x15);
 	press(0x09);
 	press(0x06);
 	expect_screen("info2_logo");
 	logo_start(S15_LOGO_BUILTIN);
+	press(0x15);
 	press(0x15);
 	press(0x09);
 	press(0x06);

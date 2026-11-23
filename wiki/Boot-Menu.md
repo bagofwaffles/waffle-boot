@@ -51,7 +51,7 @@ the items, the screen says when the OS could not be started, and why.
 | --- | --- |
 | 1 Developer mode | Off by default. On: shows the developer menu and adds a USB serial port |
 | 2 Protected writes | Lets installs write the bootloader slots (the list of parts offers the bootloader only while it is on), and lets a computer change the unit's serial and identity. 2 opens its screen, which says what it allows; hold 2 there for 5 s to turn it on. While it is on, 2 turns it off. Lasts until the next restart. No install writes the first stage, with or without it |
-| 3 Color | Off, the default, draws every screen in gray |
+| 3 Display | The color and the boot logo ([below](#display)) |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
 | 6 Start in boot menu | Every start opens this menu |
 | 7 Host link | On by default. On: a computer or a page may use the [host link](Developer-Host-Link) once the unit approves it (1 held for 5 s on the screen it asks with). Off: it is answered only that the link is off, and nothing over USB changes the unit |
@@ -66,7 +66,7 @@ boot menu off, Host link on). A change is saved at once, and only by a key press
 nothing, and leaves Start in boot menu as it is. Nothing is written to the internal drive: a format leaves
 the settings, and a settings file on the drive (`bootloader.settings`) is not read or written.
 
-When a change cannot be saved, Settings says why. Developer mode, Color and the MTP target keep their new state
+When a change cannot be saved, the screen it was made on says why. Developer mode, Color and the MTP target keep their new state
 until the next start; Start in boot menu shows what the next start will read.
 
 | Message | Meaning |
@@ -74,6 +74,15 @@ until the next start; Start in boot menu shows what the next start will read.
 | `Not saved: flash write failed` | The write failed |
 | `Not saved: slot can't keep settings` | The running slot's image is over `0x76000` bytes and fills the settings sector, or this start is a trial start, or the running slot is not known |
 | `Not saved: set from the computer` | The key came from a computer |
+
+### Display
+
+<img src="../docs/ui/display.png" width="480" alt="Display">
+
+| Item | What it does |
+| --- | --- |
+| 3 Color | Off, the default, draws every screen in gray. Kept with the settings above |
+| 6 Boot logo | Your own picture at the start in place of the built-in logo ([Boot Logo](Boot-Logo)). Its state: `Built-in`, `Custom`, `No room` when this image leaves no room for one, `Unavailable` when this start may not save one (as for the settings) |
 
 ## System
 
@@ -85,7 +94,6 @@ until the next start; Start in boot menu shows what the next start will read.
 | 2 Reset volume calibration | Resets the volume knob's calibration, then returns to the main menu |
 | 3 Remove content packs | Shown when packs are installed. Hold a pack's digit for 5 s to remove it |
 | 5 Format drive | Erases the whole internal drive. Hold M1 or sound key 1 for 5 s. After the format the unit opens **Install Firmware** |
-| 6 Boot logo | Your own picture at the start in place of the built-in logo ([Boot Logo](Boot-Logo)). Its state: `Built-in`, `Custom`, `No room` when this image leaves no room for one, `Unavailable` when this start may not save one (as for the settings) |
 | 7 Factory reset | Removes user data ([below](#factory-reset)) |
 
 ### Factory reset

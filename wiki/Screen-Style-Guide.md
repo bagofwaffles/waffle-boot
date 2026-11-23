@@ -109,7 +109,7 @@ are red. With the color off they draw as the grays below.
 
 ### Grayscale
 
-Settings' `3 Color` turns color off (S-15.173). Every pixel is then drawn in the gray of its color's luma,
+Display's `3 Color` (Settings, 3) turns color off (S-15.173). Every pixel is then drawn in the gray of its color's luma,
 `Y = (77 R + 150 G + 29 B + 128) / 256` on the 8-bit components. The grays
 above (text, dim, faint, unlit, rule, the status bar) stay as they are.
 Amber becomes `BDD7` (BDBDBD), red `8430` (848484), green `A534`
@@ -221,10 +221,11 @@ A description of the screens as they are now, free to change within the rules ab
 | Screen | Items |
 | --- | --- |
 | Main Menu | 1 Install firmware, 2 Settings, 3 Developer menu (while developer mode is on), 4 and the help key Device Info, 5 System; then 7 Continue to OS at the bottom, set apart by a blank row or by the failed-start notice. 6 is no item |
-| Settings | 1 Developer mode, 2 Protected writes, 3 Color, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link |
+| Settings | 1 Developer mode, 2 Protected writes, 3 Display, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link |
+| Display | 3 Color, 6 Boot logo (its state as the hint: `Built-in`, `Custom`, `No room`, `Unavailable`; the last two open nothing; no item without the logo's store, as in the test OS), 8 Back to Settings; Color is saved with Settings' items |
 | Protected Writes | 2 Turn on (hold to select, 5 s), 8 Back to Settings; off again after every restart; while it is on, Settings' 2 turns it off at once |
-| System | 1 Key test, 2 Reset volume calibration, 3 Remove content packs (when there are packs), 5 Format drive, 6 Boot logo (its state as the hint: `Built-in`, `Custom`, `No room`, `Unavailable`; the last two open nothing), 7 Factory reset; the format is shown on every unit, whatever developer mode is |
-| Boot Logo | 5 Remove (held 5 s, while one is stored), 8 Back to System; the disk offered, a picture dropped and ejected opens its view: 1 held for 5 s saves it, 8 cancels; the result is a view left with 8 alone |
+| System | 1 Key test, 2 Reset volume calibration, 3 Remove content packs (when there are packs), 5 Format drive, 7 Factory reset (6 is no item); the format is shown on every unit, whatever developer mode is |
+| Boot Logo | 5 Remove (held 5 s, while one is stored), 8 Back to Display; the disk offered, a picture dropped and ejected opens its view: 1 held for 5 s saves it, 8 cancels; the result is a view left with 8 alone |
 | Developer | 2 MTP file transfer (one item, its interface the MTP target's; 8 turns MTP off), 3 Start /os.ldr once (does not write), 5 Write /os.ldr to boot partition, 6 Restart; it offers no reset |
 | Host Link | 1 Allow (hold to select, 5 s), 8 Cancel; 60 s with no key cancels; the unit's own keys alone |
 | Key Test | Shift + 8 leaves it |
@@ -348,9 +349,9 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | <img src="../docs/ui/recovery-te.png" width="480" alt="A TE slot"> | <img src="../docs/ui/recovery-unknown.png" width="480" alt="An unknown slot"> |
 | slot 2 holds `TE v1000.0.20` | slot 2 holds `??` |
 | <img src="../docs/ui/recovery-keep.png" width="480" alt="Recovery: slots after a trial"> | <img src="../docs/ui/logo.png" width="480" alt="Boot Logo"> |
-| the slot menu after slot 2's trial start came up: 3 keeps it, no 2 | Boot Logo (System, 6) with a logo stored: the disk offered, 5 held removes it |
-| <img src="../docs/ui/logo-view.png" width="480" alt="A picture before its save"> | |
-| a picture dropped on the disk, as the start will show it: 1 held for 5 s saves it, 8 cancels | |
+| the slot menu after slot 2's trial start came up: 3 keeps it, no 2 | Boot Logo (Display, 6) with a logo stored: the disk offered, 5 held removes it |
+| <img src="../docs/ui/logo-view.png" width="480" alt="A picture before its save"> | <img src="../docs/ui/display.png" width="480" alt="Display"> |
+| a picture dropped on the disk, as the start will show it: 1 held for 5 s saves it, 8 cancels | Display, from Settings' 3: the color and the boot logo |
 
 ## Adding a screen
 
