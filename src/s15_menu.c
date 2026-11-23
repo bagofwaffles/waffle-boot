@@ -240,7 +240,7 @@ static void set_option(struct s15_menu *m, bool on)
 }
 
 static void draw_settings(struct s15_menu *m);
-static void logo_item(struct s15_menu *m);
+static void open_display(struct s15_menu *m);
 
 /* The option's screen: what it allows, its item, the way back; the item
  * held in place, its hold's row to follow. */
@@ -358,7 +358,7 @@ static void option_item(struct s15_menu *m)
 
 /* ---- the boot logo (waffle/logo.h) ---------------------------------- */
 
-/* SPEC-Q: the Boot logo item, its screens and keys have no label yet. */
+/* S-02.112: the save and the removal, by the unit's own keys alone. */
 
 /* n bytes in KiB, one decimal, rounded down. */
 static void kib(struct s15_buf *b, uint32_t n)
@@ -369,7 +369,7 @@ static void kib(struct s15_buf *b, uint32_t n)
 	s15_buf_str(b, " KiB");
 }
 
-/* System's item 6, its state read again as System is drawn. */
+/* Display's item 6, its state read again as Display is drawn. */
 static void logo_item(struct s15_menu *m)
 {
 	static const char *const hint[] = { "Built-in", "Custom", "No room", "Unavailable" };
@@ -409,10 +409,10 @@ static void draw_logo(struct s15_menu *m, bool armed)
 		sline(m, S15_ST_DIM, s15_hold_line);
 		blank(m);
 	}
-	sline(m, S15_ST_BACK, "8 Back to System");
+	sline(m, S15_ST_BACK, "8 Back to Display");
 }
 
-/* System's 6: a blank disk offered, its screen. */
+/* Display's 6: a blank disk offered, its screen. */
 static void open_logo(struct s15_menu *m)
 {
 	m->logo_due = false;
@@ -493,7 +493,7 @@ static void logo_done(struct s15_menu *m, enum s15_store_save r, bool saved)
 	else
 		sline(m, S15_ST_ERROR, "Not saved: flash write failed");
 	blank(m);
-	sline(m, S15_ST_BACK, "8 Back to System");
+	sline(m, S15_ST_BACK, "8 Back to Display");
 }
 
 static void logo_key(struct s15_menu *m, unsigned key)
@@ -503,7 +503,7 @@ static void logo_key(struct s15_menu *m, unsigned key)
 	if (d == 8u) {
 		m->logo_due = false;
 		usb(m, S15_USB_MAIN);
-		open_system(m);
+		open_display(m);
 	} else if (d == 5u && m->logo.state == S15_LOGO_CUSTOM && !knob_click(m, key) &&
 		   !m->host_event) {
 		draw_logo(m, true);
@@ -579,8 +579,7 @@ static void draw_settings(struct s15_menu *m)
 	sline(m, S15_ST_ITEM, m->dev_mode ? "1 Developer mode\tOn" :
 					    "1 Developer mode\tOff");
 	option_item(m);
-	sline(m, S15_ST_ITEM, m->color ? "3 Color\tOn" :      /* S-15.173 */
-					  "3 Color\tOff");
+	sline(m, S15_ST_ITEM, "3 Display");
 	if (wb_has(m->dev, WB_F_MTP_TWO_ITEMS))     /* S-15.174, S-15.196 */
 		sline(m, S15_ST_ITEM, m->mtp_macos ? "5 MTP target\tmacOS" :
 						      "5 MTP target\tWindows");
@@ -612,7 +611,10 @@ static void settings_changed(struct s15_menu *m)
 		r = m->env->settings_save(m->env->ctx, &s, &now);
 		m->start_menu = now.start_menu;
 	}
-	draw_settings(m);
+	if (m->screen == S15_SCR_DISPLAY)
+		open_display(m);
+	else
+		draw_settings(m);
 	if (m->host_event)
 		sline(m, S15_ST_WARN, s15_settings_host);
 	else if (m->env->settings_save == NULL)
@@ -631,14 +633,12 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 2:
-		/* SPEC-Q: never from a host, Protected writes */
+		/* S-10c.127: never from a host, Protected writes */
 		if (!m->host_event)
 			option_key(m);      /* S-15.140 */
 		break;
 	case 3:
-		m->color = !m->color;
-		m->changes++;   /* every pixel changes, not only the lines */
-		settings_changed(m);
+		open_display(m);
 		break;
 	case 5:
 		/* S-15.196: no MTP target without mtp-two-items */
@@ -655,12 +655,48 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		}
 		break;
 	case 7:
-		/* SPEC-Q: the Host link setting, saved as the others are */
+		/* S-15.176: the Host link setting, saved as the others are */
 		m->host_link = !m->host_link;
 		settings_changed(m);
 		break;
 	case 8:
 		open_main(m);
+		break;
+	default:
+		break;
+	}
+}
+
+/* ---- the display: the color and the boot logo ---------------------- */
+
+/* S-15.177: Settings' 3: the color (S-15.173), set here and saved as
+ * Settings' items are, and the boot logo's item (S-02.112) on digit 6;
+ * 8 back to Settings. */
+static void open_display(struct s15_menu *m)
+{
+	enter(m, S15_SCR_DISPLAY, "Display");
+	blank(m);
+	sline(m, S15_ST_ITEM, m->color ? "3 Color\tOn" :      /* S-15.173 */
+					  "3 Color\tOff");
+	logo_item(m);
+	blank(m);
+	sline(m, S15_ST_BACK, "8 Back to Settings");
+}
+
+static void display_key(struct s15_menu *m, unsigned key)
+{
+	switch (s15_digit(m->dev, key)) {
+	case 3:
+		m->color = !m->color;
+		m->changes++;   /* every pixel changes, not only the lines */
+		settings_changed(m);
+		break;
+	case 6:
+		if (m->env->logo_state != NULL && m->logo.state <= S15_LOGO_CUSTOM)
+			open_logo(m);
+		break;
+	case 8:
+		draw_settings(m);
 		break;
 	default:
 		break;
@@ -704,7 +740,7 @@ static void clear_settings(struct s15_menu *m)
 	default:
 		break;
 	}
-	/* SPEC-Q: the reset removes a stored boot logo too, its header erased
+	/* S-02.112: the reset removes a stored boot logo too, its header erased
 	 * under the logo's own rule and range check; a failure is said as the
 	 * settings' is and stops nothing. */
 	if (m->env->logo_remove != NULL &&
@@ -1039,7 +1075,7 @@ static void open_info2(struct s15_menu *m)
 		s15_first_stage_text(&v, b->first_stage_n, b->first_stage_c);
 		info_row(m, "First stage", v.s, NULL, NULL);
 	}
-	if (m->env->logo_state != NULL) {		/* SPEC-Q: the boot logo's room */
+	if (m->env->logo_state != NULL) {		/* S-02.110: the boot logo's room */
 		m->env->logo_state(m->env->ctx, &m->logo);
 		s15_buf_init(&v);
 		if (m->logo.state == S15_LOGO_NO_ROOM) {
@@ -1071,7 +1107,6 @@ static void draw_system(struct s15_menu *m, bool armed)
 	if (m->packs_item)
 		sline(m, S15_ST_ITEM, "3 Remove content packs");
 	sline(m, S15_ST_ITEM, "5 Format drive\tErases all: reinstall after");
-	logo_item(m);
 	if (armed) {
 		held_item(m, 7u, "Factory reset");
 	} else {
@@ -1134,12 +1169,8 @@ static void system_key(struct s15_menu *m, unsigned key)
 	case 5:
 		open_format(m);
 		break;
-	case 6:
-		if (m->env->logo_state != NULL && m->logo.state <= S15_LOGO_CUSTOM)
-			open_logo(m);
-		break;
 	case 7:
-		/* SPEC-Q: never from a host, the factory reset */
+		/* S-10c.127: never from a host, the factory reset */
 		if (m->host_event)
 			break;
 		draw_system(m, true);                 /* S-15.050 */
@@ -1221,6 +1252,8 @@ static void redraw(struct s15_menu *m, enum s15_screen s)
 {
 	if (s == S15_SCR_SETTINGS)
 		draw_settings(m);
+	else if (s == S15_SCR_DISPLAY)
+		open_display(m);
 	else if (s == S15_SCR_SYSTEM)
 		draw_system(m, false);
 	else if (s == S15_SCR_INFO)
@@ -1240,13 +1273,14 @@ static enum s15_screen back_of(const struct s15_menu *m)
 
 	if (s == S15_SCR_FACTORY)
 		return m->mtp == S15_MTP_OFF && m->osw == S15_OSW_VIEW_NONE ? s : S15_SCR_MAIN;
-	return s == S15_SCR_SETTINGS || s == S15_SCR_SYSTEM || s == S15_SCR_INFO ||
-	       s == S15_SCR_INFO2 ? s : S15_SCR_MAIN;
+	return s == S15_SCR_SETTINGS || s == S15_SCR_DISPLAY || s == S15_SCR_SYSTEM ||
+	       s == S15_SCR_INFO || s == S15_SCR_INFO2 ? s : S15_SCR_MAIN;
 }
 
 static const char *back_title(enum s15_screen s)
 {
-	return s == S15_SCR_SETTINGS ? "Settings" : s == S15_SCR_SYSTEM ? "System" :
+	return s == S15_SCR_SETTINGS ? "Settings" : s == S15_SCR_DISPLAY ? "Display" :
+	       s == S15_SCR_SYSTEM ? "System" :
 	       s == S15_SCR_INFO ? "Device Info" : s == S15_SCR_INFO2 ? "Device Info 2" :
 	       s == S15_SCR_FACTORY ? "Developer" : "Main Menu";
 }
@@ -1455,9 +1489,10 @@ static void restart(struct s15_menu *m)
 	m->env->reset_w7(m->env->ctx);
 }
 
-/* S-15.194: the restart into a start from /yaffs2/os.ldr, or the reason
- * there is none, under the developer menu drawn again. That start boots
- * whatever start in boot menu says (S-04.014). */
+/* S-15.194: the restart into a start from /yaffs2/os.ldr, its line under
+ * the screen it was chosen on, or the reason there is none, under the
+ * developer menu drawn again. That start boots whatever start in boot menu
+ * says (S-04.014). */
 static void os_once(struct s15_menu *m, bool host)
 {
 	const enum s15_screen back = host ? back_of(m) : S15_SCR_FACTORY;
@@ -1470,8 +1505,11 @@ static void os_once(struct s15_menu *m, bool host)
 	else
 		r = m->env->os_once_check(m->env->ctx, &file);
 	if (r == S15_ONCE_STARTED) {
-		/* the view whole on the panel before the shutdown begins */
-		enter(m, S15_SCR_STARTING, s15_cont_title);
+		/* the line under the screen that was showing, whole on the
+		 * panel before the shutdown begins; from here no key acts */
+		leave(m);
+		m->screen = S15_SCR_STARTING;
+		m->changes++;
 		sline(m, S15_ST_WARN, s15_once_restarting);
 		m->env->os_once(m->env->ctx);
 		return;
@@ -1547,7 +1585,7 @@ static void factory_key(struct s15_menu *m, unsigned key)
 
 /* ---- the host link's approval ------------------------------------- */
 
-/* SPEC-Q: the approval screen and its keys have no label yet. */
+/* S-15.198: the approval screen and its keys. */
 static void draw_approve(struct s15_menu *m, bool armed)
 {
 
@@ -1566,8 +1604,8 @@ static bool approve_from(const struct s15_menu *m)
 
 	if (s == S15_SCR_FACTORY)
 		return m->mtp == S15_MTP_OFF && m->osw == S15_OSW_VIEW_NONE;
-	return s == S15_SCR_MAIN || s == S15_SCR_SETTINGS || s == S15_SCR_SYSTEM ||
-	       s == S15_SCR_INFO || s == S15_SCR_INFO2;
+	return s == S15_SCR_MAIN || s == S15_SCR_SETTINGS || s == S15_SCR_DISPLAY ||
+	       s == S15_SCR_SYSTEM || s == S15_SCR_INFO || s == S15_SCR_INFO2;
 }
 
 bool s15_menu_approve_open(struct s15_menu *m)
@@ -2245,6 +2283,9 @@ static void key_down(struct s15_menu *m, unsigned key)
 	case S15_SCR_SETTINGS:
 		settings_key(m, key);
 		break;
+	case S15_SCR_DISPLAY:
+		display_key(m, key);
+		break;
 	case S15_SCR_OPTION:
 		option_screen_key(m, key);  /* S-15.140 */
 		break;
@@ -2272,7 +2313,7 @@ static void key_down(struct s15_menu *m, unsigned key)
 		break;
 	case S15_SCR_LOGO_DONE:
 		if (s15_digit(m->dev, key) == 8u)
-			open_system(m);
+			open_display(m);
 		break;
 	case S15_SCR_STARTING:                      /* S-15.190: no key */
 	case S15_SCR_NONE:

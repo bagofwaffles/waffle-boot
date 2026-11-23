@@ -37,11 +37,12 @@ enum s15_screen {
 	S15_SCR_STARTING,   /* S-15.190: restarting for the OS; no key acts */
 	S15_SCR_INFO2,      /* S-15.082: Device Info's second page */
 	S15_SCR_OPTION,     /* S-15.140: the option's screen, from Settings */
-	S15_SCR_LOGO,       /* the boot logo's disk, from System */
+	S15_SCR_LOGO,       /* the boot logo's disk, from Display */
 	S15_SCR_LOGO_VIEW,  /* a dropped picture as the front will draw it */
 	S15_SCR_LOGO_DONE,  /* a save's or a removal's result: digit 8 alone acts */
 	S15_SCR_NONE,       /* before held mode's first screen */
-	S15_SCR_APPROVE     /* the host link's approval: the unit's keys alone */
+	S15_SCR_APPROVE,    /* the host link's approval: the unit's keys alone */
+	S15_SCR_DISPLAY     /* Settings' 3: the color and the boot logo */
 };
 
 /* The host link's approval screen, as the board reads it. */
@@ -173,8 +174,8 @@ enum s15_store_save {
 	S15_STORE_UNUSABLE	/* the running slot keeps no settings (S-02.099) */
 };
 
-/* The boot logo (waffle/logo.h) as System shows it. SPEC-Q: the boot
- * logo's screens and keys have no requirement label yet. */
+/* The boot logo (waffle/logo.h) as Display shows it (S-02.110,
+ * S-02.112). */
 enum s15_logo_state {
 	S15_LOGO_BUILTIN,	/* none stored: the front's own */
 	S15_LOGO_CUSTOM,	/* one stored for this image */
@@ -266,7 +267,7 @@ struct s15_env_ops {
 	 * request reaches the drive, refused or not. NULL: it never does. */
 	bool (*slave_lost)(void *ctx);
 	/* S-15.190, S-05.033: restart so that the next start boots the OS,
-	 * the restarting view drawn. Does not return on the device. NULL:
+	 * the restarting line drawn. Does not return on the device. NULL:
 	 * there is no such action. */
 	void (*continue_os)(void *ctx);
 	/* S-15.082: read the selected slot's start log again into the boot's
@@ -285,7 +286,7 @@ struct s15_env_ops {
 	 * build starts no OS. */
 	enum s15_once (*os_once_check)(void *ctx, struct s15_os_file *file);
 	/* S-15.194, S-04.020 W12: the restart whose next start reads the OS
-	 * from /yaffs2/os.ldr, the restarting view drawn. Does not return on
+	 * from /yaffs2/os.ldr, the restarting line drawn. Does not return on
 	 * the device. */
 	void (*os_once)(void *ctx);
 	/* The boot logo, read again. NULL: no Boot logo item. */
@@ -470,9 +471,9 @@ enum s15_approve s15_menu_approve_result(struct s15_menu *m);
  * before (never the developer menu with developer mode off). *e is the
  * write's end. */
 bool s15_menu_os_write(struct s15_menu *m, const char *path, struct s15_osw_end *e);
-/* A host's start of /os.ldr once, as the developer menu's 3 (S-15.194);
- * it returns only when the start was not taken, with the screen shown
- * before drawn again under the reason. */
+/* A host's start of /os.ldr once, as the developer menu's 3 (S-15.194):
+ * the restarting line under the screen shown; it returns only when the
+ * start was not taken, with that screen drawn again under the reason. */
 void s15_menu_os_once(struct s15_menu *m);
 /*
  * The time passes (ms since any fixed point; only differences matter): a
@@ -493,7 +494,7 @@ uint32_t s15_menu_changes(const struct s15_menu *m);
 /* ---- S-15.190, S-05.033: continue to the OS, at a host's request -- */
 
 enum s15_continue {
-	S15_CONT_STARTED,	/* the restarting view drawn, the board's restart run */
+	S15_CONT_STARTED,	/* the restarting line drawn, the board's restart run */
 	S15_CONT_BUSY		/* a scan, host transfer, run or OS write is under way */
 };
 

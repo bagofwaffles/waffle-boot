@@ -528,13 +528,13 @@ int main(int argc, char **argv)
 		bad |= write_raw(d, "recovery-keep");
 	}
 
-	/* the boot logo: System's 6 with one stored, the disk's screen; a
-	 * picture dropped and released, shown for its save */
+	/* the boot logo: Display's 6 (Settings, 3) with one stored, the disk's
+	 * screen; a picture dropped and released, shown for its save */
 	setup(); logo_stored = true; start();
-	press(0x12); press(0x13);
+	press(0x07); press(0x08); press(0x13);
 	bad |= shot(d, "logo");
 	setup(); start();
-	press(0x12); press(0x13);
+	press(0x07); press(0x08); press(0x13);
 	s15_up_released(&menu, now_ms);
 	now_ms += 2000u;
 	s15_menu_tick(&menu, now_ms);
@@ -572,6 +572,9 @@ int main(int argc, char **argv)
 	setup(); start();
 	press(0x07);
 	bad |= shot(d, "settings");
+	press(0x08);		/* Display: the color and the boot logo */
+	bad |= shot(d, "display");
+	press(0x15);
 	press(0x07);		/* S-15.140: the option's screen */
 	bad |= shot(d, "option");
 	hold_for(0x07, 2000);	/* 2 of the 5 s */

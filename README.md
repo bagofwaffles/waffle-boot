@@ -16,6 +16,8 @@ been run on each device, open work and what is out of scope.
   [package with your own OS image](https://github.com/bagofwaffles/waffle-boot/wiki/Building-Custom-OS-Updates).
 - **For developers.** MTP file transfer, a log over USB, and a way to script changes from a computer. See
   the [Developer Host Link](https://github.com/bagofwaffles/waffle-boot/wiki/Developer-Host-Link).
+- **Your own boot logo.** Drop a PNG onto the unit from the boot menu and it shows at every start. See
+  [Boot Logo](https://github.com/bagofwaffles/waffle-boot/wiki/Boot-Logo).
 - **Recovery options.** Several [failsafes](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Recover) bring a unit back
   over USB, and they run apart from the rest of the code.
 - **Open source.** The code is here to read, build and change.

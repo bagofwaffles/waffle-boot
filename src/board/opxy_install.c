@@ -119,10 +119,34 @@ static struct {
 } sent;
 
 static int host_parts = -1;
+static bool host_sig_invalid;
 
 void opxy_install_host_parts(int parts)
 {
+	if (parts >= 0)
+		host_sig_invalid = false;
 	host_parts = parts;
+}
+
+bool opxy_install_host_sig_invalid(void)
+{
+	return host_sig_invalid;
+}
+
+void opxy_install_host_text(char *out, size_t room, const char *what)
+{
+	static const char invalid[] = " (signature invalid)";
+	size_t n = 0;
+
+	if (room == 0u)
+		return;
+	while (what[n] != '\0' && n + 1u < room) {
+		out[n] = what[n];
+		n++;
+	}
+	for (size_t i = 0; host_sig_invalid && invalid[i] != '\0' && n + 1u < room; i++)
+		out[n++] = invalid[i];
+	out[n] = '\0';
 }
 
 static void host_progress(struct opxy_master *m, uint32_t done,
@@ -1074,6 +1098,7 @@ static const char *select_end(const char *held)
  * shown and the run goes on with none. The start-up key read tells whether
  * the keys can be read (S-07.032); when they cannot, nothing is shown or
  * asked, and an invalid package, which nobody can confirm, is canceled.
+ * A host's install in an approved session asks nothing on the unit.
  */
 static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 				  uint8_t *selected)
@@ -1082,17 +1107,27 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 	struct s14_text t;
 
 	const bool invalid = env->sig == S11_SIG_INVALID;
+	/* S-15.197, S-11.022: an approved host link session's install of an
+	 * invalid package skips the prompt, the session's approval taken as
+	 * the consent; the log and the job's record still say invalid. */
+	const bool host_ok = host_parts >= 0 && opxy_hostlink_approved(m);
+	const bool ask = invalid && !host_ok;
 
-	if (!m->key_status.replied && (invalid || host_parts < 0)) {
+	if (invalid && host_ok) {
+		host_sig_invalid = true;
+		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
+			    "install: signature invalid, not asked: a host's approved session");
+	}
+	if (!m->key_status.replied && (ask || host_parts < 0)) {
 		s14_text_init(&t);
 		s14_text_str(&t, "install: keys not readable, ");
-		s14_text_str(&t, invalid ? "not confirmed: canceled" :
-					   "nothing asked");
+		s14_text_str(&t, ask ? "not confirmed: canceled" :
+				       "nothing asked");
 		s14_log_text(&m->sv.log, S14_INFO, S14_NO_TAG, &t);
-		return invalid ? S11_ANSWER_CANCEL : S11_ANSWER_UNASKED;
+		return ask ? S11_ANSWER_CANCEL : S11_ANSWER_UNASKED;
 	}
 	select_info(m, env, sel_waffle);
-	if (invalid && m->key_status.replied) {
+	if (ask && m->key_status.replied) {
 		select_wait(m, true, 0u);
 		s14_text_init(&t);
 		s14_text_str(&t, "install: the prompt ");
@@ -1101,7 +1136,7 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 		if (sel.choice != S15_SELECT_INSTALL)
 			return S11_ANSWER_CANCEL;
 	}
-	/* SPEC-Q: the parts a host chose for an approved session's install,
+	/* S-11.096, S-10c.126: the parts a host chose for an approved session's install,
 	 * those the selection would let it pick and no other: Protected
 	 * writes and the switched-off steps apply as at the unit. */
 	if (host_parts >= 0) {

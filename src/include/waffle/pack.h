@@ -14,7 +14,7 @@
  * jumps to the main image's entry. Nothing here touches the front's memory
  * or the hand-off record.
  *
- * SPEC-Q: S-01.023 has the front enter "the main image"; here it enters the
+ * S-01.023, S-01.026: the front enters the descriptor's entry, here the
  * stub, which enters the main image. S-01.013's DDR reserve now holds the
  * main image's link region (WB_IMAGE_DDR_*) and, above it, the packed block
  * (WB_PACK_*), both inside what the front reads (fr_mem_readable()).

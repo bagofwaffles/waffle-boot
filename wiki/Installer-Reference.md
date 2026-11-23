@@ -4,7 +4,7 @@ How the installer works. To install, follow [How to Install](How-to-Install).
 > unit that only an external flash programmer brings back.
 
 The installer, `waffle-install.ldr`, runs as the unit's OS. It is built on the [Test OS](Test-OS). It checks the hardware, and only when every check passes does it write the
-waffle-boot image it carries. Every write is started on the unit, by holding the step's key for 5 s.
+waffle-boot image it carries. Every write is started on the unit, by holding the step's key (`Hold to select`) until its bar is full.
 
 One image serves both devices (S-05.043): it is laid out like the OP-1F's OS (see
 [The image's layout](#the-images-layout)), which the OP-XY's own bootloader takes as well, and it decides
@@ -50,7 +50,7 @@ key).
 - **The commit:** only after both marks: the record with the right CRC, read back with the slot's bytes,
   then the selector `{slot, 0x00}`.
   Then the active byte of the two boot partitions' headers, your OS's first.
-- **The trial again:** the commit screen offers it too, on 2 held for 5 s. It is the trial above, written
+- **The trial again:** the commit screen offers it too, on 2 held. It is the trial above, written
   the same way with the same checks over the same slot, never the slot the selector names (on the OP-1F
   never the last slot of the unit's own bootloader). So one trial start can go to the recovery menu (Power
   + M4; on the OP-1F Power and the recovery key) and another to the boot menu before you keep it. The

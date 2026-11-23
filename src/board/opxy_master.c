@@ -238,8 +238,9 @@ static uint16_t reboot_reason(void *ctx)
  * compared: this image runs part of L1 data as cache, a load from which
  * faults (EXCAUSE 0x23, seen on a unit), and L1 code takes no data loads. A
  * block elsewhere is simply not compared.
- * SPEC-Q: S-01.002 and S-02.054's comparison of memory with a slot's stream,
- * over the descriptor and the packed block in place of the image's code.
+ * S-01.002, S-02.054, S-01.026: the comparison of memory with a slot's
+ * stream, over the descriptor and the packed block in place of the image's
+ * code.
  */
 static bool loaded_read(void *ctx, uint32_t addr, uint8_t *buf, uint32_t len)
 {

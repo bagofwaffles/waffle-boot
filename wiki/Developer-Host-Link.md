@@ -26,10 +26,10 @@ Host Link
   8 Cancel
 ```
 
-Only the unit's own keys answer it: **1 held for 5 s** allows, **8** refuses, and 60 s with no key is
+Only the unit's own keys answer it: **1 held** allows, **8** refuses, and 60 s with no key is
 a timeout. A knob click starts no hold. The screen it covered comes back after the answer. The computer
 reads the answer with SESSION. Until then every call that needs approval answers status 2, so a page can
-say "hold 1 on your device".
+say "hold 1 on the unit".
 
 ## Framing
 
@@ -167,7 +167,8 @@ not files on a drive (MTP's writes to the drive do not look at it either), so it
 `parts` is one bit per part of the install's list: 1 content, 2 OS, 4 bootloader, 8 BLE, 16 BLE
 bootloader, 32 keyboard; `FF` every part the unit would offer. A part the list would not let the unit's
 keys pick (the bootloader with Protected writes off, a part that is up to date or switched off) is not
-run. A package whose signature does not match still asks on the unit first, as at the unit.
+run. A package whose signature does not match installs without the unit's warning: the approved session
+is the consent. The job's text then ends in `(signature invalid)`, and the unit's log says so too.
 
 One job runs at a time. RUN answers a job record at once (state queued); the job starts when the unit's
 loop comes round, and while it runs the unit sends an EVENT each time its record changes. Requests sent
@@ -184,7 +185,8 @@ the restarts `0D 18`, `0D 19` and `0D EE`, factory unlock and set metadata all n
 approved session. Without it they are refused with `84` and a text (`host link off`, or `not allowed: hold
 1 on the unit`), or status `01` and the text in the TE form, and they change nothing; a refused one also
 puts the approval screen up, so a tool that tries again after the hold goes on. An install that comes
-that way still asks for its parts on the unit. The same holds for these asked for through the Nordic's
+that way still asks for its parts on the unit, after the warning for a package whose signature does
+not match. The same holds for these asked for through the Nordic's
 link; the PSoC's link, the unit's own, is not asked.
 
 The log (S-14) goes to the serial port only after the log-configuration request `B0`, which needs Host
@@ -199,8 +201,8 @@ The page has the package as bytes, and the unit shows the boot menu.
 
 1. HELLO: `05 21 01 7c 03 04 01 01 d1 00` (call `00`, tag `01`, version 1). The reply says Host link is on,
    version 1, the device, and lists the calls, the install action and the root `/yaffs2`.
-2. APPROVE: `08 21 02 7c 02 02 02 28 00`. The reply's state is 1, pending: the page shows "hold 1 on your
-   device". The page asks SESSION (`08 21 03 7c 02 01 03 63 00`) every quarter second until the state is
+2. APPROVE: `08 21 02 7c 02 02 02 28 00`. The reply's state is 1, pending: the page shows "hold 1 on the
+   unit". The page asks SESSION (`08 21 03 7c 02 01 03 63 00`) every quarter second until the state is
    2, approved (3 refused, 4 timed out).
 3. PUT_OPEN `/yaffs2/pkg.bin` with its size and SHA-256, then PUT_DATA in 224-byte pieces from offset 0,
    each at the offset the last reply gave, then PUT_END. Status 11: the file did not arrive whole; put it
@@ -270,7 +272,7 @@ outside the drive can be reached, and the bootloader's own files on it (`os.ldr`
 - `continue-os` refuses during an install or OS write, and before the boot menu is up.
 - `dev-key` cannot answer an install's list of parts or the approval screen, which read the unit's own
   keys. A key a computer sends never starts the factory reset and never changes Protected writes; what else
-  erases still waits for its key to be held 5 s.
+  erases still waits for its key to be held on the unit.
 
 The requests' payload is an opcode byte and its little-endian arguments in frames of id `0x7D`, framed as
 [above](#framing); the reply's payload starts with a status byte: 0 ok, 1 refused (developer mode off, or

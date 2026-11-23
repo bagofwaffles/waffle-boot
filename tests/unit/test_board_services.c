@@ -2711,7 +2711,7 @@ static void test_menu_env(void)
 		wire_n = 0;
 		CHECK(e.settings_clear(e.ctx) == S15_STORE_SAVED && flash_mem[0xFE000u] == 0xFFu);
 		CHECK(wire_has("cleared") && m.sv.files.err == 0u);
-		/* the boot logo the factory reset removes with them (SPEC-Q): a
+		/* the boot logo the factory reset removes with them (S-02.112): a
 		 * stored one, its header erased, none read after, so the next
 		 * start draws the front's own; nothing else of the slot written */
 		{

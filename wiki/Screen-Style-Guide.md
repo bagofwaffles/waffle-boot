@@ -109,7 +109,7 @@ are red. With the color off they draw as the grays below.
 
 ### Grayscale
 
-Settings' `3 Color` turns color off (S-15.173). Every pixel is then drawn in the gray of its color's luma,
+Display's `3 Color` (Settings, 3) turns color off (S-15.173). Every pixel is then drawn in the gray of its color's luma,
 `Y = (77 R + 150 G + 29 B + 128) / 256` on the 8-bit components. The grays
 above (text, dim, faint, unlit, rule, the status bar) stay as they are.
 Amber becomes `BDD7` (BDBDBD), red `8430` (848484), green `A534`
@@ -198,16 +198,13 @@ them and their exclusions needs no sign-off.
   nothing, and a key still down when it opens acts only after it has been let go and pressed again
   (S-15.013).
 - The result of a removal or a reset is a view of its own, left with 8 alone.
-- A setting shows its state as the item's hint (`Off`, or `On`, in red where it needs care). Settings
-  live on the Settings screen.
+- A setting shows its state as the item's hint (`Off`, or `On`, in red where it needs care).
 - Keys that are not items are named in a `keys` line on the screen that reads them, not in the status
   bar.
 
 ### Exclusions
 
 - The main screen holds no destructive item and no setting.
-- Whatever removes, erases or formats lives under System, on a digit only a sound key gives (5 to 7),
-  never on digit 4, which the white knob also gives.
 - No setting sits on a digit the white knob also gives.
 - 8 is never an item.
 - Developer mode is set only by its item on Settings.
@@ -221,12 +218,13 @@ A description of the screens as they are now, free to change within the rules ab
 | Screen | Items |
 | --- | --- |
 | Main Menu | 1 Install firmware, 2 Settings, 3 Developer menu (while developer mode is on), 4 and the help key Device Info, 5 System; then 7 Continue to OS at the bottom, set apart by a blank row or by the failed-start notice. 6 is no item |
-| Settings | 1 Developer mode, 2 Protected writes, 3 Color, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link |
-| Protected Writes | 2 Turn on (hold to select, 5 s), 8 Back to Settings; off again after every restart; while it is on, Settings' 2 turns it off at once |
-| System | 1 Key test, 2 Reset volume calibration, 3 Remove content packs (when there are packs), 5 Format drive, 6 Boot logo (its state as the hint: `Built-in`, `Custom`, `No room`, `Unavailable`; the last two open nothing), 7 Factory reset; the format is shown on every unit, whatever developer mode is |
-| Boot Logo | 5 Remove (held 5 s, while one is stored), 8 Back to System; the disk offered, a picture dropped and ejected opens its view: 1 held for 5 s saves it, 8 cancels; the result is a view left with 8 alone |
+| Settings | 1 Developer mode, 2 Protected writes, 3 Display, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link |
+| Display | 3 Color, 6 Boot logo (its state as the hint: `Built-in`, `Custom`, `No room`, `Unavailable`; the last two open nothing; no item without the logo's store, as in the test OS), 8 Back to Settings; Color is saved with Settings' items |
+| Protected Writes | 2 Turn on (hold to select), 8 Back to Settings; off again after every restart; while it is on, Settings' 2 turns it off at once |
+| System | 1 Key test, 2 Reset volume calibration, 3 Remove content packs (when there are packs), 5 Format drive, 7 Factory reset (6 is no item); the format is shown on every unit, whatever developer mode is |
+| Boot Logo | 5 Remove (`Hold to select`, while one is stored), 8 Back to Display; the disk offered, a picture dropped and ejected opens its view: 1 Save (hold to select) saves it, 8 cancels; the result is a view left with 8 alone |
 | Developer | 2 MTP file transfer (one item, its interface the MTP target's; 8 turns MTP off), 3 Start /os.ldr once (does not write), 5 Write /os.ldr to boot partition, 6 Restart; it offers no reset |
-| Host Link | 1 Allow (hold to select, 5 s), 8 Cancel; 60 s with no key cancels; the unit's own keys alone |
+| Host Link | 1 Allow (hold to select), 8 Cancel; 60 s with no key cancels; the unit's own keys alone |
 | Key Test | Shift + 8 leaves it |
 | Recovery's slot menu (its main screen's 1) | 1 Try slot N once, 2 Make slot N the boot slot, 3 Keep slot N, 4 Put slot N's record back, each only where it applies and each confirmed by key 1 held for 5 s on the screen after it; while 3 is shown, 2 is not; 8 goes back |
 
@@ -243,8 +241,9 @@ A description of the screens as they are now, free to change within the rules ab
   reason. It opens no screen of its own: a line under the screen it was chosen on says that the unit
   is restarting to start the OS, and from then no key acts.
 - Start `/os.ldr` once restarts the unit, and that one start boots the OS from the drive's `/os.ldr`
-  even with Start in boot menu on (S-15.194, S-04.014); it writes nothing to the eMMC. Its screen says
-  that the unit is restarting to start it.
+  even with Start in boot menu on (S-15.194, S-04.014); it writes nothing to the eMMC. Like Continue
+  to the OS it opens no screen of its own: a line under the screen it was chosen on (for a host's
+  request, the screen showing) says that the unit is restarting to start it, and from then no key acts.
 - The OS write has its own screen: its steps and their progress, and on a failure the reason and what
   the eMMC was left with. 8 goes back to where it began (the developer menu, or for a host's write the
   screen it began on); after a success 6 restarts into the OS.
@@ -331,7 +330,7 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | <img src="../docs/ui/system-lost.png" width="480" alt="System, the slave lost"> | <img src="../docs/ui/upgrade-canceled.png" width="480" alt="Nothing installed"> |
 | System while the second processor does not answer | the selection canceled: nothing installed, 6 restarts, 8 goes back |
 | <img src="../docs/ui/upgrade-sig-prompt.png" width="480" alt="The signature does not match"> | <img src="../docs/ui/upgrade-signed.png" width="480" alt="A valid package's parts"> |
-| a package whose signature does not match: 1 held for 5 s goes on to its parts, 8 cancels | a package with a valid signature: `Signed by TE` under the list |
+| a package whose signature does not match: 1 held goes on to its parts, 8 cancels | a package with a valid signature: `Signed by TE` under the list |
 | <img src="../docs/ui/oswrite-run.png" width="480" alt="Write OS"> | <img src="../docs/ui/continue-restarting.png" width="480" alt="Restarting into the OS"> |
 | Write OS (developer menu, 5), the write running | Continue to the OS: the restarting line under the screen it was chosen on |
 | <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |
@@ -347,9 +346,9 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | <img src="../docs/ui/recovery-te.png" width="480" alt="A TE slot"> | <img src="../docs/ui/recovery-unknown.png" width="480" alt="An unknown slot"> |
 | slot 2 holds `TE v1000.0.20` | slot 2 holds `??` |
 | <img src="../docs/ui/recovery-keep.png" width="480" alt="Recovery: slots after a trial"> | <img src="../docs/ui/logo.png" width="480" alt="Boot Logo"> |
-| the slot menu after slot 2's trial start came up: 3 keeps it, no 2 | Boot Logo (System, 6) with a logo stored: the disk offered, 5 held removes it |
-| <img src="../docs/ui/logo-view.png" width="480" alt="A picture before its save"> | |
-| a picture dropped on the disk, as the start will show it: 1 held for 5 s saves it, 8 cancels | |
+| the slot menu after slot 2's trial start came up: 3 keeps it, no 2 | Boot Logo (Display, 6) with a logo stored: the disk offered, 5 held removes it |
+| <img src="../docs/ui/logo-view.png" width="480" alt="A picture before its save"> | <img src="../docs/ui/display.png" width="480" alt="Display"> |
+| a picture dropped on the disk, as the start will show it: 1 held saves it, 8 cancels | Display, from Settings' 3: the color and the boot logo |
 
 ## Adding a screen
 

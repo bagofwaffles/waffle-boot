@@ -11,8 +11,8 @@
  *           fat-region devices alone (the OP-XY)
  *
  * No file call reaches the SPI flash, memory or a raw sector of the drive.
- * SPEC-Q: reading the FAT region and the boot partitions as files is new;
- * S-03.075's footprint names the yaffs2 region and the reset's group only.
+ * The roots are the host link's (S-10c.125); S-03.075's
+ * footprint names the yaffs2 region and the reset's group only.
  */
 #include "waffle/board/opxy_boot.h"
 
@@ -656,7 +656,7 @@ static void job_install(struct opxy_master *m)
 	struct s09_files *f = &m->sv.files;
 	struct hl_stat st;
 	struct s11_outcome o;
-	char text[S10C_TEXT_MAX];
+	char text[S10C_TEXT_MAX], reason[HL_TEXT_MAX + 1u];
 	const char *name = strrchr(job_path.full, '/') + 1;
 	uint32_t at = 0;
 	int32_t fd;
@@ -702,13 +702,15 @@ static void job_install(struct opxy_master *m)
 		m->sv.host_ops.ramdisk_offer(m);
 	opxy_menu_show(m);
 	if (o.kind == S11_OUTCOME_DONE || o.kind == S11_OUTCOME_NOTHING_TO_DO) {
-		job(m, HL_J_DONE, o.step, 100u, HL_OK,
-		    o.kind == S11_OUTCOME_DONE ? "[done]" : "[nothing to do]");
+		opxy_install_host_text(text, sizeof(text),
+				       o.kind == S11_OUTCOME_DONE ? "[done]" : "[nothing to do]");
+		job(m, HL_J_DONE, o.step, 100u, HL_OK, text);
 		return;
 	}
 	text[s10c_error_text(&o, text) < sizeof(text) ? s10c_error_text(&o, text) :
 	     sizeof(text) - 1u] = '\0';
-	job(m, HL_J_FAILED, o.step, HL_PERCENT_NONE, HL_E_REFUSED, text);
+	opxy_install_host_text(reason, sizeof(reason), text);
+	job(m, HL_J_FAILED, o.step, HL_PERCENT_NONE, HL_E_REFUSED, reason);
 }
 
 static void run_job(struct opxy_master *m)
@@ -761,9 +763,10 @@ static void run_job(struct opxy_master *m)
 
 /* ---- the board's side ---- */
 
-/* SPEC-Q: S-06.050's forwards from a host (to the PSoC, the Nordic or the
- * slave) need the session's approval, but for a ping or an info request,
- * which read; the coprocessors' own frames to the host are not asked. */
+/* S-10c.043, S-10c.129: S-06.050's forwards from a host (to the PSoC, the
+ * Nordic or the slave) need the session's approval, but for a ping or an
+ * info request, which read; the coprocessors' own frames to the host are
+ * not asked. */
 static OPXY_TESTOS_UNUSED bool forward_ok(void *ctx, unsigned link, uint8_t dst,
 					  const uint8_t *wire, size_t n)
 {
@@ -883,7 +886,7 @@ void opxy_hostlink_poll(struct opxy_master *m)
 		opxy_menu_show(m);
 	}
 	hl_poll(h);
-	/* SPEC-Q: the log goes to a host only in an approved session */
+	/* S-10c.128: the log goes to a host only in an approved session */
 	if (m->sv.log.cdc_on && !opxy_hostlink_approved(m))
 		m->sv.log.cdc_on = false;
 	if (h->job.state == HL_J_QUEUED)

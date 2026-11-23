@@ -101,7 +101,7 @@ struct s06_node_ops {
 	/* A frame dropped on a link; data/n as s06_rx's buffer (may be NULL). */
 	void (*dropped)(void *ctx, unsigned link, int why, const uint8_t *data,
 			size_t n);
-	/* SPEC-Q: whether a frame from link for node dst is forwarded (wire: the
+	/* S-10c.129: whether a frame from link for node dst is forwarded (wire: the
 	 * encoded frame); NULL forwards every one, as S-06.050 says. */
 	bool (*forward_ok)(void *ctx, unsigned link, uint8_t dst, const uint8_t *wire,
 			   size_t n);

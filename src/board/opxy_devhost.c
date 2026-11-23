@@ -304,6 +304,7 @@ static const char *const screen_names[] = {
 	[S15_SCR_INFO2] = "info2",
 	[S15_SCR_OPTION] = "option",
 	[S15_SCR_NONE] = "none",
+	[S15_SCR_DISPLAY] = "display",
 };
 
 /* A NUL-terminated string at out[n], cut to fit max; the new length. */
@@ -432,7 +433,7 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 		return false;
 	out[0] = OPXY_DEV_OK;
 	/* S-15.172: off unless developer mode is on. Refused, nothing changed.
-	 * SPEC-Q: and every request but ping needs the host link's approval. */
+	 * S-10c.110: and every request but ping needs the host link's approval. */
 	if (!m->sv.menu.dev_mode ||
 	    (f->payload[0] != OPXY_DEV_PING && !opxy_hostlink_approved(m))) {
 		out[0] = m->sv.menu.dev_mode ? OPXY_DEV_NOT_APPROVED : OPXY_DEV_REFUSED;

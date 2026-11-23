@@ -7,8 +7,8 @@ The number before the dot names a document by topic:
 
 | Label | Topic |
 | --- | --- |
-| S-01 | Boot chain and memory map |
-| S-02 | SPI flash: slots, selector, writers, recovery, the start log, each slot's settings |
+| S-01 | Boot chain and memory map, the packed main image and its stub |
+| S-02 | SPI flash: slots, selector, writers, recovery, the start log, each slot's settings and boot logo |
 | S-03 | The eMMC: boot partitions, OS header, user area |
 | S-04 | Reboot and metadata records |
 | S-05 | The OS hand-off |
@@ -18,7 +18,7 @@ The number before the dot names a document by topic:
 | S-09 | The SPI bridge between the two processors |
 | S-10a | USB device and mass storage |
 | S-10b | MTP |
-| S-10c | Host commands |
+| S-10c | Host commands and the host link |
 | S-11 | Firmware packages and how they install |
 | S-12 | Filesystems |
 | S-13a | Clocks and DDR |

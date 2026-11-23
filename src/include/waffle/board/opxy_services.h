@@ -51,7 +51,7 @@ struct opxy_master;
 #ifndef OPXY_BL_VERSION_MAJOR
 #define OPXY_BL_VERSION_MAJOR 0u
 #define OPXY_BL_VERSION_MINOR 9u
-#define OPXY_BL_VERSION_PATCH 50u
+#define OPXY_BL_VERSION_PATCH 51u
 #endif
 /* A test build may give slot 0 another build number, so that the
  * two slots differ and S-01.002 finds the running one (Makefile
@@ -350,6 +350,12 @@ void opxy_hostlink_progress(struct opxy_master *m, uint32_t done, uint32_t total
 extern const char *opxy_osw_path;
 /* The parts a host chose for the next install's selection; -1: the unit's. */
 void opxy_install_host_parts(int parts);
+/* Whether the host's install since its parts were set took an invalid
+ * package without the unit's prompt, its approved session the consent. */
+bool opxy_install_host_sig_invalid(void);
+/* A host install's job text: what, then " (signature invalid)" when the
+ * above holds; out holds room bytes, NUL included. */
+void opxy_install_host_text(char *out, size_t room, const char *what);
 
 /*
  * Weak builders, one per feature owner. Each fills its part of an ops
@@ -479,7 +485,7 @@ void opxy_install_source(struct opxy_master *m, const struct wire_source *src,
 			 const struct s11_check_in *in,
 			 struct s11_install_result *res);
 void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env);
-/* The boot logo (src/board/opxy_logo.c): System's Boot logo item's
+/* The boot logo (src/board/opxy_logo.c): Display's Boot logo item's
  * operations into env; the stored logo the front drew at this start, read
  * again for the hand-over frame (NULL: none, the build's picture then,
  * S-15.132); and whether a picture is the one the front's frame showed. */

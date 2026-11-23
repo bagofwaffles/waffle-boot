@@ -20,9 +20,9 @@ The master's SPI flash holds everything the unit needs to start: 1 MiB in 256 se
 | `0x0D000` | 1 sector | The selector: the slot to start, and `verified` (`0x01` means "start it without a check") | The first stage; a slot write; recovery's try, switch and keep | After a slot has been read back; once by the first stage at the start after it |
 | `0x0E000`, `0x0F000` | 1 sector each | Record 0 and record 1, one per slot: the image's CRC-32, its length and a tag | A write of that slot; recovery's try, keep and put back | After the slot's last program |
 | `0x10000` | `0x76000` | Slot 1's image: the front, the stub and the main image, deflated | The package's bootloader step; recovery; the installer | On request only: for a package, with Protected writes on and the bootloader chosen on the unit |
-| below `0x85000` | the image's end to `0x85000` | Slot 1's boot logo data: its palette and packed lines, ending at `0x85000` ([Boot Logo](Boot-Logo)) | System's Boot logo | When a picture is saved on the unit |
-| `0x85000` | 1 sector | Slot 1's boot logo header: an erased one means the built-in logo | System's Boot logo; the factory reset; a slot write erases it | Erased first and written last by a save; erased by a removal and by the factory reset |
-| `0x86000` | 1 sector | Slot 1's settings: Developer mode, Color, MTP target, Start in boot menu, Host link | The Settings screen; the factory reset; a slot write erases it | One page when a setting is changed on the unit, an erase once in 16 changes; the factory reset erases it |
+| below `0x85000` | the image's end to `0x85000` | Slot 1's boot logo data: its palette and packed lines, ending at `0x85000` ([Boot Logo](Boot-Logo)) | Display's Boot logo | When a picture is saved on the unit |
+| `0x85000` | 1 sector | Slot 1's boot logo header: an erased one means the built-in logo | Display's Boot logo; the factory reset; a slot write erases it | Erased first and written last by a save; erased by a removal and by the factory reset |
+| `0x86000` | 1 sector | Slot 1's settings: Developer mode, Color, MTP target, Start in boot menu, Host link | The Settings and Display screens; the factory reset; a slot write erases it | One page when a setting is changed on the unit, an erase once in 16 changes; the factory reset erases it |
 | `0x87000` | 1 sector | Slot 1's start log | The front and the main image; a slot write erases it | One bit at each start, a second when the main image is up; in a trial start, the front's mark and the boot menu's. The main image erases it once 256 or more entries are used, and when it reads full or not valid |
 | `0x88000` | `0x76000` | Slot 2's image | As Slot 1 | On request only |
 | below `0xFD000`, `0xFD000` | | Slot 2's boot logo data and header | As Slot 1's | As Slot 1's |
@@ -139,7 +139,7 @@ for 5 s.
 **An install writes only what is chosen on the unit.** After a package is checked and unpacked, and before
 the install's first write, the unit lists the package's parts, all at `No`. Only the parts set to `Yes`
 run; the others are skipped and touch nothing, and the bootloader can be chosen only with Protected writes
-on. Key 1 held for 5 s starts the install; 8, or 60 s with no key, cancels it with nothing written, the
+on. Key 1 held (`Install selected (hold to select)`) starts the install; 8, or 60 s with no key, cancels it with nothing written, the
 metadata included. The keys come from the PSoC alone, so no computer can answer. A unit whose keys cannot be
 read is not asked: it installs every part but the bootloader.
 

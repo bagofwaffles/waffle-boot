@@ -1098,7 +1098,7 @@ def host_approved(mon, required=True):
     except hostlink.HostLinkError as e:
         raise SystemExit('host link: %s' % e)
     if state != 'approved':
-        print('hold 1 on the unit for 5 s to allow this computer')
+        print('hold 1 on the unit to allow this computer')
         if hl.approve() != 'approved':
             raise SystemExit('not approved on the unit')
 
