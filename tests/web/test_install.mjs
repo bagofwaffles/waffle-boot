@@ -123,14 +123,15 @@ test('describeInstall: the words for the state above', () => {
     assert.deepEqual(d.slots[1].words, ['holds this image for a trial', 'trial started',
         'trial reached the boot menu']);
     assert.deepEqual(d.lines, ['The trial start reached the boot menu.', 'Holding 1: 64 %.']);
-    assert.deepEqual(d.advice, ['Hold 1 on the unit to keep the new bootloader.', inst.RETRIAL,
+    assert.deepEqual(d.advice, ['Hold 1 on the unit to install waffle-boot.', inst.RETRIAL,
         inst.LEAVE]);
     assert.equal(inst.describeInstall({ ...s, os: 6 }).leave, false, 'leave only while the OS can be made active');
     assert.equal(d.checks[18].stateText, 'FAIL');
     // each lock reason and failure code has words, and unknown ones are named
-    for (const r of [1, 2, 3, 4, 6, 7, 8, 9, 10, 11])
+    for (const r of [1, 2, 3, 4, 7, 8, 9, 10, 11])
         assert.ok(inst.LOCK[r] && inst.LOCK_ADVICE[r]);
-    assert.ok(inst.LOCK[inst.LOCK_RESERVED] && !inst.LOCK_ADVICE[inst.LOCK_RESERVED]);
+    for (const r of [inst.LOCK_RESERVED, inst.LOCK_RESERVED_6])
+        assert.ok(/never sets/.test(inst.LOCK[r]) && !inst.LOCK_ADVICE[r]);
     assert.equal(inst.failureText(0x42), 'failure code 0x42');
     assert.equal(inst.describeInstall({ ...s, phase: 11, trial: 4 }).lines[0],
         'The trial failed: the trial start did not run the new bootloader.');
@@ -141,9 +142,10 @@ test('describeInstall: the words for the state above', () => {
 test('the lock codes are the header\'s', () => {
     const h = readFileSync(here('../../src/include/waffle/board/installer.h'), 'utf8');
     const body = h.match(/enum inst_lock \{([^}]*)\}/)[1];
-    const names = [...body.matchAll(/INST_LOCK_([A-Z_]+)/g)].map((m) => m[1]);
+    const names = [...body.matchAll(/INST_LOCK_([A-Z0-9_]+)/g)].map((m) => m[1]);
     assert.equal(names[0], 'NONE');
     assert.equal(names.indexOf('RESERVED'), inst.LOCK_RESERVED);
+    assert.equal(names.indexOf('RESERVED_6'), inst.LOCK_RESERVED_6);
     assert.equal(names.indexOf('SURVEY'), inst.LOCK_SURVEY);
     assert.equal(inst.LOCK_NONE, 0);
     assert.deepEqual(Object.keys(inst.LOCK).map(Number), names.slice(1).map((_, k) => k + 1));
@@ -466,7 +468,7 @@ test('check-fail: a check fails, the install is locked, the OS is active again',
         [['emmc-volume', 'eMMC volume', 'the volume does not mount']]);
     assert.equal(failed[0].note, 'mount returned an I/O error on the second read');
     assert.equal(d.os.text, 'found and checked');
-    assert.deepEqual(r.last.lines, ['Nothing written: the installer was left without installing.',
+    assert.deepEqual(r.last.lines, ['Nothing written: returned to the old OS without installing.',
         'The OS is active again: switch the unit off and on and it starts its OS.']);
     assert.equal(r.last.os.text, 'made active again');
 }));
@@ -504,13 +506,16 @@ test('write-fail: the trial write fails', needPython, () => withBridge(async (b)
     assert.ok(r.last.advice.includes(inst.LEAVE));
 }));
 
-test('keys-ended: the key check ended with 8 locks the install (lock 6)', needPython, () => withBridge(async (b) => {
-    const r = await walk(b, 'keys-ended', {}, ['locked']);
+test('keys-ended: 8 held in the key check returns to the old OS, with no install offered', needPython,
+    () => withBridge(async (b) => {
+    const r = await walk(b, 'keys-ended', { guided: 'leave' }, ['left']);
+    assert.deepEqual(phases(r), ['checking', 'guided', 'left']);
+    assert.ok(at(r, 'guided').advice.includes(inst.LEAVE), 'the key check offers 8');
     const d = r.last;
-    assert.equal(d.lock.code, 6);
+    assert.equal(d.lock, null);
     assert.equal(d.verdict.text, 'PASS WITH GAPS');
-    assert.equal(d.lines[1], 'Why: the key check was ended with 8.');
-    assert.equal(d.advice[0], 'Start the installer again and press com, then M4 (4 under the display), on the unit.');
+    assert.deepEqual(d.lines, ['Nothing written: returned to the old OS without installing.',
+        'The OS is active again: switch the unit off and on and it starts its OS.']);
     assert.deepEqual(d.checks.filter((c) => c.kind === 2).map((c) => [c.id, c.stateText]),
         [['keys', 'not tested']]);
 }));

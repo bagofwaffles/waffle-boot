@@ -44,7 +44,7 @@ export const PHASE = {
     4: ['ready', 'Hold 1 on the unit to write the trial'],
     5: ['writing trial', 'Writing the trial'],
     6: ['trial written', 'Switch off, then on: the new bootloader starts once'],
-    7: ['commit ready', 'Hold 1 on the unit to keep the new bootloader, or 2 to write the trial again'],
+    7: ['commit ready', 'Hold 1 on the unit to install waffle-boot, or 2 for another trial boot'],
     8: ['committing', 'Writing'],
     9: ['done', 'Done: switch off and on'],
     10: ['failed', 'A write failed'],
@@ -55,21 +55,21 @@ export const PHASE = {
 
 // The commit screen's 2: the same trial again, for one more trial start (one can go to the recovery
 // menu, another to the boot menu, before the new bootloader is kept).
-export const RETRIAL = 'Or hold 2 to write the trial again, for one more trial start.';
+export const RETRIAL = 'Or hold 2 for another trial boot: the same trial is written again.';
 
 export const VERDICT = { 0: 'PASS', 1: 'PASS WITH GAPS', 2: 'FAIL', 0xFF: 'not yet' };
 export const TEST_STATE = ['not run', 'pass', 'FAIL', 'not tested', 'not passed', 'n/a'];
 export const TEST_KIND = ['OS', 'automatic', 'guided'];
 
-// STATE byte 4, the lock: installer.h's enum inst_lock, code for code
-export const LOCK_NONE = 0, LOCK_RESERVED = 5, LOCK_SURVEY = 11;
+// STATE byte 4, the lock: installer.h's enum inst_lock, code for code; 5 and 6 are never set
+export const LOCK_NONE = 0, LOCK_RESERVED = 5, LOCK_RESERVED_6 = 6, LOCK_SURVEY = 11;
 export const LOCK = {
     1: 'a check failed',
     2: 'an automatic check could not run',
     3: 'the installer did not verify the image it carries (CRC-32 or front pin)',
     4: 'the slot the selector names is not verified or not good',
     5: 'lock code 5, which the installer never sets',
-    6: 'the key check was ended with 8',
+    6: 'lock code 6, which the installer never sets',
     7: 'the eMMC could not be reached',
     8: 'the device is not identified by its first stage',
     9: 'this installer is built for another device',
@@ -83,7 +83,6 @@ export const LOCK_ADVICE = {
     2: 'Start the installer again so that every check runs: check.txt says which one was not tested.',
     3: `The installer file may be damaged: get ${INSTALLER_FILE} again and write it once more.`,
     4: 'The bootloader slots are not in a state the installer writes over.',
-    6: 'Start the installer again and press com, then M4 (4 under the display), on the unit.',
     7: 'Switch off and on and start the installer again. Save check.txt if it happens again.',
     8: "The unit's first stage is not one this project knows: nothing is installed on it. " +
         'check.txt gives its n and c.',
@@ -137,10 +136,11 @@ export const SLOT_BITS = [
 
 export const STEADY = 'Keep the unit on and the cable in.';
 export const LEAVE_KEY = 8;
-// the phases in which the installer offers to leave, when the OS can be made active again
-export const LEAVE_PHASES = [3, 4, 7, 9, 10, 11];
-export const LEAVE = 'To leave without installing, hold 8 on the unit: the installer makes ' +
-    'the OS active again.';
+// the phases in which the installer offers 8, Return to the old OS, when the OS can be made active
+// again: the key check among them
+export const LEAVE_PHASES = [2, 3, 4, 7, 9, 10, 11];
+export const LEAVE = 'To return to the old OS without installing, hold 8 on the unit: the installer ' +
+    'makes that OS active again.';
 export const BUSY = 'The unit is busy and does not answer for now; this page keeps waiting. Keep the ' +
     'unit on and the cable in.';
 export const GONE_TRIAL = 'The port went away: that is expected once the unit is off for the trial ' +

@@ -819,13 +819,14 @@ static void test_verdict(void)
 	CHECK(table.r[TCHK_OS_PARTITION].state == TCHK_FAIL);
 	CHECK(tchk_verdict(&table) == TCHK_VERDICT_PASS);
 
-	/* the key check ended with 8 leaves no gap; the installer locks on it */
+	/* the key check left with 8 held leaves no gap; the installer then returns
+	 * to the old OS */
 	all_good();
 	facts.keys = TCHK_G_ENDED;
 	facts.keys_seen = 1u;
 	judge();
 	CHECK(table.r[TCHK_KEYS].state == TCHK_NOT_TESTED);
-	CHECK(strcmp(table.r[TCHK_KEYS].detail.s, "ended with 8; com pressed, M4 not pressed") == 0);
+	CHECK(strcmp(table.r[TCHK_KEYS].detail.s, "returned with 8; com pressed, M4 not pressed") == 0);
 	CHECK(tchk_verdict(&table) == TCHK_VERDICT_PASS);
 	/* back after a trial start: not asked again */
 	all_good();
@@ -1241,7 +1242,7 @@ static void test_report_redaction(void)
 	CHECK(has("- waffle-boot's own earliest start-up"));
 	/* the report ends with its last line whole */
 	CHECK(n > 1u && report[n - 1u] == '\n' && report[n] == '\0');
-	CHECK(has("the install is then not offered.\n"));
+	CHECK(has("not tested; no install is offered.\n"));
 	CHECK(!has("returns"));
 	/* every detail written whole */
 	for (i = 0; i < TCHK_COUNT; i++)
@@ -1452,13 +1453,13 @@ static void test_one_cpu(void)
 	judge();
 	CHECK(strcmp(table.r[TCHK_PSOC].detail.s, "no answer: ping") == 0);
 
-	/* the key check ended with 8, by role */
+	/* the key check left with 8 held, by role */
 	op1f_good();
 	facts.keys = TCHK_G_ENDED;
 	facts.keys_seen = 2u;
 	judge();
 	CHECK(strcmp(table.r[TCHK_KEYS].detail.s,
-		     "ended with 8; com not pressed, recovery key pressed") == 0);
+		     "returned with 8; com not pressed, recovery key pressed") == 0);
 	CHECK(tchk_key_com(&wb_device_op1f) == 0x2Cu && tchk_key_recovery(&wb_device_op1f) == 0x09u);
 	CHECK(tchk_key_com(&wb_device_opxy) == TCHK_KEY_COM && tchk_key_com(NULL) == TCHK_KEY_COM);
 	CHECK(tchk_key_recovery(&wb_device_opxy) == TCHK_KEY_M4);

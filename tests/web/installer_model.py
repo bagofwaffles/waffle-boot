@@ -4,7 +4,8 @@ installer's read-only USB protocol (recovery's framing, types 0x40 to 0x43) and 
 a timer of its own and on the controls a person would use on the unit:
 
     act('hold')      the step's key held for 5 s (the hold bar fills, then the step runs)
-    act('leave')     8 held for 5 s: leave without installing, where it is offered
+    act('leave')     8 held for 5 s: return to the old OS without installing, where it is offered
+                     (the key check included)
     act('retrial')   2 held for 5 s on the commit screen: the same trial written again
     act('release')   the key let go before the 5 s
     act('restart')   switched off and on: the port closes, and is gone for a moment
@@ -157,7 +158,7 @@ class InstallerUnit:
         self.next_at = time.monotonic() + s * self.tick
 
     def can_leave(self):
-        return self.phase in (LOCKED, READY, COMMIT_READY, DONE, FAILED, TRIAL_FAILED) and \
+        return self.phase in (GUIDED, LOCKED, READY, COMMIT_READY, DONE, FAILED, TRIAL_FAILED) and \
             self.os in (1, 2)
 
     def write_for(self, s):
@@ -180,12 +181,10 @@ class InstallerUnit:
         self.current = NONE
         hw = self.tests[1:]
         self.verdict = 2 if FAIL in hw else 1 if NOT_TESTED in hw else 0
-        # what the other boot partition holds plays no part (S-16.027); lock 5 is never set
+        # what the other boot partition holds plays no part (S-16.027); locks 5 and 6 are never set
         lock = 0
         if FAIL in hw:
             lock = 1
-        elif self.tests[KEYS] != PASS:
-            lock = 6
         elif NOT_TESTED in hw:
             lock = 2
         elif not self.flags & F_IMAGE_OK:
@@ -215,7 +214,9 @@ class InstallerUnit:
                 else:
                     self.set_test(0, FAIL, 'no OS in the other boot partition')
             elif tid == 'keys' and self.cfg.get('keys_ended'):
-                self.set_test(k, NOT_TESTED, 'ended with 8')
+                # the key check waits for the person: act('leave') returns to the old OS
+                self.wait(0.3)
+                return
             elif tid == self.cfg.get('fail'):
                 self.set_test(k, FAIL, self.cfg['detail'], self.cfg.get('note', ''))
             else:
@@ -250,6 +251,12 @@ class InstallerUnit:
         key = self.hold_key
         self.hold, self.hold_key, self.holding = 0, 0, False
         if key == 8:
+            if self.phase == GUIDED:
+                # the key check left with 8 held: no install offered
+                self.set_test(KEYS, NOT_TESTED, 'returned with 8; com not pressed, M4 not pressed')
+                self.flags |= F_CHECKS_DONE
+                self.current = NONE
+                self.verdict = 1
             self.os = 6
             self.enter(LEFT)
         elif key == 2 and self.phase == COMMIT_READY:

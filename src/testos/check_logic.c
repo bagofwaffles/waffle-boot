@@ -1148,7 +1148,7 @@ static void judge_guided(const struct tchk_facts *f, struct tchk_table *t)
 		break;
 	case TCHK_G_ENDED:
 		d = tchk_set(t, TCHK_KEYS, TCHK_NOT_TESTED);
-		tchk_put_str(d, "ended with 8; ");
+		tchk_put_str(d, "returned with 8; ");
 		tchk_put_str(d, "com");
 		tchk_put_str(d, (f->keys_seen & 1u) ? " pressed, " : " not pressed, ");
 		tchk_put_str(d, xy ? "M4" : "recovery key");
@@ -1339,7 +1339,7 @@ size_t tchk_report(const struct tchk_table *t, const struct tchk_switch *sw, con
 		emit(&o, l[i]);
 		emit(&o, "\n");
 	}
-	emit(&o, "A key check ended with 8 is listed as not tested; the install is then not offered.\n");
+	emit(&o, "A key check left with 8 held is listed as not tested; no install is offered.\n");
 	return o.n;
 }
 

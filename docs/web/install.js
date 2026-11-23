@@ -319,9 +319,9 @@ export function describeInstall(s, hello = null, tests = null) {
     case IW.GUIDED:
         L.push('The key check.');
         A.push(d.device && d.device.name && d.device.name !== 'OP-XY' ?
-            'The key check: press the com key, then the recovery key, on the unit; its screen ' +
-            'shows the number of each key pressed.' :
-            'The key check: press com, then M4 (4 under the display), on the unit.');
+            'The key check: press the com key, then the recovery key, on the unit, to continue; ' +
+            'its screen shows the number of each key pressed.' :
+            'The key check: press com, then M4 (4 under the display), on the unit, to continue.');
         break;
     case IW.LOCKED:
         d.tone = 'bad';
@@ -357,7 +357,7 @@ export function describeInstall(s, hello = null, tests = null) {
         L.push('The trial start reached the boot menu.');
         if (d.image && d.image.breadcrumb)
             L.push(IW.BREADCRUMB);
-        A.push(`Hold ${key} on the unit to keep the new bootloader.`);
+        A.push(`Hold ${key} on the unit to install waffle-boot.`);
         A.push(IW.RETRIAL);
         break;
     case IW.COMMITTING:
@@ -387,7 +387,7 @@ export function describeInstall(s, hello = null, tests = null) {
         A.push(IW.SAVE_REPORT);
         break;
     case IW.LEFT:
-        L.push('Nothing written: the installer was left without installing.');
+        L.push('Nothing written: returned to the old OS without installing.');
         L.push(osLine(s.os));
         break;
     case IW.SURVEYED:

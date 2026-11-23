@@ -129,11 +129,13 @@ static void test_lock(void)
 	t.r[TCHK_RTC].state = TCHK_NOT_TESTED;
 	CHECK(lock(&t, &sw, true, true) == INST_LOCK_NOT_TESTED);
 	all_pass(&t, &sw);
-	t.r[TCHK_KEYS].state = TCHK_NOT_TESTED;		/* skipped */
-	CHECK(lock(&t, &sw, true, true) == INST_LOCK_GUIDED);
+	/* a key check not passed locks as a check not run: lock 6 is never set */
+	t.r[TCHK_KEYS].state = TCHK_NOT_TESTED;		/* left with 8 */
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_NOT_TESTED);
 	all_pass(&t, &sw);
 	t.r[TCHK_KEYS].state = TCHK_FAIL;
-	CHECK(lock(&t, &sw, true, true) == INST_LOCK_GUIDED);
+	CHECK(lock(&t, &sw, true, true) == INST_LOCK_NOT_TESTED);
+	CHECK(inst_lock_words(INST_LOCK_RESERVED_6)[0] == '\0');
 	/* whatever the other boot partition holds, the install is offered */
 	all_pass(&t, &sw);
 	for (sw.result = TCHK_SW_NOT_RUN; sw.result <= TCHK_SW_READY; sw.result++)
@@ -478,6 +480,9 @@ static void test_holds_and_acts(void)
 	CHECK(inst_holds_for(INST_FAILED, true) == (1u << 1 | 1u << 8));
 	CHECK(inst_holds_for(INST_LOCKED, true) == 1u << 8 && inst_holds_for(INST_DONE, false) == 0u);
 	CHECK(inst_holds_for(INST_SURVEYED, true) == 1u << 8);
+	/* the key check: 8 held returns to the old OS, where there is one */
+	CHECK(inst_holds_for(INST_GUIDED, true) == 1u << 8 && inst_holds_for(INST_GUIDED, false) == 0u);
+	CHECK(inst_act_of(INST_GUIDED, 8u) == INST_ACT_LEAVE);
 	CHECK(inst_holds_for(INST_TRIAL_WRITTEN, true) == 0u && inst_holds_for(INST_CHECKING, true) == 0u);
 
 	CHECK(inst_act_of(INST_COMMIT_READY, 1u) == INST_ACT_COMMIT);
