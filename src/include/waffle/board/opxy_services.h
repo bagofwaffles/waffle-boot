@@ -404,6 +404,8 @@ bool opxy_meta_write(struct opxy_master *m);
  * read afterwards; _clear() is the factory reset's.
  */
 void opxy_boot_store_load(struct opxy_master *m, const struct s02_store_slot *run);
+/* S-02.097's defaults, with the color's of this device (S-15.173). */
+void opxy_store_defaults(const struct opxy_master *m, struct s02_store *s);
 enum s15_store_save opxy_boot_store_save(struct opxy_master *m,
 					 const struct s02_store *s,
 					 struct s02_store *now);

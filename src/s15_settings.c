@@ -2,10 +2,17 @@
 /* Held mode's settings' defaults (waffle/s15_settings.h). */
 #include "waffle/s15_settings.h"
 
-void s15_settings_defaults(struct s15_settings *s)
+#include <stddef.h>
+
+bool s15_color_default(const struct wb_device *dev)
+{
+	return dev != NULL && dev->id == WB_DEV_OP1F;
+}
+
+void s15_settings_defaults(struct s15_settings *s, const struct wb_device *dev)
 {
 	s->dev_mode = false;
-	s->color = false;
+	s->color = s15_color_default(dev);
 	s->mtp_macos = true;
 	s->start_menu = false;
 	s->host_link = true;

@@ -191,7 +191,7 @@ static void setup(void)
 {
 	opxy_usb_stop();		/* a controller another test left up */
 	memset(&m, 0, sizeof(m));
-	s02_store_defaults(&m.sv.store);	/* as the bring-up leaves them */
+	opxy_store_defaults(&m, &m.sv.store);	/* as the bring-up leaves them */
 	wire_n = 0;
 	inject_n = inject_next = inject_calls = 0;
 	fake_mmr_reset();

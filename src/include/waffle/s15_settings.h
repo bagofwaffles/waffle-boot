@@ -10,6 +10,8 @@
 
 #include <stdbool.h>
 
+#include "waffle/device.h"
+
 struct s15_settings {
 	bool dev_mode;   /* Developer mode: the developer menu, the serial port */
 	bool color;      /* S-15.173: drawn in color, not gray */
@@ -18,8 +20,14 @@ struct s15_settings {
 	bool host_link;  /* S-15.176: the host link answers */
 };
 
-/* The defaults: developer mode off, in gray, MTP for macOS, start in boot
- * menu off, host link on. */
-void s15_settings_defaults(struct s15_settings *s);
+/* S-15.173: the color's default on dev, where no setting is stored: on for
+ * the OP-1F, off (gray) for the OP-XY and when dev is NULL.
+ * SPEC-Q: S-15.172 and S-15.173 give one default, color off, for every
+ * device; here the OP-1F's is on. Whether the contract states it by device
+ * is the maintainer's to confirm. */
+bool s15_color_default(const struct wb_device *dev);
+/* The defaults on dev: developer mode off, the color by
+ * s15_color_default(), MTP for macOS, start in boot menu off, host link on. */
+void s15_settings_defaults(struct s15_settings *s, const struct wb_device *dev);
 
 #endif /* WAFFLE_S15_SETTINGS_H */

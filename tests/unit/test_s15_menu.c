@@ -417,7 +417,7 @@ static void default_boot(void)
 	BOOT.start_log = S15_LOG_OK;
 	BOOT.start_log_used = 41;
 	BOOT.start_log_erase = 256;
-	s15_settings_defaults(&BOOT.settings);
+	s15_settings_defaults(&BOOT.settings, &wb_device_opxy);
 	BOOT.settings.dev_mode = true;	/* most tests use the developer menu */
 }
 
@@ -1811,7 +1811,7 @@ static void test_screens(void)
 	expect_screen("main_plain");    /* packs change nothing */
 	reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
 	expect_screen("main_devmode_off");
-	reset_fake(); default_boot(); s15_settings_defaults(&BOOT.settings);
+	reset_fake(); default_boot(); s15_settings_defaults(&BOOT.settings, &wb_device_opxy);
 	start();
 	expect_screen("main_devmode_off");	/* S-15.172: off by default */
 	reset_fake(); default_boot(); BOOT.start.why = S15_START_ENCRYPTED;
@@ -4095,6 +4095,15 @@ static void test_op1f(void)
 	unsigned saves;
 
 	menu_dev = &wb_device_op1f;
+
+	/* S-15.173: the factory reset's clear gives the OP-1F's default, color on */
+	reset_fake(); default_boot();
+	F.clear_rc = S15_STORE_SAVED;
+	start();
+	CHECK(!M.color, "1F: the setting as the start read it");
+	press(0x11);
+	hold(0x13);
+	CHECK(F.clears == 1u && M.color && !M.start_menu, "1F: color on after a clear");
 
 	/* S-15.196: Settings has no MTP target; its digit 5 (0x11) does nothing */
 	reset_fake(); default_boot(); start();

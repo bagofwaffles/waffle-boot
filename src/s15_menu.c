@@ -724,7 +724,7 @@ static void clear_settings(struct s15_menu *m)
 		return;
 	switch (m->env->settings_clear(m->env->ctx)) {
 	case S15_STORE_SAVED:
-		s15_settings_defaults(&d);
+		s15_settings_defaults(&d, m->dev);
 		if (m->color != d.color)
 			m->changes++;	/* every pixel changes, not only the lines */
 		m->dev_mode = d.dev_mode;
@@ -2430,7 +2430,7 @@ void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
 	m->shift = false;
 	m->option_on = false;            /* Off after any reset */
 	m->dev_mode = false;
-	m->color = false;
+	m->color = s15_color_default(dev);	/* S-15.173 */
 	m->mtp_macos = true;
 	m->start_menu = false;
 	m->host_link = true;

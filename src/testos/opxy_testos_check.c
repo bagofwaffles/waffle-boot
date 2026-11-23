@@ -994,13 +994,9 @@ void opxy_testos_check_start(struct opxy_master *m)
 	ck.f.dev = opxy_dev(m);
 	ck.f.held_ms = (uint32_t)wb_time_ms(&m->hw.time);
 	version();
-	/* The installer draws in gray always; the check suite follows the color
-	 * setting, read as held mode's services started. */
-#if defined(OPXY_TESTOS_INSTALLER)
-	ck.gray = true;
-#else
+	/* The color setting as held mode's services read it: the test OS keeps
+	 * no settings, so the device's default (S-15.173), gray on the OP-XY */
 	ck.gray = !m->sv.settings.color;
-#endif
 	/* S-08.011 in state 0: a bootloader's greeting is told to start the
 	 * application, any other answered 0x06 {40}; the gate holds back every
 	 * other frame, every other 0x0D form above all */

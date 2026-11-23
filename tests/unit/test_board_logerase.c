@@ -552,6 +552,33 @@ static void test_store_tries(void)
 	CHECK(!m.store_slot.established && g_f.nall == 0u);
 	CHECK(!m.sv.store.dev_mode && !m.sv.store.color && m.sv.store.mtp_macos &&
 	      !m.sv.store.start_menu);
+	/* S-15.173: on the OP-1F the defaults are in color, and a stored record,
+	 * color off, wins */
+	m.dev = &wb_device_op1f;
+	{
+		const struct s02_store_slot run = { false, 1u, { 0x12345678u, LEN, S02_RECORD_TAG }, true };
+
+		opxy_boot_store_load(&m, &run);
+	}
+	CHECK(m.sv.store.color && !m.sv.store.dev_mode && m.sv.store.mtp_macos);
+	flash(0);
+	master(0, false, 0);
+	m.dev = &wb_device_op1f;
+	m.flash.flash = &g_ops;
+	m.store_slot.established = true;
+	m.store_slot.slot = 0u;
+	m.store_slot.good = true;
+	(void)s02_read_record(&m.flash, 0u, &m.store_slot.rec);
+	{
+		const struct s02_store_slot run = m.store_slot;
+
+		opxy_boot_store_load(&m, &run);
+		CHECK(m.sv.store.color);			/* nothing stored yet */
+		CHECK(opxy_boot_store_save(&m, &on, &now) == S15_STORE_SAVED && !now.color);
+		opxy_boot_store_load(&m, &run);
+		CHECK(!m.sv.store.color && m.sv.store.dev_mode);	/* the stored record */
+	}
+	m.dev = NULL;
 }
 
 int main(void)

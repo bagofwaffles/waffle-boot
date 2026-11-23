@@ -60,7 +60,7 @@ the items, the screen says when the OS could not be started, and why.
 
 All five are kept in the SPI flash, in the settings sector of the slot the unit is running
 ([Flash Layout](Flash-Layout-and-Write-Safety#the-areas)), and belong to that slot's image: the other slot
-has its own, and a new image starts on the defaults (Developer mode off, Color off, MTP target macOS, Start in
+has its own, and a new image starts on the defaults (Developer mode off, Color off on the OP-XY and on on the OP-1F, MTP target macOS, Start in
 boot menu off, Host link on). A change is saved at once, and only by a key pressed on the unit. A key a computer sends
 (a developer request) changes Developer mode, Color, the MTP target or Host link until the next start and saves
 nothing, and leaves Start in boot menu as it is. Nothing is written to the internal drive: a format leaves
@@ -81,7 +81,7 @@ until the next start; Start in boot menu shows what the next start will read.
 
 | Item | What it does |
 | --- | --- |
-| 3 Color | Off, the default, draws every screen in gray. Kept with the settings above |
+| 3 Color | Off draws every screen in gray. The default is off on the OP-XY and on on the OP-1F; a saved setting wins. Kept with the settings above |
 | 6 Boot logo | Your own picture at the start in place of the built-in logo ([Boot Logo](Boot-Logo)). Its state: `Built-in`, `Custom`, `No room` when this image leaves no room for one, `Unavailable` when this start may not save one (as for the settings) |
 
 ## System
