@@ -656,7 +656,7 @@ static void job_install(struct opxy_master *m)
 	struct s09_files *f = &m->sv.files;
 	struct hl_stat st;
 	struct s11_outcome o;
-	char text[S10C_TEXT_MAX];
+	char text[S10C_TEXT_MAX], reason[HL_TEXT_MAX + 1u];
 	const char *name = strrchr(job_path.full, '/') + 1;
 	uint32_t at = 0;
 	int32_t fd;
@@ -702,13 +702,15 @@ static void job_install(struct opxy_master *m)
 		m->sv.host_ops.ramdisk_offer(m);
 	opxy_menu_show(m);
 	if (o.kind == S11_OUTCOME_DONE || o.kind == S11_OUTCOME_NOTHING_TO_DO) {
-		job(m, HL_J_DONE, o.step, 100u, HL_OK,
-		    o.kind == S11_OUTCOME_DONE ? "[done]" : "[nothing to do]");
+		opxy_install_host_text(text, sizeof(text),
+				       o.kind == S11_OUTCOME_DONE ? "[done]" : "[nothing to do]");
+		job(m, HL_J_DONE, o.step, 100u, HL_OK, text);
 		return;
 	}
 	text[s10c_error_text(&o, text) < sizeof(text) ? s10c_error_text(&o, text) :
 	     sizeof(text) - 1u] = '\0';
-	job(m, HL_J_FAILED, o.step, HL_PERCENT_NONE, HL_E_REFUSED, text);
+	opxy_install_host_text(reason, sizeof(reason), text);
+	job(m, HL_J_FAILED, o.step, HL_PERCENT_NONE, HL_E_REFUSED, reason);
 }
 
 static void run_job(struct opxy_master *m)

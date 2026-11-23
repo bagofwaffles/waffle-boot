@@ -442,7 +442,9 @@ export class HostLink {
 	}
 
 	// Runs an action; onProgress(record) for each change. The final record: state 'done' or
-	// 'failed' (or 'done' with text 'restarting' before a restart takes the port away).
+	// 'failed' (or 'done' with text 'restarting' before a restart takes the port away). An install
+	// of a package whose signature does not match asks nothing on the unit: its final text ends in
+	// '(signature invalid)', for the page to show.
 	async runAction(action, { path = null, parts = 0xff, mode = 0, onProgress = null, timeoutMs = 900000 } = {}) {
 		const args = [action];
 		if (action === A.INSTALL)

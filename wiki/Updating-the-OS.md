@@ -67,7 +67,7 @@ check has one of three results:
 | Signature | What happens |
 | --- | --- |
 | Valid | The list says `Signed by TE`, and so does the run. A bootloader that is not a waffle-boot build is called a return to stock |
-| Does not match (or the unit's key cannot be read) | A warning comes before the list: hold **1** for 5 s to go on to it, or press **8** to cancel (60 s with no key cancel too). Then every part installs as usual |
+| Does not match (or the unit's key cannot be read) | A warning comes before the list: hold **1** for 5 s to go on to it, or press **8** to cancel (60 s with no key cancel too). Then every part installs as usual. An install a computer runs through an approved [host link](Developer-Host-Link) session has no warning: the computer is told instead |
 | None (the package carries none, or a blank one) | No warning. Every part installs as usual |
 
 The signature changes only these words and the warning: every part can be chosen from any package, the

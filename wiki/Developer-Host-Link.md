@@ -167,7 +167,8 @@ not files on a drive (MTP's writes to the drive do not look at it either), so it
 `parts` is one bit per part of the install's list: 1 content, 2 OS, 4 bootloader, 8 BLE, 16 BLE
 bootloader, 32 keyboard; `FF` every part the unit would offer. A part the list would not let the unit's
 keys pick (the bootloader with Protected writes off, a part that is up to date or switched off) is not
-run. A package whose signature does not match still asks on the unit first, as at the unit.
+run. A package whose signature does not match installs without the unit's warning: the approved session
+is the consent. The job's text then ends in `(signature invalid)`, and the unit's log says so too.
 
 One job runs at a time. RUN answers a job record at once (state queued); the job starts when the unit's
 loop comes round, and while it runs the unit sends an EVENT each time its record changes. Requests sent
@@ -184,7 +185,8 @@ the restarts `0D 18`, `0D 19` and `0D EE`, factory unlock and set metadata all n
 approved session. Without it they are refused with `84` and a text (`host link off`, or `not allowed: hold
 1 on the unit`), or status `01` and the text in the TE form, and they change nothing; a refused one also
 puts the approval screen up, so a tool that tries again after the hold goes on. An install that comes
-that way still asks for its parts on the unit. The same holds for these asked for through the Nordic's
+that way still asks for its parts on the unit, after the warning for a package whose signature does
+not match. The same holds for these asked for through the Nordic's
 link; the PSoC's link, the unit's own, is not asked.
 
 The log (S-14) goes to the serial port only after the log-configuration request `B0`, which needs Host

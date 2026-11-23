@@ -350,6 +350,12 @@ void opxy_hostlink_progress(struct opxy_master *m, uint32_t done, uint32_t total
 extern const char *opxy_osw_path;
 /* The parts a host chose for the next install's selection; -1: the unit's. */
 void opxy_install_host_parts(int parts);
+/* Whether the host's install since its parts were set took an invalid
+ * package without the unit's prompt, its approved session the consent. */
+bool opxy_install_host_sig_invalid(void);
+/* A host install's job text: what, then " (signature invalid)" when the
+ * above holds; out holds room bytes, NUL included. */
+void opxy_install_host_text(char *out, size_t room, const char *what);
 
 /*
  * Weak builders, one per feature owner. Each fills its part of an ops

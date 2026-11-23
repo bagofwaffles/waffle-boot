@@ -18,7 +18,9 @@ menu's serial port, and a command line over it.
     put FILE PATH         FILE to PATH on /yaffs2 or /user, checked whole before it takes the name
     rm PATH, mkdir PATH, mv FROM TO
     install PATH [PARTS]  install the package PATH on the drive; PARTS the steps' bits (default
-                          0xFF: every part the unit would offer). Protected writes applies
+                          0xFF: every part the unit would offer). Protected writes applies;
+                          a package whose signature does not match installs with no prompt
+                          on the unit, its job's text ending in "(signature invalid)"
     os-write PATH         write the OS image PATH from the drive to the inactive boot partition
     os-once               restart once into /yaffs2/os.ldr (writes nothing)
     restart, continue-os, restart-mode MODE

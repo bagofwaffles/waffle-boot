@@ -2124,7 +2124,10 @@ static void test_whole_nothing_to_pick(void)
  * any package, with no return-to-stock warning; 8 there cancels. 8 at the
  * prompt cancels with no selection; with the keys unreadable nobody can
  * confirm it, so nothing is asked or installed. A blank signature (none)
- * shows no prompt, and its Bootloader's row is picked the same.
+ * shows no prompt, and its Bootloader's row is picked the same. A host's
+ * install in an approved host link session asks nothing on the unit, keys
+ * readable or not, the log and the job's text saying invalid; one whose
+ * session is no longer approved gets the prompt as at the unit.
  */
 static void test_whole_signature(void)
 {
@@ -2144,7 +2147,7 @@ static void test_whole_signature(void)
 	      cdc_has("1 Install anyway (hold to select)"));
 	CHECK(ks.end_ms[0] - ks.start_ms[0] >= 6000u &&
 	      ks.end_ms[0] - ks.start_ms[0] < 6500u);
-	CHECK(cdc_has("install: the prompt held 5 s"));
+	CHECK(cdc_has("install: the prompt held 5 s") && !cdc_has("not asked"));
 	CHECK(cdc_has("7 Bootloader  0.9.40 > 1234.0.0  Yes") &&
 	      cdc_has("Replaces Slot 2") && !cdc_has("Signed by TE") &&
 	      !cdc_has("back to stock"));
@@ -2174,7 +2177,63 @@ static void test_whole_signature(void)
 	canceled(&res, true);
 	whole_end();
 
+	for (int keys = 1; keys >= 0; keys--) {
+		char text[48];
+
+		t_case = keys ? "whole: invalid, a host's approved session" :
+				"whole: invalid, a host's approved session, keys unreadable";
+		whole_setup();
+		m.key_status.replied = keys != 0;
+		ks.ev[0] = nothing;
+		m.sv.menu.host_link = true;
+		m.sv.hl.session = HL_S_APPROVED;
+		opxy_install_host_parts(S11_STEP_BIT(S11_STEP_BOOTLOADER));
+		whole_install(true, false, &res);
+		CHECK(res.reason == S11_REASON_NONE && res.sig == S11_SIG_INVALID &&
+		      !res.canceled);
+		CHECK_EQ(res.selected, S11_STEP_BIT(S11_STEP_BOOTLOADER));
+		CHECK_EQ(ks.asks, 0u);
+		CHECK(cdc_has("install: signature invalid") &&
+		      cdc_has("install: signature invalid, not asked: a host's approved session"));
+		CHECK(!cdc_has("does not match.") && !cdc_has("Install anyway") &&
+		      !cdc_has("not confirmed"));
+		CHECK(cdc_has("install: parts chosen by the host, steps selected 0x04"));
+		CHECK(opxy_install_host_sig_invalid());
+		opxy_install_host_parts(-1);
+		opxy_install_host_text(text, sizeof text, "[done]");
+		CHECK(strcmp(text, "[done] (signature invalid)") == 0);
+		opxy_install_host_text(text, sizeof text, "[nothing to do]");
+		CHECK(strcmp(text, "[nothing to do] (signature invalid)") == 0);
+		m.sv.hl.session = HL_S_NONE;
+		whole_end();
+	}
+
+	t_case = "whole: invalid, a host's session no longer approved";
+	whole_setup();
+	ks.ev[0] = key8;
+	m.sv.menu.host_link = true;
+	m.sv.hl.session = HL_S_NONE;
+	opxy_install_host_parts(0xFF);
+	memcpy(flash_before, flash_mem, sizeof flash_before);
+	whole_install(true, false, &res);
+	CHECK_EQ(ks.asks, 1u);
+	CHECK(cdc_has("Signature does not match.") && !cdc_has("not asked") &&
+	      cdc_has("install: the prompt canceled with key 8"));
+	CHECK(!opxy_install_host_sig_invalid());
+	opxy_install_host_parts(-1);
+	canceled(&res, true);
+	whole_end();
+
 	t_case = "whole: none";
+	{
+		char text[48];
+
+		/* a valid or unasked install's text as it was */
+		opxy_install_host_parts(0xFF);
+		opxy_install_host_text(text, sizeof text, "[done]");
+		CHECK(strcmp(text, "[done]") == 0);
+		opxy_install_host_parts(-1);
+	}
 	whole_sig = S11_SIG_NONE;
 	whole_setup();
 	ks.ev[0] = bl_then_8;
