@@ -243,8 +243,9 @@ A description of the screens as they are now, free to change within the rules ab
   reason. It opens no screen of its own: a line under the screen it was chosen on says that the unit
   is restarting to start the OS, and from then no key acts.
 - Start `/os.ldr` once restarts the unit, and that one start boots the OS from the drive's `/os.ldr`
-  even with Start in boot menu on (S-15.194, S-04.014); it writes nothing to the eMMC. Its screen says
-  that the unit is restarting to start it.
+  even with Start in boot menu on (S-15.194, S-04.014); it writes nothing to the eMMC. Like Continue
+  to the OS it opens no screen of its own: a line under the screen it was chosen on (for a host's
+  request, the screen showing) says that the unit is restarting to start it, and from then no key acts.
 - The OS write has its own screen: its steps and their progress, and on a failure the reason and what
   the eMMC was left with. 8 goes back to where it began (the developer menu, or for a host's write the
   screen it began on); after a success 6 restarts into the OS.

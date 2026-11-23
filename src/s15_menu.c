@@ -1455,9 +1455,10 @@ static void restart(struct s15_menu *m)
 	m->env->reset_w7(m->env->ctx);
 }
 
-/* S-15.194: the restart into a start from /yaffs2/os.ldr, or the reason
- * there is none, under the developer menu drawn again. That start boots
- * whatever start in boot menu says (S-04.014). */
+/* S-15.194: the restart into a start from /yaffs2/os.ldr, its line under
+ * the screen it was chosen on, or the reason there is none, under the
+ * developer menu drawn again. That start boots whatever start in boot menu
+ * says (S-04.014). */
 static void os_once(struct s15_menu *m, bool host)
 {
 	const enum s15_screen back = host ? back_of(m) : S15_SCR_FACTORY;
@@ -1470,8 +1471,11 @@ static void os_once(struct s15_menu *m, bool host)
 	else
 		r = m->env->os_once_check(m->env->ctx, &file);
 	if (r == S15_ONCE_STARTED) {
-		/* the view whole on the panel before the shutdown begins */
-		enter(m, S15_SCR_STARTING, s15_cont_title);
+		/* the line under the screen that was showing, whole on the
+		 * panel before the shutdown begins; from here no key acts */
+		leave(m);
+		m->screen = S15_SCR_STARTING;
+		m->changes++;
 		sline(m, S15_ST_WARN, s15_once_restarting);
 		m->env->os_once(m->env->ctx);
 		return;

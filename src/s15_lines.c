@@ -879,7 +879,6 @@ void s15_once_reason(struct s15_buf *out, enum s15_once why,
 
 /* ---- S-15.190, S-05.033: continue to the OS, at a host's request ---- */
 
-const char s15_cont_title[] = "Restarting";
 const char s15_cont_restarting[] = "Restarting into the OS...";
 
 const char *s15_osw_label(enum s15_osw_step step)

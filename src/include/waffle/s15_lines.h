@@ -375,7 +375,6 @@ void s15_once_reason(struct s15_buf *out, enum s15_once why,
 
 /* ---- S-15.190, S-05.033: continue to the OS, at a host's request ---- */
 
-extern const char s15_cont_title[];		/* the restarting view's title */
 extern const char s15_cont_restarting[];	/* S15_ST_WARN */
 
 #endif /* WAFFLE_S15_LINES_H */

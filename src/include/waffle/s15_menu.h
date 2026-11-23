@@ -266,7 +266,7 @@ struct s15_env_ops {
 	 * request reaches the drive, refused or not. NULL: it never does. */
 	bool (*slave_lost)(void *ctx);
 	/* S-15.190, S-05.033: restart so that the next start boots the OS,
-	 * the restarting view drawn. Does not return on the device. NULL:
+	 * the restarting line drawn. Does not return on the device. NULL:
 	 * there is no such action. */
 	void (*continue_os)(void *ctx);
 	/* S-15.082: read the selected slot's start log again into the boot's
@@ -285,7 +285,7 @@ struct s15_env_ops {
 	 * build starts no OS. */
 	enum s15_once (*os_once_check)(void *ctx, struct s15_os_file *file);
 	/* S-15.194, S-04.020 W12: the restart whose next start reads the OS
-	 * from /yaffs2/os.ldr, the restarting view drawn. Does not return on
+	 * from /yaffs2/os.ldr, the restarting line drawn. Does not return on
 	 * the device. */
 	void (*os_once)(void *ctx);
 	/* The boot logo, read again. NULL: no Boot logo item. */
@@ -470,9 +470,9 @@ enum s15_approve s15_menu_approve_result(struct s15_menu *m);
  * before (never the developer menu with developer mode off). *e is the
  * write's end. */
 bool s15_menu_os_write(struct s15_menu *m, const char *path, struct s15_osw_end *e);
-/* A host's start of /os.ldr once, as the developer menu's 3 (S-15.194);
- * it returns only when the start was not taken, with the screen shown
- * before drawn again under the reason. */
+/* A host's start of /os.ldr once, as the developer menu's 3 (S-15.194):
+ * the restarting line under the screen shown; it returns only when the
+ * start was not taken, with that screen drawn again under the reason. */
 void s15_menu_os_once(struct s15_menu *m);
 /*
  * The time passes (ms since any fixed point; only differences matter): a
@@ -493,7 +493,7 @@ uint32_t s15_menu_changes(const struct s15_menu *m);
 /* ---- S-15.190, S-05.033: continue to the OS, at a host's request -- */
 
 enum s15_continue {
-	S15_CONT_STARTED,	/* the restarting view drawn, the board's restart run */
+	S15_CONT_STARTED,	/* the restarting line drawn, the board's restart run */
 	S15_CONT_BUSY		/* a scan, host transfer, run or OS write is under way */
 };
 

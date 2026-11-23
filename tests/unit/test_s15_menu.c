@@ -3384,7 +3384,8 @@ static void test_os_once(void)
 	};
 	uint32_t before;
 
-	/* The file there: the restarting view whole, then the board's W12. */
+	/* The file there: the restarting line under the developer menu, then
+	 * the board's W12. */
 	reset_fake(); default_boot(); start();
 	press(0x08);
 	expect_screen("factory");
@@ -3395,7 +3396,7 @@ static void test_os_once(void)
 	      M.screen == S15_SCR_STARTING && F.reset_w7 == 0u && F.cont == 0u,
 	      "S-15.194 the check, the view, then the restart");
 	expect_screen("factory_once_restarting");
-	expect_title("restarting");
+	expect_title("factory");
 	CHECK(appended(s15_once_restarting), "S-15.004 the line is logged");
 	/* No key acts on the restarting view. */
 	before = s15_menu_changes(&M);
@@ -4292,6 +4293,17 @@ static void test_host_link(void)
 	s15_menu_os_once(&M);
 	CHECK(M.screen == S15_SCR_MAIN && appended(s15_once_not_started),
 	      "host start once refused: on the main screen");
+	/* a host's start once that is taken: the restarting line under the
+	 * screen that was showing, no screen of its own */
+	reset_fake(); default_boot(); BOOT.settings.dev_mode = false; start();
+	F.once_rc = S15_ONCE_STARTED;
+	n_app = 0;
+	s15_menu_os_once(&M);
+	CHECK(F.once_checks == 1u && F.once == 1u && F.once_view &&
+	      M.screen == S15_SCR_STARTING && appended(s15_once_restarting),
+	      "host start once: the line, then the restart");
+	expect_title("main");
+	expect_screen("main_once_restarting");
 }
 
 
