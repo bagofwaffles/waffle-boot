@@ -27,6 +27,8 @@ saves nothing.
 - It is stored as runs of one color, so flat areas cost little; photos and gradients cost the most.
   `tools/wblogo.py encode PICTURE.png OUT.bin --room BYTES` converts it on a computer exactly as the unit
   does, and says how many bytes it takes.
+- A larger PNG may show a little more slowly at start: the start reads the stored picture whole before
+  its first frame.
 
 ## How much room
 
