@@ -977,6 +977,70 @@ static void test_continue_restart(void)
 }
 
 /*
+ * S-02.095, S-15.175: a trial start's boot menu, opened for the trial alone,
+ * goes on to the OS once its mark is made and read back: the trial's view
+ * at once, then, OPXY_TRIAL_SHOW_MS later, Continue to the OS's restart
+ * (W11). Without the mark, opened by something else, or with the menu busy,
+ * it stays.
+ */
+static void test_trial_continue(void)
+{
+	struct boot_held h;
+	uint64_t t0;
+	unsigned calls = 0;
+
+	memset(&h, 0, sizeof(h));
+	held_setup();
+	m.slave_present = true;
+	m.bridge.absent = false;
+	m.sv.reboot.shutdown = rs_shutdown;
+	m.sv.reboot.write_record = rs_write;
+	m.sv.reboot.hard_reset = rs_hard;
+	m.sv.reboot.psoc_reset_request = rs_psoc;
+	m.sv.reboot.nordic_enter_dfu = rs_other;
+	m.sv.reboot.nordic_exit_dfu = rs_exit;
+	m.sv.reboot.wait_for_psoc = rs_wait;
+	opxy_held_screen(&m, &h);
+	rs_n = 0;
+	/* not opened for the trial, or no mark: the boot menu stays */
+	m.trial_reached = true;
+	opxy_trial_continue(&m);
+	m.trial_go = true;
+	m.trial_reached = false;
+	opxy_trial_continue(&m);
+	CHECK(rs_n == 0u && m.sv.menu.screen == S15_SCR_MAIN && m.trial_until == 0u);
+	/* the mark made: the line, then the restart after the moment */
+	m.trial_reached = true;
+	fake_core_set_cycle_step(400u * 1000u);	/* 1 ms a read */
+	t0 = fake_core_peek_cycles();
+	opxy_trial_continue(&m);
+	CHECK(rs_n == 0u && m.sv.menu.screen == S15_SCR_STARTING && m.trial_until != 0u);
+	while (rs_n == 0u && calls++ < 10000u)
+		opxy_trial_continue(&m);
+	CHECK(rs_n == 4u && memcmp(rs_ev, "SXRH", 4) == 0 && rs_reason == S04_REASON_OS_ONCE);
+	CHECK(rs_at[0] - t0 >= (uint64_t)(OPXY_TRIAL_SHOW_MS + OPXY_RESTART_HOLD_MS) * 1000u * 400u);
+	CHECK(!m.trial_go);
+	fake_core_set_cycle_step(1u);
+	opxy_usb_stop();
+
+	/* a busy menu: nothing goes on, and it is not asked again */
+	held_setup();
+	opxy_held_screen(&m, &h);
+	m.sv.reboot.hard_reset = rs_hard;
+	rs_n = 0;
+	m.trial_go = true;
+	m.trial_reached = true;
+	m.trial_until = 0u;
+	m.sv.menu.activity = S15_ACT_SCAN;
+	opxy_trial_continue(&m);
+	CHECK(rs_n == 0u && !m.trial_go && m.sv.menu.screen == S15_SCR_MAIN);
+	m.sv.menu.activity = S15_ACT_IDLE;
+	opxy_trial_continue(&m);
+	CHECK(rs_n == 0u && m.sv.menu.screen == S15_SCR_MAIN);
+	opxy_usb_stop();
+}
+
+/*
  * S-15.194, S-04.014: Start /os.ldr once's check refuses without the slave
  * (a soft reboot cannot carry the request) and makes no request; with it,
  * the restart is W12 with reason 90, the view held first.
@@ -2994,6 +3058,7 @@ int main(void)
 	test_powered_off();
 	test_restart_hold();
 	test_continue_restart();
+	test_trial_continue();
 	test_os_once_restart();
 	test_reboot_settle();
 	test_reboot_os_detach();

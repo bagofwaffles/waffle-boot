@@ -43,7 +43,7 @@ export const PHASE = {
     3: ['locked', 'A check did not pass: nothing was written'],
     4: ['ready', 'Hold 1 on the unit to write the trial'],
     5: ['writing trial', 'Writing the trial'],
-    6: ['trial written', 'Switch off, then on: the new bootloader starts once'],
+    6: ['trial written', 'Switch off, then on: the new bootloader starts once, then the installer comes back'],
     7: ['commit ready', 'Hold 1 on the unit to install waffle-boot, or 2 for another trial boot'],
     8: ['committing', 'Writing'],
     9: ['done', 'Done: switch off and on'],
@@ -144,7 +144,8 @@ export const LEAVE = 'To return to the old OS without installing, hold 8 on the 
 export const BUSY = 'The unit is busy and does not answer for now; this page keeps waiting. Keep the ' +
     'unit on and the cable in.';
 export const GONE_TRIAL = 'The port went away: that is expected once the unit is off for the trial ' +
-    'start. Switch it on: when the installer is back, this page connects again.';
+    'start. Switch it on: the new bootloader starts once, shows its boot menu for a moment and ' +
+    'restarts into the installer by itself, and this page connects again.';
 export const GONE_END = 'The port went away at switch-off, as expected: the unit starts its OS now, ' +
     'not the installer.';
 export const SAVE_REPORT = 'Save check.txt below and keep it: it lists every check.';

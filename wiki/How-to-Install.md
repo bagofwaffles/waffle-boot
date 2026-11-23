@@ -18,7 +18,9 @@ install itself.
 - The OS file, to install again when waffle-boot is on the unit ([Updating the OS](Updating-the-OS)).
 
 Every write is started on the unit: you hold the key it names (`Hold to select`). A hold takes 5 s, and
-the unit shows the seconds left. To go back to your OS at any point without installing, hold **8**
+the unit shows the seconds left. The installer writes a trial first. Switch off and on: the new
+bootloader starts once, its boot menu shows for a moment, and the unit comes back to the installer by
+itself, which then asks whether to install. To go back to your OS at any point without installing, hold **8**
 (`Return to the old OS`).
 
 A unit that already runs waffle-boot does not need the installer: choose **Upgrade / Recover** on the page

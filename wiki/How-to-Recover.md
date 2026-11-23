@@ -75,7 +75,9 @@ Start the other slot once (a trial). If it does not come up, the next start runs
 1. Open the recovery menu.
 2. Press **1** (`Change the boot slot (optional)`), then **1** (`Try slot N once (suggested)`).
 3. Read the screen. Hold **1** for 5 s until the bar is full. Letting go early cancels.
-4. The screen says `Done: slot N starts once, as a trial`. Switch off and on, with no key held.
+4. The screen says `Done: slot N starts once, as a trial`. Switch off and on, with no key held. A
+   waffle-boot image shows its boot menu for a moment, then restarts: that start runs the old slot. Hold
+   com at power-on to keep its boot menu open.
 5. If slot N does not start, switch off and on again: the old slot starts.
 
 To keep slot N after it started in its trial:

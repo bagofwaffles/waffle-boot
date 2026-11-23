@@ -3550,6 +3550,27 @@ static void test_continue(void)
 	      s15_menu_continue(&M) == S15_CONT_BUSY && F.cont == 0u,
 	      "S-05.033 not started twice");
 
+	/* S-02.095, S-15.175: a trial start's boot menu going on to the OS:
+	 * the view with its line, no key acting, and the restart left to the
+	 * board */
+	reset_fake(); default_boot(); start();
+	clear_records();
+	CHECK(s15_menu_trial_ok(&M) == S15_CONT_STARTED && F.cont == 0u &&
+	      M.screen == S15_SCR_STARTING, "the trial's view, the restart the board's");
+	expect_screen("main_trial_ok");
+	expect_title("main");
+	before = s15_menu_changes(&M);
+	for (unsigned key = 0; key < S15_NKEYS; key++)
+		press(key);
+	CHECK(F.cont == 0u && F.n_usb == 0u && F.reset_w7 == 0u && M.screen == S15_SCR_STARTING &&
+	      s15_menu_changes(&M) == before, "no key on the trial's view");
+	CHECK(s15_menu_trial_ok(&M) == S15_CONT_BUSY && s15_menu_continue(&M) == S15_CONT_BUSY &&
+	      F.cont == 0u, "the trial's view once");
+	reset_fake(); default_boot(); start();
+	M.activity = S15_ACT_SCAN;
+	CHECK(s15_menu_trial_ok(&M) == S15_CONT_BUSY && M.screen == S15_SCR_MAIN,
+	      "busy: the boot menu stays");
+
 	/* The slave absent, lost at the start or stopped since: it restarts
 	 * all the same (the board picks the restart). */
 	for (int k = 0; k < 4; k++) {

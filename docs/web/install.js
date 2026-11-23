@@ -349,12 +349,12 @@ export function describeInstall(s, hello = null, tests = null) {
         d.tone = 'act';
         L.push('The trial is written.');
         A.push('Switch off, then on: the new bootloader starts once.');
-        A.push('When its trial start reaches the boot menu, the unit comes back to the installer, ' +
-            'and this page connects again.');
+        A.push('Its boot menu shows for a moment, then the unit restarts into the installer by ' +
+            'itself, and this page connects again.');
         break;
     case IW.COMMIT_READY:
         d.tone = 'act';
-        L.push('The trial start reached the boot menu.');
+        L.push('Trial booted: the trial start reached the boot menu.');
         if (d.image && d.image.breadcrumb)
             L.push(IW.BREADCRUMB);
         A.push(`Hold ${key} on the unit to install waffle-boot.`);

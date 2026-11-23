@@ -306,8 +306,8 @@ class InstallerUnit:
             return True
 
     def restart(self):
-        """Switched off and on: the port goes away; a written trial starts once, then the
-        installer is back."""
+        """Switched off and on: the port goes away; a written trial starts once, its boot menu
+        restarts into the OS, and the installer is back."""
         self.detach()
         self.off_until = time.monotonic() + 1.5 * self.tick
         self.holding, self.hold, self.hold_key = False, 0, 0

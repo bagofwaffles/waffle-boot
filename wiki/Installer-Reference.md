@@ -48,7 +48,12 @@ key).
   the old slot with programs alone, never an erase. When it cannot do that safely, it leaves the selector as
   it is and refuses every further write until the unit restarts ("Restart before another write").
 - **The trial start:** the new slot's front marks the start (`0xFD` to `0xFC`), and its main image marks
-  the boot menu reached (`0xFC` to `0xF0`, entry 1 of the log finished, S-02.095). Nothing else.
+  the boot menu reached (`0xFC` to `0xF0`, entry 1 of the log finished, S-02.095). Nothing else. The boot
+  menu then shows `Trial OK, restarting into the OS...` for a moment, with no key acting, and restarts as
+  Continue to OS does. In a trial start the selector already names the old slot again, so that restart
+  starts the old slot, and it starts the installer: the commit screen follows with no second switch-off.
+  The boot menu stays open instead when it was asked for (com held at power-on, Start in boot menu on), when
+  the OS load had failed, or when the mark could not be made or read back.
 - **The commit:** only after both marks: the record with the right CRC, read back with the slot's bytes,
   then the selector `{slot, 0x00}`.
   Then the active byte of the two boot partitions' headers, your OS's first.

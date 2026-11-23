@@ -505,6 +505,11 @@ enum s15_continue s15_menu_continue_check(const struct s15_menu *m);
  * view, a key test ended and a hold canceled (S-15.015), then
  * env->continue_os(). */
 enum s15_continue s15_menu_continue(struct s15_menu *m);
+/* S-02.095, S-15.175: a trial start's boot menu, opened for the trial
+ * alone, once its mark is made: busy changes nothing; otherwise the view
+ * s15_menu_continue() draws, with s15_trial_ok_line, and no key acts. The
+ * board runs env->continue_os() after a moment. */
+enum s15_continue s15_menu_trial_ok(struct s15_menu *m);
 
 /* ---- the OS write's reports (S-15.094), while env->os_write() runs -- */
 

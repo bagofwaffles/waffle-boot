@@ -935,8 +935,9 @@ unsigned inst_screen_lines(const struct inst_screen *s, struct tchk_line out[S15
 	case INST_TRIAL_WRITTEN:
 		add(&o, S15_ST_HEAD, "Trial written to ", slot_name(s->target));
 		add(&o, S15_ST_OK, "It starts once, at the next start.", NULL);
-		add(&o, S15_ST_TEXT, "1. Switch off and on: its boot menu shows.", NULL);
-		add(&o, S15_ST_TEXT, "2. Switch off and on again: keep it here.", NULL);
+		/* S-02.095: the trial start's boot menu goes on to the OS */
+		add(&o, S15_ST_TEXT, "Switch off and on: its boot menu shows for a moment,", NULL);
+		add(&o, S15_ST_TEXT, "then the installer comes back by itself.", NULL);
 		break;
 	case INST_COMMIT_READY:
 		commit_question(&o, s);

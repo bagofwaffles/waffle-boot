@@ -87,8 +87,8 @@
    "lines": [
     "head:Trial written to Slot 2",
     "ok:It starts once, at the next start.",
-    "1. Switch off and on: its boot menu shows.",
-    "2. Switch off and on again: keep it here."]},
+    "Switch off and on: its boot menu shows for a moment,",
+    "then the installer comes back by itself."]},
   {"name": "commit_ready", "phase": 7, "version": "1.0.3", "target": 1, "lock": 0, "last_rc": 255, "os": 1, "trial": 2, "hold_digit": 0, "hold_fill": 0, "hold_left_s": 0,
    "lines": [
     "head:Trial booted, do you wish to install waffle-boot v1.0.3?",

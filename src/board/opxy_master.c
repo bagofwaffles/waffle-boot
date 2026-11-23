@@ -917,11 +917,17 @@ static void load_failed(void *ctx, enum s05_fail cause)
 #if !defined(OPXY_TEST_OS)
 /* S-15.175: the setting as the slave's start read it. S-02.095: a
  * trial start opens the boot menu as the setting does, so that its mark is
- * made with the slave started too. */
+ * made with the slave started too; opened for the trial alone, it then goes
+ * on to the OS (opxy_trial_continue()).
+ * SPEC-Q: S-02.095, S-15.175 have a trial start stay in its boot menu; here
+ * one that the setting did not open goes on, by Continue to OS's restart,
+ * once the mark is made. Whether the contract wants that, and the moment
+ * the line shows (OPXY_TRIAL_SHOW_MS), is the maintainer's to confirm. */
 static bool start_in_menu(void *ctx)
 {
-	const struct opxy_master *m = ctx;
+	struct opxy_master *m = ctx;
 
+	m->trial_go = m->running_trial && !m->sv.store.start_menu;
 	return m->sv.store.start_menu || m->running_trial;
 }
 #endif

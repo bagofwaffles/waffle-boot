@@ -424,9 +424,16 @@ struct opxy_master {
 	bool running_established;
 	uint8_t running_slot;
 	/* S-02.095: the running slot is established and holds the trial mark,
-	 * and whether the boot menu's mark was made or tried */
+	 * and whether the boot menu's mark was made or tried, and made and
+	 * read back */
 	bool running_trial;
 	bool trial_marked;
+	bool trial_reached;
+	/* S-02.095, S-15.175: the boot menu opened for the trial start alone,
+	 * which goes on to the OS once its mark is made (opxy_trial_continue());
+	 * the time the trial's line is shown until */
+	bool trial_go;
+	uint64_t trial_until;
 	/* S-02.097: the running slot, its record and its image's check as the
 	 * slave's start found them: which settings sector is used */
 	struct s02_store_slot store_slot;
@@ -547,7 +554,22 @@ void opxy_start_finished(struct opxy_master *m);
 #define OPXY_TRIAL_STARTED_BYTE 0xFCu
 #define OPXY_TRIAL_REACHED_BYTE 0xF0u
 bool opxy_trial_reached_at(const struct s02_env *env, unsigned running, uint32_t *off);
+/* The mark, once; trial_reached when its program passed and the byte reads
+ * OPXY_TRIAL_REACHED_BYTE again. */
 void opxy_trial_reached(struct opxy_master *m);
+/*
+ * S-02.095, S-15.175: a trial start whose boot menu opened for the trial
+ * alone (trial_go: not by the setting, a key or a failed load) goes on to
+ * the OS once its mark is made and read back: from held mode's first pass,
+ * the screen it shows with s15_trial_ok_line for OPXY_TRIAL_SHOW_MS, no key
+ * acting, then Continue to OS's restart (S-15.190). The selector names the
+ * other slot in a trial start (opxy_trial_reached_at()), so the start after
+ * that restart runs the other slot, which starts the OS. Without the mark,
+ * or with the menu busy, the boot menu stays as it is. Called on every
+ * pass; nothing in the test OS.
+ */
+#define OPXY_TRIAL_SHOW_MS 2000u
+void opxy_trial_continue(struct opxy_master *m);
 /*
  * S-02.101: the main image's erase of the start log, so that the front's
  * count never stops for a full log and a sector takes a bounded number of

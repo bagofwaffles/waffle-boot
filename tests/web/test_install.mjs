@@ -122,7 +122,7 @@ test('describeInstall: the words for the state above', () => {
     assert.deepEqual(d.hold, { key: 1, progress: 0.64 });
     assert.deepEqual(d.slots[1].words, ['holds this image for a trial', 'trial started',
         'trial reached the boot menu']);
-    assert.deepEqual(d.lines, ['The trial start reached the boot menu.', 'Holding 1: 64 %.']);
+    assert.deepEqual(d.lines, ['Trial booted: the trial start reached the boot menu.', 'Holding 1: 64 %.']);
     assert.deepEqual(d.advice, ['Hold 1 on the unit to install waffle-boot.', inst.RETRIAL,
         inst.LEAVE]);
     assert.equal(inst.describeInstall({ ...s, os: 6 }).leave, false, 'leave only while the OS can be made active');
@@ -425,7 +425,8 @@ test('pass: checks, trial, restart, commit, done', needPython, () => withBridge(
     assert.deepEqual(at(r, 'ready').advice, ['Hold 1 on the unit to write the trial.', inst.LEAVE]);
     assert.ok(r.busy > 0, 'the port was quiet while the unit wrote');
     assert.deepEqual(at(r, 'trial written').advice[0], 'Switch off, then on: the new bootloader starts once.');
-    assert.deepEqual(at(r, 'commit ready').lines, ['The trial start reached the boot menu.']);
+    assert.deepEqual(at(r, 'commit ready').lines, ['Trial booted: the trial start reached the boot menu.']);
+    assert.match(at(r, 'trial written').advice[1], /restarts into the installer by itself/);
     assert.equal(r.last.tone, 'ok');
     assert.deepEqual(r.last.lines, ['Done: the new bootloader is kept in Slot 2.',
         'The OS is active again: switch the unit off and on and it starts its OS.']);

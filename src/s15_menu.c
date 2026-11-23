@@ -2125,20 +2125,34 @@ enum s15_continue s15_menu_continue_check(const struct s15_menu *m)
 	return S15_CONT_STARTED;
 }
 
+/* The line under the screen that was showing, whole on the panel before
+ * the shutdown begins (the board's continue_os sends the frame first);
+ * from here no key acts. */
+static void starting(struct s15_menu *m, enum s15_style st, const char *line)
+{
+	leave(m);
+	m->screen = S15_SCR_STARTING;
+	m->changes++;
+	sline(m, st, line);
+}
+
 enum s15_continue s15_menu_continue(struct s15_menu *m)
 {
 	const enum s15_continue c = s15_menu_continue_check(m);
 
 	if (c == S15_CONT_BUSY)
 		return c;
-	/* the line under the screen that was showing, whole on the panel
-	 * before the shutdown begins (the board's continue_os sends the frame
-	 * first); from here no key acts */
-	leave(m);
-	m->screen = S15_SCR_STARTING;
-	m->changes++;
-	sline(m, S15_ST_WARN, s15_cont_restarting);
+	starting(m, S15_ST_WARN, s15_cont_restarting);
 	m->env->continue_os(m->env->ctx);
+	return c;
+}
+
+enum s15_continue s15_menu_trial_ok(struct s15_menu *m)
+{
+	const enum s15_continue c = s15_menu_continue_check(m);
+
+	if (c == S15_CONT_STARTED)
+		starting(m, S15_ST_OK, s15_trial_ok_line);
 	return c;
 }
 
