@@ -421,11 +421,12 @@ static void put_item(const struct s15_geometry *g,
 }
 
 /*
- * S-15.116's rows: in column S15_PICK_INDENT an amber key badge, or for
- * a dim row the digit plain; the label from S15_PICK_LABEL_COL, the
- * detail from S15_PICK_DETAIL_COL, each clipped a column short of what
- * follows; the state right-aligned, and in PICK_ON black on a solid red
- * block, so that Yes differs from No by more than its color.
+ * S-15.116's rows: in column S15_PICK_STATE_COL the state, and in PICK_ON
+ * black on a solid red block, so that Yes differs from No by more than its
+ * color; in column S15_PICK_INDENT an amber key badge, or for a dim row the
+ * digit plain and no state; the label from S15_PICK_LABEL_COL, clipped a
+ * column short of the detail, and the detail from S15_PICK_DETAIL_COL to
+ * the row's end.
  */
 static void put_pick(const struct s15_geometry *g,
 		     const struct s15_draw_ops *d, uint16_t y, const char *s,
@@ -433,19 +434,16 @@ static void put_pick(const struct s15_geometry *g,
 {
 	const bool dim = style == S15_ST_PICK_OFF;
 	const uint16_t text = dim ? S15_DIM : S15_TEXT;
+	const size_t room = S15_COLS - S15_PICK_DETAIL_COL;
+	const size_t state_room = S15_PICK_INDENT - S15_PICK_STATE_COL - 2u;
 	struct parts pt;
-	size_t sn = 0, room = S15_COLS - S15_PICK_DETAIL_COL;
-	unsigned sc = S15_COLS;
+	size_t sn = 0;
 
 	split(s, n, &pt);
 	if (pt.n[0] == 0u)
 		return;
-	if (!dim && pt.count > 2u) {
-		sn = pt.n[2] < S15_COLS - S15_PICK_DETAIL_COL ? pt.n[2] : 0u;
-		sc = (unsigned)(S15_COLS - sn);
-		room = sc > S15_PICK_DETAIL_COL + 1u ?
-		       sc - S15_PICK_DETAIL_COL - 1u : 0u;
-	}
+	if (!dim && pt.count > 2u)
+		sn = pt.n[2] <= state_room ? pt.n[2] : 0u;
 	if (pt.n[0] > 2u)
 		put(g, d, S15_PICK_LABEL_COL, y, pt.p[0] + 2, pt.n[0] - 2u <
 		    S15_PICK_DETAIL_COL - S15_PICK_LABEL_COL - 1u ? pt.n[0] - 2u :
@@ -454,7 +452,7 @@ static void put_pick(const struct s15_geometry *g,
 		put(g, d, S15_PICK_DETAIL_COL, y, pt.p[1],
 		    pt.n[1] < room ? pt.n[1] : room, text);
 	if (sn != 0u && style == S15_ST_PICK_ON) {
-		uint16_t x = col_x(g, sc);
+		uint16_t x = col_x(g, S15_PICK_STATE_COL);
 		uint16_t w = (uint16_t)(sn * g->glyph_w + 2u * BADGE_L);
 
 		d->fill(d->ctx, (uint16_t)(x - BADGE_L + 1u), (uint16_t)(y - 1u),
@@ -465,7 +463,7 @@ static void put_pick(const struct s15_geometry *g,
 			(uint16_t)(y + BADGE_H - 2u), (uint16_t)(w - 2u), 1, S15_RED);
 		d->text(d->ctx, x, y, pt.p[2], sn, S15_BLACK, S15_RED);
 	} else if (sn != 0u) {
-		put(g, d, sc, y, pt.p[2], sn, S15_DIM);
+		put(g, d, S15_PICK_STATE_COL, y, pt.p[2], sn, S15_DIM);
 	}
 	if (dim || !is_digit(pt.p[0][0]))
 		put(g, d, S15_PICK_INDENT, y, pt.p[0], 1, S15_DIM);

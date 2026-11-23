@@ -7,6 +7,7 @@
 #include "waffle/testos.h"
 
 #include "waffle/bytes.h"
+#include "waffle/div64.h"
 #include "waffle/s17_revisions.h"
 
 /* S-13c.004 */
@@ -45,7 +46,7 @@ static uint64_t now_us(const struct s13c_panel *p)
 
 static uint32_t ms_of(uint64_t us)
 {
-	uint64_t ms = us / 1000u;
+	uint64_t ms = wb_udiv64(us, 1000u);
 
 	/* S-13c.021: at least 1. */
 	return ms == 0u ? 1u : (uint32_t)ms;
@@ -78,7 +79,7 @@ void s13c_begin(struct s13c_panel *p, const struct s13c_bus *bus,
 	p->id_valid = false;
 	p->te_misses = 0;
 	p->path = s13c_reset_decide(xmod, ymod, pa8,
-				    (uint32_t)(now_us(p) / 1000u), &hs);
+				    (uint32_t)wb_udiv64(now_us(p), 1000u), &hs);
 
 	/* S-13c.001: the first drive of RESET; on a board strapped low it
 	 * ends the strap interval's reset. */

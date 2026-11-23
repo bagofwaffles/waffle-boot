@@ -26,6 +26,7 @@ RECORD = (0xE000, 0xF000)
 SLOT = (0x10000, 0x88000)
 SLOT_MAX = 0x78000
 LOG_SECTOR = SLOT_MAX - SECTOR   # S-02.045: offset of a slot's last sector
+LOGO_SECTOR = SLOT_MAX - 3 * SECTOR   # the boot logo's header sector (src/front/fr_handoff.h)
 TAG = 0x0000B004
 META = 0xC000
 META_LEN = 0x34
@@ -247,6 +248,8 @@ def upgrade_ops(rule, sel, n=IMAGE_LEN, package=False, recovery=False):
     if rule == "conforming" and n <= LOG_SECTOR:                 # S-02.045
         ops.append(dict(cls="slot_erase", op="erase", offset=base + LOG_SECTOR, length=SECTOR))
     assert not recovery or n <= SLOT_MAX - 2 * SECTOR            # S-02.084
+    if rule == "conforming" and (package or recovery) and n <= LOGO_SECTOR:    # the boot logo's header
+        ops.append(dict(cls="slot_erase", op="erase", offset=base + LOGO_SECTOR, length=SECTOR))
     if rule == "conforming" and (package or recovery) and n <= SLOT_MAX - 2 * SECTOR:   # S-02.103
         ops.append(dict(cls="slot_erase", op="erase", offset=base + SLOT_MAX - 2 * SECTOR, length=SECTOR))
     ops.append(dict(cls="record_erase", op="erase", offset=RECORD[t], length=SECTOR))
@@ -2044,13 +2047,15 @@ SET_MAX_PAYLOAD = PAGE - SET_HEADER - 4      # 240
 SET_PAGES = SECTOR // PAGE                   # 16
 SET_SLOT_MAX = SLOT_MAX - 2 * SECTOR         # 0x76000: S-02.099, S-02.104
 SET_SECTOR = tuple(SLOT[k] + SET_SLOT_MAX for k in (0, 1))   # 0x86000, 0xfe000
-SET_FLAGS = ("developer_mode", "color", "mtp_macos", "start_in_boot_menu")
-SET_DEFAULTS = 0x04                          # developer mode off, color off, MTP macOS, start in boot menu off
+SET_FLAGS = ("developer_mode", "color", "mtp_macos", "start_in_boot_menu", "host_link_off")
+SET_DEFAULTS = 0x04                          # developer mode off, color off, MTP macOS, start in boot menu off,
+                                             # host link on (bit 4, 0x10, is payload byte 1's bit 0: off)
 
 
 def set_record(flags, stamp, payload=None, version=1, length=None, magic=SET_MAGIC, crc=None):
-    """S-02.096: magic, version u16, length u16, stamp u32, payload, CRC-32 over all before it."""
-    pl = bytes([flags]) if payload is None else payload
+    """S-02.096: magic, version u16, length u16, stamp u32, payload, CRC-32 over all before it. The
+    payload a writer writes: byte 0's flags, and with the host link off (0x10) byte 1, 0x01."""
+    pl = (bytes([flags & 0x0F]) + (b"\x01" if flags & 0x10 else b"")) if payload is None else payload
     n = len(pl) if length is None else length
     head = magic + version.to_bytes(2, "little") + n.to_bytes(2, "little") + stamp.to_bytes(4, "little") + pl
     c = zlib.crc32(head) if crc is None else crc
@@ -2070,7 +2075,8 @@ def set_decode(page, stamp):
         return None, "crc"
     if int.from_bytes(page[8:12], "little") != stamp:
         return None, "stamp"
-    return page[SET_HEADER] & 0x0F, "valid"
+    host_off = 0x10 if n >= 2 and page[SET_HEADER + 1] & 0x01 else 0
+    return (page[SET_HEADER] & 0x0F) | host_off, "valid"
 
 
 def set_pages(sector):
@@ -2164,8 +2170,8 @@ def set_torn_check(stamps):
 
 def set_recovery_ops(ops, t):
     """S-02.103: a recovery image write's ops, the erase of target t's settings sector named settings_erase,
-    checked to come right after the erase of its last sector (the start log), before the trial mark or the
-    record erase."""
+    checked to come right after the erase of its last sector (the start log), or of the boot logo's header
+    sector that follows it, before the trial mark or the record erase."""
     log = SLOT[t] + LOG_SECTOR
     out = []
     for o in ops:
@@ -2176,7 +2182,9 @@ def set_recovery_ops(ops, t):
         out.append(o)
     k = [i for i, o in enumerate(out) if o["cls"] == "settings_erase"]
     nxt = [i for i, o in enumerate(out) if o["cls"] in ("trial_log", "record_erase")]
-    assert len(k) == 1 and out[k[0]]["offset"] == SET_SECTOR[t] and out[k[0] - 1]["offset"] == log
+    before = out[k[0] - 1]["offset"]
+    assert len(k) == 1 and out[k[0]]["offset"] == SET_SECTOR[t] and \
+        (before == log or (before == SLOT[t] + LOGO_SECTOR and out[k[0] - 2]["offset"] == log))
     assert nxt and k[0] < nxt[0]
     return out
 
@@ -2194,7 +2202,7 @@ def set_recovery():
             nxt = next(o["cls"] for o in out if o["cls"] in ("trial_log", "record_erase"))
             writes.append({"way": way, "running": a, "target": t, "length": "0x%x" % IMAGE_LEN,
                            "settings_sector": "0x%05x" % SET_SECTOR[t],
-                           "settings_erase": {"after": "the log sector's erase",
+                           "settings_erase": {"after": "the log sector's and the logo header sector's erases",
                                               "before": "the trial mark" if nxt == "trial_log"
                                               else "the record erase"},
                            "ops": [{"op": o["op"], "offset": "0x%05x" % o["offset"], "length": o["length"],
@@ -2245,7 +2253,10 @@ def settings_sector():
         ("old_record_then_new", set_sector_of({0: b"WBST\x01\x00\x01\x00\x01" +
                                                zlib.crc32(b"WBST\x01\x00\x01\x00\x01").to_bytes(4, "little"),
                                                1: menu})),
-        ("flag_bits_4_to_7", set_sector_of({0: set_record(0xF8, st)})),
+        ("flag_bits_4_to_7", set_sector_of({0: set_record(0xF8 & 0x0F, st, payload=b"\xf8")})),
+        ("host_link_off", set_sector_of({0: set_record(0x14, st)})),
+        ("host_link_byte_other_bits", set_sector_of({0: set_record(0, st, payload=b"\x0e\xfe")})),
+        ("host_link_off_then_on", set_sector_of({0: set_record(0x14, st), 1: dflt})),
         ("longer_unknown_bytes", set_sector_of({0: longer})),
         ("longest", set_sector_of({0: longest})),
         ("wrong_magic", set_sector_of({0: set_record(0x0E, st, magic=b"WBSU")})),
@@ -2303,6 +2314,11 @@ def settings_sector():
               ("not_valid_gap", set_sector_of({0: dflt, 2: menu})),
               ("image_bytes", pattern(SECTOR, 9))]
     for slot in (0, 1):
+        ops, after, used = set_save_ops(slot, set_sector_of({0: dflt}), 0x17, st)
+        saves.append({"name": "host_link_off", "slot": slot, "stamp": "0x%08x" % st, "flags": 0x17,
+                      "before": set_hex_pages(set_sector_of({0: dflt})), "before_pattern": None,
+                      "ops": ops, "page": used, "after": set_hex_pages(after),
+                      "footprint": ["0x%05x" % SET_SECTOR[slot], "0x%05x" % (SET_SECTOR[slot] + SECTOR)]})
         for name, sec in starts:
             ops, after, used = set_save_ops(slot, sec, 0x07, st)
             saves.append({"name": name, "slot": slot, "stamp": "0x%08x" % st, "flags": 0x07,

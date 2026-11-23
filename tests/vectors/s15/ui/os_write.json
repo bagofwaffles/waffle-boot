@@ -23,7 +23,7 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-ok:Activate\tBoot partition 2 active",
-    "ok:Firmware written.",
+    "ok:OS written.",
     "item:6 Restart",
     "back:8 Back to Developer"
    ]
@@ -50,7 +50,7 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-ok:Activate\tBoot partition 1 active",
-    "ok:Firmware written.",
+    "ok:OS written.",
     "item:6 Restart",
     "back:8 Back to Developer"
    ]
@@ -77,8 +77,8 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-ok:Activate\tBoot partition 2 active",
-    "ok:Firmware written.",
-    "warn:The eMMC did not switch back; please restart",
+    "ok:OS written.",
+    "warn:The eMMC did not switch back: restart",
     "item:6 Restart",
     "back:8 Back to Developer"
    ]
@@ -99,9 +99,9 @@
    "lines": [
     "Looking for /os.ldr...",
     "step-fail:Read /os.ldr\tFailed",
-    "error:/os.ldr not found or could not be read",
-    "dim:   Reason: the drive can't be read",
-    "   Nothing was written.",
+    "error:Can't read /os.ldr",
+    "dim:   Reason: drive unreadable",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -121,9 +121,9 @@
    "lines": [
     "Looking for /os.ldr...",
     "step-fail:Read /os.ldr\tFailed",
-    "error:/os.ldr not found or could not be read",
+    "error:Can't read /os.ldr",
     "dim:   Reason: no /os.ldr on the drive",
-    "   Nothing was written.",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -143,9 +143,9 @@
    "lines": [
     "Looking for /os.ldr...",
     "step-fail:Read /os.ldr\tFailed",
-    "error:/os.ldr not found or could not be read",
+    "error:Can't read /os.ldr",
     "dim:   Reason: /os.ldr is a directory",
-    "   Nothing was written.",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -165,9 +165,9 @@
    "lines": [
     "Looking for /os.ldr...",
     "step-fail:Read /os.ldr\tFailed",
-    "error:/os.ldr not found or could not be read",
+    "error:Can't read /os.ldr",
     "dim:   Reason: read failed, error 61",
-    "   Nothing was written.",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -187,9 +187,9 @@
    "lines": [
     "Looking for /os.ldr...",
     "step-fail:Read /os.ldr\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: 9000000 bytes, at most 8388608",
-    "   Nothing was written.",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -209,9 +209,9 @@
    "lines": [
     "Looking for /os.ldr...",
     "step-fail:Read /os.ldr\tFailed",
-    "error:Writing the OS failed",
-    "dim:   Reason: the file read differently twice",
-    "   Nothing was written.",
+    "error:OS write failed",
+    "dim:   Reason: two reads differ",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -231,9 +231,9 @@
    "lines": [
     "Looking for /os.ldr...",
     "step-fail:Read /os.ldr\tFailed",
-    "error:Writing the OS failed",
-    "dim:   Reason: not an OS the bootloader would start",
-    "   Nothing was written.",
+    "error:OS write failed",
+    "dim:   Reason: not a bootable OS",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -252,9 +252,9 @@
    "select0_failed": false,
    "lines": [
     "Looking for /os.ldr...",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: not enough memory",
-    "   Nothing was written.",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -275,9 +275,9 @@
     "Looking for /os.ldr...",
     "step-ok:Read /os.ldr\t100 bytes",
     "step-fail:Check image\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: 100 bytes, at least 9488",
-    "   Nothing was written.",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -298,9 +298,9 @@
     "Looking for /os.ldr...",
     "step-ok:Read /os.ldr\t4194304 bytes",
     "step-fail:Check image\tFailed",
-    "error:Writing the OS failed",
-    "dim:   Reason: needs 8193 sectors, the partition has 8192",
-    "   Nothing was written.",
+    "error:OS write failed",
+    "dim:   Reason: needs 8193 sectors, partition has 8192",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -321,9 +321,9 @@
     "Looking for /os.ldr...",
     "step-ok:Read /os.ldr\t1843200 bytes",
     "step-fail:Check image\tFailed",
-    "error:Writing the OS failed",
-    "dim:   Reason: the boot partition size is unknown",
-    "   Nothing was written.",
+    "error:OS write failed",
+    "dim:   Reason: boot partition size unknown",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -345,9 +345,9 @@
     "step-ok:Read /os.ldr\t1843200 bytes",
     "step-ok:Check image\tFits: 3601 of 8192 sectors",
     "step-fail:Target\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: selecting partition 1 failed",
-    "   Nothing was written.",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -369,9 +369,9 @@
     "step-ok:Read /os.ldr\t1843200 bytes",
     "step-ok:Check image\tFits: 3601 of 8192 sectors",
     "step-fail:Target\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: reading sector 0 of partition 1 failed",
-    "   Nothing was written.",
+    "   Nothing written.",
     "back:8 Back to Developer"
    ]
   },
@@ -394,9 +394,9 @@
     "step-ok:Check image\tFits: 3601 of 8192 sectors",
     "step-ok:Target\tBoot partition 2",
     "step-fail:Erase\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: erasing group 3 of partition 2 failed",
-    "   The active boot partition is unchanged.",
+    "   Active boot partition unchanged.",
     "back:8 Back to Developer"
    ]
   },
@@ -420,9 +420,9 @@
     "step-ok:Target\tBoot partition 2",
     "step-ok:Erase\tDone",
     "step-fail:Write\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: writing sector 1025 of partition 2 failed",
-    "   The active boot partition is unchanged.",
+    "   Active boot partition unchanged.",
     "back:8 Back to Developer"
    ]
   },
@@ -446,10 +446,10 @@
     "step-ok:Target\tBoot partition 1",
     "step-ok:Erase\tDone",
     "step-fail:Write\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: writing sector 1 of partition 1 failed",
-    "   The active boot partition is unchanged.",
-    "warn:The eMMC did not switch back; please restart",
+    "   Active boot partition unchanged.",
+    "warn:The eMMC did not switch back: restart",
     "back:8 Back to Developer"
    ]
   },
@@ -474,9 +474,9 @@
     "step-ok:Erase\tDone",
     "step-ok:Write\tDone",
     "step-fail:Verify\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: reading sector 129 of partition 2 failed",
-    "   The active boot partition is unchanged.",
+    "   Active boot partition unchanged.",
     "back:8 Back to Developer"
    ]
   },
@@ -501,9 +501,9 @@
     "step-ok:Erase\tDone",
     "step-ok:Write\tDone",
     "step-fail:Verify\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: sector 3600 of partition 2 read back wrong",
-    "   The active boot partition is unchanged.",
+    "   Active boot partition unchanged.",
     "back:8 Back to Developer"
    ]
   },
@@ -529,9 +529,9 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-fail:Activate\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: sector 0 of partition 2 read back wrong",
-    "   The active boot partition is unchanged.",
+    "   Active boot partition unchanged.",
     "back:8 Back to Developer"
    ]
   },
@@ -557,7 +557,7 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-fail:Activate\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: writing sector 0 of partition 2 failed",
     "warn:Partition 2 may be active with a bad header",
     "back:8 Back to Developer"
@@ -585,9 +585,9 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-fail:Activate\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: writing sector 0 of partition 1 failed",
-    "warn:Partition 1 is still active: the old OS boots",
+    "warn:Partition 1 still active: old OS boots",
     "back:8 Back to Developer"
    ]
   },
@@ -613,9 +613,9 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-fail:Activate\tFailed",
-    "error:Writing the OS failed",
+    "error:OS write failed",
     "dim:   Reason: selecting partition 2 failed",
-    "warn:The new OS boots; partition 2 may still be active",
+    "warn:New OS boots; partition 2 may still be active",
     "back:8 Back to Developer"
    ]
   },
@@ -641,9 +641,9 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-fail:Activate\tFailed",
-    "error:Writing the OS failed",
-    "dim:   Reason: the eMMC did not commit its cache",
-    "   The active boot partition is unchanged.",
+    "error:OS write failed",
+    "dim:   Reason: the eMMC did not commit",
+    "   Active boot partition unchanged.",
     "back:8 Back to Developer"
    ]
   },
@@ -669,9 +669,9 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-fail:Activate\tFailed",
-    "error:Writing the OS failed",
-    "dim:   Reason: the eMMC did not commit its cache",
-    "warn:The new OS boots; partition 2 may still be active",
+    "error:OS write failed",
+    "dim:   Reason: the eMMC did not commit",
+    "warn:New OS boots; partition 2 may still be active",
     "back:8 Back to Developer"
    ]
   },
@@ -697,9 +697,9 @@
     "step-ok:Write\tDone",
     "step-ok:Verify\tDone",
     "step-fail:Activate\tFailed",
-    "error:Writing the OS failed",
-    "dim:   Reason: the eMMC did not commit its cache",
-    "warn:Written, but the eMMC did not confirm it",
+    "error:OS write failed",
+    "dim:   Reason: the eMMC did not commit",
+    "warn:Written; the eMMC did not confirm it",
     "back:8 Back to Developer"
    ]
   }

@@ -446,6 +446,11 @@ bool s11_select(struct s11_step_env *env, s11_ask_fn ask, void *ctx)
 		return false;
 	case S11_ANSWER_UNASKED:
 	default:
+		/* an invalid package runs only after S-15.197's prompt */
+		if (env->sig == S11_SIG_INVALID) {
+			env->selected = 0;
+			return false;
+		}
 		env->selected = s11_unasked(env);
 		return true;
 	}

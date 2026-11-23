@@ -424,7 +424,7 @@ static const struct fr_ui *rui;		/* the screen with keys; NULL: the main one */
 static const char *rows[FR_LINES + 1u];
 
 static const uint16_t v_a[4] = { 1, 2, 3, 0 }, v_b[4] = { 1, 3, 0, 0 };
-static const char *want_status = "v1.2.3 F21";	/* the running image's, v_a */
+static const char *want_status = "v1.2.3 F23";	/* the running image's, v_a */
 static bool paint_check = true;		/* rec_draw() checks the painter */
 static bool clip_ok;			/* a slot line may lose parts at the clip */
 static struct fr_screen rs_prev;	/* the screen inc holds */
@@ -456,7 +456,7 @@ static void rec_base(void)
 	rp.st = &rst;
 	rp.phase = FR_PH_IDLE;
 	rp.w.target = FR_NO_SLOT;
-	want_status = "v1.2.3 F21";
+	want_status = "v1.2.3 F23";
 }
 
 /* The x a body row's parts end at, as fr_draw.c lays them out with no
@@ -600,8 +600,8 @@ static void rec_draw(bool usb)
 	}
 	/* the status bar: the running image's version and the front's, and
 	 * no key hint */
-	CHECK(strcmp(rs.status_right, rst.own_desc ? want_status : "F21") == 0);
-	CHECK(FR_FRONT_VERSION == 21u);
+	CHECK(strcmp(rs.status_right, rst.own_desc ? want_status : "F23") == 0);
+	CHECK(FR_FRONT_VERSION == 23u);
 	CHECK(strcmp(rs.status_left, usb ? "USB" : "") == 0);
 }
 
@@ -656,11 +656,11 @@ static bool shows(const char *text)
 
 /* A failure, and that the unit starts as before. S-15.151's
  * recovery:failed asks for "as before" or "unchanged" in so many words;
- * the line now says "as it did before". */
+ * the line says "as before". */
 static bool failed_shown(void)
 {
 	return row_with((const char *const[]){ "fail*|no write", NULL }) &&
-	       shows("The unit starts as it did before");
+	       shows("The unit starts as before");
 }
 
 static const char *const s1[] = { "slot", "1", NULL }, *const s2[] = { "slot", "2", NULL };
@@ -678,7 +678,7 @@ static void test_rec_idle(void)
 	/* with no computer: how to write an image, and the way to the slot
 	 * menu; no target yet, as no write can come */
 	CHECK(rs.line[2][0] == '\0' && rs.line[4][0] == '\0');
-	CHECK(strcmp(rs.line[3], "Connect to a computer to write an image") == 0);
+	CHECK(strcmp(rs.line[3], "Connect a computer to write") == 0);
 	CHECK(strcmp(rs.line[5], "1  Change the boot slot (optional)") == 0);
 	CHECK(has("recovery:menu", NULL) && has("recovery:computer", NULL));
 	CHECK(rs.status_left[0] == '\0');
@@ -693,7 +693,7 @@ static void test_rec_idle(void)
 	/* connected: the slot a write replaces */
 	rec_draw(true);
 	CHECK(has("recovery:target", n2) && !has("recovery:target", n1));
-	CHECK(strcmp(rs.line[3], "Connected: a write from the computer replaces slot 2") == 0);
+	CHECK(strcmp(rs.line[3], "Connected: the computer writes slot 2") == 0);
 	CHECK(strcmp(rs.line[5], "1  Change the boot slot (optional)") == 0);
 	CHECK(strcmp(rs.status_left, "USB") == 0);
 
@@ -986,7 +986,7 @@ static void test_rec_new_results(void)
 	rp.phase = FR_PH_FAILED;
 	rp.result = FR_WR_READ;
 	rec_draw(false);
-	CHECK(row_with((const char *const[]){ "no write|fail*", "read", NULL }));
+	CHECK(row_with((const char *const[]){ "no write|fail*", "unreadable", NULL }));
 	rp.result = FR_WR_ONLY_GOOD;
 	rec_draw(false);
 	CHECK(row_with((const char *const[]){ "no write", "image", "checked slot", NULL }));
@@ -1118,7 +1118,7 @@ static void test_rec_refusals(void)
 	rst.running.established = false;
 	fr_rec_target(&rst);
 	rec_draw(true);
-	CHECK(row_with((const char *const[]){ "no write", "cannot tell", "running", NULL }));
+	CHECK(row_with((const char *const[]){ "no write", "running", "unknown", NULL }));
 	CHECK(!has("recovery:target", n1) && !has("recovery:target", n2));
 	/* not the selected one */
 	rec_base();
@@ -1323,7 +1323,7 @@ static void test_rec_trial(void)
 	rp.len = 0x4000u;
 	rp.got = 0x1000u;
 	rec_draw(true);
-	CHECK(row_with((const char *const[]){ "trial", "asked", "started once", NULL }));
+	CHECK(row_with((const char *const[]){ "trial", "starts once", NULL }));
 	CHECK(target_rows(&slot) == 1u && slot == 2u);
 	CHECK(!anywhere("replaces"));
 	CHECK(!anywhere("change"));
@@ -1349,7 +1349,7 @@ static void test_rec_trial(void)
 	rp.w.result = FR_WR_OK;
 	rec_draw(true);
 	CHECK(has("recovery:trial:written", n2) && !has("recovery:trial:written", n1));
-	CHECK(shows("Restart to start it once (host or power switch)"));
+	CHECK(shows("Restart to try it"));
 	CHECK(row_with(off_on));
 	CHECK(shows("Slot 2 WB v1.3.0 tried boot slot"));
 	/* the other order: slot 2 runs, slot 1 is tried */
@@ -1363,7 +1363,7 @@ static void test_rec_trial(void)
 	rp.plan_target = 0;
 	rp.len = 0x4000u;
 	rec_draw(false);
-	CHECK(row_with((const char *const[]){ "trial", "asked", NULL }));
+	CHECK(row_with((const char *const[]){ "trial", "starts once", NULL }));
 	CHECK(target_rows(&slot) == 1u && slot == 1u);
 
 	/* a trial start: slot 2 tried and running, slot 1 good and selected
@@ -1405,7 +1405,7 @@ static void test_rec_trial(void)
 	rp.len = 0x4000u;
 	rp.got = 0x2000u;
 	rec_draw(false);
-	CHECK(shows("Slot 2, which was tried, is to be kept") && !shows("Slot 1, which"));
+	CHECK(shows("Slot 2 (tried) will be kept") && !shows("Slot 1 (tried)"));
 	CHECK(!has("recovery:selected", s2));
 	CHECK(target_rows(&slot) == 1u && slot == 2u);
 	rp.phase = FR_PH_WRITING;
@@ -1420,8 +1420,8 @@ static void test_rec_trial(void)
 	rp.w.state = FR_WS_DONE;
 	rp.w.result = FR_WR_OK;
 	rec_draw(false);
-	CHECK(shows("Done: slot 2 is kept as the boot slot"));
-	CHECK(shows("Restart to start it (host or power switch)"));
+	CHECK(shows("Done: slot 2 kept as the boot slot"));
+	CHECK(shows("Restart to start it"));
 	CHECK(!shows("which was tried"));
 
 	/* the refusals of S-02.093: 19 for a trial and a select, 20, 21, and
@@ -1495,12 +1495,12 @@ static void test_rec_main(void)
 	ui_base();
 	memcpy(rst.desc.bl_version, v_real, sizeof v_real);
 	memcpy(rst.slot[0].desc.bl_version, v_real, sizeof v_real);
-	want_status = "v1.0.10 F21";
+	want_status = "v1.0.10 F23";
 	rec_draw(true);
 	CHECK(strcmp(rs.line[0], "Slot 1 WB v1.0.10 checked running boot slot") == 0);
 	CHECK(strcmp(rs.line[1], "Slot 2 WB v1.3.0 checked") == 0);
 	CHECK(rs.ink[0] == FR_INK_TEXT && rs.ink[1] == FR_INK_TEXT);
-	CHECK(strcmp(rs.status_right, "v1.0.10 F21") == 0 && strcmp(rs.status_left, "USB") == 0);
+	CHECK(strcmp(rs.status_right, "v1.0.10 F23") == 0 && strcmp(rs.status_left, "USB") == 0);
 	/* no key hint in the status bar, with or without USB */
 	CHECK(!s15t_word_in(rs.status_left, "1", NULL) && !s15t_word_in(rs.status_right, "key", NULL));
 	rec_draw(false);
@@ -1538,7 +1538,7 @@ static void test_rec_main(void)
 	ui_base();
 	rst.own_desc = false;
 	rec_draw(false);
-	CHECK(strcmp(rs.status_right, "F21") == 0);
+	CHECK(strcmp(rs.status_right, "F23") == 0);
 	/* the running slot not known: neither line says running */
 	ui_base();
 	rst.running.established = false;
@@ -1674,7 +1674,8 @@ static void test_rec_menu(void)
 	CHECK(strcmp(rs.line[8], "8  Back") == 0);
 	CHECK(rs.line[2][0] == '\0' && rs.line[7][0] == '\0');
 	CHECK(strstr(rs.line[0], "Slot 1") == rs.line[0] && strstr(rs.line[1], "Slot 2") == rs.line[1]);
-	/* slot 2 tried and started: all four */
+	/* slot 2 tried and started: keep it, which makes it the boot slot, so
+	 * no switch row */
 	rst.slot[1].good = false;
 	rst.slot[1].tried = true;
 	rst.slot[1].started = true;
@@ -1683,15 +1684,38 @@ static void test_rec_menu(void)
 	fr_rec_target(&rst);
 	rec_draw(true);
 	menu_items(items, sizeof items);
-	CHECK(strcmp(items, "1  Try slot 2 once (suggested)|2  Make slot 2 the boot slot|"
-			    "3  Keep slot 2|4  Put slot 2's record back") == 0);
-	/* tried, not started: no keep */
+	CHECK(strcmp(items, "1  Try slot 2 once (suggested)|3  Keep slot 2|"
+			    "4  Put slot 2's record back") == 0);
+	/* tried, not started: no keep, and the switch row */
 	rst.slot[1].started = false;
 	rst.slot[1].log0 = 0xFDu;
 	rec_draw(true);
 	menu_items(items, sizeof items);
 	CHECK(strcmp(items, "1  Try slot 2 once (suggested)|2  Make slot 2 the boot slot|"
 			    "4  Put slot 2's record back") == 0);
+	/* the switch row is left out exactly where the keep row shows, over
+	 * slot 2's states */
+	for (unsigned v = 0; v < 16u; v++) {
+		ui_base();
+		rst.slot[1].good = (v & 1u) != 0u;
+		rst.slot[1].tried = !rst.slot[1].good && (v & 2u) != 0u;
+		rst.slot[1].started = rst.slot[1].tried && (v & 4u) != 0u;
+		rst.slot[1].has_log = true;
+		rst.slot[1].log0 = rst.slot[1].started ? 0xFCu : 0xFDu;
+		rst.sel.index = (v & 8u) ? 0x01u : 0x00u;
+		fr_rec_target(&rst);
+		rec_draw(true);
+		menu_items(items, sizeof items);
+		{
+			struct fr_act_plan sw;
+			const bool keep = strstr(items, "3  Keep slot 2") != NULL;
+
+			fr_rec_act(&rst, FR_ACT_SWITCH, true, &sw);
+			CHECK(keep == fr_ui_offers(&rst, FR_ACT_KEEP));
+			CHECK((strstr(items, "2  Make slot 2") != NULL) ==
+			      (sw.status == FR_WR_OK && !keep));
+		}
+	}
 	/* slot 2 runs, slot 1 bad and holding no stream: nothing offered */
 	ui_base();
 	rst.running.slot = 1;
@@ -1703,7 +1727,7 @@ static void test_rec_menu(void)
 	rec_draw(true);
 	menu_items(items, sizeof items);
 	CHECK(strncmp(items, "1  Try slot 1 once", 18) == 0 && strstr(items, "Make") == NULL);
-	CHECK(strcmp(rs.line[7], "Slot 1 holds nothing the unit can start") == 0);
+	CHECK(strcmp(rs.line[7], "Slot 1 holds nothing that starts") == 0);
 	/* a trial start: slot 2 tried and runs, slot 1 trusted: keep slot 2,
 	 * the running slot; no try or switch, slot 1 already starts */
 	ui_base();
@@ -1716,7 +1740,7 @@ static void test_rec_menu(void)
 	rec_draw(true);
 	menu_items(items, sizeof items);
 	CHECK(strcmp(items, "3  Keep slot 2, the running slot") == 0);
-	CHECK(strcmp(rs.line[7], "Slot 1 is the boot slot: it starts on every start") == 0);
+	CHECK(strcmp(rs.line[7], "Slot 1 is the boot slot already") == 0);
 	/* a try written, not started: slot 2 named once */
 	ui_base();
 	rst.sel.index = 0xFF;
@@ -1734,13 +1758,13 @@ static void test_rec_menu(void)
 	rst.running.established = false;
 	fr_rec_target(&rst);
 	rec_draw(true);
-	CHECK(strcmp(rs.line[3], "No write: the unit cannot tell which slot is running") == 0);
+	CHECK(strcmp(rs.line[3], "No write: running slot unknown") == 0);
 	CHECK(strcmp(rs.line[8], "8  Back") == 0);
 	/* an action that did not start: why, on row 7 */
 	ui_base();
 	ui.refusal = FR_WR_FLASH;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[7], "Failed: the flash did not take it; write again") == 0);
+	CHECK(strcmp(rs.line[7], "Failed: flash write; write again") == 0);
 	CHECK(rs.ink[7] == FR_INK_ERROR);
 	ui.refusal = FR_WR_OK;
 	/* nothing at all to choose: the selector could not be read */
@@ -1748,7 +1772,7 @@ static void test_rec_menu(void)
 	rst.read_error = true;
 	fr_rec_target(&rst);
 	rec_draw(true);
-	CHECK(strcmp(rs.line[3], "Nothing to choose now") == 0);
+	CHECK(strcmp(rs.line[3], "Nothing to choose") == 0);
 	/* while a write runs, the main screen whatever the keys' screen */
 	ui_base();
 	rp.phase = FR_PH_WRITING;
@@ -1770,26 +1794,26 @@ static void test_rec_confirm(void)
 		uint8_t act, tier;
 		const char *r2, *r3, *r4;
 	} cs[] = {
-		{ FR_ACT_TRY, FR_TIER_SAME, "Slot 2 (v1.3.0) will start once, as a trial", "",
+		{ FR_ACT_TRY, FR_TIER_SAME, "Slot 2 (v1.3.0) starts once, as a trial", "",
 		  "If it does not start, switch off and on: slot 1 boots" },
-		{ FR_ACT_TRY, FR_TIER_FRONT, "Slot 2 (v1.3.0) will start once, as a trial",
-		  "It has another front: recovery may not open from it",
+		{ FR_ACT_TRY, FR_TIER_FRONT, "Slot 2 (v1.3.0) starts once, as a trial",
+		  "Another front: recovery may not open",
 		  "If it does not start, switch off and on: slot 1 boots" },
-		{ FR_ACT_TRY, FR_TIER_FOREIGN, "Slot 2 (v1.3.0) will start once, as a trial",
-		  "It is not a waffle-boot image: no recovery from there",
+		{ FR_ACT_TRY, FR_TIER_FOREIGN, "Slot 2 (v1.3.0) starts once, as a trial",
+		  "Not waffle-boot: no recovery from it",
 		  "If it does not start, switch off and on: slot 1 boots" },
-		{ FR_ACT_TRY, FR_TIER_BAD, "Slot 2 (an image) will start once, as a trial",
+		{ FR_ACT_TRY, FR_TIER_BAD, "Slot 2 (an image) starts once, as a trial",
 		  "Its check failed: it may not start",
 		  "If it does not start, switch off and on: slot 1 boots" },
 		{ FR_ACT_SWITCH, FR_TIER_SAME, "Slot 2 (v1.3.0) will be the boot slot",
-		  "A trial first costs one restart, and is safer", "" },
+		  "A trial first is safer", "" },
 		{ FR_ACT_SWITCH, FR_TIER_FRONT, "Slot 2 (v1.3.0) will be the boot slot",
-		  "It has another front: recovery may not open from it", "Try it once first: 8 then 1" },
+		  "Another front: recovery may not open", "Try it once first: 8 then 1" },
 		{ FR_ACT_SWITCH, FR_TIER_FOREIGN, "Slot 2 (v1.3.0) will be the boot slot",
-		  "It is not a waffle-boot image: no recovery from there",
+		  "Not waffle-boot: no recovery from it",
 		  "Try it once first: 8 then 1" },
 		{ FR_ACT_SWITCH, FR_TIER_BAD, "Slot 2 (an image) will be the boot slot",
-		  "Its check failed: nothing will ever check it again",
+		  "Its check failed: nothing will check it again",
 		  "There may be no way back without a flash programmer" },
 	};
 
@@ -1827,14 +1851,14 @@ static void test_rec_confirm(void)
 	ui.act = FR_ACT_KEEP;
 	ui.hold_pct = 100;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[2], "Slot 2, which was tried, will be kept:") == 0);
-	CHECK(strcmp(rs.line[3], "it will be the boot slot") == 0);
+	CHECK(strcmp(rs.line[2], "Slot 2 will be kept as the boot slot") == 0);
+	CHECK(rs.line[3][0] == '\0');
 	CHECK(rs.bar_pm == 1000u);
 	ui.act = FR_ACT_PUT_BACK;
 	ui.hold_pct = 0;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[2], "Slot 2's record will be put back:") == 0);
-	CHECK(strcmp(rs.line[3], "it reads checked again; the unit starts as it does now") == 0);
+	CHECK(strcmp(rs.line[2], "Slot 2's record goes back: checked again") == 0);
+	CHECK(strcmp(rs.line[3], "Starts are unchanged") == 0);
 	CHECK(rs.bar_line == 7 && rs.bar_pm == 0u);
 	ui_base();
 	rst.running.slot = 1;
@@ -1843,7 +1867,7 @@ static void test_rec_confirm(void)
 	fr_rec_target(&rst);
 	ui.act = FR_ACT_KEEP;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[2], "Slot 2, which was tried, will be kept:") == 0);
+	CHECK(strcmp(rs.line[2], "Slot 2 will be kept as the boot slot") == 0);
 	/* slot 2 runs: a try of slot 1 falls back to slot 2 */
 	ui_base();
 	rst.running.slot = 1;
@@ -1851,7 +1875,7 @@ static void test_rec_confirm(void)
 	fr_rec_target(&rst);
 	ui.act = FR_ACT_TRY;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[2], "Slot 1 (v1.2.3) will start once, as a trial") == 0);
+	CHECK(strcmp(rs.line[2], "Slot 1 (v1.2.3) starts once, as a trial") == 0);
 	CHECK(strcmp(rs.line[4], "If it does not start, switch off and on: slot 2 boots") == 0);
 	rui = NULL;
 }
@@ -1872,19 +1896,19 @@ static void test_rec_countdown(void)
 		rp.count_left = (uint8_t)left;
 		rec_draw(true);
 		CHECK(strcmp(rs.title, "Recovery") == 0);
-		CHECK(strcmp(rs.line[2], "Slot 2 will be erased and written with v1.0.10") == 0);
-		CHECK(strcmp(rs.line[3], "and is the boot slot") == 0);
+		CHECK(strcmp(rs.line[2], "Slot 2: erased, then written with v1.0.10") == 0);
+		CHECK(strcmp(rs.line[3], "then made the boot slot") == 0);
 		CHECK(rs.line[4][0] == '\0' && rs.line[5][0] == '\0');
 		{
 			char want[FR_COLS + 1];
 
-			strcpy(want, "Switch the unit off within ");
+			strcpy(want, "Switch off within ");
 			want[strlen(want) + (left >= 10u ? 2u : 1u)] = '\0';
 			if (left >= 10u) {
-				want[strlen("Switch the unit off within ")] = (char)('0' + left / 10u);
-				want[strlen("Switch the unit off within ") + 1u] = (char)('0' + left % 10u);
+				want[strlen("Switch off within ")] = (char)('0' + left / 10u);
+				want[strlen("Switch off within ") + 1u] = (char)('0' + left % 10u);
 			} else {
-				want[strlen("Switch the unit off within ")] = (char)('0' + left);
+				want[strlen("Switch off within ")] = (char)('0' + left);
 			}
 			strcat(want, " s to stop");
 			CHECK(strcmp(rs.line[6], want) == 0);
@@ -1903,31 +1927,31 @@ static void test_rec_countdown(void)
 	/* forced */
 	rp.flags = FR_BEGIN_F_FORCE;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[4], "Forced: the unit's own refusals are off") == 0);
+	CHECK(strcmp(rs.line[4], "Forced: refusals are off") == 0);
 	/* in place, with no version known */
 	rp.flags = FR_BEGIN_F_RUNNING;
 	rp.w.way = FR_WAY_IN_PLACE;
 	rp.w.target = 0;
 	rp.has_version = false;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[2], "Slot 1, the running slot, will be written in place") == 0);
-	CHECK(strcmp(rs.line[3], "with an image: no slot to fall back on") == 0);
+	CHECK(strcmp(rs.line[2], "Slot 1 (running) will be written in place") == 0);
+	CHECK(strcmp(rs.line[3], "with an image: no fallback") == 0);
 	/* a trial write */
 	rp.flags = FR_BEGIN_F_TRIAL;
 	rp.w.way = FR_WAY_TRIAL;
 	rp.w.target = 1;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[3], "and started once, as a trial, at the next start") == 0);
+	CHECK(strcmp(rs.line[3], "and tried once at the next start") == 0);
 	CHECK(strcmp(rs.line[4], "If it does not start, switch off and on: slot 1 boots") == 0);
 	/* a select first */
 	rp.flags = FR_BEGIN_F_RUNNING;
 	rp.w.way = FR_WAY_SELECT_FIRST;
 	rp.w.target = 0;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[3], "It is running; slot 2 becomes the boot slot first") == 0);
+	CHECK(strcmp(rs.line[3], "Running: slot 2 becomes the boot slot first") == 0);
 	rp.w.way = FR_WAY_PLAIN;
 	rec_draw(true);
-	CHECK(strcmp(rs.line[3], "It is the running slot; slot 2 stays the boot slot") == 0);
+	CHECK(strcmp(rs.line[3], "Running: slot 2 stays the boot slot") == 0);
 	/* an action from the host: a try, its tier's warning */
 	rp.flags = 0;
 	rp.w.way = FR_WAY_TRY;
@@ -1937,9 +1961,9 @@ static void test_rec_countdown(void)
 	rp.has_version = true;
 	memcpy(rp.version, v_b, sizeof v_b);
 	rec_draw(true);
-	CHECK(strcmp(rs.line[2], "Slot 2 (v1.3.0) will start once, as a trial") == 0);
-	CHECK(strcmp(rs.line[3], "It has another front: recovery may not open from it") == 0);
-	CHECK(strcmp(rs.line[6], "Switch the unit off within 15 s to stop") == 0);
+	CHECK(strcmp(rs.line[2], "Slot 2 (v1.3.0) starts once, as a trial") == 0);
+	CHECK(strcmp(rs.line[3], "Another front: recovery may not open") == 0);
+	CHECK(strcmp(rs.line[6], "Switch off within 15 s to stop") == 0);
 }
 
 /* The done screen: what was done, how to start it, never a refusal of the
@@ -1951,21 +1975,21 @@ static void test_rec_done(void)
 		uint8_t way, target;
 		const char *r5, *r6;
 	} ds[] = {
-		{ FR_WAY_PLAIN, 1, "Done: slot 2 is written and is the boot slot",
-		  "Restart to start it (host or power switch)" },
-		{ FR_WAY_SELECT_FIRST, 0, "Done: slot 1 is written and is the boot slot",
-		  "Restart to start it (host or power switch)" },
-		{ FR_WAY_TRIAL, 1, "Done: slot 2 is written for one trial start",
-		  "Restart to start it once (host or power switch)" },
+		{ FR_WAY_PLAIN, 1, "Done: slot 2 written, now the boot slot",
+		  "Restart to start it" },
+		{ FR_WAY_SELECT_FIRST, 0, "Done: slot 1 written, now the boot slot",
+		  "Restart to start it" },
+		{ FR_WAY_TRIAL, 1, "Done: slot 2 written for one trial",
+		  "Restart to try it" },
 		{ FR_WAY_TRY, 1, "Done: slot 2 starts once, as a trial",
-		  "Restart to start it once (host or power switch)" },
+		  "Restart to try it" },
 		{ FR_WAY_SWITCH, 1, "Done: slot 2 is the boot slot",
-		  "Restart to start it (host or power switch)" },
-		{ FR_WAY_KEEP, 1, "Done: slot 2 is kept as the boot slot",
-		  "Restart to start it (host or power switch)" },
-		{ FR_WAY_SELECT, 1, "Done: slot 2 is kept as the boot slot",
-		  "Restart to start it (host or power switch)" },
-		{ FR_WAY_PUT_BACK, 1, "Done: slot 2's record is back; it is checked", "" },
+		  "Restart to start it" },
+		{ FR_WAY_KEEP, 1, "Done: slot 2 kept as the boot slot",
+		  "Restart to start it" },
+		{ FR_WAY_SELECT, 1, "Done: slot 2 kept as the boot slot",
+		  "Restart to start it" },
+		{ FR_WAY_PUT_BACK, 1, "Done: slot 2's record is back: checked", "" },
 	};
 
 	for (unsigned i = 0; i < ARRAY_LEN(ds); i++) {
@@ -1996,7 +2020,7 @@ static void test_rec_done(void)
 		CHECK(strcmp(rs.line[6], ds[i].r5) == 0);
 		rp.refused = FR_WR_ALREADY;
 		rec_draw(true);
-		CHECK(strcmp(rs.line[4], "Nothing to do: that slot is the boot slot already") == 0);
+		CHECK(strcmp(rs.line[4], "Already the boot slot") == 0);
 		rp.refused = FR_WR_OK;
 	}
 	/* not shown in another phase */
@@ -2040,7 +2064,7 @@ static void test_rec_fits(void)
 				memcpy(rst.slot[0].desc.bl_version, v_real, sizeof v_real);
 				memcpy(rst.slot[1].desc.bl_version, v_real, sizeof v_real);
 				memcpy(rst.desc.bl_version, v_real, sizeof v_real);
-				want_status = "v1.0.10 F21";
+				want_status = "v1.0.10 F23";
 				fr_rec_target(&rst);
 				rp.made = (v & 1u) != 0u;
 				rp.flags = (v & 2u) ? FR_BEGIN_F_SELECT : 0u;
@@ -2156,7 +2180,7 @@ static void test_parts(void)
 	fr_screen_text(&s, "Recovery: confirm");
 	for (unsigned i = 0; i < FR_LINES; i++)
 		fr_screen_line(&s, i, (enum fr_ink)(i % 6u), lines[i]);
-	fr_screen_status(&s, "USB", "v0.9.36 F21");
+	fr_screen_status(&s, "USB", "v0.9.36 F23");
 	CHECK(row_misses(&s) == 0u);
 	/* the cut ends: an argument, a badge's digit, a chip's text */
 	fr_screen_text(&t, "Recovery");

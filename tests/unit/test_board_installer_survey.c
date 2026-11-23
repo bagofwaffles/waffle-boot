@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The installer's survey build (make installer-1f-survey,
+ * The installer's survey build (make installer-survey,
  * wiki/Installer-Reference.md): its write engine refuses every form but the
  * status, its gate refuses every erase and program even when armed, and the
  * driver's erase and program that its link wraps refuse too. Against a RAM
@@ -9,7 +9,6 @@
 #define OPXY_TEST_OS 1
 #define OPXY_TESTOS_CHECK 1
 #define OPXY_TESTOS_INSTALLER 1
-#define OPXY_TESTOS_1F 1
 #define OPXY_TESTOS_SURVEY 1
 #define wb_spiflash_read ram_read
 #define wb_spiflash_erase ram_erase
@@ -132,7 +131,7 @@ static void test_forms_refused(void)
 	CHECK(out[4] == OPXY_INSTALL_SLOT_GOOD);
 	CHECK(writes == 0u);
 	CHECK(strcmp(inst_rc_words(OPXY_INSTALL_REFUSED_SURVEY),
-		     "A survey build writes nothing to the SPI flash.") == 0);
+		     "Survey build: writes nothing") == 0);
 }
 
 static void test_gate_refuses(void)

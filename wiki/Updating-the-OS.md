@@ -54,7 +54,7 @@ the OS only, and never touches the bootloader or the first stage.
 > **Warning.** With Protected writes on, choosing **7 Bootloader** writes the package's bootloader into a
 > slot; the list says which slot. Any package offers it, whatever its signature. When that bootloader is
 > not a waffle-boot build (its image has no valid waffle-boot descriptor), it replaces waffle-boot; for a
-> package with a valid signature the list says `This run replaces waffle-boot: back to stock` instead. A
+> package with a valid signature the list says `Replaces waffle-boot: back to stock` instead. A
 > waffle-boot build there is an ordinary update. A package's first stage is never looked at or written.
 
 ## Signatures
@@ -79,10 +79,10 @@ bootloader too with Protected writes on.
 
 | Message | Meaning |
 | --- | --- |
-| `No valid package found` | No file with `tfw` in its name in the disk's top folder, or the package was refused. The reason line says why ([the reasons](Building-Custom-OS-Updates#refusal-reasons)) |
-| `Nothing was installed.` after the list | The list, or the signature warning before it, was canceled with 8 or ran out of time. Copy the package to the disk again, press **8** to go back, or **6** to restart |
-| `The firmware's signature does not match.` | The package's signature does not verify, or the unit's key cannot be read ([Signatures](#signatures)). Hold **1** for 5 s to install its other parts anyway |
+| `No valid package` | No file with `tfw` in its name in the disk's top folder, or the package was refused. The reason line says why ([the reasons](Building-Custom-OS-Updates#refusal-reasons)) |
+| `Nothing installed.` after the list | The list, or the signature warning before it, was canceled with 8 or ran out of time. Copy the package to the disk again, press **8** to go back, or **6** to restart |
+| `Signature does not match.` | The package's signature does not verify, or the unit's key cannot be read ([Signatures](#signatures)). Hold **1** for 5 s to install its other parts anyway |
 | `Upgrade failed.` or `Installation failed.` | A step failed; its row says which. Switch off and on, then install again |
-| `The last install did not finish.` | The unit stopped mid-install. Install the same package again |
+| `Last install did not finish.` | The unit stopped mid-install. Install the same package again |
 | `Bootloader  Skipped: written, runs on restart` | The same package was installed again before a restart: its bootloader is already in the other slot and starts after the next restart |
 | `OS needs reinstalling: install a TE firmware update` | The OS on the eMMC is stored encrypted, which waffle-boot cannot load. An install of the OS writes it in a form it can |

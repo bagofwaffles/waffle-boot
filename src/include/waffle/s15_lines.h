@@ -256,9 +256,9 @@ void s15_start_info(struct s15_buf *out, const struct s15_start *s);
 
 /* ---- required information (wording free; S-15 terms) -------------- */
 
-/* S-15.140: the option's screen: these rows, then its item on digit 2
- * with the hold's hint (s15_hold_hint()), then the way back. */
-#define S15_OPTION_PROMPT_LINES 6u
+/* S-15.140: the option's screen: these rows, then its item on digit 2,
+ * whose label names the hold, then the way back. */
+#define S15_OPTION_PROMPT_LINES 3u
 extern const char *const s15_option_prompt[S15_OPTION_PROMPT_LINES];
 extern const enum s15_style s15_option_prompt_style[S15_OPTION_PROMPT_LINES];
 extern const char s15_option_turn_on[];	/* the item's label */
@@ -285,6 +285,7 @@ extern const char s15_settings_this_start[];
 extern const char s15_settings_failed[];
 extern const char s15_settings_unusable[];
 extern const char s15_reset_settings_failed[];	/* S15_ST_WARN: the clear of S-02.105 */
+extern const char s15_reset_logo_failed[];	/* S15_ST_WARN: the boot logo's removal */
 /* S-15.192: Device Info 2's Files value for a way of enum s15_files. */
 void s15_files_text(struct s15_buf *out, unsigned way, uint32_t objects);
 extern const char s15_os_reinstall[];         /* exact text, S-15.161 */
@@ -303,11 +304,12 @@ extern const char s15_nothing_skipped[];
 extern const char s15_stock_line[];
 /* S-15.197: a package whose signature is valid (S15_ST_OK). */
 extern const char s15_signed_line[];
-/* S-15.015: the line under items chosen by a hold (S15_ST_DIM). */
+/* S-15.015: the line under items chosen by a hold (S15_ST_DIM), and the
+ * words an item's label ends in where it names its hold. */
 extern const char s15_hold_line[];
-/* S-15.015: a hold's item hint ("Hold 7 for 5 s"), and its last row
- * (S15_ST_STEP_RUN): the bar at fill percent, then the seconds left. */
-void s15_hold_hint(struct s15_buf *out, unsigned digit);
+extern const char s15_hold_named[];
+/* S-15.015: a hold's last row (S15_ST_STEP_RUN): the bar at fill percent,
+ * then the seconds left. A held item's row has no hint. */
 void s15_hold_bar(struct s15_buf *out, unsigned fill, unsigned left_s);
 
 void s15_reason_line(struct s15_buf *out, const char *reason);

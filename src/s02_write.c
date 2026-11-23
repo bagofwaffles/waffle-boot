@@ -8,6 +8,8 @@
 #include "waffle/bytes.h"
 #include "waffle/s01_memmap.h"
 
+#include "front/fr_handoff.h"
+
 #define META_RETRIES 3u	/* attempts at steps 4-6 of S-02.064 */
 
 static bool same(const uint8_t *a, const uint8_t *b, uint32_t n)
@@ -177,6 +179,12 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
 	    env->flash->erase(env->flash->ctx,
 			      base + S02_SLOT_CAPACITY - S02_SECTOR_SIZE) != 0)
 		return S02_ERR_IO;
+	/* An image that leaves the logo's header sector free gets it erased,
+	 * so the new image starts on the front's own logo (front/fr_handoff.h).
+	 * SPEC-Q: this erase has no label yet. */
+	if (n <= FR_LOGO_SLOT_OFF &&
+	    env->flash->erase(env->flash->ctx, base + FR_LOGO_SLOT_OFF) != 0)
+		return S02_ERR_IO;
 	/* S-02.103: an image that leaves the settings sector free gets it
 	 * erased with the start log, so the new image starts on defaults. */
 	if (n <= S02_SLOT_CAPACITY - 2u * S02_SECTOR_SIZE &&
@@ -185,7 +193,7 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
 		return S02_ERR_IO;
 
 	/* Classes 2 and 3: the record (S-02.046). */
-	rec.crc32 = env->crc32(0u, image, n);
+	rec.crc32 = env->crc32(0u, image, n);	/* software: the value written */
 	rec.length = n;
 	rec.tag = S02_RECORD_TAG;
 	s02_record_encode(&rec, raw);

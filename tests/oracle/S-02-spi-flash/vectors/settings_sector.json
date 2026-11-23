@@ -8,7 +8,8 @@
   "developer_mode",
   "color",
   "mtp_macos",
-  "start_in_boot_menu"
+  "start_in_boot_menu",
+  "host_link_off"
  ],
  "defaults": 4,
  "sectors": [
@@ -184,6 +185,40 @@
    "fill": "ff",
    "flags": 8,
    "page": 0,
+   "gives": "a record"
+  },
+  {
+   "name": "host_link_off",
+   "stamp": "0x1d0c2b3a",
+   "pages": {
+    "0": "57425353010002003a2b0c1d040137234117"
+   },
+   "fill": "ff",
+   "flags": 20,
+   "page": 0,
+   "gives": "a record"
+  },
+  {
+   "name": "host_link_byte_other_bits",
+   "stamp": "0x1d0c2b3a",
+   "pages": {
+    "0": "57425353010002003a2b0c1d0efe3024acc0"
+   },
+   "fill": "ff",
+   "flags": 14,
+   "page": 0,
+   "gives": "a record"
+  },
+  {
+   "name": "host_link_off_then_on",
+   "stamp": "0x1d0c2b3a",
+   "pages": {
+    "0": "57425353010002003a2b0c1d040137234117",
+    "1": "57425353010001003a2b0c1d04241e1fc8"
+   },
+   "fill": "ff",
+   "flags": 4,
+   "page": 1,
    "gives": "a record"
   },
   {
@@ -685,6 +720,47 @@
  ],
  "saves": [
   {
+   "name": "host_link_off",
+   "slot": 0,
+   "stamp": "0x1d0c2b3a",
+   "flags": 23,
+   "before": {
+    "0": "57425353010001003a2b0c1d04241e1fc8"
+   },
+   "before_pattern": null,
+   "ops": [
+    [
+     "read",
+     "0x0e000",
+     12
+    ],
+    [
+     "read",
+     "0x86000",
+     4096
+    ],
+    [
+     "program",
+     "0x86100",
+     "57425353010002003a2b0c1d0701f4706c3c"
+    ],
+    [
+     "read",
+     "0x86100",
+     18
+    ]
+   ],
+   "page": 1,
+   "after": {
+    "0": "57425353010001003a2b0c1d04241e1fc8",
+    "1": "57425353010002003a2b0c1d0701f4706c3c"
+   },
+   "footprint": [
+    "0x86000",
+    "0x87000"
+   ]
+  },
+  {
    "name": "from_erased",
    "slot": 0,
    "stamp": "0x1d0c2b3a",
@@ -1079,6 +1155,47 @@
    "footprint": [
     "0x86000",
     "0x87000"
+   ]
+  },
+  {
+   "name": "host_link_off",
+   "slot": 1,
+   "stamp": "0x1d0c2b3a",
+   "flags": 23,
+   "before": {
+    "0": "57425353010001003a2b0c1d04241e1fc8"
+   },
+   "before_pattern": null,
+   "ops": [
+    [
+     "read",
+     "0x0f000",
+     12
+    ],
+    [
+     "read",
+     "0xfe000",
+     4096
+    ],
+    [
+     "program",
+     "0xfe100",
+     "57425353010002003a2b0c1d0701f4706c3c"
+    ],
+    [
+     "read",
+     "0xfe100",
+     18
+    ]
+   ],
+   "page": 1,
+   "after": {
+    "0": "57425353010001003a2b0c1d04241e1fc8",
+    "1": "57425353010002003a2b0c1d0701f4706c3c"
+   },
+   "footprint": [
+    "0xfe000",
+    "0xff000"
    ]
   },
   {
@@ -1673,7 +1790,7 @@
     "length": "0x1345",
     "settings_sector": "0xfe000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -1817,6 +1934,12 @@
      },
      {
       "op": "erase",
+      "offset": "0xfd000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
       "offset": "0xfe000",
       "length": 4096,
       "cls": "settings_erase"
@@ -1866,7 +1989,7 @@
     "length": "0x1345",
     "settings_sector": "0x86000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -2028,6 +2151,12 @@
      },
      {
       "op": "erase",
+      "offset": "0x85000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
       "offset": "0x86000",
       "length": 4096,
       "cls": "settings_erase"
@@ -2077,7 +2206,7 @@
     "length": "0x1345",
     "settings_sector": "0xfe000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the trial mark"
     },
     "ops": [
@@ -2216,6 +2345,12 @@
      {
       "op": "erase",
       "offset": "0xff000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0xfd000",
       "length": 4096,
       "cls": "slot_erase"
      },
@@ -2288,7 +2423,7 @@
     "length": "0x1345",
     "settings_sector": "0x86000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -2427,6 +2562,12 @@
      {
       "op": "erase",
       "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x85000",
       "length": 4096,
       "cls": "slot_erase"
      },
@@ -2469,7 +2610,7 @@
     "length": "0x1345",
     "settings_sector": "0x86000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -2608,6 +2749,12 @@
      {
       "op": "erase",
       "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x85000",
       "length": 4096,
       "cls": "slot_erase"
      },
@@ -2662,7 +2809,7 @@
     "length": "0x1345",
     "settings_sector": "0xfe000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -2824,6 +2971,12 @@
      },
      {
       "op": "erase",
+      "offset": "0xfd000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
       "offset": "0xfe000",
       "length": 4096,
       "cls": "settings_erase"
@@ -2873,7 +3026,7 @@
     "length": "0x1345",
     "settings_sector": "0x86000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the trial mark"
     },
     "ops": [
@@ -3012,6 +3165,12 @@
      {
       "op": "erase",
       "offset": "0x87000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0x85000",
       "length": 4096,
       "cls": "slot_erase"
      },
@@ -3108,7 +3267,7 @@
     "length": "0x1345",
     "settings_sector": "0xfe000",
     "settings_erase": {
-     "after": "the log sector's erase",
+     "after": "the log sector's and the logo header sector's erases",
      "before": "the record erase"
     },
     "ops": [
@@ -3247,6 +3406,12 @@
      {
       "op": "erase",
       "offset": "0xff000",
+      "length": 4096,
+      "cls": "slot_erase"
+     },
+     {
+      "op": "erase",
+      "offset": "0xfd000",
       "length": 4096,
       "cls": "slot_erase"
      },

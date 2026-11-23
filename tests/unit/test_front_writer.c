@@ -290,8 +290,9 @@ static const uint8_t starts[][2] = {{0x00, 0x01}, {0x01, 0x01}, {0x02, 0x01}, {0
 #define CUR_LEN 0x1345u
 #define OLD_TARGET_LEN 0x3456u	/* a longer predecessor in the target */
 /* A write of N_IMAGE bytes: 3 sector erases, 36 page programs, the last
- * sector's erase, the settings sector's, the record's erase and program. */
-#define SLOT_OPS (3u + 36u + 1u + 1u + 2u)
+ * sector's erase, the logo header sector's, the settings sector's, the
+ * record's erase and program. */
+#define SLOT_OPS (3u + 36u + 1u + 1u + 1u + 2u)
 
 static void snapshot(void)
 {
@@ -556,11 +557,13 @@ static void check_log(unsigned t, uint32_t n, unsigned way)
 	static uint8_t programmed[FR_SLOT_CAP];
 	const uint32_t base = FR_SLOT_BASE(t), rec = FR_RECORD_OFF(t);
 	const uint32_t last = base + FR_SLOT_CAP - FR_SECTOR, settings = base + 0x76000u;
+	const uint32_t logo = base + 0x75000u;	/* the stored logo's header sector */
 	const uint32_t sectors = (n + FR_SECTOR - 1u) / FR_SECTOR;
 	const bool log_erase = true;	/* every image leaves the last sector */
+	const bool logo_erase = n <= 0x75000u;
 	unsigned i, from = 0, rec_erase, rec_prog, sel_erase = ~0u, sel_prog = ~0u, end;
 	unsigned erases = 0, last_prog = 0, log_at = ~0u, log_n = 0, kind_end = 0;
-	unsigned set_at = ~0u, set_n = 0;
+	unsigned set_at = ~0u, set_n = 0, logo_at = ~0u, logo_n = 0;
 	/* the selector before the write, and before its final settling */
 	unsigned pre = g_start.mem[FR_SELECTOR_OFF] | (unsigned)g_start.mem[FR_SELECTOR_OFF + 1u] << 8;
 
@@ -648,6 +651,11 @@ static void check_log(unsigned t, uint32_t n, unsigned way)
 				set_n++;
 				continue;
 			}
+			if (logo_erase && o->off == logo) {
+				logo_at = i;		/* the stored logo's header */
+				logo_n++;
+				continue;
+			}
 			CHECK(o->off < base + sectors * FR_SECTOR);	/* nothing wholly beyond */
 			continue;
 		}
@@ -677,11 +685,16 @@ static void check_log(unsigned t, uint32_t n, unsigned way)
 	} else {
 		CHECK_EQ(log_n, 0);
 	}
+	/* the logo's header sector erased once, right after the log's, where
+	 * the image leaves it free */
+	CHECK_EQ(logo_n, logo_erase ? 1u : 0u);
+	if (logo_erase)
+		CHECK(logo_at != ~0u && logo_at == log_at + 1u);
 	/* S-02.103: the settings sector erased once, the operation right after
-	 * the log's erase, before the record */
+	 * the log's erase or the logo's, before the record */
 	CHECK_EQ(set_n, 1);
-	CHECK(set_at != ~0u && set_at == log_at + 1u && set_at < rec_erase);
-	CHECK_EQ(erases, sectors + (log_erase ? 1u : 0u) + 1u + 1u +
+	CHECK(set_at != ~0u && set_at == (logo_erase ? logo_at : log_at) + 1u && set_at < rec_erase);
+	CHECK_EQ(erases, sectors + (log_erase ? 1u : 0u) + (logo_erase ? 1u : 0u) + 1u + 1u +
 			 (g_split ? (kind_end == 2u ? 1u : 0u) : way == FR_WAY_IN_PLACE ? 0u : 1u));
 	/* S-02.047: the read-back strictly between the record program and the
 	 * selector erase. */
@@ -694,7 +707,9 @@ static void check_final(unsigned t, uint32_t n, unsigned way)
 {
 	const unsigned keep = 1u - t;
 	const uint32_t base = FR_SLOT_BASE(t), end = (n + FR_SECTOR - 1u) / FR_SECTOR * FR_SECTOR;
-	const uint32_t keep_to = 0x76000u;	/* the settings sector, then the log */
+	/* the logo's header sector where the image leaves it, the settings
+	 * sector, then the log */
+	const uint32_t keep_to = end <= 0x75000u ? 0x75000u : 0x76000u;
 	uint32_t j;
 	uint8_t want[32];
 
@@ -703,7 +718,8 @@ static void check_final(unsigned t, uint32_t n, unsigned way)
 		CHECK_EQ(g_f.mem[base + j], 0xFFu);
 	if (end < keep_to)
 		CHECK(memcmp(g_f.mem + base + end, g_start.mem + base + end, keep_to - end) == 0);
-	/* S-02.045, S-02.095, S-02.103: an empty settings sector and start log */
+	/* S-02.045, S-02.095, S-02.103: an empty logo header, settings sector
+	 * and start log */
 	for (j = keep_to; j < FR_SLOT_CAP; j++)
 		if (g_f.mem[base + j] != 0xFFu) {
 			CHECK(0);
@@ -1292,10 +1308,19 @@ static void test_faults(void)
 			check_untouched(0);
 		}
 		setup(0x01, 0x01);
-		g_f.fail = m - 5u;	/* the last sector's */
+		g_f.fail = m - 6u;	/* the last sector's */
+		CHECK_EQ(write_all(N_IMAGE, g_sha, &run), FR_WR_FLASH);
+		CHECK_EQ(g_f.nmut, m - 6u);
+		CHECK_EQ(g_f.log[g_f.nlog - 1u].off, FR_SLOT_BASE(0) + FR_LOG_IMAGE_MAX);
+		CHECK_EQ(find_op(FF_ERASE, FR_SLOT_BASE(0) + 0x75000u, 0), ~0u);
+		CHECK_EQ(find_op(FF_ERASE, FR_SLOT_BASE(0) + 0x76000u, 0), ~0u);
+		CHECK_EQ(find_op(FF_ERASE, FR_RECORD_OFF(0), 0), ~0u);
+		no_selector_op();
+		setup(0x01, 0x01);
+		g_f.fail = m - 5u;	/* the stored logo's header sector's */
 		CHECK_EQ(write_all(N_IMAGE, g_sha, &run), FR_WR_FLASH);
 		CHECK_EQ(g_f.nmut, m - 5u);
-		CHECK_EQ(g_f.log[g_f.nlog - 1u].off, FR_SLOT_BASE(0) + FR_LOG_IMAGE_MAX);
+		CHECK_EQ(g_f.log[g_f.nlog - 1u].off, FR_SLOT_BASE(0) + 0x75000u);
 		CHECK_EQ(find_op(FF_ERASE, FR_SLOT_BASE(0) + 0x76000u, 0), ~0u);
 		CHECK_EQ(find_op(FF_ERASE, FR_RECORD_OFF(0), 0), ~0u);
 		no_selector_op();
@@ -4186,9 +4211,10 @@ static void check_trial_log(unsigned b)
 	const unsigned lp = find_op(FF_PROGRAM, FR_LOG_OFF(b), 0);
 	const struct ff_op *o = g_f.log;
 
-	CHECK(le != ~0u && lp == le + 2u && lp + 2u == find_op(FF_ERASE, FR_RECORD_OFF(b), 0));
-	CHECK(le != ~0u && le + 1u < g_f.nlog && o[le + 1u].kind == FF_ERASE &&
-	      o[le + 1u].off == FR_SLOT_BASE(b) + 0x76000u);
+	CHECK(le != ~0u && lp == le + 3u && lp + 2u == find_op(FF_ERASE, FR_RECORD_OFF(b), 0));
+	CHECK(le != ~0u && le + 2u < g_f.nlog && o[le + 1u].kind == FF_ERASE &&
+	      o[le + 1u].off == FR_SLOT_BASE(b) + 0x75000u && o[le + 2u].kind == FF_ERASE &&
+	      o[le + 2u].off == FR_SLOT_BASE(b) + 0x76000u);
 	if (lp != ~0u && lp + 1u < g_f.nlog) {
 		CHECK_EQ(o[lp].len, 1);
 		CHECK(o[lp + 1u].kind == FF_READ && o[lp + 1u].off == FR_LOG_OFF(b) && o[lp + 1u].len == 1u);

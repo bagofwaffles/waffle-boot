@@ -344,6 +344,18 @@ static void test_part_config_zero_off_line(void)
 	CHECK(!st.note_read.seen && !st.note_select.seen);
 	CHECK(ops.select(ops.ctx, S03_PART_USER) == 0);
 	CHECK(emmc.ext_csd[179] == 0x00u);
+	/* a count whose bytes wrap 32 bits (2^23 + 1 sectors, 512 bytes after
+	 * the wrap), straight to the store in a boot partition: not copied
+	 * through the bounce buffer, and refused */
+	CHECK(ops.select(ops.ctx, S03_PART_BP1) == 0);
+	memset(bounce, 0xA5, S03_SECTOR);
+	memset(buf, 0x5A, S03_SECTOR);
+	emmc.log_n = 0;
+	CHECK(st.store.emmc(st.store.ctx, S09_WRITE_SECTORS, 0u, 0x00800001u, buf,
+			    S03_SECTOR) != 0);
+	CHECK(logged(25) == 0u && logged(24) == 0u);
+	CHECK(bounce[0] == 0xA5u && bounce[S03_SECTOR - 1u] == 0xA5u);
+	CHECK(ops.select(ops.ctx, S03_PART_USER) == 0);
 }
 
 /* A select the eMMC refuses, and a read that fails: each first one noted

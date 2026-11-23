@@ -14,6 +14,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "ff.h"
+#include "waffle/logo.h"
 #include "waffle/device.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
@@ -21,6 +22,7 @@
 #include "waffle/drivers/bf70x_usb.h"
 #include "waffle/s06_frame.h"
 #include "waffle/s10a_msc.h"
+#include "waffle/s04_records.h"
 #include "waffle/s11_version.h"
 #include "waffle/s17_revisions.h"
 #include "waffle/wire_crc.h"
@@ -1265,11 +1267,11 @@ static void test_scan_not_found(void)
 	m.sv.usb_board.disk_released(m.sv.usb_board.ctx);
 	s15_up_tick(&m.sv.menu, m.sv.menu.scan_due_ms);
 	CHECK(m.sv.scan_due);
-	CHECK(con_has(S15_ST_HEAD, "Preparing the installation") &&
-	      !con_has(S15_ST_WARN, "No valid package found"));
+	CHECK(con_has(S15_ST_HEAD, "Preparing") &&
+	      !con_has(S15_ST_WARN, "No valid package"));
 	opxy_services_poll(&m);
 	CHECK(!m.sv.scan_due);
-	CHECK(con_has(S15_ST_WARN, "No valid package found"));
+	CHECK(con_has(S15_ST_WARN, "No valid package"));
 	CHECK(s10a_usb_disk()->offered && s15_up_disk_offerable(&m.sv.menu));
 	opxy_usb_stop();
 }
@@ -2688,7 +2690,7 @@ static void test_menu_env(void)
 		 * so nothing of the eMMC is read or written */
 		static const uint8_t rec[S02_RECORD_SIZE] = {
 			0x44, 0x33, 0x22, 0x11, 0x00, 0x00, 0x04, 0x00, 0x04, 0xB0, 0x00, 0x00 };
-		struct s15_settings st = { true, false, false, true }, now, back;
+		struct s15_settings st = { true, false, false, true, true }, now, back;
 
 		flash_setup();
 		memcpy(flash_mem + S02_RECORD1_OFF, rec, sizeof rec);
@@ -2709,6 +2711,41 @@ static void test_menu_env(void)
 		wire_n = 0;
 		CHECK(e.settings_clear(e.ctx) == S15_STORE_SAVED && flash_mem[0xFE000u] == 0xFFu);
 		CHECK(wire_has("cleared") && m.sv.files.err == 0u);
+		/* the boot logo the factory reset removes with them (SPEC-Q): a
+		 * stored one, its header erased, none read after, so the next
+		 * start draws the front's own; nothing else of the slot written */
+		{
+			static const uint8_t data[8] = { 0x00, 0x00, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x01 };
+			struct wb_logo l, got;
+			struct s15_logo st_logo;
+			static uint8_t buf[WB_LOGO_DATA_MAX];
+
+			memset(&l, 0, sizeof l);
+			l.width = 1;
+			l.height = 1;
+			l.bits = 1;
+			l.colors = 2;
+			l.len = sizeof data;
+			l.crc = wire_crc32(0u, data, sizeof data);
+			l.image = m.store_slot.rec.crc32;
+			wb_logo_header(&l, flash_mem + 0xFD000u);
+			memcpy(flash_mem + 0xFD000u - sizeof data, data, sizeof data);
+			CHECK(wb_logo_read(&m.flash, 1u, &got, buf));
+			e.logo_state(e.ctx, &st_logo);
+			CHECK(st_logo.state == S15_LOGO_CUSTOM && st_logo.stored == sizeof data);
+			CHECK(e.logo_remove(e.ctx) == S15_STORE_SAVED);
+			s15_menu_release(&m.sv.menu);
+			for (uint32_t i = 0; i < 0x1000u; i++)
+				if (flash_mem[0xFD000u + i] != 0xFFu) {
+					CHECK(0);
+					break;
+				}
+			CHECK(memcmp(flash_mem + 0xFD000u - sizeof data, data, sizeof data) == 0);
+			CHECK(!wb_logo_read(&m.flash, 1u, &got, buf));
+			e.logo_state(e.ctx, &st_logo);
+			CHECK(st_logo.state == S15_LOGO_BUILTIN);
+			CHECK(flash_mem[0x75000u] == 0xFFu);	/* slot 0's header untouched */
+		}
 		/* a running slot not established: refused, logged */
 		m.store_slot.established = false;
 		wire_n = 0;
@@ -2758,10 +2795,26 @@ void opxy_rtc_board_start(const struct wb_time *t)
 	(void)t;
 }
 
+/* The 64-bit form of opxy_rtc.c's days_from_civil(), the reference. */
+static int64_t ref_days(int64_t y, unsigned mo, unsigned d)
+{
+	int64_t era, yoe, doy;
+
+	y -= mo <= 2u;
+	era = (y >= 0 ? y : y - 399) / 400;
+	yoe = y - era * 400;
+	doy = (153 * (int64_t)(mo > 2u ? mo - 3u : mo + 9u) + 2) / 5 +
+	      (int64_t)d - 1;
+	return era * 146097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719468;
+}
+
 /* S-12.016's stamps from S-04.070's count. */
 static void test_rtc_utc(void)
 {
+	static const uint32_t tod[] = { 0u, 1u, 0x3Bu | 0x3Bu << 6 | 23u << 12,
+					0x1FFFFu };
 	uint64_t utc = 0;
+	unsigned bad = 0;
 
 	rtc_ok = false;
 	CHECK(!opxy_rtc_utc(&m, &utc));
@@ -2770,6 +2823,18 @@ static void test_rtc_utc(void)
 	CHECK(opxy_rtc_utc(&m, &utc) && utc == 1793536496u);
 	CHECK(s04_rtc_encode(2000u, 2u, 29u, 0u, 0u, 0u, &rtc_clk));
 	CHECK(opxy_rtc_utc(&m, &utc) && utc == 951782400u);
+	/* every day the count holds, at the least and greatest time fields */
+	for (uint32_t n = 0; n <= 0x7FFFu; n++)
+		for (size_t k = 0; k < sizeof tod / sizeof tod[0]; k++) {
+			struct s04_datetime t;
+
+			rtc_clk = n << 17 | tod[k];
+			s04_rtc_decode(rtc_clk, &t);
+			bad += !opxy_rtc_utc(&m, &utc) ||
+			       utc != (uint64_t)(ref_days(t.year, t.month, t.day) * 86400 +
+						 t.hour * 3600 + t.minute * 60 + t.second);
+		}
+	CHECK(bad == 0);
 	rtc_ok = false;
 }
 

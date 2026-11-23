@@ -3,8 +3,8 @@
 """Host tests of tools/mkldr.py and tools/layout.py on a synthetic ELF32 file
 laid out like the bootloader image (bf703.ld), and of tools/testos_layout.py
 and mkldr.py --no-init on one laid out like the test OS (bf703_testos.ld,
-wiki/Test-OS.md), and --os-1f and --device 1f on one laid out like the OP-1F's
-installer (bf703_testos_1f.ld). The streams and layouts they write are
+wiki/Test-OS.md), and --os-1f and --device both on one laid out like the installer, one
+image for both devices (bf703_installer.ld). The streams and layouts they write are
 judged by tests/oracle/S-01-boot-chain's checkers. Also tools/png2logo.py on PNG files made here
 (S-15.132). Python 3, standard library only.
 
@@ -151,6 +151,12 @@ def image(handover_reloc=None, ddr_size=None, l2=None, extra=(), symbols_extra=(
     return build_elf(sections, symbols, relocs, 0x11A00040)
 
 
+def random_bytes(n, seed=1):
+    """n bytes that deflate does not shorten."""
+    import random
+    return random.Random(seed).randbytes(n)
+
+
 def front(l2=0x08002000):
     """A front as src/front/front.ld lays one out."""
     sections = [
@@ -161,6 +167,29 @@ def front(l2=0x08002000):
     ]
     symbols = [('_fr_init', 0x11A04000, '.fr_l1code'), ('_fr_entry', l2, '.fr_l2')]
     return build_elf(sections, symbols, {}, l2)
+
+
+def stub(text=b'\x7a' * 0x40):
+    """A stub as src/stub/stub.ld lays one out."""
+    sections = [
+        ('.stub', elf32.SHT_PROGBITS, AX, 0x08031000, text),
+        ('.stub_bss', elf32.SHT_NOBITS, WA, 0x08031000 + len(text), 0x2400),
+    ]
+    return build_elf(sections, [('_wb_stub_entry', 0x08031000, '.stub')], {}, 0x08031000)
+
+
+def payload(data, b):
+    """Block b's payload in stream data."""
+    off = data.index(mkldr.header(0, b['target'], b['count'], 0)) + 16
+    return data[off:off + b['count']]
+
+
+def unpacked(data):
+    """The stream's packed block, unpacked: (entry, runs)."""
+    blocks = check_stream.ldr.parse(data)
+    pk = [b for b in blocks if b['target'] == mkldr.PACK_AT[0]]
+    assert len(pk) == 1
+    return mkldr.unpack(payload(data, pk[0]))
 
 
 VERSION = struct.pack('<4H', 1, 2, 3, 4)
@@ -181,7 +210,7 @@ class FrontMerge(unittest.TestCase):
     the descriptor (src/front/fr_handoff.h)."""
 
     def merged(self):
-        return mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()))
+        return mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()), elf32.Elf(stub()))
 
     def test_entry_init_and_rules(self):
         data = self.merged()
@@ -198,23 +227,23 @@ class FrontMerge(unittest.TestCase):
     def test_descriptor(self):
         data = self.merged()
         blocks = check_stream.ldr.parse(data)
-        main = elf32.Elf(fimage())
         desc = [b for b in blocks if b['target'] == mkldr.FR_DESC_ADDR]
         self.assertEqual(len(desc), 1)
-        off = data.index(mkldr.header(0, mkldr.FR_DESC_ADDR, desc[0]['count'], 0)) + 16
-        d = data[off:off + desc[0]['count']]
+        d = payload(data, desc[0])
         magic, ver, size, entry, n, crc, fcrc = struct.unpack_from('<IHHIIII', d)
         self.assertEqual((magic, ver), (mkldr.FR_DESC_MAGIC, mkldr.FR_DESC_VERSION))
-        self.assertEqual(entry, 0x11A00040)              # the image's _wb_reset
+        self.assertEqual(entry, 0x08031000)              # the stub's entry
         self.assertEqual(zlib.crc32(d[:size - 4]), struct.unpack_from('<I', d, size - 4)[0])
-        runs = mkldr.checked(mkldr.ordered(mkldr.runs(main)))
-        # S-01.023, S-13a.040: no region in L1 code, which the front cannot
-        # read as data; the L1 data run is listed.
-        self.assertFalse(any(0x11A00000 <= a < 0x11A0C000 for a, _ in runs))
-        self.assertIn(0x11800000, [a for a, _ in runs])
-        self.assertEqual(n, len(runs))
+        # every block but the front's, the descriptor and L1 code (S-01.023,
+        # S-13a.040: the front cannot read L1 code as data), in stream order
+        listed = [(b['target'], payload(data, b)) for b in blocks
+                  if b['count'] and not b['flags'] & check_stream.ldr.IGNORE
+                  and not mkldr.in_front(b['target']) and b['target'] != mkldr.FR_DESC_ADDR
+                  and not 0x11A00000 <= b['target'] < 0x11A0C000]
+        self.assertEqual([a for a, _ in listed], [0x11800000, 0x08031000, mkldr.PACK_AT[0]])
+        self.assertEqual(n, len(listed))
         want = 0
-        for i, (a, b) in enumerate(runs):
+        for i, (a, b) in enumerate(listed):
             self.assertEqual(struct.unpack_from('<II', d, 0x40 + 8 * i), (a, len(b)))
             want = zlib.crc32(b, want)
         self.assertEqual(crc, want)
@@ -225,15 +254,61 @@ class FrontMerge(unittest.TestCase):
             fwant = zlib.crc32(b, fwant)
         self.assertEqual(fcrc, fwant)
 
+    def test_packed(self):
+        # The image's runs outside L1 are in the packed block, L1's in the
+        # stream as they are; the packed block enters the image's entry.
+        data = self.merged()
+        main = elf32.Elf(fimage())
+        rs = mkldr.runs(main)
+        entry, runs = unpacked(data)
+        self.assertEqual(entry, 0x11A00040)              # the image's _wb_reset
+        self.assertEqual(runs, [(a, bytes(b)) for a, b in rs if not mkldr.in_l1(a)])
+        blocks = check_stream.ldr.parse(data)
+        for a, b in rs:
+            hits = [x for x in blocks if x['target'] == a]
+            self.assertEqual(len(hits), 1 if mkldr.in_l1(a) else 0, '%08x' % a)
+        # the stub's runs as they are
+        self.assertEqual([payload(data, x) for x in blocks if x['target'] == 0x08031000],
+                         [b'\x7a' * 0x40])
+        # a spoiled block fails only its output's CRC
+        bad = mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()), elf32.Elf(stub()), spoil=True)
+        with self.assertRaises(SystemExit) as cm:
+            unpacked(bad)
+        self.assertIn("output's CRC-32", str(cm.exception))
+        # --unpacked takes the image's runs and entry, nothing else
+        raw = struct.pack('<I', entry) + b''.join(
+            struct.pack('<II', a, len(b)) + b for a, b in runs)
+        self.assertTrue(mkldr.unpacked_matches(elf32.Elf(fimage()), raw))
+        self.assertFalse(mkldr.unpacked_matches(elf32.Elf(fimage()), raw[:-1] + bytes([raw[-1] ^ 1])))
+
+    def test_pack_refusals(self):
+        # Packed runs go only where the stub writes; neither the image nor the
+        # stub may meet the other, the packed block or the stub's record.
+        far = ('.far', elf32.SHT_PROGBITS, WA, 0x882BD000, b'\x68' * 8)
+        with self.assertRaises(SystemExit):
+            mkldr.merged(elf32.Elf(fimage(extra=[far])), elf32.Elf(front()), elf32.Elf(stub()))
+        for addr in (0x882BD000, 0x8833CFF0, 0x08031000, 0x0803BF00):
+            bss = ('.big.bss', elf32.SHT_NOBITS, WA, addr, 0x100)
+            with self.assertRaises(SystemExit, msg='%08x' % addr):
+                mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()), elf32.Elf(stub()))
+        with self.assertRaises(SystemExit):     # the stub over its record
+            mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()),
+                         elf32.Elf(stub(text=bytes(0xAFE0 - 0x2400 + 4))))
+        with self.assertRaises(SystemExit):     # more runs than the block holds
+            mkldr.pack([(0x8803D000 + 0x100 * i, bytes(4)) for i in range(mkldr.PACK_RUNS + 1)], 0)
+        self.assertEqual(mkldr.unpack(mkldr.pack([(0x8803D000, bytes(8))], 7)),
+                         (7, [(0x8803D000, bytes(8))]))
+
     def test_image_without_a_version_refused(self):
         # The front shows the descriptor's version with the early logo: an
         # image that does not carry one is not streamed with zeros.
         with self.assertRaises(SystemExit):
-            mkldr.merged(elf32.Elf(fimage(version=False)), elf32.Elf(front()))
+            mkldr.merged(elf32.Elf(fimage(version=False)), elf32.Elf(front()), elf32.Elf(stub()))
         bss = ('.wb.version', elf32.SHT_NOBITS, WA, 0x8803D034, 8)
         with self.assertRaises(SystemExit):
             mkldr.merged(elf32.Elf(image(extra=[bss], symbols_extra=[
-                ('_opxy_bl_version', 0x8803D034, '.wb.version')])), elf32.Elf(front()))
+                ('_opxy_bl_version', 0x8803D034, '.wb.version')])), elf32.Elf(front()),
+                elf32.Elf(stub()))
 
     def test_pin_follows_every_byte(self):
         a = mkldr.front_pin(elf32.Elf(front()))
@@ -242,9 +317,9 @@ class FrontMerge(unittest.TestCase):
 
     def test_image_meeting_the_front_refused(self):
         with self.assertRaises(SystemExit):
-            mkldr.merged(elf32.Elf(fimage(l2=0x08002800)), elf32.Elf(front()))
+            mkldr.merged(elf32.Elf(fimage(l2=0x08002800)), elf32.Elf(front()), elf32.Elf(stub()))
         with self.assertRaises(SystemExit):
-            mkldr.merged(elf32.Elf(fimage(l2=0x08030400)), elf32.Elf(front()))
+            mkldr.merged(elf32.Elf(fimage(l2=0x08030400)), elf32.Elf(front()), elf32.Elf(stub()))
         with self.assertRaises(SystemExit):
             mkldr.front_runs(elf32.Elf(front(l2=0x08031000)))
 
@@ -252,16 +327,16 @@ class FrontMerge(unittest.TestCase):
         # Both ends outside the front's L1 data window, the window inside.
         span = ('.l1.big', elf32.SHT_PROGBITS, WA, 0x11801000, b'\x67' * 0x4000)
         with self.assertRaises(SystemExit):
-            mkldr.merged(elf32.Elf(fimage(extra=[span])), elf32.Elf(front()))
+            mkldr.merged(elf32.Elf(fimage(extra=[span])), elf32.Elf(front()), elf32.Elf(stub()))
 
     def test_noload_over_the_front_refused(self):
         for addr in (0x08030800, 0x08030000, 0x08002000, 0x11803000):
             bss = ('.l2.bss', elf32.SHT_NOBITS, WA, addr, 0x100)
             with self.assertRaises(SystemExit, msg='%08x' % addr):
-                mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()))
-        # Next to the shared block, not in it: accepted.
-        bss = ('.l2.bss', elf32.SHT_NOBITS, WA, 0x08031000, 0x100)
-        mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()))
+                mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()), elf32.Elf(stub()))
+        # In the handover reserve, above the stub's region: accepted.
+        bss = ('.l2.bss', elf32.SHT_NOBITS, WA, 0x0803C000, 0x100)
+        mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()), elf32.Elf(stub()))
 
     def test_block_in_the_front_frame_refused(self):
         # S-01.023: no stream block meets the front's frame, 0x8FE00000-0x8FE34800;
@@ -270,12 +345,12 @@ class FrontMerge(unittest.TestCase):
         blk = lambda a, n=0x10: ('.ddr.data', elf32.SHT_PROGBITS, WA, a, b'\x6a' * n)
         for a in (0x8FE00000, 0x8FDFFFF0 + 4, 0x8FE347FC, 0x8FE10000):
             with self.assertRaises(SystemExit, msg='%08x' % a) as cm:
-                mkldr.merged(elf32.Elf(fimage(extra=[blk(a)])), elf32.Elf(front()))
+                mkldr.merged(elf32.Elf(fimage(extra=[blk(a)])), elf32.Elf(front()), elf32.Elf(stub()))
             self.assertIn("front's frame (S-01.023)", str(cm.exception))
         mkldr.spare_frame([(0x8FDFFFF0, bytes(0x10)), (0x8FE34800, bytes(0x10))])
         # A NOLOAD section there, the main image's own frame buffer, is taken.
         bss = ('.frame', elf32.SHT_NOBITS, WA, 0x8FE00000, 0x34800)
-        mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()))
+        mkldr.merged(elf32.Elf(fimage(extra=[bss])), elf32.Elf(front()), elf32.Elf(stub()))
         with Tmp() as t:
             e = t.write('a.elf', image(extra=[blk(0x8FE00000)]))
             with self.assertRaises(SystemExit):
@@ -283,34 +358,37 @@ class FrontMerge(unittest.TestCase):
             self.assertEqual(mkldr.main(['mkldr.py', e, t.path('b.ldr'), '--no-init']), 0)
 
     def test_image_over_the_start_log_refused(self):
-        # S-02.095: the slot's last sector is the start log. A stream one
-        # word over that limit is refused for it; the run costs its block
-        # header and its descriptor entry too.
-        n = len(self.merged())
-        fill = lambda k: ('.fill', elf32.SHT_PROGBITS, WA, 0x8803E000, b'\x69' * k)
-        k = mkldr.FR_LOG_IMAGE_MAX - n - 16 - 8
+        # S-02.095: the slot's last sector is the start log. A stream of
+        # FR_LOG_IMAGE_MAX bytes is taken, one word more is refused for it.
+        self.assertEqual(mkldr.FR_LOG_IMAGE_MAX, 0x77000)
         with self.assertRaises(SystemExit) as cm:
-            mkldr.merged(elf32.Elf(fimage(extra=[fill(k + 4)])), elf32.Elf(front()))
+            mkldr.slot_size(bytes(mkldr.FR_LOG_IMAGE_MAX + 4))
         self.assertIn('start log (S-02.095)', str(cm.exception))
         self.assertIn('0x77000', str(cm.exception))
-        self.assertEqual(mkldr.FR_LOG_IMAGE_MAX, 0x77000)
+        # an image that does not deflate, past the limit, through the merge
+        noise = random_bytes(mkldr.FR_LOG_IMAGE_MAX)
+        fill = ('.fill', elf32.SHT_PROGBITS, WA, 0x8803E000, noise)
+        with self.assertRaises(SystemExit) as cm:
+            mkldr.merged(elf32.Elf(fimage(extra=[fill])), elf32.Elf(front()), elf32.Elf(stub()))
+        self.assertIn('start log (S-02.095)', str(cm.exception))
 
     def test_image_reaching_the_settings_sector_refused(self):
         # S-02.104: the build's own slot image stops below the slot's settings
         # sector (0x86000 in Slot 1, 0xFE000 in Slot 2): the limit builds, one
         # word more does not.
-        n = len(self.merged())
-        fill = lambda k: ('.fill', elf32.SHT_PROGBITS, WA, 0x8803E000, b'\x69' * k)
-        k = mkldr.STORE_IMAGE_MAX - n - 16 - 8
-        self.assertEqual(len(mkldr.merged(elf32.Elf(fimage(extra=[fill(k)])), elf32.Elf(front()))),
-                         mkldr.STORE_IMAGE_MAX)
+        mkldr.slot_size(bytes(mkldr.STORE_IMAGE_MAX))
         with self.assertRaises(SystemExit) as cm:
-            mkldr.merged(elf32.Elf(fimage(extra=[fill(k + 4)])), elf32.Elf(front()))
+            mkldr.slot_size(bytes(mkldr.STORE_IMAGE_MAX + 4))
         self.assertIn('settings and its start log (S-02.104)', str(cm.exception))
         self.assertIn('0x76000', str(cm.exception))
         self.assertEqual(mkldr.STORE_IMAGE_MAX, 0x76000)
         self.assertEqual(0x10000 + mkldr.STORE_IMAGE_MAX, 0x86000)
         self.assertEqual(0x88000 + mkldr.STORE_IMAGE_MAX, 0xFE000)
+        noise = random_bytes(mkldr.STORE_IMAGE_MAX - len(self.merged()) + 0x100)
+        fill = ('.fill', elf32.SHT_PROGBITS, WA, 0x8803E000, noise)
+        with self.assertRaises(SystemExit) as cm:
+            mkldr.merged(elf32.Elf(fimage(extra=[fill])), elf32.Elf(front()), elf32.Elf(stub()))
+        self.assertIn('(S-02.104)', str(cm.exception))
 
     def test_installer_image_limit(self):
         # S-02.104: the installer carries at most 0x76000 bytes; one more is refused before
@@ -334,7 +412,7 @@ class FrontMerge(unittest.TestCase):
     def test_run_where_the_front_does_not_read_refused(self):
         far = ('.far', elf32.SHT_PROGBITS, WA, 0x88400000, b'\x68' * 8)
         with self.assertRaises(SystemExit):
-            mkldr.merged(elf32.Elf(fimage(extra=[far])), elf32.Elf(front()))
+            mkldr.merged(elf32.Elf(fimage(extra=[far])), elf32.Elf(front()), elf32.Elf(stub()))
 
 
 MARK = 0x8803D03C                    # where fimage_marked() puts _opxy_l1_mark
@@ -357,15 +435,13 @@ class L1Mark(unittest.TestCase):
     filled mark; an image without the mark keeps every byte."""
 
     def stream_mark(self, data):
-        blocks = check_stream.ldr.parse(data)
-        for b in blocks:
-            if b['target'] <= MARK < b['target'] + b['count']:
-                off = data.index(mkldr.header(0, b['target'], b['count'], 0)) + 16 + MARK - b['target']
-                return struct.unpack_from('<IIII', data, off)
+        for a, b in unpacked(data)[1]:
+            if a <= MARK < a + len(b):
+                return struct.unpack_from('<IIII', b, MARK - a)
         return None
 
     def test_filled(self):
-        data = mkldr.merged(elf32.Elf(fimage_marked()), elf32.Elf(front()))
+        data = mkldr.merged(elf32.Elf(fimage_marked()), elf32.Elf(front()), elf32.Elf(stub()))
         magic, addr, n, crc = self.stream_mark(data)
         code = [(a, b) for a, b in mkldr.runs(elf32.Elf(fimage_marked()))
                 if 0x11A00000 <= a < 0x11A0C000]
@@ -378,28 +454,26 @@ class L1Mark(unittest.TestCase):
         self.assertEqual(len(l1), 1)
         off = data.index(mkldr.header(0, addr, l1[0]['count'], 0)) + 16
         self.assertEqual(zlib.crc32(data[off:off + n]), crc)
-        # the descriptor's CRC is over the filled mark
+        # the packed block, which the descriptor's CRC covers, holds the
+        # filled mark
         main = elf32.Elf(fimage_marked())
         mkldr.mark_l1(main)
-        d = mkldr.descriptor(main, elf32.Elf(front()))
-        want = 0
-        for _, b in mkldr.checked(mkldr.ordered(mkldr.runs(main))):
-            want = zlib.crc32(b, want)
-        self.assertEqual(struct.unpack_from('<I', d, 0x10)[0], want)
+        self.assertEqual(unpacked(data)[1], [(a, bytes(b)) for a, b in mkldr.runs(main)
+                                             if not mkldr.in_l1(a)])
         res = check_stream.check('bootloader', data, FIRST_STAGE_STACK)
         self.assertTrue(all(ok for _, ok, _ in res), res)
 
     def test_unmarked_unchanged(self):
-        a = mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()))
-        self.assertEqual(a, mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front())))
+        a = mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()), elf32.Elf(stub()))
+        self.assertEqual(a, mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()), elf32.Elf(stub())))
         self.assertIsNone(self.stream_mark(a))
 
     def test_refused(self):
         with self.assertRaises(SystemExit):     # a mark already filled, or not the compiled one
-            mkldr.merged(elf32.Elf(fimage_marked(word=mkldr.L1_MARK_FULL)), elf32.Elf(front()))
+            mkldr.merged(elf32.Elf(fimage_marked(word=mkldr.L1_MARK_FULL)), elf32.Elf(front()), elf32.Elf(stub()))
         far = ('.l1.far', elf32.SHT_PROGBITS, AX, 0x11A02000, b'\x77' * 8)
         with self.assertRaises(SystemExit):     # two runs in L1 code
-            mkldr.merged(elf32.Elf(fimage_marked(extra=[far])), elf32.Elf(front()))
+            mkldr.merged(elf32.Elf(fimage_marked(extra=[far])), elf32.Elf(front()), elf32.Elf(stub()))
 
 
 class Tmp:
@@ -918,12 +992,12 @@ class TestOs(unittest.TestCase):
         self.assertEqual((tr1[5], tr1[6], tr1[7]), ('in', 1, 1560))
 
 
-TESTOS_1F_LD = os.path.join(TOP, 'src', 'testos', 'bf703_testos_1f.ld')
+TESTOS_1F_LD = os.path.join(TOP, 'src', 'testos', 'bf703_installer.ld')
 STUB = bytes(range(0x40, 0x98))                 # 88 bytes, eleven 8-byte words
 
 
-def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000):
-    """An OP-1F installer image (bf703_testos_1f.ld): the entry stub loaded at 0x11A00000, its one L1
+def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000, symbols_extra=()):
+    """An installer image (bf703_installer.ld): the entry stub loaded at 0x11A00000, its one L1
     block, and the test OS's DDR run at 0x8D000000 with .l1.text loaded in it."""
     sections = [
         ('.l1.entry', elf32.SHT_PROGBITS, AX, 0x11A00000, stub),
@@ -936,9 +1010,10 @@ def testos_1f_image(stub=STUB, ddr_at=0x8D000000, extra=None, entry=0x11A00000):
     ]
     if extra:
         sections += extra
-    symbols = [('_wb_testos_entry_1f', 0x11A00000, '.l1.entry'), ('_wb_testos_entry', ddr_at, '.text'),
+    symbols = [('_wb_testos_l1_entry', 0x11A00000, '.l1.entry'), ('_wb_testos_entry', ddr_at, '.text'),
                ('_main', ddr_at + 8, '.text'), ('_opxy_testos_entry', ddr_at + 0x24, '.data'),
                ('_wb_cplb_setup', 0x11A00100, '.l1.text')]
+    symbols += [(n, ddr_at + 0x10 + 2 * i, '.text') for i, n in enumerate(symbols_extra)]
     relocs = {'.text': [(ddr_at + 4, '_opxy_testos_entry', 0)]}
     return build_elf(sections, symbols, relocs, entry, lma={'.l1.text': ddr_at + 0x34})
 
@@ -947,7 +1022,7 @@ def run_testos_layout_1f(elf_path, *extra):
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = testos_layout.main(['testos_layout.py', elf_path, '--ld', TESTOS_1F_LD, '--board', BOARD,
-                                 '--memmap', MEMMAP, '--device', '1f'] + list(extra))
+                                 '--memmap', MEMMAP, '--device', 'both'] + list(extra))
     return rc, out.getvalue()
 
 
@@ -963,8 +1038,9 @@ def fix_header(h):
 
 
 class TestOs1F(unittest.TestCase):
-    """The OP-1F's installer images (make installer-1f): mkldr.py --os-1f and testos_layout.py --device 1f
-    against S-05.040's shape of the OP-1F's OS 1.7.3, S-01's os profile and S-05.024."""
+    """The installer's images, one for both devices (make installer, S-05.043): mkldr.py --os-1f and
+    testos_layout.py --device both against S-05.040's shape of the OP-1F's OS 1.7.3, S-01's os profile,
+    S-05.024 and both devices' RAM disks."""
 
     def test_stream_shape(self):
         data = mkldr.stream(elf32.Elf(testos_1f_image()), None, 0, mkldr.OS_1F_SPLIT)
@@ -1003,6 +1079,24 @@ class TestOs1F(unittest.TestCase):
         self.assertEqual(testos_layout.stream_entries(mkldr.stream(elf32.Elf(testos_1f_image()), None))[2],
                          0x11A00000)
 
+    def test_survey_holds_no_flash_write(self):
+        """--survey (make installer-survey): the flash driver's real erase and program gone from the
+        link; the refusing wraps may be there or gone."""
+        wraps = ('___wrap_wb_spiflash_erase', '___wrap_wb_spiflash_program')
+        real = ('_wb_spiflash_erase', '_wb_spiflash_program')
+        with Tmp() as t:
+            for extra in ((), wraps):
+                rc, out = run_testos_layout_1f(t.write('good.elf', testos_1f_image(symbols_extra=extra)),
+                                               '--survey')
+                self.assertEqual(rc, 0, out)
+            # the plain installer keeps both and is not held to it
+            self.assertEqual(run_testos_layout_1f(t.write('plain.elf', testos_1f_image(symbols_extra=real)))[0], 0)
+            for name in real:
+                bad = t.write('real.elf', testos_1f_image(symbols_extra=wraps + (name,)))
+                rc, out = run_testos_layout_1f(bad, '--survey')
+                self.assertEqual(rc, 1)
+                self.assertIn('FAIL the survey still holds %s' % name, out)
+
     def test_main_mode(self):
         with Tmp() as t:
             e = t.write('t.elf', testos_1f_image())
@@ -1015,7 +1109,15 @@ class TestOs1F(unittest.TestCase):
             self.assertIn('entry      0x11a00000', out)
             with open(t.path('t.json')) as f:
                 names = [r['name'] for r in json.load(f)['ranges']]
-            self.assertEqual(names[-3:], ['ramdisk', 'os_frame', 'frame_buffers'])
+            self.assertEqual(names[-6:], ['ramdisk_0', 'ramdisk_1', 'ramdisk_2', 'ramdisk_1f', 'os_frame',
+                                          'frame_buffers'])
+            # the one layout passes S-01's rules for each device's RAM disk (S-01.016, S-18.030)
+            with open(t.path('t.json')) as f:
+                lay = json.load(f)
+            for device in ('xy', '1f'):
+                res = check_layout.check(lay, device)
+                self.assertTrue(all(ok for rule, ok, _ in res if rule not in check_layout.INFORMATIVE),
+                                (device, res))
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(mkldr.main(['mkldr.py', e, t.path('u.ldr'), '--os-1f', '--no-init']), 2)
 
@@ -1024,15 +1126,23 @@ class TestOs1F(unittest.TestCase):
         self.assertEqual([r[0] for r in regions], ['l1_entry', 'l1_code', 'ddr'])
         board = layout.defines(BOARD)
         ddr = [r for r in regions if r[0] == 'ddr'][0]
-        self.assertEqual((ddr[1], ddr[2]), (board['OPXY_TESTOS_1F_IMAGE_START'],
-                                            board['OPXY_TESTOS_1F_IMAGE_END']))
+        self.assertEqual((ddr[1], ddr[2]), (board['OPXY_TESTOS_SHARED_IMAGE_START'],
+                                            board['OPXY_TESTOS_SHARED_IMAGE_END']))
         self.assertEqual(regions[0][1], 0x11A00000)
         # inside OS 1.7.3's second DDR range, above the OS frame, clear of the OP-1F's RAM disk
         lo, hi = testos_layout.os_1f_ranges()[-1]
-        self.assertTrue(lo <= board['OPXY_TESTOS_1F_IMAGE_START'] and board['OPXY_TESTOS_1F_IMAGE_END'] <= hi)
-        self.assertGreaterEqual(board['OPXY_TESTOS_1F_IMAGE_START'], board['OPXY_OS_FRAME_END'])
-        self.assertGreaterEqual(board['OPXY_TESTOS_1F_IMAGE_START'], board['OPXY_1F_DISK_END'])
-        self.assertLessEqual(board['OPXY_TESTOS_1F_HEAP_END'], board['OPXY_FRAMES_START'])
+        self.assertTrue(lo <= board['OPXY_TESTOS_SHARED_IMAGE_START'] and board['OPXY_TESTOS_SHARED_IMAGE_END'] <= hi)
+        self.assertGreaterEqual(board['OPXY_TESTOS_SHARED_IMAGE_START'], board['OPXY_OS_FRAME_END'])
+        self.assertGreaterEqual(board['OPXY_TESTOS_SHARED_IMAGE_START'], board['OPXY_1F_DISK_END'])
+        self.assertLessEqual(board['OPXY_TESTOS_SHARED_HEAP_END'], board['OPXY_FRAMES_START'])
+        # S-05.043: on the OP-XY the RAM disk stays clear of 0x8D000000-0x8E000000 and still holds
+        # S-12.001's sectors
+        self.assertEqual((board['OPXY_TESTOS_SHARED_IMAGE_START'], board['OPXY_TESTOS_SHARED_HEAP_END']),
+                         (0x8D000000, 0x8E000000))
+        parts = testos_layout.xy_shared_disk(board)
+        self.assertFalse(any(layout.meets(lo, hi, (0x8D000000, 0x8E000000)) for _, lo, hi in parts))
+        self.assertEqual(sum(hi - lo for _, lo, hi in parts), 454656 * 512)
+        self.assertGreaterEqual(parts[1][1], layout.defines(MEMMAP)['S01_RESERVE_DDR_END'])
 
     def test_refusals(self):
         with Tmp() as t:

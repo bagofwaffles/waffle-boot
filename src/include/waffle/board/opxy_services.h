@@ -19,6 +19,7 @@
 #include "blockdev.h"
 
 #include "waffle/boot.h"
+#include "waffle/hostlink.h"
 #include "waffle/s02_store.h"
 #include "waffle/s04_records.h"
 #include "waffle/s06_link.h"
@@ -37,6 +38,8 @@
 #include "waffle/s17_revisions.h"
 #include "waffle/wire_fat.h"
 
+struct wb_display_image;
+
 struct opxy_master;
 
 /*
@@ -48,7 +51,7 @@ struct opxy_master;
 #ifndef OPXY_BL_VERSION_MAJOR
 #define OPXY_BL_VERSION_MAJOR 0u
 #define OPXY_BL_VERSION_MINOR 9u
-#define OPXY_BL_VERSION_PATCH 48u
+#define OPXY_BL_VERSION_PATCH 50u
 #endif
 /* A test build may give slot 0 another build number, so that the
  * two slots differ and S-01.002 finds the running one (Makefile
@@ -79,9 +82,15 @@ struct opxy_draw_rec {
 
 /*
  * S-12.001's RAM disk over its parts in DDR (src/board/opxy_disk.c): the
- * sectors of part 0, then those of part 1, as one device.
+ * sectors of part 0, then those of part 1, and so on, as one device. The
+ * installer's images (OPXY_TESTOS_SHARED) need a third on the OP-XY
+ * (waffle/board/opxy.h).
  */
+#if defined(OPXY_TESTOS_SHARED)
+#define OPXY_DISK_PARTS 3u
+#else
 #define OPXY_DISK_PARTS 2u
+#endif
 struct opxy_disk_part {
 	uint8_t *mem;
 	uint32_t sectors;
@@ -157,6 +166,11 @@ struct opxy_services {
 	/* S-02.097: the running slot's settings as this start read them, and
 	 * as the last save left them (opxy_store.c) */
 	struct s02_store store;
+	/* the host link (opxy_hostlink.c): its session, its put, its job */
+	struct hostlink hl;
+	struct hl_ops hl_ops;
+	uint8_t hl_link;			/* the link the last job came on */
+	uint8_t hl_route;
 };
 
 /* The log and the menus' console, from the PSoC link's start on (S-14.011,
@@ -309,6 +323,33 @@ bool opxy_transfer_append(struct opxy_master *m, const uint8_t *p, size_t n);
 void opxy_transfer_discard(struct opxy_master *m);
 void opxy_transfer_submit(struct opxy_master *m, bool fw_command,
 			  struct s11_outcome *out);
+/* The same as a RAM-disk file of that name (S11_FORM_FILE, S-11.047). */
+void opxy_transfer_submit_file(struct opxy_master *m, const char *name,
+			       struct s11_outcome *out);
+
+/*
+ * The host link (src/board/opxy_hostlink.c, waffle/hostlink.h). The frame's
+ * reply on its link; false for a frame of another id.
+ */
+void opxy_hostlink_start(struct opxy_master *m);
+bool opxy_hostlink_frame(struct opxy_master *m, unsigned link, const struct s06_frame *f);
+/* Once a pass: the approval screen's answer, the setting, a queued job. */
+void opxy_hostlink_poll(struct opxy_master *m);
+/* Volume sectors of the OS's FAT volume at their user-area sectors, read or
+ * written; -1, with nothing done, for a range not wholly inside it. */
+int opxy_user_sectors(struct opxy_master *m, bool write, uint32_t lba, uint8_t *buf,
+		      uint32_t count);
+/* The session is approved and the setting on. */
+bool opxy_hostlink_approved(const struct opxy_master *m);
+/* S-10c's consent (struct s10c_ops gate). */
+enum s10c_gate opxy_hostlink_gate(void *ctx, enum s10c_link link);
+/* A job's progress, from the install's and the OS write's reports. */
+void opxy_hostlink_progress(struct opxy_master *m, uint32_t done, uint32_t total,
+			    const char *label);
+/* The file the next OS write reads (the developer menu's: /yaffs2/os.ldr). */
+extern const char *opxy_osw_path;
+/* The parts a host chose for the next install's selection; -1: the unit's. */
+void opxy_install_host_parts(int parts);
 
 /*
  * Weak builders, one per feature owner. Each fills its part of an ops
@@ -406,6 +447,11 @@ uint32_t opxy_crc32(void *ctx, uint32_t crc, const uint8_t *p, size_t n);
 void opxy_crc_begin(struct opxy_master *m);
 bool opxy_crc_engine(unsigned which);
 void opxy_crc_end(void);
+/* A CRC-32 from 0 checked against want during that use: a result other
+ * than want that the peripheral took part in is computed again in
+ * software, idle (when not NULL) between its pieces. */
+uint32_t opxy_crc32_known(const uint8_t *p, uint32_t n, uint32_t want,
+			  void (*idle)(void));
 /* A CRC-32 for a check against a known value (src/board/opxy_crc.c): a
  * result equal to that value is the verdict, any other is computed again
  * in software by the caller. */
@@ -433,6 +479,13 @@ void opxy_install_source(struct opxy_master *m, const struct wire_source *src,
 			 const struct s11_check_in *in,
 			 struct s11_install_result *res);
 void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env);
+/* The boot logo (src/board/opxy_logo.c): System's Boot logo item's
+ * operations into env; the stored logo the front drew at this start, read
+ * again for the hand-over frame (NULL: none, the build's picture then,
+ * S-15.132); and whether a picture is the one the front's frame showed. */
+void opxy_logo_env(struct opxy_master *m, struct s15_env_ops *env);
+const struct wb_display_image *opxy_logo_handover(struct opxy_master *m);
+bool opxy_logo_as_front(const struct opxy_master *m, const struct wb_display_image *im);
 const struct s15_geometry *opxy_display_geometry(void);
 void opxy_display_draw_ops(struct opxy_master *m, struct s15_draw_ops *ops);
 void opxy_display_held_start(struct opxy_master *m);

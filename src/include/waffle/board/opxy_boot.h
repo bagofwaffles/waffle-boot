@@ -87,9 +87,10 @@ void opxy_timing_stream_end(void);
  * s02_image_check(). */
 void opxy_timing_slot_read(const struct s02_image *im);
 void opxy_timing_slot_check(const struct s02_image *im);
-/* The running slot the front's record gave, and the inference from the
- * slots' streams run once for comparison: its cycles and its answer (2:
- * none). */
+/* The running slot the front's record gave; with BOOT_TIMING_INFER=1 also
+ * the inference from the slots' streams run once for comparison: its
+ * cycles and its answer (2: none). */
+void opxy_timing_slot_given(unsigned given);
 void opxy_timing_slot_inferred(unsigned given, uint64_t cycles, unsigned inferred);
 #ifndef OPXY_BOOT_TIMING_WINDOW_US
 #define OPXY_BOOT_TIMING_WINDOW_US OPXY_BOOT_LINK_SETTLE_US
@@ -472,6 +473,10 @@ struct opxy_master {
 	struct boot_master_ops ops;
 };
 
+/* The frozen front's own version, as its recovery HELLO gives it; outside
+ * the front's boundary, so tests/unit/test_board_devhost.c holds it equal. */
+#define OPXY_FRONT_VERSION 23u
+
 /*
  * The front's hand-off record (front/fr_handoff.h) at FR_HANDOFF_ADDR, whole:
  * its magic, version, size and CRC, copied out; the magic in L2 is then
@@ -486,7 +491,8 @@ bool opxy_front_take(struct fr_handoff *out);
  */
 bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out);
 /* S-18.005: the device the front decided and how, from an accepted record;
- * false when either code names none. */
+ * false when either code names none, or for a device other than the OP-XY
+ * on a CPU that is not the master or decided as the second CPU. */
 bool opxy_front_device(const struct fr_handoff *ho, enum wb_dev_id *id, enum wb_dev_how *how);
 /*
  * S-18.001 to S-18.005, the main image's side: the device and the role.
@@ -629,6 +635,10 @@ static inline const struct wb_device *opxy_dev(const struct opxy_master *m)
 	return m->dev != NULL ? m->dev : &wb_device_opxy;
 }
 
+/* S-18.004: a device the front did not identify shows its n and c; the
+ * record has no field for them, so bringup() reads the first stage again
+ * through read, after the pins (no write), when it has no n yet. */
+void opxy_device_fingerprint(struct opxy_master *m, wb_flash_read_fn read, void *ctx);
 /* S-18.002, S-18.004 to S-14: the device's log lines (psoc_start()). */
 void opxy_device_log(struct opxy_master *m);
 /* S-01.003: the entry after start-up, both roles. */

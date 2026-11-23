@@ -71,14 +71,14 @@ struct wb_display *opxy_testos_display(void)
 }
 #endif
 
-/* S-13c.004: the reset decision, from the entry's DMA9 values and the PA8
- * strap sample (S-13b.001). Before any DMA9 write. */
 /* S-13c.001: the panel's pins on the device (D/C, S-18.030). */
 static const struct wb_lcd_config *lcd_of(const struct wb_device *dev)
 {
 	return dev->id == WB_DEV_OP1F ? &wb_lcd_op1f : &wb_lcd_opxy;
 }
 
+/* S-13c.004: the reset decision, from the entry's DMA9 values and the PA8
+ * strap sample (S-13b.001). Before any DMA9 write. */
 void opxy_display_handshake(uint32_t xmod, uint32_t ymod)
 {
 	struct opxy_master *m = &opxy_master;
@@ -179,8 +179,17 @@ void opxy_display_settle(void)
 /* S-15.132: a build given no image shows the logo; the file that
  * make image LOGO=<file>.png generates defines the image instead. */
 __attribute__((weak)) const struct wb_display_image wb_display_boot_image = {
-	NULL, 0u
+	NULL, 0u, NULL
 };
+
+/* The hand-over frame's picture: the stored logo the front drew at this
+ * start, else the build's image. */
+static const struct wb_display_image *boot_image(void)
+{
+	const struct wb_display_image *im = opxy_logo_handover(&opxy_master);
+
+	return im != NULL ? im : &wb_display_boot_image;
+}
 
 /*
  * S-05.004, S-15.132: the hand-over frame before the OS is read, then the
@@ -190,7 +199,7 @@ __attribute__((weak)) const struct wb_display_image wb_display_boot_image = {
 /* S-15.132: the boot logo's frame, sent at once and ended. */
 static bool logo_frame(void)
 {
-	if (!up || wb_display_boot_logo(&disp, &wb_display_boot_image) != S13C_OK)
+	if (!up || wb_display_boot_logo(&disp, boot_image()) != S13C_OK)
 		return false;
 	adopted = false;	/* this build's image on the panel now */
 	return true;
@@ -364,7 +373,7 @@ static void os_frame_logo(void)
 {
 	uint32_t *w = OS_FRAME;
 
-	wb_display_handover_frame(&wb_display_boot_image, (uint8_t *)w);
+	wb_display_handover_frame(boot_image(), (uint8_t *)w);
 	os_relayout((uint8_t *)w, 0u);
 	os_frame_tail(w);
 }
@@ -384,8 +393,9 @@ static void os_frame_calibration(void)
  * S-05.004, S-13c.020: the panel shows the hand-over frame already when its
  * last frame is the early logo frame, nothing sent since but the gamma load
  * (none without digital gamma, S-13c.026; no line under it, S-13c.025),
- * and that frame has this build's image: the front's is the logo, so a
- * build-time image (S-15.132) is sent all the same.
+ * and that frame has this build's image: the front's is its own logo or the
+ * stored one, so a build-time image (S-15.132) the front did not draw is
+ * sent all the same.
  */
 static bool logo_kept(void)
 {
@@ -393,7 +403,7 @@ static bool logo_kept(void)
 
 	return up && p->state == S13C_ON && p->boot_frame && !p->lined &&
 	       s13c_gamma_ready(p) && !p->frame &&
-	       (!adopted || wb_display_boot_image.data == NULL);
+	       (!adopted || opxy_logo_as_front(&opxy_master, boot_image()));
 }
 
 /*

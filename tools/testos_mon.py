@@ -33,8 +33,10 @@ found by name alone, so an OP-1F's (USB product 0x0102) is found as the OP-XY's 
     swr ADDR VALUE       write a word of the slave, over the bridge
     dev-l1rd ADDR [WORDS] read words of L1 instruction memory (0x11A00000..) through ENX (developer mode)
     dev-put FILE [--as NAME]
-                         write FILE to /yaffs2/NAME (default os.ldr) over USB, then verify its sha256
-    dev-get [NAME]       the sha256 and size of /yaffs2/NAME (default os.ldr)
+                         write FILE to /yaffs2/NAME (default os.ldr) by the host link (tools/hostlink.py),
+                         checked whole by its sha256 before it takes the name. Needs the session's
+                         approval: hold 1 on the unit when it asks
+    dev-get [NAME]       the sha256 and size of /yaffs2/NAME (default os.ldr), by the host link
     dev-yscan OUT.json [--obj ID]...
                          read the yaffs2 region's tags raw, and the headers of the root's entries
                          (and of objects ID): block classes, sequence numbers, summaries, blocks
@@ -120,8 +122,9 @@ found by name alone, so an OP-1F's (USB product 0x0102) is found as the OP-XY's 
     continue-os --sysex  print the same request as one MIDI carrier SysEx message (S-10c.020), in hex,
                          for any MIDI sender: a unit with developer mode off has no serial port
     log [S]              the bootloader's or the test OS's log on this port for S seconds (default
-                         10): the log-configuration request turns its sink on (S-14.013). A
-                         BOOT_TIMING=1 build repeats its timing report there in held mode
+                         10): the log-configuration request turns its sink on (S-14.013). The boot
+                         menu sends it only to an approved host link session: hold 1 on the unit when
+                         it asks. A BOOT_TIMING=1 build repeats its timing report there in held mode
     nordic-info          the Nordic's own info text (mode, versions and, where it gives them, the
                          boot slot), asked through the bootloader's forwarding in held mode
                          (S-06.050). Sends one info request; changes nothing
@@ -147,7 +150,6 @@ LOAD_TOP = 0x8A000000 - 0x10000  # a place for the stall routine
 STATUS = {0: 'ok', 1: 'refused', 2: 'bad request', 3: 'the slave is not answering'}
 ROW, PEEK, POKE = 0x0F, 0x0E, 0x0D
 DEV_SREAD, DEV_SWRITE, DEV_HANDOVER, DEV_FLAGS, DEV_L1READ = 20, 21, 22, 23, 24  # developer requests (S-10c.110)
-DEV_PUT, DEV_SHA = 25, 26
 DEV_YTAGS, DEV_YMETA = 27, 28
 DEV_SCREEN, DEV_KEY, DEV_FRAME = 29, 30, 31
 DEV_BENCH, DEV_CHECK, DEV_EXTRACT = 32, 33, 34
@@ -256,7 +258,6 @@ USB_SETS = ['midi', 'midi+cdc', 'disk', 'disk+cdc', 'mtp', 'mtp vendor', 'serial
 MTP_STATES = ['off', 'vendor (macOS)', 'standard (Windows)']
 SCREEN_FLAGS = [(0x01, 'usb up'), (0x02, 'key test'), (0x04, 'armed'), (0x08, 'busy'),
                 (0x10, 'keys held'), (0x20, 'shift')]
-PUT_OPEN, PUT_DATA, PUT_CLOSE = 0, 1, 2
 SEND_ADDR = 0   # wb_spi_testos_send in the running image's ELF
 STEPS = ['server', 'msi init', 'eMMC init', 'volume', 'eMMC features', 'mount',
          'last request', 'last send', 'queue']
@@ -458,7 +459,10 @@ LOG_IDS = (0x03, 0x04)  # S-14.021: a log line, an error line
 
 def show_log(mon, seconds):
     """Threshold 3 and both link sinks on, then each log line as it comes: the
-    timestamp (S-14.001, u32 big-endian, microseconds) and the body."""
+    timestamp (S-14.001, u32 big-endian, microseconds) and the body. The boot
+    menu sends its log only in an approved session of its host link: asked
+    for first; the test OS, which has no host link, sends it as asked."""
+    host_approved(mon, required=False)
     mon.seq += 1
     os.write(mon.fd, frame(bytes([0xA2, 0x03]), mon.seq, LOG_CONFIG))
     end = time.monotonic() + seconds
@@ -1066,6 +1070,68 @@ def q11(mon, a):
     return 0
 
 
+class FdPort:
+    """The monitor's open port as a host link transport (tools/hostlink.py)."""
+
+    def __init__(self, mon):
+        self.mon = mon
+
+    def write(self, data):
+        os.write(self.mon.fd, data)
+
+    def read(self, timeout):
+        ready, _, _ = select.select([self.mon.fd], [], [], timeout)
+        return os.read(self.mon.fd, 4096) if ready else b''
+
+
+def host_approved(mon, required=True):
+    """The host link's session approved, asking the unit when it is not. With
+    required False, a unit with no host link (the test OS) goes on unasked."""
+    import hostlink
+    hl = hostlink.Client(FdPort(mon))
+    try:
+        state = hostlink.SESSIONS[hl.call(hostlink.SESSION, timeout=1.0)[1][0]]
+    except SystemExit:
+        if required:
+            raise
+        return
+    except hostlink.HostLinkError as e:
+        raise SystemExit('host link: %s' % e)
+    if state != 'approved':
+        print('hold 1 on the unit for 5 s to allow this computer')
+        if hl.approve() != 'approved':
+            raise SystemExit('not approved on the unit')
+
+
+def host_file(mon, c, a):
+    """dev-put and dev-get, by the host link's file calls under /yaffs2."""
+    import hashlib
+    import hostlink
+    hl = hostlink.Client(FdPort(mon))
+    name = 'os.ldr'
+    if '--as' in a:
+        name = a[a.index('--as') + 1]
+        a = a[:a.index('--as')]
+    if c == 'dev-get' and a:
+        name = a[0]
+    path = '/yaffs2/' + name
+    host_approved(mon)
+    try:
+        if c == 'dev-put':
+            with open(a[0], 'rb') as fh:
+                data = fh.read()
+            hl.put(path, data)
+        digest, size = hl.hash(path)
+    except hostlink.HostLinkError as e:
+        raise SystemExit('host link: %s' % e)
+    if c == 'dev-get':
+        print('%s: sha256 %s, %d bytes' % (path, digest.hex(), size))
+        return 0
+    ok = digest == hashlib.sha256(data).digest() and size == len(data)
+    print('%d bytes to %s, sha256 %s: %s' % (len(data), path, digest.hex(), 'verified' if ok else 'MISMATCH'))
+    return 0 if ok else 1
+
+
 def run(mon, argv):
     c, a = argv[0], argv[1:]
     if c == 'crumbs':
@@ -1162,29 +1228,8 @@ def run(mon, argv):
             v = expect(mon, ROW, 0, i)
             code = v >> 16 & 0xFF
             print('%-14s %s' % (name, 'not run' if code == 0xFF else 'code %d, %d' % (code, v & 0xFFFF)))
-    elif c == 'dev-put':
-        import hashlib
-        name = 'os.ldr'
-        if '--as' in a:
-            name = a[a.index('--as') + 1]
-            a = a[:a.index('--as')]
-        with open(a[0], 'rb') as fh:
-            data = fh.read()
-        mon.checked(bytes([DEV_PUT, PUT_OPEN]) + name.encode())
-        for off in range(0, len(data), 240):
-            mon.checked(bytes([DEV_PUT, PUT_DATA]) + data[off:off + 240])
-        mon.checked(bytes([DEV_PUT, PUT_CLOSE]))
-        r = mon.checked(bytes([DEV_SHA]) + name.encode(), 30.0)
-        digest, size = bytes(r[:32]), struct.unpack_from('<I', r, 32)[0]
-        ok = digest == hashlib.sha256(data).digest() and size == len(data)
-        print('%d bytes to /yaffs2/%s, sha256 %s: %s'
-              % (len(data), name, digest.hex(), 'verified' if ok else 'MISMATCH'))
-        return 0 if ok else 1
-    elif c == 'dev-get':
-        name = a[0] if a else 'os.ldr'
-        r = mon.checked(bytes([DEV_SHA]) + name.encode(), 30.0)
-        print('/yaffs2/%s: sha256 %s, %d bytes'
-              % (name, bytes(r[:32]).hex(), struct.unpack_from('<I', r, 32)[0]))
+    elif c in ('dev-put', 'dev-get'):
+        return host_file(mon, c, a)
     elif c in ('dev-yscan', 'yshow'):
         import json
         objs = [num(a[i + 1]) for i, v in enumerate(a) if v == '--obj']
@@ -1630,10 +1675,9 @@ START_WHYS = ['OK', 'NO_ACTIVE', 'SELECT', 'HEADER_READ', 'IMAGE_READ', 'USER_SE
               'SLAVE_START', 'FILE']
 # S-05.024's rules, by S05_REFUSE_... less one (S15_CHECK_...): the main screen's words, then Device Info's
 CHECKS = ['LENGTH', 'PARSE', 'FLAGS', 'SPACE', 'STAGING', 'RESERVE', 'RECORD', 'BOOT_RESERVE']
-CHECK_REASON = ['the image is too long to stage', "the image's block headers are not valid",
-                'the image uses a block flag not allowed', 'the image loads outside memory',
-                'the image loads over the staging area', 'the image loads over the hand-over reserve',
-                'the image loads over the reboot record', "the image loads over the ROM's boot reserve"]
+CHECK_REASON = ['image too long to stage', 'bad block headers', 'block flag not allowed',
+                'loads outside memory', 'loads over the staging area', 'loads over the hand-over reserve',
+                'loads over the reboot record', "loads over the ROM's boot reserve"]
 CHECK_INFO = ['too long', 'block headers', 'block flags', 'outside memory', 'over staging', 'over reserve',
               'over reboot record', 'over boot reserve']
 START_AT = ['lost', 'send failed', 'no ready', 'no reply', 'reply broke', 'bad reply', 'bad check', 'timed out',
@@ -1695,7 +1739,7 @@ def start_view(d):
 def file_reason(v):
     """A file start's /os.ldr reason (s15_osw_reason())."""
     w, value, limit = v.get('file_why', 'NONE'), v.get('value', 0), v.get('limit', 0)
-    return {'REFUSED': "the drive can't be read", 'MISSING': 'no /os.ldr on the drive',
+    return {'REFUSED': 'drive unreadable', 'MISSING': 'no /os.ldr on the drive',
             'DIRECTORY': '/os.ldr is a directory', 'READ': 'read failed, error %d' % value,
             'MEMORY': 'not enough memory', 'TOO_SMALL': '%d bytes, at least %d' % (value, limit),
             'TOO_LARGE': '%d bytes, at most %d' % (value, limit)}.get(w, '')
@@ -1710,27 +1754,27 @@ def start_reason(v):
     w, lost = v['why'], start_lost(v)
     part, value = v.get('part', 0), v.get('value', 0)
     if w == 'NO_ACTIVE':
-        t = 'no boot partition is active'
+        t = 'no active boot partition'
     elif w == 'SELECT':
-        t = 'at the select' if lost else 'boot partition %d could not be selected' % part
+        t = 'at the select' if lost else 'boot partition %d select failed' % part
     elif w == 'HEADER_READ':
-        t = 'at the header read' if lost else 'the header of partition %d could not be read' % part
+        t = 'at the header read' if lost else 'partition %d header read failed' % part
     elif w == 'IMAGE_READ':
-        t = 'during the image read' if lost else 'the image could not be read'
+        t = 'during the image read' if lost else 'image read failed'
     elif w == 'USER_SELECT':
-        t = 'at the last select' if lost else 'the user area could not be selected'
+        t = 'at the last select' if lost else 'user area select failed'
     elif w == 'FORMAT':
-        t = 'header format %d is not supported' % value
+        t = 'header format %d not supported' % value
     elif w == 'ZERO_LENGTH':
-        t = 'the header gives the image no length'
+        t = 'image length 0'
     elif w == 'TOO_LONG':
-        t = 'the image is longer than 8 MiB'
+        t = 'image over 8 MiB'
     elif w == 'PAST_PARTITION':
-        t = 'the image runs past the end of its partition'
+        t = 'image runs past its partition'
     elif w == 'CRC':
-        t = "the image's CRC does not match its header"
+        t = 'image CRC mismatch'
     elif w == 'ENCRYPTED':
-        t = 'the image is encrypted'
+        t = 'image is encrypted'
     elif w == 'REFUSED':
         t = CHECK_REASON[CHECKS.index(v.get('check', 'LENGTH'))]
     elif w == 'SLAVE_NO_OS':

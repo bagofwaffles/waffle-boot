@@ -46,7 +46,8 @@ static int fingerprint(wb_flash_read_fn read, void *ctx, uint32_t *n, uint32_t *
 	*n = a > 0xFFFFFFFFu - WB_FS_HEAD ? 0xFFFFFFFFu : a + WB_FS_HEAD;
 	if (*n <= WB_FS_HEAD || *n > WB_FS_N_MAX)
 		return 0;
-	/* the header's bytes count once, from the read above */
+	/* the header's bytes count once, from the read above; in software:
+	 * portable, before any peripheral set-up, and in 256-byte pieces */
 	crc = wire_crc32(0, buf, WB_FS_HEAD);
 	for (off = WB_FS_HEAD; off < *n;) {
 		const uint32_t k = *n - off < CHUNK ? *n - off : CHUNK;
@@ -78,6 +79,8 @@ struct wb_dev_decision wb_first_stage_identify_n(wb_flash_read_fn read, void *ct
 {
 	struct wb_dev_decision d = { WB_DEV_DEFAULT, WB_DEV_UNKNOWN };
 
+	*n = 0;			/* as with no try */
+	*c = 0;
 	for (unsigned t = 0; t < tries; t++) {
 		const int rc = fingerprint(read, ctx, n, c);
 

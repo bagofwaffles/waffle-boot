@@ -13,7 +13,7 @@ It first prints {"socket": PATH, "shim": whether the front's code could be built
     {"op": "unit", "spec": SPEC, "keep": true}   a new unit on the connection that is open
     {"op": "set", "set": {...}}             units.py's set()
     {"op": "state"}                         the unit's flash and what it was asked, as its state()
-    {"op": "act", "do": WHAT}               an installer's act(): hold, release, restart, reset
+    {"op": "act", "do": WHAT}               an installer's act(): hold, leave, retrial, release, restart, reset
     {"op": "reconnect"}                     the same unit on the connection the client has just
                                             made (an installer after a restart)
     {"op": "quit"}

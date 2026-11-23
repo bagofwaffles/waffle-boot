@@ -4,6 +4,7 @@
  */
 #include "waffle/s07_rules.h"
 #include "waffle/bytes.h"
+#include "waffle/div64.h"
 
 /* A key of dev's table down in b; WB_KEY_NONE never is. */
 static bool key_set(const struct wb_device *dev, const uint8_t *b, unsigned k)
@@ -179,7 +180,7 @@ uint32_t s07_breathe_step(uint32_t phase, uint32_t d_us)
 {
 	if (d_us > S07_BREATHE_GAP_US)
 		return phase;
-	return phase + (uint32_t)(((uint64_t)d_us * BREATHE_PER_MS) / 1000u);
+	return phase + (uint32_t)wb_udiv64((uint64_t)d_us * BREATHE_PER_MS, 1000u);
 }
 
 uint8_t s07_breathe_level(uint8_t base, uint32_t phase)

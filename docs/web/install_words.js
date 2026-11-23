@@ -6,18 +6,18 @@
 // The ferret tool's page, for a unit that has never had developer mode on.
 export const FERRET_URL = 'https://bagofwaffles.github.io/ferret/op-xy/';
 
+// One installer for both devices (S-05.043). On the OP-1F it and its survey are written by that
+// unit's own means, never sent by this page.
 export const INSTALLER_FILE = 'waffle-install.ldr';
-// The OP-1F's installer and its survey, laid out like the OP-1F's own OS (S-05.040): written by
-// that unit's own means, never sent by this page.
-export const INSTALLER_FILE_1F = 'waffle-install-1f.ldr';
-export const SURVEY_FILE_1F = 'waffle-install-1f-survey.ldr';
+export const SURVEY_FILE = 'waffle-install-survey.ldr';
 
 export const IHELLO = 0x40, STATE = 0x41, TEST = 0x42, REPORT = 0x43, SURVEY = 0x44;
 export const MAGIC = [0x57, 0x42, 0x49, 0x4E];          // "WBIN"
 export const IPROTO = 1;
 export const IHELLO_LEN = 64, STATE_HEAD = 32, REPORT_CHUNK = 1024, SURVEY_LEN = 76;
 // HELLO's bytes 56 to 59: the unit's device and how it was decided (S-18.005's codes), the device
-// the installer is built for, and 1 for a survey build
+// the installer installs for (the unit's, or 0 when not identified: one image serves both), and 1
+// for a survey build
 export const IHELLO_O_DEVICE = 56;
 export const DEVICES = ['OP-XY', 'OP-1F'];
 export const HOW_TABLE = 0, HOW_SECOND = 1, HOW_UNKNOWN = 2;
@@ -44,7 +44,7 @@ export const PHASE = {
     4: ['ready', 'Hold 1 on the unit for 5 s to write the trial'],
     5: ['writing trial', 'Writing the trial'],
     6: ['trial written', 'Switch off, then on: the new bootloader starts once'],
-    7: ['commit ready', 'Hold 1 for 5 s to keep the new bootloader'],
+    7: ['commit ready', 'Hold 1 for 5 s to keep the new bootloader, or 2 to write the trial again'],
     8: ['committing', 'Writing'],
     9: ['done', 'Done: switch off and on'],
     10: ['failed', 'A write failed'],
@@ -53,16 +53,22 @@ export const PHASE = {
     13: ['surveyed', 'The survey is done: nothing was written to the SPI flash'],
 };
 
+// The commit screen's 2: the same trial again, for one more trial start (one can go to the recovery
+// menu, another to the boot menu, before the new bootloader is kept).
+export const RETRIAL = 'Or hold 2 for 5 s to write the trial again, for one more trial start.';
+
 export const VERDICT = { 0: 'PASS', 1: 'PASS WITH GAPS', 2: 'FAIL', 0xFF: 'not yet' };
 export const TEST_STATE = ['not run', 'pass', 'FAIL', 'not tested', 'not passed', 'n/a'];
 export const TEST_KIND = ['OS', 'automatic', 'guided'];
 
+// STATE byte 4, the lock: installer.h's enum inst_lock, code for code
+export const LOCK_NONE = 0, LOCK_RESERVED = 5, LOCK_SURVEY = 11;
 export const LOCK = {
     1: 'a check failed',
-    2: 'a check was not tested',
+    2: 'an automatic check could not run',
     3: 'the installer did not verify the image it carries (CRC-32 or front pin)',
     4: 'the slot the selector names is not verified or not good',
-    5: "the unit's OS was not found, or fails its check",
+    5: 'lock code 5, which the installer never sets',
     6: 'the key check was ended with 8',
     7: 'the eMMC could not be reached',
     8: 'the device is not identified by its first stage',
@@ -77,14 +83,11 @@ export const LOCK_ADVICE = {
     2: 'Start the installer again so that every check runs: check.txt says which one was not tested.',
     3: `The installer file may be damaged: get ${INSTALLER_FILE} again and write it once more.`,
     4: 'The bootloader slots are not in a state the installer writes over.',
-    5: "The installer needs the unit's OS in the other boot partition, checked, so that it can " +
-        'make it active again. Write the OS from the developer menu, then the installer again.',
     6: 'Start the installer again and press com, then M4 (4 under the display), on the unit.',
     7: 'Switch off and on and start the installer again. Save check.txt if it happens again.',
     8: "The unit's first stage is not one this project knows: nothing is installed on it. " +
         'check.txt gives its n and c.',
-    9: `Use the installer built for this unit: ${INSTALLER_FILE} on an OP-XY, ` +
-        `${INSTALLER_FILE_1F} on an OP-1F.`,
+    9: `Use this project's ${INSTALLER_FILE}: it is built for both devices.`,
     10: 'On an OP-1F one slot keeps the bootloader the unit came with; this install would write ' +
         'over the last one, so it is not offered.',
     11: 'Save check.txt: it holds what the survey found. An install is not offered by this build.',
@@ -157,6 +160,17 @@ export const SURVEY_DONE = 'The survey wrote nothing to the SPI flash. Save chec
     'holds what an install on this unit would depend on.';
 export const NOT_IDENTIFIED = 'The device is not identified by its first stage: nothing is ' +
     'installed on it.';
+
+// The Install tab sends the installer to an OP-XY only. An OP-1F takes the same file by its own OS
+// write, after tools/mtpcp.py prepare-1f has arranged its volume (S-05.042), which this page does not
+// do. It is known by S-18's USB products for it (device.usb_pid, device.midi_pid) or a product name
+// that says OP-1.
+export const PIDS_1F = [0x0102, 0x8102];
+export const HOW_TO_INSTALL_1F = 'https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install#on-an-op-1-field';
+export const isOp1f = (d) => !!d && (PIDS_1F.includes(d.productId) || /\bOP-1(?![0-9A-Za-z])/i.test(d.name || ''));
+export const NOT_FOR_1F = ['This is an OP-1 Field: this page does not send the installer to it. Nothing was sent.',
+    'On an OP-1 Field the installer goes on by the unit\'s own OS write, after tools/mtpcp.py prepare-1f. ' +
+    `Follow How to Install, On an OP-1 Field: ${HOW_TO_INSTALL_1F}`];
 
 export const NAMES = ['Slot 1', 'Slot 2'];
 export const deviceName = (d) => DEVICES[d] || `device ${d}`;

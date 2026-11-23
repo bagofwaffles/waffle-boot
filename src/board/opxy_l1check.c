@@ -44,6 +44,7 @@ bool opxy_l1_check(const volatile struct opxy_l1_mark *mk, uint32_t (*word)(uint
 			buf[i + 2u] = (uint8_t)(v >> 16);
 			buf[i + 3u] = (uint8_t)(v >> 24);
 		}
+		/* software: 256-byte pieces read word by word from L1 code memory */
 		crc = wire_crc32(crc, buf, k);
 		at += k;
 	}

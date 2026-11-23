@@ -11,6 +11,7 @@
 #if OPXY_BOOT_LINK_FC && !defined(OPXY_TEST_OS)
 #include <string.h>
 
+#include "waffle/div64.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/s06_bytes.h"
 
@@ -38,7 +39,7 @@ void opxy_stream_end(int rc, int end)
 
 static uint32_t us_of(uint64_t cycles)
 {
-	const uint64_t us = cycles / OPXY_CCLK_MHZ;
+	const uint64_t us = wb_udiv64(cycles, OPXY_CCLK_MHZ);
 
 	return us > UINT32_MAX ? UINT32_MAX : (uint32_t)us;
 }

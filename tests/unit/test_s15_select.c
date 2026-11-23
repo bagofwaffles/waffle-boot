@@ -528,10 +528,10 @@ static void test_lines(void)
 	      strcmp(b[5].s, "6 Backplane\t0.4.1 > 0.4.2\tNo") == 0 &&
 	      strcmp(b[6].s, "7 Bootloader\t0.9.40 > 0.9.41\tNo") == 0,
 	      "the rows in digit order: '%s' .. '%s'", b[1].s, b[6].s);
-	CHECK(strcmp(b[7].s, "8 Cancel (cancels in 60 s)") == 0 && st[7] == S15_ST_BACK,
+	CHECK(strcmp(b[7].s, "8 Cancel (60 s)") == 0 && st[7] == S15_ST_BACK,
 	      "row 8: '%s'", b[7].s);
 	n = lines(b, st, T0 + 8000u);
-	CHECK(n == 8u && strcmp(b[7].s, "8 Cancel (cancels in 52 s)") == 0,
+	CHECK(n == 8u && strcmp(b[7].s, "8 Cancel (52 s)") == 0,
 	      "the time: '%s'", b[7].s);
 
 	/* picked, the bootloader among them: Yes, the hint, the warning */
@@ -544,7 +544,7 @@ static void test_lines(void)
 	press(K7, T0);
 	n = lines(b, st, T0);
 	CHECK(n == 9u, "nine rows: %zu", n);
-	CHECK(strcmp(b[0].s, "1 Install selected (hold for 5 s)") == 0 &&
+	CHECK(strcmp(b[0].s, "1 Install selected (hold to select)") == 0 &&
 	      st[0] == S15_ST_ITEM, "row 1 with a selection: '%s'", b[0].s);
 	CHECK(strcmp(b[1].s, "2 Main DSP\t1.1.4 > 1.1.5\tYes") == 0 &&
 	      st[1] == S15_ST_PICK_ON && st[2] == S15_ST_PICK &&
@@ -553,7 +553,7 @@ static void test_lines(void)
 	CHECK(strcmp(b[3].s, "4 BLE\tNot in this version") == 0 && st[3] == S15_ST_PICK_OFF &&
 	      strcmp(b[5].s, "6 Backplane\tUp to date") == 0 && st[5] == S15_ST_PICK_OFF,
 	      "rows that cannot be picked: '%s', '%s'", b[3].s, b[5].s);
-	CHECK(strcmp(b[8].s, "Slot 2 is replaced. Recovery remains.") == 0 &&
+	CHECK(strcmp(b[8].s, "Replaces Slot 2; recovery stays.") == 0 &&
 	      st[8] == S15_ST_WARN, "the warning: '%s'", b[8].s);
 	{
 		/* required information, by its tokens */
@@ -571,7 +571,7 @@ static void test_lines(void)
 	s15_select_key(&s, K1, true, T0 + 1000u);
 	n = lines(b, st, T0 + 3000u);
 	CHECK(n == 9u && st[0] == S15_ST_ARMED &&
-	      strcmp(b[0].s, "1 Install selected (hold for 5 s)") == 0 &&
+	      strcmp(b[0].s, "1 Install selected (hold to select)") == 0 &&
 	      strcmp(b[7].s, "8 Cancel") == 0 &&
 	      strcmp(b[8].s, "Release to cancel\t40%\t3 s") == 0 && st[8] == S15_ST_STEP_RUN,
 	      "held: '%s', '%s'", b[7].s, b[8].s);
@@ -599,10 +599,10 @@ static void test_lines(void)
 	press(K7, T0);
 	info.slot = 0;
 	n = lines(b, st, T0);
-	CHECK(strcmp(b[n - 1u].s, "Slot 1 is replaced. Recovery remains.") == 0, "slot 1");
+	CHECK(strcmp(b[n - 1u].s, "Replaces Slot 1; recovery stays.") == 0, "slot 1");
 	info.slot = -1;
 	n = lines(b, st, T0);
-	CHECK(strcmp(b[n - 1u].s, "The other slot is replaced. Recovery remains.") == 0,
+	CHECK(strcmp(b[n - 1u].s, "Replaces the other slot; recovery stays.") == 0,
 	      "slot not known");
 	info.stock = true;
 	n = lines(b, st, T0);
@@ -667,18 +667,18 @@ static void test_signature_lines(void)
 	n = lines(b, st, T0 + 9000u);
 	for (size_t i = 0; i < n; i++)
 		r[i] = b[i].s;
-	CHECK(n == 4u && st[0] == S15_ST_WARN && st[2] == S15_ST_ITEM &&
-	      strcmp(b[2].s, "1 Install anyway (hold for 5 s)") == 0 &&
-	      strcmp(b[3].s, "8 Cancel (cancels in 51 s)") == 0 && st[3] == S15_ST_BACK,
-	      "the prompt: '%s', '%s'", b[2].s, b[3].s);
+	CHECK(n == 3u && st[0] == S15_ST_WARN && st[1] == S15_ST_ITEM &&
+	      strcmp(b[1].s, "1 Install anyway (hold to select)") == 0 &&
+	      strcmp(b[2].s, "8 Cancel (51 s)") == 0 && st[2] == S15_ST_BACK,
+	      "the prompt: '%s', '%s'", b[1].s, b[2].s);
 	CHECK(s15t_match_named("sig:mismatch", r, n, NULL) &&
 	      s15t_match_named("select:install", r, n, NULL) &&
 	      !s15t_match_named("sig:valid", r, n, NULL), "the prompt's tokens");
 	s15_select_key(&s, K1, true, T0 + 9000u);
 	n = lines(b, st, T0 + 11000u);
-	CHECK(n == 5u && st[2] == S15_ST_ARMED && strcmp(b[3].s, "8 Cancel") == 0 &&
-	      strcmp(b[4].s, "Release to cancel\t40%\t3 s") == 0,
-	      "held: '%s'", b[4].s);
+	CHECK(n == 4u && st[1] == S15_ST_ARMED && strcmp(b[2].s, "8 Cancel") == 0 &&
+	      strcmp(b[3].s, "Release to cancel\t40%\t3 s") == 0,
+	      "held: '%s'", b[3].s);
 	CHECK(s15_select_tick(&s, T0 + 14000u) == S15_SELECT_INSTALL,
 	      "held 5 s: on to the selection");
 }

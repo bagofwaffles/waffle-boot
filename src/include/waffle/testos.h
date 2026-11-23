@@ -117,19 +117,11 @@ extern const unsigned opxy_testos_regs_n;
 extern uint32_t opxy_testos_entry[OPXY_TESTOS_E_WORDS];
 
 /*
- * The device this image was built for (OPXY_TESTOS_1F: the OP-1F's
- * installer images, laid out like its OS, waffle/board/opxy.h), and the
- * survey (OPXY_TESTOS_SURVEY: every SPI-flash write refused, at the gate
- * and in the driver, wiki/Installer-Reference.md). An OP-1F image runs
- * on a main CPU whose first stage the table names as the OP-1F's alone:
- * anywhere else its entry stops before any pin or memory outside the
- * image is touched, since its DDR bytes lie in the OP-XY's RAM disk.
+ * The survey (OPXY_TESTOS_SURVEY: every SPI-flash write refused, at the
+ * gate and in the driver, wiki/Installer-Reference.md). The installer's
+ * images (OPXY_TESTOS_SHARED, bf703_installer.ld) run on either device and
+ * act on the device their entry decided (S-18, S-05.043).
  */
-#if defined(OPXY_TESTOS_1F)
-#define OPXY_TESTOS_IMAGE_DEVICE 1u	/* WB_DEV_OP1F */
-#else
-#define OPXY_TESTOS_IMAGE_DEVICE 0u	/* WB_DEV_OPXY */
-#endif
 #if defined(OPXY_TESTOS_SURVEY)
 #define OPXY_TESTOS_SURVEY_ON true
 #else
@@ -171,8 +163,7 @@ enum opxy_testos_paint {
  * PA2 sample where it is not 1, then a main CPU's first stage over SPI2,
  * read up to three times, no other pin written), then red on a
  * master whose first stage the table names, when the display record says
- * the panel is initialized. Reads no .bss of the image (not yet cleared);
- * an OP-1F image stops here on any other device. */
+ * the panel is initialized. Reads no .bss of the image (not yet cleared). */
 void opxy_testos_entry_paint(void);
 /* A later milestone: through the display driver's bus once it is up, else
  * as the entry paint. Logs at once when the log has its sink, else when

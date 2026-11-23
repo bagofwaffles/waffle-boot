@@ -3,15 +3,17 @@
 #include "waffle/drivers/bf70x_time.h"
 
 #include "waffle/drivers/bf70x_core.h"
+#include "waffle/div64.h"
 
 uint64_t wb_time_us(const struct wb_time *t)
 {
-	return wb_core_cycles() / t->cycles_per_us;
+	return wb_udiv64(wb_core_cycles(), t->cycles_per_us);
 }
 
+/* floor(floor(c / a) / b) is floor(c / (a * b)). */
 uint64_t wb_time_ms(const struct wb_time *t)
 {
-	return wb_core_cycles() / ((uint64_t)t->cycles_per_us * 1000u);
+	return wb_udiv64(wb_time_us(t), 1000u);
 }
 
 uint64_t wb_time_deadline(const struct wb_time *t, uint32_t us)

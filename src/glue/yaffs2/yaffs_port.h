@@ -54,4 +54,19 @@
 typedef long long wb_yaffs_loff_t;
 #define loff_t wb_yaffs_loff_t
 
+/*
+ * n / d as C rounds it, for a d above 1, without the compiler's 64-bit
+ * signed division (__divdi3 on the BF70x): yaffsfs_DoStat()'s st_blocks,
+ * a local yaffs2 change.
+ */
+#include "../../include/waffle/div64.h"
+
+static inline long long wb_yaffs_div(long long n, unsigned long d)
+{
+	uint64_t mag = n < 0 ? 0u - (uint64_t)n : (uint64_t)n;
+	uint64_t q = wb_udiv64_32(mag, (uint32_t)d);
+
+	return n < 0 ? -(long long)q : (long long)q;
+}
+
 #endif /* WAFFLE_YAFFS_PORT_H */

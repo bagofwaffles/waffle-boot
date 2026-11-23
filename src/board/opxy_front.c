@@ -40,6 +40,7 @@ bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out)
 	if (wb_get_le32(rec) != FR_HO_MAGIC || wb_get_le16(rec + 4u) != FR_HO_VERSION ||
 	    wb_get_le16(rec + 6u) != FR_HO_SIZE)
 		return false;
+	/* software: 156 bytes, too few for the CRC peripheral */
 	if (wire_crc32(0, rec, n) != wb_get_le32(rec + n))
 		return false;
 	memcpy(out, rec, FR_HO_SIZE);
@@ -89,6 +90,10 @@ bool opxy_front_device(const struct fr_handoff *ho, enum wb_dev_id *id, enum wb_
 {
 	/* S-18.005: a device and a way of deciding that exist */
 	if (ho->device > FR_HO_DEV_OP1F || ho->device_how > FR_HO_HOW_UNKNOWN)
+		return false;
+	/* and that hold together: only the OP-XY has a second CPU */
+	if (ho->device != FR_HO_DEV_OPXY &&
+	    (ho->role_master == 0u || ho->device_how == FR_HO_HOW_SECOND))
 		return false;
 	*id = (enum wb_dev_id)ho->device;
 	*how = (enum wb_dev_how)ho->device_how;

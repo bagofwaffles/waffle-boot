@@ -1,28 +1,31 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * ADSP-BF703 link map for the OP-1F's installer images (make installer-1f,
- * installer-1f-survey; wiki/Installer-Reference.md): bf703_testos.ld's
- * test OS laid out like the OP-1F's OS 1.7.3 (S-05.040), whose shape the
- * OP-1F's own loader is known to take:
+ * ADSP-BF703 link map for the installer's images (make installer,
+ * installer-survey; wiki/Installer-Reference.md): bf703_testos.ld's test
+ * OS in the one shape both devices' own loaders take (S-05.043), that of
+ * the OP-1F's OS 1.7.3 (S-05.040, S-05.041):
  *   - the stream's entry, its FIRST and FINAL targets, is 0x11A00000 and
  *     its FINAL argument 0 (tools/mkldr.py --os-1f); there the stream
- *     loads one small L1 code block, _wb_testos_entry_1f
+ *     loads one small L1 code block, _wb_testos_l1_entry
  *     (src/testos/opxy_testos_entry.S), which jumps to the entry shim at
  *     the DDR image's first byte;
- *   - every other loaded byte is one DDR block from
- *     OPXY_TESTOS_1F_IMAGE_START (waffle/board/opxy.h), 0x8D000000, inside
- *     OS 1.7.3's second DDR range 0x8C03D002-0x8FCCDD38: above the OS
- *     frame's rows (S-05.016) and clear of the handover reserve, the
- *     staging area and the OP-1F's RAM disk 0x80004000-0x87F04000;
+ *   - every other loaded byte is one DDR run from
+ *     OPXY_TESTOS_SHARED_IMAGE_START (waffle/board/opxy.h), 0x8D000000,
+ *     inside OS 1.7.3's second DDR range 0x8C03D002-0x8FCCDD38: above the
+ *     OS frame's rows (S-05.016) and clear of the handover reserve, the
+ *     staging area and the OP-1F's RAM disk 0x80004000-0x87F04000. On the
+ *     OP-XY the image and its heap lie where the RAM disk's part 1 was,
+ *     so there the disk is in three parts around them (opxy.h);
  *   - .l1.text runs in L1 code after the entry block, loaded in DDR and
  *     copied by the shim, as in bf703_testos.ld.
- * tools/testos_layout.py --device 1f checks every destination against
- * OS 1.7.3's ranges (tests/oracle/S-05-os-handoff/vectors/os_destinations_1f.json).
+ * tools/testos_layout.py --device both checks every destination against
+ * OS 1.7.3's ranges (tests/oracle/S-05-os-handoff/vectors/os_destinations_1f.json)
+ * and the image and heap against both devices' RAM disks.
  */
 
 OUTPUT_FORMAT("elf32-bfin")
 OUTPUT_ARCH(bfin)
-ENTRY(_wb_testos_entry_1f)
+ENTRY(_wb_testos_l1_entry)
 
 MEMORY
 {
@@ -43,7 +46,7 @@ SECTIONS
 		KEEP(*(.wb.l1entry))
 	} > l1_entry
 
-	/* --- DDR, in OS 1.7.3's second range: the one DDR block --- */
+	/* --- DDR, in OS 1.7.3's second range: the DDR image --- */
 
 	.text :
 	{
@@ -124,4 +127,4 @@ SECTIONS
 _wb_ddr_image_start = ORIGIN(ddr);
 ASSERT(ADDR(.text) == ORIGIN(ddr), "the entry shim must be the first byte of the DDR image")
 ASSERT(_wb_testos_entry == ORIGIN(ddr), "the shim must be the first byte of the DDR image")
-ASSERT(_wb_testos_entry_1f == ORIGIN(l1_entry), "the entry must be the first byte of L1 code")
+ASSERT(_wb_testos_l1_entry == ORIGIN(l1_entry), "the entry must be the first byte of L1 code")

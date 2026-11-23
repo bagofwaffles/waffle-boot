@@ -94,12 +94,17 @@ struct s06_route_entry {
 #define S06_DROP_FWD_LONG S06_RX_DROP_FWD_LONG
 #define S06_DROP_NO_ROUTE 16	/* S-06.051, S-06.064 */
 #define S06_DROP_NO_ROOM 17	/* S-06.046: whole or absent */
+#define S06_DROP_REFUSED 18	/* forward_ok refused it */
 #define S06_DROP_INBOX 18	/* the inbox was full */
 
 struct s06_node_ops {
 	/* A frame dropped on a link; data/n as s06_rx's buffer (may be NULL). */
 	void (*dropped)(void *ctx, unsigned link, int why, const uint8_t *data,
 			size_t n);
+	/* SPEC-Q: whether a frame from link for node dst is forwarded (wire: the
+	 * encoded frame); NULL forwards every one, as S-06.050 says. */
+	bool (*forward_ok)(void *ctx, unsigned link, uint8_t dst, const uint8_t *wire,
+			   size_t n);
 	void *ctx;
 };
 

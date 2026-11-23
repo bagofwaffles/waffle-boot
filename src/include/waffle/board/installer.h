@@ -16,12 +16,13 @@
  *
  * The device (S-18) is decided at the entry, before any pin is touched.
  * The install is offered on a first stage that S-18.003's table names
- * only, by the image built for that device (the OP-1F's: make
- * installer-1f, laid out like its own OS). On the OP-1F it never writes
- * over the last slot whose image is not a waffle-boot stream: the
- * bootloader the unit came with stays in one slot. The survey build (make
- * installer-1f-survey) writes nothing to the SPI flash, and shows and saves
- * what an install would depend on (struct inst_survey).
+ * only. One image serves both devices (make installer, S-05.043), so the
+ * image's device is the one decided; INST_LOCK_OTHER_DEVICE stays for a
+ * runner that names another. On the OP-1F it never writes over the last
+ * slot whose image is not a waffle-boot stream: the bootloader the unit
+ * came with stays in one slot. The survey build (make installer-survey)
+ * writes nothing to the SPI flash, and shows and saves what an install
+ * would depend on (struct inst_survey).
  */
 #ifndef WAFFLE_INSTALLER_H
 #define WAFFLE_INSTALLER_H
@@ -45,7 +46,7 @@ enum inst_phase {
 	INST_READY,		/* the trial offered (hold 1) */
 	INST_WRITING_TRIAL,
 	INST_TRIAL_WRITTEN,	/* switch off and on for the trial start */
-	INST_COMMIT_READY,	/* the trial reached the boot menu (hold 1) */
+	INST_COMMIT_READY,	/* the trial reached the boot menu (hold 1, or 2 again) */
 	INST_COMMITTING,
 	INST_DONE,
 	INST_FAILED,		/* a write failed */
@@ -162,6 +163,29 @@ unsigned inst_hold_tick(struct inst_hold *h, uint32_t now_ms);
 /* The bar, 0 to 1000; 0 while no key is held. */
 unsigned inst_hold_fill(const struct inst_hold *h, uint32_t now_ms);
 
+/* --- What a completed hold starts --- */
+
+/*
+ * The digits a phase lets a hold start (bit d), and what each starts. In
+ * INST_COMMIT_READY 1 keeps the new bootloader and 2 writes the same trial
+ * again, so that one trial start can go to recovery (Power + the recovery
+ * key) and another to the boot menu before it is kept. 8 leaves while an
+ * OS waits to be made active (os_ok), since leaving otherwise changes
+ * nothing. Every write is the engine's, under its own checks.
+ */
+#define INST_DIGIT_WRITE   1u	/* the trial, the commit, or the failed write again */
+#define INST_DIGIT_RETRIAL 2u	/* INST_COMMIT_READY: the trial again */
+#define INST_DIGIT_LEAVE   8u
+enum inst_act {
+	INST_ACT_NONE,
+	INST_ACT_TRIAL,		/* the trial write */
+	INST_ACT_COMMIT,	/* the commit */
+	INST_ACT_RETRY,		/* the write that failed, again */
+	INST_ACT_LEAVE		/* an OS found made active, nothing else */
+};
+uint16_t inst_holds_for(enum inst_phase p, bool os_ok);
+enum inst_act inst_act_of(enum inst_phase p, unsigned digit);
+
 /* --- The carried image's check, before any write --- */
 
 struct inst_image {
@@ -227,7 +251,7 @@ struct inst_hello {
 };
 
 /*
- * The survey (make installer-1f-survey): what decides whether an install is
+ * The survey (make installer-survey): what decides whether an install is
  * safe, read and never written. INST_T_SURVEY's reply, INST_SURVEY_LEN bytes,
  * little-endian: [0] INST_ST_OK, [1] device, [2] how, [3] the boot mode,
  * [4..7] n, [8..11] c (S-18.003), [12] 1 when the selector was read, [13]

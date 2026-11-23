@@ -4,6 +4,8 @@
  */
 #include "waffle/s15_menu.h"
 
+#include <string.h>
+
 #include "waffle/bytes.h"
 
 #define DLC "/yaffs2/content/dlc"
@@ -65,6 +67,7 @@ static void leave(struct s15_menu *m)
 	m->armed = S15_ARM_NONE;
 	m->pending = 0;
 	m->osw = S15_OSW_VIEW_NONE;
+	m->osw_host = false;
 }
 
 /* A screen is opened or drawn: what belongs to the screen it leaves goes. */
@@ -202,18 +205,29 @@ static void hold_begin(struct s15_menu *m, enum s15_arm a, unsigned key)
 	hold_row(m, true);
 }
 
-/* The held item's row: its label, the hold as its hint. */
-static void held_item(struct s15_menu *m, unsigned digit, const char *label)
+/* An item whose label names its hold: armed while it is held. */
+static void named_item(struct s15_menu *m, unsigned digit, const char *label, bool armed)
 {
-	struct s15_buf b, h;
+	struct s15_buf b;
 
 	s15_buf_init(&b);
 	s15_buf_dec(&b, digit);
 	s15_buf_str(&b, " ");
 	s15_buf_str(&b, label);
-	s15_buf_str(&b, "\t");
-	s15_hold_hint(&h, digit);
-	s15_buf_str(&b, h.s);
+	s15_buf_str(&b, s15_hold_named);
+	sline(m, armed ? S15_ST_ARMED : S15_ST_ITEM, b.s);
+}
+
+/* The held item's row: its label alone; the bar on the last row says the
+ * rest. */
+static void held_item(struct s15_menu *m, unsigned digit, const char *label)
+{
+	struct s15_buf b;
+
+	s15_buf_init(&b);
+	s15_buf_dec(&b, digit);
+	s15_buf_str(&b, " ");
+	s15_buf_str(&b, label);
 	sline(m, S15_ST_ARMED, b.s);
 }
 
@@ -226,27 +240,18 @@ static void set_option(struct s15_menu *m, bool on)
 }
 
 static void draw_settings(struct s15_menu *m);
+static void logo_item(struct s15_menu *m);
 
 /* The option's screen: what it allows, its item, the way back; the item
  * held in place, its hold's row to follow. */
 static void draw_option(struct s15_menu *m, bool armed)
 {
-	struct s15_buf b, h;
-
 	enter(m, S15_SCR_OPTION, "Protected Writes");
+	blank(m);
 	for (size_t i = 0; i < S15_OPTION_PROMPT_LINES; i++)
 		sline(m, s15_option_prompt_style[i], s15_option_prompt[i]);
-	if (armed) {
-		held_item(m, 2u, s15_option_turn_on);
-	} else {
-		s15_buf_init(&b);
-		s15_buf_str(&b, "2 ");
-		s15_buf_str(&b, s15_option_turn_on);
-		s15_buf_str(&b, "\t");
-		s15_hold_hint(&h, 2u);
-		s15_buf_str(&b, h.s);
-		sline(m, S15_ST_ITEM, b.s);
-	}
+	blank(m);
+	named_item(m, 2u, s15_option_turn_on, armed);
 	sline(m, S15_ST_BACK, "8 Back to Settings");
 }
 
@@ -271,7 +276,7 @@ static void option_screen_key(struct s15_menu *m, unsigned key)
 
 	if (d == 8u) {
 		draw_settings(m);
-	} else if (d == 2u && !knob_click(m, key)) {
+	} else if (d == 2u && !knob_click(m, key) && !m->host_event) {
 		draw_option(m, true);
 		hold_begin(m, S15_ARM_OPTION, key);
 	}
@@ -351,6 +356,221 @@ static void option_item(struct s15_menu *m)
 		sline(m, S15_ST_ITEM, s15_option_item_off);
 }
 
+/* ---- the boot logo (waffle/logo.h) ---------------------------------- */
+
+/* SPEC-Q: the Boot logo item, its screens and keys have no label yet. */
+
+/* n bytes in KiB, one decimal, rounded down. */
+static void kib(struct s15_buf *b, uint32_t n)
+{
+	s15_buf_dec(b, n / 1024u);
+	s15_buf_str(b, ".");
+	s15_buf_dec(b, n % 1024u * 10u / 1024u);
+	s15_buf_str(b, " KiB");
+}
+
+/* System's item 6, its state read again as System is drawn. */
+static void logo_item(struct s15_menu *m)
+{
+	static const char *const hint[] = { "Built-in", "Custom", "No room", "Unavailable" };
+	struct s15_buf b;
+
+	if (m->env->logo_state == NULL)
+		return;
+	m->env->logo_state(m->env->ctx, &m->logo);
+	if (m->logo.state > S15_LOGO_UNAVAILABLE)
+		m->logo.state = S15_LOGO_UNAVAILABLE;
+	s15_buf_init(&b);
+	s15_buf_str(&b, "6 Boot logo\t");
+	s15_buf_str(&b, hint[m->logo.state]);
+	sline(m, S15_ST_ITEM, b.s);
+}
+
+/* The disk's screen: what to drop, the room, and the removal while one is
+ * stored, held in place (its hold's row to follow). */
+static void draw_logo(struct s15_menu *m, bool armed)
+{
+	struct s15_buf b;
+
+	enter(m, S15_SCR_LOGO, "Boot Logo");
+	blank(m);
+	sline(m, S15_ST_HEAD, "Drop one PNG on the disk, then eject");
+	s15_buf_init(&b);
+	s15_buf_str(&b, "Up to 480 x 222. ");
+	kib(&b, m->logo.room);
+	s15_buf_str(&b, " free");
+	sline(m, S15_ST_DIM, b.s);
+	blank(m);
+	if (armed) {
+		held_item(m, 5u, "Remove");
+		blank(m);
+	} else if (m->logo.state == S15_LOGO_CUSTOM) {
+		sline(m, S15_ST_ITEM, "5 Remove\tBack to built-in");
+		sline(m, S15_ST_DIM, s15_hold_line);
+		blank(m);
+	}
+	sline(m, S15_ST_BACK, "8 Back to System");
+}
+
+/* System's 6: a blank disk offered, its screen. */
+static void open_logo(struct s15_menu *m)
+{
+	m->logo_due = false;
+	m->pic.px = NULL;
+	m->env->logo_disk(m->env->ctx);
+	m->usb = S15_USB_DISK;
+	m->changes++;
+	draw_logo(m, false);
+}
+
+/* A picture to approve: the screen as the front will draw it (s15_menu_render()),
+ * its lines logged. */
+static void draw_logo_view(struct s15_menu *m)
+{
+	struct s15_buf b;
+
+	enter(m, S15_SCR_LOGO_VIEW, "Boot Logo");
+	m->changes++;
+	s15_buf_init(&b);
+	kib(&b, m->pic.size);
+	s15_buf_str(&b, " of ");
+	kib(&b, m->pic.room);
+	sline(m, S15_ST_TEXT, b.s);
+	sline(m, S15_ST_KEYS, "`1` Save (hold to select)   `8` Cancel");
+}
+
+/* The released disk read: the picture to approve, or why not and the
+ * disk's screen again. */
+static void logo_read(struct s15_menu *m)
+{
+	struct s15_buf b;
+
+	sline(m, S15_ST_DIM, "Reading...");
+	memset(&m->pic, 0, sizeof m->pic);
+	m->env->logo_load(m->env->ctx, &m->pic);
+	if (m->pic.result == S15_LOGO_READY && m->pic.px != NULL) {
+		draw_logo_view(m);
+		return;
+	}
+	m->pic.px = NULL;
+	draw_logo(m, false);
+	s15_buf_init(&b);
+	switch (m->pic.result) {
+	case S15_LOGO_NONE:
+		s15_buf_str(&b, "No PNG file on the disk");
+		break;
+	case S15_LOGO_MANY:
+		s15_buf_str(&b, "More than one file: drop one");
+		break;
+	case S15_LOGO_BIG:
+		s15_buf_str(&b, "Too big: ");
+		kib(&b, m->pic.size);
+		s15_buf_str(&b, ", ");
+		kib(&b, m->pic.room);
+		s15_buf_str(&b, " free");
+		break;
+	case S15_LOGO_REFUSED:
+	default:
+		s15_buf_str(&b, "Not taken: ");
+		s15_buf_str(&b, m->pic.why != NULL ? m->pic.why : "unreadable");
+		break;
+	}
+	sline(m, S15_ST_ERROR, b.s);
+}
+
+/* A save's or a removal's result, left with 8 alone; the disk withdrawn. */
+static void logo_done(struct s15_menu *m, enum s15_store_save r, bool saved)
+{
+	usb(m, S15_USB_MAIN);
+	m->pic.px = NULL;
+	enter(m, S15_SCR_LOGO_DONE, "Boot Logo");
+	blank(m);
+	if (r == S15_STORE_SAVED)
+		sline(m, S15_ST_OK, saved ? "Saved: shown from the next start" :
+					     "Removed: built-in from the next start");
+	else if (r == S15_STORE_UNUSABLE)
+		sline(m, S15_ST_ERROR, "Not saved: slot can't keep it now");
+	else
+		sline(m, S15_ST_ERROR, "Not saved: flash write failed");
+	blank(m);
+	sline(m, S15_ST_BACK, "8 Back to System");
+}
+
+static void logo_key(struct s15_menu *m, unsigned key)
+{
+	const unsigned d = s15_digit(m->dev, key);
+
+	if (d == 8u) {
+		m->logo_due = false;
+		usb(m, S15_USB_MAIN);
+		open_system(m);
+	} else if (d == 5u && m->logo.state == S15_LOGO_CUSTOM && !knob_click(m, key) &&
+		   !m->host_event) {
+		draw_logo(m, true);
+		hold_begin(m, S15_ARM_LOGO_REMOVE, key);
+	}
+}
+
+/* Only a key on the unit saves: never a host's, never a knob click. */
+static void logo_view_key(struct s15_menu *m, unsigned key)
+{
+	const unsigned d = s15_digit(m->dev, key);
+
+	if (d == 8u) {
+		open_logo(m);
+	} else if (d == 1u && !knob_click(m, key) && !m->host_event) {
+		hold_begin(m, S15_ARM_LOGO_SAVE, key);
+		m->changes++;
+	}
+}
+
+/* The view's line over its picture's bottom rows: the sizes and keys, or
+ * the hold's time left. */
+static void render_logo_view(const struct s15_menu *m, const struct s15_geometry *g,
+			     const struct s15_draw_ops *d)
+{
+	const unsigned y = g->status_y;
+	struct s15_buf b;
+	unsigned x;
+
+	for (unsigned r = 0; r < S15_HANDOVER_ROWS; r++) {
+		const uint16_t *col = m->pic.px + (size_t)r * S15_HANDOVER_VISIBLE;
+		const uint16_t sx = (uint16_t)(S15_HANDOVER_ROWS - 1u - r);
+
+		for (unsigned c = 0; c < S15_HANDOVER_VISIBLE;) {
+			unsigned n = 1;
+
+			while (c + n < S15_HANDOVER_VISIBLE && col[c + n] == col[c])
+				n++;
+			d->fill(d->ctx, sx, (uint16_t)c, 1, (uint16_t)n, col[c]);
+			c += n;
+		}
+	}
+	d->fill(d->ctx, 0, (uint16_t)y, g->width, (uint16_t)(g->height - y), S15_BLACK);
+	s15_buf_init(&b);
+	if (m->armed == S15_ARM_LOGO_SAVE) {
+		s15_buf_str(&b, "Saving in ");
+		s15_buf_dec(&b, m->arm_left);
+		s15_buf_str(&b, " s: release to cancel");
+	} else {
+		kib(&b, m->pic.size);
+		s15_buf_str(&b, " of ");
+		kib(&b, m->pic.room);
+		s15_buf_str(&b, "  1 Save (hold to select)  8 Cancel");
+	}
+	x = (g->width - (unsigned)b.n * g->glyph_w) / 2u;
+	d->text(d->ctx, (uint16_t)x, (uint16_t)s15_status_text_y(g), b.s, b.n, S15_TEXT, S15_BLACK);
+}
+
+static void logo_tick(struct s15_menu *m, uint32_t now_ms)
+{
+	if (m->logo_due && m->screen == S15_SCR_LOGO && m->armed == S15_ARM_NONE &&
+	    (int32_t)(now_ms - m->logo_due_ms) >= 0) {
+		m->logo_due = false;
+		logo_read(m);
+	}
+}
+
 /* S-15.170 */
 static void draw_settings(struct s15_menu *m)
 {
@@ -367,6 +587,7 @@ static void draw_settings(struct s15_menu *m)
 	if (m->env->settings_save != NULL)                 /* S-15.175 */
 		sline(m, S15_ST_ITEM, m->start_menu ? "6 Start in boot menu\tOn" :
 						       "6 Start in boot menu\tOff");
+	sline(m, S15_ST_ITEM, m->host_link ? "7 Host link\tOn" : "7 Host link\tOff");
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Main Menu");
 }
@@ -385,6 +606,7 @@ static void settings_changed(struct s15_menu *m)
 	s.color = m->color;
 	s.mtp_macos = m->mtp_macos;
 	s.start_menu = m->start_menu;
+	s.host_link = m->host_link;
 	if (m->env->settings_save != NULL && !m->host_event) {
 		now = s;
 		r = m->env->settings_save(m->env->ctx, &s, &now);
@@ -409,7 +631,9 @@ static void settings_key(struct s15_menu *m, unsigned key)
 		settings_changed(m);
 		break;
 	case 2:
-		option_key(m);              /* S-15.140 */
+		/* SPEC-Q: never from a host, Protected writes */
+		if (!m->host_event)
+			option_key(m);      /* S-15.140 */
 		break;
 	case 3:
 		m->color = !m->color;
@@ -429,6 +653,11 @@ static void settings_key(struct s15_menu *m, unsigned key)
 			m->start_menu = !m->start_menu;
 			settings_changed(m);
 		}
+		break;
+	case 7:
+		/* SPEC-Q: the Host link setting, saved as the others are */
+		m->host_link = !m->host_link;
+		settings_changed(m);
 		break;
 	case 8:
 		open_main(m);
@@ -466,6 +695,7 @@ static void clear_settings(struct s15_menu *m)
 		m->color = d.color;
 		m->mtp_macos = d.mtp_macos;
 		m->start_menu = d.start_menu;
+		m->host_link = d.host_link;
 		break;
 	case S15_STORE_FAILED:
 		sline(m, S15_ST_WARN, s15_reset_settings_failed);
@@ -474,6 +704,12 @@ static void clear_settings(struct s15_menu *m)
 	default:
 		break;
 	}
+	/* SPEC-Q: the reset removes a stored boot logo too, its header erased
+	 * under the logo's own rule and range check; a failure is said as the
+	 * settings' is and stops nothing. */
+	if (m->env->logo_remove != NULL &&
+	    m->env->logo_remove(m->env->ctx) == S15_STORE_FAILED)
+		sline(m, S15_ST_WARN, s15_reset_logo_failed);
 }
 
 /* S-15.052: what the reset removes, device.reset_removes (S-18.030): the
@@ -506,7 +742,7 @@ static void factory_reset(struct s15_menu *m)
 
 	enter(m, S15_SCR_RESULT, "Factory Reset");
 	check_files(m);
-	line(m, "Removing user data...");
+	line(m, "Removing...");
 	if (refused(m) || slave_lost(m)) {
 		/* S-12.052: nothing removed or erased on the yaffs2 volume;
 		 * S-15.052: the OS FAT volume's erase and the settings' clear
@@ -645,7 +881,7 @@ static void remove_pack(struct s15_menu *m, unsigned n)
 		return;
 	}
 	(void)m->env->remove_tree(m->env->ctx, DLC);
-	sline(m, S15_ST_OK, "All content packs removed.");
+	sline(m, S15_ST_OK, "All packs removed.");
 	s15_restart_line(m->dev, &b);
 	line(m, b.s);
 	m->packs_item = false;
@@ -753,7 +989,7 @@ static void open_info(struct s15_menu *m)
 		sline(m, S15_ST_WARN, s15_device_unknown);
 	else
 		blank(m);
-	sline(m, S15_ST_ITEM, "1 More\tStart log");
+	sline(m, S15_ST_ITEM, "1 More");
 	if (b->start.why != S15_START_OK) {                /* S-15.163 */
 		s15_start_info(&start, &b->start);
 		info_row(m, "OS start", start.s, NULL, NULL);
@@ -803,6 +1039,22 @@ static void open_info2(struct s15_menu *m)
 		s15_first_stage_text(&v, b->first_stage_n, b->first_stage_c);
 		info_row(m, "First stage", v.s, NULL, NULL);
 	}
+	if (m->env->logo_state != NULL) {		/* SPEC-Q: the boot logo's room */
+		m->env->logo_state(m->env->ctx, &m->logo);
+		s15_buf_init(&v);
+		if (m->logo.state == S15_LOGO_NO_ROOM) {
+			s15_buf_str(&v, "No room");
+		} else {
+			s15_buf_str(&v, m->logo.state == S15_LOGO_CUSTOM ? "Custom, " : "Built-in, ");
+			if (m->logo.state == S15_LOGO_CUSTOM) {
+				s15_buf_dec(&v, m->logo.stored);
+				s15_buf_str(&v, " of ");
+			}
+			s15_buf_dec(&v, m->logo.room);
+			s15_buf_str(&v, m->logo.state == S15_LOGO_CUSTOM ? " bytes" : " bytes free");
+		}
+		info_row(m, "Boot logo", v.s, NULL, NULL);
+	}
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Device Info");
 }
@@ -818,11 +1070,12 @@ static void draw_system(struct s15_menu *m, bool armed)
 	sline(m, S15_ST_ITEM, "2 Reset volume calibration");
 	if (m->packs_item)
 		sline(m, S15_ST_ITEM, "3 Remove content packs");
-	sline(m, S15_ST_ITEM, "5 Format drive\tWipes the drive: reinstall after");
+	sline(m, S15_ST_ITEM, "5 Format drive\tErases all: reinstall after");
+	logo_item(m);
 	if (armed) {
 		held_item(m, 7u, "Factory reset");
 	} else {
-		sline(m, S15_ST_ITEM, "7 Factory reset\tRemoves your data only");
+		sline(m, S15_ST_ITEM, "7 Factory reset\tYour data only");
 		sline(m, S15_ST_DIM, s15_hold_line);
 	}
 	/* No pack item then: dir_exists() does not answer. */
@@ -881,7 +1134,14 @@ static void system_key(struct s15_menu *m, unsigned key)
 	case 5:
 		open_format(m);
 		break;
+	case 6:
+		if (m->env->logo_state != NULL && m->logo.state <= S15_LOGO_CUSTOM)
+			open_logo(m);
+		break;
 	case 7:
+		/* SPEC-Q: never from a host, the factory reset */
+		if (m->host_event)
+			break;
 		draw_system(m, true);                 /* S-15.050 */
 		hold_begin(m, S15_ARM_RESET, key);
 		break;
@@ -908,7 +1168,7 @@ static void draw_format(struct s15_menu *m, bool armed, bool offer)
 	if (armed)
 		held_item(m, 1u, "Format drive");
 	else
-		sline(m, S15_ST_ITEM, "1 Format drive\tWipes the drive: reinstall after");
+		sline(m, S15_ST_ITEM, "1 Format drive\tErases all: reinstall after");
 	if (!armed && offer)
 		sline(m, S15_ST_DIM, s15_hold_line);
 	blank(m);
@@ -928,11 +1188,11 @@ static void run_format(struct s15_menu *m)
 	bool ok;
 
 	draw_format(m, false, false);
-	line(m, "Formatting the drive. Please wait...");
+	line(m, "Formatting...");
 	ok = m->env->format(m->env->ctx);
 	m->refused = refused(m);
 	if (!ok) {
-		sline(m, S15_ST_ERROR, "The drive could not be formatted");
+		sline(m, S15_ST_ERROR, "Format failed");
 		return;
 	}
 	sline(m, S15_ST_OK, "Done.");
@@ -949,6 +1209,85 @@ static void format_key(struct s15_menu *m, unsigned key)
 	}
 	else if (s15_digit(m->dev, key) == 8u)
 		open_system(m);
+}
+
+/* ---- going back to where a host's action began ------------------------ */
+
+static void draw_factory(struct s15_menu *m);
+
+/* The screen a host's approval or job came over, drawn again; the developer
+ * menu only while developer mode is on. */
+static void redraw(struct s15_menu *m, enum s15_screen s)
+{
+	if (s == S15_SCR_SETTINGS)
+		draw_settings(m);
+	else if (s == S15_SCR_SYSTEM)
+		draw_system(m, false);
+	else if (s == S15_SCR_INFO)
+		open_info(m);
+	else if (s == S15_SCR_INFO2)
+		open_info2(m);
+	else if (s == S15_SCR_FACTORY && m->dev_mode)
+		draw_factory(m);
+	else
+		draw_main(m);
+}
+
+/* Where a host's job goes back to: the screen shown, when redraw() knows it. */
+static enum s15_screen back_of(const struct s15_menu *m)
+{
+	const enum s15_screen s = m->screen;
+
+	if (s == S15_SCR_FACTORY)
+		return m->mtp == S15_MTP_OFF && m->osw == S15_OSW_VIEW_NONE ? s : S15_SCR_MAIN;
+	return s == S15_SCR_SETTINGS || s == S15_SCR_SYSTEM || s == S15_SCR_INFO ||
+	       s == S15_SCR_INFO2 ? s : S15_SCR_MAIN;
+}
+
+static const char *back_title(enum s15_screen s)
+{
+	return s == S15_SCR_SETTINGS ? "Settings" : s == S15_SCR_SYSTEM ? "System" :
+	       s == S15_SCR_INFO ? "Device Info" : s == S15_SCR_INFO2 ? "Device Info 2" :
+	       s == S15_SCR_FACTORY ? "Developer" : "Main Menu";
+}
+
+/* A host's file as the drive shows it, "/yaffs2" left off, its tail kept
+ * when the line would be too long. */
+static void osw_name_of(struct s15_menu *m, const char *path)
+{
+	static const char drive[] = "/yaffs2/";
+	const size_t max = sizeof m->osw_name - 1u;
+	size_t n, k = 0;
+
+	if (wb_equal((const uint8_t *)path, (const uint8_t *)drive, sizeof drive - 1u))
+		path += sizeof drive - 2u;	/* the "/" kept */
+	n = wb_strlen(path);
+	if (n > max) {
+		m->osw_name[k++] = '.';
+		m->osw_name[k++] = '.';
+		m->osw_name[k++] = '.';
+		path += n - (max - 3u);
+		n = max - 3u;
+	}
+	wb_copy((uint8_t *)m->osw_name + k, (const uint8_t *)path, n);
+	m->osw_name[k + n] = '\0';
+}
+
+/* A host's OS write names its own file: its read step's row is
+ * "Read file", not "Read /os.ldr". */
+static void osw_host_row(const struct s15_menu *m, struct s15_buf *b)
+{
+	struct s15_buf r;
+	const char *tab = b->s;
+
+	while (*tab != '\0' && *tab != '\t')
+		tab++;
+	if (!m->osw_host || m->osw_step != (int)S15_OSW_STEP_READ || *tab == '\0')
+		return;
+	s15_buf_init(&r);
+	s15_buf_str(&r, "Read file");
+	s15_buf_str(&r, tab);
+	*b = r;
 }
 
 /* ---- the factory menu: S-15.092 - S-15.095 -------------------------- */
@@ -985,7 +1324,7 @@ static void mtp_on(struct s15_menu *m, enum s15_mtp mtp)
 	usb(m, mtp == S15_MTP_VENDOR ? S15_USB_MTP_VENDOR : S15_USB_MTP);
 	enter(m, S15_SCR_FACTORY, "MTP File Transfer");
 	blank(m);
-	line(m, "The drive is shared with the computer over USB.");
+	line(m, "Drive shared over USB.");
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Developer");
 }
@@ -995,7 +1334,8 @@ void s15_osw_step(struct s15_menu *m, enum s15_osw_step step)
 {
 	if (m->osw != S15_OSW_VIEW_RUNNING || (unsigned)step >= S15_OSW_STEP_COUNT)
 		return;
-	sline(m, S15_ST_STEP_RUN, s15_osw_label(step));
+	sline(m, S15_ST_STEP_RUN, step == S15_OSW_STEP_READ && m->osw_host ?
+				  "Read file" : s15_osw_label(step));
 	m->osw_step = (int)step;
 	m->osw_p = ~0u;
 }
@@ -1010,6 +1350,7 @@ void s15_osw_progress(struct s15_menu *m, uint32_t done, uint32_t total)
 		return;
 	m->osw_p = p;
 	s15_osw_progress_row(&b, (enum s15_osw_step)m->osw_step, p);
+	osw_host_row(m, &b);
 	s15_console_set(&m->con, S15_ST_STEP_RUN, b.s);
 }
 
@@ -1020,6 +1361,7 @@ void s15_osw_done(struct s15_menu *m, uint32_t a, uint32_t b)
 	if (m->osw != S15_OSW_VIEW_RUNNING || m->osw_step < 0)
 		return;
 	s15_osw_done_row(&row, (enum s15_osw_step)m->osw_step, a, b);
+	osw_host_row(m, &row);
 	s15_console_set(&m->con, S15_ST_STEP_OK, row.s);
 	m->osw_step = -1;
 }
@@ -1036,10 +1378,18 @@ static void osw_outcome(struct s15_menu *m, const struct s15_osw_end *e)
 	} else {
 		if (m->osw_step >= 0) {
 			s15_osw_failed_row(&b, (enum s15_osw_step)m->osw_step);
+			osw_host_row(m, &b);
 			s15_console_set(&m->con, S15_ST_STEP_FAIL, b.s);
 		}
-		sline(m, S15_ST_ERROR, e->result == S15_OSW_UNREADABLE ?
-				       s15_os_ldr_unreadable : s15_os_write_failed);
+		if (e->result == S15_OSW_UNREADABLE && m->osw_host) {
+			s15_buf_init(&b);
+			s15_buf_str(&b, "Can't read ");
+			s15_buf_str(&b, m->osw_name);
+			sline(m, S15_ST_ERROR, b.s);
+		} else {
+			sline(m, S15_ST_ERROR, e->result == S15_OSW_UNREADABLE ?
+					       s15_os_ldr_unreadable : s15_os_write_failed);
+		}
 		if (e->why != S15_OSW_WHY_NONE) {
 			s15_osw_reason(&why, e->why, e->part, e->value, e->limit);
 			s15_reason_line(&b, why.s);
@@ -1054,22 +1404,42 @@ static void osw_outcome(struct s15_menu *m, const struct s15_osw_end *e)
 	/* S-15.190: a success offers the restart into the OS */
 	if (e->result == S15_OSW_OK)
 		sline(m, S15_ST_ITEM, s15_restart_item);
-	sline(m, S15_ST_BACK, s15_osw_back);
+	if (m->osw_host) {
+		s15_buf_init(&b);
+		s15_buf_str(&b, "8 Back to ");
+		s15_buf_str(&b, back_title(m->osw_back));
+		sline(m, S15_ST_BACK, b.s);
+	} else {
+		sline(m, S15_ST_BACK, s15_osw_back);
+	}
 }
 
 /* S-15.094, S-16.123: busy only while the write runs; the screen then
  * waits for digit 8, or digit 6 (restart) after a success. */
-static void os_write(struct s15_menu *m)
+static void os_write(struct s15_menu *m, const char *host_name, enum s15_screen back)
 {
 	struct s15_osw_end e = { S15_OSW_FAILED, S15_OSW_WHY_NONE,
 				 S15_OSW_EMMC_UNTOUCHED, 0, 0, 0, 0, false };
+	struct s15_buf b;
 
 	m->busy = true;
 	enter(m, S15_SCR_FACTORY, "Write OS");
 	m->osw = S15_OSW_VIEW_RUNNING;
 	m->osw_step = -1;
-	line(m, "Looking for /os.ldr...");
+	m->osw_host = host_name != NULL;
+	m->osw_back = back;
+	if (m->osw_host) {
+		osw_name_of(m, host_name);
+		s15_buf_init(&b);
+		s15_buf_str(&b, "Looking for ");
+		s15_buf_str(&b, m->osw_name);
+		s15_buf_str(&b, "...");
+		line(m, b.s);
+	} else {
+		line(m, "Looking for /os.ldr...");
+	}
 	m->env->os_write(m->env->ctx, &e);
+	m->osw_end = e;
 	osw_outcome(m, &e);
 	m->osw_written = e.result == S15_OSW_OK;
 	m->osw = S15_OSW_VIEW_DONE;
@@ -1088,8 +1458,9 @@ static void restart(struct s15_menu *m)
 /* S-15.194: the restart into a start from /yaffs2/os.ldr, or the reason
  * there is none, under the developer menu drawn again. That start boots
  * whatever start in boot menu says (S-04.014). */
-static void os_once(struct s15_menu *m)
+static void os_once(struct s15_menu *m, bool host)
 {
+	const enum s15_screen back = host ? back_of(m) : S15_SCR_FACTORY;
 	struct s15_os_file file = { S15_OSW_WHY_NONE, 0, 0 };
 	struct s15_buf why, b;
 	enum s15_once r;
@@ -1105,7 +1476,10 @@ static void os_once(struct s15_menu *m)
 		m->env->os_once(m->env->ctx);
 		return;
 	}
-	draw_factory(m);
+	if (host)
+		redraw(m, back);	/* never the developer menu for a host */
+	else
+		draw_factory(m);
 	sline(m, S15_ST_ERROR, s15_once_not_started);
 	s15_once_reason(&why, r, &file);
 	s15_reason_line(&b, why.s);
@@ -1138,7 +1512,9 @@ static void factory_key(struct s15_menu *m, unsigned key)
 	if (m->busy)
 		return;
 	if (m->osw != S15_OSW_VIEW_NONE) {        /* S-15.094 */
-		if (d == 8u)
+		if (d == 8u && m->osw_host)
+			redraw(m, m->osw_back);    /* a host's write: where it began */
+		else if (d == 8u)
 			draw_factory(m);           /* back, drawn again */
 		else if (d == 6u && m->osw_written)
 			restart_to_os(m);                  /* S-15.190 */
@@ -1153,10 +1529,10 @@ static void factory_key(struct s15_menu *m, unsigned key)
 			mtp_on(m, m->shift ? S15_MTP_VENDOR : S15_MTP_STANDARD);
 		break;
 	case 3:
-		os_once(m);                        /* S-15.194 */
+		os_once(m, false);                 /* S-15.194 */
 		break;
 	case 5:
-		os_write(m);
+		os_write(m, NULL, S15_SCR_FACTORY);
 		break;
 	case 6:
 		restart(m);                        /* S-15.095 */
@@ -1167,6 +1543,88 @@ static void factory_key(struct s15_menu *m, unsigned key)
 	default:
 		break;
 	}
+}
+
+/* ---- the host link's approval ------------------------------------- */
+
+/* SPEC-Q: the approval screen and its keys have no label yet. */
+static void draw_approve(struct s15_menu *m, bool armed)
+{
+
+	enter(m, S15_SCR_APPROVE, "Host Link");
+	blank(m);
+	sline(m, S15_ST_HEAD, "Allow this computer?");
+	sline(m, S15_ST_DIM, "Files, installs, restarts. Until restart.");
+	blank(m);
+	named_item(m, 1u, "Allow", armed);
+	sline(m, S15_ST_BACK, "8 Cancel");
+}
+
+static bool approve_from(const struct s15_menu *m)
+{
+	const enum s15_screen s = m->screen;
+
+	if (s == S15_SCR_FACTORY)
+		return m->mtp == S15_MTP_OFF && m->osw == S15_OSW_VIEW_NONE;
+	return s == S15_SCR_MAIN || s == S15_SCR_SETTINGS || s == S15_SCR_SYSTEM ||
+	       s == S15_SCR_INFO || s == S15_SCR_INFO2;
+}
+
+bool s15_menu_approve_open(struct s15_menu *m)
+{
+	if (m->screen == S15_SCR_APPROVE)
+		return true;
+	if (m->busy || m->hold || m->keytest || m->armed != S15_ARM_NONE ||
+	    m->activity != S15_ACT_IDLE || !approve_from(m))
+		return false;
+	m->approve_back = m->screen;
+	m->approve_ms = m->now_ms;
+	m->approve = S15_APPROVE_PENDING;
+	draw_approve(m, false);
+	return true;
+}
+
+/* The answer, and the screen it came from drawn again. */
+static void approve_end(struct s15_menu *m, enum s15_approve a)
+{
+	m->approve = a;
+	redraw(m, m->approve_back);
+}
+
+enum s15_approve s15_menu_approve_result(struct s15_menu *m)
+{
+	const enum s15_approve a = m->approve;
+
+	if (a != S15_APPROVE_PENDING)
+		m->approve = S15_APPROVE_NONE;
+	return a;
+}
+
+/* 1 held for 5 s allows, 8 refuses; a knob click starts no hold. */
+static void approve_key(struct s15_menu *m, unsigned key)
+{
+	const unsigned d = s15_digit(m->dev, key);
+
+	if (d == 8u) {
+		approve_end(m, S15_APPROVE_REFUSED);
+	} else if (d == 1u && !knob_click(m, key)) {
+		draw_approve(m, true);
+		hold_begin(m, S15_ARM_APPROVE, key);
+	}
+}
+
+bool s15_menu_os_write(struct s15_menu *m, const char *path, struct s15_osw_end *e)
+{
+	if (m->busy || m->hold || m->activity != S15_ACT_IDLE)
+		return false;
+	os_write(m, path, back_of(m));
+	*e = m->osw_end;
+	return true;
+}
+
+void s15_menu_os_once(struct s15_menu *m)
+{
+	os_once(m, true);
 }
 
 /* ---- the upgrade screen: S-15.100 - S-15.115 ------------------------ */
@@ -1180,7 +1638,7 @@ static void draw_upgrade(struct s15_menu *m)
 	m->restart_ok = false;
 	if (m->midi) {                                     /* S-15.102 */
 		interrupted(m);
-		line(m, "Preparing the update. Please wait.");
+		line(m, "Preparing...");
 		return;
 	}
 	if (m->boot->interrupted)                          /* S-11.080 */
@@ -1192,9 +1650,9 @@ static void draw_upgrade(struct s15_menu *m)
 	s15_buf_str(&b, m->dev->ident.product_text);
 	s15_buf_str(&b, " to a computer");
 	line(m, b.s);
-	line(m, "2. Copy the firmware to the disk that appears");
+	line(m, "2. Copy the firmware to the new disk");
 	line(m, "3. Eject the disk");
-	sline(m, S15_ST_DIM, "Waiting for the package...");
+	sline(m, S15_ST_DIM, "Waiting...");
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Main Menu");
 }
@@ -1259,7 +1717,7 @@ static void prepare(struct s15_menu *m)
 {
 	make_upgrade_current(m);
 	m->prog_key = -1;
-	sline(m, S15_ST_HEAD, "Preparing the installation");
+	sline(m, S15_ST_HEAD, "Preparing");
 }
 
 static void start_scan(struct s15_menu *m)
@@ -1287,12 +1745,20 @@ static void upgrade_key(struct s15_menu *m, unsigned key)
 void s15_up_acquired(struct s15_menu *m)
 {
 	m->scan_due_set = false;                    /* not released now */
+	m->logo_due = false;
 }
 
-/* S-15.105: 2 s after the release, not before 5 s of uptime. */
+/* S-15.105: 2 s after the release, not before 5 s of uptime. The boot
+ * logo's disk is read 2 s after its release, as well. */
 void s15_up_released(struct s15_menu *m, uint32_t now_ms)
 {
 	uint32_t due = now_ms + 2000u;
+
+	if (m->screen == S15_SCR_LOGO) {
+		m->logo_due = true;
+		m->logo_due_ms = due;
+		return;
+	}
 
 	if (!can_scan(m))
 		return;
@@ -1304,6 +1770,7 @@ void s15_up_released(struct s15_menu *m, uint32_t now_ms)
 
 void s15_up_tick(struct s15_menu *m, uint32_t now_ms)
 {
+	logo_tick(m, now_ms);
 	if (m->scan_due_set && can_scan(m) &&
 	    (int32_t)(now_ms - m->scan_due_ms) >= 0)
 		start_scan(m);
@@ -1348,7 +1815,7 @@ static void ended(struct s15_menu *m)
 	}
 }
 
-static const char *const no_package = "No valid package found";
+static const char *const no_package = "No valid package";
 
 void s15_up_not_found(struct s15_menu *m)
 {
@@ -1360,7 +1827,7 @@ void s15_up_not_found(struct s15_menu *m)
  * the not-found line nor a reason line. */
 void s15_up_no_transfer(struct s15_menu *m)
 {
-	sline(m, S15_ST_ERROR, "The transfer could not start");
+	sline(m, S15_ST_ERROR, "Transfer did not start");
 	ended(m);
 }
 
@@ -1626,9 +2093,12 @@ enum s15_continue s15_menu_continue(struct s15_menu *m)
 
 	if (c == S15_CONT_BUSY)
 		return c;
-	/* the view whole on the panel before the shutdown begins (the
-	 * board's continue_os sends the frame first) */
-	enter(m, S15_SCR_STARTING, s15_cont_title);
+	/* the line under the screen that was showing, whole on the panel
+	 * before the shutdown begins (the board's continue_os sends the frame
+	 * first); from here no key acts */
+	leave(m);
+	m->screen = S15_SCR_STARTING;
+	m->changes++;
 	sline(m, S15_ST_WARN, s15_cont_restarting);
 	m->env->continue_os(m->env->ctx);
 	return c;
@@ -1675,6 +2145,15 @@ static void hold_cancel(struct s15_menu *m)
 	case S15_ARM_OPTION:
 		draw_option(m, false);
 		break;
+	case S15_ARM_APPROVE:
+		draw_approve(m, false);
+		break;
+	case S15_ARM_LOGO_SAVE:
+		m->changes++;		/* the view's line, as it was */
+		break;
+	case S15_ARM_LOGO_REMOVE:
+		draw_logo(m, false);
+		break;
 	case S15_ARM_NONE:
 	default:
 		break;
@@ -1704,6 +2183,15 @@ static void hold_run(struct s15_menu *m)
 		set_option(m, true);                /* S-15.140 */
 		draw_settings(m);
 		break;
+	case S15_ARM_APPROVE:
+		approve_end(m, S15_APPROVE_ALLOWED);
+		break;
+	case S15_ARM_LOGO_SAVE:
+		logo_done(m, m->env->logo_save(m->env->ctx), true);
+		break;
+	case S15_ARM_LOGO_REMOVE:
+		logo_done(m, m->env->logo_remove(m->env->ctx), false);
+		break;
 	case S15_ARM_NONE:
 	default:
 		break;
@@ -1713,6 +2201,9 @@ static void hold_run(struct s15_menu *m)
 void s15_menu_tick(struct s15_menu *m, uint32_t now_ms)
 {
 	m->now_ms = now_ms;
+	if (m->screen == S15_SCR_APPROVE && m->armed == S15_ARM_NONE &&
+	    now_ms - m->approve_ms >= S15_APPROVE_MS)
+		approve_end(m, S15_APPROVE_TIMEOUT);
 	if (m->armed == S15_ARM_NONE)
 		return;
 	if (now_ms - m->arm_ms >= HOLD_MS)
@@ -1757,6 +2248,9 @@ static void key_down(struct s15_menu *m, unsigned key)
 	case S15_SCR_OPTION:
 		option_screen_key(m, key);  /* S-15.140 */
 		break;
+	case S15_SCR_APPROVE:
+		approve_key(m, key);
+		break;
 	case S15_SCR_FORMAT:
 		format_key(m, key);
 		break;
@@ -1767,6 +2261,16 @@ static void key_down(struct s15_menu *m, unsigned key)
 		upgrade_key(m, key);
 		break;
 	case S15_SCR_RESULT:
+		if (s15_digit(m->dev, key) == 8u)
+			open_system(m);
+		break;
+	case S15_SCR_LOGO:
+		logo_key(m, key);
+		break;
+	case S15_SCR_LOGO_VIEW:
+		logo_view_key(m, key);
+		break;
+	case S15_SCR_LOGO_DONE:
 		if (s15_digit(m->dev, key) == 8u)
 			open_system(m);
 		break;
@@ -1782,6 +2286,9 @@ void s15_menu_key(struct s15_menu *m, unsigned key, bool down)
 	bool was_down;
 
 	if (key >= m->dev->keys.count)        /* S-15.014 */
+		return;
+	/* the approval reads the unit's own keys alone */
+	if (m->host_event && m->screen == S15_SCR_APPROVE)
 		return;
 	was_down = bit(m->down, key);
 	set_bit(m->down, key, down);
@@ -1871,6 +2378,10 @@ void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
 	m->color = false;
 	m->mtp_macos = true;
 	m->start_menu = false;
+	m->host_link = true;
+	m->approve = S15_APPROVE_NONE;
+	m->approve_back = S15_SCR_MAIN;
+	m->approve_ms = 0;
 	m->packs_item = false;
 	m->armed = S15_ARM_NONE;
 	m->arm_key = 0;
@@ -1921,6 +2432,7 @@ void s15_menu_start(struct s15_menu *m)
 	m->color = m->boot->settings.color;          /* S-15.173 */
 	m->mtp_macos = m->boot->settings.mtp_macos;  /* S-15.174 */
 	m->start_menu = m->boot->settings.start_menu; /* S-15.175 */
+	m->host_link = m->boot->settings.host_link;
 	for (unsigned i = 0; i < sizeof m->down; i++)
 		m->stale[i] = m->down[i];         /* S-15.013 */
 	m->hold = false;	/* here: s15_menu_init() runs before the key read */
@@ -1961,6 +2473,10 @@ void s15_menu_render(struct s15_menu *m, const struct s15_geometry *g,
 	s15_menu_frame(m, &f);
 	if (m->keytest) {
 		s15_render_keytest(&m->kt, g, d, &f);
+		return;
+	}
+	if (m->screen == S15_SCR_LOGO_VIEW && m->pic.px != NULL) {
+		render_logo_view(m, g, d);
 		return;
 	}
 	if (m->black_once) {

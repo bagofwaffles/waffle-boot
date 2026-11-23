@@ -58,7 +58,7 @@ const struct wb_time opxy_time = { OPXY_CCLK_MHZ };
 const struct wb_strap opxy_strap = {
 	.port = WB_PORT_A,
 	.pins = OPXY_STRAP_ROLE | OPXY_STRAP_REV0 | OPXY_STRAP_REV1,
-	.settle_us = 20u,
+	.settle_us = OPXY_STRAP_SETTLE_US,
 	.inen_us = 2u,
 };
 

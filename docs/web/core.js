@@ -487,7 +487,7 @@ export function describe(i) {
     return {
         why: W.WHY[i.why] || `reason ${i.why}`,
         frontVersion: i.front || 0,
-        device: i.v20 ? { name: W.DEVICES[i.device] || `device ${i.device}`, identified: i.dev_how === 0,
+        device: i.v20 ? { name: W.DEVICES[i.device] || `device ${i.device}`, identified: i.dev_how === W.HOW_TABLE,
             n: i.fs_n, c: i.fs_c } : null,
         running: a,
         established: i.established,

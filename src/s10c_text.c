@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 #include "waffle/s10c_host.h"
 
+#include "waffle/div64.h"
+
 /* A bounded text builder; writes past `cap` are dropped. */
 struct text {
 	char *buf;
@@ -214,13 +216,11 @@ void s10c_setmeta_parse(const uint8_t *payload, size_t len,
 /* S-10c.103, S-16.022 */
 uint8_t s10c_percent(uint32_t done, uint32_t total)
 {
-	uint64_t t = total;
-
 	if (total == 0)
 		return 100;
 	if (done > total)
 		done = total;
-	return (uint8_t)((200u * (uint64_t)done + t) / (2u * t));
+	return (uint8_t)wb_percent32(done, total);
 }
 
 uint8_t s10c_percent_te(uint32_t done, uint32_t total)

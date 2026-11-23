@@ -248,22 +248,23 @@ _wb_testos_entry:
 	JUMP (P1);
 	.size _wb_testos_entry, . - _wb_testos_entry
 
-#if defined(OPXY_TESTOS_1F)
+#if defined(OPXY_TESTOS_SHARED)
 /*
- * The OP-1F's images (bf703_testos_1f.ld) are laid out like the OP-1F's
- * OS 1.7.3 (S-05.040): the stream's FIRST and FINAL targets are
- * 0x11A00000, the ROM's default application entry, and its one L1 block
- * is this, there. It turns the predictor and the CPLBs off as the shim
- * does, before its one branch, since what the loading bootloader left
- * may not cover DDR, then jumps to the shim in the DDR image. The shim's
- * .l1.text copy goes to L1 code after it.
+ * The installer's images (bf703_installer.ld) are laid out like the
+ * OP-1F's OS 1.7.3 (S-05.040), the shape both devices' loaders take
+ * (S-05.043): the stream's FIRST and FINAL targets are 0x11A00000, the
+ * ROM's default application entry, and its one L1 block is this, there.
+ * It turns the predictor and the CPLBs off as the shim does, before its
+ * one branch, since what the loading bootloader left may not cover DDR,
+ * then jumps to the shim in the DDR image. The shim's .l1.text copy goes
+ * to L1 code after it.
  */
 	.section .wb.l1entry, "ax"
 	.p2align 3
 
-	.global _wb_testos_entry_1f
-	.type _wb_testos_entry_1f, STT_FUNC
-_wb_testos_entry_1f:
+	.global _wb_testos_l1_entry
+	.type _wb_testos_l1_entry, STT_FUNC
+_wb_testos_l1_entry:
 	CSYNC;
 	P0.L = BPCFG_LO;
 	P0.H = BPCFG_HI;
@@ -294,7 +295,7 @@ _wb_testos_entry_1f:
 	P1.H = _wb_testos_entry;
 	JUMP (P1);
 	.p2align 3
-	.size _wb_testos_entry_1f, . - _wb_testos_entry_1f
+	.size _wb_testos_l1_entry, . - _wb_testos_l1_entry
 #endif
 
 #endif /* OPXY_TEST_OS */

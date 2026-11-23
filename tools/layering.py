@@ -22,7 +22,8 @@ core or board header. The board and the test OS may include anything. An
 include is resolved as the compiler does, against the including file's
 directory (quoted only), then src/include; one that resolves to neither (a
 system or vendored header) is not checked. src/front/ has its own check (tools/front_image.py
-boundary), and src/glue/ and src/third_party/ are not checked.
+boundary), src/stub/ is linked alone (src/stub/stub.ld), and src/glue/ and src/third_party/ are
+not checked.
 
 ALLOWED lists the crossings that remain, each with its reason; one that no
 longer occurs fails too, so that the list only shrinks. Exit status 1 on a
@@ -54,8 +55,9 @@ ALLOWED = {
     ('src/s13c_panel.c', 'src/include/waffle/testos.h'),
 }
 
-# Headers for every layer: the shared byte and string helpers.
-NEUTRAL = ('src/include/waffle/bytes.h',)
+# Headers for every layer: the shared byte and string helpers, and the
+# 64-bit division without the compiler's.
+NEUTRAL = ('src/include/waffle/bytes.h', 'src/include/waffle/div64.h')
 
 # What each layer may not include.
 FORBIDDEN = {'core': ('board', 'driver', 'testos'), 'driver': ('core', 'board'),

@@ -214,11 +214,11 @@ static void warn_line(const struct s15_select_info *info, struct s15_buf *out)
 	if (info->stock) {
 		s15_buf_str(out, s15_stock_line);
 	} else if (info->slot >= 0) {
-		s15_buf_str(out, "Slot ");
+		s15_buf_str(out, "Replaces Slot ");
 		s15_buf_dec(out, s15_slot_number((unsigned)info->slot));
-		s15_buf_str(out, " is replaced. Recovery remains.");
+		s15_buf_str(out, "; recovery stays.");
 	} else {
-		s15_buf_str(out, "The other slot is replaced. Recovery remains.");
+		s15_buf_str(out, "Replaces the other slot; recovery stays.");
 	}
 }
 
@@ -229,7 +229,7 @@ static void cancel_row(const struct s15_select *s, uint32_t now_ms,
 	s15_buf_init(out);
 	s15_buf_str(out, "8 Cancel");
 	if (!s->holding) {		/* the countdown in the label */
-		s15_buf_str(out, " (cancels in ");
+		s15_buf_str(out, " (");
 		s15_buf_dec(out, s15_select_left(s, now_ms));
 		s15_buf_str(out, " s)");
 	}
@@ -250,15 +250,11 @@ static size_t prompt_lines(const struct s15_select *s, uint32_t now_ms,
 	size_t n = 0;
 
 	s15_buf_init(&out[n]);
-	s15_buf_str(&out[n], "The firmware's signature does not match.");
+	s15_buf_str(&out[n], "Signature does not match.");
 	style[n++] = S15_ST_WARN;
 	s15_buf_init(&out[n]);
-	s15_buf_str(&out[n], "Installing it anyway is your choice.");
-	style[n++] = S15_ST_TEXT;
-	s15_buf_init(&out[n]);
-	s15_buf_str(&out[n], "1 Install anyway (hold for ");
-	s15_buf_dec(&out[n], S15_HOLD_MS / 1000u);
-	s15_buf_str(&out[n], " s)");
+	s15_buf_str(&out[n], "1 Install anyway");
+	s15_buf_str(&out[n], s15_hold_named);
 	style[n++] = s->holding ? S15_ST_ARMED : S15_ST_ITEM;
 	cancel_row(s, now_ms, &out[n]);
 	style[n++] = S15_ST_BACK;
@@ -285,9 +281,7 @@ size_t s15_select_lines(const struct s15_select_info *info,
 	if (s->selected == 0u) {
 		s15_buf_str(&out[n], "\tNothing selected");
 	} else {
-		s15_buf_str(&out[n], " (hold for ");
-		s15_buf_dec(&out[n], S15_HOLD_MS / 1000u);
-		s15_buf_str(&out[n], " s)");
+		s15_buf_str(&out[n], s15_hold_named);
 	}
 	style[n++] = s->holding ? S15_ST_ARMED : S15_ST_ITEM;
 	for (unsigned i = 0; i < ROWS; i++) {

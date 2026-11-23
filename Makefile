@@ -25,7 +25,9 @@
 #   make test-os-mon      the test OS with the USB debug monitor
 #   make installer        the installer (wiki/Installer-Reference.md): the hardware checks,
 #                 then this build's image written to the unit when every
-#                 check passes: $(BUILD)/waffle-install.ldr
+#                 check passes: $(BUILD)/waffle-install.ldr, one image for
+#                 the OP-XY and the OP-1F; make installer-survey, the same
+#                 writing nothing to the SPI flash
 #   make analyze  clang static analyzer over src/ and tests/
 #   make cppcheck cppcheck over src/ and tests/, the vendored code left out
 #   make fuzz     libFuzzer targets (clang), see tests/fuzz/README.md
@@ -40,6 +42,12 @@
 #                 make image LOG_DEBUG=1 BUILD=build/debug
 #   BOOT_CRUMBS=1 a trial boot's breadcrumbs (src/board/opxy_crumbs.c)
 #   BOOT_TIMING=1 the boot's milestones timed (src/board/opxy_timing.c)
+#   BOOT_TIMING_INFER=1  with BOOT_TIMING=1, the running slot also inferred
+#                 from both slots' streams after the front named it, timed for
+#                 the report; it lengthens the start, so it is off by default
+#   PACK_SPOIL=1  an image whose packed block the stub refuses after inflating
+#                 it (tools/mkldr.py --spoil): the stub's refusal on a unit's
+#                 trial slot; never a release
 #   BOOT_LINK_SETTLE_US=<n>  microseconds between a byte of the slave's boot
 #                 stream and the sample of PA6 that decides the next (S-13b.022),
 #                 default 2; 0 for none
@@ -100,12 +108,10 @@ COMMON := -std=c11 $(WARNINGS) -Isrc/include -Isrc -g -fdebug-prefix-map=$(CURDI
 # The image spans L1, L2 and DDR, beyond a CALL's reach (S-01.011;
 # bf703.ld). A function called across regions carries WB_FAR_CALL, and the
 # link fails on a call that cannot reach; the rest are plain calls.
-# TARGET_SIZE: smaller code at a small cost in speed (no jump tables, no
-# copied loop headers, small functions inlined only when declared inline).
-# The files built for speed take TARGET_SPEED, which is -O2 as it was.
-TARGET_SIZE := -fno-jump-tables -fno-tree-ch -fno-inline-small-functions
-TARGET_SPEED := -O2 $(patsubst -fno-%,-f%,$(TARGET_SIZE))
-TARGET_CFLAGS := $(COMMON) -mcpu=bf703-none -Os $(TARGET_SIZE) -ffreestanding \
+# The image is built for size (-Os); the files built for speed take
+# TARGET_SPEED.
+TARGET_SPEED := -O2
+TARGET_CFLAGS := $(COMMON) -mcpu=bf703-none -Os -ffreestanding \
 	-fno-common -ffunction-sections -fdata-sections
 TARGET_ASFLAGS := -mcpu=bf703-none -Isrc/include
 # The bootloader's build number (S-17.032), default 0.
@@ -137,6 +143,9 @@ endif
 # make installer test-os-mon BOOT_TIMING=1 BUILD=build/timing
 ifneq ($(BOOT_TIMING),)
 TARGET_CFLAGS += -DOPXY_BOOT_TIMING_ON=1
+endif
+ifneq ($(BOOT_TIMING_INFER),)
+TARGET_CFLAGS += -DOPXY_BOOT_TIMING_INFER_ON=1
 endif
 # BOOT_LINK_SETTLE_US=n: the time between a byte of the slave's boot stream and
 # the sample of PA6 that decides the next byte (OPXY_BOOT_LINK_SETTLE_US,
@@ -313,6 +322,8 @@ $(eval $(call VEC_HEADER,s15_vectors.h,tests/vectors/s15/gen_s15_vectors.py))
 $(eval $(call VEC_HEADER,s17_vectors.h,tests/vectors/s17/gen_s17_vectors.py))
 $(eval $(call VEC_HEADER,s18_vectors.h,tests/vectors/s18/gen_s18_vectors.py))
 $(eval $(call VEC_HEADER,wire_vectors.h,tests/vectors/wire/gen_wire_vectors.py))
+$(eval $(call VEC_HEADER,pack_vectors.h,tests/vectors/pack/gen_pack_vectors.py))
+$(eval $(call VEC_HEADER,logo_vectors.h,tests/vectors/logo/gen_logo_vectors.py))
 
 # A test's own dependency file names the headers it includes once it has
 # been built; before that, every test waits for every header.
@@ -320,8 +331,8 @@ HOST_TEST_CFLAGS += -I$(GEN)
 $(HOST_TESTS): | $(VEC_HEADERS)
 
 check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check/layering check/mtpcp \
-	check/testos_mon check/wbrecover check/web check/bump_version check/generated check/leak \
-	check/wiki_links check/ui_version
+	check/testos_mon check/hostlink check/wbrecover check/web check/bump_version check/generated check/leak \
+	check/wiki_links check/ui_version check/wblogo
 
 # The screenshots in docs/ui/ are drawn at this tree's version (tools/ui_shots.py
 # --check): after make bump-version, redraw them (wiki/Screen-Style-Guide.md).
@@ -329,6 +340,11 @@ check: $(TESTS:tests/unit/%.c=check/%) check/image_tools check/front_image check
 check/ui_version:
 	$(PYTHON) -I -B tests/tools/test_ui_shots.py
 	$(PYTHON) -I -B tools/ui_shots.py --check docs/ui
+
+# The boot logo's reference tool (tests/tools/test_wblogo.py).
+.PHONY: check/wblogo
+check/wblogo:
+	$(PYTHON) -I -B tests/tools/test_wblogo.py
 
 # The image tools' own tests (tests/tools/test_image_tools.py).
 .PHONY: check/image_tools
@@ -357,6 +373,12 @@ check/mtpcp:
 .PHONY: check/testos_mon
 check/testos_mon:
 	$(PYTHON) -I -B tests/tools/test_testos_mon.py
+
+# tools/hostlink.py, and testos_mon.py's dev-put and dev-get over it, against
+# the host link's own C (src/hostlink.c) with volumes in memory.
+.PHONY: check/hostlink
+check/hostlink:
+	CC="$(CC)" $(PYTHON) -I -B tests/tools/test_hostlink_tool.py
 
 # tools/wbrecover.py against a model of recovery's protocol and the front's
 # own C, over a pseudo-terminal.
@@ -438,7 +460,7 @@ STREAM := $(IMAGE:.elf=.ldr)
 LAYOUT := $(IMAGE:.elf=.layout.json)
 LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/opxy.h \
 	--flash src/include/waffle/s02_flash.h --memmap src/include/waffle/s01_memmap.h \
-	--stream $(STREAM)
+	--stream $(STREAM) --stub $(BUILD)/bf703/stub.elf
 
 # S-01.009: the stack the factory first stage calls the ROM's boot entry on,
 # which no block of the stream may meet (S-02.091 rule 4).
@@ -500,7 +522,62 @@ $(FRONT_STREAM): $(FRONT_ELF) $(FRONT_OK) tools/mkldr.py tools/elf32.py
 front-pin: $(FRONT_ELF)
 	$(PYTHON) -I -B tools/front_image.py pin $(FRONT_ELF) $(FRONT_PIN) --write
 
-image: $(STREAM) $(LAYOUT)
+# The stub (src/stub/, waffle/pack.h): linked alone by stub.ld from its own
+# objects, its own copy of zlib's inflate and CRC-32 (Z_SOLO: no C library;
+# NO_GZIP: raw deflate only) and libgcc, into the L2 the image leaves free.
+# The front enters it; it unpacks the image's packed block and enters the
+# image. Built for speed, apart from every build option of the image.
+STUB_LD   := src/stub/stub.ld
+STUB_SRCS := src/stub/stub.c src/stub/unpack.c src/stub/stub_libc.c
+STUB_ZLIB := $(addprefix src/third_party/zlib/,inflate.c inffast.c inftrees.c zutil.c \
+	crc32.c adler32.c)
+STUB_OBJS := $(STUB_SRCS:src/stub/%.c=$(BUILD)/bf703/stub/%.o) \
+	$(STUB_ZLIB:src/third_party/zlib/%.c=$(BUILD)/bf703/stub/zlib/%.o) \
+	$(BUILD)/bf703/stub/stub_entry.o
+STUB_ELF  := $(BUILD)/bf703/stub.elf
+STUB_ZFLAGS := -DZ_SOLO -DNO_GZIP -DZ_TESTW=
+STUB_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -Isrc/stub -isystem src/third_party/zlib \
+	-g -fdebug-prefix-map=$(CURDIR)=. -mcpu=bf703-none -O2 -ffreestanding -fno-common \
+	-ffunction-sections -fdata-sections -fno-tree-loop-distribute-patterns $(STUB_ZFLAGS)
+STUB_TP_CFLAGS := -std=gnu11 -mcpu=bf703-none -O2 -fno-common -ffunction-sections \
+	-fdata-sections -fno-tree-loop-distribute-patterns -ffreestanding $(TP_COMMON) \
+	$(LIBC_INCLUDES) $(TP_WARN) $(STUB_ZFLAGS)
+
+$(BUILD)/bf703/stub/%.o: src/stub/%.c
+	@mkdir -p $(@D)
+	$(CROSS_CC) $(STUB_CFLAGS) -MD -MP -c $< -o $@
+
+$(BUILD)/bf703/stub/zlib/%.o: src/third_party/zlib/%.c
+	@mkdir -p $(@D)
+	$(CROSS_CC) $(STUB_TP_CFLAGS) -MD -MP -c $< -o $@
+
+$(BUILD)/bf703/stub/%.o: src/stub/%.S
+	@mkdir -p $(@D)
+	$(CROSS_CC) -mcpu=bf703-none -MD -MP -c $< -o $@
+
+# adler32() is linked for inflate's zlib wrapper, which raw deflate never reaches.
+$(BUILD)/bf703/stub/zlib/adler32.o: STUB_TP_CFLAGS += -Os
+
+$(STUB_ELF): $(STUB_OBJS) $(STUB_LD)
+	$(CROSS_CC) -mcpu=bf703-none -nostartfiles -nostdlib -T $(STUB_LD) \
+		-Wl,--orphan-handling=error -Wl,--gc-sections -Wl,-Map,$(@:.elf=.map) \
+		-Wl,-u,_wb_stub_entry $(STUB_OBJS) -lgcc -o $@
+
+# The stub's unpack on the host, over the build's stream: it must give back
+# the image's packed runs (mkldr.py --unpacked).
+UNPACK_HOST := $(BUILD)/host/unpack-host
+$(UNPACK_HOST): src/stub/unpack_host.c src/stub/unpack.c src/stub/unpack.h \
+		src/include/waffle/pack.h $(BUILD)/host/libzlib.a
+	@mkdir -p $(@D)
+	$(CC) $(COMMON) -O2 $(TP_CPPFLAGS) src/stub/unpack_host.c src/stub/unpack.c \
+		$(BUILD)/host/libzlib.a -o $@
+UNPACK_CHECK := $(BUILD)/bf703/waffle-boot.unpacked
+$(UNPACK_CHECK): $(STREAM) $(UNPACK_HOST) $(IMAGE) tools/mkldr.py
+	$(UNPACK_HOST) $(STREAM) $@.tmp
+	$(PYTHON) -I -B tools/mkldr.py $(IMAGE) $@.tmp --unpacked
+	@mv $@.tmp $@
+
+image: $(STREAM) $(LAYOUT) $(if $(PACK_SPOIL),,$(UNPACK_CHECK))
 
 # S-15.132: a build-time image for the hand-over frame, a 480 x 222 PNG.
 # Its object is linked beside libwaffle, and its wb_display_boot_image
@@ -537,14 +614,24 @@ $(IMAGE): $(CROSS_LIB) $(TP_TARGET_LIBS) $(LDSCRIPT) $(LOGO_STAMP) \
 		-Wl,--whole-archive $(CROSS_LIB) -Wl,--no-whole-archive \
 		-Wl,--start-group $(TP_TARGET_LIBS) -lgcc -Wl,--end-group -o $@
 
-$(STREAM): $(IMAGE) $(FRONT_ELF) $(FRONT_OK) tools/mkldr.py tools/elf32.py $(INIT_STACK)
-	$(PYTHON) -I -B tools/mkldr.py $< $@.tmp --front $(FRONT_ELF)
+# PACK_SPOIL=1: a packed block the stub refuses after inflating every run
+# (mkldr.py --spoil), to try the refusal on a unit's trial slot. Never a release.
+# The stamp writes the stream again when the option is given or dropped.
+PACK_STAMP := $(BUILD)/bf703/pack.stamp
+$(PACK_STAMP): FORCE
+	@mkdir -p $(@D)
+	@printf '%s\n' '$(PACK_SPOIL)' | cmp -s - $@ || printf '%s\n' '$(PACK_SPOIL)' > $@
+
+$(STREAM): $(IMAGE) $(FRONT_ELF) $(FRONT_OK) $(STUB_ELF) $(PACK_STAMP) tools/mkldr.py tools/elf32.py \
+		$(INIT_STACK)
+	$(PYTHON) -I -B tools/mkldr.py $< $@.tmp --front $(FRONT_ELF) --stub $(STUB_ELF) \
+		$(if $(PACK_SPOIL),--spoil)
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_stack.py $(INIT_STACK)
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_stream.py bootloader $@.tmp \
 		--first-stage-stack $(FIRST_STAGE_STACK)
 	@mv $@.tmp $@
 
-$(LAYOUT): $(IMAGE) $(STREAM) tools/layout.py tools/elf32.py
+$(LAYOUT): $(IMAGE) $(STREAM) $(STUB_ELF) tools/layout.py tools/elf32.py tools/mkldr.py
 	$(PYTHON) -I -B tools/layout.py $< $(LAYOUT_ARGS) --json $@.tmp
 	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $@.tmp
 	@mv $@.tmp $@
@@ -642,8 +729,9 @@ $$(TESTOS_$(1)_STREAM): $$(TESTOS_$(1)_IMAGE) tools/mkldr.py tools/elf32.py
 $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testos_layout.py tools/layout.py tools/elf32.py
 	$(PYTHON) -I -B tools/testos_layout.py $$< --ld $$(TESTOS_$(1)_LD) $(TESTOS_DEVICE_$(1)) \
 		--board src/include/waffle/board/opxy.h --memmap src/include/waffle/s01_memmap.h \
-		--stream $$(TESTOS_$(1)_STREAM) --json $$@.tmp
-	$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp $(TESTOS_DEVICE_$(1))
+		--stream $$(TESTOS_$(1)_STREAM) $(TESTOS_LAYOUT_FLAGS_$(1)) --json $$@.tmp
+	$(foreach d,$(or $(TESTOS_LAYOUT_DEVICES_$(1)),xy),\
+		$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp --device $(d) &&) true
 	@mv $$@.tmp $$@
 endef
 
@@ -652,30 +740,23 @@ TESTOS_MON := mon
 TESTOS_FLAGS_gpio    := -DOPXY_TESTOS_PANEL_GPIO=1
 TESTOS_FLAGS_mon     := -DOPXY_TESTOS_MONITOR=1
 # The installer (wiki/Installer-Reference.md): the check suite, then this build's image
-# written to the unit, every write held on the unit's key; no monitor.
-TESTOS_INSTALLER := installer installer-1f installer-1f-survey
-TESTOS_FLAGS_installer := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1
-# The OP-1F's installer (make installer-1f): the same, with the same carried
-# image, laid out like the OP-1F's OS 1.7.3 for its own loader (S-05.040,
-# bf703_testos_1f.ld); it runs on an OP-1F alone. The survey (make
-# installer-1f-survey) writes nothing to the SPI flash: the gate and the
-# flash driver's write calls (--wrap) refuse every erase and program, and
-# it shows and saves what an install there would depend on.
-TESTOS_1F_FLAGS := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1 -DOPXY_TESTOS_1F=1
-TESTOS_FLAGS_installer-1f := $(TESTOS_1F_FLAGS)
-TESTOS_FLAGS_installer-1f-survey := $(TESTOS_1F_FLAGS) -DOPXY_TESTOS_SURVEY=1
-TESTOS_LD_1F := src/testos/bf703_testos_1f.ld
-TESTOS_LD_installer-1f := $(TESTOS_LD_1F)
-TESTOS_LD_installer-1f-survey := $(TESTOS_LD_1F)
-TESTOS_MKLDR_installer-1f := --os-1f
-TESTOS_MKLDR_installer-1f-survey := --os-1f
-TESTOS_DEVICE_installer-1f := --device 1f
-TESTOS_DEVICE_installer-1f-survey := --device 1f
-TESTOS_KEEP_installer-1f := -Wl,-u,_wb_testos_entry_1f
-TESTOS_KEEP_installer-1f-survey := -Wl,-u,_wb_testos_entry_1f
+# written to the unit, every write held on the unit's key; no monitor. One image for both
+# devices (S-05.043), laid out like the OP-1F's OS 1.7.3, the shape both devices' own
+# loaders take (S-05.040, S-05.041, bf703_installer.ld); it decides the device at its entry
+# and acts on it. The survey (make installer-survey) writes nothing to the SPI flash: the
+# gate and the flash driver's write calls (--wrap) refuse every erase and program, and it
+# shows and saves what an install there would depend on.
+TESTOS_INSTALLER := installer installer-survey
+TESTOS_FLAGS_installer := -DOPXY_TESTOS_CHECK=1 -DOPXY_TESTOS_INSTALLER=1 -DOPXY_TESTOS_SHARED=1
+TESTOS_FLAGS_installer-survey := $(TESTOS_FLAGS_installer) -DOPXY_TESTOS_SURVEY=1
 TESTOS_COMMA := ,
 TESTOS_SURVEY_WRAPS := wb_spiflash_erase wb_spiflash_program
-TESTOS_LDFLAGS_installer-1f-survey := $(foreach f,$(TESTOS_SURVEY_WRAPS),-Wl$(TESTOS_COMMA)--wrap=$(f))
+TESTOS_LDFLAGS_installer-survey := $(foreach f,$(TESTOS_SURVEY_WRAPS),-Wl$(TESTOS_COMMA)--wrap=$(f))
+# The linked survey is checked to hold no real erase or program (testos_layout.py --survey).
+TESTOS_LAYOUT_FLAGS_installer-survey := --survey
+$(foreach v,$(TESTOS_INSTALLER),$(eval TESTOS_LD_$(v) := src/testos/bf703_installer.ld)\
+	$(eval TESTOS_MKLDR_$(v) := --os-1f)$(eval TESTOS_DEVICE_$(v) := --device both)\
+	$(eval TESTOS_LAYOUT_DEVICES_$(v) := xy 1f)$(eval TESTOS_KEEP_$(v) := -Wl,-u,_wb_testos_l1_entry))
 # A local, untracked local.mk may add targets, test-OS variants
 # (TESTOS_EXTRA) and sources to analyze (LOCAL_SRCS).
 TESTOS_EXTRA :=
@@ -688,16 +769,16 @@ $(TESTOS_BUILD)/gen/installer_image.c: $(STREAM) tools/installer_image.py src/fr
 	$(PYTHON) -I -B tools/installer_image.py $(STREAM) src/front/front.pin $@
 $(foreach v,$(TESTOS_PANELS) $(TESTOS_MON) $(TESTOS_INSTALLER) $(TESTOS_EXTRA),$(eval $(call testos_variant,$(v))))
 
-.PHONY: installer installer-1f installer-1f-survey
+.PHONY: installer installer-survey installer-1f installer-1f-survey
 installer: $(BUILD)/waffle-install.ldr
 $(BUILD)/waffle-install.ldr: $(TESTOS_installer_STREAM) $(TESTOS_installer_LAYOUT)
 	cp $< $@
-installer-1f: $(BUILD)/waffle-install-1f.ldr
-$(BUILD)/waffle-install-1f.ldr: $(TESTOS_installer-1f_STREAM) $(TESTOS_installer-1f_LAYOUT)
+installer-survey: $(BUILD)/waffle-install-survey.ldr
+$(BUILD)/waffle-install-survey.ldr: $(TESTOS_installer-survey_STREAM) $(TESTOS_installer-survey_LAYOUT)
 	cp $< $@
-installer-1f-survey: $(BUILD)/waffle-install-1f-survey.ldr
-$(BUILD)/waffle-install-1f-survey.ldr: $(TESTOS_installer-1f-survey_STREAM) $(TESTOS_installer-1f-survey_LAYOUT)
-	cp $< $@
+# Other names for the same two targets.
+installer-1f: installer
+installer-1f-survey: installer-survey
 
 test-os: $(addprefix test-os-,$(TESTOS_PANEL))
 
@@ -771,6 +852,12 @@ $(BUILD)/host/tests/test_front_%: tests/unit/test_front_%.c $(TEST_SUPPORT_LIB) 
 	$(CC) $(HOST_TEST_CFLAGS) -MMD -MP $< $(FRONT_HOST_LIB) $(TEST_SUPPORT_LIB) $(HOST_LIB) \
 		-Wl,--start-group $(TP_HOST_LIBS) -Wl,--end-group -o $@
 
+# The stub's tests: its portable unpack (src/stub/unpack.c) and the host's zlib.
+$(BUILD)/host/tests/test_stub_%: tests/unit/test_stub_%.c src/stub/unpack.c $(TEST_SUPPORT_LIB) $(TP_HOST_LIBS)
+	@mkdir -p $(@D)
+	$(CC) $(HOST_TEST_CFLAGS) -MMD -MP $< src/stub/unpack.c $(TEST_SUPPORT_LIB) \
+		-Wl,--start-group $(TP_HOST_LIBS) -Wl,--end-group -o $@
+
 $(BUILD)/host/tests/%: tests/unit/%.c $(TEST_SUPPORT_LIB) $(HOST_LIB) $(TP_HOST_LIBS)
 	@mkdir -p $(@D)
 	$(CC) $(HOST_TEST_CFLAGS) -MMD -MP $< $(TEST_SUPPORT_LIB) $(HOST_LIB) \
@@ -792,7 +879,8 @@ $(CROSS_LIB): $(CROSS_OBJS)
 # them side by side; the output of each comes out in one piece. The files
 # with a test-OS variant (waffle/testos.h) are analyzed in it as well.
 CHECKS  := $(TESTS:tests/unit/%.c=check/%)
-ANALYZE := $(addprefix analyze/,$(SRCS) $(FRONT_SRCS) $(TP_GLUE) $(TESTS) $(TEST_SUPPORT) \
+ANALYZE := $(addprefix analyze/,$(SRCS) $(FRONT_SRCS) $(STUB_SRCS) src/stub/unpack_host.c \
+	$(TP_GLUE) $(TESTS) $(TEST_SUPPORT) \
 	$(filter %.c,$(LOCAL_SRCS)))
 TESTOS_VARIANT := $(sort $(shell grep -l 'OPXY_TEST_OS\|OPXY_TESTOS' src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
 ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
@@ -801,7 +889,7 @@ ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
 # files their options reach.
 ANALYZE_MON := $(addprefix analyze-mon/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
 ANALYZE_INSTALLER := $(addprefix analyze-installer/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
-# The OP-1F's survey installer, over the files its options reach.
+# The survey installer, over the files its options reach.
 ANALYZE_SURVEY := $(addprefix analyze-survey/,$(sort $(shell grep -l 'OPXY_TESTOS' src/testos/*.c src/board/*.c)))
 DEV_VARIANT := $(sort $(shell grep -l 'OPXY_BOOT_CRUMBS\|OPXY_CRUMB\|OPXY_TIM\|OPXY_STARTUP\|S14_DEFAULT_THRESHOLD' \
 	src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
@@ -847,9 +935,9 @@ $(ANALYZE_INSTALLER): analyze-installer/%:
 $(ANALYZE_SURVEY): analyze-survey/%:
 	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \
 		-Xanalyzer -analyzer-output=text \
-		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_installer-1f-survey) \
+		$(COMMON) $(TP_CPPFLAGS) -DOPXY_TEST_OS=1 $(TESTOS_FLAGS_installer-survey) \
 		$* -o /dev/null 2>&1); s=$$?; \
-	printf '  ANALYZE %s (OP-1F survey)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
+	printf '  ANALYZE %s (survey)\n' '$*'; [ -z "$$out" ] || printf '%s\n' "$$out"; exit $$s
 
 $(ANALYZE_DEV): analyze-dev/%:
 	@out=$$($(CLANG) --analyze -Xanalyzer -analyzer-werror \
@@ -877,5 +965,5 @@ clean:
 	rm -rf $(BUILD)
 
 -include $(HOST_OBJS:.o=.d) $(HOST_TESTS:=.d) $(TEST_SUPPORT_OBJS:.o=.d) \
-	$(FRONT_HOST_OBJS:.o=.d) $(FRONT_OBJS:.o=.d) \
+	$(FRONT_HOST_OBJS:.o=.d) $(FRONT_OBJS:.o=.d) $(STUB_OBJS:.o=.d) \
 	$(CROSS_OBJS:.o=.d) $(TESTOS_ALL_OBJS:.o=.d) $(VEC_HEADERS:=.d)

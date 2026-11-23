@@ -32,7 +32,7 @@
 #include "fr_slots.h"
 
 #define FR_PROTO_VERSION  2u
-#define FR_FRONT_VERSION  21u	/* the front's own version, bumped with its pin */
+#define FR_FRONT_VERSION  23u	/* the front's own version, bumped with its pin */
 #define FR_PROTO_MAX_DATA 1024u	/* image bytes in one DATA, after its offset */
 #define FR_PROTO_MAX      (FR_PROTO_MAX_DATA + 8u)	/* a frame's payload */
 #define FR_PROTO_HEAD     6u	/* "WR", type, seq, len */
@@ -101,7 +101,7 @@
 /* S-02.093, S-18.004, S-18.005: the device and how it was decided, with
  * the first stage's n and c as read, a table match's the row's
  * (FR_HO_HOW_UNKNOWN: the default device, not identified); front version
- * 19 on. A host reads INFO as at least the bytes its fields need. */
+ * 20 on. A host reads INFO as at least the bytes its fields need. */
 #define FR_INFO_O_DEVICE     232u	/* u8 FR_HO_DEV_* */
 #define FR_INFO_O_DEV_HOW    233u	/* u8 FR_HO_HOW_* */
 #define FR_INFO_O_FS_N       234u	/* u32 n (S-18.003) */

@@ -64,7 +64,7 @@ class Engine(Spy):
             [os.environ.get('CC', 'cc'), '-std=c11', '-shared', '-fPIC', '-I', os.path.join(TOP, 'src', 'include'),
              '-o', out, os.path.join(HERE, 'test_mtpcp_shim.c')]
             + [os.path.join(TOP, 'src', n) for n in ('s10b_mtp.c', 's10b_text.c', 's04_records.c',
-                                                     's10c_text.c', 's11_common.c', 's11_version.c')])
+                                                     's10c_text.c', 'div64.c', 's11_common.c', 's11_version.c')])
         lib = ctypes.CDLL(out)
         lib.shim_add.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32, ctypes.c_int]
         lib.shim_start.argtypes = [ctypes.c_size_t, ctypes.c_int]

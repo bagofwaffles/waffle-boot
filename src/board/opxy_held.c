@@ -207,6 +207,7 @@ void opxy_held_service(void *ctx, const struct boot_held *h)
 		/* S-09.046: again each time the clock's value changes */
 		opxy_clock_to_slave(m);
 		opxy_services_poll(m); OPXY_TIMING_HELD(m);
+		OPXY_TESTOS_OR((void)0, opxy_hostlink_poll(m));
 	}
 	/* S-07.051: the PSoC removes the power. */
 	opxy_powered_off(m);
@@ -243,7 +244,7 @@ void opxy_held(void *ctx, const struct boot_held *h)
 	s06_node_master_routes(&m->node, opxy_dev(m));
 
 	opxy_nordic_ops(m, &m->nordic_ops);
-	m->nordic_ops.crc16 = wire_crc16_xmodem;
+	m->nordic_ops.crc16 = wire_crc16_xmodem;	/* software: frames too short for the CRC peripheral */
 	s08_init(&m->nordic, &m->node, S06_LINK_NORDIC, &m->nordic_ops,
 		 (int)m->meta.state);
 	/* S-08.045: the sku read at start-up; the word is 0 when the record

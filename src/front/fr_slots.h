@@ -75,6 +75,10 @@ int fr_running_slots(const struct fr_flash *f, const struct fr_mem *mem,
  * is the whole compare above. */
 int fr_running_slots_checked(const struct fr_flash *f, const struct fr_mem *mem,
 			     unsigned *slot, bool *established, bool *both);
+/* The slot whose stored logo (fr_logo.h) a start draws, read before the
+ * image check: the one slot whose stream loads the loaded descriptor, or
+ * else the slot the selector names. FR_FLASH_IO on a read failure. */
+int fr_logo_slot(const struct fr_flash *f, const struct fr_mem *mem, unsigned *slot);
 /* The flash holds the same image in both slots: each record has the tag
  * and a length inside the slot, the lengths are equal, and the slots'
  * bytes over that length are equal. It stops at the first that differs. */
@@ -274,7 +278,8 @@ enum fr_tier {
 
 enum fr_writer_state {
 	FR_WS_IDLE, FR_WS_SELECT_ERASE, FR_WS_SELECT_PROGRAM, FR_WS_SLOT, FR_WS_LOG_ERASE,
-	FR_WS_SETTINGS_ERASE, FR_WS_LOG_PENDING, FR_WS_SELECT_LOG, FR_WS_RECORD_ERASE, FR_WS_RECORD_PROGRAM,
+	FR_WS_LOGO_ERASE, FR_WS_SETTINGS_ERASE, FR_WS_LOG_PENDING, FR_WS_SELECT_LOG, FR_WS_RECORD_ERASE,
+	FR_WS_RECORD_PROGRAM,
 	FR_WS_READBACK, FR_WS_SELECTOR_ERASE, FR_WS_SELECTOR_PROGRAM, FR_WS_TRIAL_VERIFIED,
 	FR_WS_TRIAL_INDEX, FR_WS_ACT, FR_WS_DONE
 };

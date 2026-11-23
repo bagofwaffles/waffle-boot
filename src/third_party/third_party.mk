@@ -2,7 +2,7 @@
 #
 # Build rules for the vendored libraries (src/third_party/) and their glue
 # (src/glue/). Included by the top-level Makefile, which defines BUILD, CC,
-# CROSS_CC, CROSS_AR, WARNINGS, COMMON, TARGET_SIZE and TARGET_SPEED.
+# CROSS_CC, CROSS_AR, WARNINGS, COMMON and TARGET_SPEED.
 #
 # Each component <c> is built into $(BUILD)/host/lib<c>.a and
 # $(BUILD)/bf703/lib<c>.a from:
@@ -70,10 +70,16 @@ TP_fatfs_SRCS := src/third_party/fatfs/source/ff.c src/third_party/fatfs/source/
 TP_fatfs_GLUE := src/glue/fatfs/diskio_blockdev.c src/glue/fatfs/format.c
 
 YAFFS := src/third_party/yaffs2
-TP_yaffs2_SRCS := $(sort $(wildcard $(YAFFS)/core/*.c)) \
+# Five core files are not built: under the one configuration of every
+# device they do nothing or are never reached, and yaffs_fixed.c stands in.
+YAFFS_UNBUILT := yaffs_tagscompat.c yaffs_ecc.c yaffs_nameval.c yaffs_endian.c \
+	yaffs_verify.c
+TP_yaffs2_SRCS := $(filter-out $(addprefix $(YAFFS)/core/,$(YAFFS_UNBUILT)), \
+		$(sort $(wildcard $(YAFFS)/core/*.c))) \
 	$(addprefix $(YAFFS)/direct/, yaffsfs.c yaffs_attribs.c yaffs_error.c \
 		yaffs_hweight.c)
-TP_yaffs2_GLUE := src/glue/yaffs2/yaffs_blockdev.c src/glue/yaffs2/yaffs_osglue.c
+TP_yaffs2_GLUE := src/glue/yaffs2/yaffs_blockdev.c src/glue/yaffs2/yaffs_osglue.c \
+	src/glue/yaffs2/yaffs_fixed.c
 TP_yaffs2_FLAGS := -include src/glue/yaffs2/yaffs_port.h
 TP_yaffs2_WARN := -Wno-sign-compare -Wno-unused-but-set-variable
 
@@ -113,7 +119,7 @@ TP_COMMON := -g -fdebug-prefix-map=$(CURDIR)=. $(TP_CPPFLAGS)
 TP_HOST_CFLAGS := -std=gnu11 -O2 $(TP_COMMON)
 TP_HOST_GLUE_CFLAGS := $(COMMON) -O2 $(TP_CPPFLAGS)
 
-TP_TARGET_ARCH := -mcpu=bf703-none -Os $(TARGET_SIZE) -fno-common -ffunction-sections \
+TP_TARGET_ARCH := -mcpu=bf703-none -Os -fno-common -ffunction-sections \
 	-fdata-sections
 TP_TARGET_CFLAGS := -std=gnu11 $(TP_TARGET_ARCH) $(TP_COMMON) $(LIBC_INCLUDES)
 TP_TARGET_GLUE_CFLAGS := $(COMMON) $(TP_TARGET_ARCH) $(TP_CPPFLAGS) \
@@ -158,6 +164,9 @@ $(foreach c,$(TP_COMPONENTS),$(eval $(call TP_COMPONENT,$(c))))
 
 # The CRCs and zlib are built for speed on the target (their -O2 above).
 $(TP_crc_TARGET_OBJS) $(TP_zlib_TARGET_OBJS): TP_CFLAGS += $(TARGET_SPEED)
+# Except adler32(): only a zlib-wrapped stream checks it, and the
+# bootloader inflates raw deflate (src/wire_zip.c).
+$(call tp_obj,bf703,src/third_party/zlib/adler32.c): TP_CFLAGS += -Os
 
 # memcpy and memset move every sector, chunk and window: they copy by words
 # (src/glue/libc/picolibc.h), on the host too, where their test runs.

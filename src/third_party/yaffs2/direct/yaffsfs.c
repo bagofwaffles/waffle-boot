@@ -10,6 +10,8 @@
  * published by the Free Software Foundation.
  */
 
+/* Modified for waffle-boot: see src/third_party/README.md, "Local changes". */
+
 #include "yaffsfs.h"
 #include "yaffs_guts.h"
 #include "yaffscfg.h"
@@ -1809,8 +1811,8 @@ static int yaffsfs_DoStat(struct yaffs_obj *obj, struct yaffs_stat *buf)
 		buf->st_rdev = obj->yst_rdev;
 		buf->st_size = yaffs_get_obj_length(obj);
 		buf->st_blksize = obj->my_dev->data_bytes_per_chunk;
-		buf->st_blocks = (buf->st_size + buf->st_blksize - 1) /
-		    buf->st_blksize;
+		buf->st_blocks = wb_yaffs_div(buf->st_size + buf->st_blksize - 1,
+		    buf->st_blksize);
 #if CONFIG_YAFFS_WINCE
 		buf->yst_wince_atime[0] = obj->win_atime[0];
 		buf->yst_wince_atime[1] = obj->win_atime[1];

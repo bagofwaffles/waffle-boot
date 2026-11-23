@@ -15,10 +15,11 @@ struct s15_settings {
 	bool color;      /* S-15.173: drawn in color, not gray */
 	bool mtp_macos;  /* S-15.174: MTP for macOS, not Windows */
 	bool start_menu; /* S-15.175: start in the boot menu */
+	bool host_link;  /* the host link answers (SPEC-Q: no label yet) */
 };
 
 /* The defaults: developer mode off, in gray, MTP for macOS, start in boot
- * menu off. */
+ * menu off, host link on. */
 void s15_settings_defaults(struct s15_settings *s);
 
 #endif /* WAFFLE_S15_SETTINGS_H */

@@ -24,6 +24,7 @@
 
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
+#include "waffle/div64.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/s07_program.h"
 #include "waffle/s11_content.h"
@@ -117,17 +118,24 @@ static struct {
 	uint32_t pct;
 } sent;
 
+static int host_parts = -1;
+
+void opxy_install_host_parts(int parts)
+{
+	host_parts = parts;
+}
+
 static void host_progress(struct opxy_master *m, uint32_t done,
 			  uint32_t total, const char *label)
 {
-	const uint32_t pct = total == 0u ? 100u :
-		(uint32_t)(((uint64_t)done * 200u + total) / (2u * (uint64_t)total));
+	const uint32_t pct = total == 0u ? 100u : wb_percent32(done, total);
 
 	if (label == sent.label && pct == sent.pct)
 		return;
 	sent.label = label;
 	sent.pct = pct;
 	s10c_host_progress(&m->sv.host, done, total, label);
+	opxy_hostlink_progress(m, done, total, label);
 }
 
 /* A version as text, NUL-terminated, into out[S11_VERSION_TEXT_MAX + 1]. */
@@ -455,16 +463,16 @@ static enum s11_result staged_check(const struct opxy_master *m,
 				    uint32_t len)
 {
 	const struct opxy_services *sv = &m->sv;
-	const struct s11_staged_read read = { true, len,
-					      opxy_crc32_long(0u, image, len) };
 	const struct s11_staged_read stated = { sv->extracted,
 						sv->extracted_sizes.size[c],
 						sv->extracted_sizes.crc32[c] };
+	struct s11_staged_read read = { true, len, 0u };
 
 	/* A run always follows its own extraction; without the stated
 	 * values there is nothing to check against. */
 	if (!stated.ok)
 		return S11_INTERNAL;
+	read.crc32 = opxy_crc32_known(image, len, stated.crc32, opxy_usb_breathe);
 	return s11_staged_result(s11_staged_check(&stated, &read));
 }
 
@@ -618,7 +626,7 @@ static bool already_written(const struct opxy_master *m,
 	    S02_OK)
 		return false;
 	return s02_tag_ok(rec.tag) && rec.length == len &&
-	       rec.crc32 == m->flash.crc32(0u, image, len);
+	       rec.crc32 == opxy_crc32_known(image, len, rec.crc32, opxy_usb_breathe);
 }
 
 /* S-11.068, S-02.042-S-02.053. S-11 runs the step only with the option
@@ -753,31 +761,24 @@ static int step_nordic_slot(void *ctx)
 
 /*
  * S-11.071, S-07.080-S-07.085: the staged .cyacd text through the PSoC
- * programmer. Without a PSoC unlock (S-07.081) the programmer fails the
- * step before entry, sends nothing and reports why; the image is not
- * read for it. The OP-1F's PSoC is updated the same way, with the same
- * unlock (S-18.040, S-07.081).
+ * programmer, with the PSoC unlock (S-07.081) sent at its entry. The
+ * OP-1F's PSoC is updated the same way, with the same unlock (S-18.040).
  */
 static bool step_psoc(void *ctx)
 {
 	struct opxy_master *m = ctx;
 	uint8_t unlock[S07_CY_UNLOCK_LEN];
-	const bool has_unlock = opxy_psoc_unlock(unlock);
 	uint32_t len = 0;
-	uint8_t *image = NULL;
+	uint8_t *image;
 	bool ok = false;
 	int r;
 
-	if (has_unlock) {
-		image = staged(m, S11_C_BACKPLANE, &len);
-		if (image == NULL)
-			return false;
-	}
-	r = s07_program(&m->psoc, (const char *)image, len,
-			has_unlock ? unlock : NULL, &ok);
+	(void)opxy_psoc_unlock(unlock);		/* always built in */
+	image = staged(m, S11_C_BACKPLANE, &len);
+	if (image == NULL)
+		return false;
+	r = s07_program(&m->psoc, (const char *)image, len, unlock, &ok);
 	free(image);
-	if (!has_unlock)
-		cause("no PSoC unlock");		/* S-07.081 */
 	/*
 	 * S-11.058: a step a power-off interrupts has no
 	 * result. The power-off of S-07.051 has run; nothing more of the run
@@ -974,6 +975,7 @@ static void select_info(struct opxy_master *m, const struct s11_step_env *env,
 /* The staged bootloader is waffle-boot's (S-11.091), for the screen. */
 static bool sel_waffle;
 
+/* Software: the descriptor's CRC covers too few bytes for the peripheral. */
 static uint32_t crc_of(uint32_t crc, const uint8_t *p, size_t n)
 {
 	return wire_crc32(crc, p, (uint32_t)n);
@@ -1068,7 +1070,8 @@ static const char *select_end(const char *held)
 /*
  * S-11.096: the steps to run, chosen on the unit before the run's first
  * write; for an invalid package (S-11.021) S-15.197's prompt comes first,
- * and canceling it installs nothing. The start-up key read tells whether
+ * and canceling it installs nothing. With no step to pick, no selection is
+ * shown and the run goes on with none. The start-up key read tells whether
  * the keys can be read (S-07.032); when they cannot, nothing is shown or
  * asked, and an invalid package, which nobody can confirm, is canceled.
  */
@@ -1080,7 +1083,7 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 
 	const bool invalid = env->sig == S11_SIG_INVALID;
 
-	if (!m->key_status.replied) {
+	if (!m->key_status.replied && (invalid || host_parts < 0)) {
 		s14_text_init(&t);
 		s14_text_str(&t, "install: keys not readable, ");
 		s14_text_str(&t, invalid ? "not confirmed: canceled" :
@@ -1089,7 +1092,7 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 		return invalid ? S11_ANSWER_CANCEL : S11_ANSWER_UNASKED;
 	}
 	select_info(m, env, sel_waffle);
-	if (invalid) {
+	if (invalid && m->key_status.replied) {
 		select_wait(m, true, 0u);
 		s14_text_init(&t);
 		s14_text_str(&t, "install: the prompt ");
@@ -1097,6 +1100,24 @@ static enum s11_answer select_ask(void *ctx, const struct s11_step_env *env,
 		s14_log_text(&m->sv.log, S14_INFO, S14_NO_TAG, &t);
 		if (sel.choice != S15_SELECT_INSTALL)
 			return S11_ANSWER_CANCEL;
+	}
+	/* SPEC-Q: the parts a host chose for an approved session's install,
+	 * those the selection would let it pick and no other: Protected
+	 * writes and the switched-off steps apply as at the unit. */
+	if (host_parts >= 0) {
+		sel.selected = (uint8_t)((unsigned)host_parts & s11_pickable(env));
+		*selected = sel.selected;
+		select_log(m, "parts chosen by the host");
+		return *selected != 0u || s11_pickable(env) == 0u ? S11_ANSWER_INSTALL :
+								    S11_ANSWER_CANCEL;
+	}
+	/* Nothing to pick: no screen that only 8 or the time could end; the
+	 * run reports each step as it would after any selection. */
+	if (s11_pickable(env) == 0u) {
+		s14_log_str(&m->sv.log, S14_INFO, S14_NO_TAG,
+			    "install: nothing to select, nothing asked");
+		*selected = 0;
+		return S11_ANSWER_INSTALL;
 	}
 	select_wait(m, false, s11_pickable(env));
 	*selected = sel.selected;

@@ -1189,8 +1189,7 @@ void tchk_judge(const struct tchk_facts *f, struct tchk_table *t)
 
 const char *const tchk_first_lines[TCHK_FIRST_LINES] = {
 	"Checking the hardware",
-	"The tests read the hardware and write one temporary",
-	"file. Testing now.",
+	"",
 };
 
 unsigned tchk_cover_lines(const char *out[TCHK_COVER_LINES])

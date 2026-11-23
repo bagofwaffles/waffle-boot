@@ -807,6 +807,8 @@ void opxy_services_start(struct opxy_master *m)
 	/* S-10c.076; the test OS never hands over */
 	sv->host_ops.continue_check = OPXY_TESTOS_OR(NULL, host_continue_check);
 	sv->host_ops.continue_os = OPXY_TESTOS_OR(NULL, host_continue);
+	sv->host_ops.gate = OPXY_TESTOS_OR(NULL, opxy_hostlink_gate);
+	opxy_hostlink_start(m);
 	s10c_host_init(&sv->host, &sv->host_ops, m, opxy_dev(m), (enum wb_dev_how)m->dev_how);
 	opxy_usb_start(m); OPXY_TIME(BOOT_TIME_USB);
 }
@@ -1394,6 +1396,7 @@ static void osw_step(void *ctx, enum s15_osw_step step)
 
 	s15_osw_step(&m->sv.menu, step);
 	opxy_menu_show(m);
+	opxy_hostlink_progress(m, 0u, 0u, s15_osw_label(step));
 }
 
 static void osw_progress(void *ctx, uint32_t done, uint32_t total)
@@ -1402,6 +1405,7 @@ static void osw_progress(void *ctx, uint32_t done, uint32_t total)
 
 	s15_osw_progress(&m->sv.menu, done, total);
 	opxy_menu_show(m);
+	opxy_hostlink_progress(m, done, total, NULL);
 }
 
 static void osw_done(void *ctx, uint32_t a, uint32_t b)
@@ -1417,6 +1421,8 @@ static void osw_done(void *ctx, uint32_t a, uint32_t b)
  * The image is read whole first, into the heap: S-01.016's staging area
  * lies under the RAM disk's second part.
  */
+const char *opxy_osw_path = "/yaffs2/os.ldr";
+
 static void os_write(struct opxy_master *m, struct s15_osw_end *end)
 {
 	uint8_t *image;
@@ -1439,7 +1445,8 @@ static void os_write(struct opxy_master *m, struct s15_osw_end *end)
 	{
 		const struct s15_osw_report rep = { m, osw_step, osw_progress, osw_done };
 
-		(void)s09_files_os_write(&m->sv.files, &m->emmc, image, S03_OS_MAX, &rep, end);
+		(void)s09_files_os_write_from(&m->sv.files, opxy_osw_path, &m->emmc, image,
+					      S03_OS_MAX, &rep, end);
 	}
 	free(image);
 	if (end->select0_failed) {	/* S-03.063: reported, the result kept */
@@ -1557,7 +1564,8 @@ static enum s15_store_save env_settings_save(void *ctx, const struct s15_setting
 					     struct s15_settings *now)
 {
 	struct opxy_master *m = ctx;
-	const struct s02_store want = { s->dev_mode, s->color, s->mtp_macos, s->start_menu };
+	const struct s02_store want = { s->dev_mode, s->color, s->mtp_macos, s->start_menu,
+					 s->host_link };
 	struct s02_store after;
 	const enum s15_store_save r = opxy_boot_store_save(m, &want, &after);
 
@@ -1566,6 +1574,7 @@ static enum s15_store_save env_settings_save(void *ctx, const struct s15_setting
 	now->color = after.color;
 	now->mtp_macos = after.mtp_macos;
 	now->start_menu = after.start_menu;
+	now->host_link = after.host_link;
 	return r;
 }
 
@@ -1612,6 +1621,7 @@ void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 	/* S-15.194: the test OS (waffle/testos.h) hands over to no OS */
 	env->os_once_check = OPXY_TESTOS_OR(NULL, env_os_once_check);
 	env->os_once = OPXY_TESTOS_OR(NULL, env_os_once);
+	opxy_logo_env(m, env);
 }
 
 __attribute__((weak)) const struct s15_geometry *opxy_display_geometry(void)
@@ -1664,6 +1674,7 @@ void opxy_settings_read(struct opxy_master *m, struct s15_settings *s)
 	s->color = m->sv.store.color;
 	s->mtp_macos = m->sv.store.mtp_macos;
 	s->start_menu = m->sv.store.start_menu;
+	s->host_link = m->sv.store.host_link;
 }
 
 /* S-10c.057, S-16.095: the FSN from the ROM's ADI-area read; a failed read

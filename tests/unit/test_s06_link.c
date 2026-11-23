@@ -166,6 +166,42 @@ static void test_forward_whole(void)
 	CHECK_EQ(drops[S06_DROP_NO_ROOM], 1);
 }
 
+/* The node's forward_ok, when set, decides each forward: refused, the frame
+ * is dropped as such and nothing is sent; with it unset every frame goes. */
+static int fw_calls;
+static unsigned fw_link;
+static uint8_t fw_dst;
+
+static bool fw_refuse(void *ctx, unsigned link, uint8_t dst, const uint8_t *wire, size_t n)
+{
+	(void)ctx;
+	(void)wire;
+	(void)n;
+	fw_calls++;
+	fw_link = link;
+	fw_dst = dst;
+	return false;
+}
+
+static void test_forward_refused(void)
+{
+	uint8_t wire[S06_MAX_WIRE];
+	size_t w = s06_frame_encode(0x24, 3, 0x41, 0, 0, t_crc8, wire);
+
+	t_case = "forward-refused";
+	setup(0);
+	fw_calls = 0;
+	node.obs.forward_ok = fw_refuse;
+	t_port_inject(&port[S06_LINK_CDC], 0, wire, w);
+	s06_node_poll(&node);
+	CHECK_EQ(port[S06_LINK_PSOC].ntx, 0);
+	CHECK_EQ(drops[S06_DROP_REFUSED], 1);
+	CHECK_EQ(fw_calls, 1);
+	CHECK_EQ(fw_link, S06_LINK_CDC);
+	CHECK_EQ(fw_dst, 4);
+	node.obs.forward_ok = NULL;
+}
+
 /* S-06.020-S-06.022: one counter per link; forwarding uses none. */
 static void test_seq(void)
 {
@@ -641,6 +677,7 @@ int main(void)
 	test_links();
 	test_routing();
 	test_forward_whole();
+	test_forward_refused();
 	test_seq();
 	test_requests();
 	test_host_paths();

@@ -3,7 +3,7 @@
 """Placement and stream checks of the linked test OS (wiki/Test-OS.md).
 
     testos_layout.py IMAGE.elf --ld LDSCRIPT --board OPXY_H --memmap S01_H
-                     [--stream STREAM.ldr] [--json LAYOUT.json] [--device 1f]
+                     [--stream STREAM.ldr] [--json LAYOUT.json] [--device both] [--survey]
 
 The test OS is an OS image another bootloader loads (S-05.008 to S-05.014), so it is checked against
 S-01.017 and S-05.024 rather than layout.py's rules. Prints the use of each MEMORY region of LDSCRIPT
@@ -31,18 +31,26 @@ and fails (exit 1) when:
     (kernel_model.py) and the FINAL block's argument (mkldr.py --no-init) must all be that entry.
     The ROM's default application entry 0x11A00000 (HRM Table 36-10) is in L1, which the image
     cannot load, so that reading is not absorbed.
-With --device 1f, the OP-1F's installer images (bf703_testos_1f.ld), laid out like the OP-1F's OS
-1.7.3 (S-05.040) for its own loader: the image range is OPXY_TESTOS_1F_IMAGE_START-END, the held-mode
-buffers are the OP-1F's (its one RAM disk region, the OS frame, the frame buffers), the stream is
-FIRST|IGNORE, one L1 code block at 0x11A00000 holding _wb_testos_entry_1f (a whole number of 8-byte
-words), the DDR image as consecutive blocks from the image range's start, FINAL; the first block's
-argument the stream's length less 16, every count a multiple of 4, no block longer than 0xC000 bytes
-in L1 or 0xACAB8 in DDR (S-05.041); the ELF entry, the FIRST and FINAL targets are
-0x11A00000 and the FINAL argument 0; the entry shim _wb_testos_entry is the DDR image's first byte;
-and every destination lies inside one of OS 1.7.3's ranges
-(tests/oracle/S-05-os-handoff/vectors/os_destinations_1f.json). S-01.016's room is then the OP-1F's RAM
-disk (S-12.008, OPXY_1F_DISK_SECTORS), checked here against the board header, and by check_layout.py
---device 1f against S-18's device.ramdisk_blocks and device.ramdisk_regions.
+With --device both, the installer's images (bf703_installer.ld), one image for both devices (S-05.043),
+laid out like the OP-1F's OS 1.7.3 (S-05.040) for the devices' own loaders: the image range is
+OPXY_TESTOS_SHARED_IMAGE_START-END, the held-mode buffers are both devices' (the OP-XY's three disk parts
+around the image and heap, OPXY_TESTOS_SHARED_DISK*, the OP-1F's one RAM disk region, the OS frame, the
+frame buffers), the stream is FIRST|IGNORE, one L1 code block at 0x11A00000 holding _wb_testos_l1_entry (a
+whole number of 8-byte words), the DDR image as consecutive blocks from the image range's start, FINAL; the
+first block's argument the stream's length less 16, every count a multiple of 4, no block longer than
+0xC000 bytes in L1 or 0xACAB8 in DDR (S-05.041); the ELF entry, the FIRST and FINAL targets are 0x11A00000
+and the FINAL argument 0; the entry shim _wb_testos_entry is the DDR image's first byte; and every
+destination lies inside one of OS 1.7.3's ranges
+(tests/oracle/S-05-os-handoff/vectors/os_destinations_1f.json). S-01.016's room is then checked here for
+each device against the board header: the OP-XY's parts hold S-12.001's disk (OPXY_DISK_SECTORS), the
+OP-1F's region S-12.008's (OPXY_1F_DISK_SECTORS); check_layout.py --device xy and --device 1f check the
+same layout against S-18's device.ramdisk_blocks and device.ramdisk_regions.
+With --survey, the survey's image (make installer-survey), which must not be able to write the SPI
+flash: it fails when the ELF still defines the flash driver's _wb_spiflash_erase or
+_wb_spiflash_program. The link's --wrap sends every call of them to refusing functions and
+--gc-sections drops a function no call reaches, so either one left means some call still reaches
+the real write (a call --wrap does not redirect, such as one from inside the driver's own file).
+The refusing ___wrap_ functions may be gone too, when no call of the two is left at all.
 With --json, writes the layout in tests/oracle/S-01-boot-chain/check_layout.py's form: one range per
 section, the heap and the held-mode buffers, none of them a handover range. Python 3, standard library
 only.
@@ -90,14 +98,22 @@ def forbidden(s01):
     ]
 
 
+def xy_shared_disk(board):
+    """The OP-XY's RAM disk parts in the installer's images, [(name, start, end)]."""
+    return [('ramdisk_0', board['OPXY_DISK0_START'], board['OPXY_DISK0_END']),
+            ('ramdisk_1', board['OPXY_TESTOS_SHARED_DISK1_START'], board['OPXY_TESTOS_SHARED_DISK1_END']),
+            ('ramdisk_2', board['OPXY_TESTOS_SHARED_DISK2_START'], board['OPXY_TESTOS_SHARED_DISK2_END'])]
+
+
 def ranges_of(board, device):
-    """The image, the heap and the held-mode buffers of an image for device ('xy' or '1f')."""
-    if device == '1f':
-        image = (board['OPXY_TESTOS_1F_IMAGE_START'], board['OPXY_TESTOS_1F_IMAGE_END'])
-        heap = (board['OPXY_TESTOS_1F_HEAP_START'], board['OPXY_TESTOS_1F_HEAP_END'])
-        held = [('ramdisk', board['OPXY_1F_DISK_START'], board['OPXY_1F_DISK_END']),
-                ('os_frame', board['OPXY_OS_FRAME_START'], board['OPXY_OS_FRAME_END']),
-                ('frame_buffers', board['OPXY_FRAMES_START'], board['OPXY_FRAMES_END'])]
+    """The image, the heap and the held-mode buffers of an image for device ('xy' or 'both')."""
+    if device == 'both':
+        image = (board['OPXY_TESTOS_SHARED_IMAGE_START'], board['OPXY_TESTOS_SHARED_IMAGE_END'])
+        heap = (board['OPXY_TESTOS_SHARED_HEAP_START'], board['OPXY_TESTOS_SHARED_HEAP_END'])
+        held = xy_shared_disk(board) + [
+            ('ramdisk_1f', board['OPXY_1F_DISK_START'], board['OPXY_1F_DISK_END']),
+            ('os_frame', board['OPXY_OS_FRAME_START'], board['OPXY_OS_FRAME_END']),
+            ('frame_buffers', board['OPXY_FRAMES_START'], board['OPXY_FRAMES_END'])]
         return image, heap, held
     image = (board['OPXY_TESTOS_IMAGE_START'], board['OPXY_TESTOS_IMAGE_END'])
     heap = (board['OPXY_TESTOS_HEAP_START'], board['OPXY_TESTOS_HEAP_END'])
@@ -108,8 +124,8 @@ def ranges_of(board, device):
 
 
 def entry_block(s, device):
-    """The OP-1F image's L1 block: the entry stub, loaded where it runs."""
-    return device == '1f' and s.name == '.l1.entry' and s.lma == s.addr and \
+    """The installer image's L1 block: the entry stub, loaded where it runs."""
+    return device == 'both' and s.name == '.l1.entry' and s.lma == s.addr and \
         L1_CODE[0] <= s.addr and s.end <= L1_CODE[1]
 
 
@@ -231,7 +247,7 @@ def check_blocks(data, image):
 
 
 def check_blocks_1f(data, image):
-    """The OP-1F images' shape (S-05.040, S-05.041): FIRST|IGNORE of count 0 whose argument is the
+    """The installer images' shape, the OP-1F's OS's (S-05.040, S-05.041): FIRST|IGNORE of count 0 whose argument is the
     stream's length less 16, one L1 code block at 0x11A00000 of whole 8-byte words, the DDR image as
     consecutive blocks from the image range's start inside it, FINAL of count 0 with argument 0; the
     flags FIRST, IGNORE, FILL and FINAL alone; every count a multiple of 4, no block longer than 0xC000
@@ -283,7 +299,7 @@ def check_blocks_1f(data, image):
 
 
 def check_entry_1f(elf, stream_path, image):
-    """The OP-1F images' entry: 0x11A00000 by every reading (the ELF, the FIRST and FINAL targets), the
+    """The installer images' entry: 0x11A00000 by every reading (the ELF, the FIRST and FINAL targets), the
     FINAL argument 0, and the entry shim the DDR image's first byte."""
     fails = []
     if elf.entry != ENTRY_1F:
@@ -333,6 +349,16 @@ def check_entry(elf, stream_path, image):
     return fails + check_blocks(data, image)
 
 
+SURVEY_WRAPPED = ('wb_spiflash_erase', 'wb_spiflash_program')
+
+
+def check_survey(elf):
+    """The survey's link left no way to the flash's erase and program: the driver's functions are
+    gone."""
+    return ['the survey still holds _%s: a call reaches the real flash write' % name
+            for name in SURVEY_WRAPPED if elf.symbol('_' + name) is not None]
+
+
 def layout_json(secs, heap, held):
     ranges = []
     for s in secs:
@@ -350,6 +376,8 @@ def layout_json(secs, heap, held):
 def main(argv):
     args = argv[1:]
     opts = {}
+    survey = '--survey' in args
+    args = [a for a in args if a != '--survey']
     for k in ('--ld', '--board', '--memmap', '--stream', '--json', '--device'):
         if k in args:
             i = args.index(k)
@@ -363,7 +391,7 @@ def main(argv):
     board = layout.defines(opts['--board'])
     s01 = layout.defines(opts['--memmap'])
     device = opts.get('--device', 'xy')
-    if device not in ('xy', '1f'):
+    if device not in ('xy', 'both'):
         print(__doc__)
         return 2
     fails, out, secs, heap, held = check_sections(elf, regions, board, s01, device)
@@ -375,18 +403,25 @@ def main(argv):
         print('%-10s %32s %10d %10d' % ('stream', '', n, STAGING_MAX))
         fails += check_stream_file(opts['--stream'])
     image = ranges_of(board, device)[0]
-    if device == '1f':
+    if device == 'both':
         fails += check_entry_1f(elf, opts.get('--stream'), image)
-        room = board['OPXY_1F_DISK_END'] - board['OPXY_1F_DISK_START']
         with open(opts['--board']) as f:
-            m = re.search(r'#define\s+OPXY_1F_DISK_SECTORS\s+(\d+)u?\b', f.read())
-        need = int(m.group(1)) * 512 if m else None
-        if need is None or room < need:
-            fails.append('the RAM disk region holds %d bytes, short of S-12.008\'s %s' % (room, need))
+            text = f.read()
+        rooms = (('the OP-XY\'s RAM disk parts', sum(hi - lo for _, lo, hi in xy_shared_disk(board)),
+                  'OPXY_DISK_SECTORS', 'S-12.001'),
+                 ('the OP-1F\'s RAM disk region', board['OPXY_1F_DISK_END'] - board['OPXY_1F_DISK_START'],
+                  'OPXY_1F_DISK_SECTORS', 'S-12.008'))
+        for what, room, name, req in rooms:
+            m = re.search(r'#define\s+%s\s+(\d+)u?\b' % name, text)
+            need = int(m.group(1)) * 512 if m else None
+            if need is None or room < need:
+                fails.append('%s hold %d bytes, short of %s\'s %s' % (what, room, req, need))
         if not any(lo <= image[0] and image[1] <= hi for lo, hi in os_1f_ranges()):
             fails.append('the image range 0x%08x-0x%08x is in none of OS 1.7.3\'s ranges' % image)
     else:
         fails += check_entry(elf, opts.get('--stream'), image)
+    if survey:
+        fails += check_survey(elf)
     if '--json' in opts:
         with open(opts['--json'], 'w') as f:
             json.dump(layout_json(secs, heap, held), f, indent=1, sort_keys=True)

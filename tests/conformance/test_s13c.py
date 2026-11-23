@@ -671,15 +671,18 @@ class Screen(Base):
 
     @requirement('S-15.190')
     def test_continue_frames(self):
-        """S-15.190 with the lines of src/s15_lines.c, as drawn: the restarting view, the last frame before
-        MARK poweroff, carries `continue:restarting` (info_tokens.json). Every line fits its row."""
+        """S-15.190 with the lines of src/s15_lines.c, as drawn: the screen that was showing with the
+        restarting line under it, the last frame before MARK poweroff, carries `continue:restarting`
+        (info_tokens.json) on a row of its own, which fits it (the item above it carries a key badge,
+        which the font does not read as text)."""
         lines, _, _ = trace('cont_screen', 'held', frames=2, cont=1)
         c = self.check(lines, ['held', 'poweroff'])
         view = self.frames(c)[-1]
         self.assertLess(view.t_end, c.tr.marks['poweroff'])
         rows = body(view.params, self.font)
-        self.assertTrue(T15.info_match(INFO_TOKENS['continue:restarting'], rows, {}), rows)
-        self.assertNotIn('\0', ''.join(rows))
+        said = [r for r in rows if T15.info_match(INFO_TOKENS['continue:restarting'], [r], {})]
+        self.assertEqual(len(said), 1, rows)
+        self.assertNotIn('\0', said[0])
 
 
 if __name__ == '__main__':

@@ -24,6 +24,17 @@ struct s03_emmc_ops opxy_bridge_emmc(struct s09_master *m);
 uint32_t opxy_bridge_boot_size(struct s09_master *m);
 
 /*
+ * S-09.082: a file start's release naming the master's copy, len bytes at
+ * copy, by its CRC-32 *crc. When the CRC peripheral gave *crc (peripheral)
+ * and the slave refuses it (reply 1, the slave serving on, S-09.052), the
+ * CRC is computed again by soft; a different value goes into *crc and the
+ * release is sent once more with it. The last reply, as
+ * s09_master_release_file()'s.
+ */
+int opxy_bridge_release_file(struct s09_master *m, const uint8_t *copy, uint32_t len,
+			     uint32_t *crc, bool peripheral, s03_crc32_fn soft);
+
+/*
  * S-09.018, S-09.060: wait for PA6 low at the start of the init request
  * session until deadline, a cycle count T_INIT after the stream's last
  * byte. False when it never came: the slave is absent.

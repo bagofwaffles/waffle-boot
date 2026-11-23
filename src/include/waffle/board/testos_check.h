@@ -448,7 +448,7 @@ void tchk_judge(const struct tchk_facts *f, struct tchk_table *t);
 /* --- The summary and the report --- */
 
 /* The first screen's lines while the tests run. */
-#define TCHK_FIRST_LINES 3u
+#define TCHK_FIRST_LINES 2u
 extern const char *const tchk_first_lines[TCHK_FIRST_LINES];
 
 /* What a pass does not cover. */

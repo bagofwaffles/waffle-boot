@@ -134,6 +134,13 @@ enum s10c_continue {
 	S10C_CONT_NOT_HELD	/* before held mode (S-10c.045) */
 };
 
+/* Whether a change a host asks for on a host link is served. */
+enum s10c_gate {
+	S10C_GATE_OK,
+	S10C_GATE_OFF,		/* the host link is off */
+	S10C_GATE_ASK		/* not approved: the unit asks for it now */
+};
+
 struct s10c_ops {
 	/* An S-06 frame from the master (source 1) on a host link, or on a
 	 * coprocessor link (the PSoC's or the Nordic's S-06 link), framed by
@@ -200,6 +207,11 @@ struct s10c_ops {
 	/* S-10c.076, S-05.033: the restart, after the reply 54 on link;
 	 * does not return on the device. */
 	void (*continue_os)(void *ctx, enum s10c_link link);
+	/* SPEC-Q: the host link's consent to a change asked for on CDC, the
+	 * MIDI link or the Nordic's: a transfer, a restart, factory unlock, set
+	 * metadata or the log's configuration (0xB0). NULL serves every one;
+	 * the PSoC's link is never asked. */
+	enum s10c_gate (*gate)(void *ctx, enum s10c_link link);
 };
 
 /* Where progress reports go (S-10c.100). */

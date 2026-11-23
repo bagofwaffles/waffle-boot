@@ -80,14 +80,6 @@ class Transport(unittest.TestCase):
         self.assertEqual((raw[0], raw[2], raw[3]), (m.NORDIC_ROUTE, m.INFO, 0))
         self.assertIsNone(m.nordic_info(self.mon, 0.2))
 
-    def test_put_frames(self):
-        opn = bytes([m.DEV_PUT, m.PUT_OPEN]) + b'os.ldr'
-        self.assertEqual(opn, bytes([25, 0, 111, 115, 46, 108, 100, 114]))
-        dat = bytes([m.DEV_PUT, m.PUT_DATA]) + b'\x01\x02'
-        self.assertEqual(dat[:2], bytes([25, 1]))
-        self.assertEqual(bytes([m.DEV_PUT, m.PUT_CLOSE]), bytes([25, 2]))
-        self.assertEqual(bytes([m.DEV_SHA]) + b'os.ldr', bytes([26, 111, 115, 46, 108, 100, 114]))
-
     def test_line_log(self):
         # [0, 0x50, count, (us:4, levels:1)...]: bit 0 PA6, bit 1 PC5.
         fr = bytes([0, 0x50, 2]) + struct.pack('<IB', 0, 0b10) + struct.pack('<IB', 1234000, 0b11)
@@ -779,8 +771,8 @@ class Start(unittest.TestCase):
         self.assertIn('  OS start: CRC 1234abcd, header says 00000001', lines)
         self.assertIn("the image's CRC 1234abcd", '\n'.join(lines))
         lines = m.start_lines(self.report(cause=4, refusal=8))
-        self.assertIn("  reason:   the image loads over the ROM's boot reserve", lines)
-        self.assertIn("  refusal:  the image loads over the ROM's boot reserve (rule 8 of S-05.024)", lines)
+        self.assertIn("  reason:   loads over the ROM's boot reserve", lines)
+        self.assertIn("  refusal:  loads over the ROM's boot reserve (rule 8 of S-05.024)", lines)
         lines = m.start_lines(self.report(cause=5, replied=1, reply=1))
         self.assertIn('  OS start: DSP2 answered no OS, reply 1', lines)
         self.assertIn('  release:  reply 1', lines)

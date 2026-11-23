@@ -260,6 +260,26 @@ uint32_t opxy_crc32(void *ctx, uint32_t crc, const uint8_t *p, size_t n)
 	return run(OPXY_CRC32, crc, p, n);
 }
 
+static uint32_t soft_pieces(uint32_t v, const uint8_t *p, size_t n, void (*idle)(void));
+
+/*
+ * A CRC-32 from 0 checked against a known value inside an install's use
+ * (S-11.095's staged image, S-11.068's record): the peripheral's when it
+ * gives want, else computed again in software (idle between pieces), so a
+ * wrong answer of the peripheral costs time, never a verdict. Outside a use
+ * it is the software's alone.
+ */
+uint32_t opxy_crc32_known(const uint8_t *p, uint32_t n, uint32_t want,
+			  void (*idle)(void))
+{
+	const uint32_t before = use[OPXY_CRC32].pieces;
+	const uint32_t r = run(OPXY_CRC32, 0u, p, n);
+
+	if (r == want || use[OPXY_CRC32].pieces == before)
+		return r;
+	return soft_pieces(0u, p, n, idle);
+}
+
 /* Whether a piece of this CRC was the peripheral's, uncompared, since the
  * use began; the CRC is the software's from then on. */
 static bool replaced(unsigned which)

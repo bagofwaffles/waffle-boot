@@ -182,6 +182,31 @@ static void begin_refused(struct s10c_host *h)
 		h->ops->begin_refused(h->ctx, S11_REASON_PRODUCT);
 }
 
+/* ---- the host link's consent ---- */
+
+static enum s10c_gate gate(struct s10c_host *h, enum s10c_link link)
+{
+	/* the PSoC is the unit's own; the Nordic may carry another host's */
+	if (link == S10C_LINK_PSOC || h->ops->gate == NULL)
+		return S10C_GATE_OK;
+	return h->ops->gate(h->ctx, link);
+}
+
+static const char *gate_text(enum s10c_gate g)
+{
+	return g == S10C_GATE_OFF ? "host link off" : "not allowed: hold 1 on the unit";
+}
+
+/* A change not served: its refusal, as the firmware command's 84. */
+static bool fw_gated(struct s10c_host *h, enum s10c_link link)
+{
+	const enum s10c_gate g = gate(h, link);
+
+	if (g != S10C_GATE_OK)
+		reply_fw_str(h, link, gate_text(g));
+	return g != S10C_GATE_OK;
+}
+
 /* ---- the firmware command 0D (S-10c.070-S-10c.075) ---- */
 
 static void fw_begin(struct s10c_host *h, enum s10c_link link,
@@ -283,7 +308,12 @@ static void fw_continue(struct s10c_host *h, enum s10c_link link)
 static void firmware(struct s10c_host *h, enum s10c_link link,
 		     const uint8_t *p, size_t n)
 {
-	switch (n == 0 ? 0x100u : p[0]) {
+	const unsigned sub = n == 0 ? 0x100u : p[0];
+
+	if ((sub == 0x02 || sub == 0x03 || sub == 0x05 || sub == 0x18 ||
+	     sub == 0x19 || sub == 0xEE) && fw_gated(h, link))
+		return;
+	switch (sub) {
 	case 0x02:
 		fw_begin(h, link, p, n);
 		break;
@@ -370,7 +400,7 @@ bool s10c_host_frame(struct s10c_host *h, enum s10c_link link, uint8_t route,
 		reply1(h, link, 0x06, 0x40);
 		break;
 	case 0x07:	/* S-10c.053, S-10c.061 */
-		ok = h->ops->option_on(h->ctx) && n == 4;
+		ok = gate(h, link) == S10C_GATE_OK && h->ops->option_on(h->ctx) && n == 4;
 		for (size_t i = 0; ok && i < 4; i++)
 			ok = p[i] == unlock[i];
 		h->factory = ok;
@@ -381,7 +411,8 @@ bool s10c_host_frame(struct s10c_host *h, enum s10c_link link, uint8_t route,
 		send(h, link, ROUTE_TO_HOST, 0x0A, (const uint8_t *)text, tn);
 		break;
 	case 0x0B:	/* S-10c.056, S-10c.061 */
-		ok = h->factory && h->ops->option_on(h->ctx);
+		ok = h->factory && h->ops->option_on(h->ctx) &&
+		     gate(h, link) == S10C_GATE_OK;
 		if (ok) {
 			s10c_setmeta_parse(p, n, &m);
 			/* S-10c.056: the factory key only with factory-word */
@@ -400,8 +431,9 @@ bool s10c_host_frame(struct s10c_host *h, enum s10c_link link, uint8_t route,
 			fsn[i] = (uint8_t)(words[i / 4] >> (8 * (i % 4)));
 		send(h, link, ROUTE_TO_HOST, 0x20, fsn, ok ? sizeof(fsn) : 0);
 		break;
-	case 0xB0:	/* S-10c.059 */
-		h->ops->log_config(h->ctx, p, n);
+	case 0xB0:	/* S-10c.059; SPEC-Q: the log to a host, with consent */
+		if (gate(h, link) == S10C_GATE_OK)
+			h->ops->log_config(h->ctx, p, n);
 		break;
 	case 0x03:
 	case 0x04:	/* S-10c.060 */
@@ -520,6 +552,13 @@ static void te_finish(struct s10c_host *h, const struct s10c_te_req *req)
 static void te_upgrade(struct s10c_host *h, const struct s10c_te_req *req,
 		       const uint8_t *p, size_t n)
 {
+	const enum s10c_gate g = n >= 1 && p[0] >= 0x02 && p[0] <= 0x05 ?
+				 gate(h, S10C_LINK_MIDI) : S10C_GATE_OK;
+
+	if (g != S10C_GATE_OK) {
+		te_reply_str(h, req, 0x01, gate_text(g));
+		return;
+	}
 	if (n >= 2 && p[0] == 0x03) {
 		te_chunk(h, req, p, n);
 	} else if (n >= 18 && p[0] == 0x02) {

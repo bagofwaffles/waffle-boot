@@ -48,20 +48,22 @@ C-01,23,torn,slot_erase,00 01,good,badcrc,0 0 0,True,True,0 0 0,True,True
 C-01,23,after,slot_erase,00 01,good,badcrc,0 0 0,True,True,0 0 0,True,True
 C-01,24,torn,slot_erase,00 01,good,badcrc,0 0 0,True,True,0 0 0,True,True
 C-01,24,after,slot_erase,00 01,good,badcrc,0 0 0,True,True,0 0 0,True,True
-C-01,25,torn,record_erase,00 01,good,badtag,0 0 0,True,True,0 0 0,True,True
-C-01,25,after,record_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
-C-01,26,torn,record_program,00 01,good,badtag,0 0 0,True,True,0 0 0,True,True
-C-01,26,after,record_program,00 01,good,good,0 0 0,True,True,0 0 0,True,True
-C-01,27,torn,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
-C-01,27,after,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
+C-01,25,torn,slot_erase,00 01,good,badcrc,0 0 0,True,True,0 0 0,True,True
+C-01,25,after,slot_erase,00 01,good,badcrc,0 0 0,True,True,0 0 0,True,True
+C-01,26,torn,record_erase,00 01,good,badtag,0 0 0,True,True,0 0 0,True,True
+C-01,26,after,record_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
+C-01,27,torn,record_program,00 01,good,badtag,0 0 0,True,True,0 0 0,True,True
+C-01,27,after,record_program,00 01,good,good,0 0 0,True,True,0 0 0,True,True
 C-01,28,torn,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
 C-01,28,after,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
-C-01,29,torn,selector_erase,superset_of 00 01,good,good,varies(32768 values),True,True,varies(32768 values),True,True
-C-01,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-01,30,torn,selector_program,superset_of 01 00,good,good,varies(32768 values),True,True,varies(32768 values),True,True
-C-01,30,after,selector_program,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-01,31,torn,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-01,31,after,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-01,29,torn,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
+C-01,29,after,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
+C-01,30,torn,selector_erase,superset_of 00 01,good,good,varies(32768 values),True,True,varies(32768 values),True,True
+C-01,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-01,31,torn,selector_program,superset_of 01 00,good,good,varies(32768 values),True,True,varies(32768 values),True,True
+C-01,31,after,selector_program,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-01,32,torn,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-01,32,after,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
 C-02,0,none,-,01 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-02,1,torn,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-02,1,after,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
@@ -111,20 +113,22 @@ C-02,23,torn,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-02,23,after,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-02,24,torn,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-02,24,after,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
-C-02,25,torn,record_erase,01 01,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-02,25,after,record_erase,01 01,erased,good,1 1 1,True,True,1 1 1,True,True
-C-02,26,torn,record_program,01 01,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-02,26,after,record_program,01 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-02,27,torn,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-02,27,after,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-02,25,torn,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-02,25,after,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-02,26,torn,record_erase,01 01,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-02,26,after,record_erase,01 01,erased,good,1 1 1,True,True,1 1 1,True,True
+C-02,27,torn,record_program,01 01,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-02,27,after,record_program,01 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-02,28,torn,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-02,28,after,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-02,29,torn,selector_erase,superset_of 01 01,good,good,varies(16384 values),True,True,varies(16384 values),True,True
-C-02,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-02,30,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
-C-02,30,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-02,31,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-02,31,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-02,29,torn,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-02,29,after,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-02,30,torn,selector_erase,superset_of 01 01,good,good,varies(16384 values),True,True,varies(16384 values),True,True
+C-02,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-02,31,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
+C-02,31,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-02,32,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-02,32,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-03,0,none,-,02 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-03,1,torn,slot_erase,02 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-03,1,after,slot_erase,02 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
@@ -174,20 +178,22 @@ C-03,23,torn,slot_erase,02 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-03,23,after,slot_erase,02 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-03,24,torn,slot_erase,02 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-03,24,after,slot_erase,02 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
-C-03,25,torn,record_erase,02 01,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-03,25,after,record_erase,02 01,erased,good,1 1 1,True,True,1 1 1,True,True
-C-03,26,torn,record_program,02 01,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-03,26,after,record_program,02 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-03,27,torn,readback,02 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-03,27,after,readback,02 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-03,25,torn,slot_erase,02 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-03,25,after,slot_erase,02 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-03,26,torn,record_erase,02 01,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-03,26,after,record_erase,02 01,erased,good,1 1 1,True,True,1 1 1,True,True
+C-03,27,torn,record_program,02 01,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-03,27,after,record_program,02 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-03,28,torn,readback,02 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-03,28,after,readback,02 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-03,29,torn,selector_erase,superset_of 02 01,good,good,varies(16384 values),True,True,varies(16384 values),True,True
-C-03,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-03,30,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
-C-03,30,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-03,31,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-03,31,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-03,29,torn,readback,02 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-03,29,after,readback,02 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-03,30,torn,selector_erase,superset_of 02 01,good,good,varies(16384 values),True,True,varies(16384 values),True,True
+C-03,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-03,31,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
+C-03,31,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-03,32,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-03,32,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-04,0,none,-,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-04,1,torn,slot_erase,ff 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-04,1,after,slot_erase,ff 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
@@ -237,20 +243,22 @@ C-04,23,torn,slot_erase,ff 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-04,23,after,slot_erase,ff 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-04,24,torn,slot_erase,ff 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-04,24,after,slot_erase,ff 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
-C-04,25,torn,record_erase,ff 01,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-04,25,after,record_erase,ff 01,erased,good,1 1 1,True,True,1 1 1,True,True
-C-04,26,torn,record_program,ff 01,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-04,26,after,record_program,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-04,27,torn,readback,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-04,27,after,readback,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-04,25,torn,slot_erase,ff 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-04,25,after,slot_erase,ff 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-04,26,torn,record_erase,ff 01,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-04,26,after,record_erase,ff 01,erased,good,1 1 1,True,True,1 1 1,True,True
+C-04,27,torn,record_program,ff 01,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-04,27,after,record_program,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-04,28,torn,readback,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-04,28,after,readback,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-04,29,torn,selector_erase,superset_of ff 01,good,good,varies(128 values),True,True,varies(128 values),True,True
-C-04,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-04,30,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
-C-04,30,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-04,31,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-04,31,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-04,29,torn,readback,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-04,29,after,readback,ff 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-04,30,torn,selector_erase,superset_of ff 01,good,good,varies(128 values),True,True,varies(128 values),True,True
+C-04,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-04,31,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
+C-04,31,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-04,32,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-04,32,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-05,0,none,-,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
 C-05,1,torn,slot_erase,ff ff,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-05,1,after,slot_erase,ff ff,badcrc,good,1 1 1,True,True,1 1 1,True,True
@@ -300,20 +308,22 @@ C-05,23,torn,slot_erase,ff ff,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-05,23,after,slot_erase,ff ff,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-05,24,torn,slot_erase,ff ff,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-05,24,after,slot_erase,ff ff,badcrc,good,1 1 1,True,True,1 1 1,True,True
-C-05,25,torn,record_erase,ff ff,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-05,25,after,record_erase,ff ff,erased,good,1 1 1,True,True,1 1 1,True,True
-C-05,26,torn,record_program,ff ff,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-05,26,after,record_program,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-05,27,torn,readback,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-05,27,after,readback,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-05,25,torn,slot_erase,ff ff,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-05,25,after,slot_erase,ff ff,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-05,26,torn,record_erase,ff ff,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-05,26,after,record_erase,ff ff,erased,good,1 1 1,True,True,1 1 1,True,True
+C-05,27,torn,record_program,ff ff,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-05,27,after,record_program,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
 C-05,28,torn,readback,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
 C-05,28,after,readback,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-05,29,torn,selector_erase,superset_of ff ff,good,good,varies(1 values),True,True,varies(1 values),True,True
-C-05,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-05,30,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
-C-05,30,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-05,31,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-05,31,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-05,29,torn,readback,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-05,29,after,readback,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-05,30,torn,selector_erase,superset_of ff ff,good,good,varies(1 values),True,True,varies(1 values),True,True
+C-05,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-05,31,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
+C-05,31,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-05,32,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-05,32,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-06,0,none,-,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-06,1,torn,slot_erase,00 00,good,badcrc,0 0 0,True,False,0 0 0,True,True
 C-06,1,after,slot_erase,00 00,good,badcrc,0 0 0,True,False,0 0 0,True,True
@@ -363,20 +373,22 @@ C-06,23,torn,slot_erase,00 00,good,badcrc,0 0 0,True,False,0 0 0,True,True
 C-06,23,after,slot_erase,00 00,good,badcrc,0 0 0,True,False,0 0 0,True,True
 C-06,24,torn,slot_erase,00 00,good,badcrc,0 0 0,True,False,0 0 0,True,True
 C-06,24,after,slot_erase,00 00,good,badcrc,0 0 0,True,False,0 0 0,True,True
-C-06,25,torn,record_erase,00 00,good,badtag,0 0 0,True,False,0 0 0,True,True
-C-06,25,after,record_erase,00 00,good,erased,0 0 0,True,False,0 0 0,True,True
-C-06,26,torn,record_program,00 00,good,badtag,0 0 0,True,False,0 0 0,True,True
-C-06,26,after,record_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-06,27,torn,readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-06,27,after,readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-06,25,torn,slot_erase,00 00,good,badcrc,0 0 0,True,False,0 0 0,True,True
+C-06,25,after,slot_erase,00 00,good,badcrc,0 0 0,True,False,0 0 0,True,True
+C-06,26,torn,record_erase,00 00,good,badtag,0 0 0,True,False,0 0 0,True,True
+C-06,26,after,record_erase,00 00,good,erased,0 0 0,True,False,0 0 0,True,True
+C-06,27,torn,record_program,00 00,good,badtag,0 0 0,True,False,0 0 0,True,True
+C-06,27,after,record_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-06,28,torn,readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-06,28,after,readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-06,29,torn,selector_erase,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
-C-06,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-06,30,torn,selector_program,superset_of 01 00,good,good,varies(32768 values),True,True,varies(32768 values),True,True
-C-06,30,after,selector_program,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-06,31,torn,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-06,31,after,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-06,29,torn,readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-06,29,after,readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-06,30,torn,selector_erase,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
+C-06,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-06,31,torn,selector_program,superset_of 01 00,good,good,varies(32768 values),True,True,varies(32768 values),True,True
+C-06,31,after,selector_program,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-06,32,torn,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-06,32,after,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
 C-07,0,none,-,01 00,good,good,1 1 1,True,True,1 1 1,True,True
 C-07,1,torn,slot_erase,01 00,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-07,1,after,slot_erase,01 00,badcrc,good,1 1 1,True,True,1 1 1,True,True
@@ -426,20 +438,22 @@ C-07,23,torn,slot_erase,01 00,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-07,23,after,slot_erase,01 00,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-07,24,torn,slot_erase,01 00,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-07,24,after,slot_erase,01 00,badcrc,good,1 1 1,True,True,1 1 1,True,True
-C-07,25,torn,record_erase,01 00,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-07,25,after,record_erase,01 00,erased,good,1 1 1,True,True,1 1 1,True,True
-C-07,26,torn,record_program,01 00,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-07,26,after,record_program,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-07,27,torn,readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-07,27,after,readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-07,25,torn,slot_erase,01 00,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-07,25,after,slot_erase,01 00,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-07,26,torn,record_erase,01 00,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-07,26,after,record_erase,01 00,erased,good,1 1 1,True,True,1 1 1,True,True
+C-07,27,torn,record_program,01 00,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-07,27,after,record_program,01 00,good,good,1 1 1,True,True,1 1 1,True,True
 C-07,28,torn,readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
 C-07,28,after,readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-07,29,torn,selector_erase,superset_of 01 00,good,good,varies(32768 values),True,True,varies(32768 values),True,True
-C-07,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-07,30,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
-C-07,30,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-07,31,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-07,31,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-07,29,torn,readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-07,29,after,readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-07,30,torn,selector_erase,superset_of 01 00,good,good,varies(32768 values),True,True,varies(32768 values),True,True
+C-07,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-07,31,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
+C-07,31,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-07,32,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-07,32,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-08,0,none,-,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
 C-08,1,torn,slot_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
 C-08,1,after,slot_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
@@ -489,20 +503,22 @@ C-08,23,torn,slot_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
 C-08,23,after,slot_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
 C-08,24,torn,slot_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
 C-08,24,after,slot_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
-C-08,25,torn,record_erase,00 01,good,badtag,0 0 0,True,True,0 0 0,True,True
-C-08,25,after,record_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
-C-08,26,torn,record_program,00 01,good,badtag,0 0 0,True,True,0 0 0,True,True
-C-08,26,after,record_program,00 01,good,good,0 0 0,True,True,0 0 0,True,True
-C-08,27,torn,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
-C-08,27,after,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
+C-08,25,torn,slot_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
+C-08,25,after,slot_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
+C-08,26,torn,record_erase,00 01,good,badtag,0 0 0,True,True,0 0 0,True,True
+C-08,26,after,record_erase,00 01,good,erased,0 0 0,True,True,0 0 0,True,True
+C-08,27,torn,record_program,00 01,good,badtag,0 0 0,True,True,0 0 0,True,True
+C-08,27,after,record_program,00 01,good,good,0 0 0,True,True,0 0 0,True,True
 C-08,28,torn,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
 C-08,28,after,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
-C-08,29,torn,selector_erase,superset_of 00 01,good,good,varies(32768 values),True,True,varies(32768 values),True,True
-C-08,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-08,30,torn,selector_program,superset_of 01 00,good,good,varies(32768 values),True,True,varies(32768 values),True,True
-C-08,30,after,selector_program,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-08,31,torn,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
-C-08,31,after,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-08,29,torn,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
+C-08,29,after,readback,00 01,good,good,0 0 0,True,True,0 0 0,True,True
+C-08,30,torn,selector_erase,superset_of 00 01,good,good,varies(32768 values),True,True,varies(32768 values),True,True
+C-08,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-08,31,torn,selector_program,superset_of 01 00,good,good,varies(32768 values),True,True,varies(32768 values),True,True
+C-08,31,after,selector_program,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-08,32,torn,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
+C-08,32,after,selector_readback,01 00,good,good,1 1 1,True,True,1 1 1,True,True
 C-09,0,none,-,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-09,1,torn,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-09,1,after,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
@@ -552,20 +568,22 @@ C-09,23,torn,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-09,23,after,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-09,24,torn,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
 C-09,24,after,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
-C-09,25,torn,record_erase,01 01,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-09,25,after,record_erase,01 01,erased,good,1 1 1,True,True,1 1 1,True,True
-C-09,26,torn,record_program,01 01,badtag,good,1 1 1,True,True,1 1 1,True,True
-C-09,26,after,record_program,01 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-09,27,torn,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-09,27,after,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-09,25,torn,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-09,25,after,slot_erase,01 01,badcrc,good,1 1 1,True,True,1 1 1,True,True
+C-09,26,torn,record_erase,01 01,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-09,26,after,record_erase,01 01,erased,good,1 1 1,True,True,1 1 1,True,True
+C-09,27,torn,record_program,01 01,badtag,good,1 1 1,True,True,1 1 1,True,True
+C-09,27,after,record_program,01 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-09,28,torn,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
 C-09,28,after,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
-C-09,29,torn,selector_erase,superset_of 01 01,good,good,varies(16384 values),True,True,varies(16384 values),True,True
-C-09,29,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
-C-09,30,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
-C-09,30,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-09,31,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
-C-09,31,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-09,29,torn,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-09,29,after,readback,01 01,good,good,1 1 1,True,True,1 1 1,True,True
+C-09,30,torn,selector_erase,superset_of 01 01,good,good,varies(16384 values),True,True,varies(16384 values),True,True
+C-09,30,after,selector_erase,ff ff,good,good,1 1 1,True,True,1 1 1,True,True
+C-09,31,torn,selector_program,superset_of 00 00,good,good,varies(65536 values),True,True,varies(65536 values),True,True
+C-09,31,after,selector_program,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-09,32,torn,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
+C-09,32,after,selector_readback,00 00,good,good,0 0 0,True,True,0 0 0,True,True
 C-10,0,none,-,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
 C-10,1,torn,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
 C-10,1,after,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
@@ -615,20 +633,22 @@ C-10,23,torn,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
 C-10,23,after,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
 C-10,24,torn,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
 C-10,24,after,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
-C-10,25,torn,record_erase,01 01,badtag,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
-C-10,25,after,record_erase,01 01,erased,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
-C-10,26,torn,record_program,01 01,badtag,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
-C-10,26,after,record_program,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
-C-10,27,torn,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
-C-10,27,after,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
+C-10,25,torn,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
+C-10,25,after,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
+C-10,26,torn,record_erase,01 01,badtag,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
+C-10,26,after,record_erase,01 01,erased,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
+C-10,27,torn,record_program,01 01,badtag,badcrc,1 1 1,True,n/a,1 1 1,False,n/a
+C-10,27,after,record_program,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
 C-10,28,torn,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
 C-10,28,after,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
-C-10,29,torn,selector_erase,superset_of 01 01,good,badcrc,varies(16384 values),True,n/a,varies(16384 values),True,n/a
-C-10,29,after,selector_erase,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
-C-10,30,torn,selector_program,superset_of 00 00,good,badcrc,varies(65536 values),True,n/a,varies(65536 values),True,n/a
-C-10,30,after,selector_program,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
-C-10,31,torn,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
-C-10,31,after,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-10,29,torn,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
+C-10,29,after,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
+C-10,30,torn,selector_erase,superset_of 01 01,good,badcrc,varies(16384 values),True,n/a,varies(16384 values),True,n/a
+C-10,30,after,selector_erase,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
+C-10,31,torn,selector_program,superset_of 00 00,good,badcrc,varies(65536 values),True,n/a,varies(65536 values),True,n/a
+C-10,31,after,selector_program,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-10,32,torn,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-10,32,after,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
 C-11,0,none,-,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
 C-11,1,torn,slot_erase,00 01,badcrc,badcrc,0 0 0,True,n/a,0 0 0,False,n/a
 C-11,1,after,slot_erase,00 01,badcrc,badcrc,0 0 0,True,n/a,0 0 0,False,n/a
@@ -678,20 +698,22 @@ C-11,23,torn,slot_erase,00 01,badcrc,badcrc,0 0 0,True,n/a,0 0 0,False,n/a
 C-11,23,after,slot_erase,00 01,badcrc,badcrc,0 0 0,True,n/a,0 0 0,False,n/a
 C-11,24,torn,slot_erase,00 01,badcrc,badcrc,0 0 0,True,n/a,0 0 0,False,n/a
 C-11,24,after,slot_erase,00 01,badcrc,badcrc,0 0 0,True,n/a,0 0 0,False,n/a
-C-11,25,torn,record_erase,00 01,badcrc,badtag,0 0 0,True,n/a,0 0 0,False,n/a
-C-11,25,after,record_erase,00 01,badcrc,erased,0 0 0,True,n/a,0 0 0,False,n/a
-C-11,26,torn,record_program,00 01,badcrc,badtag,0 0 0,True,n/a,0 0 0,False,n/a
-C-11,26,after,record_program,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
-C-11,27,torn,readback,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
-C-11,27,after,readback,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
+C-11,25,torn,slot_erase,00 01,badcrc,badcrc,0 0 0,True,n/a,0 0 0,False,n/a
+C-11,25,after,slot_erase,00 01,badcrc,badcrc,0 0 0,True,n/a,0 0 0,False,n/a
+C-11,26,torn,record_erase,00 01,badcrc,badtag,0 0 0,True,n/a,0 0 0,False,n/a
+C-11,26,after,record_erase,00 01,badcrc,erased,0 0 0,True,n/a,0 0 0,False,n/a
+C-11,27,torn,record_program,00 01,badcrc,badtag,0 0 0,True,n/a,0 0 0,False,n/a
+C-11,27,after,record_program,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
 C-11,28,torn,readback,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
 C-11,28,after,readback,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
-C-11,29,torn,selector_erase,superset_of 00 01,badcrc,good,varies(32768 values),True,n/a,varies(32768 values),True,n/a
-C-11,29,after,selector_erase,ff ff,badcrc,good,1 1 1,True,n/a,1 1 1,True,n/a
-C-11,30,torn,selector_program,superset_of 01 00,badcrc,good,varies(32768 values),True,n/a,varies(32768 values),True,n/a
-C-11,30,after,selector_program,01 00,badcrc,good,1 1 1,True,n/a,1 1 1,True,n/a
-C-11,31,torn,selector_readback,01 00,badcrc,good,1 1 1,True,n/a,1 1 1,True,n/a
-C-11,31,after,selector_readback,01 00,badcrc,good,1 1 1,True,n/a,1 1 1,True,n/a
+C-11,29,torn,readback,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
+C-11,29,after,readback,00 01,badcrc,good,0 0 0,True,n/a,1 1 1,True,n/a
+C-11,30,torn,selector_erase,superset_of 00 01,badcrc,good,varies(32768 values),True,n/a,varies(32768 values),True,n/a
+C-11,30,after,selector_erase,ff ff,badcrc,good,1 1 1,True,n/a,1 1 1,True,n/a
+C-11,31,torn,selector_program,superset_of 01 00,badcrc,good,varies(32768 values),True,n/a,varies(32768 values),True,n/a
+C-11,31,after,selector_program,01 00,badcrc,good,1 1 1,True,n/a,1 1 1,True,n/a
+C-11,32,torn,selector_readback,01 00,badcrc,good,1 1 1,True,n/a,1 1 1,True,n/a
+C-11,32,after,selector_readback,01 00,badcrc,good,1 1 1,True,n/a,1 1 1,True,n/a
 C-12,0,none,-,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
 C-12,1,torn,slot_erase,ff ff,badcrc,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
 C-12,1,after,slot_erase,ff ff,badcrc,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
@@ -741,20 +763,22 @@ C-12,23,torn,slot_erase,ff ff,badcrc,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
 C-12,23,after,slot_erase,ff ff,badcrc,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
 C-12,24,torn,slot_erase,ff ff,badcrc,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
 C-12,24,after,slot_erase,ff ff,badcrc,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
-C-12,25,torn,record_erase,ff ff,badtag,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
-C-12,25,after,record_erase,ff ff,erased,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
-C-12,26,torn,record_program,ff ff,badtag,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
-C-12,26,after,record_program,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
-C-12,27,torn,readback,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
-C-12,27,after,readback,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
+C-12,25,torn,slot_erase,ff ff,badcrc,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
+C-12,25,after,slot_erase,ff ff,badcrc,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
+C-12,26,torn,record_erase,ff ff,badtag,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
+C-12,26,after,record_erase,ff ff,erased,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
+C-12,27,torn,record_program,ff ff,badtag,badcrc,1 0 0,False,n/a,1 1 1,False,n/a
+C-12,27,after,record_program,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
 C-12,28,torn,readback,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
 C-12,28,after,readback,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
-C-12,29,torn,selector_erase,superset_of ff ff,good,badcrc,varies(1 values),True,n/a,varies(1 values),True,n/a
-C-12,29,after,selector_erase,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
-C-12,30,torn,selector_program,superset_of 00 00,good,badcrc,varies(65536 values),False,n/a,varies(65536 values),True,n/a
-C-12,30,after,selector_program,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
-C-12,31,torn,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
-C-12,31,after,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-12,29,torn,readback,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
+C-12,29,after,readback,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
+C-12,30,torn,selector_erase,superset_of ff ff,good,badcrc,varies(1 values),True,n/a,varies(1 values),True,n/a
+C-12,30,after,selector_erase,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
+C-12,31,torn,selector_program,superset_of 00 00,good,badcrc,varies(65536 values),False,n/a,varies(65536 values),True,n/a
+C-12,31,after,selector_program,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-12,32,torn,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-12,32,after,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
 C-13,0,none,-,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
 C-13,1,torn,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
 C-13,1,after,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
@@ -804,20 +828,22 @@ C-13,23,torn,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
 C-13,23,after,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
 C-13,24,torn,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
 C-13,24,after,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
-C-13,25,torn,record_erase,01 01,badtag,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
-C-13,25,after,record_erase,01 01,erased,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
-C-13,26,torn,record_program,01 01,badtag,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
-C-13,26,after,record_program,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
-C-13,27,torn,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
-C-13,27,after,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
+C-13,25,torn,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
+C-13,25,after,slot_erase,01 01,badcrc,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
+C-13,26,torn,record_erase,01 01,badtag,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
+C-13,26,after,record_erase,01 01,erased,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
+C-13,27,torn,record_program,01 01,badtag,badcrc,1 1 1,True,n/a,1 1 1,True,n/a
+C-13,27,after,record_program,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
 C-13,28,torn,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
 C-13,28,after,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
-C-13,29,torn,selector_erase,superset_of 01 01,good,badcrc,varies(16384 values),True,n/a,varies(16384 values),True,n/a
-C-13,29,after,selector_erase,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
-C-13,30,torn,selector_program,superset_of 00 00,good,badcrc,varies(65536 values),True,n/a,varies(65536 values),True,n/a
-C-13,30,after,selector_program,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
-C-13,31,torn,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
-C-13,31,after,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-13,29,torn,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
+C-13,29,after,readback,01 01,good,badcrc,1 1 1,True,n/a,0 0 0,True,n/a
+C-13,30,torn,selector_erase,superset_of 01 01,good,badcrc,varies(16384 values),True,n/a,varies(16384 values),True,n/a
+C-13,30,after,selector_erase,ff ff,good,badcrc,1 0 0,True,n/a,0 0 0,True,n/a
+C-13,31,torn,selector_program,superset_of 00 00,good,badcrc,varies(65536 values),True,n/a,varies(65536 values),True,n/a
+C-13,31,after,selector_program,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-13,32,torn,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
+C-13,32,after,selector_readback,00 00,good,badcrc,0 0 0,True,n/a,0 0 0,True,n/a
 R-01,0,none,-,00 01,good,good,0 0 0,True,True,0 0 0,True,True
 R-01,1,torn,slot_erase,00 01,good,badcrc,0 0 0,True,True,0 0 0,True,True
 R-01,1,after,slot_erase,00 01,good,badcrc,0 0 0,True,True,0 0 0,True,True

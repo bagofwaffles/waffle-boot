@@ -335,7 +335,7 @@ export function describeInstall(s, hello = null, tests = null) {
         break;
     case IW.READY:
         d.tone = 'act';
-        L.push('Every check passed.' + (target ? ` The trial goes into ${target}.` : ''));
+        L.push('Checks passed.' + (target ? ` The trial goes into ${target}.` : ''));
         L.push('Nothing is written until you hold the key on the unit.');
         if (d.image && d.image.breadcrumb)
             L.push(IW.BREADCRUMB);
@@ -358,6 +358,7 @@ export function describeInstall(s, hello = null, tests = null) {
         if (d.image && d.image.breadcrumb)
             L.push(IW.BREADCRUMB);
         A.push(`Hold ${key} on the unit for 5 s to keep the new bootloader.`);
+        A.push(IW.RETRIAL);
         break;
     case IW.COMMITTING:
         L.push('Writing: keeping the new bootloader.');
@@ -392,7 +393,7 @@ export function describeInstall(s, hello = null, tests = null) {
     case IW.SURVEYED:
         d.tone = 'ok';
         L.push(IW.SURVEY_DONE);
-        L.push(s.lock === 11 ? 'An install by the installer would be offered on this unit.' :
+        L.push(s.lock === IW.LOCK_SURVEY ? 'An install by the installer would be offered on this unit.' :
             `An install would not be offered: ${d.lock ? d.lock.text : 'the checks'}.`);
         L.push(osLine(s.os));
         A.push(IW.SAVE_REPORT);

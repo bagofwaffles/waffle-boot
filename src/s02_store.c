@@ -16,6 +16,7 @@ void s02_store_defaults(struct s02_store *s)
 	s->color = false;
 	s->mtp_macos = true;
 	s->start_menu = false;
+	s->host_link = true;
 }
 
 bool s02_store_decode(const uint8_t *p, size_t n, uint32_t stamp, struct s02_store *out)
@@ -31,6 +32,7 @@ bool s02_store_decode(const uint8_t *p, size_t n, uint32_t stamp, struct s02_sto
 	if (len < 1u || len > S02_STORE_PAYLOAD_MAX ||
 	    n < S02_STORE_HEADER + len + S02_STORE_CRC)
 		return false;
+	/* software: a record of a few bytes */
 	if (wire_crc32(0u, p, S02_STORE_HEADER + len) !=
 	    wb_get_le32(p + S02_STORE_HEADER + len))
 		return false;
@@ -42,14 +44,17 @@ bool s02_store_decode(const uint8_t *p, size_t n, uint32_t stamp, struct s02_sto
 	out->color = (f & S02_STORE_FLAG_COLOR) != 0u;
 	out->mtp_macos = (f & S02_STORE_FLAG_MTP_MACOS) != 0u;
 	out->start_menu = (f & S02_STORE_FLAG_START_MENU) != 0u;
+	if (len >= 2u)
+		out->host_link = (p[S02_STORE_HEADER + 1u] & S02_STORE_FLAG2_HOST_OFF) == 0u;
 	return true;
 }
 
 size_t s02_store_encode(const struct s02_store *s, uint32_t stamp, uint8_t *buf, size_t cap)
 {
+	const uint32_t n = s->host_link ? 1u : 2u;
 	uint8_t f = 0u;
 
-	if (cap < S02_STORE_WRITTEN)
+	if (cap < S02_STORE_HEADER + n + S02_STORE_CRC)
 		return 0u;
 	if (s->dev_mode)
 		f |= S02_STORE_FLAG_DEV;
@@ -61,12 +66,13 @@ size_t s02_store_encode(const struct s02_store *s, uint32_t stamp, uint8_t *buf,
 		f |= S02_STORE_FLAG_START_MENU;
 	wb_put_le32(buf, S02_STORE_MAGIC);
 	wb_put_le16(buf + 4, S02_STORE_VERSION);
-	wb_put_le16(buf + 6, 1u);
+	wb_put_le16(buf + 6, (uint16_t)n);
 	wb_put_le32(buf + 8, stamp);
 	buf[S02_STORE_HEADER] = f;
-	wb_put_le32(buf + S02_STORE_HEADER + 1u,
-		    wire_crc32(0u, buf, S02_STORE_HEADER + 1u));
-	return S02_STORE_WRITTEN;
+	buf[S02_STORE_HEADER + 1u] = S02_STORE_FLAG2_HOST_OFF;	/* used when n is 2 */
+	wb_put_le32(buf + S02_STORE_HEADER + n,		/* software, as above */
+		    wire_crc32(0u, buf, S02_STORE_HEADER + n));
+	return S02_STORE_HEADER + n + S02_STORE_CRC;
 }
 
 bool s02_store_record_ok(const struct s02_record *rec)
@@ -169,13 +175,14 @@ bool s02_store_read(const struct s02_env *env, const struct s02_store_slot *run,
 static bool same(const struct s02_store *a, const struct s02_store *b)
 {
 	return a->dev_mode == b->dev_mode && a->color == b->color &&
-	       a->mtp_macos == b->mtp_macos && a->start_menu == b->start_menu;
+	       a->mtp_macos == b->mtp_macos && a->start_menu == b->start_menu &&
+	       a->host_link == b->host_link;
 }
 
 enum s02_store_rc s02_store_write(const struct s02_env *env, const struct s02_store_slot *run,
 				  const struct s02_store *s)
 {
-	uint8_t rec[S02_STORE_WRITTEN];
+	uint8_t rec[S02_STORE_WRITTEN_MAX];
 	struct s02_store now;
 	uint32_t used, at;
 	size_t n;

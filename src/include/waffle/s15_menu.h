@@ -37,8 +37,22 @@ enum s15_screen {
 	S15_SCR_STARTING,   /* S-15.190: restarting for the OS; no key acts */
 	S15_SCR_INFO2,      /* S-15.082: Device Info's second page */
 	S15_SCR_OPTION,     /* S-15.140: the option's screen, from Settings */
-	S15_SCR_NONE        /* before held mode's first screen */
+	S15_SCR_LOGO,       /* the boot logo's disk, from System */
+	S15_SCR_LOGO_VIEW,  /* a dropped picture as the front will draw it */
+	S15_SCR_LOGO_DONE,  /* a save's or a removal's result: digit 8 alone acts */
+	S15_SCR_NONE,       /* before held mode's first screen */
+	S15_SCR_APPROVE     /* the host link's approval: the unit's keys alone */
 };
+
+/* The host link's approval screen, as the board reads it. */
+enum s15_approve {
+	S15_APPROVE_NONE,
+	S15_APPROVE_PENDING,
+	S15_APPROVE_ALLOWED,	/* 1 held for 5 s */
+	S15_APPROVE_REFUSED,	/* 8 */
+	S15_APPROVE_TIMEOUT	/* no key for S15_APPROVE_MS */
+};
+#define S15_APPROVE_MS 60000u
 
 /* S-15.015: what a hold runs. The item's own key down starts the hold;
  * held for S15_HOLD_MS it runs the action once; its early release,
@@ -48,7 +62,10 @@ enum s15_arm {
 	S15_ARM_RESET,      /* the factory reset (S-15.050) */
 	S15_ARM_FORMAT,     /* the format (S-15.071) */
 	S15_ARM_PACK,       /* removing the pack `pending` (S-15.042) */
-	S15_ARM_OPTION      /* turning the option on (S-15.140) */
+	S15_ARM_OPTION,     /* turning the option on (S-15.140) */
+	S15_ARM_APPROVE,    /* the host link's approval */
+	S15_ARM_LOGO_SAVE,  /* saving the boot logo shown */
+	S15_ARM_LOGO_REMOVE /* removing the stored boot logo */
 };
 
 /* S-09: the slave's state, for Device Info. */
@@ -156,6 +173,41 @@ enum s15_store_save {
 	S15_STORE_UNUSABLE	/* the running slot keeps no settings (S-02.099) */
 };
 
+/* The boot logo (waffle/logo.h) as System shows it. SPEC-Q: the boot
+ * logo's screens and keys have no requirement label yet. */
+enum s15_logo_state {
+	S15_LOGO_BUILTIN,	/* none stored: the front's own */
+	S15_LOGO_CUSTOM,	/* one stored for this image */
+	S15_LOGO_NO_ROOM,	/* the image leaves no room for one */
+	S15_LOGO_UNAVAILABLE	/* the running slot may not be written now
+				 * (the settings' rule) */
+};
+
+struct s15_logo {
+	uint8_t state;		/* enum s15_logo_state */
+	uint32_t room;		/* the bytes free for a logo's data */
+	uint32_t stored;	/* the stored logo's data bytes, with CUSTOM */
+};
+
+/* What a picture dropped on the disk gave. */
+enum s15_logo_load {
+	S15_LOGO_READY,		/* converted: px and size */
+	S15_LOGO_NONE,		/* no PNG file on the disk */
+	S15_LOGO_MANY,		/* more than one file */
+	S15_LOGO_REFUSED,	/* not taken: why says why */
+	S15_LOGO_BIG		/* does not fit: size the smallest tried */
+};
+
+struct s15_logo_pic {
+	uint8_t result;		/* enum s15_logo_load */
+	const char *why;	/* with S15_LOGO_REFUSED */
+	uint32_t size;		/* the data's bytes */
+	uint32_t room;
+	/* READY: the screen as the front will draw it, window row r (screen
+	 * x 479 - r) by row, 222 pixels each (waffle/logo.h) */
+	const uint16_t *px;
+};
+
 #define S15_PACKS_MAX 7u
 #define S15_NAME_MAX  255u
 
@@ -236,6 +288,16 @@ struct s15_env_ops {
 	 * from /yaffs2/os.ldr, the restarting view drawn. Does not return on
 	 * the device. */
 	void (*os_once)(void *ctx);
+	/* The boot logo, read again. NULL: no Boot logo item. */
+	void (*logo_state)(void *ctx, struct s15_logo *out);
+	/* A blank RAM disk offered for a picture, with the disk's USB set. */
+	void (*logo_disk)(void *ctx);
+	/* After the disk's release: its one PNG file read and converted. */
+	void (*logo_load)(void *ctx, struct s15_logo_pic *out);
+	/* The picture logo_load() gave saved, or the stored logo removed, in
+	 * the running slot under the settings' rule. */
+	enum s15_store_save (*logo_save)(void *ctx);
+	enum s15_store_save (*logo_remove)(void *ctx);
 };
 
 /* What the upgrade screen is doing (S-15.103). */
@@ -290,9 +352,21 @@ struct s15_menu {
 	bool color;
 	bool mtp_macos;            /* S-15.174 */
 	bool start_menu;           /* S-15.175 */
+	bool host_link;            /* the host link answers */
+
+	/* the host link's approval screen */
+	enum s15_approve approve;
+	enum s15_screen approve_back;	/* the screen it returns to */
+	uint32_t approve_ms;		/* when it opened */
 
 	/* system menu */
 	bool packs_item;
+
+	/* the boot logo */
+	struct s15_logo logo;
+	struct s15_logo_pic pic;
+	bool logo_due;             /* the disk was released: read it then */
+	uint32_t logo_due_ms;
 
 	/* S-15.015: the hold under way */
 	enum s15_arm armed;
@@ -319,6 +393,10 @@ struct s15_menu {
 	bool hold;
 	enum s15_osw_view osw;
 	bool osw_written;          /* S-15.094: the last OS write succeeded */
+	struct s15_osw_end osw_end;	/* and how it ended */
+	bool osw_host;             /* a host's write: its file, and where 8 goes */
+	enum s15_screen osw_back;
+	char osw_name[40];         /* the file as the drive shows it */
 	int osw_step;        /* the OS write's step whose row is open, or -1 */
 	unsigned osw_p;      /* its last progress value */
 
@@ -376,6 +454,26 @@ void s15_menu_event(struct s15_menu *m, unsigned key, bool down);
 /* The same for a key a host sent (a developer request): it acts as the
  * unit's key would, but saves no setting (S-15.193). */
 void s15_menu_host_event(struct s15_menu *m, unsigned key, bool down);
+/*
+ * The host link's approval screen over the screen shown, which it returns
+ * to: only from Main Menu, Settings, System, Device Info and the developer
+ * menu, with nothing under way. False when it cannot open now. Only the
+ * unit's keys answer it: 1 held for 5 s allows, 8 refuses, and with no key
+ * for S15_APPROVE_MS it times out.
+ */
+bool s15_menu_approve_open(struct s15_menu *m);
+/* Its answer; once read, an answer gives S15_APPROVE_NONE. */
+enum s15_approve s15_menu_approve_result(struct s15_menu *m);
+/* A host's OS write with the developer menu's code (S-15.094), from the
+ * file at path, which the board's os_write reads; false when the menu is
+ * busy. The screen names the file, and 8 goes back to the screen shown
+ * before (never the developer menu with developer mode off). *e is the
+ * write's end. */
+bool s15_menu_os_write(struct s15_menu *m, const char *path, struct s15_osw_end *e);
+/* A host's start of /os.ldr once, as the developer menu's 3 (S-15.194);
+ * it returns only when the start was not taken, with the screen shown
+ * before drawn again under the reason. */
+void s15_menu_os_once(struct s15_menu *m);
 /*
  * The time passes (ms since any fixed point; only differences matter): a
  * hold's bar follows it, and a hold of S15_HOLD_MS runs its action.

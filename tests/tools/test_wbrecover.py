@@ -2304,6 +2304,14 @@ class Front11(PtyCase):
         m.device, m.dev_how = 1, 0
         self.assertEqual(w.device_line(w.parse_info(m.info())),
                          'Device:   OP-1F, identified by its first stage')
+        # each defined way by its name (fr_handoff.h's FR_HO_HOW_*), and one it does not know
+        m.dev_how = 1
+        self.assertEqual(w.device_line(w.parse_info(m.info())),
+                         'Device:   OP-1F, identified by the second CPU (first stage n 34000, c 12345678)')
+        m.dev_how = 7
+        self.assertEqual(w.device_line(w.parse_info(m.info())),
+                         'Device:   OP-1F, decided by way 7, which this tool does not know (first stage '
+                         'n 34000, c 12345678)')
         # an older front: no line
         m.front = 11
         self.assertIsNone(w.parse_info(m.info())['device'])
@@ -2328,10 +2336,13 @@ class Front11(PtyCase):
                       out.text)
         self.assertIn('Keep:     refused: no slot is tried where a keep can take it', out.text)
         self.assertIn('Put back: refused: Slot 2 is not tried', out.text)
+        self.assertNotIn('keep is the action', out.text)
         m.tried, m.started = {1}, {1}
         m.phase, m.count, m.act = w.COUNTING, 7, w.ACT_KEEP
         out = Lines()
         w.cmd_info(self.link, out)
+        # Slot 2 came up from its trial: its keep, not the switch, is the action
+        self.assertRegex(out.text, r'Switch: .*; after its trial, keep is the action\n')
         self.assertIn(':   tried, started, ', out.text)
         self.assertIn('State:    counting down: 7 s left before the first erase of the keep of Slot 2. '
                       'Switching the unit off or unplugging USB now stops it, with nothing written',

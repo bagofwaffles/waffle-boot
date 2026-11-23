@@ -23,14 +23,18 @@
 #include "fr_map_rule.h"
 
 #include "front/fr_handoff.h"
+#include "front/fr_logo.h"
 #include "front/fr_start.h"
 #include "front/fr_startlog.h"
+#include "waffle/logo.h"
 #include "waffle/s06_frame.h"
 #include "waffle/s06_rx.h"
 #include "waffle/wire_crc.h"
 
-/* ---- time: 1 us per look, and whatever a delay asks ---- */
+/* the stored logo's conversion's working memory */
+static struct wb_logo_work g_work;
 
+/* ---- time: 1 us per look, and whatever a delay asks ---- */
 static uint64_t t_us;
 
 static uint64_t now_us(void *ctx)
@@ -727,6 +731,78 @@ static void test_normal_order(void)
 	/* The flash: no erase, and one program, the start log's (S-02.095) */
 	CHECK(count_fops('e') == 0u);
 	CHECK(count_fops('p') == 1u && log_program() != ~0u);
+}
+
+/*
+ * The stored logo (fr_logo.h): read and checked whole before the first
+ * frame, which shows it, the hand-off record naming its slot; with these
+ * streams no descriptor tells the slot, so it is the one the selector
+ * names. A damaged one gives the front's own logo. Either way the flash
+ * gets no erase and no program but the start log's.
+ */
+static void test_stored_logo(void)
+{
+	static uint8_t staging[FR_SLOT_CAP], data[4096];
+	static uint16_t pic[40u * 20u], px[480u * 222u];
+	static struct fr_start_hw hw;
+	struct fr_screen own;
+	struct wb_logo l;
+	enum wb_logo_way way;
+	uint32_t need;
+	static uint8_t ref[FR_PANEL_FRAME_BYTES];
+
+	for (unsigned i = 0; i < ARRAY_LEN(pic); i++)
+		pic[i] = (i / 40u + i % 40u) % 3u != 0u ? 0xF800u : 0x001Fu;
+	CHECK(wb_logo_convert(&g_work, pic, 40, 20, 0x10000u, data, sizeof data, &l, &way, &need));
+	CHECK(wb_logo_draw(&l, data, px));
+	fr_screen_logo(&own);
+	fr_paint(ref, &own);
+	for (unsigned k = 0; k < 2u; k++)
+		for (unsigned damaged = 0; damaged < 3u; damaged++) {
+			struct fr_handoff ho;
+			bool same = true;
+
+			model_reset();
+			psoc.answers = true;
+			psoc.answer_keys = true;
+			image(true);
+			flash_reset((uint8_t)k, 0x01u);
+			l.image = fr_le32(fmem + FR_RECORD_OFF(k));
+			wb_logo_header(&l, fmem + FR_LOGO_OFF(k));
+			memcpy(fmem + FR_LOGO_OFF(k) - l.len, data, l.len);
+			if (damaged == 1u)
+				fmem[FR_LOGO_OFF(k) - 1u] ^= 1u;	/* its data */
+			else if (damaged == 2u)
+				fmem[FR_LOGO_OFF(k)] ^= 1u;		/* its header */
+			n_fops = 0;
+			memset(&hw, 0, sizeof hw);
+			hw.clock = &clock;
+			hw.psoc = &link;
+			hw.panel = &bus;
+			hw.frame = panel_fb;
+			hw.flash = &flash;
+			hw.mem = &mem;
+			hw.staging = staging;
+			memset(&ho, 0, sizeof ho);
+			ho.strap = 0x0104u;
+			t_us = 1000u;
+			CHECK(fr_start_run(&st, &hw, &ho) == FR_NEXT_MAIN);
+			CHECK(((ho.flags & FR_HO_LOGO) != 0u) == (damaged == 0u));
+			CHECK(((ho.flags & FR_HO_LOGO_SLOT1) != 0u) == (damaged == 0u && k == 1u));
+			CHECK(count_fops('e') == 0u && count_fops('p') <= 1u);
+			for (unsigned r = 0; r < FR_PANEL_ROWS && same; r++)
+				for (unsigned c = 0; c < FR_PANEL_COLS; c++) {
+					const uint8_t *q = panel_fb + 2u * (r * FR_PANEL_COLS + c);
+					const uint16_t v = c < FR_PANEL_VISIBLE ? px[r * 222u + c] : 0u;
+
+					if (damaged != 0u ? memcmp(q, ref + (q - panel_fb), 2u) != 0 :
+							    q[0] != (uint8_t)(v >> 8) || q[1] != (uint8_t)v) {
+						same = false;
+						break;
+					}
+				}
+			CHECK(same);
+		}
 }
 
 /* The index of the first logged message after `from` with this id, or
@@ -3061,9 +3137,9 @@ static void test_rec_trial(void)
 		CHECK(fmem[FR_LOG_OFF(1)] == 0xFDu);
 		CHECK(!wrote_in(FR_SLOT_BASE(0), FR_SLOT_BASE(0) + FR_SLOT_CAP));
 		CHECK(!wrote_in(FR_RECORD_OFF(0), FR_RECORD_OFF(0) + FR_SECTOR));
-		CHECK(screen_says(&st.screen, "Done: slot 2 is written for one trial start"));
+		CHECK(screen_says(&st.screen, "Done: slot 2 written for one trial"));
 		CHECK(screen_says(&st.screen, "If it does not start, switch off and on: slot 1 boots"));
-		CHECK(strcmp(st.screen.status_right, "v1.0.0 F21") == 0);
+		CHECK(strcmp(st.screen.status_right, "v1.0.0 F23") == 0);
 
 		/* the trial start */
 		CHECK(first_stage() == 1u);
@@ -3092,7 +3168,7 @@ static void test_rec_trial(void)
 			CHECK(host.begin_st == FR_WR_NOT_STARTED && host.begin_way == FR_WAY_NONE);
 			CHECK((host.info[FR_INFO_O_SLOT(1) + FR_INFO_S_FLAGS] & FR_SLOT_F_STARTED) == 0u);
 			CHECK(!wrote_in(0, FLASH_SIZE));
-			CHECK(screen_says(&st.screen, "Failed: the tried slot has not started; restart first"));
+			CHECK(screen_says(&st.screen, "Failed: tried slot not started; restart first"));
 			/* the trial start, slot 2's own front, no key: the mark */
 			start_again(0x66, d_t, &ho);
 			CHECK(fmem[FR_LOG_OFF(1)] == 0xFCu);
@@ -3121,7 +3197,7 @@ static void test_rec_trial(void)
 		CHECK(fmem[FR_LOG_OFF(1)] == 0xFCu);
 		CHECK(!wrote_in(FR_RECORD_OFF(0), FR_RECORD_OFF(0) + FR_SECTOR));
 		CHECK(wrote_in(FR_RECORD_OFF(1), FR_RECORD_OFF(1) + FR_SECTOR));
-		CHECK(screen_says(&st.screen, "Done: slot 2 is kept as the boot slot"));
+		CHECK(screen_says(&st.screen, "Done: slot 2 kept as the boot slot"));
 		/* the next start checks slot 2 and trusts it */
 		CHECK(first_stage() == 1u);
 		CHECK(fmem[FR_SELECTOR_OFF] == 0x01u && fmem[FR_SELECTOR_OFF + 1u] == 0x01u);
@@ -3343,15 +3419,15 @@ static unsigned leds_of(unsigned len, uint8_t p0, unsigned *all)
 	return n;
 }
 
-/* S-18.005: the device and how it was decided, in the record; the
- * default device with no ident. The rest of a normal start as before. */
+/* S-18.005: the device and how it was decided, in the record; with no
+ * ident, the default device, not identified. The rest of a normal start as before. */
 static void test_dev_record(void)
 {
 	static const struct fr_ident xy = { &fr_dev_opxy, FR_HO_HOW_TABLE, 0x86C0u, 0xF3C93780u },
 				     f = { &fr_dev_op1f, FR_HO_HOW_TABLE, 0x8600u, 0x49267EB8u },
 				     unk = { &fr_dev_opxy, FR_HO_HOW_UNKNOWN, 0x8600u, 0x12345678u };
 	static const struct { const struct fr_ident *id; uint16_t strap; uint8_t dev, how; } c[] = {
-		{ NULL, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_TABLE },
+		{ NULL, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_UNKNOWN },
 		{ &xy, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_TABLE },
 		{ &f, 0u, FR_HO_DEV_OP1F, FR_HO_HOW_TABLE },
 		{ &unk, 0x0104u, FR_HO_DEV_OPXY, FR_HO_HOW_UNKNOWN },
@@ -3514,6 +3590,7 @@ int main(void)
 	RUN(test_rec_battery);
 	RUN(test_rec_info_device);
 	RUN(test_normal_order);
+	RUN(test_stored_logo);
 	RUN(test_inbox_before_jump);
 	RUN(test_record_running);
 	RUN(test_log_step);

@@ -6,6 +6,7 @@
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/mmr.h"
+#include "waffle/div64.h"
 
 /* Bytes the controller may hold; one service call drains at most this. */
 #define HW_FIFO 16u
@@ -158,7 +159,7 @@ int wb_uart_init_dma(struct wb_uart *u, unsigned n,
 	    t == NULL || rx_size < 2u * RX_MARGIN ||
 	    ((uintptr_t)rx & (WB_DCACHE_LINE - 1u)) != 0)
 		return WB_UART_ERR_ARG;
-	byte_cycles = (uint64_t)t->cycles_per_us * byte_ns / 1000u;
+	byte_cycles = wb_udiv64((uint64_t)t->cycles_per_us * byte_ns, 1000u);
 	if (byte_cycles == 0 || byte_cycles > UINT32_MAX)
 		return WB_UART_ERR_ARG;
 	u->dma = true;
@@ -254,7 +255,7 @@ static void rx_sample(struct wb_uart *u)
 	/* The line could have carried a whole ring: a lap cannot be ruled
 	 * out (struct wb_uart). */
 	if (delta != 0 &&
-	    (now - u->rx_seen) / u->byte_cycles + 1u >= u->rx_size)
+	    now - u->rx_seen >= (uint64_t)(u->rx_size - 1u) * u->byte_cycles)
 		u->rx_gaps++;
 	u->rx_pos = pos;
 	u->rx_seen = now;

@@ -11,16 +11,32 @@
  */
 #include "fr_start.h"
 
-bool fr_ui_offers(const struct fr_rec_status *st, uint8_t act)
+/* S-02.084: a keep is offered for a slot that started, or runs: that
+ * slot, or FR_NO_SLOT. */
+static unsigned keep_slot(const struct fr_rec_status *st)
 {
 	const unsigned a = st->running.slot < 2u ? st->running.slot : 0u;
 	struct fr_act_plan plan;
 
+	fr_rec_act(st, FR_ACT_KEEP, true, &plan);
+	if (plan.status != FR_WR_OK || !(plan.target == a || st->slot[1u - a].started))
+		return FR_NO_SLOT;
+	return plan.target;
+}
+
+bool fr_ui_offers(const struct fr_rec_status *st, uint8_t act)
+{
+	struct fr_act_plan plan;
+
+	if (act == FR_ACT_KEEP)
+		return keep_slot(st) != FR_NO_SLOT;
 	fr_rec_act(st, act, true, &plan);
 	if (plan.status != FR_WR_OK)
 		return false;
-	/* S-02.084: a keep is offered for a slot that started, or runs */
-	return act != FR_ACT_KEEP || plan.target == a || st->slot[1u - a].started;
+	/* a slot that came up from its trial is made the boot slot by its
+	 * keep: the menu leaves out the switch to it (the host's switch is
+	 * unchanged) */
+	return act != FR_ACT_SWITCH || keep_slot(st) != plan.target;
 }
 
 static void show(struct fr_ui *u, uint8_t screen)

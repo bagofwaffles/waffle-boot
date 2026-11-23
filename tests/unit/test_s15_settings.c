@@ -16,7 +16,7 @@
 /* S-15.172: the defaults a start without saved settings takes */
 static void test_defaults(void)
 {
-	struct s15_settings s = { true, true, false, true };
+	struct s15_settings s = { true, true, false, true, true };
 
 	s15_settings_defaults(&s);
 	CHECK(!s.dev_mode && !s.color && s.mtp_macos && !s.start_menu, "S-15.172 defaults");

@@ -137,7 +137,8 @@ void fr_ui_reset(struct fr_ui *u);
  * enum fr_act; the caller starts it (fr_proto_local()). */
 bool fr_ui_key(struct fr_ui *u, const struct fr_rec_status *st, unsigned key, uint64_t now_us,
 	       uint8_t *act);
-/* The slot menu offers the action: it would start, confirmed. */
+/* The slot menu offers the action: it would start, confirmed. The switch
+ * is left out where the keep of its slot is offered. */
 bool fr_ui_offers(const struct fr_rec_status *st, uint8_t act);
 
 #endif /* FR_START_H */

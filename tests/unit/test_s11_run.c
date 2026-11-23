@@ -863,6 +863,14 @@ static void test_select(void)
 	      (env.selected & S11_STEP_BIT(S11_STEP_BOOTLOADER)) != 0u &&
 	      (env.selected & S11_STEP_BIT(S11_STEP_OS)) != 0u,
 	      "invalid: the bootloader offered and selected");
+	/* S-15.197: an invalid package nobody was asked about: no run */
+	A.answer = S11_ANSWER_UNASKED;
+	env.selected = 0xFFu;
+	CHECK(!s11_select(&env, ask, NULL) && env.selected == 0,
+	      "invalid, unasked: false, nothing selected");
+	env.selected = 0xFFu;
+	CHECK(!s11_select(&env, NULL, NULL) && env.selected == 0,
+	      "invalid, no ask: false, nothing selected");
 }
 
 /* ---- staged_check.json: S-11.095 ---- */

@@ -22,6 +22,7 @@
 #include "waffle/drivers/bf70x_spi.h"
 #include "waffle/drivers/bf70x_time.h"
 #include "waffle/drivers/bf70x_uart.h"
+#include "waffle/pack.h"
 #include "waffle/device.h"
 
 enum opxy_role { OPXY_SLAVE = 0, OPXY_MASTER = 1 };
@@ -65,6 +66,7 @@ extern uint32_t opxy_init_dflt;
  * enable (twice each here, for margin). */
 extern const struct wb_strap opxy_strap;
 #define OPXY_STRAP_ROLE  (1u << 2)	/* PA2: 1 master, 0 slave */
+#define OPXY_STRAP_SETTLE_US 20u	/* opxy_strap's drivers released to sample */
 #define OPXY_STRAP_REV0  (1u << 0)	/* PA0, revision bit 0 (S-17) */
 #define OPXY_STRAP_REV1  (1u << 8)	/* PA8, revision bit 1 (S-17) */
 
@@ -274,7 +276,9 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
  *   0x80000000  disk part 0, up to the reserve
  *   0x8803D000  the DDR handover reserve (to 0x88A65000), which the
  *               handover path does not use: the main image, its data and
- *               its stack (bf703.ld), at most 3 MiB, then
+ *               its stack (bf703.ld), at most 2.5 MiB, then
+ *   0x882BD000  the packed block the stream loads and the stub unpacks,
+ *               512 KiB (waffle/pack.h), then
  *   0x8833D000  the heap (picolibc's malloc, used by yaffs2), on through
  *               the rest of the reserve up to the staging area (S-01.014);
  *   0x8A000000  disk part 1, over the staging area (S-01.016 allows it);
@@ -284,7 +288,9 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
  * tools/layout.py declares these to S-01's check_layout.py.
  */
 #define OPXY_IMAGE_START  0x8803D000u	/* S01_RESERVE_DDR_START */
-#define OPXY_IMAGE_END    0x8833D000u	/* bf703.ld's ddr region */
+#define OPXY_IMAGE_END    0x882BD000u	/* bf703.ld's ddr region */
+#define OPXY_PACK_START   0x882BD000u	/* WB_PACK_START */
+#define OPXY_PACK_END     0x8833D000u
 /*
  * The test OS (wiki/Test-OS.md, waffle/testos.h) is loaded by another
  * bootloader, so it may not load into the handover reserve (S-01.017,
@@ -302,21 +308,30 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
 #define OPXY_TESTOS_HEAP_START  0x89300000u
 #define OPXY_TESTOS_HEAP_END    0x8A000000u
 /*
- * The OP-1F's installer images (bf703_testos_1f.ld, make installer-1f):
- * laid out like the OP-1F's OS 1.7.3 (S-05.040), their DDR bytes inside
- * its second DDR range, above the OS frame (S-05.016) and clear of the
- * OP-1F's RAM disk, the reserve and the staging area. They lie in the
- * OP-XY's disk part 1, so they run on an OP-1F alone (waffle/testos.h).
+ * The installer's images (bf703_installer.ld, make installer, built with
+ * OPXY_TESTOS_SHARED): one shape for both devices (S-05.043), laid out
+ * like the OP-1F's OS 1.7.3 (S-05.040), their DDR bytes inside its second
+ * DDR range, above the OS frame (S-05.016) and clear of the OP-1F's RAM
+ * disk, the reserve and the staging area. On the OP-XY they lie where
+ * disk part 1 was, so there the disk takes three parts around them
+ * (OPXY_TESTOS_SHARED_DISK*, S-05.043 keeps 0x8D000000-0x8E000000 clear):
+ * disk part 0; from where the other test OS images sit up to the image;
+ * and from the heap's end up to where part 1 ends. Together they hold
+ * S-12.001's sectors.
  */
-#define OPXY_TESTOS_1F_IMAGE_START 0x8D000000u
-#define OPXY_TESTOS_1F_IMAGE_END   0x8D300000u
-#define OPXY_TESTOS_1F_HEAP_START  0x8D300000u
-#define OPXY_TESTOS_1F_HEAP_END    0x8E000000u
+#define OPXY_TESTOS_SHARED_IMAGE_START 0x8D000000u
+#define OPXY_TESTOS_SHARED_IMAGE_END   0x8D300000u
+#define OPXY_TESTOS_SHARED_HEAP_START  0x8D300000u
+#define OPXY_TESTOS_SHARED_HEAP_END    0x8E000000u
+#define OPXY_TESTOS_SHARED_DISK1_START 0x89000000u
+#define OPXY_TESTOS_SHARED_DISK1_END   0x8D000000u
+#define OPXY_TESTOS_SHARED_DISK2_START 0x8E000000u
+#define OPXY_TESTOS_SHARED_DISK2_END   0x8FDC3000u
 /* The image this build is linked as. */
-#if defined(OPXY_TESTOS_1F)
-#define OPXY_TESTOS_RUN_START      OPXY_TESTOS_1F_IMAGE_START
-#define OPXY_TESTOS_RUN_HEAP_START OPXY_TESTOS_1F_HEAP_START
-#define OPXY_TESTOS_RUN_HEAP_END   OPXY_TESTOS_1F_HEAP_END
+#if defined(OPXY_TESTOS_SHARED)
+#define OPXY_TESTOS_RUN_START      OPXY_TESTOS_SHARED_IMAGE_START
+#define OPXY_TESTOS_RUN_HEAP_START OPXY_TESTOS_SHARED_HEAP_START
+#define OPXY_TESTOS_RUN_HEAP_END   OPXY_TESTOS_SHARED_HEAP_END
 #else
 #define OPXY_TESTOS_RUN_START      OPXY_TESTOS_IMAGE_START
 #define OPXY_TESTOS_RUN_HEAP_START OPXY_TESTOS_HEAP_START
@@ -359,16 +374,19 @@ _Static_assert(OPXY_1F_DISK_END - OPXY_1F_DISK_START == OPXY_1F_DISK_SECTORS * 5
 _Static_assert((OPXY_DISK0_END - OPXY_DISK0_START) % 512u == 0u &&
 	       (OPXY_DISK1_END - OPXY_DISK1_START) % 512u == 0u,
 	       "each disk part holds whole sectors");
-/* The OP-1F's test OS has its heap in the OP-XY's disk part 1: it runs
- * on an OP-1F alone (its own assertion below). */
-#if !defined(OPXY_TESTOS_1F)
+/* The installer's images have their heap in disk part 1's place, and on
+ * the OP-XY their own disk parts (the assertions below). */
+#if !defined(OPXY_TESTOS_SHARED)
 _Static_assert(OPXY_DISK0_END <= OPXY_IMAGE_START &&
-	       OPXY_IMAGE_END <= OPXY_HEAP_START &&
+	       OPXY_IMAGE_END <= OPXY_PACK_START && OPXY_PACK_END <= OPXY_HEAP_START &&
 	       OPXY_HEAP_END <= OPXY_DISK1_START &&
 	       OPXY_DISK1_END <= OPXY_FRAMES_START &&
 	       OPXY_FRAMES_END <= 0x8FFFFF00u,
 	       "the DDR ranges are in order and apart");
 #endif
+_Static_assert(OPXY_IMAGE_START == WB_IMAGE_DDR_START && OPXY_IMAGE_END == WB_IMAGE_DDR_END &&
+	       OPXY_PACK_START == WB_PACK_START && OPXY_PACK_END == WB_PACK_END,
+	       "the image's DDR and the packed block as the stub has them");
 _Static_assert(OPXY_OS_FRAME_START >= OPXY_DISK1_START &&
 	       OPXY_OS_FRAME_END <= OPXY_DISK1_END,
 	       "the OS's frame lies in held mode's disk");
@@ -376,10 +394,19 @@ _Static_assert(OPXY_TESTOS_IMAGE_START >= 0x88A65000u &&
 	       OPXY_TESTOS_IMAGE_END <= OPXY_TESTOS_HEAP_START &&
 	       OPXY_TESTOS_HEAP_END <= OPXY_DISK1_START,
 	       "the test OS lies between the DDR reserve and the staging area");
-_Static_assert(OPXY_TESTOS_1F_IMAGE_START >= OPXY_OS_FRAME_END &&
-	       OPXY_TESTOS_1F_IMAGE_START >= OPXY_1F_DISK_END &&
-	       OPXY_TESTOS_1F_IMAGE_END <= OPXY_TESTOS_1F_HEAP_START &&
-	       OPXY_TESTOS_1F_HEAP_END <= OPXY_FRAMES_START,
-	       "the OP-1F's test OS lies above the OS frame, below the frame buffers");
+_Static_assert(OPXY_TESTOS_SHARED_IMAGE_START >= OPXY_OS_FRAME_END &&
+	       OPXY_TESTOS_SHARED_IMAGE_START >= OPXY_1F_DISK_END &&
+	       OPXY_TESTOS_SHARED_IMAGE_END <= OPXY_TESTOS_SHARED_HEAP_START &&
+	       OPXY_TESTOS_SHARED_HEAP_END <= OPXY_FRAMES_START,
+	       "the installer's image lies above the OS frame, below the frame buffers");
+_Static_assert(OPXY_TESTOS_SHARED_DISK1_START >= 0x88A65000u &&
+	       OPXY_TESTOS_SHARED_DISK1_END <= OPXY_TESTOS_SHARED_IMAGE_START &&
+	       OPXY_TESTOS_SHARED_DISK2_START >= OPXY_TESTOS_SHARED_HEAP_END &&
+	       OPXY_TESTOS_SHARED_DISK2_END <= OPXY_FRAMES_START &&
+	       OPXY_DISK0_END - OPXY_DISK0_START +
+	       (OPXY_TESTOS_SHARED_DISK1_END - OPXY_TESTOS_SHARED_DISK1_START) +
+	       (OPXY_TESTOS_SHARED_DISK2_END - OPXY_TESTOS_SHARED_DISK2_START) ==
+	       OPXY_DISK_SECTORS * 512u,
+	       "the installer's OP-XY disk parts hold S-12.001's disk, clear of its image and heap");
 
 #endif /* WAFFLE_BOARD_OPXY_H */

@@ -119,6 +119,21 @@ uint32_t opxy_bridge_boot_size(struct s09_master *m)
 	return v > 0 ? (uint32_t)v : 0u;
 }
 
+int opxy_bridge_release_file(struct s09_master *m, const uint8_t *copy, uint32_t len,
+			     uint32_t *crc, bool peripheral, s03_crc32_fn soft)
+{
+	const int v = s09_master_release_file(m, len, *crc);
+	uint32_t again;
+
+	if (v != 1 || !peripheral)
+		return v;
+	again = soft(0u, copy, len);
+	if (again == *crc)
+		return v;	/* the slave's copy differs: no second try */
+	*crc = again;
+	return s09_master_release_file(m, len, again);
+}
+
 /* PA6 is read once more after the deadline has passed. */
 bool opxy_bridge_init_ready(const struct s09_bus_ops *bus, uint64_t deadline)
 {

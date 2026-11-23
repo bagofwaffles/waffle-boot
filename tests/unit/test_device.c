@@ -203,6 +203,19 @@ static void test_stages(void)
 	}
 }
 
+/* No try: nothing read, n and c 0, the default device, not known. */
+static void test_no_tries(void)
+{
+	struct wb_dev_decision d;
+	uint32_t n = 7, c = 7;
+
+	put_stage(&s18v_stages[0]);
+	g_calls = 0;
+	d = wb_first_stage_identify_n(flash_read, NULL, &n, &c, 0u);
+	CHECK(n == 0u && c == 0u && g_calls == 0u);
+	CHECK(d.id == WB_DEV_DEFAULT && d.how == WB_DEV_UNKNOWN);
+}
+
 /* S-18.002's fallback sample: PA2 as the row has it. */
 static unsigned g_pa2_level, g_pa2_samples;
 
@@ -350,6 +363,7 @@ int main(void)
 	RUN(test_features);
 	RUN(test_table);
 	RUN(test_stages);
+	RUN(test_no_tries);
 	RUN(test_decide);
 	RUN(test_read_fails);
 	RUN(test_key_digit);

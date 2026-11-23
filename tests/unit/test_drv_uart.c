@@ -739,6 +739,19 @@ static void test_dma_gap(void)
 	arrive_seq(10, 10);
 	CHECK(wb_uart_read(&u, buf, sizeof(buf)) == 10 && is_seq(buf, 10, 10));
 	CHECK(u.rx_gaps == 1 && u.rx_lost == 0);
+
+	/* The edge: a lap is possible from ring - 1 shortest bytes after the
+	 * last sample on, the counter held still for the reads. */
+	fake_core_set_cycle_step(0);
+	fake_core_set_cycles(u.rx_seen + (lap - 3960u) - 1u);
+	arrive_seq(20, 10);
+	CHECK(wb_uart_read(&u, buf, sizeof(buf)) == 10 && is_seq(buf, 20, 10));
+	CHECK(u.rx_gaps == 1);
+	fake_core_set_cycles(u.rx_seen + (lap - 3960u));
+	arrive_seq(30, 10);
+	CHECK(wb_uart_read(&u, buf, sizeof(buf)) == 10 && is_seq(buf, 30, 10));
+	CHECK(u.rx_gaps == 2 && u.rx_lost == 0);
+	fake_core_set_cycle_step(1);
 }
 
 /* UART_STAT.OE is counted with DMA receive too (S-13b.070). */
