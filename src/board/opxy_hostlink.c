@@ -810,14 +810,6 @@ static int psoc_warn(void *ctx, uint8_t what, uint8_t seconds)
 	}
 	if (unit_busy(m))
 		return HL_E_BUSY;
-	/*
-	 * SPEC-Q: S-07.070's request goes to a PSoC that answers frames; one
-	 * that has not greeted in this start may not take it, and the soft
-	 * reboot's stop would then wait with the screen dark. Until that is
-	 * known the reset is refused then; the bridge reaches such a PSoC.
-	 */
-	if (what == HL_PW_RESET && !m->psoc.greeted)
-		return HL_E_REFUSED;
 	if (!s15_menu_warn_open(&m->sv.menu, w, seconds))
 		return HL_E_BUSY;
 	opxy_menu_show(m);
@@ -875,7 +867,9 @@ static bool psoc_leave(void *ctx, bool raw)
 		psoc_log(m, greeted ? "backplane link back, the PSoC greeted" :
 				      "backplane link back, no greeting");
 	} else {
-		psoc_log(m, "backplane request ended before its countdown did");
+		psoc_log(m, (m->sv.hl.psoc.flags & HL_PF_NOT_RESET) != 0u ?
+			 "backplane reset not done: the PSoC did not act on the request" :
+			 "backplane request ended before its countdown did");
 	}
 	s15_menu_warn_close(&m->sv.menu);
 	opxy_menu_show(m);
@@ -912,6 +906,25 @@ static void psoc_reset(void *ctx)
 	psoc_log(m, "backplane reset: the unit restarts");
 	host_out();
 	restart_plain(m);
+}
+
+/*
+ * S-10c.133: a PSoC that has not greeted may not take the request, so the
+ * unit is not taken down for it: the request alone, then the loop runs on
+ * as on any menu (the screen, USB, the PSoC's messages, a power-off) until
+ * the PSoC acts or the wait runs out. Nothing is written or shut down.
+ * SPEC-Q: the time the PSoC takes to act on the request is not stated;
+ * HL_PSOC_RESET_WAIT_MS is above the about 7 s in which a reset by it
+ * comes back (S-04.029's known behavior).
+ */
+static void psoc_reset_alone(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	psoc_log(m, "backplane reset: the request alone, the PSoC had not greeted");
+	s15_menu_warn_resetting(&m->sv.menu, HL_PSOC_RESET_WAIT_MS / 1000u);
+	opxy_menu_show(m);
+	s07_reset_request(&m->psoc);
 }
 
 static void psoc_event(void *ctx, const uint8_t *payload, size_t n)
@@ -987,6 +1000,7 @@ void opxy_hostlink_start(struct opxy_master *m)
 	o->psoc_write = psoc_write;
 	o->psoc_lost = psoc_lost;
 	o->psoc_reset = psoc_reset;
+	o->psoc_reset_alone = psoc_reset_alone;
 	o->psoc_event = psoc_event;
 	hl_init(&m->sv.hl, o);
 	/* the test OS serves no host link, so it keeps S-06.050's forwards */

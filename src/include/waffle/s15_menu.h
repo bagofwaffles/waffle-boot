@@ -492,6 +492,9 @@ enum s15_approve s15_menu_approve_result(struct s15_menu *m);
 bool s15_menu_warn_open(struct s15_menu *m, enum s15_warn what, unsigned seconds);
 bool s15_menu_warn_canceled(struct s15_menu *m);
 void s15_menu_warn_bridge(struct s15_menu *m);
+/* A reset's countdown over and its request sent alone: the screen that it
+ * waits up to seconds for the PSoC, where no key acts. */
+void s15_menu_warn_resetting(struct s15_menu *m, unsigned seconds);
 void s15_menu_warn_close(struct s15_menu *m);
 /* A host's OS write with the developer menu's code (S-15.094), from the
  * file at path, which the board's os_write reads; false when the menu is

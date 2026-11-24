@@ -229,14 +229,71 @@ static void psoc_end(struct hostlink *h)
 	psoc_event(h);
 }
 
+/* Whole seconds left of a span of total ms of which el have passed. */
+static uint8_t seconds_left(uint32_t total, uint32_t el)
+{
+	return (uint8_t)((total - el + 999u) / 1000u);
+}
+
+/*
+ * S-10c.133: the reset request sent alone, the unit running on. Whatever
+ * else happens meanwhile, the wait ends at its bound; a unit still running
+ * then was not reset, and says so.
+ */
+static void psoc_reset_wait(struct hostlink *h)
+{
+	const struct hl_ops *o = h->ops;
+	const uint32_t el = o->now_ms(o->ctx) - h->psoc.start_ms;
+
+	if (el < HL_PSOC_RESET_WAIT_MS) {
+		const uint8_t s = seconds_left(HL_PSOC_RESET_WAIT_MS, el);
+
+		if (s != h->psoc.seconds) {
+			h->psoc.seconds = s;
+			psoc_event(h);
+		}
+		return;
+	}
+	h->psoc.seconds = 0;
+	h->psoc.flags |= HL_PF_NOT_RESET;
+	h->psoc.state = HL_PS_ENDED;
+	(void)o->psoc_leave(o->ctx, false);
+	psoc_event(h);
+}
+
+/* S-10c.133: a PSoC that has greeted takes the plain restart's request; one
+ * that has not gets the request alone, the unit not torn down for it. */
+static void psoc_reset_now(struct hostlink *h)
+{
+	const struct hl_ops *o = h->ops;
+
+	h->psoc.state = HL_PS_RESETTING;
+	if (o->psoc_greeted(o->ctx)) {
+		psoc_event(h);
+		o->psoc_reset(o->ctx);
+		return;
+	}
+	h->psoc.flags |= HL_PF_RESET_ALONE;
+	h->psoc.start_ms = o->now_ms(o->ctx);
+	h->psoc.seconds = seconds_left(HL_PSOC_RESET_WAIT_MS, 0);
+	o->psoc_reset_alone(o->ctx);
+	psoc_event(h);
+}
+
 /* S-10c.131: the countdown has run out, or runs on. */
 static void psoc_step(struct hostlink *h)
 {
 	const struct hl_ops *o = h->ops;
 	uint32_t el;
 
-	if (!psoc_built(h) || (h->psoc.state != HL_PS_COUNTING &&
-			       h->psoc.state != HL_PS_OPEN))
+	if (!psoc_built(h))
+		return;
+	if (h->psoc.state == HL_PS_RESETTING &&
+	    (h->psoc.flags & HL_PF_RESET_ALONE) != 0u) {
+		psoc_reset_wait(h);
+		return;
+	}
+	if (h->psoc.state != HL_PS_COUNTING && h->psoc.state != HL_PS_OPEN)
 		return;
 	if (!o->link_on(o->ctx) || o->psoc_gone(o->ctx)) {
 		psoc_end(h);
@@ -254,7 +311,8 @@ static void psoc_step(struct hostlink *h)
 	}
 	el = o->now_ms(o->ctx) - h->psoc.start_ms;
 	if (el < HL_PSOC_COUNT_MS) {
-		const uint8_t s = (uint8_t)((HL_PSOC_COUNT_MS - el + 999u) / 1000u);
+		const uint8_t s = seconds_left(HL_PSOC_COUNT_MS, el);
+
 		if (s != h->psoc.seconds) {
 			h->psoc.seconds = s;
 			(void)o->psoc_warn(o->ctx, h->psoc.what, s);
@@ -264,9 +322,7 @@ static void psoc_step(struct hostlink *h)
 	}
 	h->psoc.seconds = 0;
 	if (h->psoc.what == HL_PW_RESET) {
-		h->psoc.state = HL_PS_RESETTING;
-		psoc_event(h);
-		o->psoc_reset(o->ctx);
+		psoc_reset_now(h);
 		return;
 	}
 	o->psoc_enter(o->ctx, h->psoc.what == HL_PW_BRIDGE_ENTRY);
@@ -290,7 +346,7 @@ static int psoc_ask(struct hostlink *h, uint8_t what)
 	h->psoc.state = HL_PS_COUNTING;
 	h->psoc.what = what;
 	h->psoc.flags = greeted ? HL_PF_GREETED_AT : 0u;
-	h->psoc.seconds = (uint8_t)(HL_PSOC_COUNT_MS / 1000u);
+	h->psoc.seconds = seconds_left(HL_PSOC_COUNT_MS, 0);
 	h->psoc.start_ms = o->now_ms(o->ctx);
 	h->psoc.dropped = 0;
 	h->psoc.head = h->psoc.count = 0;

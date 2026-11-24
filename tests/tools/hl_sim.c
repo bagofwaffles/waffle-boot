@@ -391,7 +391,7 @@ static int o_set(void *c, uint8_t setting, uint8_t value)
 
 static struct {
 	uint32_t ms;
-	int warn_rc, greeted, canceled, entered, left, resets;
+	int warn_rc, greeted, canceled, entered, left, resets, alone;
 	uint8_t buf[PS_BUF];
 	size_t r, w;
 	uint8_t ev[PS_EVENTS][3u + HL_PSOC_REC];
@@ -478,6 +478,13 @@ static void p_reset(void *c)
 	PS.resets++;
 }
 
+/* The request alone: this PSoC never acts on it. */
+static void p_reset_alone(void *c)
+{
+	(void)c;
+	PS.alone++;
+}
+
 static void p_event(void *c, const uint8_t *p, size_t n)
 {
 	(void)c;
@@ -493,7 +500,8 @@ static const struct hl_ops ops = {
 	.now_ms = p_now, .psoc_warn = p_warn, .psoc_greeted = p_greeted,
 	.psoc_canceled = p_canceled, .psoc_gone = p_gone, .psoc_enter = p_enter,
 	.psoc_leave = p_leave, .psoc_read = p_read, .psoc_write = p_write,
-	.psoc_lost = p_lost, .psoc_reset = p_reset, .psoc_event = p_event,
+	.psoc_lost = p_lost, .psoc_reset = p_reset, .psoc_reset_alone = p_reset_alone,
+	.psoc_event = p_event,
 };
 
 /* ---- what the tests call ---- */
@@ -683,7 +691,7 @@ void sim_psoc_cancel(void)
 }
 
 /* 0: the record's state; 1: entered (1 raw, 2 with the entry message);
- * 2: leaves; 3: resets. */
+ * 2: leaves; 3: resets; 4: requests sent alone. */
 int sim_psoc_state(int what)
 {
 	switch (what) {
@@ -693,6 +701,8 @@ int sim_psoc_state(int what)
 		return PS.entered;
 	case 2:
 		return PS.left;
+	case 4:
+		return PS.alone;
 	default:
 		return PS.resets;
 	}

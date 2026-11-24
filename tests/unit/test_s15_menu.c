@@ -4252,6 +4252,19 @@ static void test_psoc_warn(void)
 	expect_title("psoc_warn_reset");
 	s15_menu_warn_close(&M);
 	CHECK(M.screen == S15_SCR_MAIN, "closed: the main screen");
+	/* the reset's request sent alone: its wait's screen, no key, then back */
+	s15_menu_warn_resetting(&M, 10u);
+	CHECK(M.screen == S15_SCR_MAIN, "no wait's screen but over the warning");
+	CHECK(s15_menu_warn_open(&M, S15_WARN_RESET, 1u), "the reset's warning again");
+	s15_menu_warn_resetting(&M, 10u);
+	CHECK(M.screen == S15_SCR_BRIDGE, "the reset's wait");
+	expect_screen("psoc_resetting");
+	expect_title("psoc_resetting");
+	press(0x15);
+	press(0x06);
+	CHECK(M.screen == S15_SCR_BRIDGE && !s15_menu_warn_canceled(&M), "no key acts on it");
+	s15_menu_warn_close(&M);
+	CHECK(M.screen == S15_SCR_MAIN, "the wait over: the main screen");
 	/* not over a hold, the upgrade screen or the approval */
 	press(0x12);
 	ev(0x14, true);

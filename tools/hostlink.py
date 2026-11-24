@@ -39,7 +39,9 @@ menu's serial port, and a command line over it.
                           exit packet: send the bootloader's own first if the application is to start
     psoc-state            the bridge's state, its countdown and the bytes lost
     psoc-reset            reset the PSoC after the countdown, with the plain restart's reset request:
-                          the whole unit is switched off and on, and the session ends
+                          the whole unit is switched off and on, and the session ends. A PSoC that has
+                          not greeted gets the request alone while the unit runs on; if the unit is
+                          still running 10 s later the PSoC did not act on it, and the tool says so
 
   PsocBridge in this file is the same as a Python interface: open(), send(), recv(), exchange(), close().
 
@@ -68,6 +70,7 @@ PSOC_EVENT = 0x7E
 PSOC_REC = 10
 PSOC_TX_MAX = 247
 PSOC_COUNT_S = 15
+PSOC_RESET_WAIT_S = 10
 PSOC_STATES = ['none', 'counting down', 'open', 'canceled', 'ended', 'resetting']
 PSOC_WHAT = ['none', 'bridge, entry message first', 'bridge', 'reset']
 A_INSTALL, A_OS_WRITE, A_OS_ONCE, A_RESTART, A_CONTINUE_OS, A_RESTART_MODE = range(1, 7)
@@ -133,7 +136,8 @@ def psoc_record(b):
     st, what, secs, flags, over, held = struct.unpack_from('<BBBBIH', b)
     return {'state': PSOC_STATES[st] if st < len(PSOC_STATES) else st,
             'what': PSOC_WHAT[what] if what < len(PSOC_WHAT) else what, 'seconds': secs,
-            'greeted': bool(flags & 1), 'greeted_when_asked': bool(flags & 2), 'overruns': over,
+            'greeted': bool(flags & 1), 'greeted_when_asked': bool(flags & 2),
+            'reset_alone': bool(flags & 4), 'not_reset': bool(flags & 8), 'overruns': over,
             'held': held}
 
 
@@ -508,10 +512,12 @@ def command(c, a):
 def show_psoc(rec):
     print('%s%s%s, overruns %d, held %d%s' % (
         rec['state'], '' if rec['what'] == 'none' else ' (%s)' % rec['what'],
-        ', %d s left' % rec['seconds'] if rec['state'] == 'counting down' else '',
+        ', %d s left' % rec['seconds'] if rec['state'] in ('counting down', 'resetting') and
+        rec['seconds'] else '',
         rec['overruns'], rec['held'],
+        ', the PSoC did not act on the reset' if rec['not_reset'] else
         ', the PSoC greeted' if rec['state'] == 'ended' and rec['greeted'] else
-        ', no greeting' if rec['state'] == 'ended' else ''))
+        ', no greeting' if rec['state'] == 'ended' and rec['what'] != 'reset' else ''))
 
 
 def psoc_countdown(c, wait, states):
@@ -553,10 +559,16 @@ def psoc_command(c, cmd, a):
         c.psoc_reset()
         try:
             rec = psoc_countdown(c, PSOC_COUNT_S + 15.0, ('resetting', 'canceled', 'none'))
+            if rec['state'] == 'resetting' and rec['reset_alone']:
+                print('the PSoC had not greeted: the reset request went alone, and the unit runs on; '
+                      'waiting up to %d s for the PSoC to act on it' % PSOC_RESET_WAIT_S)
+                rec = c.psoc_wait(('ended', 'none'), PSOC_RESET_WAIT_S + 10.0)
         except SystemExit:
             print('the unit has gone: resetting')
             return 0
         show_psoc(rec)
+        if rec['not_reset']:
+            print('the unit is running and usable: psoc-open reaches a PSoC in its bootloader')
         return 0 if rec['state'] == 'resetting' else 1
     print(__doc__)
     return 2

@@ -167,7 +167,8 @@ typedef bool (*hl_each_fn)(void *arg, const char *name, const struct hl_stat *st
  *
  *   state:1 what:1 seconds:1 flags:1 overruns:4 held:2
  *
- * seconds: whole seconds left of the countdown, else 0; overruns: the
+ * seconds: whole seconds left of the countdown, or of a reset's wait, else
+ * 0; overruns: the
  * PSoC's bytes lost since the bridge opened; held: those still waiting
  * after this reply. The unit sends HL_PSOC_EVENT frames on its own, status
  * 0 and the record, at each change of state and of seconds.
@@ -178,11 +179,16 @@ enum hl_psoc_what { HL_PW_NONE = 0, HL_PW_BRIDGE_ENTRY = 1, HL_PW_BRIDGE = 2,
 		    HL_PW_RESET = 3 };
 #define HL_PF_GREETED      0x01u	/* the bridge ended: the PSoC greeted */
 #define HL_PF_GREETED_AT   0x02u	/* the PSoC had greeted when it was asked */
+#define HL_PF_RESET_ALONE  0x04u	/* the reset request went alone: the unit waits */
+#define HL_PF_NOT_RESET    0x08u	/* the PSoC did not act on the reset request */
 #define HL_PSOC_REC        10u
 #define HL_PSOC_TX_MAX     (HL_PAYLOAD - 2u)
 #define HL_PSOC_RX_MAX     (HL_PAYLOAD - 3u - HL_PSOC_REC)
 #define HL_PSOC_RING       2048u	/* the PSoC's bytes the unit holds */
 #define HL_PSOC_COUNT_MS   15000u	/* the warning's countdown */
+/* How long the unit runs on after the reset request alone before it holds
+ * the reset not done: above the about 7 s a reset takes to come back. */
+#define HL_PSOC_RESET_WAIT_MS 10000u
 
 /* The board's side. Every int is an enum hl_status. */
 struct hl_ops {
@@ -226,8 +232,11 @@ struct hl_ops {
 	 * framed again when it was raw, then the greeting (true when the PSoC
 	 * greeted), and the covered screen back. psoc_read, psoc_write: the raw
 	 * bytes, a write whole or not at all. psoc_lost: the PSoC's bytes the
-	 * board lost below this layer, a running count. psoc_reset: the reset;
-	 * on a unit it does not return. psoc_event: an HL_PSOC_EVENT payload
+	 * board lost below this layer, a running count. psoc_reset: the reset of
+	 * a PSoC that has greeted, the plain restart's; on a unit it does not
+	 * return. psoc_reset_alone: the reset request alone, for a PSoC that has
+	 * not, the unit running on, and the screen saying so; psoc_leave(false)
+	 * takes the screen down when the wait runs out. psoc_event: an HL_PSOC_EVENT payload
 	 * for the host that asked.
 	 */
 	uint32_t (*now_ms)(void *ctx);
@@ -241,6 +250,7 @@ struct hl_ops {
 	bool (*psoc_write)(void *ctx, const uint8_t *b, size_t n);
 	uint32_t (*psoc_lost)(void *ctx);
 	void (*psoc_reset)(void *ctx);
+	void (*psoc_reset_alone)(void *ctx);
 	void (*psoc_event)(void *ctx, const uint8_t *payload, size_t n);
 };
 

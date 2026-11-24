@@ -265,11 +265,18 @@ and says in the record whether it greeted; PSOC_CLOSE's reply carries the PSoC's
 sends no exit packet of its own**: to start the PSoC's application, send the bootloader's exit packet
 through the bridge before PSOC_CLOSE. A PSoC that greets later is answered as at any time.
 
-**The reset.** PSOC_RESET's countdown ends in the plain restart, the restart action's, whose first step is
-the PSoC reset request (`97 DE AD BE EF`). The restart goes through the PSoC's power, **the master's
-included**: the whole unit restarts and the session ends. The record says `resetting` just before. A PSoC that has not greeted in this start
-may not take that request, and the unit would then wait with its screen dark, so the reset is refused then
-(status 15): use the bridge.
+**The reset.** For a PSoC that has greeted in this start, PSOC_RESET's countdown ends in the plain
+restart, the restart action's, whose first step is the PSoC reset request (`97 DE AD BE EF`). The restart
+goes through the PSoC's power, **the master's included**: the whole unit restarts and the session ends.
+The record says `resetting` just before.
+
+A PSoC that has not greeted may not take that request, and the plain restart would then leave the unit
+waiting with its screen dark. So it gets the request **alone**: the unit shuts nothing down and writes
+nothing, says on its screen that it is resetting the backplane, and runs on (screen, USB, the switch) for
+up to 10 s, the record saying `resetting` with flag 4 and the seconds left. If the unit is still running
+then, the PSoC did not act on the request: the record says `ended` with flag 8, the menu comes back, the log
+says so, and the unit is usable as before (the bridge can reach a PSoC in its bootloader). Until then the
+other calls answer busy, and nothing the computer sends ends the wait.
 
 **While either is under way** the host link serves only SESSION, END, INFO, JOB and the PSoC calls; the
 rest answer status 10 (busy), a never one still 3. The older paths are refused, no frame from a computer is
@@ -277,8 +284,10 @@ forwarded to the PSoC, and of the developer requests only `ping`, `rd`, `dev-scr
 
 **The PSoC record**: `state:1 what:1 seconds:1 flags:1 overruns:4 held:2`. States: 0 none, 1 counting
 down, 2 open, 3 canceled, 4 ended, 5 resetting. What: 1 the bridge with the entry message, 2 the bridge
-without it, 3 the reset. Seconds: left of the countdown. Flags: 1 the PSoC greeted when the bridge ended, 2
-it had greeted when the computer asked. Overruns: the PSoC's bytes lost since the bridge opened. Held: its
+without it, 3 the reset. Seconds: left of the countdown, or of the
+reset's wait. Flags: 1 the PSoC greeted when the bridge ended, 2
+it had greeted when the computer asked, 4 the reset's request went alone and the unit waits, 8 the PSoC did
+not act on that request. Overruns: the PSoC's bytes lost since the bridge opened. Held: its
 bytes the unit holds after this reply. The unit sends PSOC_EVENT with the record at each change of state and
 of the seconds, on the link the request came on.
 

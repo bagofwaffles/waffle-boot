@@ -267,7 +267,7 @@ static const struct hl_ops ops = {
 static struct {
 	uint32_t ms;
 	int warn_rc;
-	unsigned warns, enters, leaves, resets, events;
+	unsigned warns, enters, leaves, resets, alone, events;
 	uint8_t what, seconds;
 	bool greeted, canceled, gone, entry, left_raw, greets_back, write_ok;
 	/* the PSoC's bytes for the unit, and the unit's for the PSoC */
@@ -362,6 +362,12 @@ static void p_reset(void *ctx)
 	P.resets++;
 }
 
+static void p_reset_alone(void *ctx)
+{
+	(void)ctx;
+	P.alone++;
+}
+
 static void p_event(void *ctx, const uint8_t *payload, size_t n)
 {
 	(void)ctx;
@@ -378,7 +384,8 @@ static const struct hl_ops pops = {
 	.now_ms = p_now, .psoc_warn = p_warn, .psoc_greeted = p_greeted,
 	.psoc_canceled = p_canceled, .psoc_gone = p_gone, .psoc_enter = p_enter,
 	.psoc_leave = p_leave, .psoc_read = p_read, .psoc_write = p_write,
-	.psoc_lost = p_lost, .psoc_reset = p_reset, .psoc_event = p_event,
+	.psoc_lost = p_lost, .psoc_reset = p_reset, .psoc_reset_alone = p_reset_alone,
+	.psoc_event = p_event,
 };
 
 static struct hostlink H;
@@ -1205,8 +1212,9 @@ static void test_psoc_reset(void)
 	tick(HL_PSOC_COUNT_MS - 1u);
 	CHECK(P.resets == 0u && P.seconds == 1u);
 	tick(1);
-	CHECK(P.resets == 1u && P.enters == 0u && H.psoc.state == HL_PS_RESETTING &&
-	      P.event[3] == HL_PS_RESETTING && P.event[4] == HL_PW_RESET);
+	CHECK(P.resets == 1u && P.alone == 0u && P.enters == 0u &&
+	      H.psoc.state == HL_PS_RESETTING && P.event[3] == HL_PS_RESETTING &&
+	      P.event[4] == HL_PW_RESET && (P.event[6] & HL_PF_RESET_ALONE) == 0u);
 	CHECK(hl_psoc_busy(&H));
 	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_E_BUSY);
 	CHECK(req_str(HL_STAT, "/yaffs2") == HL_E_BUSY);
@@ -1221,6 +1229,47 @@ static void test_psoc_reset(void)
 	tick(1);
 	tick(HL_PSOC_COUNT_MS);
 	CHECK(P.resets == 0u && H.psoc.state == HL_PS_CANCELED);
+
+	/* a PSoC that has not greeted: asked all the same, the request alone,
+	 * the unit running on for the wait, then said not done */
+	pfresh();
+	P.greeted = false;
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK && out[3] == HL_PS_COUNTING &&
+	      (out[6] & HL_PF_GREETED_AT) == 0u);
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.alone == 1u && P.resets == 0u && H.psoc.state == HL_PS_RESETTING &&
+	      P.event[3] == HL_PS_RESETTING && (P.event[6] & HL_PF_RESET_ALONE) != 0u &&
+	      P.event[5] == HL_PSOC_RESET_WAIT_MS / 1000u && P.leaves == 0u);
+	/* meanwhile: the state served, the rest of the link busy, nothing ends it */
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK && out[3] == HL_PS_RESETTING);
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_E_BUSY);
+	CHECK(req(HL_PSOC_CLOSE, NULL, 0) == HL_OK && out[3] == HL_PS_RESETTING &&
+	      P.leaves == 0u);
+	CHECK(req(HL_END, NULL, 0) == HL_OK && H.psoc.state == HL_PS_RESETTING);
+	P.gone = true;
+	V.on = false;
+	tick(1000);
+	CHECK(H.psoc.state == HL_PS_RESETTING && P.event[5] == 9u && P.leaves == 0u);
+	P.gone = false;
+	V.on = true;
+	tick(HL_PSOC_RESET_WAIT_MS - 1001u);
+	CHECK(H.psoc.state == HL_PS_RESETTING && P.event[5] == 1u);
+	tick(1);
+	CHECK(H.psoc.state == HL_PS_ENDED && !hl_psoc_busy(&H) && P.leaves == 1u &&
+	      !P.left_raw && P.alone == 1u && P.resets == 0u &&
+	      P.event[3] == HL_PS_ENDED && (P.event[6] & HL_PF_NOT_RESET) != 0u &&
+	      P.event[5] == 0u);
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK && (out[6] & HL_PF_NOT_RESET) != 0u);
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_OK);
+	/* the bridge may follow; its record starts clean */
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 0 }, 1) == HL_OK && out[6] == 0u);
+	/* a PSoC that greets during the countdown takes the plain restart */
+	pfresh();
+	P.greeted = false;
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK);
+	P.greeted = true;
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.resets == 1u && P.alone == 0u);
 }
 
 int main(void)

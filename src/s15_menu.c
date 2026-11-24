@@ -1732,6 +1732,23 @@ void s15_menu_warn_bridge(struct s15_menu *m)
 	sline(m, S15_ST_DIM, "To end it here, switch the unit off.");
 }
 
+void s15_menu_warn_resetting(struct s15_menu *m, unsigned seconds)
+{
+	struct s15_buf b;
+
+	if (m->screen != S15_SCR_WARN)
+		return;
+	enter(m, S15_SCR_BRIDGE, warn_title(m));
+	blank(m);
+	sline(m, S15_ST_HEAD, "Resetting the backplane.");
+	line(m, "The whole unit switches off and starts again.");
+	s15_buf_init(&b);
+	s15_buf_str(&b, "If it has not in ");
+	s15_buf_dec(&b, seconds);
+	s15_buf_str(&b, " s, the menu comes back.");
+	sline(m, S15_ST_DIM, b.s);
+}
+
 void s15_menu_warn_close(struct s15_menu *m)
 {
 	if (m->screen == S15_SCR_WARN || m->screen == S15_SCR_BRIDGE)

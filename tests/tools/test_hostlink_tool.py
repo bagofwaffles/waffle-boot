@@ -243,6 +243,25 @@ class Tool(unittest.TestCase):
         self.assertEqual(c.psoc_wait(('resetting',), 5.0, 0)['state'], 'resetting')
         self.assertEqual(LIB.sim_psoc_state(3), 1)
         self.assertEqual(LIB.sim_psoc_state(1), 0)
+        # a PSoC that has not greeted: the request alone, the unit running on, then said not done
+        c = self.client()
+        LIB.sim_psoc(0, 0)
+        self.assertFalse(c.psoc_reset()['greeted_when_asked'])
+        rec = c.psoc_wait(('resetting',), 5.0, 0)
+        self.assertTrue(rec['reset_alone'])
+        self.assertEqual((LIB.sim_psoc_state(4), LIB.sim_psoc_state(3)), (1, 0))
+        rec = c.psoc_wait(('ended',), 5.0, 0)
+        self.assertTrue(rec['not_reset'])
+        self.assertEqual([x['name'] for x in c.ls('/yaffs2')], ['lost+found'])
+        c = self.client()
+        LIB.sim_psoc(0, 0)
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(hl.command(c, ['psoc-reset']), 1)
+        self.assertIn('did not act on the reset', buf.getvalue())
+        self.assertIn('went alone', buf.getvalue())
         # refused on the unit: nothing counts down
         c = self.client()
         LIB.sim_psoc(15, 0)
