@@ -9,8 +9,8 @@ firmware. License: GPL-2.0-or-later.
 > **Status:** tested on real hardware, but not widely: use it with caution. A broken bootloader can leave a
 > unit that only an external flash programmer brings back.
 
-**Install:** [Waffle Iron](https://bagofwaffles.github.io/waffle-iron/) puts waffle-boot on a unit, from
-Chrome or Edge on a computer over USB.
+**Install: [Waffle Iron](https://bagofwaffles.github.io/waffle-iron/) puts waffle-boot on a unit, from
+Chrome or Edge on a computer over USB.**
 
 <img src="../docs/ui/main.png" width="480" alt="The boot menu's main screen">
 
