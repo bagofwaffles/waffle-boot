@@ -45,6 +45,7 @@ class Tool(unittest.TestCase):
         self.assertEqual(h['info']['device'], 'OP-XY')
         self.assertEqual(h['info']['running_slot'], 2)
         self.assertIn(hl.RUN, h['calls'])
+        self.assertTrue(set(range(hl.PSOC_OPEN, hl.PSOC_RESET + 1)) <= set(h['calls']))
         self.assertEqual(sorted(h['actions']), [1, 2, 3, 4, 5, 6])
         self.assertEqual([(r['name'], r['flags']) for r in h['roots']],
                          [('yaffs2', ['read', 'write', 'open list']), ('os', ['read']), ('user', ['read', 'write'])])
@@ -195,6 +196,77 @@ class Tool(unittest.TestCase):
         with self.assertRaises(hl.HostLinkError) as e:
             c.run(hl.A_INSTALL, 0xFF, '/os/boot1')
         self.assertEqual(e.exception.status, 6)
+
+    def test_psoc_bridge(self):
+        c = self.client()
+        seen = []
+        c.on_psoc = seen.append
+        b = hl.PsocBridge(c, every=0, poll=0)
+        self.assertEqual(c.session(), 'none')       # no approval asked, none needed
+        rec = b.open(entry=True, wait=5.0)
+        self.assertEqual((rec['state'], rec['what']), ('open', 'bridge, entry message first'))
+        self.assertIn('counting down', [r['state'] for r in seen])
+        self.assertEqual(LIB.sim_psoc_state(1), 2)
+        packet = bytes([0x01, 0x38, 0x06, 0x00, 0xA5, 0xB2, 0x98, 0x32, 0xBB, 0x3E, 0x00, 0x00, 0x17])
+        self.assertEqual(b.exchange(packet, 1.0, n=len(packet)), packet)   # the sim's PSoC sends it back
+        data = bytes((i * 11) & 0xFF for i in range(1000))
+        b.send(data)
+        self.assertEqual(b.recv(1.0, n=1000), data)
+        self.assertEqual(b.overruns, 0)
+        with self.assertRaises(hl.HostLinkError) as e:      # the rest of the link waits
+            c.ls('/yaffs2')
+        self.assertEqual(e.exception.status, 10)
+        self.assertTrue(b.close())
+        self.assertEqual(c.psoc_state()['state'], 'ended')
+        self.assertEqual(LIB.sim_psoc_state(2), 1)
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.psoc_data(b'x')
+        self.assertEqual(e.exception.status, 17)
+        self.assertIn('not open', str(e.exception))
+        self.assertEqual([x['name'] for x in c.ls('/yaffs2')], ['lost+found'])
+
+    def test_psoc_canceled(self):
+        c = self.client()
+        rec = c.psoc_open(False)
+        self.assertEqual((rec['state'], rec['seconds'], rec['greeted_when_asked']),
+                         ('counting down', 15, True))
+        LIB.sim_psoc_cancel()
+        self.assertEqual(c.psoc_wait(('open', 'canceled'), 5.0, 0)['state'], 'canceled')
+        self.assertEqual(LIB.sim_psoc_state(1), 0)
+        LIB.sim_psoc_cancel()
+        with self.assertRaises(hl.PsocError):
+            hl.PsocBridge(c, every=0).open(False, 5.0)
+
+    def test_psoc_reset(self):
+        c = self.client()
+        self.assertEqual(c.psoc_reset()['what'], 'reset')
+        self.assertEqual(c.psoc_wait(('resetting',), 5.0, 0)['state'], 'resetting')
+        self.assertEqual(LIB.sim_psoc_state(3), 1)
+        self.assertEqual(LIB.sim_psoc_state(1), 0)
+        # refused on the unit: nothing counts down
+        c = self.client()
+        LIB.sim_psoc(15, 0)
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.psoc_reset()
+        self.assertEqual(e.exception.status, 15)
+        self.assertEqual(c.psoc_state()['state'], 'none')
+
+    def test_psoc_commands(self):
+        import contextlib
+        import io
+        c = self.client()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(hl.command(c, ['psoc-open', '--no-entry', '5']), 0)
+            self.assertEqual(hl.command(c, ['psoc-raw-tx', '01 3b 00 00 c4 ff 17', '0.2']), 0)
+            self.assertEqual(hl.command(c, ['psoc-state']), 0)
+            self.assertEqual(hl.command(c, ['psoc-close']), 0)
+        out = buf.getvalue()
+        self.assertIn('counts down 15 s', out)
+        self.assertIn('01 3b 00 00 c4 ff 17', out)
+        self.assertIn('ended', out)
+        self.assertIn('the PSoC greeted', out)
+        self.assertEqual(LIB.sim_psoc_state(1), 1)
 
     def test_host_link_off(self):
         c = self.client()

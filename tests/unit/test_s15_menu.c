@@ -1512,6 +1512,8 @@ static void test_rules(void)
 					case S15_SCR_STARTING:
 					case S15_SCR_NONE:
 					case S15_SCR_APPROVE:
+					case S15_SCR_WARN:      /* a host's, not in this walk */
+					case S15_SCR_BRIDGE:
 					default:
 						break;
 					}
@@ -4193,6 +4195,79 @@ static void test_op1f(void)
 }
 
 /*
+ * S-15.200: a host's PSoC request's warning: over the menus the approval
+ * opens over, the seconds as given, the unit's own 8 cancels (read once),
+ * no other key and no host's key acts; the bridge's screen takes no key;
+ * either goes back to the screen it covered.
+ */
+static void test_psoc_warn(void)
+{
+	reset_fake(); default_boot(); start();
+	press(0x07);
+	CHECK(s15_menu_warn_open(&M, S15_WARN_BRIDGE, 15u) && M.screen == S15_SCR_WARN,
+	      "warning open");
+	expect_screen("psoc_warn_bridge");
+	expect_title("psoc_warn_bridge");
+	{
+		const uint32_t c = s15_menu_changes(&M);
+
+		CHECK(s15_menu_warn_open(&M, S15_WARN_BRIDGE, 9u) && s15_menu_changes(&M) != c,
+		      "the seconds shown");
+		expect_screen("psoc_warn_bridge_9");
+		CHECK(s15_menu_warn_open(&M, S15_WARN_BRIDGE, 9u) && s15_menu_changes(&M) == c + 1u,
+		      "the same seconds: nothing redrawn");
+	}
+	CHECK(!s15_menu_warn_open(&M, S15_WARN_RESET, 15u), "not over another warning");
+	CHECK(!s15_menu_approve_open(&M), "no approval over it");
+	press(0x06);
+	press(0x07);
+	press(0x12);
+	CHECK(M.screen == S15_SCR_WARN && !s15_menu_warn_canceled(&M), "other keys do nothing");
+	s15_menu_host_event(&M, 0x15, true);
+	s15_menu_host_event(&M, 0x15, false);
+	CHECK(M.screen == S15_SCR_WARN && !s15_menu_warn_canceled(&M), "a host's 8 does nothing");
+	CHECK(s15_menu_continue_check(&M) == S15_CONT_BUSY, "no continue to the OS meanwhile");
+	press(0x15);
+	CHECK(M.screen == S15_SCR_SETTINGS && s15_menu_warn_canceled(&M), "8 cancels");
+	CHECK(!s15_menu_warn_canceled(&M), "a cancel is read once");
+	expect_screen("settings");
+	/* the countdown over: the bridge's screen, where no key acts */
+	CHECK(s15_menu_warn_open(&M, S15_WARN_BRIDGE, 1u), "asked again");
+	s15_menu_warn_bridge(&M);
+	CHECK(M.screen == S15_SCR_BRIDGE, "the bridge's screen");
+	expect_screen("psoc_bridge");
+	expect_title("psoc_bridge");
+	press(0x15);
+	press(0x07);
+	CHECK(M.screen == S15_SCR_BRIDGE && !s15_menu_warn_canceled(&M), "no key acts");
+	CHECK(!s15_menu_warn_open(&M, S15_WARN_RESET, 15u), "nothing over it");
+	CHECK(s15_menu_continue_check(&M) == S15_CONT_BUSY, "no continue to the OS on it");
+	s15_menu_warn_close(&M);
+	CHECK(M.screen == S15_SCR_SETTINGS, "closed: back to Settings");
+	expect_screen("settings");
+	/* the reset's, over the main screen */
+	press(0x15);
+	CHECK(s15_menu_warn_open(&M, S15_WARN_RESET, 15u), "the reset's warning");
+	expect_screen("psoc_warn_reset");
+	expect_title("psoc_warn_reset");
+	s15_menu_warn_close(&M);
+	CHECK(M.screen == S15_SCR_MAIN, "closed: the main screen");
+	/* not over a hold, the upgrade screen or the approval */
+	press(0x12);
+	ev(0x14, true);
+	CHECK(!s15_menu_warn_open(&M, S15_WARN_BRIDGE, 15u) && M.armed == S15_ARM_RESET,
+	      "not during a hold");
+	ev(0x14, false);
+	press(0x15);
+	press(0x06);
+	CHECK(M.screen == S15_SCR_UPGRADE && !s15_menu_warn_open(&M, S15_WARN_BRIDGE, 15u),
+	      "not over Install");
+	reset_fake(); default_boot(); start();
+	CHECK(s15_menu_approve_open(&M) && !s15_menu_warn_open(&M, S15_WARN_BRIDGE, 15u),
+	      "not over the approval");
+}
+
+/*
  * The Host link setting (digit 7 on Settings, saved as the others), the
  * host link's approval screen (the unit's keys alone: 1 held for 5 s
  * allows, 8 refuses, 60 s with no key times out), and what a host's keys
@@ -4678,6 +4753,7 @@ int main(void)
 	test_gray();
 	test_op1f();
 	test_host_link();
+	test_psoc_warn();
 	test_logo();
 	return check_done("test_s15_menu");
 }

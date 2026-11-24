@@ -226,6 +226,7 @@ A description of the screens as they are now, free to change within the rules ab
 | Boot Logo | 5 Remove (`Hold to select`, while one is stored), 8 Back to Display; the disk offered, a picture dropped and ejected opens its view: 1 Save (hold to select) saves it, 8 cancels; the result is a view left with 8 alone |
 | Developer | 2 MTP file transfer (one item, its interface the MTP target's; 8 turns MTP off), 3 Start /os.ldr once (does not write), 5 Write /os.ldr to boot partition, 6 Restart; it offers no reset |
 | Host Link | 1 Allow (hold to select), 8 Cancel; 60 s with no key cancels; the unit's own keys alone |
+| Backplane Link, Backplane Reset | A computer's PSoC request: 8 Cancel during its 15 s countdown, the unit's own key alone, no hold (the keys come from the PSoC); then, for the link, a screen with no key while the computer has it |
 | Key Test | Shift + 8 leaves it |
 | Recovery's slot menu (its main screen's 1) | 1 Try slot N once, 2 Make slot N the boot slot, 3 Keep slot N, 4 Put slot N's record back, each only where it applies and each confirmed by key 1 held for 5 s on the screen after it; while 3 is shown, 2 is not; 8 goes back |
 

@@ -42,7 +42,15 @@ enum s15_screen {
 	S15_SCR_LOGO_DONE,  /* a save's or a removal's result: digit 8 alone acts */
 	S15_SCR_NONE,       /* before held mode's first screen */
 	S15_SCR_APPROVE,    /* the host link's approval: the unit's keys alone */
-	S15_SCR_DISPLAY     /* Settings' 3: the color and the boot logo */
+	S15_SCR_DISPLAY,    /* Settings' 3: the color and the boot logo */
+	S15_SCR_WARN,       /* S-15.200: a host's PSoC request counting down */
+	S15_SCR_BRIDGE      /* S-15.200: a host has the PSoC link; no key acts */
+};
+
+/* S-15.200: what a host's PSoC request asks for. */
+enum s15_warn {
+	S15_WARN_BRIDGE,	/* the backplane link, raw */
+	S15_WARN_RESET		/* the backplane's reset */
 };
 
 /* The host link's approval screen, as the board reads it. */
@@ -360,6 +368,12 @@ struct s15_menu {
 	enum s15_screen approve_back;	/* the screen it returns to */
 	uint32_t approve_ms;		/* when it opened */
 
+	/* S-15.200: the PSoC warning and bridge screens */
+	enum s15_warn warn;
+	unsigned warn_s;		/* the countdown's seconds shown */
+	bool warn_canceled;		/* 8 canceled it, not yet read */
+	enum s15_screen warn_back;	/* the screen they cover */
+
 	/* system menu */
 	bool packs_item;
 
@@ -465,6 +479,20 @@ void s15_menu_host_event(struct s15_menu *m, unsigned key, bool down);
 bool s15_menu_approve_open(struct s15_menu *m);
 /* Its answer; once read, an answer gives S15_APPROVE_NONE. */
 enum s15_approve s15_menu_approve_result(struct s15_menu *m);
+/*
+ * S-15.200: a host's PSoC request's warning, with the countdown's seconds,
+ * over the screens the approval opens over and with nothing under way;
+ * false when it cannot open now. Called again while it shows, it shows the
+ * seconds given. Only the unit's own 8 answers it: it cancels, and the
+ * covered screen returns; s15_menu_warn_canceled() reads that once.
+ * s15_menu_warn_bridge(): the countdown over, the screen of a host holding
+ * the link, where no key acts; s15_menu_warn_close(): either screen down,
+ * the covered one back.
+ */
+bool s15_menu_warn_open(struct s15_menu *m, enum s15_warn what, unsigned seconds);
+bool s15_menu_warn_canceled(struct s15_menu *m);
+void s15_menu_warn_bridge(struct s15_menu *m);
+void s15_menu_warn_close(struct s15_menu *m);
 /* A host's OS write with the developer menu's code (S-15.094), from the
  * file at path, which the board's os_write reads; false when the menu is
  * busy. The screen names the file, and 8 goes back to the screen shown

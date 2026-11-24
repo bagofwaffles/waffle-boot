@@ -1651,6 +1651,102 @@ static void approve_key(struct s15_menu *m, unsigned key)
 	}
 }
 
+/* ---- the host link's PSoC requests (S-15.200) ------------------------ */
+
+static const char *warn_title(const struct s15_menu *m)
+{
+	return m->warn == S15_WARN_RESET ? "Backplane Reset" : "Backplane Link";
+}
+
+/* The countdown's row, the warning's sixth. */
+#define WARN_ROW_LEFT 5u
+
+static void warn_left(const struct s15_menu *m, struct s15_buf *b)
+{
+	s15_buf_init(b);
+	s15_buf_str(b, m->warn == S15_WARN_RESET ? "Resets in " : "Starts in ");
+	s15_buf_dec(b, m->warn_s);
+	s15_buf_str(b, " s.");
+}
+
+static void draw_warn(struct s15_menu *m)
+{
+	const bool reset = m->warn == S15_WARN_RESET;
+	struct s15_buf b;
+
+	enter(m, S15_SCR_WARN, warn_title(m));
+	blank(m);
+	sline(m, S15_ST_HEAD, reset ? "A computer asks to reset the backplane." :
+				      "A computer asks for the backplane link.");
+	line(m, reset ? "The whole unit switches off and starts again." :
+			"Keys stop working until the computer ends it.");
+	sline(m, S15_ST_WARN, "Switch the unit off now to stop it.");
+	blank(m);
+	warn_left(m, &b);
+	sline(m, S15_ST_DIM, b.s);
+	sline(m, S15_ST_BACK, "8 Cancel");
+}
+
+bool s15_menu_warn_open(struct s15_menu *m, enum s15_warn what, unsigned seconds)
+{
+	if (m->screen == S15_SCR_WARN && m->warn == what) {
+		struct s15_buf b;
+
+		/* the seconds' row alone, not logged each second */
+		if (m->warn_s != seconds) {
+			m->warn_s = seconds;
+			warn_left(m, &b);
+			s15_console_put(&m->con, WARN_ROW_LEFT, S15_ST_DIM, b.s);
+		}
+		return true;
+	}
+	if (m->screen == S15_SCR_WARN || m->screen == S15_SCR_BRIDGE)
+		return false;
+	if (m->busy || m->hold || m->keytest || m->armed != S15_ARM_NONE ||
+	    m->activity != S15_ACT_IDLE || !approve_from(m))
+		return false;
+	m->warn_back = m->screen;
+	m->warn = what;
+	m->warn_s = seconds;
+	m->warn_canceled = false;
+	draw_warn(m);
+	return true;
+}
+
+bool s15_menu_warn_canceled(struct s15_menu *m)
+{
+	const bool c = m->warn_canceled;
+
+	m->warn_canceled = false;
+	return c;
+}
+
+void s15_menu_warn_bridge(struct s15_menu *m)
+{
+	if (m->screen != S15_SCR_WARN)
+		return;
+	enter(m, S15_SCR_BRIDGE, warn_title(m));
+	blank(m);
+	sline(m, S15_ST_HEAD, "A computer has the backplane link.");
+	line(m, "Keys do not work until the computer ends it.");
+	sline(m, S15_ST_DIM, "To end it here, switch the unit off.");
+}
+
+void s15_menu_warn_close(struct s15_menu *m)
+{
+	if (m->screen == S15_SCR_WARN || m->screen == S15_SCR_BRIDGE)
+		redraw(m, m->warn_back);
+}
+
+/* The unit's own 8 cancels the countdown; no other key acts. */
+static void warn_key(struct s15_menu *m, unsigned key)
+{
+	if (s15_digit(m->dev, key) == 8u) {
+		m->warn_canceled = true;
+		redraw(m, m->warn_back);
+	}
+}
+
 bool s15_menu_os_write(struct s15_menu *m, const char *path, struct s15_osw_end *e)
 {
 	if (m->busy || m->hold || m->activity != S15_ACT_IDLE)
@@ -2120,7 +2216,8 @@ enum s15_continue s15_menu_continue_check(const struct s15_menu *m)
 {
 	if (m->busy || m->hold || m->activity != S15_ACT_IDLE ||
 	    m->env->continue_os == NULL ||
-	    m->screen == S15_SCR_STARTING || m->screen == S15_SCR_NONE)
+	    m->screen == S15_SCR_STARTING || m->screen == S15_SCR_NONE ||
+	    m->screen == S15_SCR_WARN || m->screen == S15_SCR_BRIDGE)
 		return S15_CONT_BUSY;
 	return S15_CONT_STARTED;
 }
@@ -2306,6 +2403,9 @@ static void key_down(struct s15_menu *m, unsigned key)
 	case S15_SCR_APPROVE:
 		approve_key(m, key);
 		break;
+	case S15_SCR_WARN:
+		warn_key(m, key);
+		break;
 	case S15_SCR_FORMAT:
 		format_key(m, key);
 		break;
@@ -2330,6 +2430,7 @@ static void key_down(struct s15_menu *m, unsigned key)
 			open_display(m);
 		break;
 	case S15_SCR_STARTING:                      /* S-15.190: no key */
+	case S15_SCR_BRIDGE:                        /* S-15.200: no key */
 	case S15_SCR_NONE:
 	default:
 		break;                              /* S-15.014 */
@@ -2342,8 +2443,9 @@ void s15_menu_key(struct s15_menu *m, unsigned key, bool down)
 
 	if (key >= m->dev->keys.count)        /* S-15.014 */
 		return;
-	/* the approval reads the unit's own keys alone */
-	if (m->host_event && m->screen == S15_SCR_APPROVE)
+	/* the approval and the PSoC warning read the unit's own keys alone */
+	if (m->host_event && (m->screen == S15_SCR_APPROVE || m->screen == S15_SCR_WARN ||
+			      m->screen == S15_SCR_BRIDGE))
 		return;
 	was_down = bit(m->down, key);
 	set_bit(m->down, key, down);
@@ -2437,6 +2539,10 @@ void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
 	m->approve = S15_APPROVE_NONE;
 	m->approve_back = S15_SCR_MAIN;
 	m->approve_ms = 0;
+	m->warn = S15_WARN_BRIDGE;
+	m->warn_s = 0;
+	m->warn_canceled = false;
+	m->warn_back = S15_SCR_MAIN;
 	m->packs_item = false;
 	m->armed = S15_ARM_NONE;
 	m->arm_key = 0;

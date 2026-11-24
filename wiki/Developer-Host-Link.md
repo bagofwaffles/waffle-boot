@@ -1,7 +1,9 @@
 The boot menu's **host link**: a small, versioned protocol that lets a computer or a web page read and write
 the unit's files, install a package and restart the unit, after one hold on the unit approves it. Any site
 or tool may use it; `docs/web/hostlink.js` (Web Serial or Web MIDI) and `tools/hostlink.py` are clients.
-The developer requests (memory, the second processor, hand-overs) are [below](#developer-requests).
+It also carries the PSoC's link as raw bytes and the PSoC's reset, for a computer's own PSoC bootloader
+tool, after a warning instead of the hold ([below](#the-psoc-bridge-and-reset)). The developer requests
+(memory, the second processor, hand-overs) are [below](#developer-requests).
 
 - **Host link** is a setting, on by default: Boot menu → **2 Settings → 7 Host link**. Off, the unit
   answers only HELLO, saying it is off, and refuses every change asked for over USB.
@@ -11,6 +13,10 @@ The developer requests (memory, the second processor, hand-overs) are [below](#d
 - **Safe reads need no approval**; changes and the reads of files' contents need it.
 - **Never from a computer**, approved or not: the factory reset and Protected writes. Protected writes
   applies to what a computer asks for exactly as at the unit.
+- **The PSoC requests need no hold.** The keys come from the PSoC, so a PSoC that does not run could never
+  approve anything. The bridge and the PSoC reset need Host link on and nothing more: the unit always shows
+  a warning and counts down 15 s first, approved or not, and switching it off (or 8 on it, while the keys
+  work) stops them.
 
 ## The approval
 
@@ -30,6 +36,10 @@ Only the unit's own keys answer it: **1 held** allows, **8** refuses, and 60 s w
 a timeout. A knob click starts no hold. The screen it covered comes back after the answer. The computer
 reads the answer with SESSION. Until then every call that needs approval answers status 2, so a page can
 say "hold 1 on the unit".
+
+**The exception: the PSoC requests.** PSOC_OPEN and PSOC_RESET need no hold and no session. The unit warns
+and counts down 15 s instead ([below](#the-psoc-bridge-and-reset)), whether or not the session is approved.
+Every other call keeps the rule above.
 
 ## Framing
 
@@ -76,6 +86,12 @@ HELLO's lists of calls, actions and roots; a call it does not have answers statu
 | MKDIR | `18` | `path` | | needs approval |
 | RENAME | `19` | `from`, `00`, `to` (one root; no name in the way) | | needs approval |
 | RUN | `20` | `action:1`, its arguments | a job record | by its action |
+| PSOC_OPEN | `30` | `entry:1`: 1 the bootloader-entry message first, 0 none | the PSoC record | warned: no approval |
+| PSOC_DATA | `31` | the bytes for the PSoC, up to 247 | the PSoC record, then the PSoC's bytes, up to 236 | warned: no approval |
+| PSOC_CLOSE | `32` | | the PSoC record, then the PSoC's last bytes | warned: no approval |
+| PSOC_STATE | `33` | | the PSoC record | safe |
+| PSOC_RESET | `34` | | the PSoC record | warned: no approval |
+| PSOC_EVENT | `7E` | (the unit's own) | `status 0`, the PSoC record | |
 | EVENT | `7F` | (the unit's own) | `status 0`, a job record | |
 
 Never from a host: the actions `10` (factory reset) and `11` (Protected writes), and SET's setting 2
@@ -120,6 +136,7 @@ the second processor answering, 128 the drive mounted), and the OS version in th
 | 14 | the root takes no write |
 | 15 | the unit's own checks refused it |
 | 16 | the volume is not one this build reads (exFAT, or no FAT volume): "not readable by this build" |
+| 17 | the PSoC bridge is not open |
 
 ## Files
 
@@ -187,13 +204,103 @@ approved session. Without it they are refused with `84` and a text (`host link o
 puts the approval screen up, so a tool that tries again after the hold goes on. An install that comes
 that way still asks for its parts on the unit, after the warning for a package whose signature does
 not match. The same holds for these asked for through the Nordic's
-link; the PSoC's link, the unit's own, is not asked.
+link; the PSoC's link, the unit's own, is not asked. While a PSoC request holds the unit every one of them
+is refused with the text `busy: a computer has the backplane`, approved or not.
 
 The log (S-14) goes to the serial port only after the log-configuration request `B0`, which needs Host
 link on and the approved session like the changes above (without it the request is not taken); the log
 stops when the session ends. Frames a computer sends past the master, to the PSoC, the Nordic or the
 second processor (S-06.050's forwarding), are dropped without the approved session, but for a ping
 (`01`) or an info request (`09`), which only read; what those send back to the computer is not held.
+
+## The PSoC bridge and reset
+
+The PSoC (the backplane: keys, knobs, LEDs, the power switch and the battery) runs its own application and
+has its own serial bootloader. Two requests let a computer reach it through the master, to load a new PSoC
+application or recover one whose application is bad, with the computer's own tool for that bootloader's
+protocol. `tools/hostlink.py` carries the bytes; it holds no uploader.
+
+**The warning.** PSOC_OPEN and PSOC_RESET need Host link on, but no hold and no approved session: the
+keys come from the PSoC. The unit puts a warning over the screen it was on (Main Menu, Settings, Display,
+System, Device Info or the developer menu, with nothing under way; otherwise the request answers status 10)
+and counts down 15 s:
+
+```
+Backplane Link
+  A computer asks for the backplane link.
+  Keys stop working until the computer ends it.
+  ! Switch the unit off now to stop it.
+
+  Starts in 15 s.
+  8 Cancel
+```
+
+The reset's says `Backplane Reset`, `A computer asks to reset the backplane.`, `The whole unit switches off
+and starts again.` and `Resets in 15 s.`. **Switching the unit off stops either one.** The unit's own 8
+cancels it too, while the keys work; a key a computer sends does not. PSOC_CLOSE, END, Host link turned off
+and USB unplugged cancel it as well. Nothing in the countdown waits for a key or the PSoC: a unit whose PSoC
+did not answer at power-on (it opens the boot menu) counts down and opens the bridge all the same.
+
+**The bridge.** Once the countdown is over the master sends the PSoC's bootloader-entry message `0xEE`
+(with `entry` 1; send 0 for a PSoC already in its bootloader) and puts the link in raw mode. From then the
+computer does the whole bootloader protocol: each PSOC_DATA's bytes go to the PSoC as they are, whole or
+not at all (status 10 and nothing written when there is no room), and each reply carries what the PSoC has
+sent since the last one, in order. The unit holds up to 2 KiB between requests; a reply that cannot carry
+all of it says how much is still held. A byte the unit could not hold is counted, never dropped silently.
+Nothing of the master's own goes onto the link while it is raw, and nothing else reaches the PSoC. The
+screen then says:
+
+```
+Backplane Link
+  A computer has the backplane link.
+  Keys do not work until the computer ends it.
+  To end it here, switch the unit off.
+```
+
+No key acts on it. While the link is raw the bootloader reads no PSoC message, so it does not see the
+switch; what the PSoC does when it is switched off then is up to the PSoC.
+
+**The end.** PSOC_CLOSE (also END, Host link off, or USB unplugged) frames the link again, greets the PSoC
+and says in the record whether it greeted; PSOC_CLOSE's reply carries the PSoC's last bytes. **The unit
+sends no exit packet of its own**: to start the PSoC's application, send the bootloader's exit packet
+through the bridge before PSOC_CLOSE. A PSoC that greets later is answered as at any time.
+
+**The reset.** PSOC_RESET's countdown ends in the plain restart, the restart action's, whose first step is
+the PSoC reset request (`97 DE AD BE EF`). The restart goes through the PSoC's power, **the master's
+included**: the whole unit restarts and the session ends. The record says `resetting` just before. A PSoC that has not greeted in this start
+may not take that request, and the unit would then wait with its screen dark, so the reset is refused then
+(status 15): use the bridge.
+
+**While either is under way** the host link serves only SESSION, END, INFO, JOB and the PSoC calls; the
+rest answer status 10 (busy), a never one still 3. The older paths are refused, no frame from a computer is
+forwarded to the PSoC, and of the developer requests only `ping`, `rd`, `dev-screen` and `dev-shot` answer.
+
+**The PSoC record**: `state:1 what:1 seconds:1 flags:1 overruns:4 held:2`. States: 0 none, 1 counting
+down, 2 open, 3 canceled, 4 ended, 5 resetting. What: 1 the bridge with the entry message, 2 the bridge
+without it, 3 the reset. Seconds: left of the countdown. Flags: 1 the PSoC greeted when the bridge ended, 2
+it had greeted when the computer asked. Overruns: the PSoC's bytes lost since the bridge opened. Held: its
+bytes the unit holds after this reply. The unit sends PSOC_EVENT with the record at each change of state and
+of the seconds, on the link the request came on.
+
+From a terminal:
+
+    tools/hostlink.py psoc-open               # the warning and countdown, then the bridge, 0xEE first
+    tools/hostlink.py psoc-open --no-entry    # the same, nothing sent first
+    tools/hostlink.py psoc-raw-tx '01 38 06 00 ...' 0.5   # send, print what comes back in 0.5 s
+    tools/hostlink.py psoc-close              # framed again; whether the PSoC greeted
+    tools/hostlink.py psoc-state
+    tools/hostlink.py psoc-reset              # the whole unit restarts
+
+From Python, for an uploader of your own:
+
+```python
+from hostlink import Client, SerialPort, PsocBridge, find_port
+
+b = PsocBridge(Client(SerialPort(find_port())))
+b.open(entry=True)              # PsocError if the countdown was stopped
+reply = b.exchange(packet, timeout=1.0)
+greeted = b.close()
+```
 
 ## A site installs a package
 

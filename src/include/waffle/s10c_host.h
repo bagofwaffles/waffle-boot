@@ -138,7 +138,8 @@ enum s10c_continue {
 enum s10c_gate {
 	S10C_GATE_OK,
 	S10C_GATE_OFF,		/* the host link is off */
-	S10C_GATE_ASK		/* not approved: the unit asks for it now */
+	S10C_GATE_ASK,		/* not approved: the unit asks for it now */
+	S10C_GATE_BUSY		/* a host's PSoC request holds the unit (S-10c.134) */
 };
 
 struct s10c_ops {

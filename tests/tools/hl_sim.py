@@ -8,7 +8,9 @@ with the unit's side of the framing: tests/tools/test_hostlink.py and tests/web/
     wire = u.feed(bytes)       # the host's bytes in, the unit's frames out
 
 feed() answers each frame of id 0x7C; with `answer` set, an approval the unit asks for is answered so,
-and with `jobs`, a job queued is moved on to its end, each change an HL_EVENT frame after the reply.
+and with `jobs`, a job queued is moved on to its end, each change an HL_EVENT frame after the reply. After
+each request the unit's clock moves on `tick_ms` and its loop runs once (a PSoC countdown, the bridge's
+bytes), each PSoC event an HL_PSOC_EVENT frame; the PSoC sends back the bytes it is sent.
 Python 3, standard library only.
 """
 import ctypes
@@ -54,14 +56,18 @@ def build(d):
     lib.sim_os.argtypes = [ctypes.c_uint, ctypes.c_char_p, ctypes.c_size_t]
     lib.sim_last_run.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.POINTER(ctypes.c_uint8),
                                  ctypes.c_char_p, ctypes.c_size_t]
+    lib.sim_poll.restype = ctypes.c_size_t
+    lib.sim_poll.argtypes = [ctypes.c_uint32, ctypes.c_char_p]
+    lib.sim_psoc.argtypes = [ctypes.c_int, ctypes.c_int]
+    lib.sim_psoc_state.argtypes = [ctypes.c_int]
     return lib
 
 
 class Unit:
     """One unit at a time: the library holds one."""
 
-    def __init__(self, lib, on=True, user=False, answer=2, jobs=True):
-        self.lib, self.answer, self.jobs = lib, answer, jobs
+    def __init__(self, lib, on=True, user=False, answer=2, jobs=True, tick_ms=5000):
+        self.lib, self.answer, self.jobs, self.tick_ms = lib, answer, jobs, tick_ms
         self.rx = bytearray()
         self.seq = 0
         self.requests = []
@@ -97,6 +103,16 @@ class Unit:
                 if n == 0:
                     break
                 out += self._frame(ev.raw[:n])
+            out += self.poll(self.tick_ms)
+        return bytes(out)
+
+    def poll(self, ms):
+        """The unit's loop after ms more: the PSoC events it sent, as frames."""
+        out, ev = bytearray(), ctypes.create_string_buffer(64)
+        n = self.lib.sim_poll(ms, ev)
+        while n:
+            out += self._frame(ev.raw[:n])
+            n = self.lib.sim_poll(0, ev)
         return bytes(out)
 
     def put_file(self, path, data, d=False):

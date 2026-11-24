@@ -210,7 +210,7 @@ static bool approve_open(void *ctx)
 {
 	struct opxy_master *m = ctx;
 
-	if (m->sv.working || s15_menu_held(&m->sv.menu) ||
+	if (m->sv.working || s15_menu_held(&m->sv.menu) || hl_psoc_busy(&m->sv.hl) ||
 	    !s15_menu_approve_open(&m->sv.menu))
 		return false;
 	opxy_menu_show(m);
@@ -558,9 +558,10 @@ static bool unit_busy(const struct opxy_master *m)
 {
 	const struct s15_menu *mn = &m->sv.menu;
 
-	return m->sv.working || s15_menu_held(mn) || mn->busy ||
+	return m->sv.working || s15_menu_held(mn) || mn->busy || hl_psoc_busy(&m->sv.hl) ||
 	       mn->activity != S15_ACT_IDLE || mn->screen == S15_SCR_STARTING ||
-	       mn->screen == S15_SCR_APPROVE || mn->screen == S15_SCR_NONE;
+	       mn->screen == S15_SCR_APPROVE || mn->screen == S15_SCR_NONE ||
+	       mn->screen == S15_SCR_WARN || mn->screen == S15_SCR_BRIDGE;
 }
 
 static int run(void *ctx, uint8_t action, uint8_t arg, const struct hl_path *p)
@@ -625,12 +626,25 @@ static void job(struct opxy_master *m, uint8_t state, uint8_t step, uint8_t pct,
 		push(m);
 }
 
+/* What is queued for the host, out before a restart that does not return. */
+static void host_out(void)
+{
+	for (unsigned i = 0; i < 200u; i++)
+		wb_usb_task();
+}
+
 /* The record out before a restart that does not return. */
 static void restarting(struct opxy_master *m)
 {
 	job(m, HL_J_DONE, 0, 100u, HL_OK, "restarting");
-	for (unsigned i = 0; i < 200u; i++)
-		wb_usb_task();
+	host_out();
+}
+
+/* The plain restart, the restart action's and the PSoC reset's (S-10c.133):
+ * S-04.020's W2, whose first step is S-07.070's reset request. */
+static void restart_plain(struct opxy_master *m)
+{
+	opxy_reboot(m, S04_W2, 0u);
 }
 
 void opxy_hostlink_progress(struct opxy_master *m, uint32_t done, uint32_t total,
@@ -749,7 +763,7 @@ static void run_job(struct opxy_master *m)
 		break;
 	case HL_A_RESTART:
 		restarting(m);
-		opxy_reboot(m, S04_W2, 0u);
+		restart_plain(m);
 		break;
 	case HL_A_RESTART_MODE:
 		restarting(m);
@@ -759,6 +773,152 @@ static void run_job(struct opxy_master *m)
 		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_UNKNOWN, "");
 		break;
 	}
+}
+
+/* ---- the PSoC calls (S-10c.131 - S-10c.134) ---- */
+
+static void psoc_log(struct opxy_master *m, const char *what)
+{
+	struct s14_text t;
+
+	s14_text_init(&t);
+	s14_text_str(&t, "host link: ");
+	s14_text_str(&t, what);
+	s14_log_text(&m->sv.log, S14_INFO, S14_TAG("host"), &t);
+}
+
+static uint32_t now_ms(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	return (uint32_t)wb_time_ms(&m->hw.time);
+}
+
+/*
+ * The warning over a menu with nothing under way, as the approval's. No
+ * hold: keys come from the PSoC, which may be the part that is broken.
+ */
+static int psoc_warn(void *ctx, uint8_t what, uint8_t seconds)
+{
+	struct opxy_master *m = ctx;
+	const enum s15_warn w = what == HL_PW_RESET ? S15_WARN_RESET : S15_WARN_BRIDGE;
+
+	if (m->sv.menu.screen == S15_SCR_WARN) {
+		(void)s15_menu_warn_open(&m->sv.menu, w, seconds);
+		opxy_menu_show(m);
+		return HL_OK;
+	}
+	if (unit_busy(m))
+		return HL_E_BUSY;
+	/*
+	 * SPEC-Q: S-07.070's request goes to a PSoC that answers frames; one
+	 * that has not greeted in this start may not take it, and the soft
+	 * reboot's stop would then wait with the screen dark. Until that is
+	 * known the reset is refused then; the bridge reaches such a PSoC.
+	 */
+	if (what == HL_PW_RESET && !m->psoc.greeted)
+		return HL_E_REFUSED;
+	if (!s15_menu_warn_open(&m->sv.menu, w, seconds))
+		return HL_E_BUSY;
+	opxy_menu_show(m);
+	psoc_log(m, what == HL_PW_RESET ? "backplane reset asked, counting down" :
+					  "backplane link asked, counting down");
+	return HL_OK;
+}
+
+static bool psoc_greeted(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+
+	return m->psoc.greeted;
+}
+
+static bool psoc_canceled(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	if (!s15_menu_warn_canceled(&m->sv.menu))
+		return false;
+	opxy_menu_show(m);
+	psoc_log(m, "canceled on the unit");
+	return true;
+}
+
+static bool psoc_gone(void *ctx)
+{
+	(void)ctx;
+	return wb_usb_state() != WB_USB_CONFIGURED;
+}
+
+/* The screen first: no key acts once the link is raw. A power-off in the
+ * PSoC's last messages is S-07.051's. */
+static void psoc_enter(void *ctx, bool entry)
+{
+	struct opxy_master *m = ctx;
+
+	psoc_log(m, entry ? "backplane link to the computer, bootloader asked" :
+			    "backplane link to the computer");
+	s15_menu_warn_bridge(&m->sv.menu);
+	opxy_menu_show(m);
+	if (s07_bridge_enter(&m->psoc, entry) == S07_POWEROFF)
+		opxy_powered_off(m);
+}
+
+static bool psoc_leave(void *ctx, bool raw)
+{
+	struct opxy_master *m = ctx;
+	bool greeted = false;
+
+	if (raw) {
+		if (s07_bridge_leave(&m->psoc, &greeted) == S07_POWEROFF)
+			opxy_powered_off(m);
+		psoc_log(m, greeted ? "backplane link back, the PSoC greeted" :
+				      "backplane link back, no greeting");
+	} else {
+		psoc_log(m, "backplane request ended before its countdown did");
+	}
+	s15_menu_warn_close(&m->sv.menu);
+	opxy_menu_show(m);
+	return greeted;
+}
+
+static size_t psoc_read(void *ctx, uint8_t *buf, size_t max)
+{
+	struct opxy_master *m = ctx;
+
+	return s07_bridge_read(&m->psoc, buf, max);
+}
+
+static bool psoc_write(void *ctx, const uint8_t *b, size_t n)
+{
+	struct opxy_master *m = ctx;
+
+	return s07_bridge_write(&m->psoc, b, n);
+}
+
+/* What the UART counts as lost or doubtful (opxy_psoc_rx_report()'s sum). */
+static uint32_t psoc_lost(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+	const struct wb_uart *u = &m->hw.uart[OPXY_UART_PSOC];
+
+	return u->overruns + u->rx_lost + u->rx_gaps + u->dma_errors;
+}
+
+static void psoc_reset(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	psoc_log(m, "backplane reset: the unit restarts");
+	host_out();
+	restart_plain(m);
+}
+
+static void psoc_event(void *ctx, const uint8_t *payload, size_t n)
+{
+	struct opxy_master *m = ctx;
+
+	(void)s06_send(&m->node, m->sv.hl_link, m->sv.hl_route, HL_FRAME_ID, payload, n);
 }
 
 /* ---- the board's side ---- */
@@ -773,9 +933,11 @@ static OPXY_TESTOS_UNUSED bool forward_ok(void *ctx, unsigned link, uint8_t dst,
 	uint8_t raw[3];
 	size_t i = 0, k = 0;
 
-	(void)dst;
 	if (link != S06_LINK_CDC && link != S06_LINK_MIDI)
 		return true;
+	/* S-10c.134: nothing reaches the PSoC while a host's request has it */
+	if (dst == S06_ADDR_PSOC && hl_psoc_busy(&((struct opxy_master *)ctx)->sv.hl))
+		return false;
 	/* the route, sequence and id bytes, COBS-decoded */
 	while (k < sizeof raw && i < n && wire[i] != 0u) {
 		const unsigned code = wire[i++];
@@ -814,6 +976,18 @@ void opxy_hostlink_start(struct opxy_master *m)
 	o->rename = rename_;
 	o->run = run;
 	o->set = set;
+	o->now_ms = now_ms;
+	o->psoc_warn = psoc_warn;
+	o->psoc_greeted = psoc_greeted;
+	o->psoc_canceled = psoc_canceled;
+	o->psoc_gone = psoc_gone;
+	o->psoc_enter = psoc_enter;
+	o->psoc_leave = psoc_leave;
+	o->psoc_read = psoc_read;
+	o->psoc_write = psoc_write;
+	o->psoc_lost = psoc_lost;
+	o->psoc_reset = psoc_reset;
+	o->psoc_event = psoc_event;
 	hl_init(&m->sv.hl, o);
 	/* the test OS serves no host link, so it keeps S-06.050's forwards */
 	m->sv.node_ops.forward_ok = OPXY_TESTOS_OR(NULL, forward_ok);
@@ -837,7 +1011,9 @@ bool opxy_hostlink_frame(struct opxy_master *m, unsigned link, const struct s06_
 		return false;
 	if (m->sv.hl.ops == NULL)
 		return true;			/* before held mode: not served */
-	if (f->len >= 1u && f->payload[0] == HL_RUN) {
+	/* the link a job's or a PSoC request's events go to */
+	if (f->len >= 1u && (f->payload[0] == HL_RUN || f->payload[0] == HL_PSOC_OPEN ||
+			     f->payload[0] == HL_PSOC_RESET)) {
 		m->sv.hl_link = (uint8_t)link;
 		m->sv.hl_route = route;
 	}
@@ -901,6 +1077,8 @@ enum s10c_gate opxy_hostlink_gate(void *ctx, enum s10c_link link)
 	(void)link;
 	if (!m->sv.menu.host_link)
 		return S10C_GATE_OFF;
+	if (hl_psoc_busy(h))
+		return S10C_GATE_BUSY;		/* S-10c.134 */
 	if (opxy_hostlink_approved(m))
 		return S10C_GATE_OK;
 	/* not approved: the unit asks now, and the host asks again after */

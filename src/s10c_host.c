@@ -194,7 +194,9 @@ static enum s10c_gate gate(struct s10c_host *h, enum s10c_link link)
 
 static const char *gate_text(enum s10c_gate g)
 {
-	return g == S10C_GATE_OFF ? "host link off" : "not allowed: hold 1 on the unit";
+	return g == S10C_GATE_OFF ? "host link off" :
+	       g == S10C_GATE_BUSY ? "busy: a computer has the backplane" :
+				     "not allowed: hold 1 on the unit";
 }
 
 /* A change not served: its refusal, as the firmware command's 84. */

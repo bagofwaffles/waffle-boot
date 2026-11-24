@@ -305,6 +305,8 @@ static const char *const screen_names[] = {
 	[S15_SCR_OPTION] = "option",
 	[S15_SCR_NONE] = "none",
 	[S15_SCR_DISPLAY] = "display",
+	[S15_SCR_WARN] = "backplane-warning",
+	[S15_SCR_BRIDGE] = "backplane-link",
 };
 
 /* A NUL-terminated string at out[n], cut to fit max; the new length. */
@@ -437,6 +439,15 @@ bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f)
 	if (!m->sv.menu.dev_mode ||
 	    (f->payload[0] != OPXY_DEV_PING && !opxy_hostlink_approved(m))) {
 		out[0] = m->sv.menu.dev_mode ? OPXY_DEV_NOT_APPROVED : OPXY_DEV_REFUSED;
+		(void)s06_send(&m->node, S06_LINK_CDC, s06_swap_route(f->route),
+			       f->id, out, 1u);
+		return true;
+	}
+	/* S-10c.134: while a host's PSoC request holds the unit, only what reads */
+	if (hl_psoc_busy(&m->sv.hl) && f->payload[0] != OPXY_DEV_PING &&
+	    f->payload[0] != OPXY_DEV_READ && f->payload[0] != OPXY_DEV_SCREEN &&
+	    f->payload[0] != OPXY_DEV_FRAME) {
+		out[0] = OPXY_DEV_REFUSED;
 		(void)s06_send(&m->node, S06_LINK_CDC, s06_swap_route(f->route),
 			       f->id, out, 1u);
 		return true;
