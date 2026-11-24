@@ -32,8 +32,7 @@ Teenage Engineering.
 > on real hardware, but not widely. A broken bootloader can leave a unit that only an external flash
 > programmer brings back.
 
-**Install with the guided page: https://bagofwaffles.github.io/waffle-boot/?mode=install** (OP-XY). An
-OP-1 Field takes its installer by the unit's own OS write: see
+**Install with Waffle Iron: https://bagofwaffles.github.io/waffle-iron/** See
 [How to Install](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install).
 
 <img src="docs/ui/tour.gif" width="480" alt="waffle-boot's screens on the OP-XY's display: the frame shown while the OS loads, the main menu, Settings, the developer menu, System, Device Info, an install running, the line under the logo on the way into recovery, and the recovery menu">
@@ -62,7 +61,7 @@ leaving a unit that does not start, and the few writes those rules do not cover.
 The documentation is the [wiki](https://github.com/bagofwaffles/waffle-boot/wiki/). Start with:
 
 - [How to Install](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install): putting waffle-boot on a unit with the installer and
-  [the browser page](https://bagofwaffles.github.io/waffle-boot/)
+  [Waffle Iron](https://bagofwaffles.github.io/waffle-iron/)
 - [How to Recover](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Recover): the recovery menu, and what to do when the unit will not start
 
 Using it: the [Boot Menu](https://github.com/bagofwaffles/waffle-boot/wiki/Boot-Menu), [Updating the OS](https://github.com/bagofwaffles/waffle-boot/wiki/Updating-the-OS) from the boot menu, and

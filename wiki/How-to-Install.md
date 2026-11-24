@@ -1,7 +1,8 @@
-**Install with the guided page: <https://bagofwaffles.github.io/waffle-boot/?mode=install>**
+**Install with Waffle Iron: <https://bagofwaffles.github.io/waffle-iron/>**
 
-It walks through every step in the browser: getting the installer onto the unit, the checks, and the
-install itself.
+It gets the installer onto the unit from the browser: it restarts the unit into its upload screen as a USB
+disk and makes the `firmware.zip` to copy onto it, with the latest waffle-boot installer inside. The
+installer then runs its checks on the unit and offers the install.
 
 > **Back up your files first.** The OS has to be installed again afterward.
 
@@ -12,9 +13,6 @@ install itself.
 
 - The unit, charged, and a USB cable. Keep it on USB while it writes.
 - A computer with Chrome or Edge.
-- A developer menu on the unit that writes an OS file. A unit that has never had developer mode on needs it
-  turned on first, with the [ferret tool](https://bagofwaffles.github.io/ferret/op-xy/). This project does
-  nothing for that step.
 - The OS file, to install again when waffle-boot is on the unit ([Updating the OS](Updating-the-OS)).
 
 Every write is started on the unit: you hold the key it names (`Hold to select`). A hold takes 5 s, and
@@ -23,14 +21,14 @@ bootloader starts once, its boot menu shows for a moment, and the unit comes bac
 itself, which then asks whether to install. To go back to your OS at any point without installing, hold **8**
 (`Return to the old OS`).
 
-A unit that already runs waffle-boot does not need the installer: choose **Upgrade / Recover** on the page
-([How to Recover](How-to-Recover)).
+A unit that already runs waffle-boot does not need the installer: write the new image from the recovery
+menu ([How to Recover](How-to-Recover#write-a-slot-from-a-computer)).
 
 ## On an OP-1 Field
 
-The OP-1 Field (OP-1F) has initial support, from 0.9.48, run on one unit. The page does not install
-it, and refuses to send the installer to an OP-1F. The same installer, `waffle-install.ldr`, goes on as
-the OS by the unit's own OS write, after `tools/mtpcp.py prepare-1f` has made the volume ready for it;
+The OP-1 Field (OP-1F) has initial support, from 0.9.48, run on one unit. The same installer,
+`waffle-install.ldr`, can go on as the OS by the unit's own OS write, after `tools/mtpcp.py prepare-1f` has
+made the volume ready for it;
 that tool takes the unit's bootloader 1000.2.0 or 1000.1.1 only ([Putting the image on an OP-1F](Installer-Reference#putting-the-image-on-an-op-1f)). You
 can run the survey (`waffle-install-survey.ldr`, built from the source) first: it writes nothing to the
 SPI flash, and its `check.txt` says whether an install would be offered. See
@@ -43,7 +41,7 @@ SPI flash, and its `check.txt` says whether an install would be offered. See
 
 | The unit shows | It means | What to do |
 | --- | --- | --- |
-| `A check failed, no changes made.` (or another reason, with `no changes made`) | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Save `check.txt` (on the page, or from the unit's USB disk). Hold 8 to return to the old OS. A wrong check is fixed in the installer; nothing overrides it |
+| `A check failed, no changes made.` (or another reason, with `no changes made`) | A check failed or could not run, or the carried image did not pass its check. Nothing was written to the SPI flash | Save `check.txt` from the unit's USB disk. Hold 8 to return to the old OS. A wrong check is fixed in the installer; nothing overrides it |
 | Trial did not reach the boot menu | The trial start ran, or did not run, the new bootloader, but its boot menu did not show | Nothing was kept: the unit starts the bootloader it had. Hold 1 to write the trial again, or 8 to return to the old OS |
 | Write failed | A write or its read-back failed | The unit keeps a bootloader that starts. Hold 1 to try again, or 8 to return to the old OS |
 

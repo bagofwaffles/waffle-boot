@@ -9,8 +9,8 @@ firmware. License: GPL-2.0-or-later.
 > **Status:** tested on real hardware, but not widely: use it with caution. A broken bootloader can leave a
 > unit that only an external flash programmer brings back.
 
-**The page:** <https://bagofwaffles.github.io/waffle-boot/> installs waffle-boot on an OP-XY and recovers a
-unit, in Chrome or Edge over USB.
+**Install:** [Waffle Iron](https://bagofwaffles.github.io/waffle-iron/) puts waffle-boot on a unit, from
+Chrome or Edge on a computer over USB.
 
 <img src="../docs/ui/main.png" width="480" alt="The boot menu's main screen">
 
