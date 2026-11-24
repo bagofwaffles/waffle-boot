@@ -32,8 +32,7 @@ Teenage Engineering.
 > on real hardware, but not widely. A broken bootloader can leave a unit that only an external flash
 > programmer brings back.
 
-**Install with Waffle Iron: https://bagofwaffles.github.io/waffle-iron/** See
-[How to Install](https://github.com/bagofwaffles/waffle-boot/wiki/How-to-Install).
+**Install with Waffle Iron: https://bagofwaffles.github.io/waffle-iron/**
 
 <img src="docs/ui/tour.gif" width="480" alt="waffle-boot's screens on the OP-XY's display: the frame shown while the OS loads, the main menu, Settings, the developer menu, System, Device Info, an install running, the line under the logo on the way into recovery, and the recovery menu">
 
