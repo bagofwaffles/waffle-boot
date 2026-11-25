@@ -734,7 +734,7 @@ int wb_spi_recv_dma(const struct wb_spi *s, uint8_t *rx, size_t n)
 }
 
 #if defined(OPXY_TEST_OS)
-#include "../../testos/spi_master_q11.inc"
+#include "testos/spi_master_q11.inc"
 #endif
 
 /* ---- the slave end ---- */
@@ -787,7 +787,7 @@ int wb_spi_slave_init(struct wb_spi_slave *s, unsigned n,
 }
 
 #if defined(OPXY_TEST_OS)
-#include "../../testos/spi_slave_records.inc"
+#include "testos/spi_slave_records.inc"
 #endif
 
 #if defined(OPXY_TEST_OS)
@@ -1441,7 +1441,7 @@ static bool head_array(const struct wb_spi *p, uint8_t *rx, size_t head)
 }
 
 #if defined(OPXY_TEST_OS)
-#include "../../testos/spi_slave_listen.inc"
+#include "testos/spi_slave_listen.inc"
 #endif
 
 int wb_spi_slave_listen(const struct wb_spi_slave *s, uint8_t *rx, size_t head,
@@ -1610,7 +1610,7 @@ int wb_spi_slave_request(const struct wb_spi_slave *s, size_t room,
 }
 
 #if defined(OPXY_TEST_OS)
-#include "../../testos/spi_slave_q11.inc"
+#include "testos/spi_slave_q11.inc"
 #endif
 
 /*

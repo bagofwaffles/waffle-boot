@@ -80,7 +80,8 @@ TP_yaffs2_SRCS := $(filter-out $(addprefix $(YAFFS)/core/,$(YAFFS_UNBUILT)), \
 		yaffs_hweight.c)
 TP_yaffs2_GLUE := src/glue/yaffs2/yaffs_blockdev.c src/glue/yaffs2/yaffs_osglue.c \
 	src/glue/yaffs2/yaffs_fixed.c
-TP_yaffs2_FLAGS := -include src/glue/yaffs2/yaffs_port.h
+# yaffs_port.h includes waffle/div64.h.
+TP_yaffs2_FLAGS := -Isrc/include -include src/glue/yaffs2/yaffs_port.h
 TP_yaffs2_WARN := -Wno-sign-compare -Wno-unused-but-set-variable
 
 TP_zlib_SRCS := $(addprefix src/third_party/zlib/, adler32.c crc32.c inffast.c \
@@ -151,12 +152,12 @@ $$(call tp_obj,bf703,$$(TP_$(1)_GLUE)): TP_CFLAGS := $$(TP_TARGET_GLUE_CFLAGS) $
 
 $(BUILD)/bf703/lib$(1).a: $$(TP_$(1)_TARGET_OBJS)
 	@rm -f $$@
-	$$(CROSS_AR) rcsD $$@ $$^
+	$$(CROSS_AR) qcsD $$@ $$^
 
 ifneq ($(1),picolibc)
 $(BUILD)/host/lib$(1).a: $$(TP_$(1)_HOST_OBJS)
 	@rm -f $$@
-	$$(AR) rcsD $$@ $$^
+	$$(AR) qcsD $$@ $$^
 endif
 endef
 
@@ -182,7 +183,7 @@ $(BUILD)/host/libpicolibc.a: $(TP_picolibc_HOST_OBJS)
 	@rm -f $@ $(@:.a=.o)
 	$(LD) -r -o $(@:.a=.o) $^
 	$(OBJCOPY) --prefix-symbols=pl_ $(@:.a=.o)
-	$(AR) rcsD $@ $(@:.a=.o)
+	$(AR) qcsD $@ $(@:.a=.o)
 
 $(BUILD)/host/obj/%.o: %.c
 	@mkdir -p $(@D)

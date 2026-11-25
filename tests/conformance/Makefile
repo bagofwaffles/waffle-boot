@@ -23,8 +23,9 @@ WARNINGS := -Wall -Wextra -Werror -pedantic-errors \
 	-Wformat=2 -Wswitch-default -Wswitch-enum
 
 # BOOT_LINK_FC's code is built in, as in the host build; a boot link's ops
-# choose it.
-H_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -Itests/conformance -O2 -g -DOPXY_BOOT_LINK_FC=1
+# choose it. -Isrc, as in the host build, for includes rooted at src/
+# ("front/fr_handoff.h").
+H_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -Isrc -Itests/conformance -O2 -g -DOPXY_BOOT_LINK_FC=1
 
 H_SUPPORT := tests/conformance/hlib.c
 

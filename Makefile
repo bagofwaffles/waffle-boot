@@ -218,18 +218,30 @@ FRONT_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -g -fdebug-prefix-map=$(CURDI
 HOST_LIB_CFLAGS  := $(COMMON) -O2 -ffreestanding -fno-common -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
 HOST_TEST_CFLAGS := $(COMMON) -O2 -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
 
+# The sources of the image, the test OS and the host library: the files at
+# src/'s top and every file under SRC_TREES, sub-folders included. The front,
+# the stub, the glue, the vendored code and the headers are built apart.
+SRC_TREES := src/core src/board src/testos src/drivers
+# $(call rwildcard,<dirs>,<patterns>): the matching files under <dirs>, at any depth.
+rwildcard = $(foreach d,$(wildcard $(addsuffix /*,$(1))),$(call rwildcard,$(d),$(2)) $(filter $(2),$(d)))
+# $(call src_files,<suffix>): the sources with that suffix.
+src_files = $(wildcard src/*$(1)) $(call rwildcard,$(SRC_TREES),%$(1))
+
 # lcd_gpio.c is the test OS's gpio variant alone (TESTOS_LCD_GPIO below).
 # HOOK_SRCS hold strong definitions of the board's weak hooks; they come
 # after the board's files, so that a host test's link, which takes an
 # archive member for the first definition it finds, takes the weak ones.
-# The test OS's own files (src/testos/, nothing outside the test OS) sort
-# among the board's by name (by_name), since the link order places their
-# code in the test OS's images.
+# The sources are sorted by path, except that the board's files and the test
+# OS's own (src/testos/, nothing outside the test OS), in any sub-folder,
+# sort together by file name (by_name), since the link order places their
+# code in the test OS's images. A sort key and the path are joined by '!',
+# which sorts below every character of a path.
 HOOK_SRCS := src/board/opxy_display.c src/board/opxy_rtc_board.c
-by_name = $(foreach f,$(sort $(1:src/testos/%=src/board/%)),\
-	$(if $(filter $(f),$(1)),$(f),$(f:src/board/%=src/testos/%)))
+src_key = $(if $(filter src/board/% src/testos/%,$(1)),src/board/$(notdir $(1)),$(1))
+by_name = $(foreach w,$(sort $(foreach f,$(1),$(call src_key,$(f))!$(f))),\
+	$(lastword $(subst !, ,$(w))))
 SRCS  := $(filter-out src/drivers/bf70x/lcd_gpio.c $(HOOK_SRCS),\
-	$(call by_name,$(wildcard src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))) $(HOOK_SRCS)
+	$(call by_name,$(call src_files,.c))) $(HOOK_SRCS)
 TESTS := $(sort $(wildcard tests/unit/test_*.c))
 # Host-only test support (the register access fake, helpers).
 TEST_SUPPORT := $(sort $(wildcard tests/unit/support/*.c))
@@ -238,10 +250,14 @@ HOST_OBJS  := $(SRCS:src/%.c=$(BUILD)/host/obj/%.o)
 HOST_LIB   := $(BUILD)/host/libwaffle.a
 
 # The front: every source on the target; on the host all but its drivers,
-# which the host's tests stand in for.
-FRONT_SRCS := $(sort $(wildcard src/front/*.c))
-FRONT_ASM  := $(sort $(wildcard src/front/*.S))
-FRONT_TARGET_ONLY := src/front/fr_board.c src/front/fr_libc.c $(wildcard src/front/fr_hw_*.c)
+# which the host's tests stand in for. src/front/sources.mk lists them in
+# their link order (FRONT_SRCS, FRONT_ASM, FRONT_TARGET_ONLY), and a source
+# under src/front/ it does not list fails the build.
+include src/front/sources.mk
+FRONT_UNLISTED := $(filter-out $(FRONT_SRCS) $(FRONT_ASM),$(call rwildcard,src/front,%.c %.S))
+ifneq ($(FRONT_UNLISTED),)
+$(error src/front/sources.mk does not list $(FRONT_UNLISTED))
+endif
 FRONT_HOST_OBJS := $(filter-out $(FRONT_TARGET_ONLY),$(FRONT_SRCS))
 FRONT_HOST_OBJS := $(FRONT_HOST_OBJS:src/front/%.c=$(BUILD)/host/front/%.o)
 FRONT_HOST_LIB  := $(BUILD)/host/libfront.a
@@ -250,14 +266,21 @@ TEST_SUPPORT_OBJS := $(TEST_SUPPORT:tests/unit/%.c=$(BUILD)/host/tests/%.o)
 TEST_SUPPORT_LIB  := $(BUILD)/host/tests/libsupport.a
 
 # Target-only start-up code.
-ASM_SRCS   := $(call by_name,$(wildcard src/drivers/bf70x/*.S src/board/*.S src/testos/*.S))
+ASM_SRCS   := $(call by_name,$(call src_files,.S))
 CROSS_OBJS := $(SRCS:src/%.c=$(BUILD)/bf703/obj/%.o) \
 	$(ASM_SRCS:src/%.S=$(BUILD)/bf703/obj/%.o)
 CROSS_LIB  := $(BUILD)/bf703/libwaffle.a
-# A .c and a .S with one name would share an object, and the archive would
-# silently keep only one of them.
+# A .c and a .S with one name in one folder would share an object, and one
+# would overwrite the other. Objects of one file name in different folders
+# are both archived (each archive is written afresh, every member appended).
 ifneq ($(words $(CROSS_OBJS)),$(words $(sort $(CROSS_OBJS))))
 $(error a C and an assembly source share an object name: rename one)
+endif
+# The test OS's linker scripts take the entry's object by its member name
+# (src/testos/*.ld): no other object may have that name.
+TESTOS_ENTRY_OBJ := opxy_testos_entry.o
+ifneq ($(words $(filter %/$(TESTOS_ENTRY_OBJ),$(CROSS_OBJS))),1)
+$(error one object, the test OS's entry, is named $(TESTOS_ENTRY_OBJ))
 endif
 
 .PHONY: all host check cross image test-os analyze cppcheck size clean regen ui-update bump-version
@@ -712,7 +735,7 @@ $$(TESTOS_$(1)_OBJDIR)/obj/%.o: src/%.S
 
 $$(TESTOS_$(1)_LIB): $$(TESTOS_$(1)_OBJS)
 	@rm -f $$@
-	$(CROSS_AR) rcsD $$@ $$^
+	$(CROSS_AR) qcsD $$@ $$^
 
 $$(TESTOS_$(1)_IMAGE): $$(TESTOS_$(1)_LIB) $(TP_TARGET_LIBS) $$(TESTOS_$(1)_LD)
 	$(CROSS_CC) -mcpu=bf703-none -nostartfiles -nostdlib -T $$(TESTOS_$(1)_LD) \
@@ -795,7 +818,7 @@ $(BUILD)/host/obj/%.o: src/%.c
 
 $(HOST_LIB): $(HOST_OBJS)
 	@rm -f $@
-	$(AR) rcsD $@ $^
+	$(AR) qcsD $@ $^
 
 $(BUILD)/host/front/%.o: src/front/%.c
 	@mkdir -p $(@D)
@@ -803,7 +826,7 @@ $(BUILD)/host/front/%.o: src/front/%.c
 
 $(FRONT_HOST_LIB): $(FRONT_HOST_OBJS)
 	@rm -f $@
-	$(AR) rcsD $@ $^
+	$(AR) qcsD $@ $^
 
 $(BUILD)/host/tests/support/%.o: tests/unit/support/%.c
 	@mkdir -p $(@D)
@@ -811,7 +834,7 @@ $(BUILD)/host/tests/support/%.o: tests/unit/support/%.c
 
 $(TEST_SUPPORT_LIB): $(TEST_SUPPORT_OBJS)
 	@rm -f $@
-	$(AR) rcsD $@ $^
+	$(AR) qcsD $@ $^
 
 # Driver, board and boot-flow tests need neither picolibc nor the vectors,
 # so they also build where those do not (macOS cannot build picolibc's
@@ -873,7 +896,7 @@ $(BUILD)/bf703/obj/%.o: src/%.S
 
 $(CROSS_LIB): $(CROSS_OBJS)
 	@rm -f $@
-	$(CROSS_AR) rcsD $@ $^
+	$(CROSS_AR) qcsD $@ $^
 
 # Each test and each analyzed file is a target of its own, so that -j runs
 # them side by side; the output of each comes out in one piece. The files
@@ -882,7 +905,7 @@ CHECKS  := $(TESTS:tests/unit/%.c=check/%)
 ANALYZE := $(addprefix analyze/,$(SRCS) $(FRONT_SRCS) $(STUB_SRCS) src/stub/unpack_host.c \
 	$(TP_GLUE) $(TESTS) $(TEST_SUPPORT) \
 	$(filter %.c,$(LOCAL_SRCS)))
-TESTOS_VARIANT := $(sort $(shell grep -l 'OPXY_TEST_OS\|OPXY_TESTOS' src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
+TESTOS_VARIANT := $(sort $(shell grep -l 'OPXY_TEST_OS\|OPXY_TESTOS' $(call src_files,.c)))
 ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
 # The monitor's test OS with the hand-over timing report, the installer, and
 # the development image (BOOT_CRUMBS=1 BOOT_TIMING=1 LOG_DEBUG=1), over the
@@ -890,9 +913,10 @@ ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
 ANALYZE_MON := $(addprefix analyze-mon/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
 ANALYZE_INSTALLER := $(addprefix analyze-installer/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
 # The survey installer, over the files its options reach.
-ANALYZE_SURVEY := $(addprefix analyze-survey/,$(sort $(shell grep -l 'OPXY_TESTOS' src/testos/*.c src/board/*.c)))
+ANALYZE_SURVEY := $(addprefix analyze-survey/,$(sort $(shell grep -l 'OPXY_TESTOS' \
+	$(call rwildcard,src/testos src/board,%.c))))
 DEV_VARIANT := $(sort $(shell grep -l 'OPXY_BOOT_CRUMBS\|OPXY_CRUMB\|OPXY_TIM\|OPXY_STARTUP\|S14_DEFAULT_THRESHOLD' \
-	src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
+	$(call src_files,.c)))
 ANALYZE_DEV := $(addprefix analyze-dev/,$(DEV_VARIANT))
 .PHONY: $(CHECKS) $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_MON) $(ANALYZE_INSTALLER) $(ANALYZE_SURVEY) \
 	$(ANALYZE_DEV)
@@ -957,7 +981,7 @@ cppcheck: $(VEC_HEADERS)
 	$(CPPCHECK) -j $(CPPCHECK_JOBS) --cppcheck-build-dir=$(BUILD)/cppcheck \
 		--std=c11 --enable=warning,style,performance,portability \
 		--error-exitcode=1 --inline-suppr --quiet \
-		--suppress=missingIncludeSystem -Isrc/include -I$(GEN) \
+		--suppress=missingIncludeSystem -Isrc/include -Isrc -I$(GEN) \
 		-Isrc/glue/crc -Isrc/glue/blockdev -Isrc/glue/fatfs -Isrc/glue/yaffs2 -Isrc/glue/minizip \
 		-isrc/third_party src tests
 
