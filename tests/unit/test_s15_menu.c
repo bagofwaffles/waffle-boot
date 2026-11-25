@@ -2630,6 +2630,41 @@ static void test_format(void)
 	      "S-15.071 8 opens the system menu");
 }
 
+/* S-15.202: Developer's 4, the host link's approval with no hold, for this
+ * start alone: the unit's key turns it, a host's never; red where it shows;
+ * off with Developer mode. Nothing is saved. */
+static void test_no_hold(void)
+{
+	reset_fake(); default_boot(); start();
+	CHECK(!M.host_no_hold, "S-15.202 off at a start");
+	press(0x08);
+	expect_screen("factory");
+	press(0x09);
+	CHECK(M.host_no_hold && M.screen == S15_SCR_FACTORY, "S-15.202 4 turns it on");
+	expect_screen("factory_no_hold");
+	/* a host's key does not turn it */
+	s15_menu_host_event(&M, 0x09, true);
+	s15_menu_host_event(&M, 0x09, false);
+	CHECK(M.host_no_hold, "S-15.202 never a host's key");
+	/* Settings says so on Host link's row */
+	press(0x15);
+	press(0x07);
+	expect_screen("settings_no_hold");
+	CHECK(F.saves == 0u, "S-15.202 nothing saved");
+	/* Developer mode off takes it off */
+	press(0x06);
+	CHECK(!M.dev_mode && !M.host_no_hold, "S-15.202 off with Developer mode");
+	press(0x06);
+	CHECK(M.dev_mode && !M.host_no_hold, "S-15.202 stays off when it comes back");
+	/* 4 again turns it off */
+	press(0x15);
+	press(0x08);
+	press(0x09);
+	press(0x09);
+	CHECK(!M.host_no_hold, "S-15.202 4 again turns it off");
+	expect_screen("factory");
+}
+
 static void test_factory(void)
 {
 	/* S-15.093: 8 turns MTP off; 2 does nothing while it is on. */
@@ -4661,6 +4696,7 @@ int main(void)
 	test_reset_and_system();
 	test_format();
 	test_factory();
+	test_no_hold();
 	test_os_once();
 	test_os_write();
 	test_hold();

@@ -15,13 +15,16 @@
  * footprint names the yaffs2 region and the reset's group only.
  */
 #include "waffle/board/opxy_boot.h"
+#include "waffle/board/opxy_bridge.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "waffle/bytes.h"
 #include "waffle/drivers/bf70x_usb.h"
 #include "waffle/hostlink.h"
 #include "waffle/s03_emmc.h"
+#include "waffle/s05_handoff.h"
 #include "waffle/s15_lines.h"
 #include "bearssl_hash.h"
 #include "waffle/hl_fat.h"
@@ -549,6 +552,77 @@ static int rename_(void *ctx, const struct hl_path *from, const struct hl_path *
 	return synced(m);
 }
 
+/* ---- S-10c.135: an image into RAM ---- */
+
+#if !defined(OPXY_TEST_OS)
+/*
+ * The image in the heap, never at the staging area: that lies under the
+ * RAM disk's second part (S-01.016), which held mode may be serving. The
+ * RAM start copies it there once nothing else can use it (S-05.045).
+ */
+static uint8_t *ram_buf;
+static uint32_t ram_size;
+
+static void ram_drop(void *ctx)
+{
+	(void)ctx;
+	free(ram_buf);
+	ram_buf = NULL;
+	ram_size = 0;
+}
+
+static bool unit_busy(const struct opxy_master *m);
+
+static int ram_open(void *ctx, uint32_t size)
+{
+	struct opxy_master *m = ctx;
+
+	ram_drop(ctx);
+	if (size > S03_OS_MAX)
+		return HL_E_REFUSED;		/* S-05.024: longer than the staging area */
+	if (unit_busy(m))
+		return HL_E_BUSY;
+	ram_buf = malloc(size);
+	if (ram_buf == NULL)
+		return HL_E_IO;
+	ram_size = size;
+	return HL_OK;
+}
+
+static int ram_write(void *ctx, uint32_t off, const uint8_t *b, uint32_t n)
+{
+	(void)ctx;
+	if (ram_buf == NULL || off > ram_size || n > ram_size - off)
+		return HL_E_BAD;
+	memcpy(ram_buf + off, b, n);
+	return HL_OK;
+}
+
+static int ram_end(void *ctx, uint32_t size, uint8_t sha[32], uint8_t *why)
+{
+	br_sha256_context c;
+	enum s05_refusal r;
+
+	(void)ctx;
+	if (ram_buf == NULL || size != ram_size)
+		return HL_E_BAD;
+	br_sha256_init(&c);
+	br_sha256_update(&c, ram_buf, size);
+	br_sha256_out(&c, sha);
+	r = s05_check_image(ram_buf, size);	/* S-05.024, before any start */
+	*why = (uint8_t)r;
+	return r == S05_ACCEPT ? HL_OK : HL_E_REFUSED;
+}
+#endif
+
+/* S-10c.137: Developer mode and its item both on. */
+static bool no_hold(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+
+	return m->sv.menu.dev_mode && m->sv.menu.host_no_hold;
+}
+
 /* ---- actions ---- */
 
 static struct hl_path job_path;
@@ -584,6 +658,13 @@ static int run(void *ctx, uint8_t action, uint8_t arg, const struct hl_path *p)
 	switch (action) {
 	case HL_A_CONTINUE_OS:
 		return s15_menu_continue_check(&m->sv.menu) == S15_CONT_BUSY ? HL_E_BUSY : HL_OK;
+	case HL_A_RAM_START:
+		/* S-10c.136: with a second CPU the slave answering, as a file
+		 * start needs it (S-15.194) */
+		if (wb_has(opxy_dev(m), WB_F_SECOND_CPU) &&
+		    (!m->slave_present || m->bridge.absent))
+			return HL_E_UNREACHABLE;
+		return OPXY_TESTOS_OR(HL_E_UNKNOWN, ram_buf != NULL ? HL_OK : HL_E_NOT_FOUND);
 	case HL_A_OS_ONCE: {
 		/* S-15.194's check first: a start that cannot be taken is no job */
 		struct s15_os_file file;
@@ -713,6 +794,126 @@ static void job_install(struct opxy_master *m)
 	job(m, HL_J_FAILED, o.step, HL_PERCENT_NONE, HL_E_REFUSED, reason);
 }
 
+#if !defined(OPXY_TEST_OS)
+/* The pieces to the slave, then starting: that record goes out before the
+ * teardown stops USB. */
+static void ram_progress(struct opxy_master *m, uint32_t done, uint32_t total)
+{
+	if (done < total) {
+		opxy_hostlink_progress(m, done, total, "to the second processor");
+		opxy_usb_breathe();
+		return;
+	}
+	job(m, HL_J_RUNNING, 1, 100u, HL_OK, "starting");
+	for (unsigned i = 0; i < 200u; i++)
+		wb_usb_task();
+}
+
+/* S-09.084: the image into the slave's staging area, in order from 0 */
+static bool push_ram(struct opxy_master *m, const uint8_t *img, uint32_t len,
+		     void (*progress)(struct opxy_master *m, uint32_t done, uint32_t total))
+{
+	uint32_t at = 0, err = 0;
+	bool ok = true;
+
+	opxy_bridge_fast(m);
+	while (ok && at < len) {
+		const uint32_t most = s09_master_write_max(&m->bridge);
+		const uint32_t k = len - at < most ? len - at : most;
+
+		ok = s09_master_stage_write(&m->bridge, at, img + at, k, &err) == 0;
+		at += ok ? k : 0u;
+		if (ok && at < len && progress != NULL)
+			progress(m, at, len);
+	}
+	opxy_bridge_plain(m);
+	return ok;
+}
+
+enum s05_fail opxy_ram_start(struct opxy_master *m, const uint8_t *img, uint32_t len,
+			     void (*progress)(struct opxy_master *m, uint32_t done,
+					      uint32_t total))
+{
+	struct s05_master sm;
+	enum s05_fail f;
+
+	if (len == 0u || len > S03_OS_MAX)
+		return S05_FAIL_REFUSED;
+	if (wb_has(opxy_dev(m), WB_F_SECOND_CPU)) {
+		if (!m->slave_present || m->bridge.absent)
+			return S05_FAIL_SLAVE;
+		if (!push_ram(m, img, len, progress))
+			return m->bridge.absent ? S05_FAIL_SLAVE : S05_FAIL_NO_OS;
+	}
+	if (progress != NULL)
+		progress(m, len, len);	/* whole: the start follows */
+	sm.staging = (const uint8_t *)(uintptr_t)OPXY_STAGING;
+	sm.config_addr = m->ops.config_addr;
+	sm.sw_version_nonzero = false;
+	sm.file = false;
+	sm.dev = opxy_dev(m);
+	m->ram_img = img;
+	m->ram_len = len;
+	f = s05_master_ram_start(&m->handoff, &sm);
+	m->ram_img = NULL;
+	m->ram_len = 0;
+	if (f == S05_FAIL_SLAVE_START) {
+		/* released: the slave serves the bridge no more */
+		m->bridge.absent = true;
+		m->slave_present = false;
+	}
+	return f;
+}
+
+/* The job record's text for a RAM start that came back. */
+static const char *ram_failed(enum s05_fail f)
+{
+	switch (f) {
+	case S05_FAIL_REFUSED:
+		return "image refused";
+	case S05_FAIL_SLAVE:
+		return "second processor refused it";
+	case S05_FAIL_SLAVE_START:
+		return "second processor's OS did not start";
+	case S05_FAIL_NO_OS:
+	case S05_FAIL_ENCRYPTED:
+	case S05_FAIL_SELECT:
+	case S05_FAIL_FILE:
+	case S05_FAIL_NONE:
+	default:
+		return "not sent to the second processor";
+	}
+}
+
+/*
+ * S-10c.136, S-05.045: the image to the slave (with second-cpu), then the
+ * hand-over from here. The record says starting and goes out before the
+ * teardown stops USB; a start that comes back says why and the menu is
+ * drawn again over the boot logo pre_load left.
+ */
+static void job_ram_start(struct opxy_master *m)
+{
+	enum s05_fail f;
+
+	if (ram_buf == NULL) {
+		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_NOT_FOUND, "no image");
+		return;
+	}
+	s14_log_str(&m->sv.log, S14_INFO, S14_TAG("boot"),
+		    "host link: starting an OS image from RAM, writing nothing");
+	job(m, HL_J_RUNNING, 0, 0u, HL_OK, "to the second processor");
+	f = opxy_ram_start(m, ram_buf, ram_size, ram_progress);
+	/* back: the image is the host's to send again */
+	ram_drop(m);
+	hl_ram_drop(&m->sv.hl);
+	m->sv.menu_shown = ~s15_menu_changes(&m->sv.menu);
+	opxy_menu_show(m);
+	s14_log_str(&m->sv.log, S14_ERROR, S14_TAG("boot"), ram_failed(f));
+	job(m, HL_J_FAILED, 1, HL_PERCENT_NONE,
+	    f == S05_FAIL_REFUSED ? HL_E_REFUSED : HL_E_UNREACHABLE, ram_failed(f));
+}
+#endif
+
 static void run_job(struct opxy_master *m)
 {
 	struct s15_osw_end e;
@@ -746,6 +947,10 @@ static void run_job(struct opxy_master *m)
 	case HL_A_CONTINUE_OS:
 		restarting(m);
 		(void)s15_menu_continue(&m->sv.menu);
+		break;
+	case HL_A_RAM_START:
+		OPXY_TESTOS_OR(job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_UNKNOWN, ""),
+			       job_ram_start(m));
 		break;
 	case HL_A_RESTART:
 		restarting(m);
@@ -814,6 +1019,12 @@ void opxy_hostlink_start(struct opxy_master *m)
 	o->rename = rename_;
 	o->run = run;
 	o->set = set;
+	o->no_hold = no_hold;
+	/* S-10c.135: the test OS starts no OS, from RAM or elsewhere */
+	o->ram_open = OPXY_TESTOS_OR(NULL, ram_open);
+	o->ram_write = OPXY_TESTOS_OR(NULL, ram_write);
+	o->ram_end = OPXY_TESTOS_OR(NULL, ram_end);
+	o->ram_drop = OPXY_TESTOS_OR(NULL, ram_drop);
 	hl_init(&m->sv.hl, o);
 	/* the test OS serves no host link, so it keeps S-06.050's forwards */
 	m->sv.node_ops.forward_ok = OPXY_TESTOS_OR(NULL, forward_ok);

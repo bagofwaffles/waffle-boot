@@ -246,7 +246,7 @@ static size_t st_qtest(void *c, const struct s09_req *r, const uint8_t **out)
 
 static const struct s09_store_ops store = {
 	0, st_erase_group, st_boot_size, NULL /* dev_cmd */, st_emmc, st_file,
-	st_read, st_os, st_cycles, st_adjust,
+	st_read, st_os, st_cycles, st_adjust, NULL /* stage_write */
 };
 
 /* ---- the loopback bus (test_board_install's, without its damage) ---- */

@@ -276,7 +276,7 @@ static int32_t st_read(void *c, uint32_t fd, uint8_t *buf, uint32_t n, uint32_t 
 
 static const struct s09_store_ops store = {
 	0, st_erase_group, st_boot_size, NULL /* dev_cmd */, st_emmc, st_file,
-	st_read, st_os, st_cycles, st_adjust,
+	st_read, st_os, st_cycles, st_adjust, NULL /* stage_write */
 };
 
 static struct s09_slave sl;

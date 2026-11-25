@@ -210,6 +210,32 @@ void s05_master_handoff(const struct s05_master_ops *ops, const struct s05_maste
 	ops->jump(ops->ctx, ops->read_svect0(ops->ctx));
 }
 
+enum s05_fail s05_master_ram_start(const struct s05_master_ops *ops, const struct s05_master *m)
+{
+	enum s05_fail f;
+	uint32_t length = 0;
+	uint8_t reply = 0xFF;
+
+	ops->pre_load(ops->ctx);
+	f = ops->stage(ops->ctx, &length);
+	if (f != S05_FAIL_NONE)
+		return f;
+	if (s05_check_image(m->staging, length) != S05_ACCEPT)
+		return S05_FAIL_REFUSED;
+	if (wb_has(m->dev, WB_F_SECOND_CPU)) {
+		if (ops->release(ops->ctx, &reply) != 0)
+			reply = 0xFF;
+		if (reply == S05_REPLY_NO_START)
+			return S05_FAIL_SLAVE_START;
+		if (reply != 0u)
+			return S05_FAIL_SLAVE;
+	}
+	ops->teardown(ops->ctx);
+	ops->kernel_call(ops->ctx, m->config_addr);
+	ops->jump(ops->ctx, ops->read_svect0(ops->ctx));
+	return S05_FAIL_NONE;
+}
+
 /* S-05.020, S-05.021, S-05.022: after a reply of 0 the slave waits on nothing
  * from the master. */
 bool s05_slave_release(const struct s05_slave_ops *ops, const uint8_t *staging,

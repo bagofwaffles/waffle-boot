@@ -219,12 +219,12 @@ A description of the screens as they are now, free to change within the rules ab
 | Screen | Items |
 | --- | --- |
 | Main Menu | 1 Install firmware, 2 Settings, 3 Developer menu (while developer mode is on), 4 and the help key Device Info, 5 System; then 7 Continue to OS at the bottom, set apart by a blank row or by the failed-start notice. 6 is no item |
-| Settings | 1 Developer mode, 2 Protected writes, 3 Display, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link |
+| Settings | 1 Developer mode, 2 Protected writes, 3 Display, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link (`On, no hold` in red while Developer's 4 is on) |
 | Display | 3 Color, 6 Boot logo (its state as the hint: `Built-in`, `Custom`, `No room`, `Unavailable`; the last two open nothing; no item without the logo's store, as in the test OS), 8 Back to Settings; Color is saved with Settings' items |
 | Protected Writes | 2 Turn on (hold to select), 8 Back to Settings; off again after every restart; while it is on, Settings' 2 turns it off at once |
 | System | 1 Key test, 2 Reset volume calibration, 3 Remove content packs (when there are packs), 5 Format drive, 7 Factory reset (6 is no item); the format is shown on every unit, whatever developer mode is |
 | Boot Logo | 5 Remove (`Hold to select`, while one is stored), 8 Back to Display; the disk offered, a picture dropped and ejected opens its view: 1 Save (hold to select) saves it, 8 cancels; the result is a view left with 8 alone |
-| Developer | 2 MTP file transfer (one item, its interface the MTP target's; 8 turns MTP off), 3 Start /os.ldr once (does not write), 5 Write /os.ldr to boot partition, 6 Restart; it offers no reset |
+| Developer | 2 MTP file transfer (one item, its interface the MTP target's; 8 turns MTP off), 3 Start /os.ldr once (does not write), 4 Host link without hold (this start alone, the unit's key alone; `On` in red), 5 Write /os.ldr to boot partition, 6 Restart; it offers no reset |
 | Host Link | 1 Allow (hold to select), 8 Cancel; 60 s with no key cancels; the unit's own keys alone |
 | Key Test | Shift + 8 leaves it |
 | Recovery's slot menu (its main screen's 1) | 1 Try slot N once, 2 Make slot N the boot slot, 3 Keep slot N, 4 Put slot N's record back, each only where it applies and each confirmed by key 1 held for 5 s on the screen after it; while 3 is shown, 2 is not; 8 goes back |

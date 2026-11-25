@@ -179,7 +179,7 @@ static int32_t st_emmc_counted(void *c, uint8_t cmd, uint32_t a0, uint32_t a1,
 
 static const struct s09_store_ops store = {
 	0, st_erase_group, st_boot_size, NULL /* dev_cmd */, st_emmc_counted, st_file,
-	st_read, st_os, st_cycles, st_adjust,
+	st_read, st_os, st_cycles, st_adjust, NULL /* stage_write */
 };
 
 static struct s09_slave sl;

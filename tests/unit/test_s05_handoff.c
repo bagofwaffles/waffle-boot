@@ -391,6 +391,58 @@ static void test_sequences_1f(void)
 	}
 }
 
+/*
+ * S-05.045: a RAM start from held mode: the steps of a start, but no
+ * accepted op and no software-version reset; a failure comes back with
+ * its cause and never enters held mode again.
+ */
+static void test_ram_start(void)
+{
+	static const struct {
+		const struct wb_device *dev;
+		enum s05_fail stage;
+		const char *file;
+		int release_rc;
+		uint8_t reply;
+		const char *seq;
+		enum s05_fail cause;
+	} cases[] = {
+		{&wb_device_opxy, S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 0, "PSRTKVJ", S05_FAIL_NONE},
+		{&wb_device_opxy, S05_FAIL_NO_OS, NULL, 0, 0, "PS", S05_FAIL_NO_OS},
+		{&wb_device_opxy, S05_FAIL_NONE, "refuse_ddr_reserve.ldr", 0, 0, "PS", S05_FAIL_REFUSED},
+		{&wb_device_opxy, S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 1, "PSR", S05_FAIL_SLAVE},
+		{&wb_device_opxy, S05_FAIL_NONE, "synthetic_os_b.ldr", -1, 0, "PSR", S05_FAIL_SLAVE},
+		{&wb_device_opxy, S05_FAIL_NONE, "synthetic_os_b.ldr", 0, S05_REPLY_NO_START, "PSR",
+		 S05_FAIL_SLAVE_START},
+		{&wb_device_op1f, S05_FAIL_NONE, "synthetic_os_b.ldr", 0, 1, "PSTKVJ", S05_FAIL_NONE},
+		{&wb_device_op1f, S05_FAIL_NONE, "refuse_ddr_reserve.ldr", 0, 1, "PS", S05_FAIL_REFUSED},
+	};
+	unsigned i;
+
+	for (i = 0; i < N(cases); i++) {
+		struct s05_master m;
+		enum s05_fail f;
+
+		g_nev = 0;
+		g_ev[0] = '\0';
+		g_stage_result = cases[i].stage;
+		g_len = cases[i].file != NULL ? read_ldr(cases[i].file) : 0u;
+		g_release_rc = cases[i].release_rc;
+		g_reply_value = cases[i].reply;
+		g_held_cause = S05_FAIL_NONE;
+		m.staging = g_img;
+		m.config_addr = 0x0803D000u;
+		m.sw_version_nonzero = true;	/* never cleared by a RAM start */
+		m.file = false;
+		m.dev = cases[i].dev;
+		f = s05_master_ram_start(&g_mops, &m);
+		CHECK(strcmp(g_ev, cases[i].seq) == 0);
+		CHECK_EQ(f, cases[i].cause);
+		CHECK(strchr(g_ev, 'A') == NULL && strchr(g_ev, 'C') == NULL &&
+		      strchr(g_ev, 'H') == NULL);
+	}
+}
+
 /* S-05.023, S-05.039: the contract per device */
 static void test_contract(void)
 {
@@ -440,6 +492,7 @@ int main(void)
 	test_kernel_and_load_function();
 	test_sequences();
 	test_sequences_1f();
+	test_ram_start();
 	test_contract();
 	test_os_destinations_1f();
 	return finish("test_s05_handoff");

@@ -455,6 +455,10 @@ struct opxy_master {
 	struct s09_bus_ops bus_ops;
 	struct s09_master bridge;
 	bool slave_present;
+	/* S-05.045: a RAM start's image, a host's, while opxy_ram_start()
+	 * runs: stage() copies it, the release names it */
+	const uint8_t *ram_img;
+	uint32_t ram_len;
 	/* S-09.075: the highest rung opxy_bridge_fast() raises the link to,
 	 * OPXY_LINK_CEILING from the bridge's start */
 	uint8_t link_ceiling;
@@ -669,6 +673,19 @@ void opxy_master_main(struct opxy_master *m);
 /* S-05's master ops (m->handoff), as opxy_master_main() sets them; public
  * for the host's tests. */
 void opxy_master_handoff(struct opxy_master *m);
+
+/*
+ * S-05.045, S-10c.136: a RAM start from held mode of len bytes at img (a
+ * host's image, checked by S-05.024 already). With a second CPU the image
+ * goes first to the slave's staging area over the raised link (S-09.084),
+ * progress(m, done, len) after each piece; then s05_master_ram_start() on
+ * a copy at the staging area. Nothing is written to the SPI flash or the
+ * eMMC. Returns only on a failure, with its cause; the bridge may then be
+ * gone (the slave released, or lost).
+ */
+enum s05_fail opxy_ram_start(struct opxy_master *m, const uint8_t *img, uint32_t len,
+			     void (*progress)(struct opxy_master *m, uint32_t done,
+					      uint32_t total));
 /* S-07.054's usb_msc hook: USB for the battery wait's loop, then the start
  * log's mark (S-02.095). Public for the host's tests. */
 void opxy_battery_usb(void *ctx, bool on);

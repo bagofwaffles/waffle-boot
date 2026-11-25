@@ -217,7 +217,7 @@ static int32_t st_read(void *c, uint32_t fd, uint8_t *buf, uint32_t n,
 
 static const struct s09_store_ops store = {
 	0, st_group, st_boot, NULL /* dev_cmd */, st_emmc, st_file, st_read, st_os, st_cycles,
-	st_adjust,
+	st_adjust, NULL /* stage_write */
 };
 
 /* The bus: a request session ends at the deselect, a reply session gives

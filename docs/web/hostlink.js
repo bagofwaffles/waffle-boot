@@ -9,18 +9,23 @@
 //     if (await hl.requestApproval() !== 'approved') ...   // "hold 1 on the unit"
 //     await hl.put('/yaffs2/pkg.bin', bytes, { onProgress });
 //     const rec = await hl.runAction(A.INSTALL, { path: '/yaffs2/pkg.bin', parts: 0xff, onProgress });
+//     await hl.ramLoad(ldrBytes, { onProgress });  // an OS image into RAM, no file written
+//     await hl.runAction(A.RAM_START);             // and started from there
 //
 // Every call rejects with a HostLinkError carrying the unit's status (S below); E.APPROVAL means the
 // session needs the hold on the unit.
 
-export const VERSION = 1;
+export const VERSION = 2;
+export const OLDEST_UNIT = 1;	// a unit of version 1 has no RAM calls; the rest is the same
 export const FRAME_ID = 0x7c;
 export const C = {
 	HELLO: 0x00, SESSION: 0x01, APPROVE: 0x02, END: 0x03, INFO: 0x04, SET: 0x05, JOB: 0x06,
 	STAT: 0x10, LIST: 0x11, GET: 0x12, HASH: 0x13, PUT_OPEN: 0x14, PUT_DATA: 0x15, PUT_END: 0x16,
-	REMOVE: 0x17, MKDIR: 0x18, RENAME: 0x19, RUN: 0x20, EVENT: 0x7f,
+	REMOVE: 0x17, MKDIR: 0x18, RENAME: 0x19, RUN: 0x20, RAM_OPEN: 0x21, RAM_DATA: 0x22,
+	RAM_END: 0x23, EVENT: 0x7f,
 };
-export const A = { INSTALL: 1, OS_WRITE: 2, OS_ONCE: 3, RESTART: 4, CONTINUE_OS: 5, RESTART_MODE: 6 };
+export const A = { INSTALL: 1, OS_WRITE: 2, OS_ONCE: 3, RESTART: 4, CONTINUE_OS: 5, RESTART_MODE: 6,
+	RAM_START: 7 };
 export const E = {
 	OK: 0, OFF: 1, APPROVAL: 2, NEVER: 3, BAD: 4, UNKNOWN: 5, PATH: 6, NOT_FOUND: 7, EXISTS: 8,
 	IO: 9, BUSY: 10, CHECKSUM: 11, OFFSET: 12, UNREACHABLE: 13, READ_ONLY: 14, REFUSED: 15, FS: 16,
@@ -29,7 +34,11 @@ export const STATUS_TEXT = ['ok', 'host link off', 'hold 1 on the unit to allow'
 	'malformed', 'not in this build', 'path refused', 'not found', 'exists', 'I/O error', 'busy',
 	'checksum mismatch', 'offset', 'volume not answering', 'read only', 'refused by the unit',
 	'volume not readable by this build'];
-export const SESSIONS = ['none', 'pending', 'approved', 'refused', 'timed out'];
+export const SESSIONS = ['none', 'pending', 'approved', 'refused', 'timed out', 'approved, no hold'];
+// S-05.024's refusals, as RAM_END names them
+export const REFUSALS = ['accepted', 'longer than the staging area', 'not an LDR stream', 'refused flags',
+	'a destination outside L1, L2 and DDR', 'over the staging area', 'over the reserve',
+	'over the record', "over the ROM's boot reserve"];
 export const JOB_STATES = ['none', 'queued', 'running', 'done', 'failed'];
 export const CHUNK = 224;
 export const USB_FILTERS = [{ usbVendorId: 0x2367, usbProductId: 0x0021 },
@@ -306,11 +315,11 @@ export class HostLink {
 		if (le32(d, 0) !== 0x4c484257)
 			throw new Error('not a waffle-boot host link');
 		const out = { version: d[4], oldestClient: d[5], hostLink: !!d[6] };
-		if (d[4] < VERSION || d[5] > VERSION)
+		if (d[4] < OLDEST_UNIT || d[5] > VERSION)
 			throw new Error(`the unit speaks host link version ${d[4]} (clients from ${d[5]}); this client ${VERSION}`);
 		if (!out.hostLink)
 			return out;
-		out.session = SESSIONS[d[7]];
+		out.session = SESSIONS[d[7]] ?? d[7];
 		out.maxPayload = d[8];
 		out.chunk = d[9];
 		out.info = infoRecord(d.subarray(10, 34));
@@ -340,7 +349,8 @@ export class HostLink {
 	}
 
 	// Asks the unit, then waits for the hold: 'approved', 'refused', 'timed out' (or 'pending'
-	// after waitMs). onPending(): show "hold 1 on the unit".
+	// after waitMs). onPending(): show "hold 1 on the unit". With Developer mode's "Host link
+	// without hold" on, 'approved, no hold' at once; asked again then, the hold (an install's).
 	async requestApproval({ waitMs = 70000, onPending = null } = {}) {
 		let state = SESSIONS[(await this.call(C.APPROVE))[1][0]];
 		if (state === 'pending' && onPending)
@@ -425,6 +435,23 @@ export class HostLink {
 		await this.call(C.PUT_END, [], { timeoutMs: 120000 });
 	}
 
+	// An OS image into the unit's RAM, from where the unit stands, then checked whole there: its
+	// hash, then the unit's own check of the image (a refusal's error carries why: REFUSALS).
+	// Nothing is written to a file; A.RAM_START then starts it.
+	async ramLoad(bytes, { onProgress = null } = {}) {
+		const digest = await sha256(bytes);
+		let [, d] = await this.call(C.RAM_OPEN, [...u32(bytes.length), ...digest], { timeoutMs: 30000 });
+		let have = le32(d, 0);
+		while (have < bytes.length) {
+			[, d] = await this.call(C.RAM_DATA, [...u32(have), ...bytes.subarray(have, have + CHUNK)],
+				{ timeoutMs: 15000, ok: [E.OK, E.OFFSET] });
+			have = le32(d, 0);
+			if (onProgress)
+				onProgress(have);
+		}
+		await this.call(C.RAM_END, [], { timeoutMs: 60000 });
+	}
+
 	async remove(path) {
 		await this.call(C.REMOVE, utf8(path), { timeoutMs: 15000 });
 	}
@@ -442,7 +469,8 @@ export class HostLink {
 	}
 
 	// Runs an action; onProgress(record) for each change. The final record: state 'done' or
-	// 'failed' (or 'done' with text 'restarting' before a restart takes the port away). An install
+	// 'failed' (or 'done' with text 'restarting' before a restart takes the port away; 'running'
+	// with text 'starting' before a RAM start does). An install
 	// of a package whose signature does not match asks nothing on the unit: its final text ends in
 	// '(signature invalid)', for the page to show.
 	async runAction(action, { path = null, parts = 0xff, mode = 0, onProgress = null, timeoutMs = 900000 } = {}) {

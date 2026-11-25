@@ -295,6 +295,47 @@ static OPXY_TESTOS_UNUSED enum s05_fail stage_file(struct opxy_slave *s,
 	return S05_FAIL_NONE;
 }
 
+#if !defined(OPXY_TEST_OS)
+/*
+ * S-09.084: an image the master holds in RAM, pushed in order from offset 0
+ * into the staging area; pushed_len is how much of it has come. A write
+ * at 0 begins it again.
+ */
+static uint32_t pushed_len;
+
+static int32_t stage_write(void *ctx, uint32_t off, const uint8_t *data, uint32_t n)
+{
+	(void)ctx;
+	if (off == 0u)
+		pushed_len = 0;
+	if (off != pushed_len || n > S03_OS_MAX - off)
+		return -1;
+	memcpy((uint8_t *)(uintptr_t)OPXY_STAGING + off, data, n);
+	pushed_len = off + n;
+	return 0;
+}
+
+/* S-09.084: the pushed copy, whole and of the release's length and CRC-32
+ * (S-03.044's rule: the peripheral's first, the software's when it
+ * differs), then S-05.024's check. Nothing of the eMMC is read. */
+static enum s05_fail stage_pushed(struct opxy_slave *s, uint32_t len, uint32_t crc,
+				  uint32_t *length)
+{
+	const uint8_t *staging = (const uint8_t *)(uintptr_t)OPXY_STAGING;
+
+	*length = 0;
+	if (pushed_len != len)
+		return S05_FAIL_NO_OS;
+	if ((s->st.emmc.crc32_fast == NULL || s->st.emmc.crc32_fast(0u, staging, len) != crc) &&
+	    s->st.emmc.crc32(0u, staging, len) != crc)
+		return S05_FAIL_NO_OS;
+	*length = len;
+	if (s05_check_image(staging, len) != S05_ACCEPT)
+		return S05_FAIL_REFUSED;
+	return S05_FAIL_NONE;
+}
+#endif
+
 /*
  * S-09.051, S-05.020 step 1: staged and checked inside the release
  * request, while the server takes no further header and PA4 is high;
@@ -307,6 +348,8 @@ static uint32_t os_status(void *ctx, uint32_t len, uint32_t crc)
 	(void)len;	/* the test OS stages nothing */
 	(void)crc;
 	s->staged = OPXY_TESTOS_OR(S05_FAIL_NO_OS,
+				   len != 0u && pushed_len != 0u ?
+					stage_pushed(s, len, crc, &s->staged_len) :	/* S-09.084 */
 				   !opxy_storage_features(&s->st) ? S05_FAIL_SELECT :
 				   len != 0u ? stage_file(s, len, crc, &s->staged_len) :
 					       stage_os(s, &s->staged_len));
@@ -834,6 +877,7 @@ void opxy_slave_storage(struct opxy_slave *s)
 	s->st.store.dev_cmd = dev_cmd;
 #endif
 	s->st.store.os_status = os_status;
+	s->st.store.stage_write = OPXY_TESTOS_OR(NULL, stage_write);	/* S-09.084 */
 	s->st.store.cycles = cycles;
 	s->st.store.adjust = adjust;
 	s09_slave_init(&s->server, &s->st.store);

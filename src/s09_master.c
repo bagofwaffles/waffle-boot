@@ -1578,6 +1578,20 @@ int32_t s09_master_write_end(struct s09_master *m, uint32_t *err)
 	return m->bg.result;
 }
 
+/* S-09.084: as a file write, in one request and its reply */
+int32_t s09_master_stage_write(struct s09_master *m, uint32_t off, const uint8_t *p,
+			       uint32_t n, uint32_t *err)
+{
+	const struct s09_req r = { S09_STAGE_WRITE, 0, (uint16_t)n, off, n };
+	uint32_t got = 0;
+
+	if (n == 0u || n > s09_master_write_max(m)) {
+		*err = S09_EINVAL;
+		return -1;
+	}
+	return s09_master_call(m, &r, p, n, NULL, 0, &got, err);
+}
+
 /* ---- the link's rungs (S-09.070-S-09.078) ---- */
 
 unsigned s09_master_rung(const struct s09_master *m)

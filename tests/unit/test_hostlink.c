@@ -3,7 +3,9 @@
  * The host link's protocol (src/hostlink.c): the path check and its roots,
  * the one classification table, the session's approval, the file calls
  * over a volume in memory (a put's temporary name, its check before the
- * rename), the jobs, and the calls that are never served.
+ * rename), the jobs, and the calls that are never served; an image into
+ * RAM and its start (S-10c.135, S-10c.136), and the approval with no hold
+ * (S-10c.137).
  */
 #include <string.h>
 
@@ -11,6 +13,14 @@
 
 #include "waffle/hostlink.h"
 #include "bearssl_hash.h"
+
+static void wb_put_le32_t(uint8_t *p, uint32_t v)
+{
+	p[0] = (uint8_t)v;
+	p[1] = (uint8_t)(v >> 8);
+	p[2] = (uint8_t)(v >> 16);
+	p[3] = (uint8_t)(v >> 24);
+}
 
 /* ---- a volume in memory, behind the ops ---- */
 
@@ -33,6 +43,11 @@ static struct {
 	bool corrupt;			/* the next write lands one byte wrong */
 	unsigned renames, removes;
 	bool user_root;
+	bool no_hold;			/* the Developer item on */
+	uint8_t ram_buf[FILE_MAX];
+	uint32_t ram_cap, ram_size;
+	unsigned ram_opens, ram_drops;
+	uint8_t ram_why;		/* S-05.024's refusal, or 0 */
 } V;
 
 static struct ffile *find(const char *path)
@@ -253,7 +268,64 @@ static int o_set(void *ctx, uint8_t setting, uint8_t value)
 	return HL_OK;
 }
 
+static bool o_no_hold(void *ctx)
+{
+	(void)ctx;
+	return V.no_hold;
+}
+
+static int o_ram_open(void *ctx, uint32_t size)
+{
+	(void)ctx;
+	V.ram_opens++;
+	if (size > V.ram_cap)
+		return HL_E_REFUSED;
+	V.ram_size = size;
+	return HL_OK;
+}
+
+static int o_ram_write(void *ctx, uint32_t off, const uint8_t *b, uint32_t n)
+{
+	(void)ctx;
+	if (off + n > V.ram_size)
+		return HL_E_IO;
+	memcpy(V.ram_buf + off, b, n);
+	if (V.corrupt && n > 0u) {
+		V.ram_buf[off] ^= 1u;
+		V.corrupt = false;
+	}
+	return HL_OK;
+}
+
+static int o_ram_end(void *ctx, uint32_t size, uint8_t sha[32], uint8_t *why)
+{
+	br_sha256_context c;
+
+	(void)ctx;
+	br_sha256_init(&c);
+	br_sha256_update(&c, V.ram_buf, size);
+	br_sha256_out(&c, sha);
+	*why = V.ram_why;
+	return V.ram_why != 0u ? HL_E_REFUSED : HL_OK;
+}
+
+static void o_ram_drop(void *ctx)
+{
+	(void)ctx;
+	V.ram_drops++;
+}
+
 static const struct hl_ops ops = {
+	.link_on = o_on, .approve_open = o_approve, .info = o_info, .root_ok = o_root_ok,
+	.stat = o_stat, .list = o_list, .read = o_read, .hash = o_hash,
+	.create = o_create, .write = o_write, .finish = o_finish, .abandon = o_abandon,
+	.remove = o_remove, .mkdir = o_mkdir, .rename = o_rename, .run = o_run, .set = o_set,
+	.no_hold = o_no_hold, .ram_open = o_ram_open, .ram_write = o_ram_write,
+	.ram_end = o_ram_end, .ram_drop = o_ram_drop,
+};
+
+/* The same, as a build with no RAM image and no Developer item. */
+static const struct hl_ops ops_plain = {
 	.link_on = o_on, .approve_open = o_approve, .info = o_info, .root_ok = o_root_ok,
 	.stat = o_stat, .list = o_list, .read = o_read, .hash = o_hash,
 	.create = o_create, .write = o_write, .finish = o_finish, .abandon = o_abandon,
@@ -270,6 +342,7 @@ static void fresh(void)
 	V.on = true;
 	V.screen_ok = true;
 	V.writing = -1;
+	V.ram_cap = FILE_MAX;
 	hl_init(&H, &ops);
 }
 
@@ -364,7 +437,8 @@ static void test_table(void)
 {
 	static const uint8_t needs[] = { HL_GET, HL_HASH, HL_PUT_OPEN, HL_PUT_DATA,
 					 HL_PUT_END, HL_REMOVE, HL_MKDIR, HL_RENAME,
-					 HL_RUN, HL_SET };
+					 HL_RUN, HL_SET, HL_RAM_OPEN, HL_RAM_DATA,
+					 HL_RAM_END };
 	static const uint8_t safe[] = { HL_HELLO, HL_SESSION, HL_APPROVE, HL_END,
 					HL_INFO, HL_JOB };
 
@@ -390,9 +464,13 @@ static void test_table(void)
 	CHECK(hl_class_of(hl_actions, hl_nactions, HL_A_FACTORY_RESET) == HL_NEVER_C);
 	CHECK(hl_class_of(hl_actions, hl_nactions, HL_A_PROTECTED_WRITES) == HL_NEVER_C);
 	CHECK(hl_class_of(hl_settings, hl_nsettings, HL_SET_PROTECTED) == HL_NEVER_C);
+	/* S-10c.137: the install alone takes the hold whatever the Developer
+	 * item says */
 	for (size_t i = 0; i < hl_nactions; i++)
 		CHECK(hl_actions[i].cls == HL_NEVER_C ||
-		      hl_actions[i].cls == HL_NEEDS);
+		      hl_actions[i].cls == (hl_actions[i].id == HL_A_INSTALL ? HL_HOLD :
+									    HL_NEEDS));
+	CHECK(hl_class_of(hl_actions, hl_nactions, HL_A_RAM_START) == HL_NEEDS);
 	/* the roots: only the drive lists openly; the OS copies take no write */
 	CHECK(hl_roots[HL_ROOT_DRIVE].flags == (HL_RF_READ | HL_RF_WRITE | HL_RF_OPEN));
 	CHECK(hl_roots[HL_ROOT_OS].flags == HL_RF_READ);
@@ -418,7 +496,7 @@ static void test_hello_and_off(void)
 	{
 		const size_t a = 13u + HL_INFO_LEN + 1u + hl_ncalls;
 
-		CHECK(out[a] == 6u);
+		CHECK(out[a] == 7u);
 		for (size_t i = 0; i < out[a]; i++)
 			CHECK(out[a + 1u + i] != HL_A_FACTORY_RESET &&
 			      out[a + 1u + i] != HL_A_PROTECTED_WRITES);
@@ -437,6 +515,21 @@ static void test_hello_and_off(void)
 	V.on = true;
 	CHECK(req(0x6E, NULL, 0) == HL_E_UNKNOWN);
 	CHECK(req(HL_EVENT, NULL, 0) == HL_E_UNKNOWN);
+	/* a build with no RAM image lists neither its calls nor its action
+	 * (S-10c.135) and serves neither */
+	hl_init(&H, &ops_plain);
+	CHECK(req(HL_HELLO, NULL, 0) == HL_OK && out[13 + HL_INFO_LEN] == hl_ncalls - 3u);
+	{
+		const size_t a = 13u + HL_INFO_LEN + 1u + hl_ncalls - 3u;
+
+		CHECK(out[a] == 6u);
+		for (size_t i = 0; i < out[a]; i++)
+			CHECK(out[a + 1u + i] != HL_A_RAM_START);
+	}
+	approve();
+	CHECK(req(HL_RAM_END, NULL, 0) == HL_E_UNKNOWN);
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RAM_START }, 1) == HL_E_UNKNOWN);
+	hl_init(&H, &ops);
 }
 
 static void test_approval(void)
@@ -745,6 +838,177 @@ static void test_jobs(void)
 	CHECK(req(HL_JOB, (const uint8_t[]){ 3 }, 1) == HL_OK);
 }
 
+/* ---- S-10c.135, S-10c.136: an image into RAM, then its start ---- */
+
+static void ram_send(const uint8_t *img, uint32_t n)
+{
+	uint8_t a[4u + HL_CHUNK];
+	br_sha256_context c;
+	uint32_t at = 0;
+
+	br_sha256_init(&c);
+	br_sha256_update(&c, img, n);
+	wb_put_le32_t(a, n);
+	br_sha256_out(&c, a + 4);
+	CHECK(req(HL_RAM_OPEN, a, 36) == HL_OK && out_n == 7u);
+	while (at < n) {
+		const uint32_t k = n - at < HL_CHUNK ? n - at : HL_CHUNK;
+
+		wb_put_le32_t(a, at);
+		memcpy(a + 4, img + at, k);
+		CHECK(req(HL_RAM_DATA, a, 4u + k) == HL_OK);
+		at += k;
+		CHECK(out[3] == (uint8_t)at && out[4] == (uint8_t)(at >> 8));
+	}
+}
+
+static void test_ram(void)
+{
+	static uint8_t img[1000];
+	uint8_t a[4u + HL_CHUNK];
+
+	for (size_t i = 0; i < sizeof img; i++)
+		img[i] = (uint8_t)(i * 7u + 3u);
+	fresh();
+	/* needs the session's approval, as every change does */
+	memset(a, 0, sizeof a);
+	a[0] = 10;
+	CHECK(req(HL_RAM_OPEN, a, 36) == HL_E_APPROVAL && V.ram_opens == 0u);
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RAM_START }, 1) == HL_E_APPROVAL);
+	approve();
+	/* nothing to start before an image is accepted */
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RAM_START }, 1) == HL_E_NOT_FOUND);
+	/* malformed: a short open, an empty image, data or an end with none open */
+	CHECK(req(HL_RAM_OPEN, a, 35) == HL_E_BAD);
+	memset(a, 0, 4);
+	CHECK(req(HL_RAM_OPEN, a, 36) == HL_E_BAD);
+	CHECK(req(HL_RAM_DATA, a, 8) == HL_E_BAD);
+	CHECK(req(HL_RAM_END, NULL, 0) == HL_E_BAD);
+	/* more than the board has room for: its own refusal */
+	wb_put_le32_t(a, FILE_MAX + 1u);
+	CHECK(req(HL_RAM_OPEN, a, 36) == HL_E_REFUSED && !H.ram.open);
+	/* sent whole and checked: kept for the start, no file touched */
+	ram_send(img, sizeof img);
+	CHECK(req(HL_RAM_END, (const uint8_t[]){ 0 }, 1) == HL_E_BAD);
+	CHECK(req(HL_RAM_END, NULL, 0) == HL_OK && H.ram.ready && !H.ram.open);
+	CHECK(memcmp(V.ram_buf, img, sizeof img) == 0);
+	for (int i = 0; i < NFILES; i++)
+		CHECK(!V.f[i].used);
+	/* the start: queued as a job like every action, once */
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RAM_START, 0 }, 2) == HL_E_BAD);
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RAM_START }, 1) == HL_OK &&
+	      V.run_action == HL_A_RAM_START && out[4] == HL_A_RAM_START &&
+	      out[5] == HL_J_QUEUED);
+	CHECK(req(HL_RAM_OPEN, a, 36) == HL_E_BUSY);
+	(void)hl_job_set(&H, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_REFUSED, "not started");
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RAM_START }, 1) == HL_E_NOT_FOUND);
+
+	/* the end before the whole has come: the offset the unit holds */
+	ram_send(img, 300);
+	{
+		uint8_t b[36];
+		br_sha256_context c;
+
+		/* resumed: the same size and hash again give the offset held */
+		br_sha256_init(&c);
+		br_sha256_update(&c, img, 300);
+		wb_put_le32_t(b, 300);
+		br_sha256_out(&c, b + 4);
+		CHECK(req(HL_RAM_OPEN, b, 36) == HL_OK && out[3] == 44u && out[4] == 1u);
+	}
+	/* a data call at another offset is told the unit's */
+	wb_put_le32_t(a, 7);
+	CHECK(req(HL_RAM_DATA, a, 10) == HL_E_OFFSET && out[3] == 44u && out[4] == 1u);
+	/* more than declared */
+	wb_put_le32_t(a, 300);
+	CHECK(req(HL_RAM_DATA, a, 4u + 1u) == HL_E_BAD);
+
+	/* a byte wrong on the way: the hash refuses it and it is dropped */
+	V.corrupt = true;
+	ram_send(img, sizeof img);
+	V.ram_drops = 0;
+	CHECK(req(HL_RAM_END, NULL, 0) == HL_E_CHECKSUM && !H.ram.ready && !H.ram.open);
+	CHECK(V.ram_drops == 1u);
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RAM_START }, 1) == HL_E_NOT_FOUND);
+	/* S-05.024 refuses it: why, and dropped */
+	V.ram_why = 3;
+	ram_send(img, sizeof img);
+	CHECK(req(HL_RAM_END, NULL, 0) == HL_E_REFUSED && out_n == 4u && out[3] == 3u &&
+	      !H.ram.ready);
+	V.ram_why = 0;
+	/* the session's end drops an image held */
+	ram_send(img, sizeof img);
+	CHECK(req(HL_RAM_END, NULL, 0) == HL_OK && H.ram.ready);
+	V.ram_drops = 0;
+	CHECK(req(HL_END, NULL, 0) == HL_OK && !H.ram.ready && V.ram_drops == 1u);
+	/* and the board can take its memory back: no start then */
+	approve();
+	ram_send(img, sizeof img);
+	CHECK(req(HL_RAM_END, NULL, 0) == HL_OK);
+	hl_ram_drop(&H);
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RAM_START }, 1) == HL_E_NOT_FOUND);
+}
+
+/* ---- S-10c.137: the approval with no hold ---- */
+
+static void test_no_hold(void)
+{
+	uint8_t a[16];
+
+	fresh();
+	/* the item off: the screen, as ever */
+	CHECK(req(HL_APPROVE, NULL, 0) == HL_OK && out[3] == HL_S_PENDING && V.screens == 1u);
+	CHECK(req(HL_END, NULL, 0) == HL_OK);
+	/* on: allowed at once, no screen */
+	V.no_hold = true;
+	CHECK(req(HL_APPROVE, NULL, 0) == HL_OK && out[3] == HL_S_NO_HOLD && V.screens == 1u);
+	CHECK(hl_approved(&H) && !hl_held(&H));
+	CHECK(req(HL_SESSION, NULL, 0) == HL_OK && out[3] == HL_S_NO_HOLD);
+	CHECK(req(HL_HELLO, NULL, 0) == HL_OK && out[10] == HL_S_NO_HOLD);
+	/* what a hold allows, but the install */
+	make("/yaffs2/a", false);
+	CHECK(req_str(HL_REMOVE, "/yaffs2/a") == HL_OK);
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RESTART }, 1) == HL_OK);
+	(void)hl_job_set(&H, HL_J_DONE, 0, 100, HL_OK, "");
+	a[0] = HL_A_INSTALL;
+	a[1] = HL_PARTS_ALL;
+	memcpy(a + 2, "/yaffs2/p.tfw", 13);
+	CHECK(req(HL_RUN, a, 15) == HL_E_APPROVAL && V.runs == 1u);
+	/* never stays never */
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_FACTORY_RESET }, 1) == HL_E_NEVER);
+	CHECK(req(HL_SET, (const uint8_t[]){ HL_SET_PROTECTED, 1 }, 2) == HL_E_NEVER);
+	/* APPROVE again asks for the hold the install needs */
+	CHECK(req(HL_APPROVE, NULL, 0) == HL_OK && out[3] == HL_S_PENDING && V.screens == 2u);
+	hl_answer(&H, HL_S_APPROVED);
+	CHECK(hl_held(&H) && req(HL_RUN, a, 15) == HL_OK && V.runs == 2u);
+	(void)hl_job_set(&H, HL_J_DONE, 0, 100, HL_OK, "");
+	/* a held session is not ended by the item going off */
+	V.no_hold = false;
+	hl_poll(&H);
+	CHECK(H.session == HL_S_APPROVED);
+	/* one it allowed is */
+	CHECK(req(HL_END, NULL, 0) == HL_OK);
+	V.no_hold = true;
+	CHECK(req(HL_APPROVE, NULL, 0) == HL_OK && out[3] == HL_S_NO_HOLD);
+	hl_poll(&H);
+	CHECK(H.session == HL_S_NO_HOLD);
+	V.no_hold = false;
+	hl_poll(&H);
+	CHECK(H.session == HL_S_NONE && !hl_approved(&H));
+	CHECK(req_str(HL_MKDIR, "/yaffs2/d") == HL_E_APPROVAL);
+	/* and Host link off ends it as any session */
+	V.no_hold = true;
+	CHECK(req(HL_APPROVE, NULL, 0) == HL_OK && out[3] == HL_S_NO_HOLD);
+	V.on = false;
+	CHECK(!hl_approved(&H));
+	hl_poll(&H);
+	V.on = true;
+	CHECK(H.session == HL_S_NONE);
+	/* a build without the item: the screen */
+	hl_init(&H, &ops_plain);
+	CHECK(req(HL_APPROVE, NULL, 0) == HL_OK && out[3] == HL_S_PENDING);
+}
+
 int main(void)
 {
 	RUN(test_paths);
@@ -756,5 +1020,7 @@ int main(void)
 	RUN(test_put);
 	RUN(test_changes);
 	RUN(test_jobs);
+	RUN(test_ram);
+	RUN(test_no_hold);
 	return check_summary("test_hostlink");
 }

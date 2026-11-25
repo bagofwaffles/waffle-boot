@@ -751,6 +751,27 @@ static bool file_start(const struct opxy_master *m)
 	return m->boot_reason == S04_REASON_OS_FILE;
 }
 
+/* S-09.082, S-09.084: a release that names the master's copy */
+static bool copy_release(const struct opxy_master *m)
+{
+	return file_start(m) || m->ram_img != NULL;
+}
+
+/* S-05.045: the host's image copied to the staging area, and its CRC-32
+ * for the release, as a file start's (S-09.084) */
+static enum s05_fail stage_ram(struct opxy_master *m, uint32_t *length)
+{
+	uint8_t *staging = (uint8_t *)(uintptr_t)OPXY_STAGING;
+
+	memset(&stage_load, 0, sizeof stage_load);
+	memcpy(staging, m->ram_img, m->ram_len);
+	stage_file_crc = m->emmc.crc32_fast(0u, staging, m->ram_len);
+	stage_crc_peripheral = opxy_crc_fast_used;
+	stage_load.length = m->ram_len;
+	*length = m->ram_len;
+	return S05_FAIL_NONE;
+}
+
 #if !defined(OPXY_TEST_OS)
 /*
  * S-05.035: /yaffs2/os.ldr whole into the staging area over the bridge's
@@ -797,6 +818,8 @@ static enum s05_fail stage(void *ctx, uint32_t *length)
 	struct opxy_master *m = ctx;
 	const struct s03_load *ld = &stage_load;
 
+	if (m->ram_img != NULL)			/* S-05.045 */
+		return stage_ram(m, length);
 #if !defined(OPXY_TEST_OS)
 	if (file_start(m))			/* S-05.035 */
 		return stage_os_file(m, length);
@@ -830,10 +853,15 @@ static int release(void *ctx, uint8_t *reply)
 	 * S-02.101: the log's erase, when due, before the release: the slave
 	 * waits for it with no bound of its own, and from the release on the
 	 * hand-over leaves no time for a sector erase. */
-	opxy_start_finished(m);
-	opxy_start_log_tidy(m); OPXY_TIME(BOOT_TIME_RELEASE_SENT);
-	/* S-09.082: a file start's release names its copy */
-	if (file_start(m)) {
+	/* S-05.045: a RAM start writes nothing; the start that opened held
+	 * mode made its own marks */
+	if (m->ram_img == NULL) {
+		opxy_start_finished(m);
+		opxy_start_log_tidy(m);
+	}
+	OPXY_TIME(BOOT_TIME_RELEASE_SENT);
+	/* S-09.082, S-09.084: a file or RAM start's release names its copy */
+	if (copy_release(m)) {
 		const uint32_t sent = stage_file_crc;
 
 		v = opxy_bridge_release_file(&m->bridge, (const uint8_t *)(uintptr_t)OPXY_STAGING,

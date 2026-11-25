@@ -544,6 +544,16 @@ static void deferred(struct s09_slave *s, unsigned slot, const uint8_t *pl,
 		x->received = 0;
 		read_piece(s, slot);
 		return;
+	case S09_STAGE_WRITE:
+		/* S-09.084: arg0 the offset, arg1 the bytes, as 0x2B's */
+		if (r->arg1 < 1u || r->arg1 > S09_WRITE_MAX || r->arg1 > n ||
+		    s->ops->stage_write == NULL) {
+			small_reply(s, slot, -1, S09_EINVAL, 0, 0);
+			return;
+		}
+		res = s->ops->stage_write(s->ops->ctx, r->arg0, pl, r->arg1);
+		small_reply(s, slot, res == 0 ? 0 : -1, res == 0 ? 0u : S09_EINVAL, 0, 0);
+		return;
 	default:
 		file_cmd(s, slot, pl, n);
 		return;
@@ -1204,6 +1214,9 @@ int32_t s09_store_call(const struct s09_store_ops *ops, const struct s09_req *r,
 		/* S-09.040: errno is 0 */
 		return ops->emmc(ops->ctx, r->cmd, r->arg0, r->arg1, (uint8_t *)(uintptr_t)pl,
 				 plen);
+	case S09_STAGE_WRITE:
+		*err = S09_EINVAL;	/* no other CPU's staging area (S-09.084) */
+		return -1;
 	case S09_READ:
 		if (r->len == 0u || r->len > S09_READ_CHUNK || data == NULL) {
 			*err = S09_EINVAL;

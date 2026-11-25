@@ -586,7 +586,11 @@ static void draw_settings(struct s15_menu *m)
 	if (m->env->settings_save != NULL)                 /* S-15.175 */
 		sline(m, S15_ST_ITEM, m->start_menu ? "6 Start in boot menu\tOn" :
 						       "6 Start in boot menu\tOff");
-	sline(m, S15_ST_ITEM, m->host_link ? "7 Host link\tOn" : "7 Host link\tOff");
+	/* S-15.202: a session with no hold says so here too, in red */
+	if (m->host_link && m->dev_mode && m->host_no_hold)
+		sline(m, S15_ST_ITEM_ON, s15_host_link_no_hold);
+	else
+		sline(m, S15_ST_ITEM, m->host_link ? "7 Host link\tOn" : "7 Host link\tOff");
 	blank(m);
 	sline(m, S15_ST_BACK, "8 Back to Main Menu");
 }
@@ -630,6 +634,9 @@ static void settings_key(struct s15_menu *m, unsigned key)
 	switch (s15_digit(m->dev, key)) {
 	case 1:
 		m->dev_mode = !m->dev_mode;
+		/* S-15.202: the item is Developer mode's; off with it */
+		if (!m->dev_mode)
+			m->host_no_hold = false;
 		settings_changed(m);
 		break;
 	case 2:
@@ -728,6 +735,7 @@ static void clear_settings(struct s15_menu *m)
 		if (m->color != d.color)
 			m->changes++;	/* every pixel changes, not only the lines */
 		m->dev_mode = d.dev_mode;
+		m->host_no_hold = false;	/* S-15.202 */
 		m->color = d.color;
 		m->mtp_macos = d.mtp_macos;
 		m->start_menu = d.start_menu;
@@ -1326,7 +1334,7 @@ static void osw_host_row(const struct s15_menu *m, struct s15_buf *b)
 
 /* ---- the factory menu: S-15.092 - S-15.095 -------------------------- */
 
-/* The items keep their digits; digits 1 and 4 are no items. */
+/* The items keep their digits; digit 1 is no item. */
 static void draw_factory(struct s15_menu *m)
 {
 	enter(m, S15_SCR_FACTORY, "Developer");
@@ -1337,6 +1345,11 @@ static void draw_factory(struct s15_menu *m)
 		sline(m, S15_ST_ITEM, m->mtp_macos ? "2 MTP file transfer\tmacOS" :
 						      "2 MTP file transfer\tWindows");
 	sline(m, S15_ST_ITEM, s15_once_item);
+	/* S-15.202: this start's approval with no hold, in red while on */
+	if (m->host_no_hold)
+		sline(m, S15_ST_ITEM_ON, s15_no_hold_item_on);
+	else
+		sline(m, S15_ST_ITEM, s15_no_hold_item_off);
 	sline(m, S15_ST_ITEM, "5 Write /os.ldr to boot partition");
 	sline(m, S15_ST_ITEM, s15_restart_item);
 	blank(m);
@@ -1568,6 +1581,14 @@ static void factory_key(struct s15_menu *m, unsigned key)
 		break;
 	case 3:
 		os_once(m, false);                 /* S-15.194 */
+		break;
+	case 4:
+		/* S-15.202: the unit's own key alone, for this start; never a
+		 * host's */
+		if (!m->host_event) {
+			m->host_no_hold = !m->host_no_hold;
+			draw_factory(m);
+		}
 		break;
 	case 5:
 		os_write(m, NULL, S15_SCR_FACTORY);
@@ -2430,6 +2451,7 @@ void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
 	m->shift = false;
 	m->option_on = false;            /* Off after any reset */
 	m->dev_mode = false;
+	m->host_no_hold = false;         /* S-15.202: off at every start */
 	m->color = s15_color_default(dev);	/* S-15.173 */
 	m->mtp_macos = true;
 	m->start_menu = false;
