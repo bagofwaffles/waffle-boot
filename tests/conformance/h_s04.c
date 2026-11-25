@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Conformance host program for S-04 (src/s04_records.c), driven by
+ * Conformance host program for S-04 (src/core/boot/records.c), driven by
  * test_s04.py.  Commands (hlib.h notation; v is a version a.b.c.d):
  *
  *   consume REC8          -> REASON REC8      (the record after the read)
@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/s04_records.h"
+#include "waffle/boot/records.h"
 #include "hlib.h"
 
 static const char *nordic_name(enum s04_nordic n)

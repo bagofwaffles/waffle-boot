@@ -14,8 +14,8 @@
 #include "s02_check.h"
 #include "s02_fake_flash.h"
 #include "waffle/board/opxy_boot.h"
-#include "waffle/s05_handoff.h"
-#include "waffle/wire_crc.h"
+#include "waffle/boot/handoff.h"
+#include "waffle/util/crc.h"
 
 #define MEMB 0x88040000u	/* the image's code and constant data */
 #define MEML 0x4000u

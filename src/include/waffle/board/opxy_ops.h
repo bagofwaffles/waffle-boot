@@ -20,14 +20,14 @@
 #include "waffle/drivers/bf70x_spiflash.h"
 #include "waffle/drivers/bf70x_time.h"
 #include "waffle/drivers/bf70x_uart.h"
-#include "waffle/s02_flash.h"
-#include "waffle/s03_emmc.h"
-#include "waffle/s06_clock.h"
-#include "waffle/s06_link.h"
-#include "waffle/s09_fast.h"
-#include "waffle/s09_master.h"
-#include "waffle/s11_package.h"
-#include "waffle/s14_log.h"
+#include "waffle/flash/layout.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/link/clock.h"
+#include "waffle/link/link.h"
+#include "waffle/bridge/fast.h"
+#include "waffle/bridge/master.h"
+#include "waffle/install/package.h"
+#include "waffle/log/log.h"
 #include "waffle/testos.h"
 
 /* The drivers' state. One instance; each role uses its own part of it. */
@@ -97,7 +97,7 @@ struct s09_boot_ops opxy_boot_ops_fc(struct opxy_hw *hw);
  * the controller gives up with PA6 low. Both are built whenever either is.
  */
 struct s09_boot_ops opxy_boot_ops_dma(struct opxy_hw *hw);
-/* The DMA-fed stream's state and account (waffle/s09_fast.h), and the
+/* The DMA-fed stream's state and account (waffle/bridge/fast.h), and the
  * driver's four fault words of the part that started a fall-back. */
 const struct s09_fast *opxy_boot_fast(void);
 void opxy_boot_fast_fault(uint32_t out[4]);

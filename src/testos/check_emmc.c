@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#include "waffle/s09_bridge.h"
+#include "waffle/bridge/records.h"
 
 #define FLUSH_INDEX 32u		/* EXT_CSD[32] FLUSH_CACHE (S-03.068) */
 

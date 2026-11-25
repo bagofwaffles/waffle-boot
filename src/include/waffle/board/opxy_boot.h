@@ -3,7 +3,7 @@
 #define WAFFLE_BOARD_OPXY_BOOT_H
 
 /*
- * The OP-XY's boot steps: the ops of waffle/boot.h for each role, built
+ * The OP-XY's boot steps: the ops of waffle/boot/flow.h for each role, built
  * from the S-xx logic, the wire_* adapters and the drivers. One image,
  * two roles (S-01.003): opxy_main() reads the strap and runs one of them.
  */
@@ -14,18 +14,18 @@
 #include "front/fr_handoff.h"
 #include "waffle/board/opxy_ops.h"
 #include "waffle/board/opxy_services.h"
-#include "waffle/boot.h"
-#include "waffle/device.h"
+#include "waffle/boot/flow.h"
+#include "waffle/boot/device.h"
 #include "waffle/drivers/bf70x_cplb.h"
-#include "waffle/s02_flash.h"
-#include "waffle/s02_store.h"
-#include "waffle/s03_emmc.h"
-#include "waffle/s04_records.h"
-#include "waffle/s06_link.h"
-#include "waffle/s07_psoc.h"
-#include "waffle/s08_nordic.h"
-#include "waffle/s09_master.h"
-#include "waffle/s09_slave.h"
+#include "waffle/flash/layout.h"
+#include "waffle/flash/settings.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/boot/records.h"
+#include "waffle/link/link.h"
+#include "waffle/psoc/psoc.h"
+#include "waffle/nordic/nordic.h"
+#include "waffle/bridge/master.h"
+#include "waffle/bridge/slave.h"
 
 /*
  * S-05.025: the boot prompt, a property of the build: make BOOT_PROMPT=1
@@ -51,7 +51,7 @@ void opxy_crumb_read(uint32_t addr);
 #endif
 
 /*
- * Boot milestone timing (src/board/opxy_timing.c, waffle/boot_time.h):
+ * Boot milestone timing (src/board/opxy_timing.c, waffle/boot/timing.h):
  * BOOT_TIMING=1, never in a release. The bootloader stamps the master's
  * milestones, repeats the report in held mode and, at a hand-over, leaves it
  * at OPXY_BOOT_TIME_RECORD, between the frame buffers and the display record;
@@ -60,9 +60,9 @@ void opxy_crumb_read(uint32_t addr);
 #define OPXY_BOOT_TIME_RECORD 0x8FFFF800u
 #if defined(OPXY_BOOT_TIMING_ON) && !defined(OPXY_TEST_OS)
 #define OPXY_BOOT_TIMING 1
-#include "waffle/boot_time.h"
+#include "waffle/boot/timing.h"
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/s07_psoc.h"
+#include "waffle/psoc/psoc.h"
 extern struct boot_time opxy_boot_time;
 /* A milestone stamped now, boot_time_mark() out of line: a call at each site. */
 void opxy_time_mark(unsigned id);

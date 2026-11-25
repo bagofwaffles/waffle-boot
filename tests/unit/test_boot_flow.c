@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The boot flow (src/boot_flow.c) over fake steps: the master through
+ * The boot flow (src/core/boot/flow.c) over fake steps: the master through
  * every row of S-05's boot decision table (boot_decision.tsv) with the
  * slave present and absent, the load and each of its failures, the DDR
  * check, held-mode entry, the boot prompt (S-05.025), the setting to start
@@ -11,8 +11,8 @@
 
 #include "support/check.h"
 
-#include "waffle/boot.h"
-#include "waffle/s04_records.h"
+#include "waffle/boot/flow.h"
+#include "waffle/boot/records.h"
 #include "vectors/s05_vectors.h"
 
 /* Each step appends its letter, so a run's order reads as a string. */

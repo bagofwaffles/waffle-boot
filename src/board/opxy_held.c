@@ -11,7 +11,7 @@
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_sec.h"
 #include "waffle/board/opxy_rtc_board.h"
-#include "waffle/wire_crc.h"
+#include "waffle/util/crc.h"
 
 static uint8_t nordic_rx[OPXY_UART_BUF], nordic_tx[OPXY_UART_BUF];
 /* S-17.021: the PSoC's info reply, for S-17's revision checks. */

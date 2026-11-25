@@ -7,7 +7,7 @@
 #ifndef S07_TEST_H
 #define S07_TEST_H
 
-#include "waffle/s07_psoc.h"
+#include "waffle/psoc/psoc.h"
 
 #include "s06_test.h"
 #include "s06_fake.h"

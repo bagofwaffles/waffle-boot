@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for S-10b's MTP responder (src/s10b_mtp.c) over an in-memory
+ * Host program for S-10b's MTP responder (src/core/mtp/mtp.c) over an in-memory
  * volume. Containers are framed here, the host's data in 512-byte packets;
  * paths are hex (UTF-8 bytes, "/a/b").
  *
@@ -26,8 +26,8 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/s04_records.h"
-#include "waffle/s10b_mtp.h"
+#include "waffle/boot/records.h"
+#include "waffle/mtp/mtp.h"
 
 #define MAX_FILES 4096
 #define MPS 512u

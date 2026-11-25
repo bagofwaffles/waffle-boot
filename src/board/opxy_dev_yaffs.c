@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The developer requests' raw view of the yaffs2 region (S-12 section 2,
- * waffle/devhost.h): chunk tags, and the first bytes of object headers and
+ * waffle/host/devhost.h): chunk tags, and the first bytes of object headers and
  * block summaries. Read only. A data chunk's bytes are never returned: the
  * meta read answers only for a chunk whose own tags make it a header or a
  * summary.
  */
 #include <string.h>
 
-#include "waffle/bytes.h"
-#include "waffle/devhost.h"
+#include "waffle/util/bytes.h"
+#include "waffle/host/devhost.h"
 
 #define SECTOR 512u
 #define SECTORS_PER_CHUNK 8u				/* S-12.041 */

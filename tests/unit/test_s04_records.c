@@ -12,7 +12,7 @@
  */
 #include <string.h>
 
-#include "waffle/s04_records.h"
+#include "waffle/boot/records.h"
 #include "s02_check.h"
 #include "vectors/s04_vectors.h"
 

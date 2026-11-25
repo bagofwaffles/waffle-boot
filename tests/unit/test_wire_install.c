@@ -2,9 +2,9 @@
 /*
  * S-11 from end to end on the vendored libraries: every package of
  * tests/oracle/S-11-packages/vectors/pkg/ through s11_install() with checks 1-15 on
- * BearSSL and micro-ecc (src/wire_package.c), checks 16-17 on minizip
- * (src/wire_zip.c) and the staging area on a yaffs2 volume in RAM
- * (src/wire_yaffs.c). Against s11_vectors.h's reason, signature state and forced
+ * BearSSL and micro-ecc (src/core/install/crypto.c), checks 16-17 on minizip
+ * (src/core/install/zip.c) and the staging area on a yaffs2 volume in RAM
+ * (src/core/fs/yaffs.c). Against s11_vectors.h's reason, signature state and forced
  * verdicts and wire_vectors.h's model results: the reason of checks 16-17,
  * the staged tree (S-11.032) and the version a completed run records
  * (S-11.038, S-04.045 M3), read back by s11_staged_scan() from the volume;
@@ -12,7 +12,7 @@
  * writable copy (S-11.018), as the board does.
  * The run's steps are fakes that succeed; the steps are test_s11_*'s
  * subject. Also the disk cases of S-11.048: the root laid out on a FAT RAM
- * disk (src/wire_fat.c), the package picked by s11_disk_pick() and
+ * disk (src/core/fs/fat.c), the package picked by s11_disk_pick() and
  * installed as FatFs reads it (the zip in place in the file's clusters,
  * wire_fat_open_package()), with the os.ldr staged the package's and not
  * the decoy zip's. Package files are read at run time: run from the
@@ -21,15 +21,15 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/device.h"
-#include "waffle/s11_content.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_run.h"
-#include "waffle/s17_revisions.h"
-#include "waffle/wire_fat.h"
-#include "waffle/wire_package.h"
-#include "waffle/wire_yaffs.h"
-#include "waffle/wire_zip.h"
+#include "waffle/boot/device.h"
+#include "waffle/install/content.h"
+#include "waffle/install/package.h"
+#include "waffle/install/run.h"
+#include "waffle/boot/revisions.h"
+#include "waffle/fs/fat.h"
+#include "waffle/install/crypto.h"
+#include "waffle/fs/yaffs.h"
+#include "waffle/install/zip.h"
 
 #include "vectors/s11_vectors.h"
 #include "vectors/wire_vectors.h"

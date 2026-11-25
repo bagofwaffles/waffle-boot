@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * A developer host's timing requests (waffle/devhost.h, wiki/Developer-Host-Link.md):
+ * A developer host's timing requests (waffle/host/devhost.h, wiki/Developer-Host-Link.md):
  * how fast each stage of the package check (S-11.020, checks 1-15) runs on
  * the unit, where a check of the disk's package spends its time, and where
  * its extraction (checks 16-18) would. Times are core cycles. Nothing is
@@ -13,22 +13,22 @@
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/board/opxy_ops.h"
 #include "waffle/board/opxy_services.h"
-#include "waffle/bytes.h"
-#include "waffle/devhost.h"
+#include "waffle/util/bytes.h"
+#include "waffle/host/devhost.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_usb.h"
-#include "waffle/s09_bridge.h"
-#include "waffle/s09_files.h"
-#include "waffle/s09_master.h"
-#include "waffle/s11_content.h"
-#include "waffle/s11_staging.h"
-#include "waffle/s13c_panel.h"
-#include "waffle/wire_package.h"
-#include "waffle/wire_zip.h"
+#include "waffle/bridge/records.h"
+#include "waffle/bridge/files.h"
+#include "waffle/bridge/master.h"
+#include "waffle/install/content.h"
+#include "waffle/install/staging.h"
+#include "waffle/display/panel.h"
+#include "waffle/install/crypto.h"
+#include "waffle/install/zip.h"
 
 #if !defined(OPXY_TEST_OS)
 
-#define PIECE 0x8000u		/* the check's piece (src/s11_package.c) */
+#define PIECE 0x8000u		/* the check's piece (src/core/install/package.c) */
 
 static _Alignas(4) uint8_t piece[PIECE];
 
@@ -483,7 +483,7 @@ static bool dir_made(uint64_t h)
 /*
  * The requests the staging area would send for stage_path()'s path,
  * upgrade/<rel> with a '/' added for a directory: a mkdir for each
- * directory of it below those the last path made (s09_files.c remembers
+ * directory of it below those the last path made (bridge/files.c remembers
  * them). A mkdir of a directory that is there already is taken to fail
  * (yaffs2's EEXIST) and to be followed by one stat; a directory is there
  * when the staging area's reset made it ("upgrade") or an earlier path's

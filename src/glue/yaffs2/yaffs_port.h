@@ -59,7 +59,7 @@ typedef long long wb_yaffs_loff_t;
  * signed division (__divdi3 on the BF70x): yaffsfs_DoStat()'s st_blocks,
  * a local yaffs2 change.
  */
-#include "waffle/div64.h"
+#include "waffle/util/div64.h"
 
 static inline long long wb_yaffs_div(long long n, unsigned long d)
 {

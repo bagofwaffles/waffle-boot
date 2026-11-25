@@ -13,8 +13,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "waffle/s03_emmc.h"
-#include "waffle/s09_master.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/bridge/master.h"
 
 /* The master's eMMC: ctx is the struct s09_master. With the slave absent
  * every operation fails at once (S-09.008). */
@@ -103,7 +103,7 @@ void opxy_bridge_end_note(struct opxy_master *m);
 void opxy_bridge_plain(struct opxy_master *m);
 /*
  * Part `part` of the link's record for a developer host (OPXY_DEV_LINK_RECORD,
- * waffle/devhost.h), at out; its length.
+ * waffle/host/devhost.h), at out; its length.
  */
 size_t opxy_bridge_record(const struct s09_master *b, unsigned part, uint8_t *out);
 
@@ -129,7 +129,7 @@ bool opxy_bridge_load_os(struct opxy_master *m, uint8_t *staging, uint32_t cap,
 /* S-09.081: why the quad data replies were not taken up or were dropped
  * (S09_QW_...), in words. */
 const char *opxy_bridge_qdata_why(unsigned why);
-/* OPXY_DEV_QUAD_DATA's answer after its status byte (waffle/devhost.h). */
+/* OPXY_DEV_QUAD_DATA's answer after its status byte (waffle/host/devhost.h). */
 size_t opxy_bridge_qdata_report(const struct s09_master *b, uint8_t *out);
 
 #endif /* WAFFLE_BOARD_OPXY_BRIDGE_H */

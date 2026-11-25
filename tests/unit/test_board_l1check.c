@@ -13,8 +13,8 @@
 #include "support/check.h"
 
 #include "waffle/board/opxy_boot.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/wire_crc.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/util/crc.h"
 
 #define BASE S01_L1_CODE_START
 #define LEN 0x400u

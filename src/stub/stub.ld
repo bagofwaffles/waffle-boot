@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The stub's link map (waffle/pack.h): linked alone, from its own objects,
+ * The stub's link map (waffle/boot/pack.h): linked alone, from its own objects,
  * its own copy of zlib's inflate and libgcc, into the L2 the main image
  * leaves free between the shared block and its handover reserve
  * (WB_STUB_START to WB_STUB_END). Loaded: code, constants and data. Not

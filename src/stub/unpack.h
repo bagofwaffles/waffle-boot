@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The packed block's check and inflate (waffle/pack.h), apart from the
+ * The packed block's check and inflate (waffle/boot/pack.h), apart from the
  * target, so that the host's tests run the stub's own code.
  */
 #ifndef WB_STUB_UNPACK_H
@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "waffle/pack.h"
+#include "waffle/boot/pack.h"
 
 enum wb_unpack_rc {
 	WB_UNPACK_OK = 0,

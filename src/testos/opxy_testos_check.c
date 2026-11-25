@@ -29,8 +29,8 @@
 #include <string.h>
 
 #include "waffle/board/opxy_boot.h"
-#include "waffle/bytes.h"
-#include "waffle/display.h"
+#include "waffle/util/bytes.h"
+#include "waffle/display/display.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_dmc.h"
 #include "waffle/drivers/bf70x_port.h"
@@ -38,13 +38,13 @@
 #include "waffle/drivers/bf70x_spiflash.h"
 #include "waffle/drivers/bf70x_usb.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/s10a_usb.h"
-#include "waffle/s13c_panel.h"
-#include "waffle/s15_lines.h"
-#include "waffle/s17_revisions.h"
+#include "waffle/usb/device.h"
+#include "waffle/display/panel.h"
+#include "waffle/ui/lines.h"
+#include "waffle/boot/revisions.h"
 #include "waffle/board/installer.h"
 #include "waffle/board/testos_check.h"
-#include "waffle/wire_fat.h"
+#include "waffle/fs/fat.h"
 
 #define REQUEST_US 100000u		/* S-07.011, S-08.020 */
 #define LINK_TOTAL 0x800000u		/* the bridge's soak: 8 MiB */

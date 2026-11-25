@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for the S-05 hand-off logic (src/s05_handoff.c).
+ * Host program for the S-05 hand-off logic (src/core/boot/handoff.c).
  *
  * Commands (one result line each):
  *   decide REASON STATE KEYS [SLAVE] -> BOOT_OS INTERRUPTED   (KEYS 0 not held, 1 held, 2 silent;
@@ -12,7 +12,7 @@
  *   master STAGE IMAGE RELEASE NZ  -> the op log of s05_master_handoff
  *   slave STAGE IMAGE              -> the op log of s05_slave_release, then ret:0|1
  *   boot REASON STATE KEYS SLAVE STORE PROMPT STAGE IMAGE RELEASE NZ
- *                                  -> the op log of boot_master (src/boot_flow.c): store (the
+ *                                  -> the op log of boot_master (src/core/boot/flow.c): store (the
  *                                     start in boot menu op, S-15.175), prompt (S-05.025),
  *                                     the hand-off's ops, held:LOADED:CAUSE:INTERRUPTED:ABSENT.
  *                                     STORE -1: no op, else its answer; PROMPT 0: no op, else
@@ -34,9 +34,9 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/boot.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/s05_handoff.h"
+#include "waffle/boot/flow.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/boot/handoff.h"
 
 #define HB_DEFAULT  0x88A34D5Cu	/* the header buffer the vectors use */
 #define LOADFN      0x88A34E00u
@@ -387,7 +387,7 @@ static void do_slave(const struct h_cmd *c)
 	h_end();
 }
 
-/* --- the boot flow (src/boot_flow.c), with logged ops --- */
+/* --- the boot flow (src/core/boot/flow.c), with logged ops --- */
 
 static struct {
 	uint16_t reason;

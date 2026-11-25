@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The host link's /user root (src/hl_fat.c) on a FAT volume this test
+ * The host link's /user root (src/core/host/hostlink_fat.c) on a FAT volume this test
  * builds in memory with FatFs's f_mkfs: files written, read in chunks,
  * listed, renamed over a file, removed; every completed change flushed;
  * a volume FatFs does not read (blank, or exFAT) answers HL_E_FS; a drive
@@ -11,7 +11,7 @@
 
 #include "support/check.h"
 
-#include "waffle/hl_fat.h"
+#include "waffle/host/hostlink_fat.h"
 #include "wb_fatfs.h"
 
 #define SECTORS 16384u		/* 8 MiB */

@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/s02_flash.h"
+#include "waffle/flash/layout.h"
 #include "s02_ref_crc.h"
 
 #define FF_LOG_MAX 8192u

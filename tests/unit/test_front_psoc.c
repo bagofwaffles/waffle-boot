@@ -19,10 +19,10 @@
 
 #include "front/fr.h"
 #include "front/fr_psoc.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s06_rx.h"
-#include "waffle/s07_rules.h"
-#include "waffle/wire_crc.h"
+#include "waffle/link/frame.h"
+#include "waffle/link/rx.h"
+#include "waffle/psoc/rules.h"
+#include "waffle/util/crc.h"
 #include "vectors/s07_vectors.h"
 
 #define MS 1000u

@@ -844,7 +844,7 @@ void opxy_services_poll(struct opxy_master *m)
 	struct opxy_services *sv = &m->sv;
 
 	opxy_usb_poll(m);
-	/* A developer host's key events (waffle/devhost.h). */
+	/* A developer host's key events (waffle/host/devhost.h). */
 	OPXY_TESTOS_OR((void)0, opxy_dev_keys(m));
 	opxy_menu_tick(m);
 	/* S-15.105: only differences of the time matter. */

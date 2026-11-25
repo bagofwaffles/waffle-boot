@@ -22,7 +22,7 @@
 #include "waffle/board/opxy_services.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/s01_memmap.h"
+#include "waffle/boot/memmap.h"
 #include "waffle/testos.h"
 
 #define OS_FRAME_BYTES (OPXY_OS_FRAME_END - OPXY_OS_FRAME_START)

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-12 filesystems: the RAM disk on FatFs (src/wire_fat.c) and the yaffs2 volume (src/wire_yaffs.c),
+"""S-12 filesystems: the RAM disk on FatFs (src/core/fs/fat.c) and the yaffs2 volume (src/core/fs/yaffs.c),
 through h_s12 on the images of tests/oracle/S-12-filesystems, read back with conformance/fs."""
 
 import hashlib
@@ -633,7 +633,7 @@ class YaffsMount(unittest.TestCase):
         os.remove(after)
 
     @expected_failure('S-12/SC-12-YAFFS-WRITE', 'the headers lack S-12.059\'s mode type bits (yaffs2 stores '
-                      'the mode its caller gives, 0644 or 0755, and src/wire_yaffs.c gives no S_IFREG or '
+                      'the mode its caller gives, 0644 or 0755, and src/core/fs/yaffs.c gives no S_IFREG or '
                       'S_IFDIR), and a rename rewrites the header with the old times, not the clock\'s')
     @requirement('S-12.059')
     def test_SC_12_YAFFS_WRITE_headers(self):
@@ -660,7 +660,7 @@ class YaffsMount(unittest.TestCase):
 
     @expected_failure('S-12/SC-12-YAFFS-TRUST', 'the volume mounts but the root lists no entry: object 0x300 '
                       'is named from chunk 1\'s data (the S-12.051 trusted-header rule is not done, '
-                      'src/wire_yaffs.h) and wire_yaffs_list() ends at the entry it cannot stat')
+                      'waffle/fs/yaffs.h) and wire_yaffs_list() ends at the entry it cannot stat')
     @requirement('S-16.071')
     @scenario('S-12/SC-12-YAFFS-TRUST')
     def test_SC_12_YAFFS_TRUST(self):

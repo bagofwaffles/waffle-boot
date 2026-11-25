@@ -11,12 +11,12 @@
 #include <string.h>
 
 #include "front/fr_handoff.h"
-#include "waffle/bytes.h"
-#include "waffle/device.h"
-#include "waffle/s02_flash.h"
-#include "waffle/s05_handoff.h"
-#include "waffle/s15_keytest.h"
-#include "waffle/s15_lines.h"
+#include "waffle/util/bytes.h"
+#include "waffle/boot/device.h"
+#include "waffle/flash/layout.h"
+#include "waffle/boot/handoff.h"
+#include "waffle/ui/keytest.h"
+#include "waffle/ui/lines.h"
 
 /* --- the OS partition, the trial --- */
 

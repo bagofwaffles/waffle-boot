@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/s07_cypress.h"
+#include "waffle/psoc/cypress.h"
 
 /* S-13a.001-.005 at CLKIN 25 MHz. */
 const struct wb_cgu_config opxy_cgu = {

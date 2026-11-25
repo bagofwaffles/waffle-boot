@@ -15,7 +15,7 @@
 #include <string.h>
 
 #include "s03_fake_emmc.h"
-#include "waffle/s08_nordic.h"
+#include "waffle/nordic/nordic.h"
 #include "support/check.h"
 
 #define B 0x40000u		/* 256 KiB boot partitions */

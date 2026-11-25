@@ -24,7 +24,7 @@
  * shorter piece, is caught there; a wrong answer on a piece that is not
  * compared comes back wrong; a deflated member's pieces, whose lengths
  * vary, mostly stay on the peripheral. Then the
- * package's checks on top (opxy_crc.c, s11_engine.h): a member whose
+ * package's checks on top (opxy_crc.c, install/engine.h): a member whose
  * CRC-32 the peripheral got wrong is extracted again in software and
  * accepted, its staged file whole, the peripheral off after; a truly bad
  * member is refused MEMBER as the software refuses it, extracted at most
@@ -46,11 +46,11 @@
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_services.h"
 #include "waffle/drivers/bf70x_crc.h"
-#include "waffle/s11_engine.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_staging.h"
-#include "waffle/wire_crc.h"
-#include "waffle/wire_package.h"
+#include "waffle/install/engine.h"
+#include "waffle/install/package.h"
+#include "waffle/install/staging.h"
+#include "waffle/util/crc.h"
+#include "waffle/install/crypto.h"
 
 #include "zip_build.h"
 #include "zlib.h"
@@ -528,7 +528,7 @@ static void test_shapes(void)
 static _Alignas(32) uint8_t inflated[0x8000];
 
 /*
- * The CRC-32 of a deflated member as wire_zip.c's extraction feeds it:
+ * The CRC-32 of a deflated member as install/zip.c's extraction feeds it:
  * inflate() given 16 KiB of input at a time and up to 32 KiB of output, each
  * piece of output through opxy_crc32(). *pieces counts them, *changes those
  * whose length is not the one before's.

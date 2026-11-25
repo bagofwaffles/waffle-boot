@@ -3,7 +3,7 @@
  * S-06 frame codec: S-06.001-S-06.006 against tests/oracle/S-06-framing/vectors
  * (crc.json, encode.json).
  */
-#include "waffle/s06_frame.h"
+#include "waffle/link/frame.h"
 
 #include "s06_test.h"
 #include "vectors/s06_vectors.h"

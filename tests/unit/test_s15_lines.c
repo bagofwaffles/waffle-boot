@@ -9,9 +9,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "waffle/device.h"
-#include "waffle/s15_console.h"
-#include "waffle/s15_lines.h"
+#include "waffle/boot/device.h"
+#include "waffle/ui/console.h"
+#include "waffle/ui/lines.h"
 #include "s14_check.h"
 #define S15V_KEYS
 #define S15V_MANIFEST

@@ -19,19 +19,19 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/device.h"
+#include "waffle/boot/device.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/board/opxy_services.h"
-#include "waffle/bytes.h"
-#include "waffle/devhost.h"
-#include "waffle/s09_slave.h"
-#include "waffle/s11_common.h"
-#include "waffle/wire_fat.h"
-#include "waffle/wire_package.h"
-#include "waffle/wire_s09.h"
-#include "waffle/wire_yaffs.h"
-#include "waffle/wire_zip.h"
+#include "waffle/util/bytes.h"
+#include "waffle/host/devhost.h"
+#include "waffle/bridge/slave.h"
+#include "waffle/install/common.h"
+#include "waffle/fs/fat.h"
+#include "waffle/install/crypto.h"
+#include "waffle/bridge/slave_files.h"
+#include "waffle/fs/yaffs.h"
+#include "waffle/install/zip.h"
 
 #define DISK_SECTORS 454656u		/* S-12.001 */
 #define SPLIT 100u
@@ -956,7 +956,7 @@ static uint16_t le16(const uint8_t *p)
 	return (uint16_t)(p[0] | p[1] << 8);
 }
 
-/* The reply's layout (waffle/devhost.h), its counts, refusals while busy
+/* The reply's layout (waffle/host/devhost.h), its counts, refusals while busy
  * and for bad arguments, and nothing written: no storage request, the
  * volume as it was, the link plain after. */
 static void test_quad_reply(void)

@@ -8,7 +8,7 @@
 
 #include "waffle/drivers/bf70x_lcd.h"
 #include "waffle/drivers/bf70x_time.h"
-#include "waffle/s13c_panel.h"
+#include "waffle/display/panel.h"
 
 struct wb_display_bf70x {
 	struct wb_lcd lcd;

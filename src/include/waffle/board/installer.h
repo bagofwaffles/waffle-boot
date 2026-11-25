@@ -32,8 +32,8 @@
 #include <stdint.h>
 
 #include "waffle/board/testos_check.h"
-#include "waffle/s15_console.h"
-#include "waffle/s15_keytest.h"
+#include "waffle/ui/console.h"
+#include "waffle/ui/keytest.h"
 #include "waffle/testos.h"
 
 /* --- What the installer is doing (the protocol's phase) --- */

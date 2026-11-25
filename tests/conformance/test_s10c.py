@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-10c codecs, texts and the command server's Continue transcripts: src/s10c_sysex.c, s10c_text.c and
-s10c_host.c (through h_s10c) against tests/oracle/S-10c-host-commands/vectors."""
+"""S-10c codecs, texts and the command server's Continue transcripts: src/core/host/sysex.c, host/text.c and
+host/commands.c (through h_s10c) against tests/oracle/S-10c-host-commands/vectors."""
 
 import json
 import re
@@ -144,7 +144,7 @@ def ignored(script, frame):
 
 
 class HostCommands(unittest.TestCase):
-    """src/s10c_host.c through h_s10c's dev and frame commands: a transcript's inject frames delivered to the
+    """src/core/host/commands.c through h_s10c's dev and frame commands: a transcript's inject frames delivered to the
     server one by one on the vector's link, its expect frames matched in order against what the server sends.
     What the server does with frames after Continue to the OS has asked for the restart is not checked: the
     board restarts (src/board/opxy_services.c), which is not driven here."""

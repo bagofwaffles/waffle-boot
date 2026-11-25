@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""The host link's own code (src/hostlink.c) over volumes in memory (tests/tools/hl_sim.py) on this
+"""The host link's own code (src/core/host/hostlink.c) over volumes in memory (tests/tools/hl_sim.py) on this
 process's standard input and output, as raw bytes: what a host sends in, the unit's frames out. For
 tests/web/test_hostlink.mjs.
 

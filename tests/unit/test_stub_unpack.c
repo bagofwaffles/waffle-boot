@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The stub's unpack (src/stub/unpack.c, waffle/pack.h) against blocks
+ * The stub's unpack (src/stub/unpack.c, waffle/boot/pack.h) against blocks
  * tools/mkldr.py packed: a good one gives its runs back; a corrupted, a
  * truncated or a spoiled one, a run where nothing may be written and a
  * stream that does not fill its run are refused, and nothing is written

@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/s03_emmc.h"
+#include "waffle/emmc/emmc.h"
 #include "s02_ref_crc.h"
 
 #define FE_B_MAX  0x400000u

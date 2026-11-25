@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Writes src/display_font.c, the display's font (S-15.003), from the vendored Spleen 8x16 BDF file.
+"""Writes src/core/display/font.c, the display's font (S-15.003), from the vendored Spleen 8x16 BDF file.
 
-    python3 -I -B tools/bdf2c.py                  # check src/display_font.c is current
+    python3 -I -B tools/bdf2c.py                  # check src/core/display/font.c is current
     python3 -I -B tools/bdf2c.py --write          # rewrite it
     python3 -I -B tools/bdf2c.py --front [--write]  # the same for the front's copy, src/front/fr_font.c
 
@@ -16,7 +16,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BDF = os.path.join(ROOT, 'src', 'third_party', 'spleen', 'spleen-8x16.bdf')
-OUT = os.path.join(ROOT, 'src', 'display_font.c')
+OUT = os.path.join(ROOT, 'src', 'core', 'display', 'font.c')
 FRONT_OUT = os.path.join(ROOT, 'src', 'front', 'fr_font.c')
 W, H, FIRST, LAST = 8, 16, 0x20, 0x7E
 TITLE_W, TITLE_H = 10, 17
@@ -154,7 +154,7 @@ def source(g):
                     ' * are below the baseline. wb_display_title_font, the title bar\'s, is derived',
                     ' * from it by the same tool: each glyph 17 rows of 10 pixels, bit 9 the leftmost.',
                     ' */',
-                    '#include "waffle/display.h"'],
+                    '#include "waffle/display/display.h"'],
                 'const uint8_t wb_display_font[WB_FONT_COUNT][WB_FONT_H]',
                 'const uint16_t wb_display_title_font[WB_FONT_COUNT][WB_TITLE_H]')
 

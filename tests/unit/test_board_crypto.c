@@ -27,7 +27,7 @@
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_services.h"
 #include "waffle/drivers/bf70x_pkte.h"
-#include "waffle/wire_package.h"
+#include "waffle/install/crypto.h"
 
 #define N 100000u
 

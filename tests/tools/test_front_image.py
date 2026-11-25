@@ -98,7 +98,7 @@ class Boundary(unittest.TestCase):
 
     def test_bad_dependencies_fail(self):
         for path in ('../elsewhere/x.h', 'src/../../x.h', 'src/front/../../../x.h',
-                     'src/include/waffle/s02_flash.h', 'src/s01.c',
+                     'src/include/waffle/flash/layout.h', 'src/s01.c',
                      '/usr/include/string.h', '/opt/cc/bfin-elf/include/string.h',
                      CC_INCLUDE + '/../include-fixed/limits.h', CC_INCLUDE + '-other/x.h'):
             with tempfile.TemporaryDirectory() as d:

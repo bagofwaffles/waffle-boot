@@ -12,8 +12,8 @@
 
 #include "ff.h"
 #include "waffle/board/opxy_boot.h"
-#include "waffle/s10a_msc.h"
-#include "waffle/s14_export.h"
+#include "waffle/usb/msc.h"
+#include "waffle/log/export.h"
 
 #define LOGS "logs"
 

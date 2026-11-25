@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The host link on the master (waffle/hostlink.h): its roots, the approval
+ * The host link on the master (waffle/host/hostlink.h): its roots, the approval
  * screen, and its actions through the code the unit's own menus run.
  *
  *   yaffs2  the drive, as MTP offers it: read, write, list and stat open
  *   os      the installed OS's two copies on the eMMC's boot partitions,
  *           boot1 and boot2: the header sector and the image, read only
  *   user    the OS's FAT volume on the eMMC's user area, read and written
- *           with FatFs (waffle/hl_fat.h) within that volume's sectors alone;
+ *           with FatFs (waffle/host/hostlink_fat.h) within that volume's sectors alone;
  *           fat-region devices alone (the OP-XY)
  *
  * No file call reaches the SPI flash, memory or a raw sector of the drive.
@@ -20,14 +20,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/bytes.h"
+#include "waffle/util/bytes.h"
 #include "waffle/drivers/bf70x_usb.h"
-#include "waffle/hostlink.h"
-#include "waffle/s03_emmc.h"
-#include "waffle/s05_handoff.h"
-#include "waffle/s15_lines.h"
+#include "waffle/host/hostlink.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/boot/handoff.h"
+#include "waffle/ui/lines.h"
 #include "bearssl_hash.h"
-#include "waffle/hl_fat.h"
+#include "waffle/host/hostlink_fat.h"
 
 static struct opxy_master *me;	/* the ops' ctx */
 

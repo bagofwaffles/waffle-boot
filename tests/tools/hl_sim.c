@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The host link's protocol (src/hostlink.c) over volumes in memory, as a
+ * The host link's protocol (src/core/host/hostlink.c) over volumes in memory, as a
  * shared library for the host tools' tests (tests/tools/hl_sim.py): the
  * drive (/yaffs2, read-write), the installed OS's two copies (/os/boot1
- * and boot2) and the OS's FAT volume (/user, when turned on: src/hl_fat.c
+ * and boot2) and the OS's FAT volume (/user, when turned on: src/core/host/hostlink_fat.c
  * on a FAT volume sim_user() builds in memory with f_mkfs), an approval
  * the test answers, and jobs the test moves on; an image into RAM
  * (S-10c.135) up to 8 MiB, checked by a stand-in for S-05.024 that refuses
@@ -13,8 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/hl_fat.h"
-#include "waffle/hostlink.h"
+#include "waffle/host/hostlink_fat.h"
+#include "waffle/host/hostlink.h"
 #include "bearssl_hash.h"
 #include "wb_fatfs.h"
 

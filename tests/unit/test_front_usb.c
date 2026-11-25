@@ -10,8 +10,8 @@
 #include "support/check.h"
 
 #include "front/fr_usb.h"
-#include "waffle/device.h"
-#include "waffle/s10a_desc.h"
+#include "waffle/boot/device.h"
+#include "waffle/usb/desc.h"
 
 static unsigned le16(const uint8_t *p)
 {

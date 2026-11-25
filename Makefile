@@ -218,14 +218,14 @@ FRONT_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -g -fdebug-prefix-map=$(CURDI
 HOST_LIB_CFLAGS  := $(COMMON) -O2 -ffreestanding -fno-common -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
 HOST_TEST_CFLAGS := $(COMMON) -O2 -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
 
-# The sources of the image, the test OS and the host library: the files at
-# src/'s top and every file under SRC_TREES, sub-folders included. The front,
-# the stub, the glue, the vendored code and the headers are built apart.
+# The sources of the image, the test OS and the host library: every file
+# under SRC_TREES, sub-folders included. The front, the stub, the glue, the
+# vendored code and the headers are built apart.
 SRC_TREES := src/core src/board src/testos src/drivers
 # $(call rwildcard,<dirs>,<patterns>): the matching files under <dirs>, at any depth.
 rwildcard = $(foreach d,$(wildcard $(addsuffix /*,$(1))),$(call rwildcard,$(d),$(2)) $(filter $(2),$(d)))
 # $(call src_files,<suffix>): the sources with that suffix.
-src_files = $(wildcard src/*$(1)) $(call rwildcard,$(SRC_TREES),%$(1))
+src_files = $(call rwildcard,$(SRC_TREES),%$(1))
 
 # lcd_gpio.c is the test OS's gpio variant alone (TESTOS_LCD_GPIO below).
 # HOOK_SRCS hold strong definitions of the board's weak hooks; they come
@@ -300,7 +300,7 @@ TARGET_CFLAGS    += $(TP_CPPFLAGS) $(LIBC_INCLUDES)
 $(BUILD)/bf703/obj/board/opxy_handover.o: TARGET_CFLAGS += -mlong-calls
 # S-09.072: the bridge's check runs over every byte an install sends, on both
 # CPUs; -O2, as third_party.mk gives the CRCs, speeds its word loop.
-$(BUILD)/bf703/obj/s09_bridge.o: TARGET_CFLAGS += $(TARGET_SPEED)
+$(BUILD)/bf703/obj/core/bridge/records.o: TARGET_CFLAGS += $(TARGET_SPEED)
 
 host: $(HOST_LIB) $(FRONT_HOST_LIB) $(TP_HOST_LIBS) $(HOST_TESTS)
 
@@ -398,7 +398,7 @@ check/testos_mon:
 	$(PYTHON) -I -B tests/tools/test_testos_mon.py
 
 # tools/hostlink.py, and testos_mon.py's dev-put and dev-get over it, against
-# the host link's own C (src/hostlink.c) with volumes in memory.
+# the host link's own C (src/core/host/hostlink.c) with volumes in memory.
 .PHONY: check/hostlink
 check/hostlink:
 	CC="$(CC)" $(PYTHON) -I -B tests/tools/test_hostlink_tool.py
@@ -482,7 +482,7 @@ IMAGE  := $(BUILD)/bf703/waffle-boot.elf
 STREAM := $(IMAGE:.elf=.ldr)
 LAYOUT := $(IMAGE:.elf=.layout.json)
 LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/opxy.h \
-	--flash src/include/waffle/s02_flash.h --memmap src/include/waffle/s01_memmap.h \
+	--flash src/include/waffle/flash/layout.h --memmap src/include/waffle/boot/memmap.h \
 	--stream $(STREAM) --stub $(BUILD)/bf703/stub.elf
 
 # S-01.009: the stack the factory first stage calls the ROM's boot entry on,
@@ -545,7 +545,7 @@ $(FRONT_STREAM): $(FRONT_ELF) $(FRONT_OK) tools/mkldr.py tools/elf32.py
 front-pin: $(FRONT_ELF)
 	$(PYTHON) -I -B tools/front_image.py pin $(FRONT_ELF) $(FRONT_PIN) --write
 
-# The stub (src/stub/, waffle/pack.h): linked alone by stub.ld from its own
+# The stub (src/stub/, waffle/boot/pack.h): linked alone by stub.ld from its own
 # objects, its own copy of zlib's inflate and CRC-32 (Z_SOLO: no C library;
 # NO_GZIP: raw deflate only) and libgcc, into the L2 the image leaves free.
 # The front enters it; it unpacks the image's packed block and enters the
@@ -590,7 +590,7 @@ $(STUB_ELF): $(STUB_OBJS) $(STUB_LD)
 # the image's packed runs (mkldr.py --unpacked).
 UNPACK_HOST := $(BUILD)/host/unpack-host
 $(UNPACK_HOST): src/stub/unpack_host.c src/stub/unpack.c src/stub/unpack.h \
-		src/include/waffle/pack.h $(BUILD)/host/libzlib.a
+		src/include/waffle/boot/pack.h $(BUILD)/host/libzlib.a
 	@mkdir -p $(@D)
 	$(CC) $(COMMON) -O2 $(TP_CPPFLAGS) src/stub/unpack_host.c src/stub/unpack.c \
 		$(BUILD)/host/libzlib.a -o $@
@@ -751,7 +751,7 @@ $$(TESTOS_$(1)_STREAM): $$(TESTOS_$(1)_IMAGE) tools/mkldr.py tools/elf32.py
 
 $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testos_layout.py tools/layout.py tools/elf32.py
 	$(PYTHON) -I -B tools/testos_layout.py $$< --ld $$(TESTOS_$(1)_LD) $(TESTOS_DEVICE_$(1)) \
-		--board src/include/waffle/board/opxy.h --memmap src/include/waffle/s01_memmap.h \
+		--board src/include/waffle/board/opxy.h --memmap src/include/waffle/boot/memmap.h \
 		--stream $$(TESTOS_$(1)_STREAM) $(TESTOS_LAYOUT_FLAGS_$(1)) --json $$@.tmp
 	$(foreach d,$(or $(TESTOS_LAYOUT_DEVICES_$(1)),xy),\
 		$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp --device $(d) &&) true

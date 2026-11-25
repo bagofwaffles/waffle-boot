@@ -20,9 +20,9 @@
  */
 #include <string.h>
 
-#include "waffle/bytes.h"
-#include "waffle/s09_master.h"
-#include "waffle/s09_slave.h"
+#include "waffle/util/bytes.h"
+#include "waffle/bridge/master.h"
+#include "waffle/bridge/slave.h"
 
 #include "s06_test.h"
 #include "s06_fake.h"

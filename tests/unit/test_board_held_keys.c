@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Held mode's keys across a long operation (src/board/opxy_held.c,
- * src/s15_menu.c): UART0's driver on a modeled controller and DMA11, the
+ * src/core/ui/menu.c): UART0's driver on a modeled controller and DMA11, the
  * S-06 link, S-07's bitmaps and S-15's menus, as the board joins them. The
  * PSoC link has no flow control (S-13b.070): what the PSoC sends while
  * nothing services the link waits in DMA11's ring.
@@ -11,14 +11,14 @@
 #include "support/check.h"
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
-#include "waffle/device.h"
+#include "waffle/boot/device.h"
 #include "waffle/board/opxy_boot.h"
-#include "waffle/devhost.h"
+#include "waffle/host/devhost.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_sec.h"
-#include "waffle/s06_rx.h"
-#include "waffle/s06_frame.h"
-#include "waffle/wire_crc.h"
+#include "waffle/link/rx.h"
+#include "waffle/link/frame.h"
+#include "waffle/util/crc.h"
 
 static struct opxy_master m;
 
@@ -327,7 +327,7 @@ static void setup(enum during d)
 	menu_start();
 }
 
-/* --- a developer host on the CDC link (waffle/devhost.h) --- */
+/* --- a developer host on the CDC link (waffle/host/devhost.h) --- */
 
 static uint8_t cdc_wire[1024];
 static size_t cdc_n;

@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#include "waffle/bytes.h"
+#include "waffle/util/bytes.h"
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/drivers/mmr.h"
 

@@ -10,7 +10,7 @@
  */
 #include <string.h>
 
-#include "waffle/device.h"
+#include "waffle/boot/device.h"
 #include "s02_check.h"
 #include "s02_fake_flash.h"
 #include "vectors/s02_vectors.h"

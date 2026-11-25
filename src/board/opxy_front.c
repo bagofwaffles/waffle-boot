@@ -8,9 +8,9 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "waffle/bytes.h"
-#include "waffle/device.h"
-#include "waffle/wire_crc.h"
+#include "waffle/util/bytes.h"
+#include "waffle/boot/device.h"
+#include "waffle/util/crc.h"
 
 /* S-01.007, S-01.021: as the front found them at the INIT call (its
  * hand-off), logged by the master; 0 when there was none. */
@@ -30,7 +30,7 @@ _Static_assert(offsetof(struct fr_handoff, stamps) == 80u &&
 _Static_assert(FR_HO_DEV_OPXY == WB_DEV_OPXY && FR_HO_DEV_OP1F == WB_DEV_OP1F &&
 	       FR_HO_HOW_TABLE == WB_DEV_BY_TABLE && FR_HO_HOW_SECOND == WB_DEV_SECOND_CPU &&
 	       FR_HO_HOW_UNKNOWN == WB_DEV_UNKNOWN,
-	       "S-18.005: the record's device codes are device.h's");
+	       "S-18.005: the record's device codes are boot/device.h's");
 
 bool opxy_front_accept(const uint8_t *rec, struct fr_handoff *out)
 {

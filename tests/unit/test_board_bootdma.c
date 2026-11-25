@@ -19,8 +19,8 @@
 #include "waffle/board/opxy_ops.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_port.h"
-#include "waffle/s06_bytes.h"
-#include "waffle/s09_fast.h"
+#include "waffle/link/bytes_compat.h"
+#include "waffle/bridge/fast.h"
 #include "vectors/s09_vectors.h"
 
 #define N OPXY_SPI_LINK

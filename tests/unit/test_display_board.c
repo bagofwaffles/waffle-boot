@@ -13,8 +13,8 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/bytes.h"
-#include "waffle/device.h"
+#include "waffle/util/bytes.h"
+#include "waffle/boot/device.h"
 #include "waffle/board/opxy_boot.h"
 /* opxy_display() also pulls src/board/opxy_display.c out of the library
  * over the board's weak hooks */
@@ -22,8 +22,8 @@
 #include "waffle/board/opxy_services.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_lcd.h"
-#include "waffle/s13c_panel.h"
-#include "waffle/s15_lines.h"
+#include "waffle/display/panel.h"
+#include "waffle/ui/lines.h"
 #include "s15_sha256.h"
 
 /* tests/oracle/S-15-menus/vectors/handover_frame.json: the logo alone */

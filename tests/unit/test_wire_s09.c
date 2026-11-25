@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The slave's file layer of S-09.041 on yaffs2 (src/wire_s09.c): each file
+ * The slave's file layer of S-09.041 on yaffs2 (src/core/bridge/slave_files.c): each file
  * command against a yaffs2 volume in RAM, with the results and errno
  * numbers of S-09.041 and S-09.042 (errno.json's table; S-CMD's fs_err_*
  * cases: a non-empty rmdir 93, a 300-character name 78, a full volume 28),
@@ -11,8 +11,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/wire_crc.h"
-#include "waffle/wire_s09.h"
+#include "waffle/util/crc.h"
+#include "waffle/bridge/slave_files.h"
 
 #include "vectors/wire_vectors.h"
 

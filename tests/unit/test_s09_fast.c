@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-09.009, S-13b.023: the boot stream's sessions in parts by the controller,
- * with the fall-back to one byte at a time (src/s09_fast.c), under
+ * with the fall-back to one byte at a time (src/core/bridge/fast.c), under
  * s09_boot_slave() on the published synthetic slots (slave_stream_*.json),
  * against a model of the link: a controller that clocks a byte only while
  * the ready line reads low, and a slave whose line follows each case below.
@@ -14,9 +14,9 @@
  * in the stream sent whole, the rest one byte at a time, exactly once, with
  * the controller never used again.
  */
-#include "waffle/s09_fast.h"
-#include "waffle/s09_master.h"
-#include "waffle/s06_bytes.h"
+#include "waffle/bridge/fast.h"
+#include "waffle/bridge/master.h"
+#include "waffle/link/bytes_compat.h"
 
 #include "s06_test.h"
 #include "vectors/s09_vectors.h"

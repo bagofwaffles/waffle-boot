@@ -47,11 +47,11 @@
 #include "waffle/board/installer.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/drivers/bf70x_spiflash.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/s02_flash.h"
-#include "waffle/s02_store.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/flash/layout.h"
+#include "waffle/flash/settings.h"
 #include "waffle/testos.h"
-#include "waffle/wire_crc.h"
+#include "waffle/util/crc.h"
 
 #define TRIAL_CRC_XOR 0xFFFFFFFFu	/* the trial mark: every CRC bit inverted (S-02.016) */
 _Static_assert(TRIAL_CRC_XOR == 0xFFFFFFFFu, "trial_crc_flip inverts every crc bit");

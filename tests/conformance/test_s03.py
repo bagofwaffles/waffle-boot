@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-03 eMMC: src/s03_emmc.c (through h_s03) on boot partitions built with images.emmc, against its
+"""S-03 eMMC: src/core/emmc/emmc.c (through h_s03) on boot partitions built with images.emmc, against its
 load rule and writer and tests/oracle/S-03-emmc (model, vectors) (part 'logic')."""
 
 import hashlib
@@ -86,7 +86,7 @@ def outcome(res, old, new):
         'old' if crc == crc32(old) and int(res[2]) == len(old) else 'other'
 
 
-S03_RETRIES = 3                  # S-03.010: attempts of a failing operation (src/include/waffle/s03_emmc.h)
+S03_RETRIES = 3                  # S-03.010: attempts of a failing operation (src/include/waffle/emmc/emmc.h)
 
 
 class Load(unittest.TestCase):

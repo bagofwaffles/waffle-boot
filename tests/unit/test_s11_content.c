@@ -9,10 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/device.h"
-#include "waffle/s11_content.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_staging.h"
+#include "waffle/boot/device.h"
+#include "waffle/install/content.h"
+#include "waffle/install/package.h"
+#include "waffle/install/staging.h"
 
 #include "s11_check.h"
 #include "vectors/s11_vectors.h"

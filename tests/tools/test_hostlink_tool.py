@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Tests of tools/hostlink.py, and of testos_mon.py's dev-put and dev-get over it, against the host link's
-own code (src/hostlink.c) built with volumes in memory (hl_sim.py). Python 3, standard library only;
+own code (src/core/host/hostlink.c) built with volumes in memory (hl_sim.py). Python 3, standard library only;
 ($CC, default cc) builds the library, and without one the tests are skipped.
 
     test_hostlink_tool.py
@@ -137,7 +137,7 @@ class Tool(unittest.TestCase):
         self.assertEqual(self.unit.last_run()[0], hl.A_RAM_START)
 
     def test_access_vectors(self):
-        """tests/oracle/S-10c-host-commands/vectors/hostlink_access.json on src/hostlink.c: each call's
+        """tests/oracle/S-10c-host-commands/vectors/hostlink_access.json on src/core/host/hostlink.c: each call's
         gate in each session, APPROVE's outcome with Developer's item on and off, and the pass's."""
         with open(os.path.join(TOP, 'tests', 'oracle', 'S-10c-host-commands', 'vectors',
                                'hostlink_access.json')) as f:

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The yaffs2 volume through src/wire_yaffs.c, against yaffs.txt and S-12
+ * The yaffs2 volume through src/core/fs/yaffs.c, against yaffs.txt and S-12
  * section 2:
  * - every image of yaffs_trees.json through wire_yaffs_mount(): the
  *   big-endian ones refused without a sector written (S-12.052), every
@@ -14,8 +14,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/s11_staging.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/install/staging.h"
+#include "waffle/fs/yaffs.h"
 #include "wb_yaffs.h"
 
 #define MAX_ENTRIES 64

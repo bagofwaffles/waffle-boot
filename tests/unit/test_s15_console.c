@@ -8,11 +8,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "waffle/device.h"
-#include "waffle/s14_log.h"
-#include "waffle/s15_console.h"
-#include "waffle/s15_keytest.h"
-#include "waffle/s15_lines.h"
+#include "waffle/boot/device.h"
+#include "waffle/log/log.h"
+#include "waffle/ui/console.h"
+#include "waffle/ui/keytest.h"
+#include "waffle/ui/lines.h"
 #include "s14_check.h"
 #include "s15_sha256.h"
 #define S15V_CONSOLE
@@ -132,7 +132,7 @@ static const struct s15_draw_ops draw = { fb_fill, fb_text, NULL, fb_ink,
 /* Without the ink and bold ops: the bars' text on the bar's base color. */
 static const struct s15_draw_ops plain = { fb_fill, fb_text, NULL, NULL, NULL };
 
-/* The board's frame (src/include/waffle/display.h): 8 x 16 glyphs on the
+/* The board's frame (src/include/waffle/display/display.h): 8 x 16 glyphs on the
  * 480 x 222 visible area, the title bar y 0 - 23, 9 rows 19 apart from
  * y 27, x from 16, the status bar's rule at y 202. */
 static const struct s15_geometry geom = {

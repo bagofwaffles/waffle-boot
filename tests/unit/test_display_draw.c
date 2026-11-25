@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The display (src/display_draw.c, src/display_font.c): the draw
+ * The display (src/core/display/draw.c, src/core/display/font.c): the draw
  * interface on the frame buffer, the declared font, the hand-over frame,
  * the shutdown and fatal-error frames, over a recording bus.
  * Requirements: S-15.002, S-15.003, S-15.132, S-13c.021, S-13c.022,
@@ -11,8 +11,8 @@
 
 #include "support/check.h"
 #include "s15_sha256.h"
-#include "waffle/device.h"
-#include "waffle/display.h"
+#include "waffle/boot/device.h"
+#include "waffle/display/display.h"
 
 /* tests/oracle/S-15-menus/vectors/handover_frame.json: the logo alone */
 #define HANDOVER_SHA "9e50c21e72a8979051e31a3046e98383f6bf81db56a907a210847efd4455c717"

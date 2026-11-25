@@ -7,7 +7,7 @@
  * and S-07.079's 8-byte 0x42; S-18.020's trace rules no_pmic_ids and
  * no_key_led_ids (trace_rules-1f.json) over a whole session on each device.
  */
-#include "waffle/s07_rules.h"
+#include "waffle/psoc/rules.h"
 
 #include "s07_test.h"
 #include "vectors/s07_vectors.h"

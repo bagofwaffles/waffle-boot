@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Developer host requests (S-10c.110, waffle/devhost.h): register reads and
+ * Developer host requests (S-10c.110, waffle/host/devhost.h): register reads and
  * writes, slave peek and poke over the bridge, the hand-over options, a
  * hand-over of the active-partition OS, and held mode's screen and keys.
  * Part of the standard image, served
  * from held mode's USB serial loop while developer mode is on (S-15.172)
- * and the host link's session is approved (waffle/hostlink.h); otherwise
+ * and the host link's session is approved (waffle/host/hostlink.h); otherwise
  * every request is refused and changes nothing. Files go by the host link. They are
  * another way to boot an OS and to recover a unit.
  *
@@ -17,7 +17,7 @@
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
 
-#include "waffle/devhost.h"
+#include "waffle/host/devhost.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_coremmr.h"
 #include "waffle/drivers/bf70x_cplb.h"
@@ -26,11 +26,11 @@
 #include "waffle/drivers/bf70x_time.h"
 #include "waffle/drivers/bf70x_usb.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/s05_handoff.h"
-#include "waffle/s09_bridge.h"
-#include "waffle/s09_files.h"
-#include "waffle/s13c_panel.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/boot/handoff.h"
+#include "waffle/bridge/records.h"
+#include "waffle/bridge/files.h"
+#include "waffle/display/panel.h"
 
 #if !defined(OPXY_TEST_OS)
 

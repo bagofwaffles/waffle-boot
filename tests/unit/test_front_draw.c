@@ -26,10 +26,10 @@
 #include "front/fr_panel.h"
 #include "front/fr_proto.h"
 #include "front/fr_start.h"
-#include "waffle/display.h"
-#include "waffle/s11_version.h"
-#include "waffle/s15_console.h"
-#include "waffle/s15_lines.h"
+#include "waffle/display/display.h"
+#include "waffle/util/version.h"
+#include "waffle/ui/console.h"
+#include "waffle/ui/lines.h"
 
 static uint8_t fb[S13C_FRAME_BYTES], frame[S13C_FRAME_BYTES], inc[S13C_FRAME_BYTES];
 static struct wb_display disp;
@@ -1600,7 +1600,7 @@ static void test_rec_chips(void)
 	CHECK(row_misses(&rs) == 0u);
 }
 
-/* Every key digit on recovery's screens is a key badge (s15_console.c's):
+/* Every key digit on recovery's screens is a key badge (ui/console.c's):
  * an amber cell 16 x 16 centered on the digit's column, from 4 pixels left
  * of it and a pixel above the row's top, its corner pixels left out, the
  * digit in bold black. */

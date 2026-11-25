@@ -24,13 +24,13 @@
 
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
-#include "waffle/div64.h"
+#include "waffle/util/div64.h"
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/s07_program.h"
-#include "waffle/s11_content.h"
-#include "waffle/s11_package.h"
-#include "waffle/s15_select.h"
-#include "waffle/wire_crc.h"
+#include "waffle/psoc/program.h"
+#include "waffle/install/content.h"
+#include "waffle/install/package.h"
+#include "waffle/ui/select.h"
+#include "waffle/util/crc.h"
 
 #define STAGE "upgrade/"
 #define DEVICE_CONTENT 0x06u	/* the TE header's device id (S-11.004) */

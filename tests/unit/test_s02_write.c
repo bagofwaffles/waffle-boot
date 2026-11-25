@@ -15,7 +15,7 @@
 #include "s02_check.h"
 #include "s02_fake_flash.h"
 #include "vectors/s02_vectors.h"
-#include "waffle/s02_store.h"
+#include "waffle/flash/settings.h"
 #include "front/fr_handoff.h"
 
 #define N(a) (sizeof(a) / sizeof((a)[0]))

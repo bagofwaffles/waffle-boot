@@ -7,8 +7,8 @@
 #ifndef S08_TEST_H
 #define S08_TEST_H
 
-#include "waffle/s08_nordic.h"
-#include "waffle/s06_bytes.h"
+#include "waffle/nordic/nordic.h"
+#include "waffle/link/bytes_compat.h"
 
 #include "s06_test.h"
 #include "s06_fake.h"

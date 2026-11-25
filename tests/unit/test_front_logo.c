@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The stored boot logo as the front checks and draws it (src/front/fr_logo.c)
- * against the main image's code (src/logo.c) and tools/wblogo.py's screens
+ * against the main image's code (src/core/flash/logo.c) and tools/wblogo.py's screens
  * (tests/vectors/logo/): every header field wrong in turn falls back, in
  * both; hostile data (a run past its line, data cut short, a palette index
  * past the palette, a byte left over, a CRC that does not match) falls
@@ -16,10 +16,10 @@
 
 #include "front/fr_logo.h"
 #include "front/fr_panel.h"
-#include "waffle/display.h"
-#include "waffle/logo.h"
-#include "waffle/logo_png.h"
-#include "waffle/wire_crc.h"
+#include "waffle/display/display.h"
+#include "waffle/flash/logo.h"
+#include "waffle/flash/logo_png.h"
+#include "waffle/util/crc.h"
 
 #include "vectors/logo_vectors.h"
 

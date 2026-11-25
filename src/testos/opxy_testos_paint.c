@@ -66,8 +66,8 @@
 
 #include "waffle/board/opxy.h"
 #include "waffle/board/opxy_boot.h"
-#include "waffle/device.h"
-#include "waffle/display.h"
+#include "waffle/boot/device.h"
+#include "waffle/display/display.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_display.h"
 #include "waffle/drivers/bf70x_dma.h"
@@ -76,8 +76,8 @@
 #include "waffle/drivers/bf70x_rcu.h"
 #include "waffle/drivers/bf70x_spiflash.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/s13c_panel.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/display/panel.h"
 
 /* The panel's whole frame memory: 320 columns by 480 rows (ST7796S). */
 #define PANEL_COLS 320u
@@ -130,7 +130,7 @@ static const char *const stages[OPXY_PAINT_COUNT] = {
 };
 
 /* The whole frame memory, then S-13c.014's frame window again: columns
- * 49-272 (s13c_panel.c's p_caset_frame) and rows 0-479. */
+ * 49-272 (display/panel.c's p_caset_frame) and rows 0-479. */
 static const uint8_t caset_all[4] = { 0x00, 0x00, 0x01, 0x3F };
 static const uint8_t raset_all[4] = { 0x00, 0x00, 0x01, 0xDF };
 static const uint8_t caset_frame[4] = { 0x00, 0x31, 0x01, 0x10 };

@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The byte and string helpers of waffle/bytes.h: values, byte order, every
+ * The byte and string helpers of waffle/util/bytes.h: values, byte order, every
  * offset of a buffer (aligned or not), the bytes around a write left alone,
  * and the S-06 names giving the same results.
  */
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/bytes.h"
-#include "waffle/s06_bytes.h"
+#include "waffle/util/bytes.h"
+#include "waffle/link/bytes_compat.h"
 
 #define GUARD 0xA5u
 

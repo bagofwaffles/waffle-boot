@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * src/wire_zip.c against minizip's own read path (S-11.030), on zips built
+ * src/core/install/zip.c against minizip's own read path (S-11.030), on zips built
  * here and mutants of them from a fixed-seed generator.
  *
  * For every mutant both readers list the members, and every member the
@@ -21,9 +21,9 @@
 
 #include "testlib.h"
 
-#include "waffle/s11_staging.h"
-#include "waffle/wire_crc.h"
-#include "waffle/wire_zip.h"
+#include "waffle/install/staging.h"
+#include "waffle/util/crc.h"
+#include "waffle/install/zip.h"
 
 #include "zip_build.h"
 

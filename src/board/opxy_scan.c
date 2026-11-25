@@ -6,14 +6,14 @@
  * in place in the package's own clusters (S-11.018: no package is too
  * large, and the largest is bigger than the bootloader's own memory,
  * S-01.016), and staged over S-09 into the slave's /yaffs2/upgrade/
- * (s09_files.h).
+ * (bridge/files.h).
  */
 #include "waffle/board/opxy_services.h"
 
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_ops.h"
-#include "waffle/s11_content.h"
-#include "waffle/wire_zip.h"
+#include "waffle/install/content.h"
+#include "waffle/install/zip.h"
 
 static struct wire_package pkg;
 static struct wire_zip zip;

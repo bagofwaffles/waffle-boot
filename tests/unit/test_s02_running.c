@@ -15,7 +15,7 @@
 
 #include "s02_check.h"
 #include "s02_fake_flash.h"
-#include "waffle/s05_handoff.h"
+#include "waffle/boot/handoff.h"
 
 #define MEMB 0x11A00000u	/* readable memory (L2) */
 #define MEML 0x10000u

@@ -22,8 +22,8 @@
 #include "waffle/drivers/bf70x_spi.h"
 #include "waffle/drivers/bf70x_time.h"
 #include "waffle/drivers/bf70x_uart.h"
-#include "waffle/pack.h"
-#include "waffle/device.h"
+#include "waffle/boot/pack.h"
+#include "waffle/boot/device.h"
 
 enum opxy_role { OPXY_SLAVE = 0, OPXY_MASTER = 1 };
 
@@ -139,7 +139,7 @@ extern const struct wb_spi_config opxy_spi_boot_link;
 #define OPXY_BOOT_LINK_SETTLE_CYCLES ((uint64_t)(OPXY_BOOT_LINK_SETTLE_US) * OPXY_CCLK_MHZ)
 
 /* The boot link with BOOT_LINK_FC=1 or 2, 2 the Makefile's default
- * (waffle/s09_master.h): flow control on PA6 for the stream's sessions
+ * (waffle/bridge/master.h): flow control on PA6 for the stream's sessions
  * (S-13b.022, S-13b.023); the opening byte and S-09.007's go without it. */
 #ifndef OPXY_BOOT_LINK_FC
 #define OPXY_BOOT_LINK_FC 0
@@ -278,7 +278,7 @@ bool opxy_psoc_unlock(uint8_t unlock[6]);
  *               handover path does not use: the main image, its data and
  *               its stack (bf703.ld), at most 2.5 MiB, then
  *   0x882BD000  the packed block the stream loads and the stub unpacks,
- *               512 KiB (waffle/pack.h), then
+ *               512 KiB (waffle/boot/pack.h), then
  *   0x8833D000  the heap (picolibc's malloc, used by yaffs2), on through
  *               the rest of the reserve up to the staging area (S-01.014);
  *   0x8A000000  disk part 1, over the staging area (S-01.016 allows it);

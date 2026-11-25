@@ -11,9 +11,9 @@
 #if OPXY_BOOT_LINK_FC && !defined(OPXY_TEST_OS)
 #include <string.h>
 
-#include "waffle/div64.h"
+#include "waffle/util/div64.h"
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/s06_bytes.h"
+#include "waffle/link/bytes_compat.h"
 
 #define STREAM_REPORT_VERSION 2u
 

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for the S-14 logging logic (src/s14_line.c, s14_log.c,
- * s14_export.c).
+ * Host program for the S-14 logging logic (src/core/log/line.c, log/log.c,
+ * log/export.c).
  *
  * Commands (one result line each):
  *   line TS NAME LINE_NO TEXT      -> s14_line_build; NAME hex, or x for no tag
@@ -25,8 +25,8 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/s14_export.h"
-#include "waffle/s14_log.h"
+#include "waffle/log/export.h"
+#include "waffle/log/log.h"
 
 static uint8_t buf[H_MAXLINE / 2];
 

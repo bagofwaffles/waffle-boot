@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * OPXY_DEV_CKPT (waffle/devhost.h): the read-only checkpoint test of the
- * slave's volume (waffle/wire_ckpt.h), run on the master. The test device
+ * OPXY_DEV_CKPT (waffle/host/devhost.h): the read-only checkpoint test of the
+ * slave's volume (waffle/fs/checkpoint.h), run on the master. The test device
  * reads the user area over the bridge's sector reads (S-09.040), which the
  * eMMC developer requests use too, and lives in the master's memory, so the
  * slave's yaffs2 state is not touched: its device, handles and heap stay as
@@ -12,9 +12,9 @@
 #include <string.h>
 
 #include "waffle/board/opxy_boot.h"
-#include "waffle/bytes.h"
-#include "waffle/devhost.h"
-#include "waffle/wire_ckpt.h"
+#include "waffle/util/bytes.h"
+#include "waffle/host/devhost.h"
+#include "waffle/fs/checkpoint.h"
 #include "wb_yaffs.h"
 
 #define VOLUME "/yaffs2"

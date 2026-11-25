@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-14 logging: src/s14_line.c, s14_log.c and s14_export.c (through h_s14) against serial.logline and
+"""S-14 logging: src/core/log/line.c, log/log.c and log/export.c (through h_s14) against serial.logline and
 tests/oracle/S-14-logging (s14_model, vectors) (part 'logic')."""
 
 import json

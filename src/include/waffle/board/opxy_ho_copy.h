@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "waffle/s01_memmap.h"
+#include "waffle/boot/memmap.h"
 
 typedef uint32_t __attribute__((may_alias)) opxy_ho_word;
 

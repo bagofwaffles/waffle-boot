@@ -11,8 +11,8 @@
 #include "waffle/drivers/bf70x_coremmr.h"
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/wire_crc.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/util/crc.h"
 
 /* Filled by tools/mkldr.py in the stream's bytes; volatile, so that the
  * compiled values are never taken for the loaded ones. */

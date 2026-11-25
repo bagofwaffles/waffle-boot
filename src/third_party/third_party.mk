@@ -80,7 +80,7 @@ TP_yaffs2_SRCS := $(filter-out $(addprefix $(YAFFS)/core/,$(YAFFS_UNBUILT)), \
 		yaffs_hweight.c)
 TP_yaffs2_GLUE := src/glue/yaffs2/yaffs_blockdev.c src/glue/yaffs2/yaffs_osglue.c \
 	src/glue/yaffs2/yaffs_fixed.c
-# yaffs_port.h includes waffle/div64.h.
+# yaffs_port.h includes waffle/util/div64.h.
 TP_yaffs2_FLAGS := -Isrc/include -include src/glue/yaffs2/yaffs_port.h
 TP_yaffs2_WARN := -Wno-sign-compare -Wno-unused-but-set-variable
 
@@ -106,7 +106,7 @@ TP_bearssl_SRCS := $(addprefix $(BR)/, hash/sha2small.c codec/dec32be.c \
 TP_bearssl_FLAGS := -I$(BR)
 
 # TinyUSB: the device core only. The device controller driver
-# (src/drivers/bf70x/usb_dcd.c) and the class drivers (src/s10a_usb.c) are
+# (src/drivers/bf70x/usb_dcd.c) and the class drivers (src/core/usb/device.c) are
 # ours; src/glue/tinyusb/tusb_config.h configures it. Upstream raises
 # -Wconversion warnings, which TP_WARN does not enable.
 TU := src/third_party/tinyusb/src
@@ -166,7 +166,7 @@ $(foreach c,$(TP_COMPONENTS),$(eval $(call TP_COMPONENT,$(c))))
 # The CRCs and zlib are built for speed on the target (their -O2 above).
 $(TP_crc_TARGET_OBJS) $(TP_zlib_TARGET_OBJS): TP_CFLAGS += $(TARGET_SPEED)
 # Except adler32(): only a zlib-wrapped stream checks it, and the
-# bootloader inflates raw deflate (src/wire_zip.c).
+# bootloader inflates raw deflate (src/core/install/zip.c).
 $(call tp_obj,bf703,src/third_party/zlib/adler32.c): TP_CFLAGS += -Os
 
 # memcpy and memset move every sector, chunk and window: they copy by words

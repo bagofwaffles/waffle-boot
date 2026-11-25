@@ -18,25 +18,25 @@
 
 #include "blockdev.h"
 
-#include "waffle/boot.h"
-#include "waffle/hostlink.h"
-#include "waffle/s02_store.h"
-#include "waffle/s04_records.h"
-#include "waffle/s06_link.h"
-#include "waffle/s08_nordic.h"
-#include "waffle/s09_files.h"
-#include "waffle/s10a_desc.h"
-#include "waffle/s10a_usb.h"
-#include "waffle/s10b_mtp.h"
-#include "waffle/s10c_host.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_run.h"
-#include "waffle/s14_log.h"
-#include "waffle/s15_console.h"
-#include "waffle/s15_menu.h"
+#include "waffle/boot/flow.h"
+#include "waffle/host/hostlink.h"
+#include "waffle/flash/settings.h"
+#include "waffle/boot/records.h"
+#include "waffle/link/link.h"
+#include "waffle/nordic/nordic.h"
+#include "waffle/bridge/files.h"
+#include "waffle/usb/desc.h"
+#include "waffle/usb/device.h"
+#include "waffle/mtp/mtp.h"
+#include "waffle/host/commands.h"
+#include "waffle/install/package.h"
+#include "waffle/install/run.h"
+#include "waffle/log/log.h"
+#include "waffle/ui/console.h"
+#include "waffle/ui/menu.h"
 #include "waffle/board/opxy.h"
-#include "waffle/s17_revisions.h"
-#include "waffle/wire_fat.h"
+#include "waffle/boot/revisions.h"
+#include "waffle/fs/fat.h"
 
 struct wb_display_image;
 
@@ -207,7 +207,7 @@ void opxy_start_view(enum s05_fail cause, const struct boot_start *st,
 void opxy_start_log(struct opxy_master *m, enum s05_fail cause,
 		    const struct boot_start *st);
 /*
- * The failed start's account for a developer host (waffle/devhost.h),
+ * The failed start's account for a developer host (waffle/host/devhost.h),
  * little-endian: attempted:1 cause:1 (enum s05_fail) result:1
  * (S03_LOAD_...) step:1 (S03_STEP_...) step_part:1 part:1 select0_failed:1
  * sector:4 count:4 (a failed image read's) format:4 length:4 crc:4 (the
@@ -328,7 +328,7 @@ void opxy_transfer_submit_file(struct opxy_master *m, const char *name,
 			       struct s11_outcome *out);
 
 /*
- * The host link (src/board/opxy_hostlink.c, waffle/hostlink.h). The frame's
+ * The host link (src/board/opxy_hostlink.c, waffle/host/hostlink.h). The frame's
  * reply on its link; false for a frame of another id.
  */
 void opxy_hostlink_start(struct opxy_master *m);

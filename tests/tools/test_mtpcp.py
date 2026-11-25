@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Host tests of tools/mtpcp.py, with no USB: its protocol against waffle-boot's real responder
-(src/s10b_mtp.c, at levels R and W, built here through tests/tools/test_mtpcp_shim.c), and against a writable fake
+(src/core/mtp/mtp.c, at levels R and W, built here through tests/tools/test_mtpcp_shim.c), and against a writable fake
 responder whose faults, each a departure from an S-16 rule a test turns on, show the tool stays safe with any
 responder. A compiler is needed ($CC, or cc). Python 3, standard library only.
 
@@ -63,8 +63,8 @@ class Engine(Spy):
         subprocess.check_call(
             [os.environ.get('CC', 'cc'), '-std=c11', '-shared', '-fPIC', '-I', os.path.join(TOP, 'src', 'include'),
              '-o', out, os.path.join(HERE, 'test_mtpcp_shim.c')]
-            + [os.path.join(TOP, 'src', n) for n in ('s10b_mtp.c', 's10b_text.c', 's04_records.c',
-                                                     's10c_text.c', 'div64.c', 's11_common.c', 's11_version.c')])
+            + [os.path.join(TOP, 'src', 'core', n) for n in ('mtp/mtp.c', 'mtp/text.c', 'boot/records.c',
+                                                     'host/text.c', 'util/div64.c', 'install/common.c', 'util/version.c')])
         lib = ctypes.CDLL(out)
         lib.shim_add.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32, ctypes.c_int]
         lib.shim_start.argtypes = [ctypes.c_size_t, ctypes.c_int]

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Boot milestone timing: built only with BOOT_TIMING=1, never in a release
- * (waffle/board/opxy_boot.h, waffle/boot_time.h). The bootloader stamps the
+ * (waffle/board/opxy_boot.h, waffle/boot/timing.h). The bootloader stamps the
  * master's milestones as it goes. In held mode it repeats the report on the
  * log, a line every 100 ms and the whole again 2 s later, so a host that has
  * just switched the CDC sink on (S-14.013) gets all of it. At a hand-over it
@@ -17,16 +17,16 @@
 #include <string.h>
 
 #include "waffle/board/opxy.h"
-#include "waffle/devhost.h"
-#include "waffle/display.h"
+#include "waffle/host/devhost.h"
+#include "waffle/display/display.h"
 #include "waffle/drivers/bf70x_coremmr.h"
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/drivers/bf70x_msi.h"
 #include "waffle/drivers/mmr.h"
 #include "waffle/drivers/bf70x_port.h"
-#include "waffle/s01_memmap.h"
+#include "waffle/boot/memmap.h"
 #include "wb_yaffs.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/fs/yaffs.h"
 
 /* The record lies below the display record, clear of it. */
 _Static_assert(OPXY_BOOT_TIME_RECORD + BOOT_TIME_RECORD <= S01_DISPLAY_RECORD_START,
@@ -892,7 +892,7 @@ void opxy_timing_held(struct opxy_master *m)
 }
 
 #elif defined(OPXY_BOOT_TIMING_ON) && defined(OPXY_TEST_OS)
-#include "waffle/boot_time.h"
+#include "waffle/boot/timing.h"
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/testos.h"

@@ -3,7 +3,7 @@
 #include "waffle/drivers/bf70x_time.h"
 
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/div64.h"
+#include "waffle/util/div64.h"
 
 uint64_t wb_time_us(const struct wb_time *t)
 {

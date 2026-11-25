@@ -8,7 +8,7 @@
 
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_uart.h"
-#include "waffle/s06_link.h"
+#include "waffle/link/link.h"
 
 static const struct wb_time cclk400 = { 400u };
 

@@ -12,7 +12,7 @@
 
 #if defined(OPXY_TEST_OS)
 
-#include "waffle/s14_log.h"
+#include "waffle/log/log.h"
 
 static void span_add(struct opxy_testos_span *s, uint64_t v)
 {

@@ -6,7 +6,7 @@
  * S-08.032 (messages.json), S-08.043-S-08.046 (transfers.json); and S-08.004
  * forwarding before and after the link greeting.
  */
-#include "waffle/s07_psoc.h"
+#include "waffle/psoc/psoc.h"
 
 #include "s08_test.h"
 #include "vectors/s08_vectors.h"

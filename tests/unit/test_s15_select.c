@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-15.116: the selection of the steps before a run (src/s15_select.c):
+ * S-15.116: the selection of the steps before a run (src/core/ui/select.c):
  * the rows' digits, what the keys and the time decide, the bar and the
  * seconds left, and its lines, which fit their rows
  * (wiki/Screen-Style-Guide.md).
@@ -11,9 +11,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "waffle/device.h"
-#include "waffle/s15_select.h"
-#include "waffle/s15_console.h"
+#include "waffle/boot/device.h"
+#include "waffle/ui/select.h"
+#include "waffle/ui/console.h"
 #include "s14_check.h"
 #define S15V_SELECT_KEYS
 #define S15V_TOKENS

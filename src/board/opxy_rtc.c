@@ -8,7 +8,7 @@
 
 #include "waffle/board/opxy_boot.h"
 
-#include "waffle/s04_records.h"
+#include "waffle/boot/records.h"
 
 /*
  * Days from 1970-01-01 to y-m-d in the Gregorian calendar, for the years

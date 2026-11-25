@@ -10,8 +10,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/device.h"
-#include "waffle/s10a_desc.h"
+#include "waffle/boot/device.h"
+#include "waffle/usb/desc.h"
 
 #include "support/check.h"
 #include "vectors/test_s10a_vectors.h"

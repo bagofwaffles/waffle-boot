@@ -44,8 +44,8 @@
 
 #include "waffle/board/opxy_boot.h"
 #include "waffle/drivers/bf70x_msi.h"
-#include "waffle/s09_bridge.h"
-#include "waffle/s09_slave.h"
+#include "waffle/bridge/records.h"
+#include "waffle/bridge/slave.h"
 
 /* MSI source SCLK0 / 2, as the driver's tests. */
 #define SRC_HZ 50000000u

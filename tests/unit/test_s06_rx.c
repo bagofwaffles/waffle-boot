@@ -4,7 +4,7 @@
  * tests/oracle/S-06-framing/vectors/receive.json, fed whole and byte by byte, and the
  * resynchronization property of S-06.049 over random prefixes.
  */
-#include "waffle/s06_rx.h"
+#include "waffle/link/rx.h"
 
 #include "s06_test.h"
 #include "vectors/s06_vectors.h"

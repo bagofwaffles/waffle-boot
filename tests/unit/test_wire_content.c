@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-11's content step and pack names on a yaffs2 volume in RAM through
- * src/wire_yaffs.c's s11_fs_ops: every install of s11_vectors.h through
+ * src/core/fs/yaffs.c's s11_fs_ops: every install of s11_vectors.h through
  * s11_staged_scan() and s11_install_content(), against the tree after
  * (S-11.056, S-11.066, S-11.075-S-11.079), and every pack-name case
  * through s11_pack_name() (S-11.039).
@@ -15,10 +15,10 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/device.h"
-#include "waffle/s11_content.h"
-#include "waffle/s11_staging.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/boot/device.h"
+#include "waffle/install/content.h"
+#include "waffle/install/staging.h"
+#include "waffle/fs/yaffs.h"
 
 #include "vectors/s11_vectors.h"
 

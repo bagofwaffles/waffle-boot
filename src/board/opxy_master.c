@@ -9,8 +9,8 @@
 #include "waffle/drivers/bf70x_dmc.h"
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/bf70x_sec.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/wire_crc.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/util/crc.h"
 
 struct opxy_master opxy_master;
 
@@ -229,7 +229,7 @@ static uint16_t reboot_reason(void *ctx)
 #if !defined(OPXY_TEST_OS)
 /*
  * The memory the stream loaded, for the running slot's inference: only the
- * descriptor and the packed block (waffle/pack.h), which no other image's
+ * descriptor and the packed block (waffle/boot/pack.h), which no other image's
  * run can have left there, nothing has written since the stream, and which
  * are always mapped; together they stand for every byte of the image, the
  * descriptor's CRC covering the rest. The stub's and the front's memory are

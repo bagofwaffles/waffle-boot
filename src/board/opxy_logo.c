@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The boot logo on the master (waffle/logo.h): the picture the front drew
+ * The boot logo on the master (waffle/flash/logo.h): the picture the front drew
  * at this start, read again for the hand-over frame, and Display's Boot
  * logo: a blank RAM disk for one PNG file, its conversion, and its save or
  * removal in the running slot under the settings' rule, the factory reset's
@@ -15,12 +15,12 @@
 
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_ops.h"
-#include "waffle/display.h"
+#include "waffle/display/display.h"
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/logo.h"
-#include "waffle/logo_png.h"
-#include "waffle/s10a_msc.h"
-#include "waffle/s11_content.h"
+#include "waffle/flash/logo.h"
+#include "waffle/flash/logo_png.h"
+#include "waffle/usb/msc.h"
+#include "waffle/install/content.h"
 
 #define PIXELS (WB_LOGO_W * WB_LOGO_H)
 

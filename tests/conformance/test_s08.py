@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-08 reading rules: src/s08_rules.c (through h_s08) against tests/oracle/S-08-nordic/vectors."""
+"""S-08 reading rules: src/core/nordic/rules.c (through h_s08) against tests/oracle/S-08-nordic/vectors."""
 
 import json
 import unittest

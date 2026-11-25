@@ -16,7 +16,7 @@
 #include "waffle/board/opxy_ops.h"
 #include "waffle/board/opxy_services.h"
 #include "waffle/drivers/bf70x_lcd.h"
-#include "waffle/s09_bridge.h"
+#include "waffle/bridge/records.h"
 
 static void test_clocks(void)
 {

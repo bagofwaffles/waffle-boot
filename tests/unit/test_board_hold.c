@@ -11,10 +11,10 @@
 #include "support/check.h"
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
-#include "waffle/device.h"
+#include "waffle/boot/device.h"
 #include "waffle/board/opxy_boot.h"
-#include "waffle/s10a_msc.h"
-#include "waffle/s10a_usb.h"
+#include "waffle/usb/msc.h"
+#include "waffle/usb/device.h"
 
 static struct opxy_master m;
 

@@ -12,8 +12,8 @@
 #include "front/fr.h"
 #include "front/fr_handoff.h"
 #include "front/fr_image.h"
-#include "waffle/bytes.h"
-#include "waffle/wire_crc.h"
+#include "waffle/util/bytes.h"
+#include "waffle/util/crc.h"
 
 static void test_crc32(void)
 {

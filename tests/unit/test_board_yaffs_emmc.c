@@ -20,8 +20,8 @@
 #include "support/check.h"
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
-#include "waffle/s03_emmc.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/fs/yaffs.h"
 
 #define BLOCKS 24u
 #define SECTORS (BLOCKS * S03_GROUP_SECTORS)

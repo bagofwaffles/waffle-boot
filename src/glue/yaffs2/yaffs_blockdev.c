@@ -292,7 +292,7 @@ int wb_yaffs_add_blockdev(struct yaffs_dev *dev, const char *name,
 	p->hide_lost_n_found = 0;
 	p->empty_lost_n_found = 0;
 	p->disable_bad_block_marking = 1;
-	/* Scan, unless a mount asks for the checkpoint (wire_yaffs.c,
+	/* Scan, unless a mount asks for the checkpoint (fs/yaffs.c,
 	 * S-12.061), and never write a checkpoint (S-12.055). */
 	p->skip_checkpt_rd = 1;
 	p->skip_checkpt_wr = 1;

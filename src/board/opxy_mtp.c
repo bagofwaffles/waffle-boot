@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The MTP sets' store (S-10b) on the master: the slave's /yaffs2 volume
- * through the bridge's file commands (s10b_store.c), and the device's
+ * through the bridge's file commands (mtp/volume.c), and the device's
  * battery (S-07) and clock (S-04.070). S-10a drives the engine from
  * s10a_usb_poll(), so every request runs from opxy_usb_poll().
  *
@@ -14,8 +14,8 @@
 #include <string.h>
 
 #include "waffle/board/opxy_boot.h"
-#include "waffle/s10a_usb.h"
-#include "waffle/s10b_store.h"
+#include "waffle/usb/device.h"
+#include "waffle/mtp/volume.h"
 
 /* The session's listing (S-10b.013) and the store, from the heap once per
  * boot, the listing sized to S-10b.014's floor. */

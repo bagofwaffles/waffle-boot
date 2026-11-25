@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-18 devices (src/device.c): S-18.002, S-18.003, S-18.004, S-18.005,
+ * S-18 devices (src/core/boot/device.c): S-18.002, S-18.003, S-18.004, S-18.005,
  * S-18.020, S-18.030, S-18.031, against tests/oracle/S-18-devices/vectors/.
  */
 #include <stdio.h>
@@ -12,7 +12,7 @@
 
 #include "front/fr_handoff.h"
 #include "waffle/board/opxy.h"
-#include "waffle/device.h"
+#include "waffle/boot/device.h"
 
 static const struct wb_device *const devs[2] = { &wb_device_opxy, &wb_device_op1f };
 

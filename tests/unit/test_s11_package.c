@@ -20,9 +20,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/device.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_version.h"
+#include "waffle/boot/device.h"
+#include "waffle/install/package.h"
+#include "waffle/util/version.h"
 
 #include "s11_check.h"
 #include "s11_ref.h"

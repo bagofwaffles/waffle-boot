@@ -22,8 +22,8 @@
 
 #include "ff.h"
 #include "waffle/board/opxy_boot.h"
-#include "waffle/bytes.h"
-#include "waffle/display.h"
+#include "waffle/util/bytes.h"
+#include "waffle/display/display.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/bf70x_core.h"
@@ -34,9 +34,9 @@
 #include "waffle/drivers/bf70x_spi.h"
 #include "waffle/drivers/bf70x_start.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/s07_rules.h"
-#include "waffle/s13c_panel.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/psoc/rules.h"
+#include "waffle/display/panel.h"
 
 /* S-01.006: the first stage's panel handshake is in MDMA0's DMA9 pair. */
 #define HANDSHAKE_CH 9u

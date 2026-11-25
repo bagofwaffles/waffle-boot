@@ -4,11 +4,11 @@
 
 #include "waffle/board/opxy_boot.h"
 
-#include "waffle/bytes.h"
-#include "waffle/devhost.h"
+#include "waffle/util/bytes.h"
+#include "waffle/host/devhost.h"
 #include "waffle/drivers/bf70x_spi.h"
 #include "waffle/drivers/bf70x_time.h"
-#include "waffle/s09_bridge.h"
+#include "waffle/bridge/records.h"
 
 /* S-09.023: the most sectors one 0x12, 0x13 or 0x16 request moves. */
 #define MAX_SECTORS 128u
@@ -228,7 +228,7 @@ static const char *const why_text[S09_WHY_COUNT] = {
 	[S09_WHY_REPLY_END] = "a reply it saw no end of",
 };
 
-/* The tests' patterns, in s09_master.c's order. */
+/* The tests' patterns, in bridge/master.c's order. */
 static const char *const pat_text[] = {
 	"0x00", "0xFF", "0xAA", "0x55", "0x0F", "0xF0", "walking one", "walking zero",
 	"count", "random",
@@ -557,7 +557,7 @@ bool opxy_bridge_load_os(struct opxy_master *m, uint8_t *staging, uint32_t cap,
 	return true;
 }
 
-/* --- the record for a developer host (waffle/devhost.h) --- */
+/* --- the record for a developer host (waffle/host/devhost.h) --- */
 
 static size_t put_u32(uint8_t *p, uint32_t v)
 {

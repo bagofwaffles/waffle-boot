@@ -7,7 +7,7 @@
 #include "support/fake_mmr.h"
 
 #include "waffle/drivers/bf70x_msi.h"
-#include "waffle/s03_emmc.h"
+#include "waffle/emmc/emmc.h"
 
 static const struct wb_time cclk400 = { 400u };
 

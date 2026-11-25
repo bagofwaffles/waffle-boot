@@ -44,7 +44,7 @@ blocks no longer. The entry, the FIRST and FINAL blocks' target, is the ELF
 entry, which src/testos/bf703_installer.ld puts at 0x11A00000.
 
 With --front, the bootloader's stream carries the frozen front
-(src/front/fr_handoff.h), the stub (src/stub/, waffle/pack.h) and the image,
+(src/front/fr_handoff.h), the stub (src/stub/, waffle/boot/pack.h) and the image,
 packed: the image's runs in L1 as they are, and every other run deflated into
 one packed block (pack()), loaded as data at PACK_AT. The front's blocks, the
 stub's, the L1 runs and the packed block go in the same order (L1 first), the
@@ -282,7 +282,7 @@ def descriptor(loaded, entry, version, front):
     return d + struct.pack('<I', zlib.crc32(d) & 0xFFFFFFFF)
 
 
-# waffle/pack.h: the packed block and the stub
+# waffle/boot/pack.h: the packed block and the stub
 PACK_MAGIC = 0x4B504257
 PACK_VERSION = 1
 PACK_RUNS = 8
@@ -306,7 +306,7 @@ def deflate(buf):
 
 
 def pack(rs, entry, spoil=False):
-    """The packed block (waffle/pack.h) of runs rs, [(address, bytes)] in
+    """The packed block (waffle/boot/pack.h) of runs rs, [(address, bytes)] in
     ascending order, whose image enters at entry; each run its own raw
     deflate stream. spoil: an out_crc that does not match (--spoil)."""
     if not 1 <= len(rs) <= PACK_RUNS:

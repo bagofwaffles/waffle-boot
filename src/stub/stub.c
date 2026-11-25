@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The stub's work on the target (waffle/pack.h): the caches on for the
+ * The stub's work on the target (waffle/boot/pack.h): the caches on for the
  * inflate, the packed block unpacked over the main image's link regions,
  * the caches off again, and the main image's entry for stub_entry.S to
  * jump to.

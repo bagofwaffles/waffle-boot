@@ -364,7 +364,7 @@ def main():
              ' * tests/oracle/S-11-packages/. Do not edit. */',
              '#ifndef S11_VECTORS_H', '#define S11_VECTORS_H', '',
              '#include <stddef.h>', '#include <stdint.h>', '',
-             '#include "waffle/s11_common.h"', '#include "waffle/s11_run.h"', '',
+             '#include "waffle/install/common.h"', '#include "waffle/install/run.h"', '',
              '/* present (0 for null), offset into s11v_blob, length */',
              'struct s11v_ref { int present; size_t off, len; };',
              '/* sig: digest (32), r (28), s (28) the verifier must be given; verdict. signature: the',

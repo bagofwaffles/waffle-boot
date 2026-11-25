@@ -6,7 +6,7 @@
 #include "waffle/drivers/bf70x_cplb.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/div64.h"
+#include "waffle/util/div64.h"
 
 /* Bytes the controller may hold; one service call drains at most this. */
 #define HW_FIFO 16u

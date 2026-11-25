@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The CRC adapters of src/wire_crc.c in the forms the S-xx modules take
+ * The CRC adapters of src/core/util/crc.c in the forms the S-xx modules take
  * them, against the vectors (crc.txt: S-02.015, S-11.008,
  * S-06.003, S-07.082): CRC-32 for S-02 and S-03, the S-06 CRC-8, the X-25
  * CRC through S-07's own check (which swaps its bytes), CRC-16/XMODEM for
@@ -11,14 +11,14 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/s02_flash.h"
-#include "waffle/s03_emmc.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s07_cypress.h"
-#include "waffle/s08_nordic.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_staging.h"
-#include "waffle/wire_crc.h"
+#include "waffle/flash/layout.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/link/frame.h"
+#include "waffle/psoc/cypress.h"
+#include "waffle/nordic/nordic.h"
+#include "waffle/install/package.h"
+#include "waffle/install/staging.h"
+#include "waffle/util/crc.h"
 
 /* The adapters must have the modules' types exactly. */
 static const s02_crc32_fn crc_s02 = wire_crc32;

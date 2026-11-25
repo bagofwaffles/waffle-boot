@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-10a USB device logic: src/s10a_desc.c, s10a_ch9.c, s10a_scsi.c and s10a_bot.c (through h_s10a)
+"""S-10a USB device logic: src/core/usb/desc.c, usb/ch9.c, usb/msc_scsi.c and usb/msc_bot.c (through h_s10a)
 against conformance/usb and tests/oracle/S-10a-usb-msc (vectors, s10a_model)."""
 
 import functools
@@ -193,7 +193,7 @@ class Descriptors(unittest.TestCase):
 
     @requirement('S-10a.002', 'S-10a.011', 'S-10a.013', 'S-10a.020')
     def test_set_shape(self):
-        """s10a_desc's accessors (what s10a_ch9.c and s10a_usb.c route by) against the configurations
+        """s10a_desc's accessors (what usb/ch9.c and usb/device.c route by) against the configurations
         they build: bNumConfigurations, bNumInterfaces, each interface's function and that function's
         first interface, bMaxPower of each configuration value (0 past the last), and the endpoints."""
         names = SETS
@@ -477,7 +477,7 @@ class Chapter9(unittest.TestCase):
 
     @requirement('S-10a.032', 'S-10a.020')
     def test_S10a_032_input_current(self):
-        """The target s10a_usb.c sets on a selection is 2 x s10a_desc_max_power of the value selected:
+        """The target usb/device.c sets on a selection is 2 x s10a_desc_max_power of the value selected:
         the model's 500, 100 and 2 mA (S-10a.032)."""
         T = spec_test()
         out = run('s10a', ['shape %d' % SET_NO[n] for n in SETS])

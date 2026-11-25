@@ -17,8 +17,8 @@
 #if OPXY_BOOT_PROMPT
 
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/s11_version.h"
-#include "waffle/s15_prompt.h"
+#include "waffle/util/version.h"
+#include "waffle/ui/prompt.h"
 
 static struct s15_prompt prompt;
 /* The board's key hook (opxy_master.c's, for the menus), kept while the

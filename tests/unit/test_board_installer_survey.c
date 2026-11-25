@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #include "waffle/board/opxy_ops.h"
-#include "waffle/device.h"
+#include "waffle/boot/device.h"
 
 #include "support/check.h"
 

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Conformance host program for S-02 (src/s02_flash.c, src/s02_write.c),
+ * Conformance host program for S-02 (src/core/flash/layout.c, src/core/flash/write.c),
  * driven by test_s02.py.  It holds one 1 MiB NOR flash with S-02.019's
  * semantics and an operation log, with the fault and power-cut injection of
  * images.spiflash.FlashModel.  Each result is followed by " |" and the
@@ -82,10 +82,10 @@
 #include "front/fr_logo.h"
 #include "front/fr_proto.h"
 #include "front/fr_startlog.h"
-#include "waffle/s01_memmap.h"
-#include "waffle/s02_flash.h"
-#include "waffle/logo.h"
-#include "waffle/s02_store.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/flash/layout.h"
+#include "waffle/flash/logo.h"
+#include "waffle/flash/settings.h"
 #include "hlib.h"
 
 static uint8_t flash[S02_FLASH_SIZE];

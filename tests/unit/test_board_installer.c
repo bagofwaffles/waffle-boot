@@ -13,9 +13,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "waffle/device.h"
-#include "waffle/s02_flash.h"
-#include "waffle/wire_crc.h"
+#include "waffle/boot/device.h"
+#include "waffle/flash/layout.h"
+#include "waffle/util/crc.h"
 #include "s15_sha256.h"
 #include "support/check.h"
 

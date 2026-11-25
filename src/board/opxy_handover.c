@@ -27,8 +27,8 @@
 #include "waffle/drivers/bf70x_timer.h"
 #include "waffle/drivers/bf70x_uart.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/devhost.h"
-#include "waffle/s01_memmap.h"
+#include "waffle/host/devhost.h"
+#include "waffle/boot/memmap.h"
 
 /* The test OS (waffle/testos.h) never hands over and may not load into the
  * reserve (S-01.017): these become ordinary DDR sections there. */
@@ -154,12 +154,12 @@ static HO_TEXT void ho_beacon(void)
 #endif
 
 /* The hand-over options in force; 0 (the normal hand-over) until a developer
- * request sets them (waffle/devhost.h). */
+ * request sets them (waffle/host/devhost.h). */
 volatile uint32_t opxy_ho_flags;
 volatile uint32_t opxy_ho_trace;
 volatile uint32_t opxy_ho_slave_delay_ms;
 
-/* A hand-over milestone, recorded only on a trace run (waffle/devhost.h). */
+/* A hand-over milestone, recorded only on a trace run (waffle/host/devhost.h). */
 static void ho_mark(uint32_t code)
 {
 	if (OPXY_HO_BIT(OPXY_HO_TRACE))
@@ -419,7 +419,7 @@ static void sec_quiet(const struct opxy_sec_keep *keep, unsigned n, bool set)
 }
 
 /* S-05.016, the master's rows but the SEC's. The options of a developer
- * hand-over (waffle/devhost.h) leave some as found; 0 is the normal boot.
+ * hand-over (waffle/host/devhost.h) leave some as found; 0 is the normal boot.
  * Each UART's queued bytes leave the pin before it closes (S-13b.072). */
 static void teardown_master(struct opxy_master *m)
 {

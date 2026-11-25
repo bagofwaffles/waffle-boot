@@ -3,10 +3,10 @@
  * S-13c.017 in the test OS: a frame sent without a TE edge is logged as a
  * timeout, and a paced frame that saw its edge is not. The source is
  * included with OPXY_TEST_OS, so the test does not use the host library's
- * s13c_panel.o (the same interface, which this object then defines).
+ * display/panel.o (the same interface, which this object then defines).
  */
 #define OPXY_TEST_OS 1
-#include "../../src/s13c_panel.c"
+#include "../../src/core/display/panel.c"
 
 #include <string.h>
 

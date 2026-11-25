@@ -3,7 +3,7 @@
 #include "waffle/board/opxy_ops.h"
 
 #include "waffle/board/opxy_services.h"
-#include "waffle/wire_crc.h"
+#include "waffle/util/crc.h"
 
 #include "waffle/drivers/bf70x_core.h"
 #include "waffle/drivers/bf70x_dma.h"

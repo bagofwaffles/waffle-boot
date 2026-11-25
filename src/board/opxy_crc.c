@@ -3,7 +3,7 @@
  * The package's two bulk CRCs on the processor's CRC peripheral (CRC0 and
  * memory DMA stream 1, src/drivers/bf70x/crc.c): CRC-16/XMODEM over every
  * piece of a package (S-11.008, check 6) and CRC-32 over every extracted
- * member (S-11.030). The software (wire_crc.h) computes the unaligned head
+ * member (S-11.030). The software (util/crc.h) computes the unaligned head
  * and tail of a call, every call shorter than LEAST, and everything after
  * a failure; it is also the reference the peripheral is tested against.
  *
@@ -40,7 +40,7 @@
  * piece of each of the four transfer sizes and every 64th piece.
  *
  * What stands behind a piece between those, when the peripheral gives a
- * wrong answer with a good status (s11_engine.h, set while the use lasts):
+ * wrong answer with a good status (install/engine.h, set while the use lasts):
  * - A member's CRC-32 that does not match, with a piece of it computed here
  *   unchecked, turns the peripheral off for CRC-32 and the member is
  *   extracted again with the software's CRC-32. A member is never refused
@@ -62,9 +62,9 @@
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_services.h"
 #include "waffle/drivers/bf70x_crc.h"
-#include "waffle/s11_engine.h"
-#include "waffle/s14_log.h"
-#include "waffle/wire_crc.h"
+#include "waffle/install/engine.h"
+#include "waffle/log/log.h"
+#include "waffle/util/crc.h"
 
 #define LEAST 0x400u		/* below this the set-up costs more */
 #define CHECK_EVERY 64u

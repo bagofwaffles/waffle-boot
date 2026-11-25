@@ -14,8 +14,8 @@
 #include "support/fake_mmr.h"
 
 #include "waffle/board/opxy_boot.h"
-#include "waffle/s06_frame.h"
-#include "waffle/wire_crc.h"
+#include "waffle/link/frame.h"
+#include "waffle/util/crc.h"
 
 static struct opxy_master m;
 static uint8_t rx[OPXY_UART_BUF], tx[OPXY_UART_BUF];

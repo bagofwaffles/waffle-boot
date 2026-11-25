@@ -11,10 +11,10 @@
 
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/drivers/bf70x_core.h"
-#include "waffle/s09_bridge.h"
-#include "waffle/wire_crc.h"
-#include "waffle/wire_s09.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/bridge/records.h"
+#include "waffle/util/crc.h"
+#include "waffle/bridge/slave_files.h"
+#include "waffle/fs/yaffs.h"
 #include "wb_yaffs.h"
 
 /* Each descriptor is four words the eMMC controller fetches as one burst:

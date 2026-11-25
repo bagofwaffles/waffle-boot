@@ -21,7 +21,7 @@
 #include "front/fr_proto.h"
 #include "front/fr_slots.h"
 #include "front/fr_startlog.h"
-#include "waffle/s05_handoff.h"
+#include "waffle/boot/handoff.h"
 
 #define N(a) (sizeof(a) / sizeof((a)[0]))
 

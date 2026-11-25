@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/s04_records.h"
-#include "waffle/s10b_mtp.h"
+#include "waffle/boot/records.h"
+#include "waffle/mtp/mtp.h"
 
 #include "support/check.h"
 #include "s15_sha256.h"

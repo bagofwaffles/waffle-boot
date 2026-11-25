@@ -24,10 +24,10 @@
 
 #include "front/fr_draw.h"
 #include "front/fr_start.h"
-#include "waffle/device.h"
-#include "waffle/display.h"
-#include "waffle/logo.h"
-#include "waffle/s15_menu.h"
+#include "waffle/boot/device.h"
+#include "waffle/display/display.h"
+#include "waffle/flash/logo.h"
+#include "waffle/ui/menu.h"
 
 /* This tree's version, from tools/ui-shots.sh: the pictures show it, slot 2
  * one patch older and an offered upgrade one patch newer. */
@@ -122,7 +122,7 @@ static enum s15_store_save e_clear(void *c)
 }
 
 /* The boot logo: none stored, or one; a picture dropped on the disk, made
- * here and converted as the unit converts one (waffle/logo.h). */
+ * here and converted as the unit converts one (waffle/flash/logo.h). */
 static bool logo_stored;
 static struct wb_logo_work g_work;	/* the conversion's working memory */
 static uint16_t logo_pic[300u * 120u], logo_px[480u * 222u];

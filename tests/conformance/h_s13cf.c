@@ -54,8 +54,8 @@
 #include "hlib.h"
 #include "front/fr_handoff.h"
 #include "front/fr_start.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s06_rx.h"
+#include "waffle/link/frame.h"
+#include "waffle/link/rx.h"
 
 #define US 1000u
 #define MS 1000000u

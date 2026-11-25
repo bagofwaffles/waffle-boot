@@ -1655,7 +1655,7 @@ def show_link_record(mon):
 
 
 # OPXY_DEV_BOOT_START's report (waffle/board/opxy_services.h), and the words S-15.163's main screen and
-# Device Info use for it (src/s15_lines.c), so the host reads what the unit showed.
+# Device Info use for it (src/core/ui/lines.c), so the host reads what the unit showed.
 START_LAYOUT = '<7B7I6BI4I2B4I'
 START_FIELDS = ('attempted', 'cause', 'result', 'step', 'step_part', 'part', 'select0_failed', 'sector',
                 'count', 'format', 'length', 'crc', 'image_crc', 'boot_size', 'refusal', 'replied', 'reply',

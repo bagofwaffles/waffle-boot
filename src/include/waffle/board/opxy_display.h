@@ -6,7 +6,7 @@
 #ifndef WAFFLE_BOARD_OPXY_DISPLAY_H
 #define WAFFLE_BOARD_OPXY_DISPLAY_H
 
-#include "waffle/display.h"
+#include "waffle/display/display.h"
 
 /* The display the hooks drive, or NULL while its bus is not up. */
 const struct wb_display *opxy_display(void);

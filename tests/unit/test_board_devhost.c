@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Developer host requests and the hand-over options (waffle/devhost.h,
+ * Developer host requests and the hand-over options (waffle/host/devhost.h,
  * src/board/opxy_devhost.c, src/board/opxy_handover.c): opxy_ho_flags = 0 is
  * the normal hand-over (S-05.023), each bit moves one piece away from it,
  * the developer requests answer only while developer mode is on, and
@@ -14,7 +14,7 @@
 
 #include "front/fr_proto.h"
 #include "waffle/board/opxy_boot.h"
-#include "waffle/devhost.h"
+#include "waffle/host/devhost.h"
 #include "waffle/drivers/bf70x_coremmr.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_dmc.h"

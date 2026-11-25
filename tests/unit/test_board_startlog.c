@@ -17,8 +17,8 @@
 #include "waffle/board/opxy_display.h"
 #include "waffle/drivers/bf70x_lcd.h"
 #include "waffle/drivers/bf70x_port.h"
-#include "waffle/s13c_panel.h"
-#include "waffle/wire_crc.h"
+#include "waffle/display/panel.h"
+#include "waffle/util/crc.h"
 
 static struct opxy_master m;
 static unsigned programs;

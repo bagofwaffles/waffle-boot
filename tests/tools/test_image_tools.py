@@ -39,8 +39,8 @@ import check_stack  # noqa: E402
 LD = os.path.join(TOP, 'src', 'drivers', 'bf70x', 'bf703.ld')
 TESTOS_LD = os.path.join(TOP, 'src', 'testos', 'bf703_testos.ld')
 BOARD = os.path.join(TOP, 'src', 'include', 'waffle', 'board', 'opxy.h')
-FLASH = os.path.join(TOP, 'src', 'include', 'waffle', 's02_flash.h')
-MEMMAP = os.path.join(TOP, 'src', 'include', 'waffle', 's01_memmap.h')
+FLASH = os.path.join(TOP, 'src', 'include', 'waffle', 'flash', 'layout.h')
+MEMMAP = os.path.join(TOP, 'src', 'include', 'waffle', 'boot', 'memmap.h')
 # The Makefile's FIRST_STAGE_STACK (S-01.009, S-02.091 rule 4).
 FIRST_STAGE_STACK = (0x11807000, 0x11808000)
 

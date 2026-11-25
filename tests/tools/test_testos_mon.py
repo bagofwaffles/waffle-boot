@@ -102,7 +102,7 @@ class Transport(unittest.TestCase):
 
 class ScreenKeys(unittest.TestCase):
     """dev-screen, dev-key and dev-shot against replies laid out as src/board/opxy_devhost.c
-    builds them (waffle/devhost.h)."""
+    builds them (waffle/host/devhost.h)."""
 
     def unit(self, rows, changes=7, bump_at=None):
         """A checked() for DEV_SCREEN and DEV_FRAME: the reply without its status byte."""
@@ -418,7 +418,7 @@ class Crumbs(unittest.TestCase):
 
 class Link(unittest.TestCase):
     """dev-extract's estimate, the link's record and the link bench's table, read from replies laid out
-    as waffle/devhost.h gives them."""
+    as waffle/host/devhost.h gives them."""
 
     UNIT = {'mkdir requests': 61, 'stat requests': 1, 'files': 852, 'write requests': 7035}
 
@@ -603,7 +603,7 @@ class Link(unittest.TestCase):
 
 
 class QuadReply(unittest.TestCase):
-    """dev-quad-reply: OPXY_DEV_QUAD_REPLY's answer laid out as waffle/devhost.h gives it, the cells asked
+    """dev-quad-reply: OPXY_DEV_QUAD_REPLY's answer laid out as waffle/host/devhost.h gives it, the cells asked
     for, the tables and the verdicts."""
 
     @staticmethod
@@ -886,7 +886,7 @@ class Stream(unittest.TestCase):
 
 class QuadData(unittest.TestCase):
     """dev-quad-data: OPXY_DEV_QUAD_DATA's report of this start's quad data replies (S-09.081), as
-    opxy_bridge_qdata_report() lays it out (waffle/devhost.h)."""
+    opxy_bridge_qdata_report() lays it out (waffle/host/devhost.h)."""
 
     def report(self, state=2, why=0, rung=2, sent=8, whole=8, first=0, test_len=0, test_us=41250,
                replies=37, nbytes=2359296, failed=0, fault=(0, 0, 0, 0, 0)):
@@ -955,7 +955,7 @@ class CalStart(unittest.TestCase):
 
 class Checkpoint(unittest.TestCase):
     """dev-ckpt: OPXY_DEV_CKPT's summary and texts as src/board/opxy_dev_ckpt.c lays them out
-    (waffle/devhost.h)."""
+    (waffle/host/devhost.h)."""
 
     def summary(self, outcome=0, accepted=1, unmounted=1, cut=0, alloc_used=0, blocks=3, reads=410,
                 sectors=3000, mount_us=812000, refused=0, scan=1200, ckpt=1200, diffs=0, seq=0x1234,

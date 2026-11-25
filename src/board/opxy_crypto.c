@@ -20,11 +20,11 @@
 
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_services.h"
-#include "waffle/bytes.h"
+#include "waffle/util/bytes.h"
 #include "waffle/drivers/bf70x_pkte.h"
-#include "waffle/wire_package.h"
+#include "waffle/install/crypto.h"
 
-#define PIECE 0x8000u		/* the check's piece (src/s11_package.c) */
+#define PIECE 0x8000u		/* the check's piece (src/core/install/package.c) */
 #define LEAST 0x400u		/* below this the engine's set-up costs more */
 #define UNTOUCHED 0x5Au		/* answers(): the hash's destination */
 

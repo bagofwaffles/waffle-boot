@@ -26,9 +26,9 @@
 #include "waffle/board/opxy_boot.h"
 #include "waffle/board/opxy_bridge.h"
 #include "waffle/drivers/bf70x_msi.h"
-#include "waffle/s09_bridge.h"
-#include "waffle/s09_files.h"
-#include "waffle/s09_master.h"
+#include "waffle/bridge/records.h"
+#include "waffle/bridge/files.h"
+#include "waffle/bridge/master.h"
 
 #define LOG_N 512u
 #define CCLK_MHZ 400u

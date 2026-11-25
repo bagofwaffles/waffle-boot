@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-09 bridge: src/s09_master.c and s09_slave.c wired together (through h_s09), each session checked
+"""S-09 bridge: src/core/bridge/master.c and bridge/slave.c wired together (through h_s09), each session checked
 by tests/oracle/S-09-bridge/bridge_check.py and its vectors; the slave's store is test glue."""
 
 import json
@@ -532,7 +532,7 @@ class Defer(unittest.TestCase):
         self.assertEqual(bc.check_replies([{'name': 'poll_none', 'hex': replies[3]}]), [])
 
 
-T_BOOT_READY, T_STREAM = 500000, 2000000   # src/include/waffle/s09_master.h, us
+T_BOOT_READY, T_STREAM = 500000, 2000000   # src/include/waffle/bridge/master.h, us
 T_POWER = 2000000
 SLACK = 50000                               # the declared value + 50 ms
 
@@ -855,7 +855,7 @@ class QuadTest(unittest.TestCase):
 
 LINK_REQ = {it['name']: it for it in vectors('link_requests.json')}
 WRITE = 0x2B
-T_TRIAL = 2000000                           # src/include/waffle/s09_master.h, us
+T_TRIAL = 2000000                           # src/include/waffle/bridge/master.h, us
 
 
 def link_payload(rule, n):

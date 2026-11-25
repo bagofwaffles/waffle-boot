@@ -12,7 +12,7 @@
 
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_spiflash.h"
-#include "waffle/s02_flash.h"
+#include "waffle/flash/layout.h"
 
 #include "s13b_check.h"
 #include "s13b_trace.h"

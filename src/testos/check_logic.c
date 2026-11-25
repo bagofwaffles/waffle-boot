@@ -11,9 +11,9 @@
 
 #include <string.h>
 
-#include "waffle/s06_frame.h"
-#include "waffle/s11_version.h"
-#include "waffle/s17_revisions.h"
+#include "waffle/link/frame.h"
+#include "waffle/util/version.h"
+#include "waffle/boot/revisions.h"
 
 const struct tchk_info tchk_tests[TCHK_COUNT] = {
 	[TCHK_OS_PARTITION] = { "os-partition", "OS partition", TCHK_KIND_OS },

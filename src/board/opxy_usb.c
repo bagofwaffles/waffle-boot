@@ -8,9 +8,9 @@
 #include <string.h>
 
 #include "waffle/board/opxy_boot.h"
-#include "waffle/div64.h"
-#include "waffle/s10a_msc.h"
-#include "waffle/s10c_sysex.h"
+#include "waffle/util/div64.h"
+#include "waffle/usb/msc.h"
+#include "waffle/host/sysex.h"
 
 #define DISK_IDLE_MS 1000u
 
@@ -183,7 +183,7 @@ static const struct s06_port_ops cdc_port = { cdc_read, cdc_room, cdc_write };
  * S-10c.033: wait for the host to take what is queued, at least
  * len / 10 + 110 ms, servicing the bus meanwhile. This runs inside S-10c
  * (a reply), so it must not call s10a_usb_poll(), which hands S-10c what
- * arrived (s10a_usb.h): the device stack and the ring's kick move the
+ * arrived (usb/device.h): the device stack and the ring's kick move the
  * bytes.
  */
 static void cdc_wait(struct opxy_master *m, size_t need)

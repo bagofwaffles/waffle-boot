@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for S-10c's codecs and texts (src/s10c_sysex.c, s10c_text.c).
+ * Host program for S-10c's codecs and texts (src/core/host/sysex.c, host/text.c).
  * Bytes are hex ("-": empty).
  *
  * Commands (one result line each):
@@ -19,7 +19,7 @@
  *   skiplabel STEP WHY   -> the label after a step's Skipped (s10c_skip_label); WHY option_off |
  *                        not_confirmed | switched_off
  *
- * The command server (src/s10c_host.c), one device across commands:
+ * The command server (src/core/host/commands.c), one device across commands:
  *   dev HELD SLAVE BUSY  -> ok: a fresh server (s10c_host_init) on a device
  *                        in held mode or not (S-10c.045: not held, the
  *                        continue op is NULL), the slave present or not
@@ -38,9 +38,9 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/device.h"
-#include "waffle/s10c_host.h"
-#include "waffle/s10c_sysex.h"
+#include "waffle/boot/device.h"
+#include "waffle/host/commands.h"
+#include "waffle/host/sysex.h"
 
 static uint8_t in[H_MAXLINE / 2];
 static uint8_t out[H_MAXLINE / 2 + H_MAXLINE / 14 + 16];

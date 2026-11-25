@@ -31,9 +31,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "waffle/device.h"
-#include "waffle/s03_emmc.h"
-#include "waffle/s15_console.h"
+#include "waffle/boot/device.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/ui/console.h"
 #include "waffle/testos.h"
 
 /* --- The tests --- */

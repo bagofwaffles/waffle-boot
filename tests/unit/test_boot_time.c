@@ -1,18 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The boot timing build's stamp store, its report lines and the record that
- * crosses a hand-over (waffle/boot_time.h).
+ * crosses a hand-over (waffle/boot/timing.h).
  */
 #include "support/check.h"
 
 #include <stddef.h>
 #include <string.h>
 
-#include "waffle/boot_time.h"
-#include "waffle/s09_fast.h"
-#include "waffle/s09_master.h"
-#include "waffle/s06_bytes.h"
-#include "waffle/s06_clock.h"
+#include "waffle/boot/timing.h"
+#include "waffle/bridge/fast.h"
+#include "waffle/bridge/master.h"
+#include "waffle/link/bytes_compat.h"
+#include "waffle/link/clock.h"
 
 #define MHZ 400u
 #define US(n) ((uint64_t)(n) * MHZ)

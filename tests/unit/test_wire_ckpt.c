@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The read-only checkpoint test (src/wire_ckpt.c) on volumes whose
+ * The read-only checkpoint test (src/core/fs/checkpoint.c) on volumes whose
  * checkpoint upstream yaffs2 writes here, with checkpoint writing on (test
  * code only; the bootloader never writes one, S-12.055): a valid
  * checkpoint, one left stale by later writes, one half written, and a
@@ -11,8 +11,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/wire_ckpt.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/fs/checkpoint.h"
+#include "waffle/fs/yaffs.h"
 #include "wb_yaffs.h"
 
 #define BLOCKS 64u		/* at least yaffs2's 60 for a checkpoint */

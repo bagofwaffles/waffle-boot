@@ -16,7 +16,7 @@
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/drivers/bf70x_spi.h"
-#include "waffle/s09_master.h"
+#include "waffle/bridge/master.h"
 
 static const struct wb_time cclk400 = { 400u };
 

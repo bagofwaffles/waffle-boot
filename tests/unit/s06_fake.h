@@ -13,8 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/s06_clock.h"
-#include "waffle/s06_link.h"
+#include "waffle/link/clock.h"
+#include "waffle/link/link.h"
 
 #define T_PORT_RX 32768
 #define T_PORT_TX 65536

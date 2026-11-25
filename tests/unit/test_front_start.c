@@ -26,10 +26,10 @@
 #include "front/fr_logo.h"
 #include "front/fr_start.h"
 #include "front/fr_startlog.h"
-#include "waffle/logo.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s06_rx.h"
-#include "waffle/wire_crc.h"
+#include "waffle/flash/logo.h"
+#include "waffle/link/frame.h"
+#include "waffle/link/rx.h"
+#include "waffle/util/crc.h"
 
 /* the stored logo's conversion's working memory */
 static struct wb_logo_work g_work;

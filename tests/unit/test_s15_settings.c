@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/s15_console.h"
-#include "waffle/s15_settings.h"
+#include "waffle/ui/console.h"
+#include "waffle/ui/settings.h"
 #include "s14_check.h"
 #define S15V_GRAY
 #include "vectors/s15_vectors.h"
