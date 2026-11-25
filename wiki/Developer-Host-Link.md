@@ -120,7 +120,7 @@ HELLO's lists of calls, actions and roots; a call it does not have answers statu
 Never from a host: the actions `10` (factory reset) and `11` (Protected writes), and SET's setting 2
 (Protected writes), approved or not. The developer requests (id `0x7D`) need developer mode and the
 approval. One table in the code holds this (`hl_calls`, `hl_actions` and `hl_settings` in
-`src/hostlink.c`); a unit test holds every id there once.
+`src/core/host/hostlink.c`); a unit test holds every id there once.
 
 `type` is 1 a file, 2 a directory. LIST's `next` is the index to ask from next, `FFFF` once the
 directory has no more. SET's setting 7 value 0 turns Host link off for this start, as a computer's key
@@ -445,7 +445,7 @@ outside the drive can be reached, and the bootloader's own files on it (`os.ldr`
 The requests' payload is an opcode byte and its little-endian arguments in frames of id `0x7D`, framed as
 [above](#framing); the reply's payload starts with a status byte: 0 ok, 1 refused (developer mode off, or
 the access refused), 2 malformed, 3 the slave is not answering, 4 not approved. `frame()` and `crc8()` in
-`tools/testos_mon.py` are the reference; opcodes and reply layouts are in `src/include/waffle/devhost.h`.
+`tools/testos_mon.py` are the reference; opcodes and reply layouts are in `src/include/waffle/host/devhost.h`.
 
 ### Hand-over options
 
@@ -508,7 +508,7 @@ last plain start: The OS could not be started.
 A refused image adds `refusal` (S-05.024), a failed release adds `release`. A start from `/os.ldr`
 (S-05.035) begins `/os.ldr could not be started.` and adds `file`, the file's length and its copy's CRC. With no failed start it prints
 `the last plain start did not fail, or none was tried`. Layout: `opxy_start_report()` in
-`src/include/waffle/board/opxy_services.h`.
+`src/include/waffle/board/services.h`.
 
 ### The slave's boot stream
 
@@ -527,7 +527,7 @@ this start's stream: by the controller under flow control, fed by DMA
 ```
 
 After a fall-back it names the cause, the session and the byte, and the driver's account of the part that
-failed. Layout: `opxy_stream_report()` in `src/include/waffle/board/opxy_boot.h`.
+failed. Layout: `opxy_stream_report()` in `src/include/waffle/board/boot.h`.
 
 ### Timing the package check
 
@@ -557,7 +557,7 @@ An install raises the link no higher than rung 2; the quad I/O rungs 3 and 4 are
 `dev-link-test` and `dev-quad-reply`. `dev-link-test` needs no package, writes nothing to the eMMC and sends only echoes, `0x19`, `0x1A` and
 `0x1B`. The default run sends about 17 MB in about 6 s, plus about 1 s per fault, bounded at 90 s. It is
 refused as the timing requests are, and without the slave. If the slave could not be told the link is
-plain at the end, restart. Reply formats: `src/include/waffle/devhost.h`.
+plain at the end, restart. Reply formats: `src/include/waffle/host/devhost.h`.
 
 ### The quad reply test
 
@@ -603,7 +603,7 @@ The test writes nothing to the eMMC or the flash and sends nothing but its own r
 breaks is followed by the bridge's usual way back (echoes and polls). Both processors are back in single
 I/O after each reply, and the run ends with the link plain and the slave answering. If the
 tool says the slave stopped answering, or did not answer after a cell, restart the unit. It is
-refused as `dev-link-test` is. Reply format: `OPXY_DEV_QUAD_REPLY` in `src/include/waffle/devhost.h`.
+refused as `dev-link-test` is. Reply format: `OPXY_DEV_QUAD_REPLY` in `src/include/waffle/host/devhost.h`.
 
 ### Quad data replies
 
@@ -625,5 +625,5 @@ this start's quad data replies: taken up, ended with the link
   link:     rung 0 now
 ```
 
-Reply format: `OPXY_DEV_QUAD_DATA` in `src/include/waffle/devhost.h`.
+Reply format: `OPXY_DEV_QUAD_DATA` in `src/include/waffle/host/devhost.h`.
 

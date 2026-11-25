@@ -208,7 +208,7 @@ write of Slot 1 in the same recovery, while the selector is not settled: restart
 
 ## Protocol
 
-`tools/wbrecover.py` is the reference host; `src/front/fr_proto.h` gives every offset. Recovery is a
+`tools/wbrecover.py` is the reference host; `src/front/recovery/proto.h` gives every offset. Recovery is a
 USB serial (CDC) port with the product string `OP-XY Recovery` (vendor `0x2367`, product `0x0021`), or on an
 OP-1 Field `OP-1 Recovery` (product `0x0102`).
 

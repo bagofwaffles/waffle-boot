@@ -1,6 +1,6 @@
 How the boot menu's screens look and read, so that a new screen or line fits
-with the rest. The lines themselves are in `src/s15_lines.c` and
-`src/s15_menu.c`. Everything here may change except the rules under
+with the rest. The lines themselves are in `src/core/ui/lines.c` and
+`src/core/ui/menu.c`. Everything here may change except the rules under
 [Menus and keys](#menus-and-keys), the gray formula (S-15.173) and the
 hand-over frame (S-15.132). The pictures in `docs/ui/` are drawn by the
 bootloader's own code (`tools/ui-shots.sh`); see [The screens](#the-screens).
@@ -46,7 +46,7 @@ opens a second page, `Device Info 2`, left with `8 Back to Device Info`.
 ### Bar colors
 
 The bars are flat, with no texture. The constants are in
-`src/include/waffle/s15_console.h` (`S15_MARK_*` for the squares).
+`src/include/waffle/ui/console.h` (`S15_MARK_*` for the squares).
 
 | Bar | Fill | Squares |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ under `Writing slot N: keep the power on`. On every way into recovery,
 
 Spleen 8 × 16 (`src/third_party/spleen`, BSD-2-Clause) for all text, the
 bars included: 8 pixels wide, 16 tall, 12 above the baseline and 4 below.
-`tools/bdf2c.py` generates `src/display_font.c` (glyphs 0x20–0x7E) from
+`tools/bdf2c.py` generates `src/core/display/font.c` (glyphs 0x20–0x7E) from
 the BDF file. Do not shrink text to fit: reword, or split the screen.
 
 The title bar's text is a larger bold cut, 10 × 17 with capitals 14 tall,
@@ -365,6 +365,6 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 2. Fit its lines into nine rows of 56 columns in the styles above; if they
    do not fit, split the screen or reword, never shrink the font.
 3. Put its items in digit order, with `8 Back to …` last.
-4. Write its lines into the code (`src/s15_menu.c`) and its test data
+4. Write its lines into the code (`src/core/ui/menu.c`) and its test data
    (`tests/vectors/s15/ui/screens.json`), and render it with
    `tools/ui-shots.sh` to check it by eye.

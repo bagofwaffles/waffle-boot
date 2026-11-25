@@ -2858,7 +2858,7 @@ static void test_menu_env(void)
 	CHECK(s15_menu_held(&m.sv.menu));
 }
 
-/* The test's RTC, in place of src/rtc_board.c's. */
+/* The test's RTC, in place of src/board/ui/rtc_hooks.c's. */
 static bool rtc_ok;
 static uint32_t rtc_clk;
 

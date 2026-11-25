@@ -81,7 +81,7 @@ them all.
 
 Install the timing build with its installer, then write `waffle-test-mon.ldr` as the OS from waffle-boot's
 developer menu. The bootloader stamps the cycle counter at each milestone
-(`src/include/waffle/boot_time.h`), at 400 MHz from INIT (earlier counts raw), in a record at `0x8FFFF800`.
+(`src/include/waffle/boot/timing.h`), at 400 MHz from INIT (earlier counts raw), in a record at `0x8FFFF800`.
 
 - After a hand-over to the monitor's test OS, `testos_mon.py report` prints a `time` line per milestone,
   then the PSoC greeting, battery and charge waits, the OS copy's rate and the slave stream's pacing. The

@@ -385,7 +385,7 @@ void opxy_system_info(struct opxy_master *m);
 /* The RTC's time, seconds since 1970 (UTC), for S-12.016's stamps; false
  * when it cannot be read. */
 bool opxy_rtc_utc(struct opxy_master *m, uint64_t *utc);
-/* RTC0's count register as S-04.070 encodes it (src/rtc_board.c); until
+/* RTC0's count register as S-04.070 encodes it (src/board/ui/rtc_hooks.c); until
  * held mode's opxy_rtc_board_start() the read fails and the write is
  * dropped (S-13a.070). */
 bool opxy_rtc_read(uint32_t *clk);

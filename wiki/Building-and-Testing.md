@@ -46,7 +46,7 @@ kept in a Docker volume.
 | docs or comments only | `python3 -I -B tools/leak-check.py tree` |
 | `src/` | `host analysis`, plus `cross` when the image changes, `repro` when the build changes |
 | `tests/oracle/`, vectors, the conformance harness | `conformance`, plus `host` when vectors change |
-| A screen's wording | Edit `src/s15_menu.c` or `src/s15_lines.c` and `tests/vectors/s15/ui/`, then `make ui-update` ([Screen Style Guide](Screen-Style-Guide)) |
+| A screen's wording | Edit `src/core/ui/menu.c` or `src/core/ui/lines.c` and `tests/vectors/s15/ui/`, then `make ui-update` ([Screen Style Guide](Screen-Style-Guide)) |
 
 ## The frozen front
 
@@ -56,41 +56,68 @@ round on a unit before it is committed to a slot ([The Front](The-Front#changing
 
 ## Source map
 
-Where the code for each [requirement label](Specification) (`S-NN.NNN`) lives. A `src/sNN_*.c` file holds the logic of one
-label number; files without a number are shared (the boot flow, drawing, library adapters).
+| Path | What it holds |
+| --- | --- |
+| `src/core/<topic>/`, `src/include/waffle/<topic>/` | Hardware-independent logic, one folder per topic: `boot`, `flash`, `emmc`, `link`, `psoc`, `nordic`, `bridge`, `usb`, `mtp`, `host`, `install`, `fs`, `display`, `ui`, `log`, `util` |
+| `src/board/`, `src/include/waffle/board/` | The board, for the OP-XY and the OP-1 Field, wiring the logic to the drivers: `boot/`, `storage/`, `usb/`, `install/`, `ui/` (the boot menu and its services), `dev/` (developer mode tools) |
+| `src/drivers/bf70x/`, `src/include/waffle/drivers/` | ADSP-BF70x drivers: start-up, CPLBs, interrupts, timers, clocks and DDR, pins, DMA, SPI and serial flash, UART, the eMMC, OTP; the BF703 linker script |
+| `src/front/` | The frozen front and recovery, by topic: `start/`, `slots/`, `psoc/`, `display/`, `recovery/`, `hw/` ([The Front](The-Front)) |
+| `src/stub/` | The stub that unpacks the main image, linked alone |
+| `src/testos/`, `src/include/waffle/testos/` | The test OS and the installer, their linker scripts, and the SPI driver's test-OS parts, which `spi.c` includes in that build only ([Test OS](Test-OS), [Installer Reference](Installer-Reference)) |
+| `src/glue/`, `src/third_party/` | Our glue, and the vendored picolibc, FatFs, yaffs2, zlib and minizip, BearSSL, micro-ecc, Spleen and TinyUSB (listed in `src/third_party/README.md`) |
 
-| Label | Topic | Sources |
-| --- | --- | --- |
-| S-01 | Boot chain and memory map | `src/s01_memmap.c`, `src/boot_flow.c`, `src/front/` |
-| S-02 | SPI flash slots | `src/s02_*.c` |
-| S-03 | eMMC layout | `src/s03_emmc.c` |
-| S-04 | Persistent records | `src/s04_records.c` |
-| S-05 | The OS hand-over | `src/s05_handoff.c` |
-| S-06 | Serial framing | `src/s06_*.c` |
-| S-07 | The PSoC link | `src/s07_*.c` |
-| S-08 | The Nordic link | `src/s08_*.c` |
-| S-09 | The SPI bridge between the two processors | `src/s09_*.c`, `src/wire_s09.c` |
-| S-10a to S-10c | USB device and mass storage, MTP, host commands | `src/s10a_*.c`, `src/s10b_*.c`, `src/s10c_*.c` |
-| S-11 | Firmware packages and installs | `src/s11_*.c`, `src/wire_package.c`, `src/wire_zip.c` |
-| S-12 | Filesystems | `src/wire_fat.c`, `src/wire_yaffs.c`, `src/glue/` |
-| S-13a, S-13b | Bring-up: clocks and DDR, buses and pins | `src/drivers/bf70x/` |
-| S-13c | The display | `src/s13c_panel.c`, `src/display_*.c`, `src/board/opxy_display.c`, `src/drivers/bf70x/display.c` |
-| S-14 | Logging | `src/s14_*.c` |
-| S-15 | The menus' keys and actions | `src/s15_*.c` |
-| S-16 | Compatibility and design register | across the above |
-| S-17 | Board revisions | `src/s17_revisions.c` |
+File names say what the code does. The [requirement labels](Specification) (`S-NN.NNN`) in comments tie
+it to the requirements, so `git grep S-02.084` finds the code for one. Where each label number's code lives
+for the most part:
+
+| Label | Sources |
+| --- | --- |
+| S-01 | `src/core/boot/memmap.c`, `src/core/boot/flow.c`, `src/board/boot/`, `src/front/`, `src/stub/`, `src/drivers/bf70x/bf703.ld` |
+| S-02 | `src/core/flash/`, `src/front/slots/`, `src/front/recovery/`, `src/board/install/install.c` |
+| S-03 | `src/core/emmc/emmc.c`, `src/board/storage/storage.c` |
+| S-04 | `src/core/boot/records.c`, `src/board/ui/services.c` |
+| S-05 | `src/core/boot/handoff.c`, `src/board/boot/handover.c` |
+| S-06 | `src/core/link/`, `src/front/psoc/` |
+| S-07 | `src/core/psoc/`, `src/front/psoc/` |
+| S-08 | `src/core/nordic/` |
+| S-09 | `src/core/bridge/`, `src/board/boot/master.c`, `src/board/boot/slave.c` |
+| S-10a | `src/core/usb/`, `src/board/usb/usb.c` |
+| S-10b | `src/core/mtp/`, `src/board/usb/mtp.c` |
+| S-10c | `src/core/host/`, `src/board/usb/hostlink.c`, `src/board/dev/devhost.c` |
+| S-11 | `src/core/install/`, `src/board/install/` |
+| S-12 | `src/core/fs/`, `src/glue/` |
+| S-13a, S-13b | `src/drivers/bf70x/`, `src/board/boot/values.c`, `src/front/start/init.c`, `src/front/hw/` |
+| S-13c | `src/core/display/panel.c`, `src/core/display/draw.c`, `src/board/ui/display.c`, `src/drivers/bf70x/display.c`, `src/front/display/` |
+| S-14 | `src/core/log/` |
+| S-15 | `src/core/ui/`, `src/board/ui/` |
+| S-16 | across the above |
+| S-17 | `src/core/boot/revisions.c` |
+| S-18 | `src/core/boot/device.c`, `src/core/boot/device_identify.c`, `src/front/start/device.c` |
 
 ### Layers
 
+`tools/layering.py` checks the includes in `make check`, by where a file lives:
+
+| Layer | Paths | May include |
+| --- | --- | --- |
+| core | `src/core/`, `src/include/waffle/<topic>/` | no board, driver or test OS file; it works behind operation structs |
+| board | `src/board/`, `src/include/waffle/board/`, `src/include/waffle/testos.h`, `src/include/waffle/testos/` | anything |
+| driver | `src/drivers/`, `src/include/waffle/drivers/` | no core or board header |
+| test OS | `src/testos/` | anything |
+
+Every layer may include `waffle/util/bytes.h` and `waffle/util/div64.h`, which include none of the layers'
+headers. The crossings that remain are listed, each with its reason, in `tools/layering.py`.
+
+The front is checked apart by `tools/front_image.py` in every cross build: it is compiled only from
+`src/front/` and `src/include/waffle/drivers/`, and nothing outside it includes a front header except
+`src/front/handoff.h`. `src/front/sources.mk` lists the front's sources in link order, which decides its
+loaded bytes; a new front source goes there, and the build fails on one it does not list. `src/stub/`,
+`src/glue/` and `src/third_party/` are not checked.
+
+### Tests and tools
+
 | Path | What it holds |
 | --- | --- |
-| `src/*.c`, `src/include/waffle/*.h` | Hardware-independent logic behind operation structs. It includes no board or driver header, and no driver includes its headers; `tools/layering.py` checks this in `make check` and lists the crossings that remain |
-| `src/wire_*.c` | Adapters from those structs to the vendored libraries (crypto, zip, filesystems, CRCs) |
-| `src/board/`, `src/include/waffle/board/` | The board, for the OP-XY and the OP-1 Field: wiring the logic to the drivers, held mode, the test OS's hooks |
-| `src/drivers/bf70x/`, `src/include/waffle/drivers/` | ADSP-BF70x drivers: start-up, CPLBs, interrupts, timers, clocks and DDR, pins, DMA, SPI and serial flash, UART, eMMC, OTP; the BF703 linker script |
-| `src/front/` | The frozen front and recovery ([The Front](The-Front)) |
-| `src/testos/` | The test OS's board files, linker script, and the SPI driver's test-OS parts, which `spi.c` includes in that build only, and the installer ([Test OS](Test-OS), [Installer Reference](Installer-Reference)) |
-| `src/glue/`, `src/third_party/` | Our glue, and the vendored picolibc, FatFs, yaffs2, zlib and minizip, BearSSL, micro-ecc, Spleen and TinyUSB (listed in `src/third_party/README.md`) |
 | `tests/unit/` | Host unit tests, driver tests against a register-access fake, the libraries tested end to end |
 | `tests/conformance/` | The conformance tests: drive the code with the reference models of `tests/oracle/`; `coverage.py` writes an untracked `COVERAGE.md` listing every scenario in `scenarios.tsv` and how it is covered |
 | `tests/fuzz/` | libFuzzer targets for the parsers |

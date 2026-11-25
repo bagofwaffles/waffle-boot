@@ -90,7 +90,7 @@ TP_zlib_SRCS := $(addprefix src/third_party/zlib/, adler32.c crc32.c inffast.c \
 # speed on the target. BUILDFIXED: inflate builds its fixed-code tables in
 # RAM on first use instead of carrying them (the same tables). Z_TESTW empty:
 # crc32() byte by byte from its one 1 KiB table, without the 4 KiB braid
-# tables; the bulk CRC-32s run on the CRC peripheral (opxy_crc.c).
+# tables; the bulk CRC-32s run on the CRC peripheral (src/board/install/crc.c).
 TP_zlib_FLAGS := -O2 -DBUILDFIXED -DZ_TESTW=
 
 TP_minizip_SRCS := src/third_party/minizip/unzip.c src/third_party/minizip/ioapi.c

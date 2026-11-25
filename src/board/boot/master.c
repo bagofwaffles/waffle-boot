@@ -615,7 +615,7 @@ static enum s05_keys psoc_start(void *ctx)
 	OPXY_TESTOS(opxy_testos_paint(OPXY_PAINT_YELLOW);) psoc_link_init(m);	/* the test OS: the panel's one initialization, then yellow, before the link */
 	/* S-01.007: the SP the ROM entered the INIT stage with, which no unit
 	 * has shown yet (L2 or L1 scratch), and the first stage's L1DM_DCTL
-	 * and L1DM_DCPLB_DFLT at that entry (opxy_init_entry.S; S-01.021
+	 * and L1DM_DCPLB_DFLT at that entry (front/start/entry.S; S-01.021
 	 * gives 0x00000202 and 0x00000F00). */
 	s14_text_init(&t);
 	s14_text_str(&t, OPXY_TESTOS_OR("entry sp ", "init sp "));	/* the test OS: S-05.014's SP */

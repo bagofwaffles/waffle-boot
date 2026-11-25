@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Recovery's numbers and words: the protocol's constants (src/front/fr_proto.h), the status and
+// Recovery's numbers and words: the protocol's constants (src/front/recovery/proto.h), the status and
 // refusal tables, and what INFO means, said as tools/wbrecover.py says it. core.js imports this
 // file and exports its names again; a page imports core.js only.
 //
@@ -31,7 +31,7 @@ export const INFO_V5 = 199, INFO_V6 = 219, INFO_V11 = 232;
 // identified, the OP-XY's default) and the first stage's n and c (S-18.003, S-18.004)
 export const INFO_V20 = 242;
 export const DEVICES = ['OP-XY', 'OP-1F'];
-// INFO's dev_how: how the device was decided (S-18.002 to S-18.004, fr_handoff.h's FR_HO_HOW_*)
+// INFO's dev_how: how the device was decided (S-18.002 to S-18.004, handoff.h's FR_HO_HOW_*)
 export const HOW_TABLE = 0, HOW_SECOND = 1, HOW_UNKNOWN = 2;
 export const BATT_MAX = 16;
 export const F_ESTABLISHED = 1, F_SELECTOR = 2, F_OWN_DESC = 4, F_MOVED = 8, F_SPOILED = 16,

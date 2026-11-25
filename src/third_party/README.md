@@ -16,7 +16,7 @@ under `src/glue/`.
 | minizip (unzip) | <https://github.com/madler/zlib>, `contrib/minizip` | 1.3.2, as zlib | Zlib (`crypt.h`: Info-ZIP, not built) | `ioapi.c` builds without stdio; built with `NOUNCRYPT`, `MINIZIP_NO_STDIO` and `IOAPI_NO_64` |
 | micro-ecc | <https://github.com/kmackay/micro-ecc> | 1.2, `541b3a78026420a3e369c4c9281c396b5e531113` | BSD-2-Clause | none; P-224 only, by `-D` options |
 | BearSSL (subset) | <https://www.bearssl.org/git/BearSSL>, from FreeBSD's vendor import | `79c060e` (2023-02-20), freebsd-src `d84e570b54961e8874bbd8de25635eb96be0977e` | MIT | none |
-| Spleen (8x16 font) | <https://github.com/fcambus/spleen> | 2.2.0, `0493c34e22791824767c618fed42c434b477662c` | BSD-2-Clause | none; `spleen-8x16.bdf` only, turned into `src/display_font.c` by `tools/bdf2c.py` |
+| Spleen (8x16 font) | <https://github.com/fcambus/spleen> | 2.2.0, `0493c34e22791824767c618fed42c434b477662c` | BSD-2-Clause | none; `spleen-8x16.bdf` only, turned into `src/core/display/font.c` by `tools/bdf2c.py` |
 | TinyUSB (device stack) | <https://github.com/hathach/tinyusb> | 0.21.0, `dae3f9a366bfcddbf9dcf1b48d7500286a849539` | MIT | none; configured by `src/glue/tinyusb/tusb_config.h`. `src/drivers/bf70x/usb_dcd.c` is ours, after its `portable/mentor/musb/dcd_musb.c` |
 
 CRC-16/XMODEM, the S-06 CRC-8 and the PSoC CRC-16 are ours (`src/glue/crc`), not
@@ -56,7 +56,7 @@ what is built.
   system is needed, and no whole libc is built for a few functions. Integer
   division is libgcc's (`__divsi3`, `__udivdi3`, ...). `malloc` takes
   memory from `sbrk()`, which the board code provides
-  (`src/board/opxy_main.c`).
+  (`src/board/boot/main.c`).
 - **AES: BearSSL `aes_big`**, its table AES, with CBC decryption. The
   constant-time `aes_ct` takes about three times as many instructions a
   byte on the BF703, where it dominated the package check. The tables
@@ -70,7 +70,7 @@ what is built.
 - **FatFs** `ffconf.h`: code page 850, long names with UTF-8 at the API,
   `f_mkfs`, labels, and `f_utime` with `f_chmod` (one option,
   `FF_USE_CHMOD`) on, and fast seek on (the
-  package's in-place recovery, `src/wire_fat.c`); everything else at its
+  package's in-place recovery, `src/core/fs/fat.c`); everything else at its
   defaults.
 - **yaffs2**, zero-erased media (`CONFIG_YAFFS_ERASED_ZERO`, S-12.043): the
   four places that test or set the erased value: the erased check in
@@ -134,13 +134,13 @@ what is built.
   end, and compares the length read with the stated size.
 - **zlib**: the inflate subset is `adler32.c`, `crc32.c`, `inffast.c`,
   `inflate.c`, `inftrees.c` and `zutil.c`; `adler32.c` is built for size,
-  as only a zlib-wrapped stream calls it. `src/wire_zip.c` reads each
+  as only a zlib-wrapped stream calls it. `src/core/install/zip.c` reads each
   member raw from minizip and inflates it itself, step for step as
   minizip's read did, so minizip computes no CRC-32 of it. Built with
   `BUILDFIXED`, inflate builds its fixed-code tables in RAM on first use;
   with `Z_TESTW` empty, `crc32()` works byte by byte from one 1 KiB table,
   without the braid tables. The bulk CRC-32s run on the CRC peripheral
-  (`src/board/opxy_crc.c`). The stub (`src/stub/`) builds the same six
+  (`src/board/install/crc.c`). The stub (`src/stub/`) builds the same six
   files into its own link, with `Z_SOLO` (no C library, no allocator) and
   `NO_GZIP`, and keeps the fixed-code tables as constants
   (`inffixed.h`).

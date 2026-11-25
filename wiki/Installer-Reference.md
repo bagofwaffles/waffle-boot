@@ -177,7 +177,7 @@ While it writes, and in some long checks, the installer does not service the por
 | `0x41` STATE | none | 32 bytes, then each test's state (u8): 0 phase, 1 flags, 2 verdict (0 pass, 1 pass with gaps, 2 fail, `FF` not yet), 3 the test under way (`FF` none), 4 the lock, 5 and 6 the selector, 7 and 8 each slot's state, 9 the target slot (`FF` none), 10 the last write's code (`FF` none), 11 the OS partition, 12 the hold's progress (u16, 0 to 1000), 14 the key held (digit), 15 the trial, 16 the key of the next step (1, or 0), 17 bit k set when slot k holds a waffle-boot stream, the rest zeros |
 | `0x42` TEST | the test's index (u8) | status (0, or 1 for no such test), index, state, kind (0 OS, 1 automatic, 2 guided), then four NUL-ended strings: its id, its name, the detail line (at most 56 characters) and the report's note (at most 160) |
 | `0x43` REPORT | an offset (u32) | status (0), `check.txt`'s length (u32), then up to 1024 of its bytes from the offset. The text is rewritten as the checks run, so a reader starts again when the length changes |
-| `0x44` SURVEY | none | a survey build, once its checks end: 76 bytes, `src/include/waffle/board/installer.h` lists them; any other build answers `FF` |
+| `0x44` SURVEY | none | a survey build, once its checks end: 76 bytes, `src/include/waffle/testos/installer.h` lists them; any other build answers `FF` |
 
 - **Phase:** 0 starting, 1 checking, 2 the key check (8 held returns to the old OS), 3 locked, 4 ready (the trial offered), 5 writing the
   trial, 6 the trial written, 7 the commit offered (hold 1, or 2 for the trial again), 8 committing, 9 done, 10 a write failed, 11 the trial
