@@ -147,7 +147,7 @@ class HostCommands(unittest.TestCase):
     """src/core/host/commands.c through h_s10c's dev and frame commands: a transcript's inject frames delivered to the
     server one by one on the vector's link, its expect frames matched in order against what the server sends.
     What the server does with frames after Continue to the OS has asked for the restart is not checked: the
-    board restarts (src/board/opxy_services.c), which is not driven here."""
+    board restarts (src/board/ui/services.c), which is not driven here."""
 
     def play(self, v):
         dev = v.get('device', {})

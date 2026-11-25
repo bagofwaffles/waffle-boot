@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-02.095: the main image's finished mark in the start log, from the
- * front's hand-off record (opxy_front.c), and where the boot makes it:
- * held mode's first pass (opxy_held.c), the battery wait's loop and the
- * boot path's release (opxy_master.c). The boot prompt's is
+ * front's hand-off record (board/boot/front_record.c), and where the boot makes it:
+ * held mode's first pass (board/ui/held.c), the battery wait's loop and the
+ * boot path's release (board/boot/master.c). The boot prompt's is
  * test_board_services.c's.
  */
 #include "support/check.h"
@@ -13,8 +13,8 @@
 
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_display.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/display.h"
 #include "waffle/drivers/bf70x_lcd.h"
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/display/panel.h"

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The check suite's pure parts (src/testos/check_logic.c, check_emmc.c,
- * waffle/board/testos_check.h, wiki/Test-OS.md "The check suite"): the switch-back
+ * waffle/testos/check.h, wiki/Test-OS.md "The check suite"): the switch-back
  * against the RAM eMMC for every starting state and failure, its guard, the
  * read of both boot partitions, the temporary file against a fake file
  * layer, the verdicts, the Nordic gate, the summary's pages and the report's

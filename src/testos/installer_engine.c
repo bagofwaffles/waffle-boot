@@ -2,7 +2,7 @@
 /*
  * The installer's write engine (wiki/Installer-Reference.md): the installer carries a
  * waffle-boot slot image in its own stream and, once the runner
- * (src/testos/opxy_testos_installer.c) has a hold on the unit's key for it,
+ * (src/testos/installer_run.c) has a hold on the unit's key for it,
  * writes it to the slot the selector does not name. Two forms:
  *
  *   trial   the image, a record whose crc32 is wrong, byte 0 of slot k's start
@@ -44,8 +44,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/board/installer.h"
-#include "waffle/board/opxy_boot.h"
+#include "waffle/testos/installer.h"
+#include "waffle/board/boot.h"
 #include "waffle/drivers/bf70x_spiflash.h"
 #include "waffle/boot/memmap.h"
 #include "waffle/flash/layout.h"

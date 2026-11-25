@@ -12,7 +12,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy.h"
+#include "waffle/board/values.h"
 #include "waffle/drivers/bf70x_cgu.h"
 #include "waffle/drivers/bf70x_dmc.h"
 #include "waffle/drivers/bf70x_rcu.h"

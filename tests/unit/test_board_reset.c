@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The hard reset (src/board/opxy_reset.c, S-13a.061): before the write that
+ * The hard reset (src/board/boot/reset.c, S-13a.061): before the write that
  * enables the watchdog, every RCU0_MSG bit cleared, 1s to RCU0_STAT's
  * reset-cause bits, RCU0_BCODE.NOMEMINIT, the fault route; after it, no
  * register write.
@@ -11,7 +11,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 #include "waffle/drivers/bf70x_rcu.h"
 #include "waffle/drivers/bf70x_sec.h"
 #include "waffle/drivers/bf70x_timer.h"

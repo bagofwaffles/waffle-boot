@@ -9,8 +9,8 @@
 #include <string.h>
 
 #include "s06_test.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
 #include "waffle/util/bytes.h"
 #include "waffle/host/devhost.h"
 #include "waffle/emmc/emmc.h"

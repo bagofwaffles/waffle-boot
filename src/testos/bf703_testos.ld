@@ -6,15 +6,15 @@
  * this one differs where an OS image must (S-01.017, S-05.024) and where
  * another loading bootloader's hand-over may differ from waffle-boot's:
  *   - every byte the stream loads goes to DDR, in one block, from
- *     OPXY_TESTOS_IMAGE_START (waffle/board/opxy.h), 0x89000000: the
+ *     OPXY_TESTOS_IMAGE_START (waffle/board/values.h), 0x89000000: the
  *     loading bootloader's hand-over code may run from L1 instruction SRAM
  *     after it has loaded the image's blocks, so a load block there could
  *     overwrite the code that is handing over to it; it may use L2 too,
- *     and DDR just above S-01.013's reserve end (waffle/board/opxy.h). So
+ *     and DDR just above S-01.013's reserve end (waffle/board/values.h). So
  *     no block's destination is in L1 or L2 or below 0x89000000, and
  *     tools/testos_layout.py fails the build if one is;
  *   - the entry is the first byte of that block: _wb_testos_entry
- *     (src/testos/opxy_testos_entry.S), so the ELF entry, the FIRST
+ *     (src/testos/testos_entry.S), so the ELF entry, the FIRST
  *     block's target, the FINAL block's target and the FINAL block's
  *     argument are all OPXY_TESTOS_IMAGE_START (S-05.013 by every reading
  *     of where the entry comes from, tools/mkldr.py);
@@ -39,10 +39,10 @@
  *     it 0x11B01F00-0x11B02000 (S-01.008): tools/testos_layout.py checks
  *     every section, loaded or not, and check_stream.py's os profile the
  *     stream;
- *   - no L2 at all: no handover sections. opxy_handover.c's code and data become
+ *   - no L2 at all: no handover sections. board/boot/handover.c's code and data become
  *     ordinary DDR sections under OPXY_TEST_OS, and the hand-over entry's
  *     .handover.text is placed with .text; none of it is ever run.
- * The RAM disk, the frame buffers and the display record are where opxy.h
+ * The RAM disk, the frame buffers and the display record are where board/values.h
  * puts them for the bootloader (S-01.016).
  */
 
@@ -68,7 +68,7 @@ SECTIONS
 		/* The entry shim first: the stream's entry is the block's first
 		 * byte. start.S's .wb.reset (the main and fault entries) and
 		 * everything else follow. */
-		KEEP(*libwaffle.a:opxy_testos_entry.o(.wb.reset))
+		KEEP(*libwaffle.a:testos_entry.o(.wb.reset))
 		KEEP(*(.wb.reset))
 		*(.text .text.*)
 		*(.handover.text .handover.text.*)

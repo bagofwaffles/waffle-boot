@@ -118,7 +118,7 @@ static const char *predictor_steps(const char *s, const char *label)
  * prediction on, over code the bootloader ran). */
 static void test_testos_entry(void)
 {
-	const char *s = load_file("src/testos/opxy_testos_entry.S");
+	const char *s = load_file("src/testos/testos_entry.S");
 
 	CHECK(s != NULL);
 	if (s != NULL)
@@ -188,7 +188,7 @@ static void test_front_entry(void)
  * parity checking stays on (S-13a.040). */
 static void test_testos_masks(void)
 {
-	const char *s = load_file("src/testos/opxy_testos_entry.S");
+	const char *s = load_file("src/testos/testos_entry.S");
 	const unsigned long dclr = L1DM_DCTL_ENCPLB | L1DM_DCTL_CFG_MASK |
 				   L1DM_DCTL_ENX;
 	const unsigned long iclr = L1IM_ICTL_ENCPLB | L1IM_ICTL_CFG;
@@ -349,7 +349,7 @@ static void test_svect0(void)
 	/* Written once. */
 	CHECK(strstr(p, "SVECT0_LO") == NULL);
 	/* The hand-over's C reads it and writes nothing to it. */
-	s = load_file("src/board/opxy_handover.c");
+	s = load_file("src/board/boot/handover.c");
 	CHECK(s != NULL);
 	if (s == NULL)
 		return;

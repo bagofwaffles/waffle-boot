@@ -437,7 +437,7 @@ static size_t five_blocks(uint8_t *slot)
 	return n;
 }
 
-/* The board's stream ops, as opxy_timing.c counts them, against a slave that
+/* The board's stream ops, as board/boot/timing.c counts them, against a slave that
  * is always ready and answers the opening byte. */
 struct fake_split {
 	struct boot_time t;

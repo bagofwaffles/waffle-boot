@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The slave's stream source on the board (src/board/opxy_master.c): the two
+ * The slave's stream source on the board (src/board/boot/master.c): the two
  * steps the slave start takes, called as it calls them, on a fake flash.
  * A normal start; a trial start (the tried slot runs, is established, and
  * is sent, its trial start: S-09.002); byte-identical slots (established: the slot
@@ -13,7 +13,7 @@
 
 #include "s02_check.h"
 #include "s02_fake_flash.h"
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 #include "waffle/boot/handoff.h"
 #include "waffle/util/crc.h"
 

@@ -7,11 +7,12 @@
 Three layers and the test OS, by where a file lives:
 
   core    src/core/ and the headers in src/include/waffle/'s topic
-          folders (all but board/ and drivers/): hardware-independent,
-          behind ops structs
-  board   src/board/ and src/include/waffle/board/, and
+          folders (all but board/, drivers/ and testos/):
+          hardware-independent, behind ops structs
+  board   src/board/ and src/include/waffle/board/;
           src/include/waffle/testos.h, which declares the board's test-OS
-          hooks
+          hooks; and the test OS's headers in src/include/waffle/testos/,
+          which a driver may not include either
   driver  src/drivers/ and src/include/waffle/drivers/
   testos  src/testos/: the test OS's own code (wiki/Test-OS.md)
 
@@ -72,7 +73,7 @@ def layer(rel):
         return 'neutral'
     if rel == 'src/include/waffle/testos.h':
         return 'board'
-    if within(d, 'src/board', 'src/include/waffle/board'):
+    if within(d, 'src/board', 'src/include/waffle/board', 'src/include/waffle/testos'):
         return 'board'
     if within(d, 'src/drivers', 'src/include/waffle/drivers'):
         return 'driver'

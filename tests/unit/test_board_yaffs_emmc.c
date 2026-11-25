@@ -18,8 +18,8 @@
 #include <string.h>
 
 #include "support/check.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
 #include "waffle/emmc/emmc.h"
 #include "waffle/fs/yaffs.h"
 

@@ -11,7 +11,7 @@
 #include "vectors/s18_vectors.h"
 
 #include "front/fr_handoff.h"
-#include "waffle/board/opxy.h"
+#include "waffle/board/values.h"
 #include "waffle/boot/device.h"
 
 static const struct wb_device *const devs[2] = { &wb_device_opxy, &wb_device_op1f };

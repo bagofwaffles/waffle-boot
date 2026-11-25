@@ -8,7 +8,7 @@
 #include "support/check.h"
 #include "support/fake_core.h"
 
-#include "waffle/board/opxy_bridge.h"
+#include "waffle/board/emmc_bridge.h"
 #include "waffle/drivers/bf70x_spi.h"
 #include "waffle/drivers/bf70x_time.h"
 

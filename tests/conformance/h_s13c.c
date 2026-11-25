@@ -635,7 +635,7 @@ static void view(struct sim *s, struct wb_display *d, const struct opts *o, cons
 /* S-05.033, S-15.190: Continue to the OS from held mode (cont=1): the
  * menu's restarting line under the screen that was showing, here the main
  * screen's item 7 (s15_menu_continue()), then the board's continue_os
- * (src/board/opxy_services.c): the view shown, held 750 ms, then the
+ * (src/board/ui/services.c): the view shown, held 750 ms, then the
  * restart, whose shutdown starts with the panel's power-off (S-13c.022). */
 static void continue_os(struct sim *s, struct wb_display *d, const struct opts *o)
 {

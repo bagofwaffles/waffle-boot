@@ -20,7 +20,7 @@
  * Not reached on the host: opxy_main() and opxy_master_main() themselves,
  * which take the record from memory and bring up the UART, the SPI flash
  * and the panel's DMA; the board's own steps between are in
- * src/board/opxy_master.c, and this test calls the modules they call, in
+ * src/board/boot/master.c, and this test calls the modules they call, in
  * their order.
  */
 #include <string.h>
@@ -30,9 +30,9 @@
 
 #include "s07_test.h"
 
-#include "waffle/board/opxy.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
+#include "waffle/board/values.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
 #include "waffle/boot/flow.h"
 #include "waffle/drivers/bf70x_msi.h"
 #include "waffle/drivers/bf70x_spi.h"

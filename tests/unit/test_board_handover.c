@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-05.014, S-05.016 on the board (src/board/opxy_handover.c): the SEC
+ * S-05.014, S-05.016 on the board (src/board/boot/handover.c): the SEC
  * sources, the slave's MSI controller and what the OS gets at its first
  * instruction, on each CPU.
  */
@@ -10,7 +10,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_dmc.h"
 #include "waffle/drivers/bf70x_sec.h"

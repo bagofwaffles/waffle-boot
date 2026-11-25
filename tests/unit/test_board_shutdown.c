@@ -18,8 +18,8 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_services.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/services.h"
 #include "waffle/drivers/bf70x_uart.h"
 #include "waffle/link/link.h"
 #include "waffle/bridge/master.h"

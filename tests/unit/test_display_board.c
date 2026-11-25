@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The board's display hooks (src/board/opxy_display.c) over the BF70x panel
+ * The board's display hooks (src/board/ui/display.c) over the BF70x panel
  * bus on the fake MMR, in the order the board calls them: the handshake,
  * held mode's start, the draw ops, a frame per render, the power-off that
  * sends nothing.
@@ -15,11 +15,11 @@
 
 #include "waffle/util/bytes.h"
 #include "waffle/boot/device.h"
-#include "waffle/board/opxy_boot.h"
-/* opxy_display() also pulls src/board/opxy_display.c out of the library
+#include "waffle/board/boot.h"
+/* opxy_display() also pulls src/board/ui/display.c out of the library
  * over the board's weak hooks */
-#include "waffle/board/opxy_display.h"
-#include "waffle/board/opxy_services.h"
+#include "waffle/board/display.h"
+#include "waffle/board/services.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_lcd.h"
 #include "waffle/display/panel.h"

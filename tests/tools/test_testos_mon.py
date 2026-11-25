@@ -101,7 +101,7 @@ class Transport(unittest.TestCase):
 
 
 class ScreenKeys(unittest.TestCase):
-    """dev-screen, dev-key and dev-shot against replies laid out as src/board/opxy_devhost.c
+    """dev-screen, dev-key and dev-shot against replies laid out as src/board/dev/devhost.c
     builds them (waffle/host/devhost.h)."""
 
     def unit(self, rows, changes=7, bump_at=None):
@@ -166,7 +166,7 @@ class ScreenKeys(unittest.TestCase):
 
 class YaffsRaw(unittest.TestCase):
     """dev-yscan over a synthetic region, its reads guarded as the unit guards
-    them (src/board/opxy_dev_yaffs.c): a data chunk's bytes are refused."""
+    them (src/board/dev/yaffs_dump.c): a data chunk's bytes are refused."""
 
     def setUp(self):
         self.img = bytearray(4 * 128 * 4096)
@@ -242,7 +242,7 @@ class YaffsRaw(unittest.TestCase):
 
 
 class FakeBus:
-    """mon_bus() (src/testos/opxy_testos.c) over a bridge that always works: each step's status 1, the
+    """mon_bus() (src/testos/readouts.c) over a bridge that always works: each step's status 1, the
     room checks as the C code makes them, and a slave whose memory pokes write and peeks read, whose
     echo answers the complement and whose armed reply fills the q11 slots."""
 
@@ -810,7 +810,7 @@ class Start(unittest.TestCase):
 
 class Stream(unittest.TestCase):
     """dev-stream: OPXY_DEV_STREAM's report of this start's slave boot stream (S-09.009), as
-    opxy_stream_report() lays it out (waffle/board/opxy_boot.h)."""
+    opxy_stream_report() lays it out (waffle/board/boot.h)."""
 
     def report(self, way=2, rc=0, end=0, fell=0, linked=1, held=0, ran=1, words=(), fault=(0, 0, 0, 0),
                fcs=(0, 0, 0, 0), version=2):
@@ -954,7 +954,7 @@ class CalStart(unittest.TestCase):
 
 
 class Checkpoint(unittest.TestCase):
-    """dev-ckpt: OPXY_DEV_CKPT's summary and texts as src/board/opxy_dev_ckpt.c lays them out
+    """dev-ckpt: OPXY_DEV_CKPT's summary and texts as src/board/dev/checkpoint.c lays them out
     (waffle/host/devhost.h)."""
 
     def summary(self, outcome=0, accepted=1, unmounted=1, cut=0, alloc_used=0, blocks=3, reads=410,

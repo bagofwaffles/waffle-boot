@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The check suite's table, verdicts, detail lines, summary pages, report
- * and the Nordic link's gate (waffle/board/testos_check.h). Pure: the host's
+ * and the Nordic link's gate (waffle/testos/check.h). Pure: the host's
  * unit tests include this file with OPXY_TESTOS_CHECK defined. Nothing is
  * compiled without it.
  */
-#include "waffle/board/testos_check.h"
+#include "waffle/testos/check.h"
 
 #if defined(OPXY_TESTOS_CHECK)
 

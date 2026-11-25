@@ -17,7 +17,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HEADER = os.path.join(os.path.dirname(HERE), 'src', 'include', 'waffle', 'board', 'opxy_services.h')
+HEADER = os.path.join(os.path.dirname(HERE), 'src', 'include', 'waffle', 'board', 'services.h')
 PLACES = ('MAJOR', 'MINOR', 'PATCH')
 MAX = 0xFFFF            # a field of the descriptor's version
 

@@ -30,7 +30,7 @@
  * key 8 cancels.
  *
  * This file is portable: the board gives the volumes, the approval screen
- * and the actions through struct hl_ops (src/board/opxy_hostlink.c).
+ * and the actions through struct hl_ops (src/board/usb/hostlink.c).
  */
 
 #include <stdbool.h>

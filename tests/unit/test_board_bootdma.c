@@ -14,9 +14,9 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_ops.h"
+#include "waffle/board/values.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/ops.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_port.h"
 #include "waffle/link/bytes_compat.h"

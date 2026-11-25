@@ -21,7 +21,7 @@
 #include "waffle/testos.h"
 
 /* S-05.025: the boot prompt is a property of the build (BOOT_PROMPT=1,
- * waffle/board/opxy_boot.h); its op exists only then. */
+ * waffle/board/boot.h); its op exists only then. */
 #ifndef OPXY_BOOT_PROMPT
 #define OPXY_BOOT_PROMPT 0
 #endif

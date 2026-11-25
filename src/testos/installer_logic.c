@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The installer's pure parts (waffle/board/installer.h): the lock, the
+ * The installer's pure parts (waffle/testos/installer.h): the lock, the
  * hold, the carried image's check, the USB protocol and the screens. In the
  * installer variant alone; the host tests include this file.
  */
-#include "waffle/board/installer.h"
+#include "waffle/testos/installer.h"
 
 #if defined(OPXY_TESTOS_INSTALLER)
 

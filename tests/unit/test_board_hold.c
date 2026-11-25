@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-10a.049 on the master (src/board/opxy_services.c, opxy_usb.c): held
+ * S-10a.049 on the master (src/board/ui/services.c, board/usb/usb.c): held
  * mode's file operations run under the host hold, and a disk offered when
  * one starts is withdrawn for it (an own write's withdrawal: no release)
  * and offered again after it, with the medium change.
@@ -12,7 +12,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "waffle/boot/device.h"
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 #include "waffle/usb/msc.h"
 #include "waffle/usb/device.h"
 

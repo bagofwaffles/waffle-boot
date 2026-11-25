@@ -168,7 +168,7 @@ struct boot {
 	bool good;		/* and S-02.016's verdict on the image of it */
 };
 
-/* The board's steps (opxy_master.c). */
+/* The board's steps (board/boot/master.c). */
 static struct boot boot(unsigned selected, const struct s02_probe *probe, s02_read_fn fast)
 {
 	struct s02_env env = ff_env(&g_f, &g_ops);

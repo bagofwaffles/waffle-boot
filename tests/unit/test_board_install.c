@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The install steps' read-back check (src/board/opxy_install.c,
+ * The install steps' read-back check (src/board/install/install.c,
  * S-11.095) on the host: the master's step ops over an S-09 loopback to
  * s09_slave serving wire_s09 on a yaffs2 volume in RAM, with the SPI flash
  * in RAM. The loopback can damage one byte of a chosen read reply, the
@@ -27,8 +27,8 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "waffle/boot/device.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
 #include "waffle/link/frame.h"
 #include "waffle/bridge/slave.h"
 #include "waffle/install/run.h"

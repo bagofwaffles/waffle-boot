@@ -7,15 +7,15 @@
  *   - the stream's entry, its FIRST and FINAL targets, is 0x11A00000 and
  *     its FINAL argument 0 (tools/mkldr.py --os-1f); there the stream
  *     loads one small L1 code block, _wb_testos_l1_entry
- *     (src/testos/opxy_testos_entry.S), which jumps to the entry shim at
+ *     (src/testos/testos_entry.S), which jumps to the entry shim at
  *     the DDR image's first byte;
  *   - every other loaded byte is one DDR run from
- *     OPXY_TESTOS_SHARED_IMAGE_START (waffle/board/opxy.h), 0x8D000000,
+ *     OPXY_TESTOS_SHARED_IMAGE_START (waffle/board/values.h), 0x8D000000,
  *     inside OS 1.7.3's second DDR range 0x8C03D002-0x8FCCDD38: above the
  *     OS frame's rows (S-05.016) and clear of the handover reserve, the
  *     staging area and the OP-1F's RAM disk 0x80004000-0x87F04000. On the
  *     OP-XY the image and its heap lie where the RAM disk's part 1 was,
- *     so there the disk is in three parts around them (opxy.h);
+ *     so there the disk is in three parts around them (board/values.h);
  *   - .l1.text runs in L1 code after the entry block, loaded in DDR and
  *     copied by the shim, as in bf703_testos.ld.
  * tools/testos_layout.py --device both checks every destination against
@@ -53,7 +53,7 @@ SECTIONS
 		/* The entry shim first: the stream's entry is the block's first
 		 * byte. start.S's .wb.reset (the main and fault entries) and
 		 * everything else follow. */
-		KEEP(*libwaffle.a:opxy_testos_entry.o(.wb.reset))
+		KEEP(*libwaffle.a:testos_entry.o(.wb.reset))
 		KEEP(*(.wb.reset))
 		*(.text .text.*)
 		*(.handover.text .handover.text.*)

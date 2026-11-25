@@ -93,7 +93,7 @@ extern volatile uint32_t opxy_ho_slave_delay_ms;
 #define OPXY_HO_MARK_JUMP     8u	/* the last C before the jump to RCU0_SVECT0 */
 #define OPXY_HO_MARK_MS       2u
 /* A timing build's beacons: the slave's PB2 low this long at each of its
- * hand-over steps (opxy_handover.c), seen by the master on PC5. */
+ * hand-over steps (board/boot/handover.c), seen by the master on PC5. */
 #define OPXY_HO_BEACON_US    20u
 #define OPXY_HO_LINE_PA6    0x01u
 #define OPXY_HO_LINE_PC5    0x02u
@@ -134,7 +134,7 @@ enum {
 /*
  * OPXY_DEV_BOOT_START answers this boot's failed plain start, at any time:
  * opxy_start_report()'s OPXY_START_REPORT bytes after the status byte, laid
- * out in waffle/board/opxy_services.h; its first byte 0 when no start was
+ * out in waffle/board/services.h; its first byte 0 when no start was
  * tried or none failed (held mode by its keys, its reason or the boot
  * prompt). What S-15.163 shows on the main screen and Device Info, and the
  * load's log line, come from the same account.
@@ -143,7 +143,7 @@ enum {
 /*
  * OPXY_DEV_STREAM answers how this start's slave boot stream went
  * (S-09.009), at any time: opxy_stream_report()'s OPXY_STREAM_REPORT bytes
- * after the status byte, laid out in waffle/board/opxy_boot.h. Only a build
+ * after the status byte, laid out in waffle/board/boot.h. Only a build
  * with BOOT_LINK_FC=1 or 2 (2 is the default) has it; a BOOT_LINK_FC=0 build
  * answers OPXY_DEV_BAD.
  */
@@ -489,7 +489,7 @@ struct opxy_zip_reader {
 bool opxy_zip_read(void *ctx, uint32_t off, uint8_t *buf, size_t n);
 
 struct opxy_master;
-/* The timing requests (src/board/opxy_devtime.c): the reply's length, its
+/* The timing requests (src/board/dev/devtime.c): the reply's length, its
  * status byte at out[0] left OPXY_DEV_OK or set. */
 size_t opxy_dev_bench(struct opxy_master *m, const uint8_t *req, size_t n,
 		      uint8_t *out);
@@ -499,7 +499,7 @@ size_t opxy_dev_link_test(struct opxy_master *m, const uint8_t *req, size_t n,
 			  uint8_t *out);
 size_t opxy_dev_quad_reply(struct opxy_master *m, const uint8_t *req, size_t n,
 			   uint8_t *out);
-/* OPXY_DEV_CKPT (src/board/opxy_dev_ckpt.c). */
+/* OPXY_DEV_CKPT (src/board/dev/checkpoint.c). */
 size_t opxy_dev_ckpt(struct opxy_master *m, const uint8_t *req, size_t n, uint8_t *out);
 
 /* From held mode's loop, once a pass: one queued key event to the menus;
@@ -512,7 +512,7 @@ bool opxy_dev_mem_ok(uint32_t addr, bool write);
 
 struct opxy_master;
 struct s06_frame;
-/* The held-mode USB handler (src/board/opxy_devhost.c); true when it was a
+/* The held-mode USB handler (src/board/dev/devhost.c); true when it was a
  * developer-request frame (served or refused). */
 bool opxy_dev_host(struct opxy_master *m, const struct s06_frame *f);
 #endif /* WAFFLE_HOST_DEVHOST_H */

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-05.009, S-05.011: the load function's word copy into DDR and L2
- * (waffle/board/opxy_ho_copy.h) against a byte loop, for every source and
+ * (waffle/board/ho_copy.h) against a byte loop, for every source and
  * destination alignment, every length from 0 to well past a few words, so
  * every end alignment: the destination's bytes equal, the bytes around it
  * untouched. And which blocks it serves.
@@ -11,7 +11,7 @@
 
 #include "support/check.h"
 
-#include "waffle/board/opxy_ho_copy.h"
+#include "waffle/board/ho_copy.h"
 
 #define MAX_LEN 96u
 #define GUARD 16u

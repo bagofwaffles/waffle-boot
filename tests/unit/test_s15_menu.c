@@ -172,7 +172,7 @@ static size_t f_manifest(void *c, const char *dir, uint8_t *buf, size_t max)
 	return 0;
 }
 
-/* The long calls hold the keys, as the board's do (opxy_services.c). */
+/* The long calls hold the keys, as the board's do (board/ui/services.c). */
 static bool f_remove(void *c, const char *path)
 {
 	(void)c;

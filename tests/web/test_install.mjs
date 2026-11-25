@@ -138,9 +138,9 @@ test('describeInstall: the words for the state above', () => {
     assert.equal(inst.describeInstall({ ...s, phase: 3, lock: 12, os: 6 }).lines[1], 'Why: lock reason 12.');
 });
 
-// STATE's lock codes as installer.h's enum inst_lock numbers them, each with the page's words
+// STATE's lock codes as testos/installer.h's enum inst_lock numbers them, each with the page's words
 test('the lock codes are the header\'s', () => {
-    const h = readFileSync(here('../../src/include/waffle/board/installer.h'), 'utf8');
+    const h = readFileSync(here('../../src/include/waffle/testos/installer.h'), 'utf8');
     const body = h.match(/enum inst_lock \{([^}]*)\}/)[1];
     const names = [...body.matchAll(/INST_LOCK_([A-Z0-9_]+)/g)].map((m) => m[1]);
     assert.equal(names[0], 'NONE');

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-02.095: the boot menu's mark in a trial start (opxy_trial_reached(),
- * src/board/opxy_front.c): byte 0 of the tried slot's last sector, 0xFC (the
+ * src/board/boot/front_record.c): byte 0 of the tried slot's last sector, 0xFC (the
  * front's trial start mark) to 0xF0, once, at held mode's first pass, only
  * in a start of a tried slot that the selector does not name, and only over
  * a sector that holds the front's mark alone. And that the front reads the
@@ -15,7 +15,7 @@
 #include "front/fr_startlog.h"
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 
 static struct opxy_master m;
 static uint8_t mem[S02_FLASH_SIZE];

@@ -1,18 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * S-09.019: the slave's check of the L1 code the stream loaded
- * (src/board/opxy_l1check.c), against the mark tools/mkldr.py fills: the
+ * (src/board/boot/l1check.c), against the mark tools/mkldr.py fills: the
  * image as loaded passes; a one-bit error at any bit of it fails, and so do
  * a mark left as compiled, a wrong length or CRC, and a run outside L1 code.
  * The bring-up spins without serving the bridge on a failure
- * (src/board/opxy_slave.c); that the check runs before the server starts is
+ * (src/board/boot/slave.c); that the check runs before the server starts is
  * that function's order.
  */
 #include <string.h>
 
 #include "support/check.h"
 
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 #include "waffle/boot/memmap.h"
 #include "waffle/util/crc.h"
 

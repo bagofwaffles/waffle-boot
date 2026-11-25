@@ -22,7 +22,7 @@ import bump_version as b  # noqa: E402
 class Bump(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
-        self.path = os.path.join(self.dir, 'opxy_services.h')
+        self.path = os.path.join(self.dir, 'services.h')
         shutil.copyfile(b.HEADER, self.path)
         with open(self.path, 'rb') as f:
             self.orig = f.read()

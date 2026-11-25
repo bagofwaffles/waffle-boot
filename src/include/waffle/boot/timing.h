@@ -4,7 +4,7 @@
 
 /*
  * A boot's milestones in cycle counts, for a build that measures where the
- * time goes (make BOOT_TIMING=1; waffle/board/opxy_boot.h). Taking a stamp
+ * time goes (make BOOT_TIMING=1; waffle/board/boot.h). Taking a stamp
  * stores the counter and nothing else; the lines are made later, in held
  * mode or by the test OS after a hand-over, so the measurement does not
  * move what it measures. Nothing here is a requirement: log wording and
@@ -75,7 +75,7 @@ enum boot_time_id {
 	BOOT_TIME_LINK_UP,		/* the link raised for the copy, its quad reply
 					 * test before it (S-09.081) */
 	/* The slave's own steps after its server stop, from its beacons on
-	 * PC5 (opxy_handover.c): its teardown begun, its kernel call next,
+	 * PC5 (board/boot/handover.c): its teardown begun, its kernel call next,
 	 * its kernel returned (the OS image loaded), its jump next. */
 	BOOT_TIME_SLAVE_TEARDOWN,
 	BOOT_TIME_SLAVE_KERNEL,

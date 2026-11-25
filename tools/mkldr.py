@@ -197,7 +197,7 @@ FR_DESC_REGIONS = 24
 # S-01.023 "The front's frame": the frame the front paints in DDR, one frame in bus order.
 FR_FRAME = (0x8FE00000, 0x8FE34800)
 FR_LOG_IMAGE_MAX = 0x77000     # a slot less its last sector, the start log (S-02.095)
-# S-09.019: the slave's L1 check's mark (waffle/board/opxy_boot.h), as compiled and as filled
+# S-09.019: the slave's L1 check's mark (waffle/board/boot.h), as compiled and as filled
 L1_MARK = '_opxy_l1_mark'
 L1_MARK_EMPTY, L1_MARK_FULL = 0x4C314D30, 0x4C314D31
 STORE_IMAGE_MAX = 0x76000      # and less the sector below it, the slot's settings (S-02.099, S-02.104)

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Held mode's keys across a long operation (src/board/opxy_held.c,
+ * Held mode's keys across a long operation (src/board/ui/held.c,
  * src/core/ui/menu.c): UART0's driver on a modeled controller and DMA11, the
  * S-06 link, S-07's bitmaps and S-15's menus, as the board joins them. The
  * PSoC link has no flow control (S-13b.070): what the PSoC sends while
@@ -12,7 +12,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "waffle/boot/device.h"
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 #include "waffle/host/devhost.h"
 #include "waffle/drivers/bf70x_dma.h"
 #include "waffle/drivers/bf70x_sec.h"
@@ -178,7 +178,7 @@ enum during { D_RELEASE, D_PRESS_6, D_BACKLOG };
 static enum during during;
 static unsigned resets, continues, mains, formats, removes;
 
-/* A long call: it holds the menu's keys as opxy_services.c's calls do,
+/* A long call: it holds the menu's keys as board/ui/services.c's calls do,
  * and the PSoC sends meanwhile. */
 static void meanwhile(void)
 {

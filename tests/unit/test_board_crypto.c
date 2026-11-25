@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The package check's crypto on the packet engine (src/board/opxy_crypto.c,
+ * The package check's crypto on the packet engine (src/board/install/crypto.c,
  * src/drivers/bf70x/pkte.c) against a model of the engine as a unit shows
  * it: one descriptor in autonomous ring mode, a hash continued from the
  * state record, a decryption that leaves the state's IV alone and ends with
@@ -24,8 +24,8 @@
 #include "bearssl_block.h"
 #include "bearssl_hash.h"
 
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_services.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/services.h"
 #include "waffle/drivers/bf70x_pkte.h"
 #include "waffle/install/crypto.h"
 

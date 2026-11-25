@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The OP-1F's main CPU and its own eMMC (S-13b.060): the storage of
- * src/board/opxy_storage.c on wb_device_op1f, reached by the bridge client
+ * src/board/storage/storage.c on wb_device_op1f, reached by the bridge client
  * on the same CPU (s09_master_local()), over the MSI driver and an eMMC
  * model. The volume is added once in a process, so this is a test of its
  * own (test_board_storage covers the OP-XY slave and the OP-1F's bring-up,
@@ -23,8 +23,8 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
 #include "waffle/drivers/bf70x_msi.h"
 #include "waffle/bridge/records.h"
 #include "waffle/bridge/files.h"

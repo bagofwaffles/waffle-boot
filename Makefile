@@ -40,8 +40,8 @@
 #                 make image BOOT_PROMPT=1 BUILD=build/prompt
 #   LOG_DEBUG=1   a development build that also logs the debug lines:
 #                 make image LOG_DEBUG=1 BUILD=build/debug
-#   BOOT_CRUMBS=1 a trial boot's breadcrumbs (src/board/opxy_crumbs.c)
-#   BOOT_TIMING=1 the boot's milestones timed (src/board/opxy_timing.c)
+#   BOOT_CRUMBS=1 a trial boot's breadcrumbs (src/board/boot/crumbs.c)
+#   BOOT_TIMING=1 the boot's milestones timed (src/board/boot/timing.c)
 #   BOOT_TIMING_INFER=1  with BOOT_TIMING=1, the running slot also inferred
 #                 from both slots' streams after the front named it, timed for
 #                 the report; it lengthens the start, so it is off by default
@@ -125,10 +125,10 @@ TARGET_CFLAGS += -DOPXY_BL_VERSION_MAJOR=$(word 1,$(OPXY_BL_VERSION_WORDS))u \
 	-DOPXY_BL_VERSION_MINOR=$(word 2,$(OPXY_BL_VERSION_WORDS))u \
 	-DOPXY_BL_VERSION_PATCH=$(word 3,$(OPXY_BL_VERSION_WORDS))u
 endif
-# S-05.025: the boot prompt (OPXY_BOOT_PROMPT, waffle/board/opxy_boot.h) is in
+# S-05.025: the boot prompt (OPXY_BOOT_PROMPT, waffle/board/boot.h) is in
 # the image only with BOOT_PROMPT=1. The host build has it on, so that its code
 # is built, analyzed and tested there; its op is never set on the host.
-# BOOT_CRUMBS=1: a trial boot's breadcrumbs (src/board/opxy_crumbs.c). In the
+# BOOT_CRUMBS=1: a trial boot's breadcrumbs (src/board/boot/crumbs.c). In the
 # bootloader alone, and it goes into the installer with it:
 # make installer BOOT_CRUMBS=1 BUILD=build/crumbs
 ifneq ($(BOOT_CRUMBS),)
@@ -137,7 +137,7 @@ endif
 ifneq ($(BOOT_PROMPT),)
 TARGET_CFLAGS += -DOPXY_BOOT_PROMPT=1
 endif
-# BOOT_TIMING=1: the boot's milestones timed (src/board/opxy_timing.c), never in
+# BOOT_TIMING=1: the boot's milestones timed (src/board/boot/timing.c), never in
 # a release. The report repeats on the log in held mode, and the monitor's
 # test OS reads a hand-over's report (wiki/Test-OS.md):
 # make installer test-os-mon BOOT_TIMING=1 BUILD=build/timing
@@ -149,7 +149,7 @@ TARGET_CFLAGS += -DOPXY_BOOT_TIMING_INFER_ON=1
 endif
 # BOOT_LINK_SETTLE_US=n: the time between a byte of the slave's boot stream and
 # the sample of PA6 that decides the next byte (OPXY_BOOT_LINK_SETTLE_US,
-# waffle/board/opxy.h), default 2. How soon the slave's boot ROM raises PA6
+# waffle/board/values.h), default 2. How soon the slave's boot ROM raises PA6
 # after a byte is not measured; a timing build measures it, and watches PA6
 # for BOOT_TIMING_WINDOW_US after each byte when that is longer
 # (wiki/Test-OS.md):
@@ -236,7 +236,7 @@ src_files = $(call rwildcard,$(SRC_TREES),%$(1))
 # sort together by file name (by_name), since the link order places their
 # code in the test OS's images. A sort key and the path are joined by '!',
 # which sorts below every character of a path.
-HOOK_SRCS := src/board/opxy_display.c src/board/opxy_rtc_board.c
+HOOK_SRCS := src/board/ui/display.c src/board/ui/rtc_hooks.c
 src_key = $(if $(filter src/board/% src/testos/%,$(1)),src/board/$(notdir $(1)),$(1))
 by_name = $(foreach w,$(sort $(foreach f,$(1),$(call src_key,$(f))!$(f))),\
 	$(lastword $(subst !, ,$(w))))
@@ -278,7 +278,7 @@ $(error a C and an assembly source share an object name: rename one)
 endif
 # The test OS's linker scripts take the entry's object by its member name
 # (src/testos/*.ld): no other object may have that name.
-TESTOS_ENTRY_OBJ := opxy_testos_entry.o
+TESTOS_ENTRY_OBJ := testos_entry.o
 ifneq ($(words $(filter %/$(TESTOS_ENTRY_OBJ),$(CROSS_OBJS))),1)
 $(error one object, the test OS's entry, is named $(TESTOS_ENTRY_OBJ))
 endif
@@ -297,7 +297,7 @@ HOST_TEST_CFLAGS += $(TP_CPPFLAGS)
 TARGET_CFLAGS    += $(TP_CPPFLAGS) $(LIBC_INCLUDES)
 # The hand-over's code is in L2 and calls into DDR and back: every call in
 # that file goes through a register.
-$(BUILD)/bf703/obj/board/opxy_handover.o: TARGET_CFLAGS += -mlong-calls
+$(BUILD)/bf703/obj/board/boot/handover.o: TARGET_CFLAGS += -mlong-calls
 # S-09.072: the bridge's check runs over every byte an install sends, on both
 # CPUs; -O2, as third_party.mk gives the CRCs, speeds its word loop.
 $(BUILD)/bf703/obj/core/bridge/records.o: TARGET_CFLAGS += $(TARGET_SPEED)
@@ -481,7 +481,7 @@ $(START_CHECK): $(CROSS_LIB) $(BUILD)/bf703/libpicolibc.a $(LDSCRIPT)
 IMAGE  := $(BUILD)/bf703/waffle-boot.elf
 STREAM := $(IMAGE:.elf=.ldr)
 LAYOUT := $(IMAGE:.elf=.layout.json)
-LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/opxy.h \
+LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/values.h \
 	--flash src/include/waffle/flash/layout.h --memmap src/include/waffle/boot/memmap.h \
 	--stream $(STREAM) --stub $(BUILD)/bf703/stub.elf
 
@@ -665,7 +665,7 @@ $(LAYOUT): $(IMAGE) $(STREAM) $(STUB_ELF) tools/layout.py tools/elf32.py tools/m
 # on a unit before anything is written to the SPI flash. The same sources
 # compiled with -DOPXY_TEST_OS=1 (waffle/testos.h) into their own objects,
 # linked by bf703_testos.ld outside the handover reserve and the staging
-# area (S-01.017) with src/testos/opxy_testos_entry.S as the entry
+# area (S-01.017) with src/testos/testos_entry.S as the entry
 # (S-05.013, S-05.014), streamed with no INIT block (the clocks and DDR are
 # up at OS entry, S-05.016), and gated by S-01's os
 # profile, S-05.024's refusals and the layout rules (tools/testos_layout.py,
@@ -751,7 +751,7 @@ $$(TESTOS_$(1)_STREAM): $$(TESTOS_$(1)_IMAGE) tools/mkldr.py tools/elf32.py
 
 $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testos_layout.py tools/layout.py tools/elf32.py
 	$(PYTHON) -I -B tools/testos_layout.py $$< --ld $$(TESTOS_$(1)_LD) $(TESTOS_DEVICE_$(1)) \
-		--board src/include/waffle/board/opxy.h --memmap src/include/waffle/boot/memmap.h \
+		--board src/include/waffle/board/values.h --memmap src/include/waffle/boot/memmap.h \
 		--stream $$(TESTOS_$(1)_STREAM) $(TESTOS_LAYOUT_FLAGS_$(1)) --json $$@.tmp
 	$(foreach d,$(or $(TESTOS_LAYOUT_DEVICES_$(1)),xy),\
 		$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp --device $(d) &&) true

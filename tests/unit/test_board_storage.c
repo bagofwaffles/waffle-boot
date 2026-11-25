@@ -42,7 +42,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 #include "waffle/drivers/bf70x_msi.h"
 #include "waffle/bridge/records.h"
 #include "waffle/bridge/slave.h"
