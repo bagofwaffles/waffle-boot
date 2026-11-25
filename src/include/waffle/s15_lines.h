@@ -386,7 +386,7 @@ void s15_once_reason(struct s15_buf *out, enum s15_once why,
 extern const char s15_cont_restarting[];	/* S15_ST_WARN */
 extern const char s15_trial_ok_line[];	/* S15_ST_OK: a trial start goes on to the OS */
 
-/* ---- S-15.199 - S-15.201: the OS files of /yaffs2/os ------------------ */
+/* ---- S-15.203 - S-15.205: the OS files of /yaffs2/os ------------------ */
 
 /* A file's size as a screen shows it, to the nearest tenth: "5.2 MiB",
  * "812.0 KiB". */

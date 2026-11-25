@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-15.199: the list of OS files of /yaffs2/os.
+ * S-15.203: the list of OS files of /yaffs2/os.
  */
 #include "waffle/s15_osfiles.h"
 

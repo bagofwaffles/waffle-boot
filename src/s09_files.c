@@ -1156,7 +1156,7 @@ bool s09_files_os_read(struct s09_files *f, uint8_t *buf, uint32_t cap,
 	return s09_files_os_read_at(f, OS_LDR, buf, cap, out, len);
 }
 
-/* S-15.199: each entry of the directory offered to the list. */
+/* S-15.203: each entry of the directory offered to the list. */
 static bool os_offer(void *ctx, const char *name)
 {
 	s15_os_files_offer(ctx, name);

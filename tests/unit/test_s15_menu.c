@@ -97,7 +97,7 @@ struct fake {
 	unsigned usb_at_files;            /* USB sets started before the scan */
 	unsigned removed_at_files;        /* removals made before it */
 	unsigned saves_at_files;
-	/* S-15.199: the OS files of /os the list reads, and the file the
+	/* S-15.203: the OS files of /os the list reads, and the file the
 	 * menu last named for a write or a start */
 	bool osf_fails;
 	unsigned osf_n, osf_more, osf_reads;
@@ -313,7 +313,7 @@ static void f_once(void *c)
 		      memcmp(s, s15_once_restarting, n) == 0;
 }
 
-/* S-15.199 */
+/* S-15.203 */
 static bool f_os_files(void *c, struct s15_os_files *out)
 {
 	(void)c;
@@ -893,7 +893,7 @@ static unsigned held_key(const struct rstate *st)
 	if (st->screen == S15_SCR_OPTION && st->opt == OPT_PENDING)
 		return 0x0fu;
 	if (st->screen == S15_SCR_OS_FILE && st->armed)
-		return st->pending == 1u ? 0x06u : 0x12u;	/* S-15.200 */
+		return st->pending == 1u ? 0x06u : 0x12u;	/* S-15.204 */
 	return NO_KEY;
 }
 
@@ -912,7 +912,7 @@ static void setup_state(const struct rstate *st)
 		F.pack_names[1] = "p2";
 	}
 	F.refused = st->refused;
-	/* S-15.199: two OS files in /os, none for files=0 */
+	/* S-15.203: two OS files in /os, none for files=0 */
 	if (strstr(st->name, "files=0") == NULL) {
 		F.osf_n = 2;
 		F.osf_names[0] = "a.ldr";
@@ -1001,7 +1001,7 @@ static void setup_state(const struct rstate *st)
 	case S15_SCR_OS_DONE:
 		press(0x13);
 		press(0x06);
-		hold(0x12);			/* S-15.201: a removal's result */
+		hold(0x12);			/* S-15.205: a removal's result */
 		break;
 	case S15_SCR_MAIN:
 	case S15_SCR_NONE:
@@ -1144,8 +1144,8 @@ static void observe(struct toks *t, const struct rstate *st,
 		add(t, "once");
 	if (F.saves != 0u && F.saved.start_menu != BOOT.settings.start_menu)
 		add(t, F.saved.start_menu ? "start_menu_on" : "start_menu_off");
-	/* S-15.200: an OS file's hold begun, or canceled with its screen
-	 * drawn idle again; S-15.201: its removal */
+	/* S-15.204: an OS file's hold begun, or canceled with its screen
+	 * drawn idle again; S-15.205: its removal */
 	if (os_armed_before == S15_ARM_NONE && (M.armed == S15_ARM_OS_INSTALL ||
 						M.armed == S15_ARM_OS_REMOVE))
 		add(t, M.armed == S15_ARM_OS_INSTALL ? "os_arm:1" : "os_arm:5");
@@ -1224,7 +1224,7 @@ enum rule {
 	R_START_MENU,         /* S-15.175: Settings' digit 6 alone */
 	R_HOLD,               /* S-15.015: the hold's time runs the action once */
 	R_OS_ONCE,            /* S-15.194: the developer menu's digit 3, an OS file's 2 */
-	R_OS_FILES,           /* S-15.199 - S-15.201 */
+	R_OS_FILES,           /* S-15.203 - S-15.205 */
 	R_N
 };
 
@@ -1304,7 +1304,7 @@ static void rules_hold(const struct rstate *st)
 	ok = st->screen == S15_SCR_SYSTEM ? tok(&got, "factory_reset") :
 	     st->screen == S15_SCR_PACKS ? tok(&got, want) :
 	     st->screen == S15_SCR_FORMAT ? tok(&got, "format") :
-	     /* S-15.200: the write, its result's view; S-15.201: the removal */
+	     /* S-15.204: the write, its result's view; S-15.205: the removal */
 	     st->screen == S15_SCR_OS_FILE ? (st->pending == 1u ?
 	     tok(&got, "os_write") && M.screen == S15_SCR_FACTORY &&
 	     M.osw == S15_OSW_VIEW_DONE && strcmp(F.osf_path, "") == 0 :
@@ -1542,7 +1542,7 @@ static void test_rules(void)
 					     !tok_has(&got, "dev_mode") && !tok_has(&got, "color") &&
 					     !tok_has(&got, "mtp_") && !tok_has(&got, "start_menu"),
 					     n, key, down, &got);
-					/* S-15.199: digit 6 opens the OS files */
+					/* S-15.203: digit 6 opens the OS files */
 					if (down && d == 6u)
 						rule(R_OS_FILES, next == S15_SCR_OS_FILES &&
 						     only(&got, "open"), n, key, down, &got);
@@ -1574,10 +1574,10 @@ static void test_rules(void)
 					case S15_SCR_INFO2:
 						ok = next == S15_SCR_INFO;
 						break;
-					case S15_SCR_OS_FILES:	/* S-15.199 */
+					case S15_SCR_OS_FILES:	/* S-15.203 */
 						ok = next == S15_SCR_MAIN && only(&got, "open");
 						break;
-					case S15_SCR_OS_FILE:	/* S-15.200, S-15.201 */
+					case S15_SCR_OS_FILE:	/* S-15.204, S-15.205 */
 					case S15_SCR_OS_DONE:
 						ok = next == S15_SCR_OS_FILES && only(&got, "open");
 						break;
@@ -1678,7 +1678,7 @@ static void test_rules(void)
 					     (d == 2u && before == S15_SCR_OS_FILE && !armed_st)),
 					     n, key, down, &got);
 
-				/* S-15.199 - S-15.201: the list's digits open their
+				/* S-15.203 - S-15.205: the list's digits open their
 				 * files and 8 goes back; on a file, 2 starts it once,
 				 * 1 and 5 alone begin their holds; only a hold's time
 				 * installs or removes */
@@ -1849,7 +1849,7 @@ static void test_rules(void)
 }
 
 
-/* ---- S-15.199 - S-15.201: the OS files of /yaffs2/os --------------------- */
+/* ---- S-15.203 - S-15.205: the OS files of /yaffs2/os --------------------- */
 
 static void os_files_two(void)
 {
@@ -1861,10 +1861,10 @@ static void os_files_two(void)
 }
 
 /*
- * S-15.199: the list, in byte order, with sizes; empty, unreadable and too
- * long. S-15.200: a file's screen, its holds, Install as the OS write from
+ * S-15.203: the list, in byte order, with sizes; empty, unreadable and too
+ * long. S-15.204: a file's screen, its holds, Install as the OS write from
  * the file and back to the list, Boot once that starts and that can't.
- * S-15.201: the removal's result. S-04.072: each names its list place.
+ * S-15.205: the removal's result. S-04.072: each names its list place.
  */
 static void test_os_files(void)
 {
@@ -1875,50 +1875,50 @@ static void test_os_files(void)
 
 	reset_fake(); default_boot(); os_files_two(); start();
 	press(0x13);
-	CHECK(F.osf_reads == 1u, "S-15.199 the list read on opening");
+	CHECK(F.osf_reads == 1u, "S-15.203 the list read on opening");
 	expect_title("os_files");
 	expect_screen("os_files");
 	press(0x08);			/* digit 3: no file there */
-	CHECK(M.screen == S15_SCR_OS_FILES, "S-15.199 a digit past the list");
+	CHECK(M.screen == S15_SCR_OS_FILES, "S-15.203 a digit past the list");
 	press(0x06);
 	expect_title("os_file");
 	expect_screen("os_file");
 	ev(0x06, true);
-	CHECK(M.armed == S15_ARM_OS_INSTALL, "S-15.200 1 holds Install");
+	CHECK(M.armed == S15_ARM_OS_INSTALL, "S-15.204 1 holds Install");
 	expect_screen("os_file_armed_install");
 	ev(0x06, false);
-	CHECK(M.armed == S15_ARM_NONE && F.os_write == 0u, "S-15.200 released: nothing");
+	CHECK(M.armed == S15_ARM_NONE && F.os_write == 0u, "S-15.204 released: nothing");
 	expect_screen("os_file");
 	/* Boot once of a file that can't start: the reason under its screen */
 	F.once_file.why = S15_OSW_WHY_MISSING;
 	press(0x07);
 	CHECK(F.once_checks == 1u && F.once == 0u && M.screen == S15_SCR_OS_FILE &&
-	      strcmp(F.osf_path, "") == 0, "S-15.200 Boot once refused, the file let go");
+	      strcmp(F.osf_path, "") == 0, "S-15.204 Boot once refused, the file let go");
 	expect_screen("os_file_once_failed");
 	/* Install: the OS write from the file, then 8 back to the list */
 	hold(0x06);
 	CHECK(F.os_write == 1u && M.screen == S15_SCR_FACTORY &&
 	      F.osf_named >= 2u && strcmp(F.osf_path, "") == 0,
-	      "S-15.200 Install wrote, the file let go after");
-	CHECK(appended("Looking for /os/op-xy-1.1.4.ldr..."), "S-15.200 the file named");
+	      "S-15.204 Install wrote, the file let go after");
+	CHECK(appended("Looking for /os/op-xy-1.1.4.ldr..."), "S-15.204 the file named");
 	expect_screen("os_install_done");
 	press(0x15);
 	CHECK(M.screen == S15_SCR_OS_FILES && F.osf_reads == 2u,
-	      "S-15.200 8: the list read again");
+	      "S-15.204 8: the list read again");
 	press(0x07);
 	ev(0x12, true);
 	expect_screen("os_file_armed_remove");
 	tick(S15_HOLD_MS - 1u);
-	CHECK(F.n_removed == 0u, "S-15.201 not before the hold's time");
+	CHECK(F.n_removed == 0u, "S-15.205 not before the hold's time");
 	tick(1u);
 	CHECK(F.n_removed == 1u && removed("/yaffs2/os/op-xy-1.2.0.ldr") &&
-	      M.screen == S15_SCR_OS_DONE, "S-15.201 removed at the hold's time");
+	      M.screen == S15_SCR_OS_DONE, "S-15.205 removed at the hold's time");
 	ev(0x12, false);
 	expect_screen("os_removed");
 	press(0x13);
-	CHECK(M.screen == S15_SCR_OS_DONE, "S-15.201 the result: 8 alone");
+	CHECK(M.screen == S15_SCR_OS_DONE, "S-15.205 the result: 8 alone");
 	press(0x15);
-	CHECK(M.screen == S15_SCR_OS_FILES && F.osf_reads == 3u, "S-15.201 8: the list");
+	CHECK(M.screen == S15_SCR_OS_FILES && F.osf_reads == 3u, "S-15.205 8: the list");
 
 	reset_fake(); default_boot(); os_files_two(); start();
 	F.fail_remove = "/yaffs2/os/op-xy-1.1.4.ldr";
@@ -1931,20 +1931,20 @@ static void test_os_files(void)
 	press(0x13); press(0x07); press(0x07);
 	CHECK(F.once == 1u && F.once_checks == 1u && M.screen == S15_SCR_STARTING &&
 	      strcmp(F.osf_path, "/yaffs2/os/op-xy-1.2.0.ldr") == 0 && F.osf_place == 1u,
-	      "S-15.200 Boot once: place 2's file, then the restart");
+	      "S-15.204 Boot once: place 2's file, then the restart");
 	expect_screen("os_once_restarting");
 
 	reset_fake(); default_boot(); start();
 	press(0x13);
 	expect_screen("os_files_empty");
 	press(0x06);
-	CHECK(M.screen == S15_SCR_OS_FILES, "S-15.199 an empty list: no file");
+	CHECK(M.screen == S15_SCR_OS_FILES, "S-15.203 an empty list: no file");
 	reset_fake(); default_boot(); F.osf_fails = true; start();
 	press(0x13);
 	expect_screen("os_files_unreadable");
 	reset_fake(); default_boot(); F.refused = true; start();
 	press(0x13);
-	CHECK(F.osf_reads == 0u, "S-15.199 a refused drive is not read");
+	CHECK(F.osf_reads == 0u, "S-15.203 a refused drive is not read");
 	expect_screen("os_files_unreadable");
 	reset_fake(); default_boot(); start();
 	F.osf_n = 11;
@@ -1956,10 +1956,10 @@ static void test_os_files(void)
 	expect_screen("os_files_many");
 	press(0x12);
 	CHECK(M.screen == S15_SCR_OS_FILE && strcmp(M.osf_path, "/yaffs2/os/d.ldr") == 0,
-	      "S-15.199 digit 5, the fifth in byte order");
+	      "S-15.203 digit 5, the fifth in byte order");
 }
 
-/* S-15.199: the list's own parts. */
+/* S-15.203: the list's own parts. */
 static void test_os_list(void)
 {
 	struct s15_os_files l;
@@ -1969,7 +1969,7 @@ static void test_os_list(void)
 	CHECK(s15_os_file_name("a.ldr") && s15_os_file_name("A.LdR") &&
 	      !s15_os_file_name(".ldr") && !s15_os_file_name(".a.ldr") &&
 	      !s15_os_file_name("a.ldr.txt") && !s15_os_file_name("ldr") &&
-	      !s15_os_file_name(""), "S-15.199 OS file names");
+	      !s15_os_file_name(""), "S-15.203 OS file names");
 	s15_os_files_init(&l);
 	for (unsigned i = 0; i < 9; i++) {
 		const char n[8] = { (char)('i' - i), '.', 'l', 'd', 'r', '\0' };
@@ -1977,12 +1977,12 @@ static void test_os_list(void)
 		s15_os_files_offer(&l, n);
 	}
 	CHECK(l.n == 7u && l.more == 2u && strcmp(l.name[0], "a.ldr") == 0 &&
-	      strcmp(l.name[6], "g.ldr") == 0, "S-15.199 the first seven kept");
+	      strcmp(l.name[6], "g.ldr") == 0, "S-15.203 the first seven kept");
 	s15_os_files_drop(&l, 0);
-	CHECK(l.n == 6u && strcmp(l.name[0], "b.ldr") == 0, "S-15.199 a place dropped");
+	CHECK(l.n == 6u && strcmp(l.name[0], "b.ldr") == 0, "S-15.203 a place dropped");
 	CHECK(s15_os_file_path(&l, 5, path, sizeof path) &&
 	      strcmp(path, "/yaffs2/os/g.ldr") == 0 && !s15_os_file_path(&l, 6, path, sizeof path) &&
-	      !s15_os_file_path(&l, 0, path, 12), "S-15.199 paths");
+	      !s15_os_file_path(&l, 0, path, 12), "S-15.203 paths");
 	s15_size_text(&b, 0u);
 	CHECK(strcmp(b.s, "0.0 KiB") == 0, "size 0");
 	s15_size_text(&b, 8388608u);
@@ -2005,7 +2005,7 @@ static void test_start_screens(void)
 {
 	const char *got[S15_ROWS];
 	char buf[S15_ROWS][ROWLEN], want[ROWLEN];
-	const size_t items = 6u;	/* six items, the blank row over them gone (S-15.199) */
+	const size_t items = 6u;	/* six items, the blank row over them gone (S-15.203) */
 
 	for (size_t i = 0; i < S15V_N(s15v_starts); i++) {
 		const struct s15v_start *c = &s15v_starts[i];
@@ -3812,7 +3812,7 @@ static void test_continue(void)
 {
 	uint32_t before;
 
-	/* The main screen's digit 6 is OS files (S-15.199), no Continue;
+	/* The main screen's digit 6 is OS files (S-15.203), no Continue;
 	 * on a board without them it does nothing. */
 	reset_fake(); default_boot(); start();
 	expect_screen("main_plain");

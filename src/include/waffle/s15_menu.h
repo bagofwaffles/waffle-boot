@@ -43,9 +43,9 @@ enum s15_screen {
 	S15_SCR_NONE,       /* before held mode's first screen */
 	S15_SCR_APPROVE,    /* the host link's approval: the unit's keys alone */
 	S15_SCR_DISPLAY,    /* Settings' 3: the color and the boot logo */
-	S15_SCR_OS_FILES,   /* S-15.199: the OS files of /yaffs2/os */
-	S15_SCR_OS_FILE,    /* S-15.200: one of them and what it can do */
-	S15_SCR_OS_DONE     /* S-15.201: a removal's result: digit 8 alone acts */
+	S15_SCR_OS_FILES,   /* S-15.203: the OS files of /yaffs2/os */
+	S15_SCR_OS_FILE,    /* S-15.204: one of them and what it can do */
+	S15_SCR_OS_DONE     /* S-15.205: a removal's result: digit 8 alone acts */
 };
 
 /* The host link's approval screen, as the board reads it. */
@@ -70,8 +70,8 @@ enum s15_arm {
 	S15_ARM_APPROVE,    /* the host link's approval */
 	S15_ARM_LOGO_SAVE,  /* saving the boot logo shown */
 	S15_ARM_LOGO_REMOVE, /* removing the stored boot logo */
-	S15_ARM_OS_INSTALL, /* installing the OS file shown (S-15.200) */
-	S15_ARM_OS_REMOVE   /* removing it (S-15.200) */
+	S15_ARM_OS_INSTALL, /* installing the OS file shown (S-15.204) */
+	S15_ARM_OS_REMOVE   /* removing it (S-15.204) */
 };
 
 /* S-09: the slave's state, for Device Info. */
@@ -304,11 +304,11 @@ struct s15_env_ops {
 	 * the running slot under the settings' rule. */
 	enum s15_store_save (*logo_save)(void *ctx);
 	enum s15_store_save (*logo_remove)(void *ctx);
-	/* S-15.199: the OS files of /yaffs2/os, a missing directory an empty
+	/* S-15.203: the OS files of /yaffs2/os, a missing directory an empty
 	 * list, each listed one's size read; false when the directory cannot
 	 * be read. NULL: the main screen has no OS files item. */
 	bool (*os_files)(void *ctx, struct s15_os_files *out);
-	/* S-15.200: the file os_write(), os_once_check() and os_once() take
+	/* S-15.204: the file os_write(), os_once_check() and os_once() take
 	 * from here on, path at list place `place` (from 0); path NULL:
 	 * /yaffs2/os.ldr again. */
 	void (*os_file)(void *ctx, const char *path, unsigned place);
@@ -400,7 +400,7 @@ struct s15_menu {
 	/* format menu */
 	bool refused;
 
-	/* the OS files: S-15.199 - S-15.201 */
+	/* the OS files: S-15.203 - S-15.205 */
 	struct s15_os_files osf;
 	bool osf_read;             /* the list was read */
 	unsigned osf_at;           /* the file shown, its place */

@@ -1083,7 +1083,7 @@ static void test_os_once_restart(void)
 	fake_core_set_cycle_step(1u);
 	opxy_usb_stop();
 
-	/* S-04.072, S-15.200: an OS file of /os named by the menu: W13 with
+	/* S-04.072, S-15.204: an OS file of /os named by the menu: W13 with
 	 * its list place; let go, W12 again */
 	held_setup();
 	m.slave_present = true;

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-15.199: the list of OS files of /yaffs2/os, as the menu, the file
+ * S-15.203: the list of OS files of /yaffs2/os, as the menu, the file
  * reads and the start make it; no screen text.
  */
 #ifndef WAFFLE_S15_OSFILES_H
@@ -11,14 +11,14 @@
 #include <stdint.h>
 
 #define S15_OS_DIR "/yaffs2/os"
-/* S-15.199: the places the list holds (S-04.072's places, digits 1 to 7). */
+/* S-15.203: the places the list holds (S-04.072's places, digits 1 to 7). */
 #define S15_OS_FILES_MAX 7u
 /* A listed file's name, its terminator included; longer names are not
  * listed. */
 #define S15_OS_NAME_MAX 128u
 
 /*
- * S-15.199: the OS files, the names of /yaffs2/os that end in ".ldr" (any
+ * S-15.203: the OS files, the names of /yaffs2/os that end in ".ldr" (any
  * case) and do not start with '.', in byte order: the first
  * S15_OS_FILES_MAX of them, and how many more there are. The list is the
  * same wherever it is made from the same directory, so a place names the

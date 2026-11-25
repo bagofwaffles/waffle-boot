@@ -238,13 +238,13 @@ bool s09_files_os_check(struct s09_files *f, uint32_t cap, struct s15_os_file *o
  * was read, with *len its length. */
 bool s09_files_os_read(struct s09_files *f, uint8_t *buf, uint32_t cap,
 		       struct s15_os_file *out, uint32_t *len);
-/* S-05.044, S-15.200: the same of the file at path. */
+/* S-05.044, S-15.204: the same of the file at path. */
 bool s09_files_os_check_at(struct s09_files *f, const char *path, uint32_t cap,
 			   struct s15_os_file *out, uint32_t *len);
 bool s09_files_os_read_at(struct s09_files *f, const char *path, uint8_t *buf, uint32_t cap,
 			  struct s15_os_file *out, uint32_t *len);
 /*
- * S-15.199: the OS files of /yaffs2/os (s15_os_files_offer()'s list), each
+ * S-15.203: the OS files of /yaffs2/os (s15_os_files_offer()'s list), each
  * listed one's size read by its stat; a listed name that is a directory or
  * whose stat fails is dropped. A missing directory is an empty list. False
  * when the volume is refused or the directory cannot be read. A volume not
