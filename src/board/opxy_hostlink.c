@@ -729,7 +729,7 @@ static void run_job(struct opxy_master *m)
 			e.result = S15_OSW_FAILED;
 			e.why = S15_OSW_WHY_NONE;
 		}
-		opxy_osw_path = "/yaffs2/os.ldr";
+		opxy_osw_path = OPXY_OS_LDR;
 		opxy_menu_show(m);
 		if (e.result == S15_OSW_OK)
 			job(m, HL_J_DONE, 0, 100u, HL_OK, "written");

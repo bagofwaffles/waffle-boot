@@ -238,7 +238,7 @@ def chip_serial(item1, item1_reads=True, record_reads=True):
 # --- S-04.032 the slave's power-off before every master hard reset (inside S-04.063's shutdown) ---
 T_POWER_MIN_MS = 1000       # S-09.060
 SLAVE_ARM_MS = 30           # S-04.025: the answer to the slave's arming
-HARD_RESET_WRITERS = ('W1', 'W10', 'W11', 'W12', 'W3', 'W4', 'W6', 'W7')
+HARD_RESET_WRITERS = ('W1', 'W10', 'W11', 'W12', 'W13', 'W3', 'W4', 'W6', 'W7')
 TRACE_EVENTS = ('event', 'absent', 'bridge', 'poweroff', 'answer', 'report', 'link', 'record', 'arm', 'reset',
                 'slave_arm', 'slave_reset', 'boot_link')
 

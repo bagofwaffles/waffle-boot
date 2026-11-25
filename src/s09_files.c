@@ -1091,8 +1091,8 @@ static bool os_file_unread(const struct s09_files *f, struct s15_os_file *out)
 	return false;
 }
 
-bool s09_files_os_check(struct s09_files *f, uint32_t cap, struct s15_os_file *out,
-			uint32_t *len)
+bool s09_files_os_check_at(struct s09_files *f, const char *path, uint32_t cap,
+			   struct s15_os_file *out, uint32_t *len)
 {
 	const uint32_t most = cap < S03_OS_MAX ? cap : S03_OS_MAX;
 	struct s09_stat st;
@@ -1108,7 +1108,7 @@ bool s09_files_os_check(struct s09_files *f, uint32_t cap, struct s15_os_file *o
 		out->why = S15_OSW_WHY_REFUSED;
 		return false;
 	}
-	if (s09_files_stat(f, OS_LDR, &st) != 0)
+	if (s09_files_stat(f, path, &st) != 0)
 		return os_file_unread(f, out);
 	if (is_dir(&st)) {
 		out->why = S15_OSW_WHY_DIRECTORY;
@@ -1130,17 +1130,74 @@ bool s09_files_os_check(struct s09_files *f, uint32_t cap, struct s15_os_file *o
 	return true;
 }
 
-bool s09_files_os_read(struct s09_files *f, uint8_t *buf, uint32_t cap,
-		       struct s15_os_file *out, uint32_t *len)
+bool s09_files_os_check(struct s09_files *f, uint32_t cap, struct s15_os_file *out,
+			uint32_t *len)
+{
+	return s09_files_os_check_at(f, OS_LDR, cap, out, len);
+}
+
+bool s09_files_os_read_at(struct s09_files *f, const char *path, uint8_t *buf, uint32_t cap,
+			  struct s15_os_file *out, uint32_t *len)
 {
 	uint32_t n;
 
 	*len = 0;
-	if (!s09_files_os_check(f, cap, out, &n))
+	if (!s09_files_os_check_at(f, path, cap, out, &n))
 		return false;
-	if (!osw_read(f, OS_LDR, buf, n, NULL))
+	if (!osw_read(f, path, buf, n, NULL))
 		return os_file_unread(f, out);
 	*len = n;
+	return true;
+}
+
+bool s09_files_os_read(struct s09_files *f, uint8_t *buf, uint32_t cap,
+		       struct s15_os_file *out, uint32_t *len)
+{
+	return s09_files_os_read_at(f, OS_LDR, buf, cap, out, len);
+}
+
+/* S-15.199: each entry of the directory offered to the list. */
+static bool os_offer(void *ctx, const char *name)
+{
+	s15_os_files_offer(ctx, name);
+	return true;
+}
+
+bool s09_files_os_files(struct s09_files *f, struct s15_os_files *out)
+{
+	char path[sizeof S15_OS_DIR + S15_OS_NAME_MAX];
+	struct s09_stat st;
+	unsigned i = 0;
+
+	s15_os_files_init(out);
+	if (!f->mounted && !s09_files_volume_refused(f) && s09_files_mount(f) < 0 &&
+	    !s09_files_volume_refused(f))
+		return false;
+	if (s09_files_volume_refused(f))
+		return false;		/* S-12.052: what it holds is not read */
+	if (!s09_files_list(f, S15_OS_DIR, os_offer, out)) {
+		const bool missing = f->err == S09_ENOENT || f->err == S09_ENODEV;
+
+		s15_os_files_init(out);
+		if (missing)
+			f->err = 0;
+		return missing;		/* no /os: no OS files */
+	}
+	/* each listed name read; a directory goes, and a name that can't be
+	 * read fails the list, so that no place names another file */
+	while (i < out->n) {
+		if (!s15_os_file_path(out, i, path, sizeof path) ||
+		    s09_files_stat(f, path, &st) != 0) {
+			s15_os_files_init(out);
+			return false;
+		}
+		if (is_dir(&st)) {
+			s15_os_files_drop(out, i);
+			continue;
+		}
+		out->size[i++] = st.size;
+	}
+	f->err = 0;
 	return true;
 }
 

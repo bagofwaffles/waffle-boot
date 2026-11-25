@@ -346,8 +346,13 @@ enum s10c_gate opxy_hostlink_gate(void *ctx, enum s10c_link link);
 /* A job's progress, from the install's and the OS write's reports. */
 void opxy_hostlink_progress(struct opxy_master *m, uint32_t done, uint32_t total,
 			    const char *label);
-/* The file the next OS write reads (the developer menu's: /yaffs2/os.ldr). */
+#define OPXY_OS_LDR "/yaffs2/os.ldr"
+#define OPXY_OS_PLACE_NONE 0xFFu
+/* The file the OS write and Start once take (S-15.094, S-15.194), and its
+ * place in the OS files' list (S-15.200), OPXY_OS_PLACE_NONE for
+ * /yaffs2/os.ldr or a host's file. */
 extern const char *opxy_osw_path;
+extern unsigned opxy_os_place;
 /* The parts a host chose for the next install's selection; -1: the unit's. */
 void opxy_install_host_parts(int parts);
 /* Whether the host's install since its parts were set took an invalid

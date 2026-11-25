@@ -60,7 +60,10 @@ enum wire_os_file {
  * S-09.082: /os.ldr of the mounted volume read whole into buf, at most cap
  * bytes, and checked against the release's len and crc: the CRC-32 by
  * crc32_fast first when it is not NULL, and by crc32 when that differs
- * (S-03.044's rule). The file is not written; nothing else is read.
+ * (S-03.044's rule). S-09.083: when /os.ldr is not that copy, the files of
+ * /os are tried in directory order, each of length len read and checked
+ * the same way, and the first that passes is taken; the result is then
+ * WIRE_OS_FILE_OK, else /os.ldr's. Nothing is written.
  */
 enum wire_os_file wire_s09_os_file(struct wire_s09 *s, s03_crc32_fn crc32,
 				   s03_crc32_fn crc32_fast, uint8_t *buf,

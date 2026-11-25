@@ -126,17 +126,19 @@ static void test_writers(void)
 		{1, 30, "SEUWH"}, {1, 10, "SEUWH"}, {1, 50, "SEUWH"}, {1, 40, "SEUWH"},
 		{2, 0, "PSXUWQ"}, {3, 0, "SXDUWH"}, {4, 0, "SEUWH"},
 		{6, 0, "SXLUWH"}, {7, 20, "SUWH"}, {7, 30, "SUWH"}, {9, 0, "UWH"},
-		{11, 0, "SXUWH"}, {12, 0, "SXUWH"},
+		{11, 0, "SXUWH"}, {12, 0, "SXUWH"}, {13, 2, "SXUWH"},
 	};
 	unsigned i;
 
 	for (i = 0; i < N(v_writers); i++) {
 		const struct v_writer *v = &v_writers[i];
 		struct s04_writer_rule r;
-		uint16_t arg = v->reason == -1 ? 30u : v->reason == -2 ? 40u : 0u;
+		uint16_t arg = v->reason == -1 ? 30u : v->reason == -2 ? 40u :
+			       v->reason == -3 ? 2u : 0u;
 
 		s04_writer_rule((enum s04_writer)v->id, arg, &r);
-		CHECK_EQ(r.reason, v->reason >= 0 ? (uint16_t)v->reason : arg);
+		CHECK_EQ(r.reason, v->reason >= 0 ? (uint16_t)v->reason :
+			 v->reason == -3 ? (uint16_t)(S04_REASON_OS_LIST + arg) : arg);
 		CHECK_EQ(r.reset, v->reset);
 		CHECK_EQ(r.nordic, v->nordic);
 		CHECK_EQ(r.shutdown, v->shutdown == 1);
@@ -171,6 +173,8 @@ static void test_writers(void)
 			CHECK(g_delay >= 10u);		/* S-04.023 */
 		if (runs[i].id == 12)
 			CHECK_EQ(g_written, S04_REASON_OS_FILE);	/* S-04.014 */
+		if (runs[i].id == 13)
+			CHECK_EQ(g_written, 102u);		/* S-04.072 */
 	}
 	/* S-04.014: reason 90 boots, and a present record acts once. */
 	{

@@ -301,6 +301,21 @@ static uint32_t bad_crc(uint32_t crc, const uint8_t *p, uint32_t n)
 	return ~wire_crc32(crc, p, n);
 }
 
+/* A file written whole through the bridge's commands. */
+static void put_file(const char *path, const uint8_t *data, uint32_t n)
+{
+	uint32_t err;
+	int32_t fd = path_cmd(S09_OPEN, S09_O_RDWR | S09_O_CREAT | S09_O_TRUNC, path, &err);
+
+	for (uint32_t off = 0; fd >= 0 && off < n; off += 0x1000u) {
+		uint32_t k = n - off < 0x1000u ? n - off : 0x1000u;
+
+		(void)cmd(S09_WRITE, (uint32_t)fd, k, (uint16_t)k, NULL, NULL, data + off, k, &err);
+	}
+	CHECK(fd >= 0 && cmd(S09_CLOSE, (uint32_t)fd, 0, 0, NULL, NULL, NULL, 0, &err) == 0,
+	      "%s written", path);
+}
+
 /* S-09.082: the slave's copy of a file start's /os.ldr, checked against
  * the release's length and CRC-32. */
 static void test_os_file(void)
@@ -338,6 +353,24 @@ static void test_os_file(void)
 	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof img - 1u, sizeof img, crc) ==
 	      WIRE_OS_FILE_LENGTH, "over the buffer");
 	CHECK(path_cmd(S09_UNLINK, 0, "os.ldr", &err) == 0, "removed");
+
+	/* S-09.083: no /os.ldr, the release's copy among the files of /os,
+	 * another of the same length first */
+	CHECK(path_cmd(S09_MKDIR, 0755, "os", &err) == 0, "/os");
+	img[0] ^= 0xFFu;
+	put_file("os/a.ldr", img, sizeof img);
+	img[0] ^= 0xFFu;
+	put_file("os/b.ldr", img, 100u);
+	put_file("os/c.ldr", img, sizeof img);
+	memset(got, 0, sizeof got);
+	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof got, sizeof img, crc) ==
+	      WIRE_OS_FILE_OK && !memcmp(got, img, sizeof img), "S-09.083 found in /os");
+	CHECK(wire_s09_os_file(&S, wire_crc32, NULL, got, sizeof got, sizeof img, crc ^ 1u) ==
+	      WIRE_OS_FILE_UNREAD, "S-09.083 none of /os: /os.ldr's result");
+	CHECK(path_cmd(S09_UNLINK, 0, "os/a.ldr", &err) == 0 &&
+	      path_cmd(S09_UNLINK, 0, "os/b.ldr", &err) == 0 &&
+	      path_cmd(S09_UNLINK, 0, "os/c.ldr", &err) == 0 &&
+	      path_cmd(S09_RMDIR, 0, "os", &err) == 0, "/os removed");
 }
 
 static void test_unmount(void)

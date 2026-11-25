@@ -95,12 +95,12 @@ def main():
     w('};')
     w('')
 
-    w('/* writers.tsv: reason -1 host mode, -2 the reason taken; reset 0 hard 1 soft;')
+    w('/* writers.tsv: reason -1 host mode, -2 the reason taken, -3 100 + a list place; reset 0 hard 1 soft;')
     w(' * nordic 0 none 1 enter 2 exit; shutdown 0 no 1 yes 2 n/a */')
     w('struct v_writer { int id; int reason; int reset; int nordic; int shutdown; int psoc_reset; uint32_t delay; };')
     w('static const struct v_writer v_writers[] = {')
     for r in tsv('writers.tsv'):
-        reason = {'host_modes.tsv': -1, 'taken': -2}.get(r['reason'])
+        reason = {'host_modes.tsv': -1, 'taken': -2, 'list': -3}.get(r['reason'])
         if reason is None:
             reason = int(r['reason'])
         w('\t{%s, %d, %d, %d, %d, %d, %s},' % (

@@ -13,6 +13,7 @@
 
 #include "waffle/device.h"
 #include "waffle/s15_console.h"
+#include "waffle/s15_osfiles.h"
 
 /* Keys (S-07.030) the screens name. Shift and the white knob are
  * device.key.shift and device.key.confirm (S-15.016). */
@@ -241,11 +242,13 @@ struct s15_start {
 	uint8_t cmd, at;	/* then the request and where it broke */
 	bool file;		/* S-15.195: a file start's (S-05.035) */
 	enum s15_osw_why file_why;	/* S15_START_FILE */
+	bool listed;		/* with file: an OS file's of /yaffs2/os (S-05.044) */
 };
 
 /* The notice's first line (S15_ST_ERROR); a file start's (S-15.195). */
 extern const char s15_start_failed[];
 extern const char s15_start_failed_file[];
+extern const char s15_start_failed_listed[];	/* an OS file's (S-05.044) */
 /* Its second: the reason, for s15_reason_line(); not for an encrypted
  * image, whose second line is s15_os_reinstall. */
 void s15_start_reason(struct s15_buf *out, const struct s15_start *s);
@@ -377,5 +380,27 @@ void s15_once_reason(struct s15_buf *out, enum s15_once why,
 
 extern const char s15_cont_restarting[];	/* S15_ST_WARN */
 extern const char s15_trial_ok_line[];	/* S15_ST_OK: a trial start goes on to the OS */
+
+/* ---- S-15.199 - S-15.201: the OS files of /yaffs2/os ------------------ */
+
+/* A file's size as a screen shows it, to the nearest tenth: "5.2 MiB",
+ * "812.0 KiB". */
+void s15_size_text(struct s15_buf *out, uint32_t bytes);
+/* A name as a row shows it: at most max characters, its end cut to "...". */
+void s15_name_text(struct s15_buf *out, const char *name, size_t max);
+
+extern const char s15_os_files_item[];		/* S15_ST_ITEM, the main screen's digit 6 */
+extern const char s15_os_files_where[];		/* S15_ST_DIM, over the list */
+extern const char s15_os_files_none[];		/* S15_ST_TEXT: an empty list */
+extern const char s15_os_files_how[];		/* S15_ST_DIM, under it */
+extern const char s15_os_files_unread[];	/* S15_ST_ERROR: /os could not be read */
+extern const char s15_os_install_item[];	/* S15_ST_ITEM, digit 1 */
+extern const char s15_os_once_item[];		/* S15_ST_ITEM, digit 2 */
+extern const char s15_os_remove_item[];		/* S15_ST_ITEM, digit 5 */
+extern const char s15_os_kept[];		/* S15_ST_DIM: a removal's result */
+/* A named file's reason, for s15_reason_line(): s15_osw_reason()'s, with
+ * a missing file and a directory said of the file, not /os.ldr. */
+void s15_file_reason(struct s15_buf *out, enum s15_osw_why why, uint32_t value,
+		     uint32_t limit);
 
 #endif /* WAFFLE_S15_LINES_H */

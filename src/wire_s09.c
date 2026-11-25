@@ -505,17 +505,16 @@ int32_t wire_s09_read(void *ctx, uint32_t fd, uint8_t *buf, uint32_t n,
 	return (int32_t)got;
 }
 
-enum wire_os_file wire_s09_os_file(struct wire_s09 *s, s03_crc32_fn crc32,
-				   s03_crc32_fn crc32_fast, uint8_t *buf,
-				   uint32_t cap, uint32_t len, uint32_t crc)
+/* One file, at s->path, read whole into buf and checked (S-09.082). */
+static enum wire_os_file os_file_at(struct wire_s09 *s, s03_crc32_fn crc32,
+				    s03_crc32_fn crc32_fast, uint8_t *buf,
+				    uint32_t cap, uint32_t len, uint32_t crc)
 {
 	struct yaffs_stat st;
 	uint32_t got = 0, sum;
 	int fd;
 
-	if (!s->y->mounted || wire_yaffs_volume_refused(s->y) ||
-	    !wire_yaffs_full_path(s->y, "os.ldr", s->path) ||
-	    yaffs_stat(s->path, &st) != 0 || (st.st_mode & S_IFMT) == S_IFDIR)
+	if (yaffs_stat(s->path, &st) != 0 || (st.st_mode & S_IFMT) == S_IFDIR)
 		return WIRE_OS_FILE_UNREAD;
 	if (st.st_size < 0 || (uint64_t)st.st_size != len || len > cap)
 		return WIRE_OS_FILE_LENGTH;
@@ -536,4 +535,47 @@ enum wire_os_file wire_s09_os_file(struct wire_s09 *s, s03_crc32_fn crc32,
 	if (sum != crc)
 		sum = crc32(0u, buf, len);
 	return sum == crc ? WIRE_OS_FILE_OK : WIRE_OS_FILE_CRC;
+}
+
+/* S-09.083: the files of /os, in directory order, one at a time: the first
+ * of the release's length whose bytes give its CRC-32. */
+static bool os_dir_file(struct wire_s09 *s, s03_crc32_fn crc32, s03_crc32_fn crc32_fast,
+			uint8_t *buf, uint32_t cap, uint32_t len, uint32_t crc)
+{
+	static char dir[WIRE_YAFFS_PATH_MAX];
+	const struct yaffs_dirent *de;
+	yaffs_DIR *d;
+	bool found = false;
+
+	if (!wire_yaffs_full_path(s->y, "os", dir) || (d = yaffs_opendir(dir)) == NULL)
+		return false;
+	while (!found && (de = yaffs_readdir(d)) != NULL) {
+		const size_t n = strlen(dir), k = strlen(de->d_name);
+
+		if (de->d_name[0] == '.' || n + 1u + k + 1u > sizeof s->path)
+			continue;	/* ".", "..", hidden, or no room */
+		memcpy(s->path, dir, n);
+		s->path[n] = '/';
+		memcpy(s->path + n + 1u, de->d_name, k + 1u);
+		found = os_file_at(s, crc32, crc32_fast, buf, cap, len, crc) == WIRE_OS_FILE_OK;
+	}
+	(void)yaffs_closedir(d);
+	return found;
+}
+
+enum wire_os_file wire_s09_os_file(struct wire_s09 *s, s03_crc32_fn crc32,
+				   s03_crc32_fn crc32_fast, uint8_t *buf,
+				   uint32_t cap, uint32_t len, uint32_t crc)
+{
+	enum wire_os_file r;
+
+	if (!s->y->mounted || wire_yaffs_volume_refused(s->y))
+		return WIRE_OS_FILE_UNREAD;
+	r = wire_yaffs_full_path(s->y, "os.ldr", s->path) ?
+	    os_file_at(s, crc32, crc32_fast, buf, cap, len, crc) : WIRE_OS_FILE_UNREAD;
+	/* S-09.083: the master's copy came from an OS file of /os */
+	if (r != WIRE_OS_FILE_OK && len <= cap &&
+	    os_dir_file(s, crc32, crc32_fast, buf, cap, len, crc))
+		return WIRE_OS_FILE_OK;
+	return r;
 }

@@ -46,6 +46,7 @@ struct boot_start {
 	 * partition (load all zero but its length): what the read found, and
 	 * the CRC-32 of the master's copy */
 	bool file;
+	bool listed;			/* S-05.044: the file an OS file of /yaffs2/os */
 	struct s15_os_file os_file;
 	uint32_t file_crc;
 };

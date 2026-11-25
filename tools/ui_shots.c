@@ -93,6 +93,28 @@ static enum s15_store_save e_settings(void *c, const struct s15_settings *s,
 	return S15_STORE_SAVED;
 }
 
+/* S-15.199: three OS files in /os. */
+static bool e_os_files(void *c, struct s15_os_files *out)
+{
+	static const char *const names[] = { "op-xy-1.2.0.ldr", "op-xy-1.1.4.ldr",
+					     "my-test-build.ldr" };
+	static const uint32_t sizes[] = { 5452595u, 5390336u, 831488u };
+
+	(void)c;
+	for (unsigned i = 0; i < 3u; i++)
+		s15_os_files_offer(out, names[i]);
+	for (unsigned i = 0; i < out->n; i++)
+		for (unsigned j = 0; j < 3u; j++)
+			if (strcmp(out->name[i], names[j]) == 0)
+				out->size[i] = sizes[j];
+	return true;
+}
+
+static void e_os_file(void *c, const char *path, unsigned place)
+{
+	(void)c; (void)path; (void)place;
+}
+
 static enum s15_store_save e_clear(void *c)
 {
 	(void)c;
@@ -156,6 +178,7 @@ static const struct s15_env_ops env = {
 	e_remove, e_none, e_format, e_osw, e_none, e_none, e_none, e_option,
 	e_settings, NULL, e_lost, e_continue, NULL, NULL, e_clear, NULL, NULL,
 	e_logo_state, e_none, e_logo_load, e_logo_save, e_logo_save,
+	e_os_files, e_os_file,
 };
 
 /* S-15.163: the image read lost the slave, as on a unit. */
@@ -615,6 +638,16 @@ int main(int argc, char **argv)
 	setup(); start();
 	press(0x08);
 	bad |= shot(d, "developer");
+
+	/* S-15.199 - S-15.201: the OS files, one of them, Install held 2 of
+	 * the 5 s */
+	setup(); start();
+	press(0x13);
+	bad |= shot(d, "os-files");
+	press(0x07);
+	bad |= shot(d, "os-file");
+	hold_for(0x06, 2000);
+	bad |= shot(d, "os-file-held");
 
 	/* S-15.094: the OS write running, done, failed */
 	osw_dir = d;

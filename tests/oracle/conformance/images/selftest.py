@@ -82,10 +82,12 @@ def _():
     assert beh(30)['transport'] == 'msc' and beh(40)['transport'] == 'midi' and beh(0x1003C)['screen'] == 'main'
     assert [records.host_mode_reason(p) for p in (b'', b'\x01', b'\x02', b'\x04\x01', b'\x03')] == [40, 30, 10, 50, 40]
     assert records.nordic_step(20) == 'exit' and records.nordic_step(0) == 'none' and records.nordic_step(30) == 'enter'
-    assert sorted(records.WRITERS) == sorted('W%d' % i for i in range(1, 13) if i not in (5, 8))
+    assert sorted(records.WRITERS) == sorted('W%d' % i for i in range(1, 14) if i not in (5, 8))
     assert records.writer_reason('W10', taken=30) == 70 and records.reason_behavior(70)['boots']
     assert records.writer_reason('W11', taken=30) == 80 and records.reason_behavior(80)['boots']
     assert records.writer_reason('W12', taken=30) == 90 and records.reason_behavior(90)['boots']
+    assert records.writer_reason('W13', place=6) == 106 and records.writer_reason('W13', place=7) == 20
+    assert records.reason_behavior(106)['boots']
     assert records.writer_reason('W1', mode_payload=b'\x01') == 30 and records.writer_reason('W7', taken=60) == 60
     assert records.reboot_record(30) == records.build_reboot_record(30)
     b = records.build_metadata(serial='ABCDEFGH', sku=5, state='upgrading', sw_version=(1, 2, 3, 4))

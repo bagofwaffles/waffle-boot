@@ -10,6 +10,8 @@ row	record	reason_taken	boots	screen	cdc	transport	os_writes	record_after
 70	0df0adde46000000	70	yes	main	no	-	no	0000000046000000
 80	0df0adde50000000	80	yes	main	no	-	no	0000000050000000
 90	0df0adde5a000000	90	yes	main	no	-	no	000000005a000000
+100	0df0adde64000000	100	yes	main	no	-	no	0000000064000000
+106	0df0adde6a000000	106	yes	main	no	-	no	000000006a000000
 absent	ffffffffffffffff	20	yes	main	no	-	-	ffffffffffffffff
 magic0	000000001e000000	20	yes	main	no	-	-	000000001e000000
 magicC	0cf0adde28000000	20	yes	main	no	-	-	0cf0adde28000000

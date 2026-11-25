@@ -76,6 +76,14 @@ bootloader too with Protected writes on.
 
 <img src="../docs/ui/upgrade-sig-prompt.png" width="480" alt="The signature does not match">
 
+## Several OS versions on the drive
+
+An OS image (`.ldr`) copied into the folder `os` on the internal drive, with MTP or the host link, shows
+under the main menu's **6 OS files**. From there one can be tried for a single start (**2 Boot once**,
+nothing written) or installed (**1 Install**, held): the install writes the inactive boot partition and
+makes it active only once the copy checks out, so the OS that was there stays if it fails. The files
+stay on the drive until removed (**5 Remove**, held). See [the boot menu](Boot-Menu#os-files).
+
 ## If it does not work
 
 | Message | Meaning |

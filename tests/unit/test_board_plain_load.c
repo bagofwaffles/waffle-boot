@@ -1206,6 +1206,59 @@ static void test_file_start(void)
 	}
 }
 
+/* /yaffs2/os/<name> with len bytes of image, the first byte changed by
+ * flip; then unmounted as put_os_file() leaves it. */
+static void put_listed(const char *name, uint32_t len, uint8_t flip)
+{
+	char path[64];
+	int fd;
+
+	snprintf(path, sizeof path, "/yaffs2/os/%s", name);
+	CHECK_EQ(wire_yaffs_mount(&Y), WIRE_MOUNT_OK);
+	(void)yaffs_mkdir("/yaffs2/os", 0755);
+	fd = yaffs_open(path, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+	CHECK(fd >= 0);
+	image[0] ^= flip;
+	CHECK(yaffs_write(fd, image, len) == (int)len);
+	image[0] ^= flip;
+	CHECK(yaffs_close(fd) == 0);
+	CHECK(yaffs_unmount2("/yaffs2", 1) == 0);
+	Y.mounted = false;
+}
+
+/*
+ * S-05.044, S-09.083: an OS file's start. The master lists /os as the menu
+ * did and reads the file at the reason's place; the slave, with no
+ * /os.ldr, finds the copy of the release's length and CRC among the files
+ * of /os, past one of the same length that is not it.
+ */
+static void test_listed_start(void)
+{
+	static struct s15_os_files list;
+	struct s15_os_file out;
+	char path[sizeof S15_OS_DIR + S15_OS_NAME_MAX];
+	uint32_t len, crc;
+
+	t_case = "listed start";
+	put_os(742764u, 11u);
+	memset(bp[1], 0, B_SIZE);
+	fresh();
+	put_listed("a.ldr", 742764u, 0x40u);	/* the same length, not it */
+	put_listed("b.ldr", 742764u, 0u);
+	start_up();
+	memset(sl_staging, 0x5A, S03_OS_MAX);
+	s09_files_init(&F, &ms);
+	CHECK(s09_files_os_files(&F, &list) && list.n == 2u);
+	CHECK(s15_os_file_path(&list, 1u, path, sizeof path) &&
+	      strcmp(path, "/yaffs2/os/b.ldr") == 0);
+	CHECK(s09_files_os_read_at(&F, path, staging, S03_OS_MAX, &out, &len) &&
+	      len == 742764u && memcmp(staging, image, len) == 0);
+	crc = opxy_crc32_long(0u, staging, len);
+	CHECK_EQ(s09_master_release_file(&ms, len, crc), 0);
+	CHECK(sv.released && sl_file == WIRE_OS_FILE_OK);
+	CHECK(memcmp(sl_staging, image, len) == 0);
+}
+
 /* S-05.035's refusals before any release: each with its reason. */
 static void file_refused(const char *what, uint32_t len, bool dir, bool none,
 			 enum s15_osw_why why, uint32_t value, uint32_t limit)
@@ -1261,6 +1314,7 @@ int main(void)
 	test_select();
 	test_write_still_absent();
 	test_file_start();
+	test_listed_start();
 	test_file_refused();
 	wire_s09_release(&S);
 	wire_yaffs_detach(&Y);

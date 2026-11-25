@@ -8,7 +8,8 @@ The boot menu is waffle-boot's own set of screens, shown instead of starting the
   pressed while the line shows do nothing, and a key still held when the menu opens does nothing until let
   go and pressed again.
 - **Settings → 6 Start in boot menu: On.** Every start then opens the menu instead of the OS, but the one
-  start after Continue to the OS or after the developer menu's 3 Start /os.ldr once (does not write).
+  start after Continue to the OS, after the developer menu's 3 Start /os.ldr once (does not write), or
+  after an OS file's 2 Boot once.
 - **By itself**, when the OS cannot be started, when the last install did not finish, or when the OS
   restarts the unit into the bootloader for an update.
 
@@ -38,10 +39,31 @@ once; letting go earlier, or any other key, cancels. A knob click never starts i
 | 3 Developer menu | Shown only while developer mode is on |
 | 4 Device info | Serial numbers, versions, the second processor's state, and why the OS did not start. The help key opens it too. Its `1 More` opens a second page: the selected slot's start log, with the starts it holds, the unfinished ones at its end and the count it is erased at, read again each time the page opens, and the boot logo: built-in or custom, and the bytes this image leaves for one |
 | 5 System | Key test, volume calibration, content packs, format, factory reset |
+| 6 OS files | The OS files kept on the internal drive, below |
 | 7 Continue to OS | At the bottom, apart from the others. Restarts the unit into the OS from the eMMC's boot partition, also with Start in boot menu on. Nothing is written. With DSP2 not answering, the restart is the one that restarts DSP2 too, after which Start in boot menu applies |
 
 The status bar shows the running slot (`SLOT1` or `SLOT2`) and `USB`, lit while a disk is offered. Under
 the items, the screen says when the OS could not be started, and why.
+
+## OS files
+
+<img src="../docs/ui/os-files.png" width="480" alt="OS Files">
+
+The files in the folder `os` on the internal drive whose names end in `.ldr`, in name order, each with its
+size: digits 1 to 7 for the first seven (a header says how many more there are). Copy files there with MTP
+(the developer menu's 2) or the host link; the folder is not made for you. A file's digit opens its screen:
+
+<img src="../docs/ui/os-file.png" width="480" alt="OS File">
+
+| Item | What it does |
+| --- | --- |
+| 1 Install | Hold 1. Writes the file to the eMMC's inactive boot partition, the same steps as the developer menu's 5 Write /os.ldr to boot partition: the partition is made active only after the copy checks out, so a failed install leaves the OS that was there. After a success, 6 restarts into the new OS and 8 goes back to the list |
+| 2 Boot once | Restarts the unit, and that one start loads the OS from this file instead of the eMMC's boot partition, also with Start in boot menu on. Nothing is written. Without a usable file, or with DSP2 not answering, it does not restart and says why; a file that fails at the start opens the boot menu with the reason |
+| 5 Remove | Hold 5. Deletes the file from the drive. The OS on the eMMC is not changed |
+| 8 Back to OS Files | |
+
+Boot once names the file by its place in the list, so add, rename or remove nothing in `os` between the
+choice and the restart. DSP2 finds its own copy by the file's length and CRC.
 
 ## Settings
 
