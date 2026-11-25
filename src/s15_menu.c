@@ -322,7 +322,7 @@ static bool start_failed(struct s15_menu *m)
 	return m->boot->start.why != S15_START_OK;
 }
 
-/* S-15.199: the board lists OS files and takes one for a write or a start. */
+/* S-15.203: the board lists OS files and takes one for a write or a start. */
 static bool has_os_files(const struct s15_menu *m)
 {
 	return m->env->os_files != NULL && m->env->os_file != NULL;
@@ -334,7 +334,7 @@ static bool has_os_files(const struct s15_menu *m)
 static void draw_main(struct s15_menu *m)
 {
 	const bool notice = m->boot->start.why != S15_START_OK || m->boot->interrupted;
-	const bool files = has_os_files(m);	/* S-15.199 */
+	const bool files = has_os_files(m);	/* S-15.203 */
 
 	enter(m, S15_SCR_MAIN, "Main Menu");
 	/* the blank row over the items while nine rows hold it */
@@ -965,7 +965,7 @@ static void packs_key(struct s15_menu *m, unsigned key)
 	hold_begin(m, S15_ARM_PACK, key);
 }
 
-/* ---- the OS files: S-15.199 - S-15.201 ------------------------------ */
+/* ---- the OS files: S-15.203 - S-15.205 ------------------------------ */
 
 #define OS_NAME_ROW 36u		/* a name's characters on a list row */
 #define OS_NAME_LINE 50u	/* and on a line of its own */
@@ -979,7 +979,7 @@ static void read_os_files(struct s15_menu *m)
 		s15_os_files_init(&m->osf);
 }
 
-/* S-15.199: the list, one row a file with its size, on digits 1 to 7; an
+/* S-15.203: the list, one row a file with its size, on digits 1 to 7; an
  * empty list says how files get there; a list that can't be read says
  * so. The blank rows go first when they would not fit. */
 static void draw_os_files(struct s15_menu *m)
@@ -1042,7 +1042,7 @@ static void os_name(const struct s15_menu *m, struct s15_buf *out)
 	s15_name_text(out, m->osf.name[m->osf_at], OS_NAME_LINE);
 }
 
-/* S-15.200: the file and its three actions; install and remove are
+/* S-15.204: the file and its three actions; install and remove are
  * confirmed by their own keys held (S-15.015), armed the one held, its
  * hold's row to follow. after: rows the caller adds under it. */
 static void draw_os_file(struct s15_menu *m, unsigned armed, unsigned after)
@@ -1075,7 +1075,7 @@ static void draw_os_file(struct s15_menu *m, unsigned armed, unsigned after)
 	sline(m, S15_ST_BACK, "8 Back to OS Files");
 }
 
-/* S-15.199: a file's digit opens its screen. */
+/* S-15.203: a file's digit opens its screen. */
 static void os_files_key(struct s15_menu *m, unsigned key)
 {
 	const unsigned d = s15_digit(m->dev, key);
@@ -1091,7 +1091,7 @@ static void os_files_key(struct s15_menu *m, unsigned key)
 	draw_os_file(m, 0u, 0u);
 }
 
-/* S-15.200: Install, S-15.094's OS write from the file, which goes into
+/* S-15.204: Install, S-15.094's OS write from the file, which goes into
  * the inactive boot partition and is made active last (S-03.055); 8 then
  * goes back to the list. */
 static void os_install(struct s15_menu *m)
@@ -1101,7 +1101,7 @@ static void os_install(struct s15_menu *m)
 	m->env->os_file(m->env->ctx, NULL, 0u);
 }
 
-/* S-15.200: Boot once, S-15.194's restart for this file; when it can't
+/* S-15.204: Boot once, S-15.194's restart for this file; when it can't
  * start, its screen again under the reason. */
 static void os_boot_once(struct s15_menu *m)
 {
@@ -1121,7 +1121,7 @@ static void os_boot_once(struct s15_menu *m)
 	sline(m, S15_ST_DIM, b.s);
 }
 
-/* S-15.201: the removal, the scan before a write first (S-15.191); its
+/* S-15.205: the removal, the scan before a write first (S-15.191); its
  * result is a view of its own, left with 8 alone. */
 static void os_remove(struct s15_menu *m)
 {
@@ -1148,7 +1148,7 @@ static void os_remove(struct s15_menu *m)
 	sline(m, S15_ST_BACK, "8 Back to OS Files");
 }
 
-/* S-15.200: 1 and 5 start their holds, 2 restarts at once, 8 goes back. */
+/* S-15.204: 1 and 5 start their holds, 2 restarts at once, 8 goes back. */
 static void os_file_key(struct s15_menu *m, unsigned key)
 {
 	const unsigned d = s15_digit(m->dev, key);
@@ -1724,7 +1724,7 @@ static void restart(struct s15_menu *m)
 }
 
 /* S-15.194: the check, then the restart into a start from the file (name
- * NULL: /yaffs2/os.ldr; S-15.200: an OS file's), its line under the screen
+ * NULL: /yaffs2/os.ldr; S-15.204: an OS file's), its line under the screen
  * shown; from then on no key acts. False when it does not start, *why
  * then the reason for s15_reason_line(). */
 static bool os_once_from(struct s15_menu *m, const char *name, struct s15_buf *why)
@@ -2439,7 +2439,7 @@ static void main_key(struct s15_menu *m, unsigned key)
 	else if (d == 5u)
 		open_system(m);
 	else if (d == 6u && has_os_files(m))
-		open_os_files(m);	/* S-15.199 */
+		open_os_files(m);	/* S-15.203 */
 	else if (d == 7u)
 		restart_to_os(m);	/* S-15.031, S-15.190 */
 }
@@ -2516,10 +2516,10 @@ static void hold_run(struct s15_menu *m)
 		logo_done(m, m->env->logo_remove(m->env->ctx), false);
 		break;
 	case S15_ARM_OS_INSTALL:
-		os_install(m);                      /* S-15.200 */
+		os_install(m);                      /* S-15.204 */
 		break;
 	case S15_ARM_OS_REMOVE:
-		os_remove(m);                       /* S-15.201 */
+		os_remove(m);                       /* S-15.205 */
 		break;
 	case S15_ARM_NONE:
 	default:
@@ -2613,7 +2613,7 @@ static void key_down(struct s15_menu *m, unsigned key)
 		os_file_key(m, key);
 		break;
 	case S15_SCR_OS_DONE:
-		if (s15_digit(m->dev, key) == 8u)   /* S-15.201 */
+		if (s15_digit(m->dev, key) == 8u)   /* S-15.205 */
 			open_os_files(m);
 		break;
 	case S15_SCR_STARTING:                      /* S-15.190: no key */

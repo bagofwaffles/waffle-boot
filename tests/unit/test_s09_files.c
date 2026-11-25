@@ -3981,7 +3981,7 @@ static void os_stream(uint8_t *d, size_t n, uint32_t seed)
 }
 
 /* S-15.094 through S-03's OS write and the eMMC commands */
-/* S-15.199: the OS files of /yaffs2/os, sized, in byte order; no /os is an
+/* S-15.203: the OS files of /yaffs2/os, sized, in byte order; no /os is an
  * empty list; a refused volume is not read. S-05.044: a listed file read
  * by its path. */
 static void test_os_files(void)

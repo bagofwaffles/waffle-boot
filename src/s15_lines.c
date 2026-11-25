@@ -1068,7 +1068,7 @@ void s15_osw_emmc_line(struct s15_buf *out, enum s15_style *style,
 	}
 }
 
-/* ---- S-15.199 - S-15.201: the OS files of /yaffs2/os ---------------- */
+/* ---- S-15.203 - S-15.205: the OS files of /yaffs2/os ---------------- */
 
 const char s15_os_files_item[] = "6 OS files";
 const char s15_os_files_where[] = "/os on the internal drive";

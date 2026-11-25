@@ -247,7 +247,7 @@ A description of the screens as they are now, free to change within the rules ab
   even with Start in boot menu on (S-15.194, S-04.014); it writes nothing to the eMMC. Like Continue
   to the OS it opens no screen of its own: a line under the screen it was chosen on (for a host's
   request, the screen showing) says that the unit is restarting to start it, and from then no key acts.
-- An OS file's Boot once is Start `/os.ldr` once for that file (S-15.200): the restart names the file's
+- An OS file's Boot once is Start `/os.ldr` once for that file (S-15.204): the restart names the file's
   place in the list (S-04.072), the next start lists `/os` again and loads the file at that place
   (S-05.044), and DSP2 finds its copy among the files of `/os` by its length and CRC (S-09.083).
 - The OS write has its own screen: its steps and their progress, and on a failure the reason and what

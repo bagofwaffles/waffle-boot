@@ -93,7 +93,7 @@ static enum s15_store_save e_settings(void *c, const struct s15_settings *s,
 	return S15_STORE_SAVED;
 }
 
-/* S-15.199: three OS files in /os. */
+/* S-15.203: three OS files in /os. */
 static bool e_os_files(void *c, struct s15_os_files *out)
 {
 	static const char *const names[] = { "op-xy-1.2.0.ldr", "op-xy-1.1.4.ldr",
@@ -639,7 +639,7 @@ int main(int argc, char **argv)
 	press(0x08);
 	bad |= shot(d, "developer");
 
-	/* S-15.199 - S-15.201: the OS files, one of them, Install held 2 of
+	/* S-15.203 - S-15.205: the OS files, one of them, Install held 2 of
 	 * the 5 s */
 	setup(); start();
 	press(0x13);

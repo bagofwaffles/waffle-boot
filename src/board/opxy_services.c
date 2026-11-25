@@ -1595,7 +1595,7 @@ static void env_os_once(void *ctx)
 		opxy_reboot(m, S04_W12, 0u);
 }
 
-/* S-15.199: the OS files of /yaffs2/os. */
+/* S-15.203: the OS files of /yaffs2/os. */
 static bool env_os_files(void *ctx, struct s15_os_files *out)
 {
 	struct opxy_master *m = ctx;
@@ -1603,7 +1603,7 @@ static bool env_os_files(void *ctx, struct s15_os_files *out)
 	return s09_files_os_files(&m->sv.files, out);
 }
 
-/* S-15.200: the file the OS write and the start once take. The path is
+/* S-15.204: the file the OS write and the start once take. The path is
  * the menu's, kept while it is set. */
 static void env_os_file(void *ctx, const char *path, unsigned place)
 {
@@ -1675,7 +1675,7 @@ void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 	/* S-15.194: the test OS (waffle/testos.h) hands over to no OS */
 	env->os_once_check = OPXY_TESTOS_OR(NULL, env_os_once_check);
 	env->os_once = OPXY_TESTOS_OR(NULL, env_os_once);
-	/* S-15.199: the test OS starts no OS and writes none */
+	/* S-15.203: the test OS starts no OS and writes none */
 	env->os_files = OPXY_TESTOS_OR(NULL, env_os_files);
 	env->os_file = OPXY_TESTOS_OR(NULL, env_os_file);
 	opxy_logo_env(m, env);

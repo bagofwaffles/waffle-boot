@@ -349,7 +349,7 @@ void opxy_hostlink_progress(struct opxy_master *m, uint32_t done, uint32_t total
 #define OPXY_OS_LDR "/yaffs2/os.ldr"
 #define OPXY_OS_PLACE_NONE 0xFFu
 /* The file the OS write and Start once take (S-15.094, S-15.194), and its
- * place in the OS files' list (S-15.200), OPXY_OS_PLACE_NONE for
+ * place in the OS files' list (S-15.204), OPXY_OS_PLACE_NONE for
  * /yaffs2/os.ldr or a host's file. */
 extern const char *opxy_osw_path;
 extern unsigned opxy_os_place;

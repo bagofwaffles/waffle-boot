@@ -42,7 +42,7 @@
  * (S-05.035). Written only by W12. */
 #define S04_REASON_OS_FILE 90u
 /* S-04.072: boots as 90 does, with the OS image read from the file of
- * /yaffs2/os at the list place reason - 100 (S-05.044, S-15.199): 100 is
+ * /yaffs2/os at the list place reason - 100 (S-05.044, S-15.203): 100 is
  * the list's first file. Written only by W13. */
 #define S04_REASON_OS_LIST 100u
 #define S04_OS_LIST_PLACES 7u
