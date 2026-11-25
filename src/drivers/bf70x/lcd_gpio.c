@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The panel bus bit-banged over GPIO: waffle/drivers/bf70x_lcd.h's
+ * The panel bus bit-banged over GPIO: waffle/drivers/bf70x/lcd.h's
  * interface with every byte driven by the port, for the test OS's gpio
  * variant (wiki/Test-OS.md, make test-os), which drives the panel
  * without the SMC. Built only with
@@ -26,11 +26,11 @@
  * this way, sent in the foreground: frame_start() returns when the frame
  * has gone out, and frame_busy() is never true.
  */
-#include "waffle/drivers/bf70x_lcd.h"
+#include "waffle/drivers/bf70x/lcd.h"
 
 #if defined(OPXY_TEST_OS) && defined(OPXY_TESTOS_PANEL_GPIO)
 
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/port.h"
 #include "waffle/drivers/mmr.h"
 
 #define DATA_PINS 0xFFu

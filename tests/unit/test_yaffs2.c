@@ -27,7 +27,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/drivers/bf70x_msi.h"
+#include "waffle/drivers/bf70x/msi.h"
 #include "wb_yaffs.h"
 
 #define MAX_ENTRIES 64

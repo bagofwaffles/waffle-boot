@@ -199,7 +199,7 @@ def main():
         '#include <stddef.h>',
         '#include <stdint.h>',
         '',
-        '#include "waffle/s11_common.h"',
+        '#include "waffle/install/common.h"',
         '',
     ]
     installs(out)

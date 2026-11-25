@@ -3,7 +3,7 @@
 """Generate vectors/hostlink_access.json from hostlink_model.py: for each session a host can be in, what
 the approval makes of each call and action (S-10c.123, S-10c.127, S-10c.131, S-10c.135 - S-10c.137), and APPROVE's
 and the pass's outcomes with Developer's item on and off. tests/tools/test_hostlink_tool.py runs them on
-src/hostlink.c.
+src/core/host/hostlink.c.
 
     python3 -I -B tests/oracle/S-10c-host-commands/gen_hostlink.py --write     write the file
     python3 -I -B tests/oracle/S-10c-host-commands/gen_hostlink.py             check it is current

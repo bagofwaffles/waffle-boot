@@ -18,12 +18,12 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_services.h"
-#include "waffle/drivers/bf70x_uart.h"
-#include "waffle/s06_link.h"
-#include "waffle/s09_master.h"
-#include "waffle/s09_slave.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/services.h"
+#include "waffle/drivers/bf70x/uart.h"
+#include "waffle/link/link.h"
+#include "waffle/bridge/master.h"
+#include "waffle/bridge/slave.h"
 
 static struct opxy_master m;
 static struct s09_slave sl;

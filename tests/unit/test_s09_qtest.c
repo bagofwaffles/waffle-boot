@@ -3,7 +3,7 @@
  * The quad reply test (S-09.080, S-13b.084) end to end at the protocol's
  * level: s09_master_quad_test() on the master, s09_slave serving 0x1C
  * through a loopback of the S-09 bus, and a slave store whose test op
- * stands in for the board's (src/board/opxy_slave.c): it arms, builds the
+ * stands in for the board's (src/board/boot/slave.c): it arms, builds the
  * test reply with s09_qt_build() and keeps a record as the driver would
  * fill it. The loopback's quad receive hands the master the test reply,
  * whole or damaged, and the record says how the slave's candidate ended.
@@ -20,9 +20,9 @@
  */
 #include <string.h>
 
-#include "waffle/bytes.h"
-#include "waffle/s09_master.h"
-#include "waffle/s09_slave.h"
+#include "waffle/util/bytes.h"
+#include "waffle/bridge/master.h"
+#include "waffle/bridge/slave.h"
 
 #include "s06_test.h"
 #include "s06_fake.h"

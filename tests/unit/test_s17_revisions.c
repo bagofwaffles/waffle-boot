@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/s11_version.h"
-#include "waffle/s17_revisions.h"
+#include "waffle/util/version.h"
+#include "waffle/boot/revisions.h"
 
 #include "s11_check.h"
 #include "vectors/s17_vectors.h"

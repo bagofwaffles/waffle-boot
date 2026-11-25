@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* Time from the core cycle counter (see waffle/drivers/bf70x_time.h). */
-#include "waffle/drivers/bf70x_time.h"
+/* Time from the core cycle counter (see waffle/drivers/bf70x/time.h). */
+#include "waffle/drivers/bf70x/time.h"
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/div64.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/util/div64.h"
 
 uint64_t wb_time_us(const struct wb_time *t)
 {

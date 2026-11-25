@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* Dynamic Memory Controller, DDR2 (see waffle/drivers/bf70x_dmc.h). */
-#include "waffle/drivers/bf70x_dmc.h"
+/* Dynamic Memory Controller, DDR2 (see waffle/drivers/bf70x/dmc.h). */
+#include "waffle/drivers/bf70x/dmc.h"
 
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/drivers/mmr.h"
 
 int wb_dmc_check(const struct wb_dmc_config *c)

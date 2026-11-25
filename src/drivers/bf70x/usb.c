@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * USB device port: bring-up, attach and detach (waffle/drivers/bf70x_usb.h).
+ * USB device port: bring-up, attach and detach (waffle/drivers/bf70x/usb.h).
  * The device controller driver is usb_dcd.c; the device stack is TinyUSB's.
  */
-#include "waffle/drivers/bf70x_usb.h"
+#include "waffle/drivers/bf70x/usb.h"
 
-#include "waffle/drivers/bf70x_sec.h"
+#include "waffle/drivers/bf70x/sec.h"
 #include "waffle/drivers/mmr.h"
 
 #include "tusb_option.h"

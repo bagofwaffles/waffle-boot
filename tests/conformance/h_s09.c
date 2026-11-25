@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for the S-09 bridge (src/s09_bridge.c, s09_master.c,
- * s09_slave.c): the master's bus wired to the slave's session interface,
+ * Host program for the S-09 bridge (src/core/bridge/records.c, bridge/master.c,
+ * bridge/slave.c): the master's bus wired to the slave's session interface,
  * every session logged, the slave's store programmable.
  *
  * Commands (one result line each):
@@ -123,13 +123,13 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/s06_bytes.h"
-#include "waffle/s06_clock.h"
-#include "waffle/s06_link.h"
-#include "waffle/s09_bridge.h"
-#include "waffle/s09_fast.h"
-#include "waffle/s09_master.h"
-#include "waffle/s09_slave.h"
+#include "waffle/link/bytes_compat.h"
+#include "waffle/link/clock.h"
+#include "waffle/link/link.h"
+#include "waffle/bridge/records.h"
+#include "waffle/bridge/fast.h"
+#include "waffle/bridge/master.h"
+#include "waffle/bridge/slave.h"
 
 static uint8_t buf[H_MAXLINE / 2];
 static uint8_t pay[128u * S09_SECTOR];

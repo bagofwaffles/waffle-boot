@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""The host link's protocol (src/hostlink.c) over volumes in memory (hl_sim.c), built as a shared library,
+"""The host link's protocol (src/core/host/hostlink.c) over volumes in memory (hl_sim.c), built as a shared library,
 with the unit's side of the framing: tests/tools/test_hostlink.py and tests/web/hl_bridge.py drive it.
 
     lib = build(tmpdir)        # None with no C compiler
@@ -34,10 +34,10 @@ def build(d):
     if not shutil.which(cc):
         return None
     out = os.path.join(d, 'hl_sim.so')
-    srcs = [os.path.join(TOP, 'tests', 'tools', 'hl_sim.c'), os.path.join(TOP, 'src', 'hostlink.c'),
+    srcs = [os.path.join(TOP, 'tests', 'tools', 'hl_sim.c'), os.path.join(TOP, 'src', 'core', 'host', 'hostlink.c'),
             os.path.join(BEARSSL, 'src', 'hash', 'sha2small.c'),
             os.path.join(BEARSSL, 'src', 'codec', 'dec32be.c'),
-            os.path.join(BEARSSL, 'src', 'codec', 'enc32be.c'), os.path.join(TOP, 'src', 'hl_fat.c'),
+            os.path.join(BEARSSL, 'src', 'codec', 'enc32be.c'), os.path.join(TOP, 'src', 'core', 'host', 'hostlink_fat.c'),
             os.path.join(FATFS, 'ff.c'), os.path.join(FATFS, 'ffunicode.c'),
             os.path.join(TOP, 'src', 'glue', 'fatfs', 'diskio_blockdev.c')]
     subprocess.check_call([cc, '-std=c11', '-O1', '-shared', '-fPIC', '-I', os.path.join(TOP, 'src', 'include'),

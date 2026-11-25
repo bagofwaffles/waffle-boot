@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/device.h"
-#include "waffle/s10a_msc.h"
+#include "waffle/boot/device.h"
+#include "waffle/usb/msc.h"
 
 #include "support/check.h"
 #include "s15_sha256.h"

@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* MSI controller and eMMC (see waffle/drivers/bf70x_msi.h). */
-#include "waffle/drivers/bf70x_msi.h"
+/* MSI controller and eMMC (see waffle/drivers/bf70x/msi.h). */
+#include "waffle/drivers/bf70x/msi.h"
 
 #include <stddef.h>
 
-#include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x/cplb.h"
 #include "waffle/drivers/mmr.h"
 
 #define CMD_BASE  (MSI_CMD_STARTCMD | MSI_CMD_USEHOLDREG)

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Tests of tools/wbrecover.py: its image checks, and its commands over a
 pseudo-terminal against a Python model of recovery's protocol
-(src/front/fr_proto.h), with damaged replies and refusals. When a C compiler
+(src/front/recovery/proto.h), with damaged replies and refusals. When a C compiler
 ($CC, default cc) builds the front's protocol and writer into a shared
 library, the same commands also run against the real C code. Python 3,
 standard library only."""
@@ -201,7 +201,7 @@ def bootable(img):
 
 
 class Model:
-    """Recovery's protocol as fr_proto.h states it, over the pty's master end.
+    """Recovery's protocol as front/recovery/proto.h states it, over the pty's master end.
     Its writer takes ten steps; the flash is two slot images and a selector.
     front is the version it plays: below 8, a refusal leaves phase failed even
     after a write has run. From 9 it speaks protocol 2: ACT and its rules, the
@@ -778,7 +778,7 @@ def stale_frame():
 class Sync(unittest.TestCase):
     def test_every_cut(self):
         """Whatever part of a frame an earlier host left, the zeros sent before the first request
-        leave the parser (take_frame(), as fr_proto.c's next_frame()) in step: the next frame is
+        leave the parser (take_frame(), as front/recovery/proto.c's next_frame()) in step: the next frame is
         the request, whole."""
         f, hello = stale_frame(), w.frame(w.HELLO, 1)
         for k in range(len(f)):
@@ -2304,7 +2304,7 @@ class Front11(PtyCase):
         m.device, m.dev_how = 1, 0
         self.assertEqual(w.device_line(w.parse_info(m.info())),
                          'Device:   OP-1F, identified by its first stage')
-        # each defined way by its name (fr_handoff.h's FR_HO_HOW_*), and one it does not know
+        # each defined way by its name (front/handoff.h's FR_HO_HOW_*), and one it does not know
         m.dev_how = 1
         self.assertEqual(w.device_line(w.parse_info(m.info())),
                          'Device:   OP-1F, identified by the second CPU (first stage n 34000, c 12345678)')
@@ -2696,12 +2696,12 @@ def header(name):
 
 
 class AgreesWithHeaders(unittest.TestCase):
-    """The tool's protocol constants are fr_proto.h's, fr_slots.h's and fr_usb.h's."""
+    """The tool's protocol constants are the front's headers'."""
 
     @classmethod
     def setUpClass(cls):
         cls.h = {}
-        for name in ('fr_proto.h', 'fr_slots.h', 'fr_usb.h', 'fr_handoff.h'):
+        for name in ('recovery/proto.h', 'slots/slots.h', 'recovery/usb.h', 'handoff.h'):
             cls.h.update(header(name))
 
     def same(self, pairs):
@@ -2724,7 +2724,7 @@ class AgreesWithHeaders(unittest.TestCase):
         self.assertEqual(w.PORTS, ((w.PID, w.PRODUCT), (w.PID_1F, w.PRODUCT_1F)))
         # FR_PROTO_MAX is FR_PROTO_MAX_DATA + 8u, a sum the number pattern does not take
         self.assertIn('#define FR_PROTO_MAX      (FR_PROTO_MAX_DATA + 8u)',
-                      open(os.path.join(TOP, 'src', 'front', 'fr_proto.h')).read())
+                      open(os.path.join(TOP, 'src', 'front', 'recovery', 'proto.h')).read())
         self.assertEqual(w.MAX_PAYLOAD, h['FR_PROTO_MAX_DATA'] + 8)
         self.assertEqual(w.FRAME_MAX, h['FR_PROTO_HEAD'] + w.MAX_PAYLOAD + 4)
 
@@ -2873,6 +2873,35 @@ class SignedPins(unittest.TestCase):
             self.assertEqual((state, ver), ('unsigned', None))
             self.assertIn("the working tree's pin, not in a commit", words)
 
+    @unittest.skipUnless(shutil.which('git'), 'no git')
+    def test_git_older_header_path(self):
+        """A commit from before the front's folders has the protocol header at its older path:
+        its pin still gets that commit's version, beside a later commit's at the path now."""
+        env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+        env.update(GIT_AUTHOR_NAME='t', GIT_AUTHOR_EMAIL='', GIT_COMMITTER_NAME='t',
+                   GIT_COMMITTER_EMAIL='', GIT_CONFIG_GLOBAL=os.devnull,
+                   GIT_CONFIG_NOSYSTEM='1')
+
+        def git(d, *args):
+            subprocess.run(['git', '-C', d] + list(args), check=True, capture_output=True,
+                           env=env, timeout=30)
+        self.assertNotEqual(w.PROTO_H, w.PROTO_H_OLD)
+        with tempfile.TemporaryDirectory() as d:
+            git(d, 'init', '-q')
+            put(d, w.PIN_FILE, pin_text(self.P1))
+            put(d, w.PROTO_H_OLD, proto_text(6))
+            git(d, 'add', '.')
+            git(d, 'commit', '-q', '-m', 'c')
+            os.makedirs(os.path.dirname(os.path.join(d, w.PROTO_H)), exist_ok=True)
+            git(d, 'mv', w.PROTO_H_OLD, w.PROTO_H)
+            put(d, w.PIN_FILE, pin_text(self.P2))
+            put(d, w.PROTO_H, proto_text(7))
+            git(d, 'add', '.')
+            git(d, 'commit', '-q', '-m', 'c')
+            got = w.signed_pins(d)
+            self.assertEqual(got, {'git': True, 'pins': {self.P1: 6, self.P2: 7}, 'now': self.P2})
+            self.assertEqual(w.signed_words(self.P1, lambda: got)[:2], ('signed', 6))
+
     def test_lookup_fails(self):
         def boom():
             raise OSError('no')
@@ -2885,7 +2914,7 @@ SHIM = r'''
 #define _POSIX_C_SOURCE 199309L
 #include <string.h>
 #include <time.h>
-#include "fr_proto.h"
+#include "front/recovery/proto.h"
 
 static uint8_t flash[0x100000];
 static uint8_t staging[FR_SLOT_CAP];
@@ -2966,7 +2995,7 @@ int shim_restart(void) { return proto.restart; }
 
 
 def build_shim(d):
-    srcs = ['fr_proto.c', 'fr_slots.c', 'fr_image.c', 'fr_util.c']
+    srcs = ['recovery/proto.c', 'slots/slots.c', 'slots/image.c', 'start/util.c']
     if not all(os.path.exists(os.path.join(TOP, 'src', 'front', s)) for s in srcs):
         return None
     shim = os.path.join(d, 'shim.c')
@@ -2974,7 +3003,7 @@ def build_shim(d):
         f.write(SHIM)
     out = os.path.join(d, 'shim.so')
     subprocess.check_call([os.environ.get('CC', 'cc'), '-std=c11', '-O1', '-shared', '-fPIC',
-                           '-I', os.path.join(TOP, 'src', 'front'), '-I', os.path.join(TOP, 'src', 'include'),
+                           '-I', os.path.join(TOP, 'src'), '-I', os.path.join(TOP, 'src', 'include'),
                            '-o', out, shim] + [os.path.join(TOP, 'src', 'front', s) for s in srcs])
     lib = ctypes.CDLL(out)
     lib.shim_flash.argtypes = [ctypes.c_uint32, ctypes.c_char_p, ctypes.c_uint32]
@@ -3004,7 +3033,7 @@ class AgainstC(unittest.TestCase):
         cls.dir = tempfile.TemporaryDirectory()
         cls.lib = build_shim(cls.dir.name)
         if cls.lib is None:
-            raise unittest.SkipTest('src/front/fr_slots.c is not there yet')
+            raise unittest.SkipTest('src/front/slots/slots.c is not there yet')
 
     @classmethod
     def tearDownClass(cls):
@@ -3749,7 +3778,7 @@ class AgainstC(unittest.TestCase):
             self.assertEqual(link.request(typ, pl)[0][0], 1)
         # the C front's own version, as its header has it
         version = int(re.search(r'^#define FR_FRONT_VERSION\s+(\d+)u', open(os.path.join(
-            TOP, 'src', 'front', 'fr_proto.h')).read(), re.M).group(1))
+            TOP, 'src', 'front', 'recovery', 'proto.h')).read(), re.M).group(1))
         self.assertEqual(w.parse_hello(link.request(w.HELLO)[0])['front_version'], version)
         i = w.get_info(link)
         self.assertEqual((i['phase'], i['way']), (w.WRITING, w.WAY_IN_PLACE))

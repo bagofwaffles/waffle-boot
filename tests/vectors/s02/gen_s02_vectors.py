@@ -58,7 +58,7 @@ def main():
     w('#ifndef S02_VECTORS_H')
     w('#define S02_VECTORS_H')
     w('#include <stdint.h>')
-    w('#include "waffle/s01_memmap.h"')
+    w('#include "waffle/boot/memmap.h"')
     w('')
 
     rec = load_json('records.json')

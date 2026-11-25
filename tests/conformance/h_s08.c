@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for S-08's reading rules (src/s08_rules.c). Payloads are hex
+ * Host program for S-08's reading rules (src/core/nordic/rules.c). Payloads are hex
  * ("-": empty); "none" is no reply.
  *
  * Commands (one result line each):
@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/s08_nordic.h"
+#include "waffle/nordic/nordic.h"
 
 static uint8_t buf[H_MAXLINE / 2];
 static uint8_t image[0x10000];

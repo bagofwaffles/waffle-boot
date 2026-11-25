@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Host program for S-10a's USB device logic: the descriptor sets
- * (src/s10a_desc.c), the control endpoint's answers (s10a_ch9.c), the
- * logical unit (s10a_scsi.c) and the Bulk-Only Transport (s10a_bot.c).
- * s10a_usb.c, the TinyUSB glue, is not built: this program plays its part
+ * (src/core/usb/desc.c), the control endpoint's answers (usb/ch9.c), the
+ * logical unit (usb/msc_scsi.c) and the Bulk-Only Transport (usb/msc_bot.c).
+ * usb/device.c, the TinyUSB glue, is not built: this program plays its part
  * and the stack's (below), on a sparse disk of 454656 blocks.
  *
  * SET is a set number (enum s10a_set), SERIAL the serial text as hex ("-":
@@ -69,10 +69,10 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/device.h"
-#include "waffle/s10a_ch9.h"
-#include "waffle/s10a_desc.h"
-#include "waffle/s10a_msc.h"
+#include "waffle/boot/device.h"
+#include "waffle/usb/ch9.h"
+#include "waffle/usb/desc.h"
+#include "waffle/usb/msc.h"
 
 #define BLOCKS		454656u		/* S-12.001 */
 #define BIG		(257u * S10A_BLOCK)
@@ -142,7 +142,7 @@ static const struct wb_blockdev dev = {
 	.n_sectors = BLOCKS, .read = disk_read, .write = disk_write,
 };
 
-/* --- The device: the parts s10a_usb.c holds ------------------------------ */
+/* --- The device: the parts usb/device.c holds ------------------------------ */
 
 static struct s10a_lu lu;
 static struct s10a_bot bot;
@@ -206,7 +206,7 @@ static const struct s10a_bot_port port = {
 	.stall_in = stall_in, .stall_out = stall_out,
 };
 
-/* As s10a_usb.c: the control endpoint learns the BOT's reset wait. */
+/* As usb/device.c: the control endpoint learns the BOT's reset wait. */
 static void sync_reset_owed(void)
 {
 	ch9.reset_owed = s10a_bot_reset_owed(&bot);
@@ -228,7 +228,7 @@ static bool msc_endpoint(uint8_t addr)
 	       (addr == S10A_EP_BULK_IN || addr == S10A_EP_BULK_OUT);
 }
 
-/* SET_CONFIGURATION as the stack carries it to s10a_usb.c. */
+/* SET_CONFIGURATION as the stack carries it to usb/device.c. */
 static void configure(unsigned value)
 {
 	if (value == 0) {
@@ -249,7 +249,7 @@ static void configure(unsigned value)
 /*
  * CLEAR_FEATURE(ENDPOINT_HALT) forwarded to the stack. As usbd_edpt_clear_stall()
  * and the BF70x dcd_edpt_clear_stall() do, the endpoint's transfer is dropped,
- * halted or not; then s10a_usb.c's halt_cleared() runs.
+ * halted or not; then usb/device.c's halt_cleared() runs.
  */
 static void clear_halt(uint8_t addr)
 {
@@ -318,7 +318,7 @@ static void forward(const uint8_t s[8])
 	case 3:		/* SET_FEATURE(ENDPOINT_HALT) */
 		set_halt(addr);
 		break;
-	case 6:		/* GET_DESCRIPTOR: the s10a_usb.c callbacks */
+	case 6:		/* GET_DESCRIPTOR: the usb/device.c callbacks */
 		switch (value >> 8) {
 		case 1:
 			s10a_desc_device(&wb_device_opxy, ch9.set, serial[0] != '\0', d);

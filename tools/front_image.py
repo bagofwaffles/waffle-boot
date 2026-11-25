@@ -18,10 +18,11 @@ the front's own (src/front/), a register definition
 (src/include/waffle/drivers/), or a header of the compiler's own include
 directory DIR ($(CROSS_CC) -print-file-name=include); a path that leaves
 the tree or any other absolute path fails. And no source under src/ outside
-src/front/ includes a front header but src/front/fr_handoff.h, whatever the
+src/front/ includes a front header but src/front/handoff.h, whatever the
 include's form: quoted or angled, with or without front/, any path that
 resolves into src/front/ against the including file's directory, one of its
-parents or src/include, or that names a front header found nowhere else.
+parents or src/include, or, when it resolves against none of those, against
+src/front/ or a folder below it (as an -I into the front would have it).
 The front's own link, from its objects and libgcc alone and with
 --orphan-handling=error, fails on any other symbol or unplaced section.
 
@@ -37,7 +38,7 @@ is static (no alloca or VLA) and at most FRAME_LIMIT bytes, and twice the
 sum of all frames fits front.ld's FR_STACK. A call graph from the
 relocations is not sound, since the front calls through its ops structs and
 callbacks, so the bound takes every function on one chain: twice, since the
-PSoC link's greeting re-enters its own wait (fr_psoc.c, held to one level by
+PSoC link's greeting re-enters its own wait (src/front/psoc/psoc.c, held to one level by
 p->greeting), so a chain may hold a function twice.
 
 Python 3, standard library only.
@@ -55,7 +56,7 @@ import mkldr  # noqa: E402
 TOP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ALLOWED = ('src/front/', 'src/include/waffle/drivers/')
 FRONT_DIR = 'src/front/'
-SHARED = 'src/front/fr_handoff.h'
+SHARED = 'src/front/handoff.h'
 INCLUDE_ROOTS = ('src/include',)
 
 # S-01.012: the L1 spaces the INIT stage may use; layout.py's MMR spaces.
@@ -161,7 +162,7 @@ INCLUDE = re.compile(r'^[ \t]*#[ \t]*include[ \t]*([<"])([^>"\n]*)[>"]', re.M)
 def include_failures(top=TOP):
     """Sources under src/ outside src/front/ that include a front header."""
     front = os.path.join(top, FRONT_DIR)
-    front_names = set(n for n in os.listdir(front) if n.endswith('.h')) if os.path.isdir(front) else set()
+    inside = front_dirs(front)
     shared = os.path.join(top, SHARED)
     roots = [os.path.join(top, r) for r in INCLUDE_ROOTS]
     bad = []
@@ -176,17 +177,28 @@ def include_failures(top=TOP):
             with open(path, errors='replace') as f:
                 text = f.read()
             for m in INCLUDE.finditer(text):
-                hit = front_target(m.group(2), path, top, roots, front, front_names)
+                hit = front_target(m.group(2), path, top, roots, front, inside)
                 if hit and hit != shared:
                     bad.append('%s includes %s%s%s' % (os.path.relpath(path, top), m.group(1),
                                                        m.group(2), '>' if m.group(1) == '<' else '"'))
     return bad
 
 
-def front_target(inc, path, top, roots, front, front_names):
+def front_dirs(front):
+    """src/front/ and every folder below it, the places an -I into the front
+    could name."""
+    out = []
+    for root, dirs, _ in os.walk(front):
+        dirs.sort()
+        out.append(os.path.normpath(root))
+    return out
+
+
+def front_target(inc, path, top, roots, front, inside):
     """The front file an include names, or None. Bases: the including file's
     directory and each parent up to the top (any -I inside the tree), and the
-    include roots."""
+    include roots; an include that resolves against none of them is tried
+    against the front's own folders (inside), by path, not by file name."""
     bases = []
     d = os.path.dirname(path)
     while under(d, top):
@@ -203,9 +215,12 @@ def front_target(inc, path, top, roots, front, front_names):
         if under(cand, os.path.normpath(front)):
             return cand
         elsewhere = True
-    base = os.path.basename(inc)
-    if not elsewhere and base in front_names:
-        return os.path.join(front, base)
+    if elsewhere:
+        return None
+    for b in inside:
+        cand = os.path.normpath(os.path.join(b, inc))
+        if os.path.isfile(cand) and under(cand, os.path.normpath(front)):
+            return cand
     return None
 
 

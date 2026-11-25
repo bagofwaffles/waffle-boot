@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The frozen front's link map (fr_handoff.h). The front is linked alone,
+ * The frozen front's link map (handoff.h). The front is linked alone,
  * from its own objects and libgcc, at fixed addresses that bf703.ld leaves
  * free, so its bytes do not depend on the rest of the image:
  *   - L1 code 0x11A04000-0x11A0C000: the INIT stage and all it calls,

@@ -416,7 +416,7 @@ test('HELLO and INFO parse as the Python tool parses them, for every front', nee
     const i20 = core.parseInfo(p20);
     assert.deepEqual([i20.v20, i20.device, i20.dev_how, i20.fs_n, i20.fs_c], [true, 0, 2, 34000, 0x12345678]);
     assert.deepEqual(core.describe(i20).device, { name: 'OP-XY', identified: false, n: 34000, c: 0x12345678 });
-    // each way it was decided by name (fr_handoff.h's FR_HO_HOW_*), as the Python tool says it
+    // each way it was decided by name (front/handoff.h's FR_HO_HOW_*), as the Python tool says it
     const way = (how, device = 0) => core.deviceLine({ ...i20, device, dev_how: how });
     assert.equal(way(0, 1), 'Device:   OP-1F, identified by its first stage');
     assert.equal(way(1, 1), 'Device:   OP-1F, identified by the second CPU (first stage n 34000, c 12345678)');

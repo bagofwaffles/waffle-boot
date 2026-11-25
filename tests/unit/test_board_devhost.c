@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Developer host requests and the hand-over options (waffle/devhost.h,
- * src/board/opxy_devhost.c, src/board/opxy_handover.c): opxy_ho_flags = 0 is
+ * Developer host requests and the hand-over options (waffle/host/devhost.h,
+ * src/board/dev/devhost.c, src/board/boot/handover.c): opxy_ho_flags = 0 is
  * the normal hand-over (S-05.023), each bit moves one piece away from it,
  * the developer requests answer only while developer mode is on, and
  * opxy_dev_mem_ok bounds the access.
@@ -12,16 +12,16 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "front/fr_proto.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/devhost.h"
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_dmc.h"
-#include "waffle/drivers/bf70x_msi.h"
-#include "waffle/drivers/bf70x_port.h"
-#include "waffle/drivers/bf70x_spi.h"
-#include "waffle/drivers/bf70x_sec.h"
+#include "front/recovery/proto.h"
+#include "waffle/board/boot.h"
+#include "waffle/host/devhost.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/dmc.h"
+#include "waffle/drivers/bf70x/msi.h"
+#include "waffle/drivers/bf70x/port.h"
+#include "waffle/drivers/bf70x/spi.h"
+#include "waffle/drivers/bf70x/sec.h"
 
 #define CRC1_CTL 0x200B1000u
 

@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* The panel bus over SMC0 bank 0 and GPIO (see waffle/drivers/bf70x_lcd.h). */
-#include "waffle/drivers/bf70x_lcd.h"
+/* The panel bus over SMC0 bank 0 and GPIO (see waffle/drivers/bf70x/lcd.h). */
+#include "waffle/drivers/bf70x/lcd.h"
 
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/port.h"
 #include "waffle/drivers/mmr.h"
 
 #define DATA_PINS 0xFFu

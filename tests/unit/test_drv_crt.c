@@ -7,9 +7,9 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_rcu.h"
-#include "waffle/drivers/bf70x_start.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/rcu.h"
+#include "waffle/drivers/bf70x/start.h"
 
 static void reset(void)
 {

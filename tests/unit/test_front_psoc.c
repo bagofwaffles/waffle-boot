@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's PSoC link (src/front/fr_psoc.c) against a scripted PSoC on a
+ * The front's PSoC link (src/front/psoc/psoc.c) against a scripted PSoC on a
  * fake byte link and a fake clock that moves on each delay and each read:
  * S-06 frames against libwaffle's codec and receiver, S-07.020's greeting,
  * S-07.021's exit packet and wait, S-07.011's 100 ms, S-07.032's hold
@@ -17,12 +17,12 @@
 
 #include "support/check.h"
 
-#include "front/fr.h"
-#include "front/fr_psoc.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s06_rx.h"
-#include "waffle/s07_rules.h"
-#include "waffle/wire_crc.h"
+#include "front/front.h"
+#include "front/psoc/psoc.h"
+#include "waffle/link/frame.h"
+#include "waffle/link/rx.h"
+#include "waffle/psoc/rules.h"
+#include "waffle/util/crc.h"
 #include "vectors/s07_vectors.h"
 
 #define MS 1000u

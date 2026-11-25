@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's start-up order (src/front/fr_start.c, S-07.023, S-01.023):
+ * The front's start-up order (src/front/start/start.c, S-07.023, S-01.023):
  * the key read is reached within a stated bound with a silent PSoC and
  * with no panel or a dead one; S-07.021's wait ends when the PSoC greets;
  * the messages go out in the new order; Power + M4 and a failed image check
@@ -22,14 +22,14 @@
 #include "support/check.h"
 #include "fr_map_rule.h"
 
-#include "front/fr_handoff.h"
-#include "front/fr_logo.h"
-#include "front/fr_start.h"
-#include "front/fr_startlog.h"
-#include "waffle/logo.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s06_rx.h"
-#include "waffle/wire_crc.h"
+#include "front/handoff.h"
+#include "front/display/logo.h"
+#include "front/start/start.h"
+#include "front/slots/startlog.h"
+#include "waffle/flash/logo.h"
+#include "waffle/link/frame.h"
+#include "waffle/link/rx.h"
+#include "waffle/util/crc.h"
 
 /* the stored logo's conversion's working memory */
 static struct wb_logo_work g_work;
@@ -277,7 +277,7 @@ static struct {
 static unsigned n_frames;
 
 /* A body row says text, read as it shows: its control bytes and their
- * arguments out, a badge's digit kept (fr_draw.h). */
+ * arguments out, a badge's digit kept (front/display/draw.h). */
 static bool screen_says(const struct fr_screen *scr, const char *text)
 {
 	for (unsigned i = 0; i < FR_LINES; i++) {
@@ -734,7 +734,7 @@ static void test_normal_order(void)
 }
 
 /*
- * The stored logo (fr_logo.h): read and checked whole before the first
+ * The stored logo (front/display/logo.h): read and checked whole before the first
  * frame, which shows it, the hand-off record naming its slot; with these
  * streams no descriptor tells the slot, so it is the one the selector
  * names. A damaged one gives the front's own logo. Either way the flash
@@ -3204,7 +3204,7 @@ static void test_rec_trial(void)
 	}
 }
 
-/* ---- recovery's keys through the loop (S-02.084, fr_recui.c) ---- */
+/* ---- recovery's keys through the loop (S-02.084, front/recovery/ui.c) ---- */
 
 #define K4   0x00u, 0x02u, 0x00u, true	/* key 4 (M4) */
 #define K1   0x40u, 0x00u, 0x00u, true	/* key 1 (M1) */

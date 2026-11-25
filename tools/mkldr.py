@@ -44,7 +44,7 @@ blocks no longer. The entry, the FIRST and FINAL blocks' target, is the ELF
 entry, which src/testos/bf703_installer.ld puts at 0x11A00000.
 
 With --front, the bootloader's stream carries the frozen front
-(src/front/fr_handoff.h), the stub (src/stub/, waffle/pack.h) and the image,
+(src/front/handoff.h), the stub (src/stub/, waffle/boot/pack.h) and the image,
 packed: the image's runs in L1 as they are, and every other run deflated into
 one packed block (pack()), loaded as data at PACK_AT. The front's blocks, the
 stub's, the L1 runs and the packed block go in the same order (L1 first), the
@@ -181,13 +181,13 @@ def stream(elf, init_symbol, final_argument=None, split=None):
     return header(FIRST | IGNORE, entry, 0, len(body)) + bytes(body)
 
 
-# src/front/fr_handoff.h
+# src/front/handoff.h
 FR_WINDOWS = ((0x11A04000, 0x11A0C000), (0x11802000, 0x11804000), (0x08002000, 0x08030000))
 FR_SHARED = (0x08030000, 0x08031000)
 FR_DESC_ADDR = 0x08030000
 # S-13a.040: L1 instruction memory, which the front does not read as data.
 L1_CODE = (0x11A00000, 0x11A0C000)
-# fr_image.c's fr_mem_readable(): where the front reads the loaded image.
+# front/slots/image.c's fr_mem_readable(): where the front reads the loaded image.
 FR_READABLE = ((0x11800000, 0x11802000), (0x11804000, 0x11807000), (0x11900000, 0x11908000),
                (0x08030000, 0x08030800), (0x08031000, 0x0803DFD4), (0x8803D000, 0x8833D000))
 FR_DESC_MAGIC = 0x4D494257
@@ -197,7 +197,7 @@ FR_DESC_REGIONS = 24
 # S-01.023 "The front's frame": the frame the front paints in DDR, one frame in bus order.
 FR_FRAME = (0x8FE00000, 0x8FE34800)
 FR_LOG_IMAGE_MAX = 0x77000     # a slot less its last sector, the start log (S-02.095)
-# S-09.019: the slave's L1 check's mark (waffle/board/opxy_boot.h), as compiled and as filled
+# S-09.019: the slave's L1 check's mark (waffle/board/boot.h), as compiled and as filled
 L1_MARK = '_opxy_l1_mark'
 L1_MARK_EMPTY, L1_MARK_FULL = 0x4C314D30, 0x4C314D31
 STORE_IMAGE_MAX = 0x76000      # and less the sector below it, the slot's settings (S-02.099, S-02.104)
@@ -282,7 +282,7 @@ def descriptor(loaded, entry, version, front):
     return d + struct.pack('<I', zlib.crc32(d) & 0xFFFFFFFF)
 
 
-# waffle/pack.h: the packed block and the stub
+# waffle/boot/pack.h: the packed block and the stub
 PACK_MAGIC = 0x4B504257
 PACK_VERSION = 1
 PACK_RUNS = 8
@@ -306,7 +306,7 @@ def deflate(buf):
 
 
 def pack(rs, entry, spoil=False):
-    """The packed block (waffle/pack.h) of runs rs, [(address, bytes)] in
+    """The packed block (waffle/boot/pack.h) of runs rs, [(address, bytes)] in
     ascending order, whose image enters at entry; each run its own raw
     deflate stream. spoil: an out_crc that does not match (--spoil)."""
     if not 1 <= len(rs) <= PACK_RUNS:

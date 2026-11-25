@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The main image's start end to end on each device, over the fakes, with
- * boot_master() (src/boot_flow.c) and s05_master_handoff() driving the
+ * boot_master() (src/core/boot/flow.c) and s05_master_handoff() driving the
  * real modules at each step:
  *
  *   the device from the front's version 3 record (S-18.005,
@@ -20,7 +20,7 @@
  * Not reached on the host: opxy_main() and opxy_master_main() themselves,
  * which take the record from memory and bring up the UART, the SPI flash
  * and the panel's DMA; the board's own steps between are in
- * src/board/opxy_master.c, and this test calls the modules they call, in
+ * src/board/boot/master.c, and this test calls the modules they call, in
  * their order.
  */
 #include <string.h>
@@ -30,14 +30,14 @@
 
 #include "s07_test.h"
 
-#include "waffle/board/opxy.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
-#include "waffle/boot.h"
-#include "waffle/drivers/bf70x_msi.h"
-#include "waffle/drivers/bf70x_spi.h"
-#include "waffle/s13c_panel.h"
-#include "waffle/s09_master.h"
+#include "waffle/board/values.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
+#include "waffle/boot/flow.h"
+#include "waffle/drivers/bf70x/msi.h"
+#include "waffle/drivers/bf70x/spi.h"
+#include "waffle/display/panel.h"
+#include "waffle/bridge/master.h"
 
 #define CCLK_MHZ 400u
 

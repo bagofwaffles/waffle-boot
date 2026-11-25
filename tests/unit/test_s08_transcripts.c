@@ -12,7 +12,7 @@
 #include "s08_test.h"
 #include "vectors/s08_transcripts.h"
 
-#include "waffle/s04_records.h"
+#include "waffle/boot/records.h"
 
 static const struct s08t *cur;
 static int rule0, nrules;	/* the scripted Nordic's rules */

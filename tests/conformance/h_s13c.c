@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for the S-13c panel logic (src/s13c_panel.c), driven
- * through the board's display interface (src/display_draw.c) with frames
+ * Host program for the S-13c panel logic (src/core/display/panel.c), driven
+ * through the board's display interface (src/core/display/draw.c) with frames
  * drawn by S-15's console renderer in its frame.
  *
  * Commands (one result line each):
@@ -65,7 +65,7 @@
  *   cont=1        after held mode's frames, Continue to the OS (S-05.033,
  *                 S-15.190), a restart: the restarting view as
  *                 s15_menu_continue() draws it, with the lines of
- *                 src/s15_lines.c, sent whole; the board's 750 ms hold;
+ *                 src/core/ui/lines.c, sent whole; the board's 750 ms hold;
  *                 then the restart's shutdown, which starts with the
  *                 panel's power-off as poweroff=N's (MARK poweroff, then
  *                 0x51 00 00 02), and the run ends there
@@ -89,12 +89,12 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/device.h"
-#include "waffle/display.h"
-#include "waffle/s13c_panel.h"
-#include "waffle/s15_console.h"
-#include "waffle/s15_lines.h"
-#include "waffle/s15_prompt.h"
+#include "waffle/boot/device.h"
+#include "waffle/display/display.h"
+#include "waffle/display/panel.h"
+#include "waffle/ui/console.h"
+#include "waffle/ui/lines.h"
+#include "waffle/ui/prompt.h"
 
 #define US 1000u
 #define MS 1000000u
@@ -635,7 +635,7 @@ static void view(struct sim *s, struct wb_display *d, const struct opts *o, cons
 /* S-05.033, S-15.190: Continue to the OS from held mode (cont=1): the
  * menu's restarting line under the screen that was showing, here the main
  * screen's item 7 (s15_menu_continue()), then the board's continue_os
- * (src/board/opxy_services.c): the view shown, held 750 ms, then the
+ * (src/board/ui/services.c): the view shown, held 750 ms, then the
  * restart, whose shutdown starts with the panel's power-off (S-13c.022). */
 static void continue_os(struct sim *s, struct wb_display *d, const struct opts *o)
 {
@@ -768,7 +768,7 @@ static void run(const struct h_cmd *c)
 		return;
 	}
 	bus.ctx = &s;
-	fprintf(s.f, "# S-13c trace of src/s13c_panel.c (h_s13c run %s)\n", path);
+	fprintf(s.f, "# S-13c trace of src/core/display/panel.c (h_s13c run %s)\n", path);
 	wb_display_init(&d, fb);
 	s15_console_init(&con, NULL);
 

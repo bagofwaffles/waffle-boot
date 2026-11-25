@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The package's CRCs on the CRC peripheral (src/board/opxy_crc.c,
+ * The package's CRCs on the CRC peripheral (src/board/install/crc.c,
  * src/drivers/bf70x/crc.c) against a model of CRC0 in memory scan mode fed
  * by DMA18. The model is the test's, not a unit's: what it assumes is
  * named in `struct convention` and in hook() below.
@@ -24,7 +24,7 @@
  * shorter piece, is caught there; a wrong answer on a piece that is not
  * compared comes back wrong; a deflated member's pieces, whose lengths
  * vary, mostly stay on the peripheral. Then the
- * package's checks on top (opxy_crc.c, s11_engine.h): a member whose
+ * package's checks on top (board/install/crc.c, install/engine.h): a member whose
  * CRC-32 the peripheral got wrong is extracted again in software and
  * accepted, its staged file whole, the peripheral off after; a truly bad
  * member is refused MEMBER as the software refuses it, extracted at most
@@ -43,20 +43,20 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_services.h"
-#include "waffle/drivers/bf70x_crc.h"
-#include "waffle/s11_engine.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_staging.h"
-#include "waffle/wire_crc.h"
-#include "waffle/wire_package.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/services.h"
+#include "waffle/drivers/bf70x/crc.h"
+#include "waffle/install/engine.h"
+#include "waffle/install/package.h"
+#include "waffle/install/staging.h"
+#include "waffle/util/crc.h"
+#include "waffle/install/crypto.h"
 
 #include "zip_build.h"
 #include "zlib.h"
 
 #define BIG (WB_CRC_MAX + 0x3000u)
-#define LEAST 0x400u		/* opxy_crc.c's */
+#define LEAST 0x400u		/* board/install/crc.c's */
 
 static struct opxy_master m;
 static _Alignas(32) uint8_t data[BIG + 64u];
@@ -282,7 +282,7 @@ static uint32_t board(unsigned which, uint32_t v, const uint8_t *p, size_t n)
 }
 
 /* CRC-16/XMODEM is the top half of the 32-bit CRC with 0x1021 shifted up,
- * from the running value shifted up likewise: what opxy_crc.c relies on. */
+ * from the running value shifted up likewise: what board/install/crc.c relies on. */
 static void test_crc16_on_32(void)
 {
 	static const size_t lens[] = { 0, 1, 2, 3, 9, 100, 1021, 4096 };
@@ -528,7 +528,7 @@ static void test_shapes(void)
 static _Alignas(32) uint8_t inflated[0x8000];
 
 /*
- * The CRC-32 of a deflated member as wire_zip.c's extraction feeds it:
+ * The CRC-32 of a deflated member as install/zip.c's extraction feeds it:
  * inflate() given 16 KiB of input at a time and up to 32 KiB of output, each
  * piece of output through opxy_crc32(). *pieces counts them, *changes those
  * whose length is not the one before's.

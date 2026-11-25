@@ -8,7 +8,7 @@
  * After the load the bridge must still serve: a mount (0x08), a file
  * written and read back, then the release (0x50) answered 0.
  *
- * The slave runs as the board's serve loop does (opxy_slave.c): it takes a
+ * The slave runs as the board's serve loop does (board/boot/slave.c): it takes a
  * request session whole, raises PA6 and executes it before it looks at
  * anything else, so PA6 stays high and PB2 shows what it showed before the
  * session until the work is done; only then is PB2 set again and the slave
@@ -34,16 +34,16 @@
 #include "s06_test.h"
 #include "s06_fake.h"
 #include "support/fake_core.h"
-#include "waffle/board/opxy_bridge.h"
-#include "waffle/board/opxy_ops.h"
-#include "waffle/s03_emmc.h"
-#include "waffle/s06_bytes.h"
-#include "waffle/s09_files.h"
-#include "waffle/s09_master.h"
-#include "waffle/s09_slave.h"
-#include "waffle/wire_crc.h"
-#include "waffle/wire_s09.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/board/emmc_bridge.h"
+#include "waffle/board/ops.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/link/bytes_compat.h"
+#include "waffle/bridge/files.h"
+#include "waffle/bridge/master.h"
+#include "waffle/bridge/slave.h"
+#include "waffle/util/crc.h"
+#include "waffle/bridge/slave_files.h"
+#include "waffle/fs/yaffs.h"
 #include "yaffsfs.h"
 
 #define BLOCKS 40u			/* the yaffs2 volume on the user area */
@@ -185,7 +185,7 @@ static const struct s03_emmc_ops em_ops = {
 };
 static const struct opxy_emmc_more em_more = { em_erase_arg, em_write_reliable };
 
-/* ---- the slave's store, as opxy_slave.c's ---- */
+/* ---- the slave's store, as board/boot/slave.c's ---- */
 
 #define PART_UNKNOWN 0xFFu
 
@@ -194,7 +194,7 @@ static struct wb_ramdisk ram;
 static struct wire_yaffs Y;
 static struct wire_s09 S;
 static bool features;
-static unsigned sl_part;		/* the slave's own idea (opxy_slave.c) */
+static unsigned sl_part;		/* the slave's own idea (board/boot/slave.c) */
 
 static bool features_ready(void)
 {
@@ -237,7 +237,7 @@ static uint32_t st_os(void *c, uint32_t len, uint32_t crc)
 	cost_us += tm.release_us;
 	if (len == 0u)
 		return 0;		/* the slave's own OS staged and accepted */
-	/* as opxy_slave.c's stage_file(), S-05.024's check apart */
+	/* as board/boot/slave.c's stage_file(), S-05.024's check apart */
 	sl_file = sl_part != S03_PART_USER ? WIRE_OS_FILE_UNREAD :
 		  wire_s09_os_file(&S, wire_crc32, NULL, sl_staging, S03_OS_MAX,
 				   len, crc);
@@ -597,7 +597,7 @@ static const struct s09_bus_ops bus = {
 	.configure = lb_configure,
 };
 
-/* clock_idle (opxy_ops.c): the master's every wait services USB. */
+/* clock_idle (board/boot/ops.c): the master's every wait services USB. */
 static void master_tick(void *ctx)
 {
 	(void)ctx;
@@ -701,7 +701,7 @@ static bool plain_start(uint32_t len, const char *what)
 	bops = opxy_bridge_emmc(&ms);
 	memset(&env, 0, sizeof env);
 	env.ops = &bops;
-	env.crc32 = opxy_crc32_long;	/* the board's, as opxy_master.c sets it */
+	env.crc32 = opxy_crc32_long;	/* the board's, as board/boot/master.c sets it */
 	env.boot_size = boot_size;
 	env.scratch = emmc_scratch;
 	env.scratch_len = sizeof emmc_scratch;

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The stub's entry, the descriptor's main entry (src/front/fr_handoff.h):
+ * The stub's entry, the descriptor's main entry (src/front/handoff.h):
  * the front jumps here as it jumped to the main image, in the reset event
  * with its own stack in L2. The stub moves to its own stack, clears the
  * registers the C ABI takes as zero, runs wb_stub_main() and jumps to the

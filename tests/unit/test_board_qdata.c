@@ -9,12 +9,12 @@
 #include <string.h>
 
 #include "s06_test.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
-#include "waffle/bytes.h"
-#include "waffle/devhost.h"
-#include "waffle/s03_emmc.h"
-#include "waffle/wire_crc.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
+#include "waffle/util/bytes.h"
+#include "waffle/host/devhost.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/util/crc.h"
 
 static struct opxy_master m;
 

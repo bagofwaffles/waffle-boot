@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-13c the display panel (src/s13c_panel.c) over a recording bus.
+ * S-13c the display panel (src/core/display/panel.c) over a recording bus.
  * Requirements: S-13c.004 - S-13c.007, S-13c.011 - S-13c.013, S-13c.017,
  * S-13c.020 - S-13c.022, S-13c.025. The whole runs are checked against
  * tests/oracle/S-13c-display/check_trace.py in tests/conformance/test_s13c.py;
@@ -10,8 +10,8 @@
 #include <string.h>
 
 #include "support/check.h"
-#include "waffle/device.h"
-#include "waffle/s13c_panel.h"
+#include "waffle/boot/device.h"
+#include "waffle/display/panel.h"
 
 struct fake {
 	uint64_t t;		/* us */

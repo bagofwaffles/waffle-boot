@@ -5,9 +5,9 @@
  * S-09.042 (errno.json), S-09.043 (records.json), S-09.001-S-09.007
  * (slave_stream_*.json against the published slot images).
  */
-#include "waffle/s09_master.h"
-#include "waffle/s09_slave.h"
-#include "waffle/s06_bytes.h"
+#include "waffle/bridge/master.h"
+#include "waffle/bridge/slave.h"
+#include "waffle/link/bytes_compat.h"
 
 #include "s06_test.h"
 #include "s06_fake.h"

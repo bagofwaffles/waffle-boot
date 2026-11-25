@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The stored boot logo in the main image (src/logo.c, src/logo_png.c)
+ * The stored boot logo in the main image (src/core/flash/logo.c, src/core/flash/logo_png.c)
  * against tools/wblogo.py, the reference (tests/vectors/logo/): every PNG
  * case decoded to the same pixels or refused for the same reason, converted
  * to the same bytes by the same way, and drawn to the same screen; the room
@@ -14,8 +14,8 @@
 
 #include "support/check.h"
 #include "s02_fake_flash.h"
-#include "waffle/logo.h"
-#include "waffle/logo_png.h"
+#include "waffle/flash/logo.h"
+#include "waffle/flash/logo_png.h"
 
 #include "vectors/logo_vectors.h"
 

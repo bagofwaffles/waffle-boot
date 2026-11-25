@@ -11,9 +11,9 @@
 #include <setjmp.h>
 #include <string.h>
 
-#include "waffle/s02_flash.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_run.h"
+#include "waffle/flash/layout.h"
+#include "waffle/install/package.h"
+#include "waffle/install/run.h"
 
 #include "s11_check.h"
 #include "s11_ref.h"

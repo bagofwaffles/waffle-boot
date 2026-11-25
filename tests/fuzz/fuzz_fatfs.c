@@ -75,7 +75,7 @@ static void read_file(const char *path)
 
 	if (f_open(&fil, path, FA_READ) != FR_OK)
 		return;
-	/* the bootloader's open (wire_fat.c): a link map when the chain ends,
+	/* the bootloader's open (fs/fat.c): a link map when the chain ends,
 	 * then seeks back as the in-place recovery makes them */
 	(void)wb_fatfs_link_map(&fil, map, sizeof(map) / sizeof(map[0]));
 	while (total < MAX_READ &&

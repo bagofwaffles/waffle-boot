@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The master's services (src/board/opxy_services.c, opxy_usb.c) on the
+ * The master's services (src/board/ui/services.c, board/usb/usb.c) on the
  * host: the log's PSoC sink and the dropped-frame line, the draw recorder
  * S-15 renders into, the USB sets and host links, the RAM disk, and the
  * weak builders' refusals.
@@ -14,18 +14,18 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "ff.h"
-#include "waffle/logo.h"
-#include "waffle/device.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
-#include "waffle/board/opxy_rtc_board.h"
-#include "waffle/drivers/bf70x_usb.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s10a_msc.h"
-#include "waffle/s04_records.h"
-#include "waffle/s11_version.h"
-#include "waffle/s17_revisions.h"
-#include "waffle/wire_crc.h"
+#include "waffle/flash/logo.h"
+#include "waffle/boot/device.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
+#include "waffle/board/rtc_hooks.h"
+#include "waffle/drivers/bf70x/usb.h"
+#include "waffle/link/frame.h"
+#include "waffle/usb/msc.h"
+#include "waffle/boot/records.h"
+#include "waffle/util/version.h"
+#include "waffle/boot/revisions.h"
+#include "waffle/util/crc.h"
 
 #include "device/dcd.h"
 
@@ -2632,7 +2632,7 @@ static void test_no_slot_chords(void)
 }
 
 /*
- * S-05.025, S-15.180 on the board (opxy_prompt.c; the host build has the
+ * S-05.025, S-15.180 on the board (board/ui/prompt.c; the host build has the
  * prompt on): the prompt's lines are logged (S-15.004), a bitmap waiting
  * when the prompt opens counts as down then and acts only after an up and
  * a down, the first digit 1 or 2 is returned, and the key hook is
@@ -2858,7 +2858,7 @@ static void test_menu_env(void)
 	CHECK(s15_menu_held(&m.sv.menu));
 }
 
-/* The test's RTC, in place of src/rtc_board.c's. */
+/* The test's RTC, in place of src/board/ui/rtc_hooks.c's. */
 static bool rtc_ok;
 static uint32_t rtc_clk;
 
@@ -2881,13 +2881,13 @@ void opxy_rtc_write(uint32_t clk)
 }
 
 /* Its start too, so that a link that reaches held mode's code
- * (opxy_held.c) takes none of opxy_rtc_board.c. */
+ * (board/ui/held.c) takes none of board/ui/rtc_hooks.c. */
 void opxy_rtc_board_start(const struct wb_time *t)
 {
 	(void)t;
 }
 
-/* The 64-bit form of opxy_rtc.c's days_from_civil(), the reference. */
+/* The 64-bit form of board/ui/rtc.c's days_from_civil(), the reference. */
 static int64_t ref_days(int64_t y, unsigned mo, unsigned d)
 {
 	int64_t era, yoe, doy;

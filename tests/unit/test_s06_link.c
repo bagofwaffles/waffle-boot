@@ -6,7 +6,7 @@
  * request_reply.json and forward_host_psoc.json; without second-cpu
  * FR-NODE5-1F (S-06.010, S-06.011, S-06.050, S-06.051).
  */
-#include "waffle/s06_link.h"
+#include "waffle/link/link.h"
 
 #include "s06_test.h"
 #include "s06_fake.h"

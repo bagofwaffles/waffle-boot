@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-11 checks 16 and 17 on minizip and yaffs2 (src/wire_zip.c,
- * src/wire_yaffs.c): every zip of zips.json (zips.txt) through
+ * S-11 checks 16 and 17 on minizip and yaffs2 (src/core/install/zip.c,
+ * src/core/fs/yaffs.c): every zip of zips.json (zips.txt) through
  * s11_check_zip() with minizip reading it and the members staged into a
  * yaffs2 volume in RAM, against s11_vectors.h's reason, components and
  * staged files (S-11.030-S-11.035). Also: the member table minizip gives
@@ -17,10 +17,10 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/s11_staging.h"
-#include "waffle/wire_crc.h"
-#include "waffle/wire_yaffs.h"
-#include "waffle/wire_zip.h"
+#include "waffle/install/staging.h"
+#include "waffle/util/crc.h"
+#include "waffle/fs/yaffs.h"
+#include "waffle/install/zip.h"
 
 #include "vectors/s11_vectors.h"
 #include "zip_build.h"

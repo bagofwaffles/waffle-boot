@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "waffle/s01_memmap.h"
-#include "waffle/s05_handoff.h"
+#include "waffle/boot/memmap.h"
+#include "waffle/boot/handoff.h"
 #include "s02_check.h"
 #include "vectors/s05_vectors.h"
 

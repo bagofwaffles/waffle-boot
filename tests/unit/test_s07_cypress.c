@@ -5,7 +5,7 @@
  * conformance bootloader model's recorded replies (cypress.json and the
  * failure cases of test_s07.py Cypress.test_run_failures).
  */
-#include "waffle/s07_cypress.h"
+#include "waffle/psoc/cypress.h"
 
 #include "s06_test.h"
 #include "vectors/s07_vectors.h"

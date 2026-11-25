@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for S-07's rules without I/O (src/s07_rules.c) and the
- * PSoC bootloader-host protocol (src/s07_cypress.c).
+ * Host program for S-07's rules without I/O (src/core/psoc/rules.c) and the
+ * PSoC bootloader-host protocol (src/core/psoc/cypress.c).
  *
  * Commands (one result line each):
  *   keys BITMAP              -> the numbers of the keys down (s07_key_down), or "-"
@@ -27,8 +27,8 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/s07_cypress.h"
-#include "waffle/s07_rules.h"
+#include "waffle/psoc/cypress.h"
+#include "waffle/psoc/rules.h"
 
 static uint8_t buf[H_MAXLINE / 2];
 

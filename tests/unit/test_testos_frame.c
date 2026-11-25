@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The test OS's frame timing (src/testos/opxy_testos_frame.c, scenario
+ * The test OS's frame timing (src/testos/frame.c, scenario
  * HW-FRAME): TE's period and high time and the frames' times measured on
  * a model of TE and of a transfer, at 400 cycles a microsecond, each
  * sample 40 cycles later than the one before. The source is included with
  * OPXY_TEST_OS; the host library's object of it is empty.
  */
 #define OPXY_TEST_OS 1
-#include "../../src/testos/opxy_testos_frame.c"
+#include "../../src/testos/frame.c"
 
 #include <string.h>
 

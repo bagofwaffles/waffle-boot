@@ -5,7 +5,7 @@
 //     node --test tests/web/test_hostlink.mjs
 //
 // Its framing and the MIDI carrier against bytes tools/testos_mon.py makes, then each call against the
-// host link's own C (src/hostlink.c, over volumes in memory) through hl_bridge.py. Without python3 or
+// host link's own C (src/core/host/hostlink.c, over volumes in memory) through hl_bridge.py. Without python3 or
 // a C compiler the calls are skipped.
 
 import test from 'node:test';

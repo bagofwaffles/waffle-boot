@@ -15,8 +15,8 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_sec.h"
-#include "waffle/drivers/bf70x_usb.h"
+#include "waffle/drivers/bf70x/sec.h"
+#include "waffle/drivers/bf70x/usb.h"
 
 #include "tusb_option.h"
 #include "device/dcd.h"

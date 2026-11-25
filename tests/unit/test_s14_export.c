@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "waffle/s14_export.h"
+#include "waffle/log/export.h"
 #include "s14_check.h"
 #define S14V_EXPORT
 #include "vectors/s14_vectors.h"

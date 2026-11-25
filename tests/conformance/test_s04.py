@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-04 persistent records: src/s04_records.c (through h_s04) against images.records and
+"""S-04 persistent records: src/core/boot/records.c (through h_s04) against images.records and
 tests/oracle/S-04-records (s04_model.py, tables) (part 'logic')."""
 
 import datetime

@@ -1,5 +1,0 @@
-{
- "note": "S-01.007: the code that runs on the INIT block's entry SP, for tests/oracle/S-01-boot-chain/check_stack.py. src/front/fr_entry.S turns the data CPLBs off (core MMRs only, S-01.021) and moves SP to its own stack in L1 data A before it pushes or calls anything, so its frame on the entry stack is 0 and it calls nothing there; tests/tools/test_image_tools.py checks the .S against this.",
- "entry": "fr_init",
- "frames": {"fr_init": 0}
-}

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's devices (src/front/fr_device.c): its copy of each device's
- * values against src/device.c's profiles and
+ * The front's devices (src/front/start/device.c): its copy of each device's
+ * values against src/core/boot/device.c's profiles and
  * tests/oracle/S-18-devices/vectors/{first_stage,profile}.json (S-18.003:
  * one table everywhere; S-18.030), and fr_identify() over every synthetic
  * first stage (S-18.003, S-18.004): each byte of [0, n) read once per try,
@@ -15,13 +15,13 @@
 #include "support/check.h"
 #include "vectors/s18_vectors.h"
 
-#include "front/fr_device.h"
-#include "front/fr_handoff.h"
-#include "front/fr_psoc.h"
-#include "front/fr_slots.h"
-#include "front/fr_usb.h"
-#include "waffle/device.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "front/start/device.h"
+#include "front/handoff.h"
+#include "front/psoc/psoc.h"
+#include "front/slots/slots.h"
+#include "front/recovery/usb.h"
+#include "waffle/boot/device.h"
+#include "waffle/drivers/bf70x/port.h"
 
 static const struct fr_dev *const frs[2] = { &fr_dev_opxy, &fr_dev_op1f };
 static const struct wb_device *const wbs[2] = { &wb_device_opxy, &wb_device_op1f };
@@ -89,7 +89,7 @@ static void test_profiles(void)
 	CHECK(fr_dev_or_default(NULL) == &fr_dev_opxy &&
 	      fr_dev_or_default(&fr_dev_op1f) == &fr_dev_op1f);
 	CHECK(fr_dev_of(WB_DEV_DEFAULT) == &fr_dev_opxy);
-	/* the record's codes are device.h's */
+	/* the record's codes are boot/device.h's */
 	CHECK(FR_HO_DEV_OPXY == WB_DEV_OPXY && FR_HO_DEV_OP1F == WB_DEV_OP1F);
 	CHECK(FR_HO_HOW_TABLE == WB_DEV_BY_TABLE && FR_HO_HOW_SECOND == WB_DEV_SECOND_CPU &&
 	      FR_HO_HOW_UNKNOWN == WB_DEV_UNKNOWN);
@@ -141,7 +141,7 @@ static void test_gpio(void)
 		CHECK(in_front || pin == WB_PIN(WB_PORT_C, 11) || pin == WB_PIN(WB_PORT_C, 5));
 	}
 	CHECK(xy->inputs_first_n == 2u && memcmp(xy->inputs_first, first_xy, 2) == 0);
-	/* the kinds' codes are device.h's */
+	/* the kinds' codes are boot/device.h's */
 	CHECK(FR_GPIO_IN == WB_GPIO_IN && FR_GPIO_LOW == WB_GPIO_OUT_LOW &&
 	      FR_GPIO_HIGH == WB_GPIO_OUT_HIGH && FR_GPIO_KEEP == WB_GPIO_OUT_KEEP);
 }

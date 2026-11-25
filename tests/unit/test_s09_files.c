@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The master's S-09 file client (src/s09_files.c) end to end: the client
+ * The master's S-09 file client (src/core/bridge/files.c) end to end: the client
  * on the master's side, s09_slave serving it through a loopback of the S-09
  * bus, and on the slave's side wire_s09 on a yaffs2 volume in RAM and an eMMC
  * model whose user area holds that volume.
@@ -16,19 +16,19 @@
  * S-09.060). S-11's staging writes on the client: the reset, directories,
  * files, the free space (S-11.031 - S-11.033), the progress record (S-11.062)
  * and checks 16 and 17 end to end through s09_files_zip_ops() over a zip
- * reader fake. S-10b's store (s10b_store.c) on the same volume: each of its
+ * reader fake. S-10b's store (mtp/volume.c) on the same volume: each of its
  * operations, a folder removed whole, a rename that never replaces, a full
  * volume, and the MTP responder at level W over it.
  */
 #include <time.h>
 
-#include "waffle/s09_files.h"
-#include "waffle/s09_slave.h"
-#include "waffle/s10b_store.h"
-#include "waffle/bytes.h"
-#include "waffle/s11_run.h"
-#include "waffle/wire_s09.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/bridge/files.h"
+#include "waffle/bridge/slave.h"
+#include "waffle/mtp/volume.h"
+#include "waffle/util/bytes.h"
+#include "waffle/install/run.h"
+#include "waffle/bridge/slave_files.h"
+#include "waffle/fs/yaffs.h"
 
 #include "s06_test.h"
 #include "s06_fake.h"

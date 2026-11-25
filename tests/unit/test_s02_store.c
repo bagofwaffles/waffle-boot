@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The settings sector (src/s02_store.c) on the flash fake: its record's
+ * The settings sector (src/core/flash/settings.c) on the flash fake: its record's
  * bytes and stamp, what a reader accepts, the guards that decide whether
  * the running slot keeps settings at all, the save's page append and its
  * erase when the sector is full or not valid, the factory reset's clear,
@@ -13,7 +13,7 @@
 #include "support/check.h"
 #include "s02_fake_flash.h"
 
-#include "waffle/s02_store.h"
+#include "waffle/flash/settings.h"
 
 static struct fake_flash g_f;
 static struct s02_flash_ops g_ops;

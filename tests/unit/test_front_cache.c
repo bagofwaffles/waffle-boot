@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's caches (src/front/fr_cache.c, and src/front/fr_hw_cache.c
+ * The front's caches (src/front/start/cache.c, and src/front/hw/cache.c
  * built here for the host since its registers are faked).
  *
  * The table: each side passes the main image's own table rules
@@ -27,9 +27,9 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "front/fr_hw_cache.c"
-#include "front/fr_handoff.h"
-#include "waffle/drivers/bf70x_cplb.h"
+#include "front/hw/cache.c"
+#include "front/handoff.h"
+#include "waffle/drivers/bf70x/cplb.h"
 
 /* The page of t holding [lo, hi) whole, or -1; -2 when one only meets it. */
 static int page_of(const struct wb_cplb *t, unsigned n, uint64_t lo, uint64_t hi)

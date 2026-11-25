@@ -1,22 +1,22 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The installer's pure parts (waffle/board/installer.h): the lock, the
+ * The installer's pure parts (waffle/testos/installer.h): the lock, the
  * hold, the carried image's check, the USB protocol and the screens. In the
  * installer variant alone; the host tests include this file.
  */
-#include "waffle/board/installer.h"
+#include "waffle/testos/installer.h"
 
 #if defined(OPXY_TESTOS_INSTALLER)
 
 #include <string.h>
 
-#include "front/fr_handoff.h"
-#include "waffle/bytes.h"
-#include "waffle/device.h"
-#include "waffle/s02_flash.h"
-#include "waffle/s05_handoff.h"
-#include "waffle/s15_keytest.h"
-#include "waffle/s15_lines.h"
+#include "front/handoff.h"
+#include "waffle/util/bytes.h"
+#include "waffle/boot/device.h"
+#include "waffle/flash/layout.h"
+#include "waffle/boot/handoff.h"
+#include "waffle/ui/keytest.h"
+#include "waffle/ui/lines.h"
 
 /* --- the OS partition, the trial --- */
 

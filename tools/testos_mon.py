@@ -222,7 +222,7 @@ RR_NONE = 0xFF          # a link test's rung not tried; an entry's fault: lost b
 LINK_TEST_REPLY = 37    # a run's answer after its status byte (OPXY_LINK_TEST_REPLY less one)
 LINK_TEST_ROW = 33      # a row of its table
 BENCH_FAULT = 114       # a link test's fault as the record keeps it
-# the SPI driver's stage of a failure (WB_SPI_STAGE_..., bf70x_spi.h); with dma_err, ERRC in bits 8-10
+# the SPI driver's stage of a failure (WB_SPI_STAGE_..., waffle/drivers/bf70x/spi.h); with dma_err, ERRC in bits 8-10
 SPI_STAGES = ['none', 'arguments refused', 'waiting for transmit room', 'waiting for the transmit to end',
               'waiting for a received word', 'the DMA refused the transfer', "the DMA's count stopped",
               'the DMA reported an error', 'receive overrun or mode fault', 'the master-ready pin never high',
@@ -524,7 +524,7 @@ SPACES = {1: 'L1 data A', 2: 'L1 data B', 3: 'L1 scratch', 4: 'L2', 5: 'other', 
 
 
 def show_crumbs(c):
-    """A breadcrumb build's marks, from the tried slot's last sector (src/board/opxy_crumbs.c); c[0] is
+    """A breadcrumb build's marks, from the tried slot's last sector (src/board/boot/crumbs.c); c[0] is
     that sector's byte 0, the start log's (S-02.095)."""
     marks = [i for i in range(1, 32) if c[i] == i]
     if all(b == 0xFF for b in c[1:]):           # byte 0 is a trial's entry (S-02.095)
@@ -650,7 +650,7 @@ def cycles(v):
 
 
 class Prog:
-    """A MON_BUS program (src/testos/opxy_testos.c, mon_bus()) and the layout of its output."""
+    """A MON_BUS program (src/testos/readouts.c, mon_bus()) and the layout of its output."""
 
     def __init__(self):
         self.code = bytearray()
@@ -1654,8 +1654,8 @@ def show_link_record(mon):
                 print(line)
 
 
-# OPXY_DEV_BOOT_START's report (waffle/board/opxy_services.h), and the words S-15.163's main screen and
-# Device Info use for it (src/s15_lines.c), so the host reads what the unit showed.
+# OPXY_DEV_BOOT_START's report (waffle/board/services.h), and the words S-15.163's main screen and
+# Device Info use for it (src/core/ui/lines.c), so the host reads what the unit showed.
 START_LAYOUT = '<7B7I6BI4I2B4I'
 START_FIELDS = ('attempted', 'cause', 'result', 'step', 'step_part', 'part', 'select0_failed', 'sector',
                 'count', 'format', 'length', 'crc', 'image_crc', 'boot_size', 'refusal', 'replied', 'reply',

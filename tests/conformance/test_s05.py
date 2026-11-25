@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-05 hand-off: src/s05_handoff.c (through h_s05) against tests/oracle/S-05-os-handoff (decision
+"""S-05 hand-off: src/core/boot/handoff.c (through h_s05) against tests/oracle/S-05-os-handoff (decision
 tables, kernel_model, vectors) and streams built with images.ldr; outside steps are logged stubs."""
 
 import json
@@ -360,7 +360,7 @@ STORE = {'on': 1, 'off': 0, 'erased': 0}       # an erased store gives its defau
 
 
 def boot_cmd(reason, state, keys, slave, store, prompt=0, stage=0, image=None, release='0', nz=0):
-    """h_s05's boot line: boot_master (src/boot_flow.c) with its ops logged."""
+    """h_s05's boot line: boot_master (src/core/boot/flow.c) with its ops logged."""
     return 'boot %d %s %d %d %s %d %d %s %s %d' % (reason, state, keys, slave, store, prompt, stage,
                                                    image or Master.os_a, release, nz)
 

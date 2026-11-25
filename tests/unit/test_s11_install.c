@@ -16,9 +16,9 @@
  */
 #include <string.h>
 
-#include "waffle/s11_package.h"
-#include "waffle/device.h"
-#include "waffle/s11_run.h"
+#include "waffle/install/package.h"
+#include "waffle/boot/device.h"
+#include "waffle/install/run.h"
 
 #include "s11_check.h"
 #include "s11_ref.h"

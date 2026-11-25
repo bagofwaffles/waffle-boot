@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-10b MTP: src/s10b_mtp.c (through h_s10b, over an in-memory volume) against tests/oracle/S-10b-mtp: the
+"""S-10b MTP: src/core/mtp/mtp.c (through h_s10b, over an in-memory volume) against tests/oracle/S-10b-mtp: the
 level-W scripts of vectors/writes.json (SC-10b-WRITE's and SC-10b-READONLY's logic slice), the operation sweep
 and DeviceInfo at both levels. Handles are bound by path through the device's own listing, never by value."""
 

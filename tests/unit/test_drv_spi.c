@@ -10,9 +10,9 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_spiflash.h"
-#include "waffle/s02_flash.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/spiflash.h"
+#include "waffle/flash/layout.h"
 
 #include "s13b_check.h"
 #include "s13b_trace.h"

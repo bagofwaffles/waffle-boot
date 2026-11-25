@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Core event controller and System Event Controller (see
- * waffle/drivers/bf70x_sec.h).
+ * waffle/drivers/bf70x/sec.h).
  */
-#include "waffle/drivers/bf70x_sec.h"
+#include "waffle/drivers/bf70x/sec.h"
 
 #include <stddef.h>
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_coremmr.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/coremmr.h"
 #include "waffle/drivers/mmr.h"
 
 struct handler {

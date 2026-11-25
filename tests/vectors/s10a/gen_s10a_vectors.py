@@ -181,7 +181,7 @@ def main():
         '#include <stddef.h>',
         '#include <stdint.h>',
         '',
-        '#include "waffle/s10a_desc.h"',
+        '#include "waffle/usb/desc.h"',
         '',
         '/* present (0 for null), offset into s10av_blob, length */',
         'struct s10av_ref { int present; size_t off, len; };',

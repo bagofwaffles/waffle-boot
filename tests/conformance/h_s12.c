@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Host program for S-12's filesystems: the RAM disk on FatFs
- * (src/wire_fat.c) and the yaffs2 volume (src/wire_yaffs.c), each on a RAM
+ * (src/core/fs/fat.c) and the yaffs2 volume (src/core/fs/yaffs.c), each on a RAM
  * block device, with the scans that read the disk's root (s11_disk_pick,
  * S-04.024's CDC check) and the log export (s14_export_run). The images are
  * tests/oracle/S-12-filesystems/gen_vectors.py --images's and are read back by the
@@ -59,12 +59,12 @@
 #include "bearssl_hash.h"
 
 #include "hlib.h"
-#include "waffle/device.h"
-#include "waffle/s04_records.h"
-#include "waffle/s11_content.h"
-#include "waffle/s14_export.h"
-#include "waffle/wire_fat.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/boot/device.h"
+#include "waffle/boot/records.h"
+#include "waffle/install/content.h"
+#include "waffle/log/export.h"
+#include "waffle/fs/fat.h"
+#include "waffle/fs/yaffs.h"
 
 #define BLOCK_BYTES (WB_YAFFS_CHUNKS_PER_BLOCK * WB_YAFFS_CHUNK_BYTES)
 /* A name or path argument: longer than any the filesystems take. */

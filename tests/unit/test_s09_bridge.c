@@ -9,10 +9,10 @@
  * CPU-link messages (S-09.033, S-09.034, S-09.045-S-09.047) and the release
  * (S-09.050-S-09.052).
  */
-#include "waffle/s04_records.h"
-#include "waffle/s09_master.h"
-#include "waffle/s09_slave.h"
-#include "waffle/s06_bytes.h"
+#include "waffle/boot/records.h"
+#include "waffle/bridge/master.h"
+#include "waffle/bridge/slave.h"
+#include "waffle/link/bytes_compat.h"
 
 #include "s06_test.h"
 #include "s06_fake.h"

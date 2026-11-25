@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-10a on TinyUSB's device core: src/s10a_usb.c with the real usbd and a
+ * S-10a on TinyUSB's device core: src/core/usb/device.c with the real usbd and a
  * device controller fake below that answers a SETUP as the BF70x driver
  * does (s10a_usb_setup_filter() first, RESELECT included). Checks the
  * enumeration of every set at both speeds (S-10a.001 to S-10a.021), the
@@ -16,12 +16,12 @@
 #include "tusb.h"
 #include "device/dcd.h"
 
-#include "waffle/device.h"
-#include "waffle/s10a_msc.h"
-#include "waffle/s10a_usb.h"
-#include "waffle/s10b_mtp.h"
-#include "waffle/s10c_host.h"
-#include "waffle/s10c_sysex.h"
+#include "waffle/boot/device.h"
+#include "waffle/usb/msc.h"
+#include "waffle/usb/device.h"
+#include "waffle/mtp/mtp.h"
+#include "waffle/host/commands.h"
+#include "waffle/host/sysex.h"
 
 #include "support/check.h"
 #include "s15_sha256.h"

@@ -9,7 +9,7 @@ host's register reads and writes (wiki/Developer-Host-Link.md: held mode, develo
 src/drivers/bf70x/crc.c uses, so it needs no new build. It never touches CRC1 or MDMA2, the
 display's stream.
 
-search  the board's search (src/board/opxy_crc.c), every option set and conversion of the
+search  the board's search (src/board/install/crc.c), every option set and conversion of the
         running value tried on three runs of a 1 KiB buffer against the software's CRC-16/XMODEM
         and CRC-32: prints each combination that answers all three
 speed   one scan of 4 MiB, eight times, and the MiB/s (host clock: a few ms of error on each)

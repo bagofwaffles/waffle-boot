@@ -6,11 +6,13 @@
 
 Three layers and the test OS, by where a file lives:
 
-  core    the files directly under src/ and the headers directly under
-          src/include/waffle/: hardware-independent, behind ops structs
-  board   src/board/ and src/include/waffle/board/, and
+  core    src/core/ and the headers in src/include/waffle/'s topic
+          folders (all but board/, drivers/ and testos/):
+          hardware-independent, behind ops structs
+  board   src/board/ and src/include/waffle/board/;
           src/include/waffle/testos.h, which declares the board's test-OS
-          hooks
+          hooks; and the test OS's headers in src/include/waffle/testos/,
+          which a driver may not include either
   driver  src/drivers/ and src/include/waffle/drivers/
   testos  src/testos/: the test OS's own code (wiki/Test-OS.md)
 
@@ -20,8 +22,8 @@ which include no header of the three layers or of the test OS.
 The core includes no board, driver or test OS file, and a driver includes no
 core or board header. The board and the test OS may include anything. An
 include is resolved as the compiler does, against the including file's
-directory (quoted only), then src/include; one that resolves to neither (a
-system or vendored header) is not checked. src/front/ has its own check (tools/front_image.py
+directory (quoted only), then src/include, then src; one that resolves to
+none of them (a system or vendored header) is not checked. src/front/ has its own check (tools/front_image.py
 boundary), src/stub/ is linked alone (src/stub/stub.ld), and src/glue/ and src/third_party/ are
 not checked.
 
@@ -42,22 +44,22 @@ SUFFIXES = ('.c', '.h', '.S', '.inc')
 # (including file, included file), both from the top.
 ALLOWED = {
     # The TinyUSB class adapter's state holds the USB driver's struct.
-    ('src/include/waffle/s10a_usb.h', 'src/include/waffle/drivers/bf70x_usb.h'),
+    ('src/include/waffle/usb/device.h', 'src/include/waffle/drivers/bf70x/usb.h'),
     # The panel driver's adapter fills the core's S-13c bus struct.
-    ('src/include/waffle/drivers/bf70x_display.h', 'src/include/waffle/s13c_panel.h'),
+    ('src/include/waffle/drivers/bf70x/display.h', 'src/include/waffle/display/panel.h'),
     # The test OS's hooks, until the test OS leaves the core.
     ('src/drivers/bf70x/spi.c', 'src/include/waffle/testos.h'),
-    ('src/include/waffle/boot.h', 'src/include/waffle/testos.h'),
-    ('src/include/waffle/s09_slave.h', 'src/include/waffle/testos.h'),
-    ('src/s07_psoc.c', 'src/include/waffle/testos.h'),
-    ('src/s09_bridge.c', 'src/include/waffle/testos.h'),
-    ('src/s09_master.c', 'src/include/waffle/testos.h'),
-    ('src/s13c_panel.c', 'src/include/waffle/testos.h'),
+    ('src/include/waffle/boot/flow.h', 'src/include/waffle/testos.h'),
+    ('src/include/waffle/bridge/slave.h', 'src/include/waffle/testos.h'),
+    ('src/core/psoc/psoc.c', 'src/include/waffle/testos.h'),
+    ('src/core/bridge/records.c', 'src/include/waffle/testos.h'),
+    ('src/core/bridge/master.c', 'src/include/waffle/testos.h'),
+    ('src/core/display/panel.c', 'src/include/waffle/testos.h'),
 }
 
 # Headers for every layer: the shared byte and string helpers, and the
 # 64-bit division without the compiler's.
-NEUTRAL = ('src/include/waffle/bytes.h', 'src/include/waffle/div64.h')
+NEUTRAL = ('src/include/waffle/util/bytes.h', 'src/include/waffle/util/div64.h')
 
 # What each layer may not include.
 FORBIDDEN = {'core': ('board', 'driver', 'testos'), 'driver': ('core', 'board'),
@@ -71,20 +73,26 @@ def layer(rel):
         return 'neutral'
     if rel == 'src/include/waffle/testos.h':
         return 'board'
-    if d in ('src', 'src/include/waffle'):
-        return 'core'
-    if d.startswith(('src/board', 'src/include/waffle/board')):
+    if within(d, 'src/board', 'src/include/waffle/board', 'src/include/waffle/testos'):
         return 'board'
-    if d.startswith(('src/drivers', 'src/include/waffle/drivers')):
+    if within(d, 'src/drivers', 'src/include/waffle/drivers'):
         return 'driver'
-    if d.startswith('src/testos'):
+    if within(d, 'src/testos'):
         return 'testos'
+    if within(d, 'src/core', 'src/include/waffle'):
+        return 'core'
     return None
+
+
+def within(d, *roots):
+    """Whether directory d is one of roots or below one."""
+    return any(d == r or d.startswith(r + '/') for r in roots)
 
 
 def resolve(inc, path, quoted, top):
     """The file an include names, from the top, or None outside the tree."""
-    bases = ([os.path.dirname(path)] if quoted else []) + [os.path.join(top, 'src', 'include')]
+    bases = ([os.path.dirname(path)] if quoted else []) + [os.path.join(top, 'src', 'include'),
+                                                           os.path.join(top, 'src')]
     for b in bases:
         cand = os.path.normpath(os.path.join(b, inc))
         if os.path.isfile(cand):

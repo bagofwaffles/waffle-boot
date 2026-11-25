@@ -539,7 +539,7 @@ const ROM_BOOT_RESERVE = [0x08000000, 0x08002000];
 const RECORD_AND_ROM_STACK = [0x11B01F00, 0x11B02000];
 const FIRST_STAGE_STACK = [0x11807000, 0x11808000];
 const BCODE = 4;
-// src/front/fr_handoff.h, as tools/mkldr.py has them
+// src/front/handoff.h, as tools/mkldr.py has them
 const FR_WINDOWS = [[0x11A04000, 0x11A0C000], [0x11802000, 0x11804000], [0x08002000, 0x08030000]];
 const FR_SHARED = [0x08030000, 0x08031000];
 const FR_DESC_ADDR = 0x08030000, FR_DESC_MAGIC = 0x4D494257, FR_DESC_VERSION = 1,
@@ -646,7 +646,7 @@ function checkStream(data) {
     return { rules: out, blocks };
 }
 
-// The front's part of the device's scan() (src/front/fr_slots.c); the two must agree. Blocks in
+// The front's part of the device's scan() (src/front/slots/slots.c); the two must agree. Blocks in
 // stream order up to FINAL; a block with a destination that meets the shared block must be the
 // descriptor; one that meets a front window must be data inside that window, and then counts,
 // in stream order, toward the front's CRC and pin. Anything else there: no waffle-boot front.

@@ -7,7 +7,7 @@
  * the bits wb_cplb_disable() clears; the cycle counter is started before
  * any time use (S-13a.030). Before all of that the branch predictor is
  * emptied and switched off (S-13a.042); the front's entry
- * (src/front/fr_entry.S) is held to the same, and to S-01.024's mask.
+ * (src/front/start/entry.S) is held to the same, and to S-01.024's mask.
  */
 #include <ctype.h>
 #include <stdio.h>
@@ -16,12 +16,12 @@
 
 #include "support/check.h"
 
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_cplb.h"
-#include "waffle/drivers/bf70x_rcu.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/cplb.h"
+#include "waffle/drivers/bf70x/rcu.h"
 
 #define START_S "src/drivers/bf70x/start.S"
-#define FRONT_S "src/front/fr_entry.S"
+#define FRONT_S "src/front/start/entry.S"
 
 static char src[32 * 1024];
 
@@ -118,7 +118,7 @@ static const char *predictor_steps(const char *s, const char *label)
  * prediction on, over code the bootloader ran). */
 static void test_testos_entry(void)
 {
-	const char *s = load_file("src/testos/opxy_testos_entry.S");
+	const char *s = load_file("src/testos/testos_entry.S");
 
 	CHECK(s != NULL);
 	if (s != NULL)
@@ -188,7 +188,7 @@ static void test_front_entry(void)
  * parity checking stays on (S-13a.040). */
 static void test_testos_masks(void)
 {
-	const char *s = load_file("src/testos/opxy_testos_entry.S");
+	const char *s = load_file("src/testos/testos_entry.S");
 	const unsigned long dclr = L1DM_DCTL_ENCPLB | L1DM_DCTL_CFG_MASK |
 				   L1DM_DCTL_ENX;
 	const unsigned long iclr = L1IM_ICTL_ENCPLB | L1IM_ICTL_CFG;
@@ -349,7 +349,7 @@ static void test_svect0(void)
 	/* Written once. */
 	CHECK(strstr(p, "SVECT0_LO") == NULL);
 	/* The hand-over's C reads it and writes nothing to it. */
-	s = load_file("src/board/opxy_handover.c");
+	s = load_file("src/board/boot/handover.c");
 	CHECK(s != NULL);
 	if (s == NULL)
 		return;

@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "waffle/s05_handoff.h"
-#include "waffle/s01_memmap.h"
+#include "waffle/boot/handoff.h"
+#include "waffle/boot/memmap.h"
 #include "s02_check.h"
 #include "s02_ref_crc.h"
 #include "vectors/s05_vectors.h"

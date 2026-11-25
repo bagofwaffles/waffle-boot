@@ -52,7 +52,7 @@ L1 = ((0x11800000, 0x11808000), (0x11900000, 0x11908000),
 ROM = (0x04000000, 0x08000000)
 MMR = (0x1FC00000, 0x30000000)
 DDR = (0x80000000, 0x90000000)
-# S-05.008: src/board/opxy_handover.c's symbols for the kernel call.
+# S-05.008: src/board/boot/handover.c's symbols for the kernel call.
 HO_ROLES = (('ho_stack', 'kernel_stack', 'stack'), ('config_block', 'config_block', 'data'),
             ('header_buffer', 'header_buffer', 'data'))
 

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for the front's panel (src/front/fr_panel.c) on its way into
+ * Host program for the front's panel (src/front/display/panel.c) on its way into
  * recovery: the whole of fr_start_run() and then fr_recovery_run(), over a
  * model of the panel bus with its TE line and memory DMA, a model PSoC on
  * the link, a flash and the loaded image.
@@ -52,10 +52,10 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "front/fr_handoff.h"
-#include "front/fr_start.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s06_rx.h"
+#include "front/handoff.h"
+#include "front/start/start.h"
+#include "waffle/link/frame.h"
+#include "waffle/link/rx.h"
 
 #define US 1000u
 #define MS 1000000u

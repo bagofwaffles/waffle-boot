@@ -3,7 +3,7 @@
 #define WAFFLE_TESTS_FAKE_CORE_H
 
 /*
- * Host fake for the core operations (waffle/drivers/bf70x_core.h).
+ * Host fake for the core operations (waffle/drivers/bf70x/core.h).
  *
  * - csync is recorded in the register access log (fake_mmr.h), so a test
  *   sees it in order with the register accesses;
@@ -28,7 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 
 void fake_core_reset(void);
 

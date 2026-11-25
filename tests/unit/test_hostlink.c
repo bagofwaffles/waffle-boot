@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The host link's protocol (src/hostlink.c): the path check and its roots,
+ * The host link's protocol (src/core/host/hostlink.c): the path check and its roots,
  * the one classification table, the session's approval, the file calls
  * over a volume in memory (a put's temporary name, its check before the
  * rename), the jobs, and the calls that are never served; an image into
@@ -11,7 +11,7 @@
 
 #include "support/check.h"
 
-#include "waffle/hostlink.h"
+#include "waffle/host/hostlink.h"
 #include "bearssl_hash.h"
 
 static void wb_put_le32_t(uint8_t *p, uint32_t v)

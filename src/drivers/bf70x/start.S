@@ -4,7 +4,7 @@
  * "Events and Sequencing": supervisor mode, the event vector table and
  * returning from the reset event to run at IVG15).
  *
- * The front's _fr_entry jumps here (src/front/fr_handoff.h) in supervisor
+ * The front's _fr_entry jumps here (src/front/handoff.h) in supervisor
  * mode, in the reset event (IVG1), as the boot ROM left it, with the
  * front's stack in L2. This code:
  *   - empties the branch predictor and switches it off, before any
@@ -28,7 +28,7 @@
  */
 
 /*
- * ICU_EVT0 = 0x1FC02000 (S-01.012; waffle/drivers/bf70x_coremmr.h). The
+ * ICU_EVT0 = 0x1FC02000 (S-01.012; waffle/drivers/bf70x/coremmr.h). The
  * PRM's chapter 4 table prints 0x1FE02000, a misprint: a vector written
  * there is never taken.
  */
@@ -40,7 +40,7 @@
  * wb_cplb_disable() clears and of RDCHK, off until the L1 pass is done
  * (S-13a.040): DCTL ENCPLB, CFG, RDCHK, ENX (0x0001020E) and ICTL ENCPLB,
  * CFG, RDCHK (0x00000206). tests/unit/test_drv_start.c checks them
- * against waffle/drivers/bf70x_cplb.h.
+ * against waffle/drivers/bf70x/cplb.h.
  */
 #define CTL_HI      0x1FC0
 #define DCTL_LO     0x0004

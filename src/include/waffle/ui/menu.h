@@ -1,0 +1,647 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/*
+ * S-15 held mode: the screens and what keys, host events and upgrade
+ * reports do to them.
+ *
+ * Key events come in as data (S-07.031, decoded by the PSoC link). What is
+ * drawn goes to the console (ui/console.h) and out through
+ * s15_menu_render(); what is sent or written goes out through
+ * s15_env_ops. All calls run on one thread; an env operation may take
+ * time (a format, an OS write) and returns when it is done.
+ */
+#ifndef WAFFLE_UI_MENU_H
+#define WAFFLE_UI_MENU_H
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include "waffle/log/log.h"
+#include "waffle/ui/select.h"
+#include "waffle/ui/console.h"
+#include "waffle/ui/keytest.h"
+#include "waffle/ui/lines.h"
+#include "waffle/ui/settings.h"
+
+/* The screens of held mode. */
+enum s15_screen {
+	S15_SCR_MAIN,
+	S15_SCR_PACKS,
+	S15_SCR_INFO,
+	S15_SCR_SYSTEM,
+	S15_SCR_SETTINGS,
+	S15_SCR_FORMAT,
+	S15_SCR_FACTORY,
+	S15_SCR_UPGRADE,
+	S15_SCR_RESULT,     /* an erasing action's result: digit 8 alone acts */
+	S15_SCR_STARTING,   /* S-15.190: restarting for the OS; no key acts */
+	S15_SCR_INFO2,      /* S-15.082: Device Info's second page */
+	S15_SCR_OPTION,     /* S-15.140: the option's screen, from Settings */
+	S15_SCR_LOGO,       /* the boot logo's disk, from Display */
+	S15_SCR_LOGO_VIEW,  /* a dropped picture as the front will draw it */
+	S15_SCR_LOGO_DONE,  /* a save's or a removal's result: digit 8 alone acts */
+	S15_SCR_NONE,       /* before held mode's first screen */
+	S15_SCR_APPROVE,    /* the host link's approval: the unit's keys alone */
+	S15_SCR_DISPLAY,    /* Settings' 3: the color and the boot logo */
+	S15_SCR_OS_FILES,   /* S-15.203: the OS files of /yaffs2/os */
+	S15_SCR_OS_FILE,    /* S-15.204: one of them and what it can do */
+	S15_SCR_OS_DONE,    /* S-15.205: a removal's result: digit 8 alone acts */
+	S15_SCR_WARN,       /* S-15.200: a host's PSoC request counting down */
+	S15_SCR_BRIDGE      /* S-15.200: a host has the PSoC link; no key acts */
+};
+
+/* S-15.200: what a host's PSoC request asks for. */
+enum s15_warn {
+	S15_WARN_BRIDGE,	/* the backplane link, raw */
+	S15_WARN_RESET		/* the backplane's reset */
+};
+
+/* The host link's approval screen, as the board reads it. */
+enum s15_approve {
+	S15_APPROVE_NONE,
+	S15_APPROVE_PENDING,
+	S15_APPROVE_ALLOWED,	/* 1 held for 5 s */
+	S15_APPROVE_REFUSED,	/* 8 */
+	S15_APPROVE_TIMEOUT	/* no key for S15_APPROVE_MS */
+};
+#define S15_APPROVE_MS 60000u
+
+/* S-15.015: what a hold runs. The item's own key down starts the hold;
+ * held for S15_HOLD_MS it runs the action once; its early release,
+ * or any other key down, only cancels. */
+enum s15_arm {
+	S15_ARM_NONE,
+	S15_ARM_RESET,      /* the factory reset (S-15.050) */
+	S15_ARM_FORMAT,     /* the format (S-15.071) */
+	S15_ARM_PACK,       /* removing the pack `pending` (S-15.042) */
+	S15_ARM_OPTION,     /* turning the option on (S-15.140) */
+	S15_ARM_APPROVE,    /* the host link's approval */
+	S15_ARM_LOGO_SAVE,  /* saving the boot logo shown */
+	S15_ARM_LOGO_REMOVE, /* removing the stored boot logo */
+	S15_ARM_OS_INSTALL, /* installing the OS file shown (S-15.204) */
+	S15_ARM_OS_REMOVE   /* removing it (S-15.204) */
+};
+
+/* S-09: the slave's state, for Device Info. */
+enum s15_slave {
+	S15_SLAVE_OK,
+	S15_SLAVE_NO_OS,
+	S15_SLAVE_ABSENT,
+	S15_SLAVE_NO_START,	/* S-05.032: released, its OS did not start */
+	S15_SLAVE_LOST		/* present at the start, then stopped answering */
+};
+
+/* S-12.061: how the drive's volume was mounted, S-09.041's ways 1 - 6;
+ * none: no mount reported. */
+enum s15_files {
+	S15_FILES_NONE,
+	S15_FILES_RESTORED,
+	S15_FILES_NO_CKPT,
+	S15_FILES_CKPT_INVALID,
+	S15_FILES_CKPT_STALE,
+	S15_FILES_CKPT_UNREADABLE,
+	S15_FILES_FOR_WRITE,
+	S15_FILES_SCANNED	/* no checkpoint read */
+};
+
+/* S-10a.010 descriptor sets. */
+enum s15_usb_set {
+	S15_USB_MAIN,          /* the main screen's set */
+	S15_USB_DISK,          /* the upgrade screen's set: the RAM disk */
+	S15_USB_MTP_VENDOR,
+	S15_USB_MTP,
+	S15_USB_SERIAL
+};
+
+/* S-15.094: the result of the factory menu's OS write. */
+enum s15_os_write {
+	S15_OSW_OK,
+	S15_OSW_UNREADABLE,    /* /os.ldr missing or not read whole */
+	S15_OSW_FAILED         /* S-03's write reported failure */
+};
+
+/* S-15.094: how the OS write ended. */
+struct s15_osw_end {
+	enum s15_os_write result;
+	enum s15_osw_why why;      /* S15_OSW_WHY_NONE after a success */
+	enum s15_osw_emmc emmc;    /* after a failure */
+	unsigned part;             /* a failed eMMC operation's partition */
+	unsigned target;           /* S-03.052's target, 0 before it is chosen */
+	uint32_t value, limit;     /* as why names them */
+	bool select0_failed;       /* S-03.063 */
+};
+
+/* What the OS write reports while it runs (S-15.094): a step starts, its
+ * progress, its success (a and b: s15_osw_done_row()'s). */
+struct s15_osw_report {
+	void *ctx;
+	void (*step)(void *ctx, enum s15_osw_step step);
+	void (*progress)(void *ctx, uint32_t done, uint32_t total);
+	void (*done)(void *ctx, uint32_t a, uint32_t b);
+};
+
+/* What this boot knows when held mode starts. */
+/* The selected slot's start log (S-02.095) as Device Info shows it. */
+enum s15_log {
+	S15_LOG_UNREAD = 0,	/* not read, or a read failed */
+	S15_LOG_OK,		/* start_log_used entries used */
+	S15_LOG_FULL,
+	S15_LOG_ODD,
+	S15_LOG_NONE		/* the slot's image leaves no log */
+};
+#define S15_LOG_ENTRIES 16384u
+
+struct s15_boot {
+	/* S-18: how the front decided the device (S-18.005); with
+	 * WB_DEV_UNKNOWN the first stage's n and c (S-18.003, S-18.004) */
+	enum wb_dev_how dev_how;
+	uint32_t first_stage_n, first_stage_c;
+	const char *version;       /* S-17.032 version text */
+	unsigned reason;           /* S-04.006 reason taken */
+	struct s15_settings settings; /* S-15.172: the running slot's settings as read at this start */
+	enum s15_slave slave;
+	bool running_known;        /* S-01.002: the running slot is established */
+	unsigned running_slot;     /* its index then */
+	struct s15_start start;    /* S-15.163: a failed plain start; S-15.161
+				    * when its image is marked encrypted */
+	bool interrupted;          /* S-11.080: the last install did not finish */
+	uint8_t start_log;         /* enum s15_log */
+	uint8_t start_log_slot;    /* the selected slot's index, but with S15_LOG_UNREAD */
+	uint16_t start_log_used;   /* with S15_LOG_OK */
+	uint16_t start_log_unfinished; /* with S15_LOG_OK: unfinished entries at the end */
+	uint16_t start_log_erase;  /* used entries the main image erases the log at; 0: none */
+	/* S-12.061: the drive's mount (enum s15_files), kept current by the
+	 * board, and the objects of its tree */
+	uint8_t files_way;
+	uint32_t files_objects;
+	/* S-17.030 */
+	const char *unit_serial, *chip_serial, *psoc_serial;
+	const char *os_version, *sw_version, *ble_version, *psoc_version;
+	bool provisioned;
+};
+
+/* S-15.172: how a save or a clear of the settings sector ended. */
+enum s15_store_save {
+	S15_STORE_SAVED,
+	S15_STORE_FAILED,	/* an erase, program or a read-back failed */
+	S15_STORE_UNUSABLE	/* the running slot keeps no settings (S-02.099) */
+};
+
+/* The boot logo (waffle/flash/logo.h) as Display shows it (S-02.110,
+ * S-02.112). */
+enum s15_logo_state {
+	S15_LOGO_BUILTIN,	/* none stored: the front's own */
+	S15_LOGO_CUSTOM,	/* one stored for this image */
+	S15_LOGO_NO_ROOM,	/* the image leaves no room for one */
+	S15_LOGO_UNAVAILABLE	/* the running slot may not be written now
+				 * (the settings' rule) */
+};
+
+struct s15_logo {
+	uint8_t state;		/* enum s15_logo_state */
+	uint32_t room;		/* the bytes free for a logo's data */
+	uint32_t stored;	/* the stored logo's data bytes, with CUSTOM */
+};
+
+/* What a picture dropped on the disk gave. */
+enum s15_logo_load {
+	S15_LOGO_READY,		/* converted: px and size */
+	S15_LOGO_NONE,		/* no PNG file on the disk */
+	S15_LOGO_MANY,		/* more than one file */
+	S15_LOGO_REFUSED,	/* not taken: why says why */
+	S15_LOGO_BIG		/* does not fit: size the smallest tried */
+};
+
+struct s15_logo_pic {
+	uint8_t result;		/* enum s15_logo_load */
+	const char *why;	/* with S15_LOGO_REFUSED */
+	uint32_t size;		/* the data's bytes */
+	uint32_t room;
+	/* READY: the screen as the front will draw it, window row r (screen
+	 * x 479 - r) by row, 222 pixels each (waffle/flash/logo.h) */
+	const uint16_t *px;
+};
+
+#define S15_PACKS_MAX 7u
+#define S15_NAME_MAX  255u
+
+struct s15_env_ops {
+	/* Start a USB descriptor set (S-10a.010), also when presented. */
+	void (*usb_set)(void *ctx, enum s15_usb_set set);
+	/* Send 0x48 {01} to the PSoC (S-07.078). */
+	void (*volcal_reset)(void *ctx);
+	/* The LED messages of S-07.045 for the key test's start or end; the
+	 * end's end with 0x40 {01}. */
+	void (*keytest_leds)(void *ctx, bool start);
+	/* The yaffs2 volume is refused (big-endian, S-12.052). */
+	bool (*volume_refused)(void *ctx);
+	/* Whether a yaffs2 directory exists. */
+	bool (*dir_exists)(void *ctx, const char *path);
+	/* Subdirectory `index` of /yaffs2/content/dlc in directory order,
+	 * files skipped, "." and ".." skipped (S-16.082); its
+	 * name copied to name. False past the last. */
+	bool (*pack_dir)(void *ctx, size_t index, char name[S15_NAME_MAX + 1]);
+	/* Up to max bytes from the start of
+	 * /yaffs2/content/dlc/<dir>/manifest.json; 0 if missing (S-15.041). */
+	size_t (*read_manifest)(void *ctx, const char *dir, uint8_t *buf,
+				size_t max);
+	/* Remove a yaffs2 path with everything in it. True on success or
+	 * when it does not exist. */
+	bool (*remove_tree)(void *ctx, const char *path);
+	/* Erase the first erase group of the OS's FAT volume (S-03.073). */
+	void (*erase_os_fat)(void *ctx);
+	/* Format the yaffs2 volume (S-12.057) and mount it again; false for
+	 * a failed format (S-15.072). volume_refused() then gives the new
+	 * mount's result. */
+	bool (*format)(void *ctx);
+	/* Read /yaffs2/os.ldr and write it with S-03's OS write, reporting
+	 * the steps with s15_osw_step() and the others as they go; *end
+	 * comes in as a failure that names nothing (S15_OSW_FAILED). */
+	void (*os_write)(void *ctx, struct s15_osw_end *end);
+	/* The shutdown of S-04.063 (with its black frame) and the
+	 * hard reset of S-04.020 W7. Does not return on the device. */
+	void (*reset_w7)(void *ctx);
+	/* Write the system information to the disk (S-12.017), with the log
+	 * export (S-14.051, s14_export_run()). */
+	void (*system_info)(void *ctx);
+	/* Start the scan of S-11.045 now. */
+	void (*scan_now)(void *ctx);
+	/* The session upgrade option turned on or off (S-02.055). */
+	void (*option)(void *ctx, bool on);
+	/* S-15.172, S-02.098: save these settings in the running slot's
+	 * settings sector; *now is what a start reads afterwards, also after a
+	 * failed or refused save. NULL: there is no settings sector (the test
+	 * OS), the settings last for this start, and Start in boot menu is no
+	 * item. */
+	enum s15_store_save (*settings_save)(void *ctx, const struct s15_settings *s,
+					     struct s15_settings *now);
+	void *ctx;
+	/* The slave stopped answering (S-09.008) for the rest of the boot: no
+	 * request reaches the drive, refused or not. NULL: it never does. */
+	bool (*slave_lost)(void *ctx);
+	/* S-15.190, S-05.033: restart so that the next start boots the OS,
+	 * the restarting line drawn. Does not return on the device. NULL:
+	 * there is no such action. */
+	void (*continue_os)(void *ctx);
+	/* S-15.082: read the selected slot's start log again into the boot's
+	 * start_log fields. NULL: they stay as held mode began with them. */
+	void (*start_log_read)(void *ctx);
+	/* S-12.062: the scan before the session's first write, made while
+	 * boot->files_way is S15_FILES_RESTORED, the line on the panel first;
+	 * the board updates files_way. NULL: there is no such scan. */
+	void (*files_scan)(void *ctx);
+	/* S-02.105: the factory reset's clear of the running slot's settings
+	 * sector. NULL: none. */
+	enum s15_store_save (*settings_clear)(void *ctx);
+	/* S-15.194: whether Start /os.ldr once can restart now: the slave
+	 * answering, then /yaffs2/os.ldr as S-05.035 would take it (*file
+	 * says why not, with S15_ONCE_FILE). Nothing is written. NULL: this
+	 * build starts no OS. */
+	enum s15_once (*os_once_check)(void *ctx, struct s15_os_file *file);
+	/* S-15.194, S-04.020 W12: the restart whose next start reads the OS
+	 * from /yaffs2/os.ldr, the restarting line drawn. Does not return on
+	 * the device. */
+	void (*os_once)(void *ctx);
+	/* The boot logo, read again. NULL: no Boot logo item. */
+	void (*logo_state)(void *ctx, struct s15_logo *out);
+	/* A blank RAM disk offered for a picture, with the disk's USB set. */
+	void (*logo_disk)(void *ctx);
+	/* After the disk's release: its one PNG file read and converted. */
+	void (*logo_load)(void *ctx, struct s15_logo_pic *out);
+	/* The picture logo_load() gave saved, or the stored logo removed, in
+	 * the running slot under the settings' rule. */
+	enum s15_store_save (*logo_save)(void *ctx);
+	enum s15_store_save (*logo_remove)(void *ctx);
+	/* S-15.203: the OS files of /yaffs2/os, a missing directory an empty
+	 * list, each listed one's size read; false when the directory cannot
+	 * be read. NULL: the main screen has no OS files item. */
+	bool (*os_files)(void *ctx, struct s15_os_files *out);
+	/* S-15.204: the file os_write(), os_once_check() and os_once() take
+	 * from here on, path at list place `place` (from 0); path NULL:
+	 * /yaffs2/os.ldr again. */
+	void (*os_file)(void *ctx, const char *path, unsigned place);
+};
+
+/* What the upgrade screen is doing (S-15.103). */
+enum s15_activity {
+	S15_ACT_IDLE,
+	S15_ACT_SCAN,
+	S15_ACT_TRANSFER,
+	S15_ACT_RUN
+};
+
+/* The preparation steps with a progress line. */
+enum s15_phase {
+	S15_PH_DECRYPT,
+	S15_PH_EXTRACT_FIRMWARE,
+	S15_PH_EXTRACT_CONTENT,
+	S15_PH_TRANSFER
+};
+
+enum s15_mtp {
+	S15_MTP_OFF,
+	S15_MTP_VENDOR,
+	S15_MTP_STANDARD
+};
+
+/* S-15.094: the OS write's screen on the developer menu. */
+enum s15_osw_view {
+	S15_OSW_VIEW_NONE,
+	S15_OSW_VIEW_RUNNING,
+	S15_OSW_VIEW_DONE      /* digit 8 acts, and digit 6 after a success */
+};
+
+struct s15_menu {
+	struct s15_console con;
+	const struct wb_device *dev;	/* S-15.016's keys, S-18's features */
+	const struct s15_boot *boot;
+	const struct s15_env_ops *env;
+	enum s15_screen screen;
+	const char *title;        /* The title bar's name */
+	enum s15_usb_set usb;     /* the set last started */
+
+	/* keys: S-15.010 - S-15.013 */
+	uint8_t down[(S15_NKEYS + 7u) / 8u];
+	uint8_t stale[(S15_NKEYS + 7u) / 8u];
+	bool shift;
+	bool host_event;          /* the event in hand came from a host (S-15.193) */
+
+	/* the option: S-15.140 */
+	bool option_on;
+
+	/* Settings: S-15.170, S-15.173 */
+	bool dev_mode;             /* S-15.172: the menu, the serial port */
+	bool color;
+	bool mtp_macos;            /* S-15.174 */
+	bool start_menu;           /* S-15.175 */
+	bool host_link;            /* the host link answers */
+	bool host_no_hold;         /* S-15.202: approved with no hold, this start */
+
+	/* the host link's approval screen */
+	enum s15_approve approve;
+	enum s15_screen approve_back;	/* the screen it returns to */
+	uint32_t approve_ms;		/* when it opened */
+
+	/* S-15.200: the PSoC warning and bridge screens */
+	enum s15_warn warn;
+	unsigned warn_s;		/* the countdown's seconds shown */
+	bool warn_canceled;		/* 8 canceled it, not yet read */
+	enum s15_screen warn_back;	/* the screen they cover */
+
+	/* system menu */
+	bool packs_item;
+
+	/* the boot logo */
+	struct s15_logo logo;
+	struct s15_logo_pic pic;
+	bool logo_due;             /* the disk was released: read it then */
+	uint32_t logo_due_ms;
+
+	/* S-15.015: the hold under way */
+	enum s15_arm armed;
+	unsigned arm_key;          /* the key held */
+	uint32_t arm_ms;           /* when it went down */
+	unsigned arm_fill;         /* the bar as drawn: percent */
+	unsigned arm_left;         /* and seconds left */
+	uint32_t now_ms;           /* the time s15_menu_tick() last gave */
+
+	/* pack list */
+	unsigned npacks;
+	unsigned pending;    /* the held pack, 1 to 7 */
+	char dirs[S15_PACKS_MAX][S15_NAME_MAX + 1u];
+	char labels[S15_PACKS_MAX][64];
+
+	/* format menu */
+	bool refused;
+
+	/* the OS files: S-15.203 - S-15.205 */
+	struct s15_os_files osf;
+	bool osf_read;             /* the list was read */
+	unsigned osf_at;           /* the file shown, its place */
+	char osf_path[sizeof S15_OS_DIR + S15_OS_NAME_MAX];
+
+	/* developer menu */
+	enum s15_mtp mtp;
+	bool busy;
+	/* Key downs have no effect from a long call's start until the board
+	 * has read what arrived during it (s15_menu_hold()). */
+	bool hold;
+	enum s15_osw_view osw;
+	bool osw_written;          /* S-15.094: the last OS write succeeded */
+	struct s15_osw_end osw_end;	/* and how it ended */
+	bool osw_host;             /* a host's write: its file, and where 8 goes */
+	enum s15_screen osw_back;
+	char osw_name[40];         /* the file as the drive shows it */
+	int osw_step;        /* the OS write's step whose row is open, or -1 */
+	unsigned osw_p;      /* its last progress value */
+
+	/* digit 6 continues to the OS after a completed run (S-11.060) */
+	bool restart_ok;
+
+	/* key test */
+	bool keytest;
+	struct s15_keytest kt;
+	bool black_once;
+	uint32_t changes;
+
+	/* upgrade screen */
+	bool midi;
+	enum s15_activity activity;
+	bool final;          /* a zip was read in this boot (S-15.103, S-15.115) */
+	bool begun;          /* a host transfer has begun in this boot (S-15.103) */
+	bool from_disk;      /* the last package was found by a scan */
+	bool disk_read;      /* a zip was read from the RAM disk (S-15.115) */
+	bool scan_due_set;
+	uint32_t scan_due_ms;
+	bool content_only;
+	int prog_key;        /* last progress line: phase or step, -1 none */
+	int row_step;        /* the step whose row is the last line, or -1 */
+	unsigned prog_p;
+	uint32_t transfer_total;
+};
+
+/* dev: the device held mode runs on (S-18.005). */
+void s15_menu_init(struct s15_menu *m, const struct wb_device *dev,
+		   const struct s15_boot *boot,
+		   const struct s15_env_ops *env, struct s14_log *log);
+/* Held mode starts: open the first screen (S-15.020). */
+void s15_menu_start(struct s15_menu *m);
+/* S-15.013: before s15_menu_start(), the keys down as S-07 knows them (an
+ * S-07.031 bitmap), with those the events told of: each acts only after it
+ * has been seen released. */
+void s15_menu_keys_down(struct s15_menu *m, const uint8_t bitmap[(S15_NKEYS + 7u) / 8u]);
+/* A key event (S-07.031), before or after the start. */
+void s15_menu_key(struct s15_menu *m, unsigned key, bool down);
+/* S-15.191: on the current screen, the scan before a write when the
+ * mount is restored (a host's write that comes outside the menu's own). */
+void s15_check_files(struct s15_menu *m);
+/*
+ * A long call of the environment (the OS write, a format, a removal, the
+ * FAT erase) holds the keys: key downs during it, and those the board reads
+ * after it from what arrived meanwhile, have no effect. The board starts
+ * the hold, reads all of that, then releases it.
+ */
+void s15_menu_hold(struct s15_menu *m);
+bool s15_menu_held(const struct s15_menu *m);
+void s15_menu_release(struct s15_menu *m);
+/* s15_menu_key() with that hold: held mode's key events come here. */
+void s15_menu_event(struct s15_menu *m, unsigned key, bool down);
+/* The same for a key a host sent (a developer request): it acts as the
+ * unit's key would, but saves no setting (S-15.193). */
+void s15_menu_host_event(struct s15_menu *m, unsigned key, bool down);
+/*
+ * The host link's approval screen over the screen shown, which it returns
+ * to: only from Main Menu, Settings, System, Device Info and the developer
+ * menu, with nothing under way. False when it cannot open now. Only the
+ * unit's keys answer it: 1 held for 5 s allows, 8 refuses, and with no key
+ * for S15_APPROVE_MS it times out.
+ */
+bool s15_menu_approve_open(struct s15_menu *m);
+/* Its answer; once read, an answer gives S15_APPROVE_NONE. */
+enum s15_approve s15_menu_approve_result(struct s15_menu *m);
+/*
+ * S-15.200: a host's PSoC request's warning, with the countdown's seconds,
+ * over the screens the approval opens over and with nothing under way;
+ * false when it cannot open now. Called again while it shows, it shows the
+ * seconds given. Only the unit's own 8 answers it: it cancels, and the
+ * covered screen returns; s15_menu_warn_canceled() reads that once.
+ * s15_menu_warn_bridge(): the countdown over, the screen of a host holding
+ * the link, where no key acts; s15_menu_warn_close(): either screen down,
+ * the covered one back.
+ */
+bool s15_menu_warn_open(struct s15_menu *m, enum s15_warn what, unsigned seconds);
+bool s15_menu_warn_canceled(struct s15_menu *m);
+void s15_menu_warn_bridge(struct s15_menu *m);
+/* A reset's countdown over and its request sent alone: the screen that it
+ * waits up to seconds for the PSoC, where no key acts. */
+void s15_menu_warn_resetting(struct s15_menu *m, unsigned seconds);
+void s15_menu_warn_close(struct s15_menu *m);
+/* A host's OS write with the developer menu's code (S-15.094), from the
+ * file at path, which the board's os_write reads; false when the menu is
+ * busy. The screen names the file, and 8 goes back to the screen shown
+ * before (never the developer menu with developer mode off). *e is the
+ * write's end. */
+bool s15_menu_os_write(struct s15_menu *m, const char *path, struct s15_osw_end *e);
+/* A host's start of /os.ldr once, as the developer menu's 3 (S-15.194):
+ * the restarting line under the screen shown; it returns only when the
+ * start was not taken, with that screen drawn again under the reason. */
+void s15_menu_os_once(struct s15_menu *m);
+/*
+ * The time passes (ms since any fixed point; only differences matter): a
+ * hold's bar follows it, and a hold of S15_HOLD_MS runs its action.
+ * The board gives the time before each key event and on every pass, so a
+ * key event is timed by the last call.
+ */
+void s15_menu_tick(struct s15_menu *m, uint32_t now_ms);
+/* Draw a frame of held mode (S-15.002, S-15.062); also the
+ * fatal-error frame. */
+void s15_menu_render(struct s15_menu *m, const struct s15_geometry *g,
+		     const struct s15_draw_ops *d);
+/* What the title bar and the status bar show now. */
+void s15_menu_frame(const struct s15_menu *m, struct s15_frame *f);
+/* A counter that changes whenever the frame's content changes. */
+uint32_t s15_menu_changes(const struct s15_menu *m);
+
+/* ---- S-15.190, S-05.033: continue to the OS, at a host's request -- */
+
+enum s15_continue {
+	S15_CONT_STARTED,	/* the restarting line drawn, the board's restart run */
+	S15_CONT_BUSY		/* a scan, host transfer, run or OS write is under way */
+};
+
+/* Whether continuing would start now, without acting. */
+enum s15_continue s15_menu_continue_check(const struct s15_menu *m);
+/* The host command (S-10c.076) comes here, and digit 6 after an install or
+ * an OS write (S-15.190): busy changes nothing; otherwise the restarting
+ * view, a key test ended and a hold canceled (S-15.015), then
+ * env->continue_os(). */
+enum s15_continue s15_menu_continue(struct s15_menu *m);
+/* S-02.095, S-15.175: a trial start's boot menu, opened for the trial
+ * alone, once its mark is made: busy changes nothing; otherwise the view
+ * s15_menu_continue() draws, with s15_trial_ok_line, and no key acts. The
+ * board runs env->continue_os() after a moment. */
+enum s15_continue s15_menu_trial_ok(struct s15_menu *m);
+
+/* ---- the OS write's reports (S-15.094), while env->os_write() runs -- */
+
+/* A step starts: its row. Nothing happens outside the OS write. */
+void s15_osw_step(struct s15_menu *m, enum s15_osw_step step);
+/* The open step's progress. */
+void s15_osw_progress(struct s15_menu *m, uint32_t done, uint32_t total);
+/* The open step succeeded; a and b as s15_osw_done_row() names them. */
+void s15_osw_done(struct s15_menu *m, uint32_t a, uint32_t b);
+
+/* ---- the upgrade screen's events ----------------------------------- */
+
+/* The host acquired the disk. */
+void s15_up_acquired(struct s15_menu *m);
+/* S-15.105: the host released the disk at now_ms (since the start). */
+void s15_up_released(struct s15_menu *m, uint32_t now_ms);
+/* S-15.105: the time passes; starts a due scan. */
+void s15_up_tick(struct s15_menu *m, uint32_t now_ms);
+/* S-15.104: a host transfer's begin, before its product word is
+ * checked; len the package length (0 when it has none). It ends the scans
+ * for the rest of the boot (S-15.103). */
+void s15_up_transfer_begin(struct s15_menu *m, uint32_t len);
+/* The begin started its transfer: the Transfer row, when the
+ * begin's length is not 0. */
+void s15_up_transfer_started(struct s15_menu *m);
+/* The begin's product word passed but its transfer could not
+ * start (S-10c.071, S-10c.088): one error line, no reason line. */
+void s15_up_no_transfer(struct s15_menu *m);
+/* Chunk number n (from 1) has arrived, done bytes of the
+ * package; last for the final chunk. */
+void s15_up_transfer_chunk(struct s15_menu *m, uint32_t n, uint32_t done,
+			   bool last);
+/* The scan found no package (S-11.046). */
+void s15_up_not_found(struct s15_menu *m);
+/* A package refused (S-11.020 checks 1 - 15, or a begin's
+ * product word), with its reason's name. */
+void s15_up_refused(struct s15_menu *m, const char *reason);
+/* A phase starts; its progress. */
+void s15_up_phase(struct s15_menu *m, enum s15_phase phase);
+void s15_up_progress(struct s15_menu *m, uint32_t done, uint32_t total);
+/* The extraction refused (S-11.020 checks 16 - 17). */
+void s15_up_extract_refused(struct s15_menu *m, const char *reason,
+			    bool content_only);
+/* S-15.116: the selection is shown before the run, each line logged, at
+ * every change of its rows or its hold; s15_up_select_time() then
+ * replaces, not logged, the rows the time changes. The keys are
+ * s15_select's, not the menus'. S-15.197's prompt is drawn the same way,
+ * from an s15_select opened by s15_select_prompt_open(). */
+void s15_up_select(struct s15_menu *m, const struct s15_select_info *info,
+		   const struct s15_select *s, uint32_t now_ms);
+void s15_up_select_time(struct s15_menu *m, const struct s15_select_info *info,
+			const struct s15_select *s, uint32_t now_ms);
+/* The selection canceled: no run, nothing installed (S-11.096); the zip
+ * does not count as read, so the screen is idle again (S-15.103). */
+void s15_up_canceled(struct s15_menu *m);
+/* A run starts; te_signed: the package's signature is valid (S-15.197). */
+void s15_up_run_start(struct s15_menu *m, enum s15_run_kind kind,
+		      const char *version, const char *name, bool stock,
+		      bool te_signed);
+void s15_up_step_start(struct s15_menu *m, enum s15_step step);
+void s15_up_step_progress(struct s15_menu *m, enum s15_step step,
+			  uint32_t done, uint32_t total);
+/* Refused_start: S-02.090 refused the bootloader step's start. Cause:
+ * why a step that stopped the run failed, NULL or "" when the result
+ * says it all. */
+void s15_up_step_result(struct s15_menu *m, enum s15_step step,
+			enum s15_result result, const char *version,
+			bool refused_start, const char *cause);
+/* S-11.069, S-11.070: the note's lines after a step's result. */
+void s15_up_step_note(struct s15_menu *m, enum s15_note note);
+/* S-15.115; skipped has bit n set for each step n that reported Skipped:
+ * a completed run names them. */
+void s15_up_run_end(struct s15_menu *m, enum s15_outcome outcome,
+		    unsigned skipped);
+/*
+ * S-15.115, S-11.049: false once a run (or a refusal at checks 16 - 17)
+ * has read a zip from the RAM disk in this boot; the disk is then not
+ * offered to the host again. A package that came over a host link leaves
+ * it true: the disk is offered again when the transfer ends (S-10c.073,
+ * S-10c.090), though no scan follows (S-15.103).
+ */
+bool s15_up_disk_offerable(const struct s15_menu *m);
+
+#endif /* WAFFLE_UI_MENU_H */

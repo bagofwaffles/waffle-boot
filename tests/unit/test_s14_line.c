@@ -6,7 +6,7 @@
  */
 #include <stdint.h>
 
-#include "waffle/s14_log.h"
+#include "waffle/log/log.h"
 #include "s14_check.h"
 #define S14V_LINES
 #include "vectors/s14_vectors.h"

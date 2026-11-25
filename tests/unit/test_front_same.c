@@ -16,12 +16,12 @@
 #include "s02_fake_flash.h"
 
 #include "bearssl_hash.h"
-#include "front/fr.h"
-#include "front/fr_handoff.h"
-#include "front/fr_proto.h"
-#include "front/fr_slots.h"
-#include "front/fr_startlog.h"
-#include "waffle/s05_handoff.h"
+#include "front/front.h"
+#include "front/handoff.h"
+#include "front/recovery/proto.h"
+#include "front/slots/slots.h"
+#include "front/slots/startlog.h"
+#include "waffle/boot/handoff.h"
 
 #define N(a) (sizeof(a) / sizeof((a)[0]))
 

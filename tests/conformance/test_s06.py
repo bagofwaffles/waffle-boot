@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-06 framing: src/s06_frame.c, s06_rx.c and s06_link.c (through h_s06) against serial's codec,
+"""S-06 framing: src/core/link/frame.c, link/rx.c and link/link.c (through h_s06) against serial's codec,
 receiver and node model and tests/oracle/S-06-framing (vectors, tables); the CRC-8 is test glue (h_s06.c)."""
 
 import json

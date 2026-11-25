@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-13c display panel: src/s13c_panel.c (through h_s13c, over a model of the panel bus) and the front's
+"""S-13c display panel: src/core/display/panel.c (through h_s13c, over a model of the panel bus) and the front's
 panel on its way into recovery (src/front/, through h_s13cf) against
 tests/oracle/S-13c-display/check_trace.py (part 'logic')."""
 
@@ -295,7 +295,7 @@ def line_block(lines):
 
 
 class Front(Base):
-    """The front's panel (src/front/fr_panel.c) from its entry into recovery: fr_start_run() and
+    """The front's panel (src/front/display/panel.c) from its entry into recovery: fr_start_run() and
     fr_recovery_run() whole, over h_s13cf's bus, PSoC, flash and image models; check_trace --expect
     recovery."""
 
@@ -524,7 +524,7 @@ def status_row(frame, font):
 
 
 class Screen(Base):
-    """The frames the display layer draws (src/display_draw.c) through S-15's console renderer, in the
+    """The frames the display layer draws (src/core/display/draw.c) through S-15's console renderer, in the
     frame: the title bar, 9 body rows, the status bar."""
 
     @classmethod
@@ -671,7 +671,7 @@ class Screen(Base):
 
     @requirement('S-15.190')
     def test_continue_frames(self):
-        """S-15.190 with the lines of src/s15_lines.c, as drawn: the screen that was showing with the
+        """S-15.190 with the lines of src/core/ui/lines.c, as drawn: the screen that was showing with the
         restarting line under it, the last frame before MARK poweroff, carries `continue:restarting`
         (info_tokens.json) on a row of its own, which fits it (the item above it carries a key badge,
         which the font does not read as text)."""

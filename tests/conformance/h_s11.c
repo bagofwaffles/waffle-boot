@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Host program for S-11's installs: s11_install() and s11_interrupted() with
- * checks 1-15 on BearSSL and micro-ecc (src/wire_package.c), checks 16-17 on
- * minizip (src/wire_zip.c), the staging area and the content step
- * (s11_install_content) on a yaffs2 volume in RAM (src/wire_yaffs.c), and
- * the RAM disk on FatFs (src/wire_fat.c). The metadata record, the Nordic and
+ * checks 1-15 on BearSSL and micro-ecc (src/core/install/crypto.c), checks 16-17 on
+ * minizip (src/core/install/zip.c), the staging area and the content step
+ * (s11_install_content) on a yaffs2 volume in RAM (src/core/fs/yaffs.c), and
+ * the RAM disk on FatFs (src/core/fs/fat.c). The metadata record, the Nordic and
  * PSoC peers and the image writers are fakes that log what they are asked.
  * The volume, the metadata and the installed versions persist from command
  * to command, as they do across boots.
@@ -122,19 +122,19 @@
 #include "bearssl_hash.h"
 
 #include "hlib.h"
-#include "waffle/device.h"
-#include "waffle/s05_handoff.h"
-#include "waffle/s11_content.h"
-#include "waffle/s11_package.h"
-#include "waffle/s11_run.h"
-#include "waffle/s09_files.h"
-#include "waffle/s09_slave.h"
-#include "waffle/s17_revisions.h"
-#include "waffle/wire_fat.h"
-#include "waffle/wire_package.h"
-#include "waffle/wire_s09.h"
-#include "waffle/wire_yaffs.h"
-#include "waffle/wire_zip.h"
+#include "waffle/boot/device.h"
+#include "waffle/boot/handoff.h"
+#include "waffle/install/content.h"
+#include "waffle/install/package.h"
+#include "waffle/install/run.h"
+#include "waffle/bridge/files.h"
+#include "waffle/bridge/slave.h"
+#include "waffle/boot/revisions.h"
+#include "waffle/fs/fat.h"
+#include "waffle/install/crypto.h"
+#include "waffle/bridge/slave_files.h"
+#include "waffle/fs/yaffs.h"
+#include "waffle/install/zip.h"
 
 #define BLOCKS 64u			/* a volume of 32 MiB */
 #define LOG_MAX 512u

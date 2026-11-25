@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/s10a_cdc.h"
-#include "waffle/s10a_ch9.h"
+#include "waffle/usb/cdc.h"
+#include "waffle/usb/ch9.h"
 
 #include "support/check.h"
 

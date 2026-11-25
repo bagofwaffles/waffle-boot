@@ -9,7 +9,7 @@
  * endpoint management (usbd.c). The device controller
  * driver is ours (src/drivers/bf70x/usb_dcd.c, written from the ADSP-BF70x
  * HRM chapter 28 through the MMR accessors), and so are the class drivers
- * (src/s10a_usb.c, registered through usbd_app_driver_get_cb()), so every
+ * (src/core/usb/device.c, registered through usbd_app_driver_get_cb()), so every
  * TinyUSB class is off here.
  */
 

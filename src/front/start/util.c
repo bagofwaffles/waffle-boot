@@ -1,0 +1,174 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* The front's byte helpers, CRC-32 and SHA-256 (see front.h). */
+#include "front/front.h"
+
+void fr_copy(void *dst, const void *src, size_t n)
+{
+	uint8_t *d = dst;
+	const uint8_t *s = src;
+
+	while (n--)
+		*d++ = *s++;
+}
+
+void fr_fill(void *dst, uint8_t v, size_t n)
+{
+	uint8_t *d = dst;
+
+	while (n--)
+		*d++ = v;
+}
+
+bool fr_same(const void *a, const void *b, size_t n)
+{
+	const uint8_t *x = a, *y = b;
+
+	while (n--)
+		if (*x++ != *y++)
+			return false;
+	return true;
+}
+
+/* The reflected polynomial 0xEDB88320, a nibble at a time. */
+static const uint32_t crc_nibble[16] = {
+	0x00000000u, 0x1DB71064u, 0x3B6E20C8u, 0x26D930ACu,
+	0x76DC4190u, 0x6B6B51F4u, 0x4DB26158u, 0x5005713Cu,
+	0xEDB88320u, 0xF00F9344u, 0xD6D6A3E8u, 0xCB61B38Cu,
+	0x9B64C2B0u, 0x86D3D2D4u, 0xA00AE278u, 0xBDBDF21Cu,
+};
+
+void (*fr_serve_hook)(void);
+
+void fr_serve(void)
+{
+	if (fr_serve_hook != NULL)
+		fr_serve_hook();
+}
+
+FR_FAST uint32_t fr_crc32(uint32_t crc, const uint8_t *p, size_t n)
+{
+	uint32_t c = ~crc;
+	size_t k = 0;
+
+	while (n--) {
+		c ^= *p++;
+		c = (c >> 4) ^ crc_nibble[c & 0xFu];
+		c = (c >> 4) ^ crc_nibble[c & 0xFu];
+		if (++k == FR_SERVE_BYTES) {
+			k = 0;
+			fr_serve();
+		}
+	}
+	return ~c;
+}
+
+/* FIPS 180-4. */
+static const uint32_t sha_k[64] = {
+	0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu,
+	0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u, 0xd807aa98u, 0x12835b01u,
+	0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u,
+	0xc19bf174u, 0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu,
+	0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau, 0x983e5152u,
+	0xa831c66du, 0xb00327c8u, 0xbf597fc7u, 0xc6e00bf3u, 0xd5a79147u,
+	0x06ca6351u, 0x14292967u, 0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu,
+	0x53380d13u, 0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u,
+	0xa2bfe8a1u, 0xa81a664bu, 0xc24b8b70u, 0xc76c51a3u, 0xd192e819u,
+	0xd6990624u, 0xf40e3585u, 0x106aa070u, 0x19a4c116u, 0x1e376c08u,
+	0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu,
+	0x682e6ff3u, 0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u,
+	0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u,
+};
+
+static uint32_t ror(uint32_t x, unsigned n)
+{
+	return x >> n | x << (32u - n);
+}
+
+FR_FAST static void sha_block(uint32_t h[8], const uint8_t *b)
+{
+	uint32_t w[64], a, bb, c, d, e, f, g, hh;
+	unsigned i;
+
+	for (i = 0; i < 16u; i++)
+		w[i] = (uint32_t)b[4 * i] << 24 | (uint32_t)b[4 * i + 1] << 16 |
+		       (uint32_t)b[4 * i + 2] << 8 | b[4 * i + 3];
+	for (i = 16; i < 64u; i++) {
+		uint32_t s0 = ror(w[i - 15], 7) ^ ror(w[i - 15], 18) ^ (w[i - 15] >> 3);
+		uint32_t s1 = ror(w[i - 2], 17) ^ ror(w[i - 2], 19) ^ (w[i - 2] >> 10);
+
+		w[i] = w[i - 16] + s0 + w[i - 7] + s1;
+	}
+	a = h[0]; bb = h[1]; c = h[2]; d = h[3];
+	e = h[4]; f = h[5]; g = h[6]; hh = h[7];
+	for (i = 0; i < 64u; i++) {
+		uint32_t t1 = hh + (ror(e, 6) ^ ror(e, 11) ^ ror(e, 25)) +
+			      ((e & f) ^ (~e & g)) + sha_k[i] + w[i];
+		uint32_t t2 = (ror(a, 2) ^ ror(a, 13) ^ ror(a, 22)) +
+			      ((a & bb) ^ (a & c) ^ (bb & c));
+
+		hh = g; g = f; f = e; e = d + t1;
+		d = c; c = bb; bb = a; a = t1 + t2;
+	}
+	h[0] += a; h[1] += bb; h[2] += c; h[3] += d;
+	h[4] += e; h[5] += f; h[6] += g; h[7] += hh;
+}
+
+void fr_sha256_init(struct fr_sha256 *s)
+{
+	static const uint32_t iv[8] = {
+		0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
+		0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u,
+	};
+
+	fr_copy(s->h, iv, sizeof iv);
+	s->len = 0;
+	s->fill = 0;
+}
+
+void fr_sha256_add(struct fr_sha256 *s, const uint8_t *p, size_t n)
+{
+	unsigned blocks = 0;
+
+	s->len += n;
+	while (n) {
+		if (s->fill == 0u && n >= 64u) {
+			sha_block(s->h, p);
+			p += 64;
+			n -= 64u;
+			if (++blocks == FR_SERVE_BYTES / 64u) {
+				blocks = 0;
+				fr_serve();
+			}
+			continue;
+		}
+		s->buf[s->fill++] = *p++;
+		n--;
+		if (s->fill == 64u) {
+			sha_block(s->h, s->buf);
+			s->fill = 0;
+		}
+	}
+}
+
+void fr_sha256_end(struct fr_sha256 *s, uint8_t out[FR_SHA256_LEN])
+{
+	const uint64_t bits = s->len * 8u;
+	unsigned i;
+
+	s->buf[s->fill++] = 0x80u;
+	if (s->fill > 56u) {
+		fr_fill(s->buf + s->fill, 0, 64u - s->fill);
+		sha_block(s->h, s->buf);
+		s->fill = 0;
+	}
+	fr_fill(s->buf + s->fill, 0, 56u - s->fill);
+	for (i = 0; i < 8u; i++)
+		s->buf[56u + i] = (uint8_t)(bits >> (56u - 8u * i));
+	sha_block(s->h, s->buf);
+	for (i = 0; i < 8u; i++) {
+		out[4 * i] = (uint8_t)(s->h[i] >> 24);
+		out[4 * i + 1] = (uint8_t)(s->h[i] >> 16);
+		out[4 * i + 2] = (uint8_t)(s->h[i] >> 8);
+		out[4 * i + 3] = (uint8_t)s->h[i];
+	}
+}

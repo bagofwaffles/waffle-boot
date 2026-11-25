@@ -12,7 +12,7 @@
  * polynomial with the wire's first bit highest. Each guarantee below is
  * checked against that, and the model itself against s09_check_word().
  */
-#include "waffle/s09_bridge.h"
+#include "waffle/bridge/records.h"
 
 #include "s06_test.h"
 

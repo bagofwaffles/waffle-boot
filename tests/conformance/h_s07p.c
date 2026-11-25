@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for S-07's PSoC link (src/s07_psoc.c, src/s07_program.c) on
+ * Host program for S-07's PSoC link (src/core/psoc/psoc.c, src/core/psoc/program.c) on
  * the unit tests' virtual clock and fake port (tests/unit/s07_test.h),
  * against a PSoC the Python driver plays with s07_model.
  *
@@ -32,9 +32,9 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/device.h"
-#include "waffle/s07_program.h"
-#include "waffle/s15_prompt.h"
+#include "waffle/boot/device.h"
+#include "waffle/psoc/program.h"
+#include "waffle/ui/prompt.h"
 
 #include "../unit/s07_test.h"
 

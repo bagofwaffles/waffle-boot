@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The mount that restores the OS's checkpoint (S-12.061) and the scan
- * before a session's first write (S-12.062), through src/wire_yaffs.c and
- * src/wire_s09.c, on volumes whose checkpoint upstream yaffs2 writes here
+ * before a session's first write (S-12.062), through src/core/fs/yaffs.c and
+ * src/core/bridge/slave_files.c, on volumes whose checkpoint upstream yaffs2 writes here
  * with checkpoint writing on (test code only; the bootloader never writes
  * one, S-12.055):
  * - a valid checkpoint: restored, read only, the scanned tree, nothing
@@ -20,9 +20,9 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/s09_bridge.h"
-#include "waffle/wire_s09.h"
-#include "waffle/wire_yaffs.h"
+#include "waffle/bridge/records.h"
+#include "waffle/bridge/slave_files.h"
+#include "waffle/fs/yaffs.h"
 #include "wb_yaffs.h"
 
 #define BLOCKS 64u		/* at least yaffs2's 60 for a checkpoint */

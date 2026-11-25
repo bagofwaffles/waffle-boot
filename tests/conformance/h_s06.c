@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Host program for the S-06 framing logic (src/s06_frame.c, s06_rx.c,
- * s06_link.c).
+ * Host program for the S-06 framing logic (src/core/link/frame.c, link/rx.c,
+ * link/link.c).
  *
  * Commands (one result line each):
  *   crc HEX                        -> the glue CRC-8 (below)
@@ -34,10 +34,10 @@
 #include <string.h>
 
 #include "hlib.h"
-#include "waffle/s06_clock.h"
-#include "waffle/s06_frame.h"
-#include "waffle/s06_link.h"
-#include "waffle/s06_rx.h"
+#include "waffle/link/clock.h"
+#include "waffle/link/frame.h"
+#include "waffle/link/link.h"
+#include "waffle/link/rx.h"
 
 /*
  * The S-06 frame check (tests/oracle/conformance/serial/crc8.py): poly 0x4D

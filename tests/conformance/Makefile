@@ -23,8 +23,9 @@ WARNINGS := -Wall -Wextra -Werror -pedantic-errors \
 	-Wformat=2 -Wswitch-default -Wswitch-enum
 
 # BOOT_LINK_FC's code is built in, as in the host build; a boot link's ops
-# choose it.
-H_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -Itests/conformance -O2 -g -DOPXY_BOOT_LINK_FC=1
+# choose it. -Isrc, as in the host build, for includes rooted at src/
+# ("front/handoff.h").
+H_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -Isrc -Itests/conformance -O2 -g -DOPXY_BOOT_LINK_FC=1
 
 H_SUPPORT := tests/conformance/hlib.c
 
@@ -48,72 +49,72 @@ $(OUT)/tp/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) $(TP_CC_FLAGS) -c $< -o $@
 
-H_s02_SRCS := src/s02_flash.c src/s02_write.c src/s01_memmap.c src/s05_handoff.c \
-	src/front/fr_slots.c src/front/fr_proto.c src/front/fr_image.c src/front/fr_util.c \
-	src/front/fr_startlog.c
+H_s02_SRCS := src/core/flash/layout.c src/core/flash/write.c src/core/boot/memmap.c src/core/boot/handoff.c \
+	src/front/slots/slots.c src/front/recovery/proto.c src/front/slots/image.c src/front/start/util.c \
+	src/front/slots/startlog.c
 # Recovery's writer and protocol (S-02.084, S-02.093) and the start log (S-02.095) are the front's own.
 H_s02_CPPFLAGS := -Isrc
 # The settings sector (S-02.096-.100, S-02.105) and its CRC-32, zlib's (S-02.015).
-H_s02_SRCS += src/s02_store.c src/wire_crc.c
+H_s02_SRCS += src/core/flash/settings.c src/core/util/crc.c
 # The boot logo (S-02.109 - S-02.112): the main image's and the front's.
-H_s02_SRCS += src/logo.c src/front/fr_logo.c
+H_s02_SRCS += src/core/flash/logo.c src/front/display/logo.c
 H_s02_TP := $(call tp_o,$(TP_crc_SRCS) $(TP_crc_GLUE) $(TP_zlib_SRCS) $(TP_zlib_GLUE))
-H_s03_SRCS := src/s03_emmc.c src/device.c
-H_s04_SRCS := src/s04_records.c src/s10c_text.c src/div64.c src/s11_common.c src/s11_version.c src/device.c
-H_s05_SRCS := src/s05_handoff.c src/s01_memmap.c src/device.c
+H_s03_SRCS := src/core/emmc/emmc.c src/core/boot/device.c
+H_s04_SRCS := src/core/boot/records.c src/core/host/text.c src/core/util/div64.c src/core/install/common.c src/core/util/version.c src/core/boot/device.c
+H_s05_SRCS := src/core/boot/handoff.c src/core/boot/memmap.c src/core/boot/device.c
 # The boot flow's order (S-05.001, S-15.175); built with the boot prompt's op
 # (S-05.025), which a run leaves NULL to stand for a build without it.
-H_s05_SRCS += src/boot_flow.c
+H_s05_SRCS += src/core/boot/flow.c
 H_s05_CPPFLAGS := -DOPXY_BOOT_PROMPT=1
-H_s06_SRCS := src/s06_frame.c src/s06_rx.c src/s06_link.c src/device.c
-H_s07_SRCS := src/s07_rules.c src/div64.c src/s07_cypress.c src/device.c
+H_s06_SRCS := src/core/link/frame.c src/core/link/rx.c src/core/link/link.c src/core/boot/device.c
+H_s07_SRCS := src/core/psoc/rules.c src/core/util/div64.c src/core/psoc/cypress.c src/core/boot/device.c
 # The PSoC link on the unit tests' clock and port (tests/unit/s07_test.h).
-H_s07p_SRCS := src/s07_psoc.c src/div64.c src/s07_program.c src/s07_cypress.c src/s07_rules.c \
-	src/s06_frame.c src/s06_rx.c src/s06_link.c \
-	src/s15_prompt.c src/s15_console.c src/s15_lines.c src/s14_log.c src/s14_line.c \
-	src/s17_revisions.c src/s11_common.c src/s11_version.c
-H_s08_SRCS := src/s08_rules.c src/device.c
-H_s09_SRCS := src/s09_bridge.c src/div64.c src/s09_master.c src/s09_slave.c src/s09_fast.c src/s06_frame.c src/s06_rx.c \
-	src/s06_link.c
-H_s10c_SRCS := src/s10c_sysex.c src/div64.c src/s10c_text.c src/s11_common.c src/s11_version.c
+H_s07p_SRCS := src/core/psoc/psoc.c src/core/util/div64.c src/core/psoc/program.c src/core/psoc/cypress.c src/core/psoc/rules.c \
+	src/core/link/frame.c src/core/link/rx.c src/core/link/link.c \
+	src/core/ui/prompt.c src/core/ui/console.c src/core/ui/lines.c src/core/log/log.c src/core/log/line.c \
+	src/core/boot/revisions.c src/core/install/common.c src/core/util/version.c
+H_s08_SRCS := src/core/nordic/rules.c src/core/boot/device.c
+H_s09_SRCS := src/core/bridge/records.c src/core/util/div64.c src/core/bridge/master.c src/core/bridge/slave.c src/core/bridge/fast.c src/core/link/frame.c src/core/link/rx.c \
+	src/core/link/link.c
+H_s10c_SRCS := src/core/host/sysex.c src/core/util/div64.c src/core/host/text.c src/core/install/common.c src/core/util/version.c
 # The command server (S-10c.070, S-10c.076).
-H_s10c_SRCS += src/s10c_host.c
-H_s10a_SRCS := src/s10a_desc.c src/s10a_ch9.c src/s10a_scsi.c src/s10a_bot.c
-H_s10b_SRCS := src/s10b_mtp.c src/div64.c src/s10b_text.c src/s04_records.c src/s10c_text.c src/s11_common.c \
-	src/s11_version.c
-H_s13c_SRCS := src/s13c_panel.c src/div64.c src/display_draw.c src/display_font.c src/s15_console.c src/s15_lines.c \
-	src/s15_prompt.c src/s14_log.c src/s14_line.c src/s17_revisions.c src/s11_common.c src/s11_version.c
+H_s10c_SRCS += src/core/host/commands.c
+H_s10a_SRCS := src/core/usb/desc.c src/core/usb/ch9.c src/core/usb/msc_scsi.c src/core/usb/msc_bot.c
+H_s10b_SRCS := src/core/mtp/mtp.c src/core/util/div64.c src/core/mtp/text.c src/core/boot/records.c src/core/host/text.c src/core/install/common.c \
+	src/core/util/version.c
+H_s13c_SRCS := src/core/display/panel.c src/core/util/div64.c src/core/display/draw.c src/core/display/font.c src/core/ui/console.c src/core/ui/lines.c \
+	src/core/ui/prompt.c src/core/log/log.c src/core/log/line.c src/core/boot/revisions.c src/core/install/common.c src/core/util/version.c
 # The front's start and recovery (src/front/'s portable code) and the model
 # PSoC's S-06 framing.
-H_s13cf_SRCS := src/front/fr_start.c src/front/fr_recovery.c src/front/fr_recscreen.c \
-	src/front/fr_recui.c src/front/fr_panel.c src/front/fr_draw.c src/front/fr_font.c \
-	src/front/fr_psoc.c src/front/fr_proto.c src/front/fr_slots.c src/front/fr_image.c \
-	src/front/fr_startlog.c src/front/fr_util.c src/front/fr_device.c src/front/fr_logo.c \
-	src/s06_frame.c src/s06_rx.c
+H_s13cf_SRCS := src/front/start/start.c src/front/recovery/recovery.c src/front/recovery/screen.c \
+	src/front/recovery/ui.c src/front/display/panel.c src/front/display/draw.c src/front/display/font.c \
+	src/front/psoc/psoc.c src/front/recovery/proto.c src/front/slots/slots.c src/front/slots/image.c \
+	src/front/slots/startlog.c src/front/start/util.c src/front/start/device.c src/front/display/logo.c \
+	src/core/link/frame.c src/core/link/rx.c
 H_s13cf_CPPFLAGS := -Isrc
-H_s14_SRCS := src/s14_line.c src/s14_log.c src/s14_export.c
-H_s11_SRCS := $(sort $(wildcard src/s11_*.c)) src/s17_revisions.c src/wire_crc.c src/s01_memmap.c src/s05_handoff.c \
-	src/s02_flash.c \
-	src/wire_package.c src/wire_zip.c src/wire_yaffs.c src/wire_ckpt.c src/wire_fat.c \
-	src/s09_files.c src/s09_master.c src/s09_slave.c src/s09_bridge.c src/wire_s09.c src/s15_settings.c \
-	src/s15_osfiles.c src/s06_frame.c src/s06_rx.c src/s06_link.c src/s03_emmc.c src/s04_records.c \
-	src/s10c_text.c src/div64.c
-H_s12_SRCS := src/s04_records.c src/div64.c src/s10c_text.c src/s11_common.c src/s11_version.c \
-	src/s11_content.c src/s14_export.c src/wire_fat.c src/wire_package.c src/wire_yaffs.c src/wire_ckpt.c \
-	src/wire_crc.c src/wire_zip.c
+H_s14_SRCS := src/core/log/line.c src/core/log/log.c src/core/log/export.c
+H_s11_SRCS := src/core/install/common.c src/core/install/content.c src/core/install/install.c src/core/install/package.c src/core/install/run.c src/core/install/staging.c src/core/util/version.c src/core/boot/revisions.c src/core/util/crc.c src/core/boot/memmap.c src/core/boot/handoff.c \
+	src/core/flash/layout.c \
+	src/core/install/crypto.c src/core/install/zip.c src/core/fs/yaffs.c src/core/fs/checkpoint.c src/core/fs/fat.c \
+	src/core/bridge/files.c src/core/bridge/master.c src/core/bridge/slave.c src/core/bridge/records.c src/core/bridge/slave_files.c src/core/ui/settings.c \
+	src/core/ui/osfiles.c src/core/link/frame.c src/core/link/rx.c src/core/link/link.c src/core/emmc/emmc.c src/core/boot/records.c \
+	src/core/host/text.c src/core/util/div64.c
+H_s12_SRCS := src/core/boot/records.c src/core/util/div64.c src/core/host/text.c src/core/install/common.c src/core/util/version.c \
+	src/core/install/content.c src/core/log/export.c src/core/fs/fat.c src/core/install/crypto.c src/core/fs/yaffs.c src/core/fs/checkpoint.c \
+	src/core/util/crc.c src/core/install/zip.c
 # Programs that link the vendored libraries.
-# S-18: the device table the modules read (src/device.c, with its CRC-32, zlib's)
+# S-18: the device table the modules read (src/core/boot/device.c, with its CRC-32, zlib's)
 H_DEVICE_TP := $(call tp_o,$(TP_crc_SRCS) $(TP_crc_GLUE) $(TP_zlib_SRCS) $(TP_zlib_GLUE))
-H_s07p_SRCS += src/device.c src/wire_crc.c
+H_s07p_SRCS += src/core/boot/device.c src/core/util/crc.c
 H_s07p_TP := $(H_DEVICE_TP)
-H_s10a_SRCS += src/device.c src/wire_crc.c
+H_s10a_SRCS += src/core/boot/device.c src/core/util/crc.c
 H_s10a_TP := $(H_DEVICE_TP)
-H_s10c_SRCS += src/device.c src/wire_crc.c
+H_s10c_SRCS += src/core/boot/device.c src/core/util/crc.c
 H_s10c_TP := $(H_DEVICE_TP)
-H_s13c_SRCS += src/device.c src/wire_crc.c
+H_s13c_SRCS += src/core/boot/device.c src/core/util/crc.c
 H_s13c_TP := $(H_DEVICE_TP)
-H_s11_SRCS += src/device.c
-H_s12_SRCS += src/device.c
+H_s11_SRCS += src/core/boot/device.c
+H_s12_SRCS += src/core/boot/device.c
 H_s11_TP := $(TP_OBJS)
 H_s12_TP := $(TP_OBJS)
 # Programs that need only a vendored library's header.

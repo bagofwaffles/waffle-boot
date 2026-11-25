@@ -9,8 +9,8 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_cgu.h"
-#include "waffle/drivers/bf70x_dmc.h"
+#include "waffle/drivers/bf70x/cgu.h"
+#include "waffle/drivers/bf70x/dmc.h"
 
 /* S-13a.002, .003, .005 for CLKIN = 25 MHz. */
 static const struct wb_cgu_config s13a_cgu = {

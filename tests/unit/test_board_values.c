@@ -10,13 +10,13 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy.h"
-#include "waffle/board/opxy_boot.h"
-#include "waffle/board/opxy_bridge.h"
-#include "waffle/board/opxy_ops.h"
-#include "waffle/board/opxy_services.h"
-#include "waffle/drivers/bf70x_lcd.h"
-#include "waffle/s09_bridge.h"
+#include "waffle/board/values.h"
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
+#include "waffle/board/ops.h"
+#include "waffle/board/services.h"
+#include "waffle/drivers/bf70x/lcd.h"
+#include "waffle/bridge/records.h"
 
 static void test_clocks(void)
 {

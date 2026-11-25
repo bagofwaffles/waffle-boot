@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Conformance host program for S-03 (src/s03_emmc.c), driven by
+ * Conformance host program for S-03 (src/core/emmc/emmc.c), driven by
  * test_s03.py.  It holds an eMMC with two boot partitions of B bytes that
  * erase to 0 (images.emmc.Emmc), an operation log and fault injection.  Each
  * result is followed by " |" and the eMMC operations, in images.emmc's
@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/s03_emmc.h"
+#include "waffle/emmc/emmc.h"
 #include "hlib.h"
 
 #define MAX_B (8u << 20)

@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "waffle/s11_engine.h"
-#include "waffle/s11_staging.h"
+#include "waffle/install/engine.h"
+#include "waffle/install/staging.h"
 
 #include "s11_check.h"
 #include "s11_ref.h"
@@ -33,7 +33,7 @@ struct fake {
 
 static struct fake F;
 
-/* An engine behind the CRC-32 (s11_engine.h): while `wrong`, every CRC-32
+/* An engine behind the CRC-32 (install/engine.h): while `wrong`, every CRC-32
  * comes back with its top bit flipped; crc32_again() replaces it with the
  * software when `replaceable`, and stays so with `always`. */
 struct engine_model {

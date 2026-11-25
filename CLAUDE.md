@@ -27,6 +27,7 @@ the diff, and fix any unit test that quotes the old text.
 
 `src/front/` runs from the image's entry to the key read and holds recovery (Power + M4). It is linked
 alone, and its loaded bytes are pinned in `src/front/front.pin`; every cross build fails when they change.
+`src/front/sources.mk` lists its sources in link order, which decides those bytes.
 A front that fails takes recovery with it, so the front and its pin change only with the maintainer's
 sign-off, and a changed front needs a recovery round on a unit (`wiki/Recovery-Reference.md`) before it is
 committed to a slot.

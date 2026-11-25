@@ -1,0 +1,1313 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/*
+ * The host link on the master (waffle/host/hostlink.h): its roots, the approval
+ * screen, and its actions through the code the unit's own menus run.
+ *
+ *   yaffs2  the drive, as MTP offers it: read, write, list and stat open
+ *   os      the installed OS's two copies on the eMMC's boot partitions,
+ *           boot1 and boot2: the header sector and the image, read only
+ *   user    the OS's FAT volume on the eMMC's user area, read and written
+ *           with FatFs (waffle/host/hostlink_fat.h) within that volume's sectors alone;
+ *           fat-region devices alone (the OP-XY)
+ *
+ * No file call reaches the SPI flash, memory or a raw sector of the drive.
+ * The roots are the host link's (S-10c.125); S-03.075's
+ * footprint names the yaffs2 region and the reset's group only.
+ */
+#include "waffle/board/boot.h"
+#include "waffle/board/emmc_bridge.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+#include "waffle/util/bytes.h"
+#include "waffle/drivers/bf70x/usb.h"
+#include "waffle/host/hostlink.h"
+#include "waffle/emmc/emmc.h"
+#include "waffle/boot/handoff.h"
+#include "waffle/ui/lines.h"
+#include "bearssl_hash.h"
+#include "waffle/host/hostlink_fat.h"
+
+static struct opxy_master *me;	/* the ops' ctx */
+
+/* ---- errors ---- */
+
+static int err_of(const struct s09_files *f)
+{
+	if (s09_files_slave_lost(f))
+		return HL_E_UNREACHABLE;
+	switch (f->err) {
+	case S09_ENOENT:
+		return HL_E_NOT_FOUND;
+	case S09_EEXIST:
+		return HL_E_EXISTS;
+	case S09_ENAMETOOLONG:
+		return HL_E_PATH;
+	case S09_ENOTEMPTY:
+	case S09_EBUSY:
+	case S09_EROFS:
+		return HL_E_REFUSED;
+	default:
+		return HL_E_IO;
+	}
+}
+
+static int drive_ok(struct opxy_master *m)
+{
+	if (s09_files_slave_lost(&m->sv.files))
+		return HL_E_UNREACHABLE;
+	return s09_files_volume_refused(&m->sv.files) ? HL_E_REFUSED : HL_OK;
+}
+
+/* lost+found keeps its place, as over MTP */
+static bool kept(const struct hl_path *p)
+{
+	return p->root == HL_ROOT_DRIVE && strcmp(p->rest, "lost+found") == 0;
+}
+
+/* Each change on the eMMC, not in its cache, before the host is answered. */
+static int synced(struct opxy_master *m)
+{
+	return s09_files_flush(&m->sv.files) == 0 ? HL_OK : HL_E_IO;
+}
+
+static void from_stat(const struct s09_stat *s, struct hl_stat *st)
+{
+	st->type = (s->mode & 0xF000u) == 0x4000u ? 2u : 1u;
+	st->size = st->type == 2u ? 0u : s->size;
+	st->mtime = s->mtime;
+}
+
+/* ---- the installed OS's copies (root os) ---- */
+
+static _Alignas(32) uint8_t os_sector[S03_SECTOR];
+static int os_part = -1;
+static uint32_t os_at;
+
+/* Sector n of boot partition part, the user area selected again after. */
+static int os_read(struct opxy_master *m, unsigned part, uint32_t n)
+{
+	const struct s03_emmc_ops *e = m->emmc.ops;
+	int rc;
+
+	if ((int)part == os_part && n == os_at)
+		return HL_OK;
+	os_part = -1;
+	if (e == NULL || s09_files_slave_lost(&m->sv.files))
+		return HL_E_UNREACHABLE;
+	rc = e->select(e->ctx, part) == 0 && e->read(e->ctx, n, 1u, os_sector) == 0 ?
+	     HL_OK : HL_E_IO;
+	if (e->select(e->ctx, S03_PART_USER) != 0)
+		rc = HL_E_IO;
+	if (rc == HL_OK) {
+		os_part = (int)part;
+		os_at = n;
+	}
+	return rc;
+}
+
+static unsigned os_which(const struct hl_path *p)
+{
+	return strcmp(p->rest, "boot1") == 0 ? S03_PART_BP1 :
+	       strcmp(p->rest, "boot2") == 0 ? S03_PART_BP2 : 0u;
+}
+
+/* The header sector and the image it states; the header alone when it
+ * states none this bootloader could load. */
+static int os_size(struct opxy_master *m, unsigned part, uint32_t *size)
+{
+	struct s03_header h;
+	int rc = os_read(m, part, 0u);
+
+	if (rc != HL_OK)
+		return rc;
+	s03_header_decode(os_sector, &h);
+	*size = S03_SECTOR;
+	if (s03_header_mode(&h) != S03_MODE_REFUSED && h.length != 0u &&
+	    h.length <= S03_OS_MAX)
+		*size += h.length;
+	return HL_OK;
+}
+
+/* ---- the OS's FAT volume (root user) ---- */
+
+/*
+ * Volume sectors [lba, lba + count) at their user-area sectors (S-03.072):
+ * the one bound on what the root's FatFs reaches. A range that is not
+ * wholly inside the volume reads or writes nothing.
+ */
+int opxy_user_sectors(struct opxy_master *m, bool write, uint32_t lba, uint8_t *buf,
+		      uint32_t count)
+{
+	const struct s03_emmc_ops *e = m->emmc.ops;
+
+	if (e == NULL || count == 0u || lba >= S03_FAT_SECTORS ||
+	    count > S03_FAT_SECTORS - lba)
+		return -1;
+	while (count > 0u) {
+		const uint32_t to = lba < S03_FAT_FIRST ? S03_FAT_FIRST : S03_FAT_SECTORS;
+		const uint32_t k = to - lba < count ? to - lba : count;
+		const uint32_t at = s03_fat_volume_to_user(lba);
+
+		if (write ? e->write(e->ctx, at, k, buf) != 0 : e->read(e->ctx, at, k, buf) != 0)
+			return -1;
+		lba += k;
+		buf += k * S03_SECTOR;
+		count -= k;
+	}
+	return 0;
+}
+
+static int user_read(void *ctx, uint32_t lba, void *buf, uint32_t count)
+{
+	(void)ctx;
+	return opxy_user_sectors(me, false, lba, buf, count);
+}
+
+static int user_write(void *ctx, uint32_t lba, const void *buf, uint32_t count)
+{
+	(void)ctx;
+	return opxy_user_sectors(me, true, lba, (uint8_t *)(uintptr_t)buf, count);
+}
+
+static const struct wb_blockdev user_dev = {
+	.ctx = NULL, .n_sectors = S03_FAT_SECTORS, .read = user_read, .write = user_write,
+};
+
+/* The eMMC's cache to its nonvolatile memory (S-03.068). */
+static int user_flush(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+	const struct s03_emmc_ops *e = m->emmc.ops;
+
+	return e != NULL && e->switch_byte(e->ctx, 32u, 1u) == 0 ? 0 : -1;
+}
+
+/* FatFs's one drive is the RAM disk's while a scan or a transfer has it. */
+static bool user_busy(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+
+	return m->sv.fat.mounted;
+}
+
+static struct hl_fat ufat = { .dev = &user_dev, .flush = user_flush, .busy = user_busy };
+
+static struct hl_fat *user(struct opxy_master *m)
+{
+	ufat.ctx = m;
+	return s09_files_slave_lost(&m->sv.files) ? NULL : &ufat;
+}
+
+/* ---- the ops ---- */
+
+static bool link_on(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+
+	return m->sv.menu.host_link;
+}
+
+static bool approve_open(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	if (m->sv.working || s15_menu_held(&m->sv.menu) || hl_psoc_busy(&m->sv.hl) ||
+	    !s15_menu_approve_open(&m->sv.menu))
+		return false;
+	opxy_menu_show(m);
+	return true;
+}
+
+/* bl_version[4] front:2 device:1 slot:1 reason:2 flags:2 os_version[4] */
+static void info(void *ctx, uint8_t o[HL_INFO_LEN])
+{
+	const struct opxy_master *m = ctx;
+	const struct s15_menu *mn = &m->sv.menu;
+	const uint16_t bl[4] = { OPXY_BL_VERSION_MAJOR, OPXY_BL_VERSION_MINOR,
+				 OPXY_BL_VERSION_PATCH, OPXY_BL_VERSION_BUILD };
+	unsigned f = 0;
+
+	for (unsigned i = 0; i < 4u; i++) {
+		wb_put_le16(o + 2u * i, bl[i]);
+		wb_put_le16(o + 16u + 2u * i, m->meta.os_version[i]);
+	}
+	wb_put_le16(o + 8, OPXY_FRONT_VERSION);
+	o[10] = (uint8_t)opxy_dev(m)->id;
+	o[11] = m->sv.boot.running_known ? (uint8_t)m->sv.boot.running_slot : 0xFFu;
+	wb_put_le16(o + 12, m->boot_reason);
+	f |= mn->option_on ? 0x01u : 0u;
+	f |= mn->dev_mode ? 0x02u : 0u;
+	f |= mn->color ? 0x04u : 0u;
+	f |= mn->mtp_macos ? 0x08u : 0u;
+	f |= mn->start_menu ? 0x10u : 0u;
+	f |= mn->host_link ? 0x20u : 0u;
+	f |= m->slave_present && !s09_files_slave_lost(&m->sv.files) ? 0x40u : 0u;
+	f |= m->sv.files.mounted ? 0x80u : 0u;
+	wb_put_le16(o + 14, (uint16_t)f);
+}
+
+static bool root_ok(void *ctx, unsigned root)
+{
+	const struct opxy_master *m = ctx;
+
+	return root == HL_ROOT_DRIVE || root == HL_ROOT_OS ||
+	       (root == HL_ROOT_USER && wb_has(opxy_dev(m), WB_F_FAT_REGION));
+}
+
+static int stat_(void *ctx, const struct hl_path *p, struct hl_stat *st)
+{
+	struct opxy_master *m = ctx;
+	struct s09_stat s;
+
+	st->type = 2u;
+	st->size = st->mtime = 0u;
+	if (p->root == HL_ROOT_DRIVE) {
+		int rc = drive_ok(m);
+
+		if (rc == HL_OK && s09_files_stat(&m->sv.files, p->full, &s) != 0)
+			rc = err_of(&m->sv.files);
+		if (rc == HL_OK)
+			from_stat(&s, st);
+		return rc;
+	}
+	if (p->root == HL_ROOT_USER)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_stat(user(m), p->rest, st);
+	if (*p->rest == '\0')
+		return HL_OK;
+	st->type = 1u;
+	return os_which(p) == 0u ? HL_E_NOT_FOUND : os_size(m, os_which(p), &st->size);
+}
+
+/* The drive's listing: entries from skip on, each one stat'ed. */
+struct drive_list {
+	struct opxy_master *m;
+	const char *dir;
+	uint32_t skip;
+	hl_each_fn each;
+	void *arg;
+	bool full;
+	int rc;
+};
+
+static bool drive_each(void *ctx, const char *name)
+{
+	static char path[HL_PATH_MAX + 260u];
+	struct drive_list *l = ctx;
+	struct s09_stat s;
+	struct hl_stat st;
+	const size_t a = strlen(l->dir), b = strlen(name);
+
+	if (l->skip > 0u) {
+		l->skip--;
+		return true;
+	}
+	if (a + b + 2u > sizeof(path))
+		return true;			/* past any path this link names */
+	memcpy(path, l->dir, a);
+	path[a] = '/';
+	memcpy(path + a + 1u, name, b + 1u);
+	if (s09_files_stat(&l->m->sv.files, path, &s) != 0) {
+		l->rc = err_of(&l->m->sv.files);
+		return false;
+	}
+	from_stat(&s, &st);
+	if (!l->each(l->arg, name, &st)) {
+		l->full = true;
+		return false;
+	}
+	return true;
+}
+
+static int list(void *ctx, const struct hl_path *p, uint32_t start, hl_each_fn each,
+		void *arg, bool *end)
+{
+	static const char *const boot[] = { "boot1", "boot2" };
+	struct opxy_master *m = ctx;
+	struct hl_stat st;
+	int rc;
+
+	*end = false;
+	if (p->root == HL_ROOT_DRIVE) {
+		struct drive_list l = { m, p->full, start, each, arg, false, HL_OK };
+
+		rc = drive_ok(m);
+		if (rc != HL_OK)
+			return rc;
+		if (!s09_files_list(&m->sv.files, p->full, drive_each, &l) && !l.full &&
+		    l.rc == HL_OK)
+			return err_of(&m->sv.files);
+		*end = !l.full && l.rc == HL_OK;
+		return l.rc;
+	}
+	if (p->root == HL_ROOT_OS) {
+		if (*p->rest != '\0')
+			return HL_E_NOT_FOUND;
+		for (uint32_t i = start; i < 2u; i++) {
+			st.type = 1u;
+			st.mtime = 0u;
+			rc = os_size(m, S03_PART_BP1 + i, &st.size);
+			if (rc != HL_OK)
+				return rc;
+			if (!each(arg, boot[i], &st))
+				return HL_OK;
+		}
+		*end = true;
+		return HL_OK;
+	}
+	return user(m) == NULL ? HL_E_UNREACHABLE :
+	       hlfat_list(user(m), p->rest, start, each, arg, end);
+}
+
+static int read_(void *ctx, const struct hl_path *p, uint32_t off, uint8_t *buf,
+		 uint32_t n, uint32_t *got)
+{
+	struct opxy_master *m = ctx;
+	struct s09_files *f = &m->sv.files;
+	uint32_t size;
+	int rc;
+
+	*got = 0;
+	if (p->root == HL_ROOT_DRIVE) {
+		int32_t fd, r;
+
+		rc = drive_ok(m);
+		if (rc != HL_OK)
+			return rc;
+		fd = s09_files_open(f, p->full, S09_O_RDONLY);
+		if (fd < 0)
+			return err_of(f);
+		r = s09_files_seek(f, fd, off) == 0 ? s09_files_read(f, fd, buf, n) : -1;
+		rc = r < 0 ? err_of(f) : HL_OK;
+		(void)s09_files_close(f, fd);
+		*got = r > 0 ? (uint32_t)r : 0u;
+		return rc;
+	}
+	if (p->root == HL_ROOT_OS) {
+		const unsigned part = os_which(p);
+
+		if (part == 0u)
+			return HL_E_NOT_FOUND;
+		rc = os_size(m, part, &size);
+		while (rc == HL_OK && *got < n && off < size) {
+			const uint32_t in = off % S03_SECTOR;
+			uint32_t k = S03_SECTOR - in;
+
+			k = k < n - *got ? k : n - *got;
+			k = k < size - off ? k : size - off;
+			rc = os_read(m, part, off / S03_SECTOR);
+			if (rc == HL_OK) {
+				memcpy(buf + *got, os_sector + in, k);
+				*got += k;
+				off += k;
+			}
+		}
+		return rc;
+	}
+	return user(m) == NULL ? HL_E_UNREACHABLE :
+	       hlfat_read(user(m), p->rest, off, buf, n, got);
+}
+
+/* The whole file's SHA-256 and size, read as GET reads it. */
+static int hash(void *ctx, const struct hl_path *p, uint8_t sha[32], uint32_t *size)
+{
+	static uint8_t buf[4096];
+	br_sha256_context c;
+	uint32_t got;
+	int rc;
+
+	br_sha256_init(&c);
+	*size = 0;
+	do {
+		rc = read_(ctx, p, *size, buf, sizeof(buf), &got);
+		br_sha256_update(&c, buf, got);
+		*size += got;
+		opxy_usb_breathe();
+	} while (rc == HL_OK && got == sizeof(buf));
+	br_sha256_out(&c, sha);
+	return rc;
+}
+
+static int32_t put_fd = -1;
+static bool put_user;		/* the put under way is on /user */
+
+static int create(void *ctx, const struct hl_path *p)
+{
+	struct opxy_master *m = ctx;
+	int rc;
+
+	put_user = p->root == HL_ROOT_USER;
+	if (put_user)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_create(user(m), p->rest);
+	rc = drive_ok(m);
+
+	if (rc != HL_OK)
+		return rc;
+	s15_check_files(&m->sv.menu);	/* S-12.062: the scan first, the host waiting */
+	put_fd = s09_files_open(&m->sv.files, p->full,
+				S09_O_WRONLY | S09_O_CREAT | S09_O_TRUNC);
+	return put_fd < 0 ? err_of(&m->sv.files) : HL_OK;
+}
+
+static int write_(void *ctx, const uint8_t *b, uint32_t n)
+{
+	struct opxy_master *m = ctx;
+
+	if (put_user)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_write(user(m), b, n);
+	if (put_fd < 0)
+		return HL_E_BAD;
+	return s09_files_write(&m->sv.files, put_fd, b, n) == (int32_t)n ? HL_OK :
+	       err_of(&m->sv.files);
+}
+
+/* On the eMMC, not in its cache, before the check reads it. */
+static int finish(void *ctx)
+{
+	struct opxy_master *m = ctx;
+	const int32_t fd = put_fd;
+
+	if (put_user)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_finish(user(m));
+	put_fd = -1;
+	if (fd < 0)
+		return HL_E_BAD;
+	return s09_files_close_sync(&m->sv.files, fd) == 0 ? HL_OK : err_of(&m->sv.files);
+}
+
+static void abandon(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	if (put_user) {
+		hlfat_abandon(&ufat);
+		return;
+	}
+	if (put_fd >= 0)
+		(void)s09_files_close(&m->sv.files, put_fd);
+	put_fd = -1;
+}
+
+static int remove_(void *ctx, const struct hl_path *p)
+{
+	struct opxy_master *m = ctx;
+	struct s09_stat s;
+	int rc;
+
+	if (p->root == HL_ROOT_USER)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_remove(user(m), p->rest);
+	rc = drive_ok(m);
+	if (rc != HL_OK)
+		return rc;
+	if (kept(p))
+		return HL_E_REFUSED;
+	s15_check_files(&m->sv.menu);
+	if (s09_files_stat(&m->sv.files, p->full, &s) != 0)
+		return err_of(&m->sv.files);
+	if ((s.mode & 0xF000u) == 0x4000u ? s09_files_rmdir(&m->sv.files, p->full) != 0 :
+	    s09_files_unlink(&m->sv.files, p->full) != 0)
+		return err_of(&m->sv.files);
+	return synced(m);
+}
+
+static int mkdir_(void *ctx, const struct hl_path *p)
+{
+	struct opxy_master *m = ctx;
+	int rc;
+
+	if (p->root == HL_ROOT_USER)
+		return user(m) == NULL ? HL_E_UNREACHABLE : hlfat_mkdir(user(m), p->rest);
+	rc = drive_ok(m);
+
+	if (rc != HL_OK)
+		return rc;
+	s15_check_files(&m->sv.menu);
+	return s09_files_mkdir(&m->sv.files, p->full) == 0 ? synced(m) : err_of(&m->sv.files);
+}
+
+/* A file in the way is replaced, as a put's last step needs. */
+static int rename_(void *ctx, const struct hl_path *from, const struct hl_path *to)
+{
+	struct opxy_master *m = ctx;
+	struct s09_files *f = &m->sv.files;
+	struct s09_stat s;
+	int rc;
+
+	if (from->root == HL_ROOT_USER)
+		return user(m) == NULL ? HL_E_UNREACHABLE :
+		       hlfat_rename(user(m), from->rest, to->rest);
+	rc = drive_ok(m);
+	if (rc != HL_OK)
+		return rc;
+	if (kept(from) || kept(to))
+		return HL_E_REFUSED;
+	s15_check_files(&m->sv.menu);
+	if (s09_files_rename(f, from->full, to->full) == 0)
+		return synced(m);
+	if (s09_files_stat(f, to->full, &s) != 0 || (s.mode & 0xF000u) == 0x4000u ||
+	    s09_files_unlink(f, to->full) != 0 ||
+	    s09_files_rename(f, from->full, to->full) != 0)
+		return err_of(f);
+	return synced(m);
+}
+
+/* ---- S-10c.135: an image into RAM ---- */
+
+#if !defined(OPXY_TEST_OS)
+/*
+ * The image in the heap, never at the staging area: that lies under the
+ * RAM disk's second part (S-01.016), which held mode may be serving. The
+ * RAM start copies it there once nothing else can use it (S-05.045).
+ */
+static uint8_t *ram_buf;
+static uint32_t ram_size;
+
+static void ram_drop(void *ctx)
+{
+	(void)ctx;
+	free(ram_buf);
+	ram_buf = NULL;
+	ram_size = 0;
+}
+
+static bool unit_busy(const struct opxy_master *m);
+
+static int ram_open(void *ctx, uint32_t size)
+{
+	struct opxy_master *m = ctx;
+
+	ram_drop(ctx);
+	if (size > S03_OS_MAX)
+		return HL_E_REFUSED;		/* S-05.024: longer than the staging area */
+	if (unit_busy(m))
+		return HL_E_BUSY;
+	ram_buf = malloc(size);
+	if (ram_buf == NULL)
+		return HL_E_IO;
+	ram_size = size;
+	return HL_OK;
+}
+
+static int ram_write(void *ctx, uint32_t off, const uint8_t *b, uint32_t n)
+{
+	(void)ctx;
+	if (ram_buf == NULL || off > ram_size || n > ram_size - off)
+		return HL_E_BAD;
+	memcpy(ram_buf + off, b, n);
+	return HL_OK;
+}
+
+static int ram_end(void *ctx, uint32_t size, uint8_t sha[32], uint8_t *why)
+{
+	br_sha256_context c;
+	enum s05_refusal r;
+
+	(void)ctx;
+	if (ram_buf == NULL || size != ram_size)
+		return HL_E_BAD;
+	br_sha256_init(&c);
+	br_sha256_update(&c, ram_buf, size);
+	br_sha256_out(&c, sha);
+	r = s05_check_image(ram_buf, size);	/* S-05.024, before any start */
+	*why = (uint8_t)r;
+	return r == S05_ACCEPT ? HL_OK : HL_E_REFUSED;
+}
+#endif
+
+/* S-10c.137: Developer mode and its item both on. */
+static bool no_hold(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+
+	return m->sv.menu.dev_mode && m->sv.menu.host_no_hold;
+}
+
+/* ---- actions ---- */
+
+static struct hl_path job_path;
+static uint8_t job_arg;
+
+static bool unit_busy(const struct opxy_master *m)
+{
+	const struct s15_menu *mn = &m->sv.menu;
+
+	return m->sv.working || s15_menu_held(mn) || mn->busy || hl_psoc_busy(&m->sv.hl) ||
+	       mn->activity != S15_ACT_IDLE || mn->screen == S15_SCR_STARTING ||
+	       mn->screen == S15_SCR_APPROVE || mn->screen == S15_SCR_NONE ||
+	       mn->screen == S15_SCR_WARN || mn->screen == S15_SCR_BRIDGE;
+}
+
+static int run(void *ctx, uint8_t action, uint8_t arg, const struct hl_path *p)
+{
+	struct opxy_master *m = ctx;
+	struct hl_stat st;
+
+	if (unit_busy(m))
+		return HL_E_BUSY;
+	if (p != NULL) {
+		const int rc = stat_(ctx, p, &st);
+
+		if (rc != HL_OK)
+			return rc;
+		if (st.type != 1u)
+			return HL_E_PATH;
+		job_path = *p;
+		job_path.rest = job_path.full + (p->rest - p->full);
+	}
+	job_arg = arg;
+	switch (action) {
+	case HL_A_CONTINUE_OS:
+		return s15_menu_continue_check(&m->sv.menu) == S15_CONT_BUSY ? HL_E_BUSY : HL_OK;
+	case HL_A_RAM_START:
+		/* S-10c.136: with a second CPU the slave answering, as a file
+		 * start needs it (S-15.194) */
+		if (wb_has(opxy_dev(m), WB_F_SECOND_CPU) &&
+		    (!m->slave_present || m->bridge.absent))
+			return HL_E_UNREACHABLE;
+		return OPXY_TESTOS_OR(HL_E_UNKNOWN, ram_buf != NULL ? HL_OK : HL_E_NOT_FOUND);
+	case HL_A_OS_ONCE: {
+		/* S-15.194's check first: a start that cannot be taken is no job */
+		struct s15_os_file file;
+
+		if (m->sv.env.os_once == NULL || m->sv.env.os_once_check == NULL)
+			return HL_E_UNKNOWN;
+		return m->sv.env.os_once_check(m, &file) == S15_ONCE_STARTED ? HL_OK :
+		       HL_E_REFUSED;
+	}
+	default:
+		return HL_OK;
+	}
+}
+
+static int set(void *ctx, uint8_t setting, uint8_t value)
+{
+	struct opxy_master *m = ctx;
+
+	/* a host's change lasts for this start, as a host's key does */
+	if (setting == HL_SET_HOST_LINK && value == 0u) {
+		m->sv.menu.host_link = false;
+		hl_end(&m->sv.hl);
+	}
+	return HL_OK;
+}
+
+static void push(struct opxy_master *m)
+{
+	uint8_t out[HL_PAYLOAD];
+
+	(void)s06_send(&m->node, m->sv.hl_link, m->sv.hl_route, HL_FRAME_ID, out,
+		       hl_event(&m->sv.hl, out));
+}
+
+static void job(struct opxy_master *m, uint8_t state, uint8_t step, uint8_t pct,
+		uint8_t err, const char *text)
+{
+	if (hl_job_set(&m->sv.hl, state, step, pct, err, text))
+		push(m);
+}
+
+/* What is queued for the host, out before a restart that does not return. */
+static void host_out(void)
+{
+	for (unsigned i = 0; i < 200u; i++)
+		wb_usb_task();
+}
+
+/* The record out before a restart that does not return. */
+static void restarting(struct opxy_master *m)
+{
+	job(m, HL_J_DONE, 0, 100u, HL_OK, "restarting");
+	host_out();
+}
+
+/* The plain restart, the restart action's and the PSoC reset's (S-10c.133):
+ * S-04.020's W2, whose first step is S-07.070's reset request. */
+static void restart_plain(struct opxy_master *m)
+{
+	opxy_reboot(m, S04_W2, 0u);
+}
+
+void opxy_hostlink_progress(struct opxy_master *m, uint32_t done, uint32_t total,
+			    const char *label)
+{
+	const struct hl_job *j = &m->sv.hl.job;
+
+	if (j->state != HL_J_RUNNING)
+		return;
+	job(m, HL_J_RUNNING, j->step,
+	    total == 0u ? HL_PERCENT_NONE : (uint8_t)wb_percent32(done, total), HL_OK,
+	    label != NULL ? label : j->text);
+}
+
+/*
+ * As the firmware command's begin, chunks and finish (S-10c.071-S-10c.073),
+ * the bytes copied from the drive: the upgrade screen, the transfer's file,
+ * then the install of the package file with the host's parts.
+ */
+static void job_install(struct opxy_master *m)
+{
+	static uint8_t buf[4096];
+	struct s09_files *f = &m->sv.files;
+	struct hl_stat st;
+	struct s11_outcome o;
+	char text[S10C_TEXT_MAX], reason[HL_TEXT_MAX + 1u];
+	const char *name = strrchr(job_path.full, '/') + 1;
+	uint32_t at = 0;
+	int32_t fd;
+
+	if (stat_(m, &job_path, &st) != HL_OK || st.type != 1u) {
+		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_NOT_FOUND, "no package");
+		return;
+	}
+	s15_up_transfer_begin(&m->sv.menu, st.size);
+	opxy_menu_show(m);
+	if (!opxy_transfer_start(m)) {
+		s15_up_no_transfer(&m->sv.menu);
+		opxy_menu_show(m);
+		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_IO, "transfer did not start");
+		return;
+	}
+	s15_up_transfer_started(&m->sv.menu);
+	fd = s09_files_open(f, job_path.full, S09_O_RDONLY);
+	while (fd >= 0 && at < st.size) {
+		const int32_t r = s09_files_read(f, fd, buf, sizeof(buf));
+
+		if (r <= 0 || !opxy_transfer_append(m, buf, (size_t)r))
+			break;
+		at += (uint32_t)r;
+		job(m, HL_J_RUNNING, 0, (uint8_t)wb_percent32(at, st.size), HL_OK, "copying");
+		opxy_menu_show(m);
+		opxy_usb_breathe();
+	}
+	if (fd >= 0)
+		(void)s09_files_close(f, fd);
+	if (at != st.size) {
+		opxy_transfer_discard(m);
+		s15_up_no_transfer(&m->sv.menu);
+		opxy_menu_show(m);
+		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_IO, "copy failed");
+		return;
+	}
+	job(m, HL_J_RUNNING, 1, HL_PERCENT_NONE, HL_OK, "installing");
+	opxy_install_host_parts(job_arg);
+	opxy_transfer_submit_file(m, name, &o);
+	opxy_install_host_parts(-1);
+	if (m->sv.host_ops.ramdisk_offer != NULL)
+		m->sv.host_ops.ramdisk_offer(m);
+	opxy_menu_show(m);
+	if (o.kind == S11_OUTCOME_DONE || o.kind == S11_OUTCOME_NOTHING_TO_DO) {
+		opxy_install_host_text(text, sizeof(text),
+				       o.kind == S11_OUTCOME_DONE ? "[done]" : "[nothing to do]");
+		job(m, HL_J_DONE, o.step, 100u, HL_OK, text);
+		return;
+	}
+	text[s10c_error_text(&o, text) < sizeof(text) ? s10c_error_text(&o, text) :
+	     sizeof(text) - 1u] = '\0';
+	opxy_install_host_text(reason, sizeof(reason), text);
+	job(m, HL_J_FAILED, o.step, HL_PERCENT_NONE, HL_E_REFUSED, reason);
+}
+
+#if !defined(OPXY_TEST_OS)
+/* The pieces to the slave, then starting: that record goes out before the
+ * teardown stops USB. */
+static void ram_progress(struct opxy_master *m, uint32_t done, uint32_t total)
+{
+	if (done < total) {
+		opxy_hostlink_progress(m, done, total, "to the second processor");
+		opxy_usb_breathe();
+		return;
+	}
+	job(m, HL_J_RUNNING, 1, 100u, HL_OK, "starting");
+	for (unsigned i = 0; i < 200u; i++)
+		wb_usb_task();
+}
+
+/* S-09.084: the image into the slave's staging area, in order from 0 */
+static bool push_ram(struct opxy_master *m, const uint8_t *img, uint32_t len,
+		     void (*progress)(struct opxy_master *m, uint32_t done, uint32_t total))
+{
+	uint32_t at = 0, err = 0;
+	bool ok = true;
+
+	opxy_bridge_fast(m);
+	while (ok && at < len) {
+		const uint32_t most = s09_master_write_max(&m->bridge);
+		const uint32_t k = len - at < most ? len - at : most;
+
+		ok = s09_master_stage_write(&m->bridge, at, img + at, k, &err) == 0;
+		at += ok ? k : 0u;
+		if (ok && at < len && progress != NULL)
+			progress(m, at, len);
+	}
+	opxy_bridge_plain(m);
+	return ok;
+}
+
+enum s05_fail opxy_ram_start(struct opxy_master *m, const uint8_t *img, uint32_t len,
+			     void (*progress)(struct opxy_master *m, uint32_t done,
+					      uint32_t total))
+{
+	struct s05_master sm;
+	enum s05_fail f;
+
+	if (len == 0u || len > S03_OS_MAX)
+		return S05_FAIL_REFUSED;
+	if (wb_has(opxy_dev(m), WB_F_SECOND_CPU)) {
+		if (!m->slave_present || m->bridge.absent)
+			return S05_FAIL_SLAVE;
+		if (!push_ram(m, img, len, progress))
+			return m->bridge.absent ? S05_FAIL_SLAVE : S05_FAIL_NO_OS;
+	}
+	if (progress != NULL)
+		progress(m, len, len);	/* whole: the start follows */
+	sm.staging = (const uint8_t *)(uintptr_t)OPXY_STAGING;
+	sm.config_addr = m->ops.config_addr;
+	sm.sw_version_nonzero = false;
+	sm.file = false;
+	sm.dev = opxy_dev(m);
+	m->ram_img = img;
+	m->ram_len = len;
+	f = s05_master_ram_start(&m->handoff, &sm);
+	m->ram_img = NULL;
+	m->ram_len = 0;
+	if (f == S05_FAIL_SLAVE_START) {
+		/* released: the slave serves the bridge no more */
+		m->bridge.absent = true;
+		m->slave_present = false;
+	}
+	return f;
+}
+
+/* The job record's text for a RAM start that came back. */
+static const char *ram_failed(enum s05_fail f)
+{
+	switch (f) {
+	case S05_FAIL_REFUSED:
+		return "image refused";
+	case S05_FAIL_SLAVE:
+		return "second processor refused it";
+	case S05_FAIL_SLAVE_START:
+		return "second processor's OS did not start";
+	case S05_FAIL_NO_OS:
+	case S05_FAIL_ENCRYPTED:
+	case S05_FAIL_SELECT:
+	case S05_FAIL_FILE:
+	case S05_FAIL_NONE:
+	default:
+		return "not sent to the second processor";
+	}
+}
+
+/*
+ * S-10c.136, S-05.045: the image to the slave (with second-cpu), then the
+ * hand-over from here. The record says starting and goes out before the
+ * teardown stops USB; a start that comes back says why and the menu is
+ * drawn again over the boot logo pre_load left.
+ */
+static void job_ram_start(struct opxy_master *m)
+{
+	enum s05_fail f;
+
+	if (ram_buf == NULL) {
+		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_NOT_FOUND, "no image");
+		return;
+	}
+	s14_log_str(&m->sv.log, S14_INFO, S14_TAG("boot"),
+		    "host link: starting an OS image from RAM, writing nothing");
+	job(m, HL_J_RUNNING, 0, 0u, HL_OK, "to the second processor");
+	f = opxy_ram_start(m, ram_buf, ram_size, ram_progress);
+	/* back: the image is the host's to send again */
+	ram_drop(m);
+	hl_ram_drop(&m->sv.hl);
+	m->sv.menu_shown = ~s15_menu_changes(&m->sv.menu);
+	opxy_menu_show(m);
+	s14_log_str(&m->sv.log, S14_ERROR, S14_TAG("boot"), ram_failed(f));
+	job(m, HL_J_FAILED, 1, HL_PERCENT_NONE,
+	    f == S05_FAIL_REFUSED ? HL_E_REFUSED : HL_E_UNREACHABLE, ram_failed(f));
+}
+#endif
+
+static void run_job(struct opxy_master *m)
+{
+	struct s15_osw_end e;
+	uint8_t mode = job_arg;
+
+	job(m, HL_J_RUNNING, 0, HL_PERCENT_NONE, HL_OK, "");
+	switch (m->sv.hl.job.action) {
+	case HL_A_INSTALL:
+		job_install(m);
+		break;
+	case HL_A_OS_WRITE:
+		opxy_osw_path = job_path.full;
+		if (!s15_menu_os_write(&m->sv.menu, job_path.full, &e)) {
+			e.result = S15_OSW_FAILED;
+			e.why = S15_OSW_WHY_NONE;
+		}
+		opxy_osw_path = OPXY_OS_LDR;
+		opxy_menu_show(m);
+		if (e.result == S15_OSW_OK)
+			job(m, HL_J_DONE, 0, 100u, HL_OK, "written");
+		else
+			job(m, HL_J_FAILED, (uint8_t)e.why, HL_PERCENT_NONE,
+			    HL_E_REFUSED, "not written");
+		break;
+	case HL_A_OS_ONCE:
+		restarting(m);
+		s15_menu_os_once(&m->sv.menu);	/* returns when not started */
+		opxy_menu_show(m);
+		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_REFUSED, "not started");
+		break;
+	case HL_A_CONTINUE_OS:
+		restarting(m);
+		(void)s15_menu_continue(&m->sv.menu);
+		break;
+	case HL_A_RAM_START:
+		OPXY_TESTOS_OR(job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_UNKNOWN, ""),
+			       job_ram_start(m));
+		break;
+	case HL_A_RESTART:
+		restarting(m);
+		restart_plain(m);
+		break;
+	case HL_A_RESTART_MODE:
+		restarting(m);
+		opxy_reboot(m, S04_W1, s04_host_mode_reason(&mode, 1u));
+		break;
+	default:
+		job(m, HL_J_FAILED, 0, HL_PERCENT_NONE, HL_E_UNKNOWN, "");
+		break;
+	}
+}
+
+/* ---- the PSoC calls (S-10c.131 - S-10c.134) ---- */
+
+static void psoc_log(struct opxy_master *m, const char *what)
+{
+	struct s14_text t;
+
+	s14_text_init(&t);
+	s14_text_str(&t, "host link: ");
+	s14_text_str(&t, what);
+	s14_log_text(&m->sv.log, S14_INFO, S14_TAG("host"), &t);
+}
+
+static uint32_t now_ms(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	return (uint32_t)wb_time_ms(&m->hw.time);
+}
+
+/*
+ * The warning over a menu with nothing under way, as the approval's. No
+ * hold: keys come from the PSoC, which may be the part that is broken.
+ */
+static int psoc_warn(void *ctx, uint8_t what, uint8_t seconds)
+{
+	struct opxy_master *m = ctx;
+	const enum s15_warn w = what == HL_PW_RESET ? S15_WARN_RESET : S15_WARN_BRIDGE;
+
+	if (m->sv.menu.screen == S15_SCR_WARN) {
+		(void)s15_menu_warn_open(&m->sv.menu, w, seconds);
+		opxy_menu_show(m);
+		return HL_OK;
+	}
+	if (unit_busy(m))
+		return HL_E_BUSY;
+	if (!s15_menu_warn_open(&m->sv.menu, w, seconds))
+		return HL_E_BUSY;
+	opxy_menu_show(m);
+	psoc_log(m, what == HL_PW_RESET ? "backplane reset asked, counting down" :
+					  "backplane link asked, counting down");
+	return HL_OK;
+}
+
+static bool psoc_greeted(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+
+	return m->psoc.greeted;
+}
+
+static bool psoc_canceled(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	if (!s15_menu_warn_canceled(&m->sv.menu))
+		return false;
+	opxy_menu_show(m);
+	psoc_log(m, "canceled on the unit");
+	return true;
+}
+
+static bool psoc_gone(void *ctx)
+{
+	(void)ctx;
+	return wb_usb_state() != WB_USB_CONFIGURED;
+}
+
+/* The screen first: no key acts once the link is raw. A power-off in the
+ * PSoC's last messages is S-07.051's. */
+static void psoc_enter(void *ctx, bool entry)
+{
+	struct opxy_master *m = ctx;
+
+	psoc_log(m, entry ? "backplane link to the computer, bootloader asked" :
+			    "backplane link to the computer");
+	s15_menu_warn_bridge(&m->sv.menu);
+	opxy_menu_show(m);
+	if (s07_bridge_enter(&m->psoc, entry) == S07_POWEROFF)
+		opxy_powered_off(m);
+}
+
+static bool psoc_leave(void *ctx, bool raw)
+{
+	struct opxy_master *m = ctx;
+	bool greeted = false;
+
+	if (raw) {
+		if (s07_bridge_leave(&m->psoc, &greeted) == S07_POWEROFF)
+			opxy_powered_off(m);
+		psoc_log(m, greeted ? "backplane link back, the PSoC greeted" :
+				      "backplane link back, no greeting");
+	} else {
+		psoc_log(m, (m->sv.hl.psoc.flags & HL_PF_NOT_RESET) != 0u ?
+			 "backplane reset not done: the PSoC did not act on the request" :
+			 "backplane request ended before its countdown did");
+	}
+	s15_menu_warn_close(&m->sv.menu);
+	opxy_menu_show(m);
+	return greeted;
+}
+
+static size_t psoc_read(void *ctx, uint8_t *buf, size_t max)
+{
+	struct opxy_master *m = ctx;
+
+	return s07_bridge_read(&m->psoc, buf, max);
+}
+
+static bool psoc_write(void *ctx, const uint8_t *b, size_t n)
+{
+	struct opxy_master *m = ctx;
+
+	return s07_bridge_write(&m->psoc, b, n);
+}
+
+/* What the UART counts as lost or doubtful (opxy_psoc_rx_report()'s sum). */
+static uint32_t psoc_lost(void *ctx)
+{
+	const struct opxy_master *m = ctx;
+	const struct wb_uart *u = &m->hw.uart[OPXY_UART_PSOC];
+
+	return u->overruns + u->rx_lost + u->rx_gaps + u->dma_errors;
+}
+
+static void psoc_reset(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	psoc_log(m, "backplane reset: the unit restarts");
+	host_out();
+	restart_plain(m);
+}
+
+/*
+ * S-10c.133: a PSoC that has not greeted may not take the request, so the
+ * unit is not taken down for it: the request alone, then the loop runs on
+ * as on any menu (the screen, USB, the PSoC's messages, a power-off) until
+ * the PSoC acts or the wait runs out. Nothing is written or shut down.
+ * SPEC-Q: the time the PSoC takes to act on the request is not stated;
+ * HL_PSOC_RESET_WAIT_MS is above the about 7 s in which a reset by it
+ * comes back (S-04.029's known behavior).
+ */
+static void psoc_reset_alone(void *ctx)
+{
+	struct opxy_master *m = ctx;
+
+	psoc_log(m, "backplane reset: the request alone, the PSoC had not greeted");
+	s15_menu_warn_resetting(&m->sv.menu, HL_PSOC_RESET_WAIT_MS / 1000u);
+	opxy_menu_show(m);
+	s07_reset_request(&m->psoc);
+}
+
+static void psoc_event(void *ctx, const uint8_t *payload, size_t n)
+{
+	struct opxy_master *m = ctx;
+
+	(void)s06_send(&m->node, m->sv.hl_link, m->sv.hl_route, HL_FRAME_ID, payload, n);
+}
+
+/* ---- the board's side ---- */
+
+/* S-10c.043, S-10c.129: S-06.050's forwards from a host (to the PSoC, the
+ * Nordic or the slave) need the session's approval, but for a ping or an
+ * info request, which read; the coprocessors' own frames to the host are
+ * not asked. */
+static OPXY_TESTOS_UNUSED bool forward_ok(void *ctx, unsigned link, uint8_t dst,
+					  const uint8_t *wire, size_t n)
+{
+	uint8_t raw[3];
+	size_t i = 0, k = 0;
+
+	if (link != S06_LINK_CDC && link != S06_LINK_MIDI)
+		return true;
+	/* S-10c.134: nothing reaches the PSoC while a host's request has it */
+	if (dst == S06_ADDR_PSOC && hl_psoc_busy(&((struct opxy_master *)ctx)->sv.hl))
+		return false;
+	/* the route, sequence and id bytes, COBS-decoded */
+	while (k < sizeof raw && i < n && wire[i] != 0u) {
+		const unsigned code = wire[i++];
+
+		for (unsigned j = 1; j < code && k < sizeof raw && i < n; j++)
+			raw[k++] = wire[i++];
+		if (code != 0xFFu && k < sizeof raw)
+			raw[k++] = 0u;
+	}
+	if (k == sizeof raw && (raw[2] == 0x01u || raw[2] == 0x09u))
+		return true;
+	return opxy_hostlink_gate(ctx, link == S06_LINK_CDC ? S10C_LINK_CDC :
+							      S10C_LINK_MIDI) == S10C_GATE_OK;
+}
+
+void opxy_hostlink_start(struct opxy_master *m)
+{
+	struct hl_ops *o = &m->sv.hl_ops;
+
+	me = m;
+	o->ctx = m;
+	o->link_on = link_on;
+	o->approve_open = approve_open;
+	o->info = info;
+	o->root_ok = root_ok;
+	o->stat = stat_;
+	o->list = list;
+	o->read = read_;
+	o->hash = hash;
+	o->create = create;
+	o->write = write_;
+	o->finish = finish;
+	o->abandon = abandon;
+	o->remove = remove_;
+	o->mkdir = mkdir_;
+	o->rename = rename_;
+	o->run = run;
+	o->set = set;
+	o->no_hold = no_hold;
+	/* S-10c.135: the test OS starts no OS, from RAM or elsewhere */
+	o->ram_open = OPXY_TESTOS_OR(NULL, ram_open);
+	o->ram_write = OPXY_TESTOS_OR(NULL, ram_write);
+	o->ram_end = OPXY_TESTOS_OR(NULL, ram_end);
+	o->ram_drop = OPXY_TESTOS_OR(NULL, ram_drop);
+	o->now_ms = now_ms;
+	o->psoc_warn = psoc_warn;
+	o->psoc_greeted = psoc_greeted;
+	o->psoc_canceled = psoc_canceled;
+	o->psoc_gone = psoc_gone;
+	o->psoc_enter = psoc_enter;
+	o->psoc_leave = psoc_leave;
+	o->psoc_read = psoc_read;
+	o->psoc_write = psoc_write;
+	o->psoc_lost = psoc_lost;
+	o->psoc_reset = psoc_reset;
+	o->psoc_reset_alone = psoc_reset_alone;
+	o->psoc_event = psoc_event;
+	hl_init(&m->sv.hl, o);
+	/* the test OS serves no host link, so it keeps S-06.050's forwards */
+	m->sv.node_ops.forward_ok = OPXY_TESTOS_OR(NULL, forward_ok);
+	m->node.obs.forward_ok = m->sv.node_ops.forward_ok;
+	m->sv.hl_link = S06_LINK_CDC;
+	m->sv.hl_route = s06_route(S06_ADDR_MASTER, S06_ADDR_HOST);
+}
+
+bool opxy_hostlink_approved(const struct opxy_master *m)
+{
+	return m->sv.menu.host_link && m->sv.hl.session == HL_S_APPROVED;
+}
+
+bool opxy_hostlink_frame(struct opxy_master *m, unsigned link, const struct s06_frame *f)
+{
+	static uint8_t out[HL_PAYLOAD];
+	const uint8_t route = s06_swap_route(f->route);
+	size_t n;
+
+	if (f->id != HL_FRAME_ID)
+		return false;
+	if (m->sv.hl.ops == NULL)
+		return true;			/* before held mode: not served */
+	/* the link a job's or a PSoC request's events go to */
+	if (f->len >= 1u && (f->payload[0] == HL_RUN || f->payload[0] == HL_PSOC_OPEN ||
+			     f->payload[0] == HL_PSOC_RESET)) {
+		m->sv.hl_link = (uint8_t)link;
+		m->sv.hl_route = route;
+	}
+	n = hl_request(&m->sv.hl, f->payload, f->len, out);
+	(void)s06_send(&m->node, link, route, HL_FRAME_ID, out, n);
+	return true;
+}
+
+static void approval_log(struct opxy_master *m, const char *how)
+{
+	struct s14_text t;
+
+	s14_text_init(&t);
+	s14_text_str(&t, "host link: ");
+	s14_text_str(&t, how);
+	s14_log_text(&m->sv.log, S14_INFO, S14_TAG("host"), &t);
+}
+
+void opxy_hostlink_poll(struct opxy_master *m)
+{
+	struct hostlink *h = &m->sv.hl;
+
+	if (h->ops == NULL)
+		return;
+	if (h->session == HL_S_PENDING) {
+		switch (s15_menu_approve_result(&m->sv.menu)) {
+		case S15_APPROVE_PENDING:
+			break;
+		case S15_APPROVE_ALLOWED:
+			hl_answer(h, HL_S_APPROVED);
+			approval_log(m, "allowed");
+			break;
+		case S15_APPROVE_REFUSED:
+			hl_answer(h, HL_S_REFUSED);
+			approval_log(m, "refused");
+			break;
+		case S15_APPROVE_TIMEOUT:
+			hl_answer(h, HL_S_TIMEOUT);
+			approval_log(m, "not answered");
+			break;
+		case S15_APPROVE_NONE:
+		default:
+			h->session = HL_S_NONE;
+			break;
+		}
+		opxy_menu_show(m);
+	}
+	hl_poll(h);
+	/* S-10c.128: the log goes to a host only in an approved session */
+	if (m->sv.log.cdc_on && !opxy_hostlink_approved(m))
+		m->sv.log.cdc_on = false;
+	if (h->job.state == HL_J_QUEUED)
+		run_job(m);
+}
+
+enum s10c_gate opxy_hostlink_gate(void *ctx, enum s10c_link link)
+{
+	struct opxy_master *m = ctx;
+	struct hostlink *h = &m->sv.hl;
+
+	(void)link;
+	if (!m->sv.menu.host_link)
+		return S10C_GATE_OFF;
+	if (hl_psoc_busy(h))
+		return S10C_GATE_BUSY;		/* S-10c.134 */
+	if (opxy_hostlink_approved(m))
+		return S10C_GATE_OK;
+	/* not approved: the unit asks now, and the host asks again after */
+	if (h->ops != NULL && h->session != HL_S_PENDING && approve_open(m))
+		h->session = HL_S_PENDING;
+	return S10C_GATE_ASK;
+}

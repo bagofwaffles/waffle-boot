@@ -17,9 +17,9 @@
  * S-07.062, S-07.065-S-07.067, S-07.070-S-07.072, S-07.075-S-07.078,
  * S-07.080-S-07.086.
  */
-#include "waffle/device.h"
-#include "waffle/s07_program.h"
-#include "waffle/s15_prompt.h"
+#include "waffle/boot/device.h"
+#include "waffle/psoc/program.h"
+#include "waffle/ui/prompt.h"
 
 #include "s07_test.h"
 #include "vectors/s07_vectors.h"

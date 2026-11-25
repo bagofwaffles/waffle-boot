@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-11 checks 1-15 on the vendored libraries (src/wire_package.c): every
+ * S-11 checks 1-15 on the vendored libraries (src/core/install/crypto.c): every
  * package vector of tests/oracle/S-11-packages/vectors/pkg/ through
  * s11_check_package() with BearSSL's SHA-256 and AES, micro-ecc's P-224 and
  * minizip's check 15, against the reason, signature state and forced verdicts and
@@ -14,9 +14,9 @@
 #define _POSIX_C_SOURCE 200809L
 #include "testlib.h"
 
-#include "waffle/device.h"
-#include "waffle/s11_package.h"
-#include "waffle/wire_package.h"
+#include "waffle/boot/device.h"
+#include "waffle/install/package.h"
+#include "waffle/install/crypto.h"
 
 #include "vectors/s11_vectors.h"
 

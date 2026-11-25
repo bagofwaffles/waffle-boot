@@ -92,12 +92,12 @@ extern const struct opxy_testos_reg opxy_testos_regs[];
 extern const unsigned opxy_testos_regs_n;
 
 /*
- * Written by src/testos/opxy_testos_entry.S before anything else of the
+ * Written by src/testos/testos_entry.S before anything else of the
  * image runs, once the CPLBs are off: SP, IPEND, IMASK and RETS at the
  * first instruction (S-05.014), in [0] to [3]. Then by the entry paint
  * (opxy_testos_entry_paint(), before wb_start_c()), which decides the
  * device before any pin, paint, UART, SPI0 or MSI0 access (S-18.001 to
- * S-18.004): [4] what the red paint did (src/testos/opxy_testos_paint.c's
+ * S-18.004): [4] what the red paint did (src/testos/paint.c's
  * PAINT_ values), [5] the role as opxy_strap_role() reads it, from the
  * boot mode, or the PA2 sample where it is not 1 (S-18.002, as the
  * front's fr_decide(); the full strap is opxy_main()'s, on a device with
@@ -129,12 +129,12 @@ extern uint32_t opxy_testos_entry[OPXY_TESTOS_E_WORDS];
 #endif
 
 /* opxy_main()'s device and role in the test OS: the entry's decision,
- * the first stage read once (waffle/board/opxy_boot.h). */
+ * the first stage read once (waffle/board/boot.h). */
 struct opxy_device_pick;
 void opxy_testos_device(struct opxy_device_pick *out);
 
 /*
- * The milestone paints (src/testos/opxy_testos_paint.c, which lists
+ * The milestone paints (src/testos/paint.c, which lists
  * each): the whole panel in one color at each milestone of
  * the master's start, through the build's panel byte path, held for
  * OPXY_TESTOS_PAINT_HOLD_US so a person sees it. Nothing on the slave.
@@ -170,9 +170,9 @@ void opxy_testos_entry_paint(void);
  * opxy_testos_paint_log() flushes. */
 void opxy_testos_paint(enum opxy_testos_paint which);
 void opxy_testos_paint_log(struct opxy_master *m);
-/* src/board/opxy_display.c: the display once its bus is up, else NULL. */
+/* src/board/ui/display.c: the display once its bus is up, else NULL. */
 struct wb_display *opxy_testos_display(void);
-/* src/board/opxy_display.c: the early logo of S-05.004 in the test OS, with
+/* src/board/ui/display.c: the early logo of S-05.004 in the test OS, with
  * a paint after each sub-step (cyan, gray); true when the frame went out. */
 bool opxy_testos_early_logo(void);
 
@@ -299,7 +299,7 @@ extern volatile uint32_t wb_spi_testos_tally[2];
  * quad I/O (SPI2_CTL 0x00222510), its set-up written with EN set last, or
  * both. A quad listen that hears nothing for 2 s goes back to single I/O and
  * clears this word. An armed request is served only when it is the echo or the
- * peek (src/board/opxy_slave.c).
+ * peek (src/board/boot/slave.c).
  */
 #define OPXY_TESTOS_REQ_QUAD        0x1u
 #define OPXY_TESTOS_REQ_EN_LAST     0x2u
@@ -320,7 +320,7 @@ extern volatile uint32_t wb_spi_testos_reqstat[OPXY_REQ_SLOTS];
 /* A request header has come in (rc the driver's code): recorded, and true,
  * when an armed listen made it ready. */
 bool wb_spi_testos_req_header(int rc, const uint8_t *hdr);
-/* The master's ends of it, in src/testos/opxy_testos.c: the bounded wait for
+/* The master's ends of it, in src/testos/readouts.c: the bounded wait for
  * the ready line; the first session answered (bus_configure()'s step 3);
  * after s09_master_start(): blue, the eMMC's bring-up, the table, or brown
  * and the slave absent. */
@@ -331,7 +331,7 @@ void opxy_testos_slave_bringup(struct opxy_master *m);
 /* After held mode's services started: the read-outs if the bridge was lost. */
 void opxy_testos_bridge_check(struct opxy_master *m);
 /* The bridge's first bus operations, for the log's `bridge trace` lines
- * (opxy_ops.c): what ('S' select, 'E' end of select, 'T' send, 'R' receive),
+ * (board/boot/ops.c): what ('S' select, 'E' end of select, 'T' send, 'R' receive),
  * the driver's code, the bytes. */
 void opxy_testos_bus_note(char what, int rc, const uint8_t *d, size_t n);
 /*
@@ -362,7 +362,7 @@ void opxy_testos_bus_note(char what, int rc, const uint8_t *d, size_t n);
 #else
 #define OPXY_TESTOS_MON_ON false
 #endif
-/* The full-screen paint at each start-up stage (src/testos/opxy_testos_paint.c):
+/* The full-screen paint at each start-up stage (src/testos/paint.c):
  * the panel variants have it; the monitor and the installer paint only a fatal,
  * and name each stage after the early logo in a line under it. */
 #if defined(OPXY_TESTOS_MONITOR) || defined(OPXY_TESTOS_INSTALLER)
@@ -433,7 +433,7 @@ enum { OPXY_INSTALL_LOG_OK, OPXY_INSTALL_LOG_ODD, OPXY_INSTALL_LOG_FULL,
 #define OPXY_INSTALL_SLOT_SPENT     0x20u
 #define OPXY_INSTALL_SLOT_ODD       0x40u
 /* With TRIAL: byte 0 of the log reads OPXY_TRIAL_REACHED_BYTE, the trial
- * start's main image reached the boot menu (waffle/board/opxy_boot.h). */
+ * start's main image reached the boot menu (waffle/board/boot.h). */
 #define OPXY_INSTALL_SLOT_REACHED   0x80u
 enum { OPXY_INSTALL_MIRROR_INVALID, OPXY_INSTALL_MIRROR_SAME, OPXY_INSTALL_MIRROR_DIFFERS,
        OPXY_INSTALL_MIRROR_UNREAD };
@@ -447,7 +447,7 @@ void opxy_testos_display_dma_stop(void);
 bool opxy_testos_monitor(struct opxy_master *m, const struct s06_frame *f);
 
 /*
- * src/testos/opxy_testos.c (compiled to nothing outside the test OS).
+ * src/testos/readouts.c (compiled to nothing outside the test OS).
  * Each is called from the board's normal flow through the macros above.
  */
 /* At opxy_main()'s start, before any bring-up: the display record of
@@ -470,7 +470,7 @@ void opxy_testos_disk_files(struct opxy_master *m);
 void opxy_testos_frame_timing(struct opxy_master *m);
 
 /*
- * src/testos/opxy_testos_frame.c: TE's period and high time over
+ * src/testos/frame.c: TE's period and high time over
  * OPXY_FT_PERIODS periods, then OPXY_FT_FRAMES frames, each started on a
  * TE rising edge through held mode's frame path and timed from its start
  * to the end of its transfer, and from there to the next rising edge (a
@@ -517,7 +517,7 @@ int opxy_testos_flash_program(void *ctx, uint32_t off, const uint8_t *buf,
 			      uint32_t len);
 
 /*
- * The check suite (src/testos/opxy_testos_check.c, waffle/board/testos_check.h),
+ * The check suite (src/testos/check_run.c, waffle/testos/check.h),
  * in the installer variant alone. check_start(): before held mode's entry
  * steps, the Nordic link's gate and the USB set; check_service(): held
  * mode's loop in place of the menus; check_disk(): on the RAM disk, just
@@ -527,7 +527,7 @@ struct boot_held;
 void opxy_testos_check_start(struct opxy_master *m);
 void opxy_testos_check_service(void *ctx, const struct boot_held *h);
 void opxy_testos_check_disk(struct opxy_master *m);
-/* What src/testos/opxy_testos.c kept for the suite: the registers read at
+/* What src/testos/readouts.c kept for the suite: the registers read at
  * entry (opxy_testos_regs' order), whether the key status was answered, and
  * the display waits cut short. */
 void opxy_testos_check_kept(const uint32_t **regs, unsigned *n, bool *key_replied,

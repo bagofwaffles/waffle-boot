@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Generate pack_vectors.h: packed blocks (waffle/pack.h) written by tools/mkldr.py's pack(), for the
+"""Generate pack_vectors.h: packed blocks (waffle/boot/pack.h) written by tools/mkldr.py's pack(), for the
 stub's unpack test (tests/unit/test_stub_unpack.c).
 
 Run from the repository root:  python3 -I -B tests/vectors/pack/gen_pack_vectors.py --out DIR

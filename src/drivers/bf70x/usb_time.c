@@ -4,7 +4,7 @@
  * tusb_time_millis_api() (tusb.c references it). It has an object of its
  * own so that a test's controller fake can link usbd without the driver.
  */
-#include "waffle/drivers/bf70x_usb.h"
+#include "waffle/drivers/bf70x/usb.h"
 
 #include "tusb.h"
 

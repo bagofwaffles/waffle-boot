@@ -22,10 +22,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "waffle/device.h"
-#include "waffle/s14_log.h"
-#include "waffle/s15_menu.h"
-#include "waffle/s15_prompt.h"
+#include "waffle/boot/device.h"
+#include "waffle/log/log.h"
+#include "waffle/ui/menu.h"
+#include "waffle/ui/prompt.h"
 #include "s14_check.h"
 #define S15V_SCREENS
 #define S15V_PROMPT_KEYS
@@ -172,7 +172,7 @@ static size_t f_manifest(void *c, const char *dir, uint8_t *buf, size_t max)
 	return 0;
 }
 
-/* The long calls hold the keys, as the board's do (opxy_services.c). */
+/* The long calls hold the keys, as the board's do (board/ui/services.c). */
 static bool f_remove(void *c, const char *path)
 {
 	(void)c;
@@ -764,7 +764,7 @@ static void test_info2(void)
 /* ---- the boot prompt: S-15.180 ---------------------------------------- */
 
 /* The boot prompt, which is shown before held mode and whose keys
- * s15_prompt.h reads: a screen of its own past s15_menu.h's. */
+ * ui/prompt.h reads: a screen of its own past ui/menu.h's. */
 #define SCR_PROMPT 100u
 
 /* The prompt's next screen and effect for one key event on a prompt with
@@ -4776,7 +4776,7 @@ static void test_host_link(void)
 }
 
 
-/* ---- the boot logo (waffle/logo.h) ------------------------------------- */
+/* ---- the boot logo (waffle/flash/logo.h) ------------------------------------- */
 
 static struct {
 	struct s15_logo state;

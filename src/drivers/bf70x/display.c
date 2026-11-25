@@ -3,7 +3,7 @@
  * struct s13c_bus over the BF70x ST7796S driver. ctx is the struct wb_lcd
  * (the first member of struct wb_display_bf70x).
  */
-#include "waffle/drivers/bf70x_display.h"
+#include "waffle/drivers/bf70x/display.h"
 
 /* cppcheck-suppress constParameterCallback ; s13c_bus fixes the type */
 static void a_reset(void *ctx, bool high)

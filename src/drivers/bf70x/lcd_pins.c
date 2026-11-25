@@ -4,9 +4,9 @@
  * (lcd.c over the SMC, lcd_gpio.c bit-banged): the SMC fields are unused
  * by the gpio variant.
  */
-#include "waffle/drivers/bf70x_lcd.h"
+#include "waffle/drivers/bf70x/lcd.h"
 
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/port.h"
 
 #define PA(n) WB_PIN(WB_PORT_A, n)
 

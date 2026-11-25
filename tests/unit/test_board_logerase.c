@@ -1,18 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-02.101: the main image's erase of the start log (opxy_front.c): the
+ * S-02.101: the main image's erase of the start log (board/boot/front_record.c): the
  * scan of a slot's log as the front reads it, every branch of the guard,
  * the erase and its read-back, and each state a cut of that erase can
  * leave, with what the next start then does; the front's version 2 record
  * lifting the guard on the other slot's trial mark. Also the settings sector's
- * save and clear (opxy_store.c), made with the writers' tries (S-13b.017).
+ * save and clear (board/storage/settings.c), made with the writers' tries (S-13b.017).
  */
 #include "support/check.h"
 
 #include <string.h>
 
 #include "s02_fake_flash.h"
-#include "waffle/board/opxy_boot.h"
+#include "waffle/board/boot.h"
 
 static struct fake_flash g_f;
 static struct s02_flash_ops g_ops;

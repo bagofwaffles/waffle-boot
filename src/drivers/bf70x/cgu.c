@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* Clock Generation Unit (see waffle/drivers/bf70x_cgu.h). */
-#include "waffle/drivers/bf70x_cgu.h"
+/* Clock Generation Unit (see waffle/drivers/bf70x/cgu.h). */
+#include "waffle/drivers/bf70x/cgu.h"
 
 #include <stddef.h>
 

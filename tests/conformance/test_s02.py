@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-02 SPI flash: src/s02_flash.c and src/s02_write.c (through h_s02) on images built by
+"""S-02 SPI flash: src/core/flash/layout.c and src/core/flash/write.c (through h_s02) on images built by
 images.spiflash, against its outcome checker and tests/oracle/S-02-spi-flash/vectors (part 'logic')."""
 
 import csv
@@ -390,7 +390,7 @@ class Upgrade(unittest.TestCase):
                 sector_erases = [o for o in ops if o.startswith('e:') and
                                  spiflash.SLOT_OFF[0] <= int(o[2:], 16) < spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX]
                 # S-02.045: the image's sectors, and the last sector when the image leaves it free; then the
-                # boot logo's header sector (src/front/fr_handoff.h) and S-02.103's settings sector when the
+                # boot logo's header sector (src/front/handoff.h) and S-02.103's settings sector when the
                 # image leaves them free too
                 last = n <= spiflash.SLOT_MAX - 0x1000
                 settings = n <= spiflash.SLOT_MAX - 0x2000
@@ -2252,7 +2252,7 @@ class RecoveryActions(unittest.TestCase):
 
 
 class StartLog(unittest.TestCase):
-    """SC-STARTLOG on the logic: the front's step for the start log (src/front/fr_startlog.c, fr_log_start())
+    """SC-STARTLOG on the logic: the front's step for the start log (src/front/slots/startlog.c, fr_log_start())
     through h_s02's flash, against vectors/start_log.csv. The hand-off record, the main image's program and
     the ways in that skip the step (run 5) are the unit tests' (test_front_startlog, test_front_start)."""
 
@@ -2418,7 +2418,7 @@ STORE_OK, STORE_UNUSABLE, STORE_IO, STORE_VERIFY = 0, 1, 2, 3
 
 
 class SettingsSector(unittest.TestCase):
-    """SC-SETTINGS on the logic: src/s02_store.c (s02_store_read(), s02_store_write(), s02_store_clear())
+    """SC-SETTINGS on the logic: src/core/flash/settings.c (s02_store_read(), s02_store_write(), s02_store_clear())
     through h_s02's flash, against vectors/settings_sector.json, for both slots. The running slot's
     establishment and its image's check are the start's (S-01.002, S-02.016) and are given to each command; what
     a start does with Start in boot menu is S-05's (test_s05.py StartInMenu); the Settings screen and the factory
@@ -2810,8 +2810,8 @@ def logo_pattern(n, p):
 
 
 class BootLogo(unittest.TestCase):
-    """The stored boot logo: src/logo.c (wb_logo_parse(), wb_logo_room(), wb_logo_read(), wb_logo_save(),
-    wb_logo_remove()) and the front's check and read (src/front/fr_logo.c) through h_s02's flash, against
+    """The stored boot logo: src/core/flash/logo.c (wb_logo_parse(), wb_logo_room(), wb_logo_read(), wb_logo_save(),
+    wb_logo_remove()) and the front's check and read (src/front/display/logo.c) through h_s02's flash, against
     vectors/boot_logo.json, for both slots; the slot upgrade's erase of the header through s02_slot_upgrade().
     System's Boot logo screen, the PNG's conversion and the factory reset's screen are not driven here."""
 

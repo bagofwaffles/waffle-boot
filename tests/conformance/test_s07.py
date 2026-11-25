@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-07 rules and the PSoC bootloader-host protocol: src/s07_rules.c and s07_cypress.c (through h_s07),
-and the backplane step (src/s07_psoc.c, s07_program.c through h_s07p), against tests/oracle/S-07-psoc."""
+"""S-07 rules and the PSoC bootloader-host protocol: src/core/psoc/rules.c and psoc/cypress.c (through h_s07),
+and the backplane step (src/core/psoc/psoc.c, psoc/program.c through h_s07p), against tests/oracle/S-07-psoc."""
 
 import json
 import os
@@ -30,7 +30,7 @@ class Keys(unittest.TestCase):
 
     @requirement('S-07.031', 'S-07.079')
     def test_S07_031_bitmaps(self):
-        """Each bitmap's keys down by s07_key_down(). The lengths of S-07.079 are the caller's (src/s07_psoc.c,
+        """Each bitmap's keys down by s07_key_down(). The lengths of S-07.079 are the caller's (src/core/psoc/psoc.c,
         not driven): a bitmap shorter than 9 bytes is ignored (no events), and only bytes 0-8 are read."""
         cases = vectors('keys.json')['bitmaps']
         read = [b[:18] for c in cases for b in c['bitmaps'] if len(b) >= 18]
@@ -89,7 +89,7 @@ class Power(unittest.TestCase):
 
     @requirement('S-07.055', 'S-07.079')
     def test_S07_055_vbus(self):
-        """A shorter reply's missing bytes read as 00 (S-07.079): the caller's (src/s07_psoc.c), done here."""
+        """A shorter reply's missing bytes read as 00 (S-07.079): the caller's (src/core/psoc/psoc.c), done here."""
         cases = vectors('power.json')['vbus']
         reply = [(bytes.fromhex(c['reply']) + bytes(2))[:2] for c in cases]
         out = run('s07', ['vbus %d %d %d %d' % (c['applied'], c['target'], r[0], r[1]) for c, r in zip(cases, reply)])
@@ -401,7 +401,7 @@ class Backplane(unittest.TestCase):
 
 
 class Continue(unittest.TestCase):
-    """Continue to the OS on the PSoC link (S-05.033): src/s07_psoc.c in h_s07p, held mode by the hold key and a key
+    """Continue to the OS on the PSoC link (S-05.033): src/core/psoc/psoc.c in h_s07p, held mode by the hold key and a key
     test, then the restart's PSoC part as the board makes it with the slave present (the key test's end, the view's
     hold, s07_shutdown_reports()), against s07_model.Psoc."""
 

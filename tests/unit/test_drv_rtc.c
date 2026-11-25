@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Tests for RTC0 (src/drivers/bf70x/rtc.c) and the board's RTC hooks
- * (src/board/opxy_rtc_board.c): S-13a.070 - S-13a.072 over a model of the
+ * (src/board/ui/rtc_hooks.c): S-13a.070 - S-13a.072 over a model of the
  * RTC's 1 Hz domain in the MMR fake.
  */
 #include <string.h>
@@ -10,10 +10,10 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_rtc.h"
-#include "waffle/board/opxy_rtc_board.h"
+#include "waffle/drivers/bf70x/rtc.h"
+#include "waffle/board/rtc_hooks.h"
 
-/* As waffle/board/opxy_services.h declares them. */
+/* As waffle/board/services.h declares them. */
 bool opxy_rtc_read(uint32_t *clk);
 void opxy_rtc_write(uint32_t clk);
 

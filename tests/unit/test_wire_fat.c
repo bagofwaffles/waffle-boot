@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The USB disk's FAT volume on FatFs (src/wire_fat.c), against the S-12
+ * The USB disk's FAT volume on FatFs (src/core/fs/fat.c), against the S-12
  * vectors in wire_vectors.h and fat.txt:
  * - S-12.016's stamps (stamps.json), S-12.012's names (names.json create:
  *   the entry forms FatFs gives, and every refused name creates nothing),
@@ -27,9 +27,9 @@
 
 #include "wb_fatfs.h"
 
-#include "waffle/device.h"
-#include "waffle/s11_content.h"
-#include "waffle/wire_fat.h"
+#include "waffle/boot/device.h"
+#include "waffle/install/content.h"
+#include "waffle/fs/fat.h"
 
 #include "vectors/wire_vectors.h"
 

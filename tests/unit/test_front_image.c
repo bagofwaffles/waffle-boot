@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The front's CRC-32 and SHA-256, its image descriptor and the loaded
- * image's check (src/front/fr_image.c), and the hand-off record's seal
+ * image's check (src/front/slots/image.c), and the hand-off record's seal
  * as the full bootloader reads it.
  */
 #include <string.h>
@@ -9,11 +9,11 @@
 #include "support/check.h"
 #include "fr_map_rule.h"
 
-#include "front/fr.h"
-#include "front/fr_handoff.h"
-#include "front/fr_image.h"
-#include "waffle/bytes.h"
-#include "waffle/wire_crc.h"
+#include "front/front.h"
+#include "front/handoff.h"
+#include "front/slots/image.h"
+#include "waffle/util/bytes.h"
+#include "waffle/util/crc.h"
 
 static void test_crc32(void)
 {

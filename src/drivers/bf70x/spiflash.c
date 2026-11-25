@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* Serial NOR flash commands (see waffle/drivers/bf70x_spiflash.h). */
-#include "waffle/drivers/bf70x_spiflash.h"
+/* Serial NOR flash commands (see waffle/drivers/bf70x/spiflash.h). */
+#include "waffle/drivers/bf70x/spiflash.h"
 
 #include <stddef.h>
 

@@ -1,19 +1,19 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The check suite's table, verdicts, detail lines, summary pages, report
- * and the Nordic link's gate (waffle/board/testos_check.h). Pure: the host's
+ * and the Nordic link's gate (waffle/testos/check.h). Pure: the host's
  * unit tests include this file with OPXY_TESTOS_CHECK defined. Nothing is
  * compiled without it.
  */
-#include "waffle/board/testos_check.h"
+#include "waffle/testos/check.h"
 
 #if defined(OPXY_TESTOS_CHECK)
 
 #include <string.h>
 
-#include "waffle/s06_frame.h"
-#include "waffle/s11_version.h"
-#include "waffle/s17_revisions.h"
+#include "waffle/link/frame.h"
+#include "waffle/util/version.h"
+#include "waffle/boot/revisions.h"
 
 const struct tchk_info tchk_tests[TCHK_COUNT] = {
 	[TCHK_OS_PARTITION] = { "os-partition", "OS partition", TCHK_KIND_OS },

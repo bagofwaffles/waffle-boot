@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The 64-bit divisions done without the compiler's: wb_udiv64_32() and
- * wb_udiv64() (waffle/div64.h), the progress percent wb_percent32(), the
+ * wb_udiv64() (waffle/util/div64.h), the progress percent wb_percent32(), the
  * time they give (wb_time_us(), wb_time_ms()), and
  * yaffs2's wb_yaffs_div() (yaffs_port.h), each against the host's own
  * 64-bit division at the edges of every step and on random values.
@@ -10,8 +10,8 @@
 #include "testlib.h"
 
 #include "support/fake_core.h"
-#include "waffle/div64.h"
-#include "waffle/drivers/bf70x_time.h"
+#include "waffle/util/div64.h"
+#include "waffle/drivers/bf70x/time.h"
 #include "yaffs_port.h"
 
 static uint64_t rng = 0x9E3779B97F4A7C15u;

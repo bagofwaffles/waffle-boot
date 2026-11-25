@@ -40,8 +40,8 @@
 #                 make image BOOT_PROMPT=1 BUILD=build/prompt
 #   LOG_DEBUG=1   a development build that also logs the debug lines:
 #                 make image LOG_DEBUG=1 BUILD=build/debug
-#   BOOT_CRUMBS=1 a trial boot's breadcrumbs (src/board/opxy_crumbs.c)
-#   BOOT_TIMING=1 the boot's milestones timed (src/board/opxy_timing.c)
+#   BOOT_CRUMBS=1 a trial boot's breadcrumbs (src/board/boot/crumbs.c)
+#   BOOT_TIMING=1 the boot's milestones timed (src/board/boot/timing.c)
 #   BOOT_TIMING_INFER=1  with BOOT_TIMING=1, the running slot also inferred
 #                 from both slots' streams after the front named it, timed for
 #                 the report; it lengthens the start, so it is off by default
@@ -125,10 +125,10 @@ TARGET_CFLAGS += -DOPXY_BL_VERSION_MAJOR=$(word 1,$(OPXY_BL_VERSION_WORDS))u \
 	-DOPXY_BL_VERSION_MINOR=$(word 2,$(OPXY_BL_VERSION_WORDS))u \
 	-DOPXY_BL_VERSION_PATCH=$(word 3,$(OPXY_BL_VERSION_WORDS))u
 endif
-# S-05.025: the boot prompt (OPXY_BOOT_PROMPT, waffle/board/opxy_boot.h) is in
+# S-05.025: the boot prompt (OPXY_BOOT_PROMPT, waffle/board/boot.h) is in
 # the image only with BOOT_PROMPT=1. The host build has it on, so that its code
 # is built, analyzed and tested there; its op is never set on the host.
-# BOOT_CRUMBS=1: a trial boot's breadcrumbs (src/board/opxy_crumbs.c). In the
+# BOOT_CRUMBS=1: a trial boot's breadcrumbs (src/board/boot/crumbs.c). In the
 # bootloader alone, and it goes into the installer with it:
 # make installer BOOT_CRUMBS=1 BUILD=build/crumbs
 ifneq ($(BOOT_CRUMBS),)
@@ -137,7 +137,7 @@ endif
 ifneq ($(BOOT_PROMPT),)
 TARGET_CFLAGS += -DOPXY_BOOT_PROMPT=1
 endif
-# BOOT_TIMING=1: the boot's milestones timed (src/board/opxy_timing.c), never in
+# BOOT_TIMING=1: the boot's milestones timed (src/board/boot/timing.c), never in
 # a release. The report repeats on the log in held mode, and the monitor's
 # test OS reads a hand-over's report (wiki/Test-OS.md):
 # make installer test-os-mon BOOT_TIMING=1 BUILD=build/timing
@@ -149,7 +149,7 @@ TARGET_CFLAGS += -DOPXY_BOOT_TIMING_INFER_ON=1
 endif
 # BOOT_LINK_SETTLE_US=n: the time between a byte of the slave's boot stream and
 # the sample of PA6 that decides the next byte (OPXY_BOOT_LINK_SETTLE_US,
-# waffle/board/opxy.h), default 2. How soon the slave's boot ROM raises PA6
+# waffle/board/values.h), default 2. How soon the slave's boot ROM raises PA6
 # after a byte is not measured; a timing build measures it, and watches PA6
 # for BOOT_TIMING_WINDOW_US after each byte when that is longer
 # (wiki/Test-OS.md):
@@ -211,25 +211,37 @@ ifneq ($(YAFFS_ZERO_ERASE),)
 TARGET_CFLAGS += -DOPXY_YAFFS_ZERO_ERASE=1
 endif
 # The frozen front (src/front/, CONTRIBUTING.md): its own flags, so that no build
-# option of the image changes its bytes.
-FRONT_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -g -fdebug-prefix-map=$(CURDIR)=. \
+# option of the image changes its bytes. -Isrc: its includes are rooted at src/.
+FRONT_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -Isrc -g -fdebug-prefix-map=$(CURDIR)=. \
 	-mcpu=bf703-none -mlong-calls -Os -ffreestanding -fno-common \
 	-ffunction-sections -fdata-sections -fno-tree-loop-distribute-patterns
 HOST_LIB_CFLAGS  := $(COMMON) -O2 -ffreestanding -fno-common -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
 HOST_TEST_CFLAGS := $(COMMON) -O2 -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
 
+# The sources of the image, the test OS and the host library: every file
+# under SRC_TREES, sub-folders included. The front, the stub, the glue, the
+# vendored code and the headers are built apart.
+SRC_TREES := src/core src/board src/testos src/drivers
+# $(call rwildcard,<dirs>,<patterns>): the matching files under <dirs>, at any depth.
+rwildcard = $(foreach d,$(wildcard $(addsuffix /*,$(1))),$(call rwildcard,$(d),$(2)) $(filter $(2),$(d)))
+# $(call src_files,<suffix>): the sources with that suffix.
+src_files = $(call rwildcard,$(SRC_TREES),%$(1))
+
 # lcd_gpio.c is the test OS's gpio variant alone (TESTOS_LCD_GPIO below).
 # HOOK_SRCS hold strong definitions of the board's weak hooks; they come
 # after the board's files, so that a host test's link, which takes an
 # archive member for the first definition it finds, takes the weak ones.
-# The test OS's own files (src/testos/, nothing outside the test OS) sort
-# among the board's by name (by_name), since the link order places their
-# code in the test OS's images.
-HOOK_SRCS := src/board/opxy_display.c src/board/opxy_rtc_board.c
-by_name = $(foreach f,$(sort $(1:src/testos/%=src/board/%)),\
-	$(if $(filter $(f),$(1)),$(f),$(f:src/board/%=src/testos/%)))
+# The sources are sorted by path, except that the board's files and the test
+# OS's own (src/testos/, nothing outside the test OS), in any sub-folder,
+# sort together by file name (by_name), since the link order places their
+# code in the test OS's images. A sort key and the path are joined by '!',
+# which sorts below every character of a path.
+HOOK_SRCS := src/board/ui/display.c src/board/ui/rtc_hooks.c
+src_key = $(if $(filter src/board/% src/testos/%,$(1)),src/board/$(notdir $(1)),$(1))
+by_name = $(foreach w,$(sort $(foreach f,$(1),$(call src_key,$(f))!$(f))),\
+	$(lastword $(subst !, ,$(w))))
 SRCS  := $(filter-out src/drivers/bf70x/lcd_gpio.c $(HOOK_SRCS),\
-	$(call by_name,$(wildcard src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))) $(HOOK_SRCS)
+	$(call by_name,$(call src_files,.c))) $(HOOK_SRCS)
 TESTS := $(sort $(wildcard tests/unit/test_*.c))
 # Host-only test support (the register access fake, helpers).
 TEST_SUPPORT := $(sort $(wildcard tests/unit/support/*.c))
@@ -238,10 +250,14 @@ HOST_OBJS  := $(SRCS:src/%.c=$(BUILD)/host/obj/%.o)
 HOST_LIB   := $(BUILD)/host/libwaffle.a
 
 # The front: every source on the target; on the host all but its drivers,
-# which the host's tests stand in for.
-FRONT_SRCS := $(sort $(wildcard src/front/*.c))
-FRONT_ASM  := $(sort $(wildcard src/front/*.S))
-FRONT_TARGET_ONLY := src/front/fr_board.c src/front/fr_libc.c $(wildcard src/front/fr_hw_*.c)
+# which the host's tests stand in for. src/front/sources.mk lists them in
+# their link order (FRONT_SRCS, FRONT_ASM, FRONT_TARGET_ONLY), and a source
+# under src/front/ it does not list fails the build.
+include src/front/sources.mk
+FRONT_UNLISTED := $(filter-out $(FRONT_SRCS) $(FRONT_ASM),$(call rwildcard,src/front,%.c %.S))
+ifneq ($(FRONT_UNLISTED),)
+$(error src/front/sources.mk does not list $(FRONT_UNLISTED))
+endif
 FRONT_HOST_OBJS := $(filter-out $(FRONT_TARGET_ONLY),$(FRONT_SRCS))
 FRONT_HOST_OBJS := $(FRONT_HOST_OBJS:src/front/%.c=$(BUILD)/host/front/%.o)
 FRONT_HOST_LIB  := $(BUILD)/host/libfront.a
@@ -250,14 +266,21 @@ TEST_SUPPORT_OBJS := $(TEST_SUPPORT:tests/unit/%.c=$(BUILD)/host/tests/%.o)
 TEST_SUPPORT_LIB  := $(BUILD)/host/tests/libsupport.a
 
 # Target-only start-up code.
-ASM_SRCS   := $(call by_name,$(wildcard src/drivers/bf70x/*.S src/board/*.S src/testos/*.S))
+ASM_SRCS   := $(call by_name,$(call src_files,.S))
 CROSS_OBJS := $(SRCS:src/%.c=$(BUILD)/bf703/obj/%.o) \
 	$(ASM_SRCS:src/%.S=$(BUILD)/bf703/obj/%.o)
 CROSS_LIB  := $(BUILD)/bf703/libwaffle.a
-# A .c and a .S with one name would share an object, and the archive would
-# silently keep only one of them.
+# A .c and a .S with one name in one folder would share an object, and one
+# would overwrite the other. Objects of one file name in different folders
+# are both archived (each archive is written afresh, every member appended).
 ifneq ($(words $(CROSS_OBJS)),$(words $(sort $(CROSS_OBJS))))
 $(error a C and an assembly source share an object name: rename one)
+endif
+# The test OS's linker scripts take the entry's object by its member name
+# (src/testos/*.ld): no other object may have that name.
+TESTOS_ENTRY_OBJ := testos_entry.o
+ifneq ($(words $(filter %/$(TESTOS_ENTRY_OBJ),$(CROSS_OBJS))),1)
+$(error one object, the test OS's entry, is named $(TESTOS_ENTRY_OBJ))
 endif
 
 .PHONY: all host check cross image test-os analyze cppcheck size clean regen ui-update bump-version
@@ -274,10 +297,10 @@ HOST_TEST_CFLAGS += $(TP_CPPFLAGS)
 TARGET_CFLAGS    += $(TP_CPPFLAGS) $(LIBC_INCLUDES)
 # The hand-over's code is in L2 and calls into DDR and back: every call in
 # that file goes through a register.
-$(BUILD)/bf703/obj/board/opxy_handover.o: TARGET_CFLAGS += -mlong-calls
+$(BUILD)/bf703/obj/board/boot/handover.o: TARGET_CFLAGS += -mlong-calls
 # S-09.072: the bridge's check runs over every byte an install sends, on both
 # CPUs; -O2, as third_party.mk gives the CRCs, speeds its word loop.
-$(BUILD)/bf703/obj/s09_bridge.o: TARGET_CFLAGS += $(TARGET_SPEED)
+$(BUILD)/bf703/obj/core/bridge/records.o: TARGET_CFLAGS += $(TARGET_SPEED)
 
 host: $(HOST_LIB) $(FRONT_HOST_LIB) $(TP_HOST_LIBS) $(HOST_TESTS)
 
@@ -375,7 +398,7 @@ check/testos_mon:
 	$(PYTHON) -I -B tests/tools/test_testos_mon.py
 
 # tools/hostlink.py, and testos_mon.py's dev-put and dev-get over it, against
-# the host link's own C (src/hostlink.c) with volumes in memory.
+# the host link's own C (src/core/host/hostlink.c) with volumes in memory.
 .PHONY: check/hostlink
 check/hostlink:
 	CC="$(CC)" $(PYTHON) -I -B tests/tools/test_hostlink_tool.py
@@ -458,8 +481,8 @@ $(START_CHECK): $(CROSS_LIB) $(BUILD)/bf703/libpicolibc.a $(LDSCRIPT)
 IMAGE  := $(BUILD)/bf703/waffle-boot.elf
 STREAM := $(IMAGE:.elf=.ldr)
 LAYOUT := $(IMAGE:.elf=.layout.json)
-LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/opxy.h \
-	--flash src/include/waffle/s02_flash.h --memmap src/include/waffle/s01_memmap.h \
+LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/values.h \
+	--flash src/include/waffle/flash/layout.h --memmap src/include/waffle/boot/memmap.h \
 	--stream $(STREAM) --stub $(BUILD)/bf703/stub.elf
 
 # S-01.009: the stack the factory first stage calls the ROM's boot entry on,
@@ -467,9 +490,9 @@ LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/opxy.h \
 FIRST_STAGE_STACK := 0x11807000:0x11808000
 # S-01.007: what the INIT block runs on the ROM's entry SP, against the
 # 0xE8 budget (check_stack.py). S-01.020's BCODE is check_stream.py's.
-INIT_STACK := src/front/fr_entry.stack.json
+INIT_STACK := src/front/start/entry.stack.json
 
-# The frozen front (src/front/fr_handoff.h): linked alone by front.ld from
+# The frozen front (src/front/handoff.h): linked alone by front.ld from
 # its own objects and libgcc, so that a reference to anything else or a
 # section front.ld does not place fails the link. Checked by
 # tools/front_image.py: its includes (boundary; -MD lists the compiler's
@@ -522,7 +545,7 @@ $(FRONT_STREAM): $(FRONT_ELF) $(FRONT_OK) tools/mkldr.py tools/elf32.py
 front-pin: $(FRONT_ELF)
 	$(PYTHON) -I -B tools/front_image.py pin $(FRONT_ELF) $(FRONT_PIN) --write
 
-# The stub (src/stub/, waffle/pack.h): linked alone by stub.ld from its own
+# The stub (src/stub/, waffle/boot/pack.h): linked alone by stub.ld from its own
 # objects, its own copy of zlib's inflate and CRC-32 (Z_SOLO: no C library;
 # NO_GZIP: raw deflate only) and libgcc, into the L2 the image leaves free.
 # The front enters it; it unpacks the image's packed block and enters the
@@ -567,7 +590,7 @@ $(STUB_ELF): $(STUB_OBJS) $(STUB_LD)
 # the image's packed runs (mkldr.py --unpacked).
 UNPACK_HOST := $(BUILD)/host/unpack-host
 $(UNPACK_HOST): src/stub/unpack_host.c src/stub/unpack.c src/stub/unpack.h \
-		src/include/waffle/pack.h $(BUILD)/host/libzlib.a
+		src/include/waffle/boot/pack.h $(BUILD)/host/libzlib.a
 	@mkdir -p $(@D)
 	$(CC) $(COMMON) -O2 $(TP_CPPFLAGS) src/stub/unpack_host.c src/stub/unpack.c \
 		$(BUILD)/host/libzlib.a -o $@
@@ -642,7 +665,7 @@ $(LAYOUT): $(IMAGE) $(STREAM) $(STUB_ELF) tools/layout.py tools/elf32.py tools/m
 # on a unit before anything is written to the SPI flash. The same sources
 # compiled with -DOPXY_TEST_OS=1 (waffle/testos.h) into their own objects,
 # linked by bf703_testos.ld outside the handover reserve and the staging
-# area (S-01.017) with src/testos/opxy_testos_entry.S as the entry
+# area (S-01.017) with src/testos/testos_entry.S as the entry
 # (S-05.013, S-05.014), streamed with no INIT block (the clocks and DDR are
 # up at OS entry, S-05.016), and gated by S-01's os
 # profile, S-05.024's refusals and the layout rules (tools/testos_layout.py,
@@ -712,7 +735,7 @@ $$(TESTOS_$(1)_OBJDIR)/obj/%.o: src/%.S
 
 $$(TESTOS_$(1)_LIB): $$(TESTOS_$(1)_OBJS)
 	@rm -f $$@
-	$(CROSS_AR) rcsD $$@ $$^
+	$(CROSS_AR) qcsD $$@ $$^
 
 $$(TESTOS_$(1)_IMAGE): $$(TESTOS_$(1)_LIB) $(TP_TARGET_LIBS) $$(TESTOS_$(1)_LD)
 	$(CROSS_CC) -mcpu=bf703-none -nostartfiles -nostdlib -T $$(TESTOS_$(1)_LD) \
@@ -728,7 +751,7 @@ $$(TESTOS_$(1)_STREAM): $$(TESTOS_$(1)_IMAGE) tools/mkldr.py tools/elf32.py
 
 $$(TESTOS_$(1)_LAYOUT): $$(TESTOS_$(1)_IMAGE) $$(TESTOS_$(1)_STREAM) tools/testos_layout.py tools/layout.py tools/elf32.py
 	$(PYTHON) -I -B tools/testos_layout.py $$< --ld $$(TESTOS_$(1)_LD) $(TESTOS_DEVICE_$(1)) \
-		--board src/include/waffle/board/opxy.h --memmap src/include/waffle/s01_memmap.h \
+		--board src/include/waffle/board/values.h --memmap src/include/waffle/boot/memmap.h \
 		--stream $$(TESTOS_$(1)_STREAM) $(TESTOS_LAYOUT_FLAGS_$(1)) --json $$@.tmp
 	$(foreach d,$(or $(TESTOS_LAYOUT_DEVICES_$(1)),xy),\
 		$(PYTHON) -I -B tests/oracle/S-01-boot-chain/check_layout.py $$@.tmp --device $(d) &&) true
@@ -795,7 +818,7 @@ $(BUILD)/host/obj/%.o: src/%.c
 
 $(HOST_LIB): $(HOST_OBJS)
 	@rm -f $@
-	$(AR) rcsD $@ $^
+	$(AR) qcsD $@ $^
 
 $(BUILD)/host/front/%.o: src/front/%.c
 	@mkdir -p $(@D)
@@ -803,7 +826,7 @@ $(BUILD)/host/front/%.o: src/front/%.c
 
 $(FRONT_HOST_LIB): $(FRONT_HOST_OBJS)
 	@rm -f $@
-	$(AR) rcsD $@ $^
+	$(AR) qcsD $@ $^
 
 $(BUILD)/host/tests/support/%.o: tests/unit/support/%.c
 	@mkdir -p $(@D)
@@ -811,7 +834,7 @@ $(BUILD)/host/tests/support/%.o: tests/unit/support/%.c
 
 $(TEST_SUPPORT_LIB): $(TEST_SUPPORT_OBJS)
 	@rm -f $@
-	$(AR) rcsD $@ $^
+	$(AR) qcsD $@ $^
 
 # Driver, board and boot-flow tests need neither picolibc nor the vectors,
 # so they also build where those do not (macOS cannot build picolibc's
@@ -873,7 +896,7 @@ $(BUILD)/bf703/obj/%.o: src/%.S
 
 $(CROSS_LIB): $(CROSS_OBJS)
 	@rm -f $@
-	$(CROSS_AR) rcsD $@ $^
+	$(CROSS_AR) qcsD $@ $^
 
 # Each test and each analyzed file is a target of its own, so that -j runs
 # them side by side; the output of each comes out in one piece. The files
@@ -882,7 +905,7 @@ CHECKS  := $(TESTS:tests/unit/%.c=check/%)
 ANALYZE := $(addprefix analyze/,$(SRCS) $(FRONT_SRCS) $(STUB_SRCS) src/stub/unpack_host.c \
 	$(TP_GLUE) $(TESTS) $(TEST_SUPPORT) \
 	$(filter %.c,$(LOCAL_SRCS)))
-TESTOS_VARIANT := $(sort $(shell grep -l 'OPXY_TEST_OS\|OPXY_TESTOS' src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
+TESTOS_VARIANT := $(sort $(shell grep -l 'OPXY_TEST_OS\|OPXY_TESTOS' $(call src_files,.c)))
 ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
 # The monitor's test OS with the hand-over timing report, the installer, and
 # the development image (BOOT_CRUMBS=1 BOOT_TIMING=1 LOG_DEBUG=1), over the
@@ -890,9 +913,10 @@ ANALYZE_TESTOS := $(addprefix analyze-testos/,$(TESTOS_VARIANT))
 ANALYZE_MON := $(addprefix analyze-mon/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
 ANALYZE_INSTALLER := $(addprefix analyze-installer/,$(filter-out $(TESTOS_LCD_GPIO),$(TESTOS_VARIANT)))
 # The survey installer, over the files its options reach.
-ANALYZE_SURVEY := $(addprefix analyze-survey/,$(sort $(shell grep -l 'OPXY_TESTOS' src/testos/*.c src/board/*.c)))
+ANALYZE_SURVEY := $(addprefix analyze-survey/,$(sort $(shell grep -l 'OPXY_TESTOS' \
+	$(call rwildcard,src/testos src/board,%.c))))
 DEV_VARIANT := $(sort $(shell grep -l 'OPXY_BOOT_CRUMBS\|OPXY_CRUMB\|OPXY_TIM\|OPXY_STARTUP\|S14_DEFAULT_THRESHOLD' \
-	src/*.c src/board/*.c src/testos/*.c src/drivers/bf70x/*.c))
+	$(call src_files,.c)))
 ANALYZE_DEV := $(addprefix analyze-dev/,$(DEV_VARIANT))
 .PHONY: $(CHECKS) $(ANALYZE) $(ANALYZE_TESTOS) $(ANALYZE_MON) $(ANALYZE_INSTALLER) $(ANALYZE_SURVEY) \
 	$(ANALYZE_DEV)
@@ -957,7 +981,7 @@ cppcheck: $(VEC_HEADERS)
 	$(CPPCHECK) -j $(CPPCHECK_JOBS) --cppcheck-build-dir=$(BUILD)/cppcheck \
 		--std=c11 --enable=warning,style,performance,portability \
 		--error-exitcode=1 --inline-suppr --quiet \
-		--suppress=missingIncludeSystem -Isrc/include -I$(GEN) \
+		--suppress=missingIncludeSystem -Isrc/include -Isrc -I$(GEN) \
 		-Isrc/glue/crc -Isrc/glue/blockdev -Isrc/glue/fatfs -Isrc/glue/yaffs2 -Isrc/glue/minizip \
 		-isrc/third_party src tests
 

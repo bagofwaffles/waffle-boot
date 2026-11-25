@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * waffle-boot's MTP responder (src/s10b_mtp.c) over a few files held in the
+ * waffle-boot's MTP responder (src/core/mtp/mtp.c) over a few files held in the
  * calling process, at level R or W, so that tests/tools/test_mtpcp.py can run
  * tools/mtpcp.py against the real engine through ctypes. A host build for
  * that test only.
@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "waffle/s10b_mtp.h"
+#include "waffle/mtp/mtp.h"
 
 #define MAX_FILES 64
 

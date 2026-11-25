@@ -20,11 +20,11 @@
  *   - the first 2.5 MiB of the DDR handover reserve, from 0x8803D000
  *     (S-01.013): the main image, its data and its stack (S-13a, Terms).
  *     The next 512 KiB, to 0x8833D000, hold the packed block the stream
- *     loads and the stub unpacks (waffle/pack.h); the rest of DDR is the
- *     heap, the RAM disk and the frame buffers (waffle/board/opxy.h,
+ *     loads and the stub unpacks (waffle/boot/pack.h); the rest of DDR is the
+ *     heap, the RAM disk and the frame buffers (waffle/board/values.h,
  *     S-01.016). The region's end keeps the image out of them.
  *
- * The frozen front (src/front/fr_handoff.h, front.ld) owns L1 code
+ * The frozen front (src/front/handoff.h, front.ld) owns L1 code
  * 0x11A04000-0x11A0C000, L1 data A 0x11802000-0x11804000 and L2
  * 0x08002000-0x08031000: the regions here stop short of them, and
  * tools/mkldr.py refuses an image that meets them. The front holds the INIT
@@ -156,7 +156,7 @@ SECTIONS
 	} > ddr
 
 	/* The packed block, which the running-slot inference compares
-	 * (src/board/opxy_master.c, waffle/pack.h). */
+	 * (src/board/boot/master.c, waffle/boot/pack.h). */
 	_wb_pack_start = ORIGIN(ddr) + LENGTH(ddr);
 	_wb_pack_end = 0x8833D000;
 

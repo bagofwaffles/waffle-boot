@@ -71,13 +71,13 @@ sys.path.insert(0, os.path.join(HERE, '..', 'tests', 'oracle', 'S-01-boot-chain'
 import mkldr  # noqa: E402
 import check_stream  # noqa: E402
 
-VID, PID = 0x2367, 0x0021      # src/front/fr_usb.h
+VID, PID = 0x2367, 0x0021      # src/front/recovery/usb.h
 PRODUCT = 'OP-XY Recovery'
 PID_1F, PRODUCT_1F = 0x0102, 'OP-1 Recovery'    # S-02.093 on the OP-1F
 # Recovery's port on each device: (product id, product string).
 PORTS = ((PID, PRODUCT), (PID_1F, PRODUCT_1F))
 
-# src/front/fr_proto.h
+# src/front/recovery/proto.h
 PROTO = 2                      # from front version 11
 OLD_PROTO = 1                  # fronts 5 to 10
 HELLO, INFO, BEGIN, DATA, END, RESTART, ACT, REPLY = 1, 2, 3, 4, 5, 6, 7, 0x80
@@ -417,7 +417,7 @@ class Link:
 
     def sync(self):
         """Puts the front's parser back in step before the first request. The parser keeps a
-        partial frame until its stated length has come (fr_proto.c, next_frame()), so a frame an
+        partial frame until its stated length has come (front/recovery/proto.c, next_frame()), so a frame an
         earlier host left cut off would take the start of this host's first request as its tail.
         From version 8 the front drops it when USB's configured state changes, which closing the
         port need not do.
@@ -1288,7 +1288,7 @@ def _meets(a, b, span):
 
 
 def front_scan(data, blocks):
-    """The front's part of the device's scan() (src/front/fr_slots.c); the two must agree.
+    """The front's part of the device's scan() (src/front/slots/slots.c); the two must agree.
     Blocks in stream order up to FINAL; a block with a destination (a count, not IGNORE) that
     meets the shared block must be the descriptor (data, at its address, inside the block);
     one that meets a front window must be data inside that window, and then counts, in stream
@@ -1329,7 +1329,9 @@ def front_scan(data, blocks):
     return out
 
 
-PIN_FILE, PROTO_H = 'src/front/front.pin', 'src/front/fr_proto.h'
+PIN_FILE, PROTO_H = 'src/front/front.pin', 'src/front/recovery/proto.h'
+# Where the protocol header is in older commits, before the front's files had folders.
+PROTO_H_OLD = 'src/front/fr_proto.h'
 
 
 def _pin_of(text):
@@ -1356,10 +1358,20 @@ def _git(root, *args):
     return r.stdout if r.returncode == 0 else None
 
 
+def _proto_at(root, rev):
+    """The protocol header at commit rev, at its path now or else at its older one; None
+    when the commit has neither."""
+    for path in (PROTO_H, PROTO_H_OLD):
+        text = _git(root, 'show', '%s:%s' % (rev, path))
+        if text is not None:
+            return text
+    return None
+
+
 def signed_pins(root=os.path.join(HERE, '..')):
     """What this checkout says of front pins, or None when it says nothing:
     {'git': whether HEAD's history of src/front/front.pin could be read,
-     'pins': {pin: the front's version from fr_proto.h at the same commit, or None} for every
+     'pins': {pin: the front's version from the protocol header at the same commit, or None} for every
              pin a commit of that history set (signed),
      'now': the working tree's pin, or None}."""
     try:
@@ -1375,7 +1387,7 @@ def signed_pins(root=os.path.join(HERE, '..')):
         if pin is None:
             continue            # a commit that removed it
         if pins.get(pin) is None:
-            pins[pin] = _front_version_of(_git(root, 'show', '%s:%s' % (rev, PROTO_H)))
+            pins[pin] = _front_version_of(_proto_at(root, rev))
     ok = revs is not None and bool(pins)
     if not ok and now is None:
         return None

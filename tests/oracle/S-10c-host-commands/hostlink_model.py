@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """S-10c.123, S-10c.127, S-10c.131, S-10c.135 - S-10c.137: the host link's classes and its approval, as a model
-independent of src/hostlink.c. gen_hostlink.py builds vectors/hostlink_access.json from it."""
+independent of src/core/host/hostlink.c. gen_hostlink.py builds vectors/hostlink_access.json from it."""
 
 SAFE, NEEDS, NEVER, BY_ROOT, HOLD, WARNED = 'safe', 'needs', 'never', 'by root', 'hold', 'warned'
 

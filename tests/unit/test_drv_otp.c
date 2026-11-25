@@ -3,7 +3,7 @@
 #include "support/check.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_otp.h"
+#include "waffle/drivers/bf70x/otp.h"
 
 static uint32_t last_item;
 static bool rom_ok;

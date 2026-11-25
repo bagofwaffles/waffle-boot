@@ -1,18 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The boot timing build's stamp store, its report lines and the record that
- * crosses a hand-over (waffle/boot_time.h).
+ * crosses a hand-over (waffle/boot/timing.h).
  */
 #include "support/check.h"
 
 #include <stddef.h>
 #include <string.h>
 
-#include "waffle/boot_time.h"
-#include "waffle/s09_fast.h"
-#include "waffle/s09_master.h"
-#include "waffle/s06_bytes.h"
-#include "waffle/s06_clock.h"
+#include "waffle/boot/timing.h"
+#include "waffle/bridge/fast.h"
+#include "waffle/bridge/master.h"
+#include "waffle/link/bytes_compat.h"
+#include "waffle/link/clock.h"
 
 #define MHZ 400u
 #define US(n) ((uint64_t)(n) * MHZ)
@@ -437,7 +437,7 @@ static size_t five_blocks(uint8_t *slot)
 	return n;
 }
 
-/* The board's stream ops, as opxy_timing.c counts them, against a slave that
+/* The board's stream ops, as board/boot/timing.c counts them, against a slave that
  * is always ready and answers the opening byte. */
 struct fake_split {
 	struct boot_time t;

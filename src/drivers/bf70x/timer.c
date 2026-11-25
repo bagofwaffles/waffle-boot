@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * GP timers, core timer and watchdog (see waffle/drivers/bf70x_timer.h).
+ * GP timers, core timer and watchdog (see waffle/drivers/bf70x/timer.h).
  */
-#include "waffle/drivers/bf70x_timer.h"
+#include "waffle/drivers/bf70x/timer.h"
 
-#include "waffle/drivers/bf70x_coremmr.h"
+#include "waffle/drivers/bf70x/coremmr.h"
 #include "waffle/drivers/mmr.h"
 
 void wb_gptimer_stop_all(void)

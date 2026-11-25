@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * S-05.004 on the board (src/board/opxy_master.c): the report before the
+ * S-05.004 on the board (src/board/boot/master.c): the report before the
  * load reaches the PSoC link even behind a queued log line. The UART moves
  * at most a FIFO's worth of bytes each time it is serviced, so a frame
  * written behind a long line stays in the ring; opxy_psoc_drain() sends it
@@ -13,9 +13,9 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/board/opxy_boot.h"
-#include "waffle/s06_frame.h"
-#include "waffle/wire_crc.h"
+#include "waffle/board/boot.h"
+#include "waffle/link/frame.h"
+#include "waffle/util/crc.h"
 
 static struct opxy_master m;
 static uint8_t rx[OPXY_UART_BUF], tx[OPXY_UART_BUF];

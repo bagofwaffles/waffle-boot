@@ -16,9 +16,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/device.h"
-#include "waffle/s10c_host.h"
-#include "waffle/s10c_sysex.h"
+#include "waffle/boot/device.h"
+#include "waffle/host/commands.h"
+#include "waffle/host/sysex.h"
 
 #include "s11_check.h"
 #include "vectors/s10c_vectors.h"

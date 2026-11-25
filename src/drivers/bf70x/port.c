@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* Ports, pin multiplexing and pads (see waffle/drivers/bf70x_port.h). */
-#include "waffle/drivers/bf70x_port.h"
+/* Ports, pin multiplexing and pads (see waffle/drivers/bf70x/port.h). */
+#include "waffle/drivers/bf70x/port.h"
 
 #include "waffle/drivers/mmr.h"
 

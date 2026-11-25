@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The check suite's eMMC parts (waffle/board/testos_check.h): the guard on the
+ * The check suite's eMMC parts (waffle/testos/check.h): the guard on the
  * eMMC operations, the switch-back that makes the unit's OS active again
  * when it is intact in the other boot partition, the read of both boot
  * partitions, and the temporary file. Pure: S-03's operations come in as
@@ -8,13 +8,13 @@
  * host's unit tests run all of it against fakes. Nothing is compiled
  * without OPXY_TESTOS_CHECK.
  */
-#include "waffle/board/testos_check.h"
+#include "waffle/testos/check.h"
 
 #if defined(OPXY_TESTOS_CHECK)
 
 #include <string.h>
 
-#include "waffle/s09_bridge.h"
+#include "waffle/bridge/records.h"
 
 #define FLUSH_INDEX 32u		/* EXT_CSD[32] FLUSH_CACHE (S-03.068) */
 
