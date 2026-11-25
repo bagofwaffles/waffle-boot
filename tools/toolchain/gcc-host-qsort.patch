@@ -1,0 +1,122 @@
+--- a/gcc/gcc/haifa-sched.c
++++ b/gcc/gcc/haifa-sched.c
+@@ -3085,7 +3085,7 @@
+     swap_sort (first, n_ready_real);
+   else if (n_ready_real > 2)
+     /* HACK: Disable qsort checking for now (PR82396).  */
+-    (qsort) (first, n_ready_real, sizeof (rtx), rank_for_schedule);
++    gcc_stable_qsort (first, n_ready_real, sizeof (rtx), rank_for_schedule);
+ 
+   if (sched_verbose >= 4)
+     {
+--- a/gcc/gcc/system.h
++++ b/gcc/gcc/system.h
+@@ -1181,6 +1181,10 @@
+ /* Get definitions of HOST_WIDE_INT.  */
+ #include "hwint.h"
+ 
++/* A sort that does not depend on the host C library (vec.c).  */
++void gcc_stable_qsort (void *, size_t, size_t,
++		       int (*)(const void *, const void *));
++
+ /* qsort comparator consistency checking: except in release-checking compilers,
+    redirect 4-argument qsort calls to qsort_chk; keep 1-argument invocations
+    corresponding to vec::qsort (cmp): they use C qsort internally anyway.  */
+--- a/gcc/gcc/vec.c
++++ b/gcc/gcc/vec.c
+@@ -196,6 +196,86 @@
+   vec_mem_desc.dump (VEC_ORIGIN);
+ }
+ 
++/* A merge sort that makes the same comparisons in the same order as the
++   GNU C library's qsort: halves split at N / 2, the left element taken when
++   the two compare equal, and pointers sorted in place of elements larger than
++   32 bytes.  Sorting with it keeps the compiler's output from depending on
++   the host C library's qsort, which may order equal elements differently.  */
++
++struct stable_qsort_ctx
++{
++  size_t size;
++  int (*cmp) (const void *, const void *);
++  bool indirect;
++  char *tmp;
++};
++
++static void
++stable_qsort_1 (const stable_qsort_ctx *c, char *b, size_t n)
++{
++  if (n <= 1)
++    return;
++  size_t s = c->size;
++  size_t n1 = n / 2, n2 = n - n1;
++  char *b1 = b, *b2 = b + n1 * s, *out = c->tmp;
++  stable_qsort_1 (c, b1, n1);
++  stable_qsort_1 (c, b2, n2);
++  while (n1 > 0 && n2 > 0)
++    {
++      int r = (c->indirect
++	       ? c->cmp (*(void **) b1, *(void **) b2)
++	       : c->cmp (b1, b2));
++      if (r <= 0)
++	{
++	  memcpy (out, b1, s);
++	  b1 += s;
++	  n1--;
++	}
++      else
++	{
++	  memcpy (out, b2, s);
++	  b2 += s;
++	  n2--;
++	}
++      out += s;
++    }
++  if (n1 > 0)
++    memcpy (out, b1, n1 * s);
++  memcpy (b, c->tmp, (n - n2) * s);
++}
++
++void
++gcc_stable_qsort (void *base, size_t n, size_t size,
++		  int (*cmp) (const void *, const void *))
++{
++  if (n <= 1)
++    return;
++  stable_qsort_ctx c = { size, cmp, false, NULL };
++  if (size > 32)
++    {
++      char **ptrs = XNEWVEC (char *, n);
++      char *sorted = XNEWVEC (char, n * size);
++      for (size_t i = 0; i < n; i++)
++	ptrs[i] = (char *) base + i * size;
++      c.size = sizeof (char *);
++      c.indirect = true;
++      c.tmp = XNEWVEC (char, n * sizeof (char *));
++      stable_qsort_1 (&c, (char *) ptrs, n);
++      for (size_t i = 0; i < n; i++)
++	memcpy (sorted + i * size, ptrs[i], size);
++      memcpy (base, sorted, n * size);
++      XDELETEVEC (c.tmp);
++      XDELETEVEC (sorted);
++      XDELETEVEC (ptrs);
++    }
++  else
++    {
++      c.tmp = XNEWVEC (char, n * size);
++      stable_qsort_1 (&c, (char *) base, n);
++      XDELETEVEC (c.tmp);
++    }
++}
++
+ #if CHECKING_P
+ /* Report qsort comparator CMP consistency check failure with P1, P2, P3 as
+    witness elements.  */
+@@ -236,7 +316,7 @@
+ qsort_chk (void *base, size_t n, size_t size,
+ 	   int (*cmp)(const void *, const void *))
+ {
+-  (qsort) (base, n, size, cmp);
++  gcc_stable_qsort (base, n, size, cmp);
+ #if 0
+ #define LIM(n) (n)
+ #else

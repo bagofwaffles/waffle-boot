@@ -41,10 +41,18 @@ On macOS (tested on arm64, Xcode 16.4's clang 17), the Command Line Tools and:
 Both need about 1.5 GB of free disk during the build (the source fetch is about 1.4 GB; the installed
 toolchain about 55 MB) and network access to github.com.
 
-The 2017-era sources need a few host settings, all in `build.sh` with no source patches: `-std=gnu11` and
-`-std=gnu++14 -fcommon` for the host, no manuals (`MAKEINFO=true`), and on macOS Homebrew's paths, the
-bundled zlib's `fdopen` declaration kept, and on non-x86 Macs GCC 8's default host hooks. The compiler's
-output is the same as on Linux.
+The 2017-era sources need a few host settings, all in `build.sh`: `-std=gnu11` and `-std=gnu++14 -fcommon`
+for the host, no manuals (`MAKEINFO=true`), and on macOS Homebrew's paths, the bundled zlib's `fdopen`
+declaration kept, and on non-x86 Macs GCC 8's default host hooks.
+
+One source patch, `gcc-host-qsort.patch`, keeps the compiler's output the same on every host. GCC 8 sorts
+with the host C library's `qsort`, and some of its comparators leave elements equal (induction variable
+candidates in `add_iv_candidate_derived_from_uses`, `tree-ssa-loop-ivopts.c`) or are not consistent (the
+scheduler's `rank_for_schedule`). The GNU C library keeps equal elements in order and macOS does not, so
+the two hosts emitted some instructions in a different order. The patch routes `qsort_chk` (`vec.c`, which
+every `qsort` call in `gcc/` reaches in this checking build) and the scheduler's direct call through a merge
+sort that makes the same comparisons as the GNU C library's, so the output on Linux is unchanged. The stamp
+in the install directory records the patches; a toolchain built without them is rebuilt.
 
 ## Notes
 

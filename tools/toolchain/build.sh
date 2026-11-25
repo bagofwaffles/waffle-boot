@@ -19,6 +19,11 @@ set -euo pipefail
 TOOLCHAIN_REPO=https://github.com/deanm1278/blackfin-plus-gnu
 TOOLCHAIN_COMMIT=e4408a15b9be6cd911283f103a1a3f69e9a6b8c0
 TARGET=bfin-elf
+# Applied to the fetched sources: GCC sorts with its own merge sort, which
+# orders equal elements as the GNU C library's qsort does, instead of the
+# host's qsort, so the compiler's output is the same on every host.
+HERE=$(cd "$(dirname "$0")" && pwd)
+PATCHES=("$HERE/gcc-host-qsort.patch")
 
 CACHE=${WAFFLE_TOOLCHAIN_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/waffle-boot/toolchain}
 PREFIX=$CACHE/$TARGET-$TOOLCHAIN_COMMIT
@@ -34,7 +39,13 @@ case "${1:-}" in
 	*) echo "usage: $0 [--print-prefix | --print-commit]" >&2; exit 2 ;;
 esac
 
-if [ -f "$STAMP" ]; then
+# The stamp names the commit and the patches, so a toolchain built without
+# the current patches is built again.
+ID="$TOOLCHAIN_COMMIT"
+for p in "${PATCHES[@]}"; do
+	ID="$ID $(basename "$p") $(git hash-object "$p")"
+done
+if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$ID" ]; then
 	echo "toolchain already built: $PREFIX"
 	exit 0
 fi
@@ -44,7 +55,7 @@ log() { printf '==> %s\n' "$*"; }
 # Fetch only the pinned commit and only the two trees we build.
 fetch() {
 	local src=$WORK/src
-	if [ -f "$src/.waffle-fetched" ]; then
+	if [ -f "$src/.waffle-fetched" ] && [ "$(cat "$src/.waffle-fetched")" = "$ID" ]; then
 		return
 	fi
 	rm -rf "$src"
@@ -60,7 +71,11 @@ fetch() {
 	# binutils' install-sh is committed without its execute bit; configure
 	# falls back to it where mkdir -p is not GNU's (macOS).
 	find "$src" -name install-sh -exec chmod +x {} +
-	touch "$src/.waffle-fetched"
+	for p in "${PATCHES[@]}"; do
+		log "applying $(basename "$p")"
+		git -C "$src" apply "$p"
+	done
+	echo "$ID" > "$src/.waffle-fetched"
 }
 
 # These 2017-era sources predate current host compilers; relax the host
@@ -134,6 +149,6 @@ fetch
 build_binutils
 build_gcc
 "$PREFIX/bin/$TARGET-gcc" --version | head -n1
-echo "$TOOLCHAIN_COMMIT" > "$STAMP"
+echo "$ID" > "$STAMP"
 rm -rf "$WORK"
 log "toolchain installed in $PREFIX"
