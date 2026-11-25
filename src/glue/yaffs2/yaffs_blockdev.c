@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/drivers/bf70x_msi.h"	/* WB_MSI_TIMEOUT */
+#include "waffle/drivers/bf70x/msi.h"	/* WB_MSI_TIMEOUT */
 #include "wb_yaffs.h"
 #include "yaffs_packedtags2.h"
 

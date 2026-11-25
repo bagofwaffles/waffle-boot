@@ -8,7 +8,7 @@
 #include "waffle/util/bytes.h"
 #include "waffle/boot/memmap.h"
 
-#include "front/fr_handoff.h"
+#include "front/handoff.h"
 
 #define META_RETRIES 3u	/* attempts at steps 4-6 of S-02.064 */
 
@@ -181,7 +181,7 @@ int s02_slot_upgrade_start(const struct s02_env *env, bool option_on,
 		return S02_ERR_IO;
 	/* S-02.113: an image that leaves the logo's header sector free gets it
 	 * erased, so the new image starts on the front's own logo
-	 * (front/fr_handoff.h). */
+	 * (front/handoff.h). */
 	if (n <= FR_LOGO_SLOT_OFF &&
 	    env->flash->erase(env->flash->ctx, base + FR_LOGO_SLOT_OFF) != 0)
 		return S02_ERR_IO;

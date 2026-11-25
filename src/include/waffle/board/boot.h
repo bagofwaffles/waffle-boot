@@ -11,12 +11,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "front/fr_handoff.h"
+#include "front/handoff.h"
 #include "waffle/board/ops.h"
 #include "waffle/board/services.h"
 #include "waffle/boot/flow.h"
 #include "waffle/boot/device.h"
-#include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x/cplb.h"
 #include "waffle/flash/layout.h"
 #include "waffle/flash/settings.h"
 #include "waffle/emmc/emmc.h"
@@ -61,7 +61,7 @@ void opxy_crumb_read(uint32_t addr);
 #if defined(OPXY_BOOT_TIMING_ON) && !defined(OPXY_TEST_OS)
 #define OPXY_BOOT_TIMING 1
 #include "waffle/boot/timing.h"
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/psoc/psoc.h"
 extern struct boot_time opxy_boot_time;
 /* A milestone stamped now, boot_time_mark() out of line: a call at each site. */
@@ -405,7 +405,7 @@ struct opxy_master {
 	/* S-13b.060: the main CPU's own eMMC and volume (emmc-on-main),
 	 * served to the bridge client (s09_master_local()) */
 	struct opxy_storage st;
-	/* The frozen front's hand-off (front/fr_handoff.h): front is true when
+	/* The frozen front's hand-off (front/handoff.h): front is true when
 	 * the record was found whole, and ho is its copy. */
 	bool front;
 	struct fr_handoff ho;
@@ -489,7 +489,7 @@ struct opxy_master {
 #define OPXY_FRONT_VERSION 23u
 
 /*
- * The front's hand-off record (front/fr_handoff.h) at FR_HANDOFF_ADDR, whole:
+ * The front's hand-off record (front/handoff.h) at FR_HANDOFF_ADDR, whole:
  * its magic, version, size and CRC, copied out; the magic in L2 is then
  * cleared, so a later run never takes it again. False on the host, and when
  * there is none (the test OS).

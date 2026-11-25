@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's screens (src/front/fr_draw.c): the logo screen, the logo
+ * The front's screens (src/front/display/draw.c): the logo screen, the logo
  * alone, against S-15.132's frame and digest; the text screen's bars,
  * rows and inks against held mode's drawing of the same parts
  * (s15_render_frame, s15_render_row); the painter's frame buffer against
@@ -21,11 +21,11 @@
 #include "vectors/s15_vectors.h"
 #include "s15_tokens.h"
 
-#include "front/fr_draw.h"
-#include "front/fr_font.h"
-#include "front/fr_panel.h"
-#include "front/fr_proto.h"
-#include "front/fr_start.h"
+#include "front/display/draw.h"
+#include "front/display/font.h"
+#include "front/display/panel.h"
+#include "front/recovery/proto.h"
+#include "front/start/start.h"
 #include "waffle/display/display.h"
 #include "waffle/util/version.h"
 #include "waffle/ui/console.h"
@@ -415,7 +415,7 @@ static void test_bar(void)
 	}
 }
 
-/* ---- Recovery's screen (src/front/fr_recscreen.c, S-15.151) ---- */
+/* ---- Recovery's screen (src/front/recovery/screen.c, S-15.151) ---- */
 
 static struct fr_rec_status rst;
 static struct fr_proto rp;
@@ -459,7 +459,7 @@ static void rec_base(void)
 	want_status = "v1.2.3 F23";
 }
 
-/* The x a body row's parts end at, as fr_draw.c lays them out with no
+/* The x a body row's parts end at, as front/display/draw.c lays them out with no
  * clip; *drawn: what the painter draws of it, at most FR_CLIP_X. */
 static unsigned row_end(const char *t, unsigned *drawn)
 {
@@ -508,7 +508,7 @@ static unsigned row_end(const char *t, unsigned *drawn)
 }
 
 /* A body row as it reads on the screen: the control bytes out, and
- * nothing past the clip (fr_draw.h). */
+ * nothing past the clip (front/display/draw.h). */
 static void plain(char *t)
 {
 	char out[FR_LINE_MAX + 1];
@@ -1557,7 +1557,7 @@ static void test_rec_chips(void)
 
 	ui_base();
 	fr_rec_screen(&rs, &rst, &rp, true, NULL);
-	/* the control bytes of fr_draw.h, spelled out */
+	/* the control bytes of front/display/draw.h, spelled out */
 	CHECK(strcmp(rs.line[0], "\x06" "Slot 1 \x03" "WB\x04 v1.2.3\x07 \x05\x04" "checked\x04 "
 			     "\x05\x05" "running\x04 \x05\x01" "boot slot\x04") == 0);
 	CHECK(row_misses(&rs) == 0u);
@@ -2156,7 +2156,7 @@ static void test_rec_fits(void)
  * repaint of the rows that changed against a whole paint. */
 static void test_parts(void)
 {
-	/* fr_draw.h's control bytes spelled out: \x01 ink, \x02 badge, \x03
+	/* front/display/draw.h's control bytes spelled out: \x01 ink, \x02 badge, \x03
 	 * chip, \x04 end, \x05 ring, \x06 title font, \x07 body font; an
 	 * ink's argument 1 + enum fr_ink */
 	static const char *const lines[] = {
@@ -2257,7 +2257,7 @@ static void test_line(void)
 	CHECK(S15_DIM == 0x8C71u && FR_LINE_Y == 140u && FR_PANEL_LINE_COL == 49u + 140u);
 }
 
-/* ---- the panel's sends (src/front/fr_panel.c, S-13c.016 - S-13c.025) ----
+/* ---- the panel's sends (src/front/display/panel.c, S-13c.016 - S-13c.025) ----
  * A bus whose TE line, DMA and clock the test sets. */
 
 enum { PE_CMD = 1, PE_DATA, PE_DMA, PE_STOP };

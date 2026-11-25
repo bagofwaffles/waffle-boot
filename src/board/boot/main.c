@@ -7,12 +7,12 @@
 #include "waffle/board/boot.h"
 
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_port.h"
-#include "waffle/drivers/bf70x_rcu.h"
-#include "waffle/drivers/bf70x_spiflash.h"
-#include "waffle/drivers/bf70x_start.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/port.h"
+#include "waffle/drivers/bf70x/rcu.h"
+#include "waffle/drivers/bf70x/spiflash.h"
+#include "waffle/drivers/bf70x/start.h"
 #include "waffle/drivers/mmr.h"
 
 /* S-01.006: the first stage's panel handshake is in MDMA0's DMA9 pair. */

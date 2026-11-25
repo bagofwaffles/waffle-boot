@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The start log (src/front/fr_startlog.c) against S-02.095 and the
+ * The start log (src/front/slots/startlog.c) against S-02.095 and the
  * scenario SC-STARTLOG, over a RAM flash with an op log: each record that
  * gives no log, an empty log, each kind of odd log, a full one and a failed
  * read; the count of unfinished entries before the first free one; the one
@@ -13,10 +13,10 @@
 
 #include "support/check.h"
 
-#include "front/fr.h"
-#include "front/fr_handoff.h"
-#include "front/fr_slots.h"
-#include "front/fr_startlog.h"
+#include "front/front.h"
+#include "front/handoff.h"
+#include "front/slots/slots.h"
+#include "front/slots/startlog.h"
 
 /* ---- the flash: NOR, erase to 0xFF, program clears bits, an op log ---- */
 

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's SPI flash (src/front/fr_hw_flash.c, built here for the host
+ * The front's SPI flash (src/front/hw/flash.c, built here for the host
  * since the front links it for the target only), against a model of the
  * part on SPI2: without an error the frames of S-13b.013-.015 (the run's
  * first frame an RDSR, WREN before each SE and PP, RDSR until WIP = 0);
@@ -18,9 +18,9 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "front/fr_hw_flash.c"
-#include "front/fr_device.h"
-#include "front/fr_handoff.h"
+#include "front/hw/flash.c"
+#include "front/start/device.h"
+#include "front/handoff.h"
 
 #define N 2u
 #define SIZE 0x100000u

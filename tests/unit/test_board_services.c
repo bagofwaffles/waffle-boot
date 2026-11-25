@@ -19,7 +19,7 @@
 #include "waffle/board/boot.h"
 #include "waffle/board/emmc_bridge.h"
 #include "waffle/board/rtc_hooks.h"
-#include "waffle/drivers/bf70x_usb.h"
+#include "waffle/drivers/bf70x/usb.h"
 #include "waffle/link/frame.h"
 #include "waffle/usb/msc.h"
 #include "waffle/boot/records.h"

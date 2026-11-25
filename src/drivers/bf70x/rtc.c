@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * RTC0: held mode's set-up and the count register (S-13a.070 - S-13a.072,
- * S-04.070). See waffle/drivers/bf70x_rtc.h.
+ * S-04.070). See waffle/drivers/bf70x/rtc.h.
  */
-#include "waffle/drivers/bf70x_rtc.h"
+#include "waffle/drivers/bf70x/rtc.h"
 
 #include <stddef.h>
 

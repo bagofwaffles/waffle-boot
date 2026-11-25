@@ -7,7 +7,7 @@
 
 #include "waffle/board/boot.h"
 #include "waffle/board/emmc_bridge.h"
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 
 /* --- S-06: dropped frames go to the log (S-16.020) --- */
 

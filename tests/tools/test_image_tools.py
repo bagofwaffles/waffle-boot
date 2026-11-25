@@ -207,7 +207,7 @@ def fimage(version=True, **kw):
 
 class FrontMerge(unittest.TestCase):
     """tools/mkldr.py --front: the front's blocks, its INIT and entry, and
-    the descriptor (src/front/fr_handoff.h)."""
+    the descriptor (src/front/handoff.h)."""
 
     def merged(self):
         return mkldr.merged(elf32.Elf(fimage()), elf32.Elf(front()), elf32.Elf(stub()))
@@ -559,9 +559,9 @@ class Stream(unittest.TestCase):
 
 class InitStack(unittest.TestCase):
     """S-01.007: the Makefile's check_stack.py declaration matches the
-    INIT entry that mkldr.py streams (the front's, src/front/fr_entry.S)."""
-    ENTRY_S = os.path.join(TOP, 'src', 'front', 'fr_entry.S')
-    DECL = os.path.join(TOP, 'src', 'front', 'fr_entry.stack.json')
+    INIT entry that mkldr.py streams (the front's, src/front/start/entry.S)."""
+    ENTRY_S = os.path.join(TOP, 'src', 'front', 'start', 'entry.S')
+    DECL = os.path.join(TOP, 'src', 'front', 'start', 'entry.stack.json')
     FRONT_LD = os.path.join(TOP, 'src', 'front', 'front.ld')
 
     def test_declaration_passes(self):
@@ -699,7 +699,7 @@ class Layout(unittest.TestCase):
 
     def test_l2_above_the_front(self):
         # L2 from the ROM boot reserve up to 0x08031000 is the front's
-        # (src/front/fr_handoff.h): the image's lowest L2 is just above it.
+        # (src/front/handoff.h): the image's lowest L2 is just above it.
         with Tmp() as t:
             e = t.write('a.elf', image(l2=0x08031000))
             s = t.write('a.ldr', mkldr.stream(elf32.read(e), '_init'))

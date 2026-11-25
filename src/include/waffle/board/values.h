@@ -14,14 +14,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "waffle/drivers/bf70x_cgu.h"
-#include "waffle/drivers/bf70x_dmc.h"
-#include "waffle/drivers/bf70x_msi.h"
-#include "waffle/drivers/bf70x_otp.h"
-#include "waffle/drivers/bf70x_port.h"
-#include "waffle/drivers/bf70x_spi.h"
-#include "waffle/drivers/bf70x_time.h"
-#include "waffle/drivers/bf70x_uart.h"
+#include "waffle/drivers/bf70x/cgu.h"
+#include "waffle/drivers/bf70x/dmc.h"
+#include "waffle/drivers/bf70x/msi.h"
+#include "waffle/drivers/bf70x/otp.h"
+#include "waffle/drivers/bf70x/port.h"
+#include "waffle/drivers/bf70x/spi.h"
+#include "waffle/drivers/bf70x/time.h"
+#include "waffle/drivers/bf70x/uart.h"
 #include "waffle/boot/pack.h"
 #include "waffle/boot/device.h"
 

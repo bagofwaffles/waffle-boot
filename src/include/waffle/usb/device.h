@@ -33,7 +33,7 @@
 #include <stdint.h>
 
 #include "blockdev.h"
-#include "waffle/drivers/bf70x_usb.h"
+#include "waffle/drivers/bf70x/usb.h"
 #include "waffle/usb/desc.h"
 #include "waffle/usb/msc.h"
 

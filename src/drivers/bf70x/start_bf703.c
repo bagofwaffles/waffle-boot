@@ -1,16 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The target half of start-up: the linker script's symbols and the weak
- * board hooks (see waffle/drivers/bf70x_start.h). Host builds have none of
+ * board hooks (see waffle/drivers/bf70x/start.h). Host builds have none of
  * these symbols, so the file is empty there.
  */
-#include "waffle/drivers/bf70x_start.h"
+#include "waffle/drivers/bf70x/start.h"
 
 #if defined(__bfin__)
 
 #include <stddef.h>
 
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 
 /* From src/drivers/bf70x/bf703.ld. */
 extern char wb_bss_start[], wb_bss_end[];

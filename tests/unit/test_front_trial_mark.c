@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "front/fr_startlog.h"
+#include "front/slots/startlog.h"
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 #include "waffle/board/boot.h"

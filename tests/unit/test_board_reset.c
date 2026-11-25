@@ -12,9 +12,9 @@
 #include "support/fake_mmr.h"
 
 #include "waffle/board/boot.h"
-#include "waffle/drivers/bf70x_rcu.h"
-#include "waffle/drivers/bf70x_sec.h"
-#include "waffle/drivers/bf70x_timer.h"
+#include "waffle/drivers/bf70x/rcu.h"
+#include "waffle/drivers/bf70x/sec.h"
+#include "waffle/drivers/bf70x/timer.h"
 
 static jmp_buf idled;
 

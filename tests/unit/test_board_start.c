@@ -34,8 +34,8 @@
 #include "waffle/board/boot.h"
 #include "waffle/board/emmc_bridge.h"
 #include "waffle/boot/flow.h"
-#include "waffle/drivers/bf70x_msi.h"
-#include "waffle/drivers/bf70x_spi.h"
+#include "waffle/drivers/bf70x/msi.h"
+#include "waffle/drivers/bf70x/spi.h"
 #include "waffle/display/panel.h"
 #include "waffle/bridge/master.h"
 

@@ -222,7 +222,7 @@ RR_NONE = 0xFF          # a link test's rung not tried; an entry's fault: lost b
 LINK_TEST_REPLY = 37    # a run's answer after its status byte (OPXY_LINK_TEST_REPLY less one)
 LINK_TEST_ROW = 33      # a row of its table
 BENCH_FAULT = 114       # a link test's fault as the record keeps it
-# the SPI driver's stage of a failure (WB_SPI_STAGE_..., bf70x_spi.h); with dma_err, ERRC in bits 8-10
+# the SPI driver's stage of a failure (WB_SPI_STAGE_..., waffle/drivers/bf70x/spi.h); with dma_err, ERRC in bits 8-10
 SPI_STAGES = ['none', 'arguments refused', 'waiting for transmit room', 'waiting for the transmit to end',
               'waiting for a received word', 'the DMA refused the transfer', "the DMA's count stopped",
               'the DMA reported an error', 'receive overrun or mode fault', 'the master-ready pin never high',

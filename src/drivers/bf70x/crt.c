@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Start-up steps between reset and main() (see waffle/drivers/bf70x_start.h).
+ * Start-up steps between reset and main() (see waffle/drivers/bf70x/start.h).
  */
-#include "waffle/drivers/bf70x_start.h"
+#include "waffle/drivers/bf70x/start.h"
 
 #include <string.h>
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_rcu.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/rcu.h"
 #include "waffle/drivers/mmr.h"
 
 const struct wb_l1_range wb_l1_bf703[4] = {

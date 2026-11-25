@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Recovery's protocol (src/front/fr_proto.c) over an in-memory port and a
+ * Recovery's protocol (src/front/recovery/proto.c) over an in-memory port and a
  * fake SPI flash, with the front's own writer: a whole write, every
  * refusal, DATA out of order and DATA's size, damaged frames, replies that
  * wait for the port, and RESTART; BEGIN's flags byte, INFO's fields for a
@@ -17,10 +17,10 @@
 #include "support/check.h"
 #include "vectors/s02_vectors.h"
 
-#include "front/fr.h"
-#include "front/fr_handoff.h"
-#include "front/fr_proto.h"
-#include "front/fr_slots.h"
+#include "front/front.h"
+#include "front/handoff.h"
+#include "front/recovery/proto.h"
+#include "front/slots/slots.h"
 
 /* --- the fake flash: NOR, erase to 0xFF, program clears bits --- */
 

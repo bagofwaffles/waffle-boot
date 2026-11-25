@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "waffle/util/div64.h"
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/link/bytes_compat.h"
 
 #define STREAM_REPORT_VERSION 2u

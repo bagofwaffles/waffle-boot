@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* DMA channel helpers (see waffle/drivers/bf70x_dma.h). */
-#include "waffle/drivers/bf70x_dma.h"
+/* DMA channel helpers (see waffle/drivers/bf70x/dma.h). */
+#include "waffle/drivers/bf70x/dma.h"
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/cplb.h"
 #include "waffle/drivers/mmr.h"
 
 #define STAT_W1C (DMA_STAT_IRQDONE | DMA_STAT_IRQERR | DMA_STAT_PIRQ)

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's INIT stage (src/front/fr_init.c), the code that sets the
+ * The front's INIT stage (src/front/start/init.c), the code that sets the
  * clocks and DDR: S-13a.030, the cycle counter is started before the
  * stage's first CYCLES read, with the CGU and DMC answering as a unit at
  * reset does; the clock and DDR values it writes are the board's (opxy_cgu,
@@ -13,10 +13,10 @@
 #include "support/fake_mmr.h"
 
 #include "waffle/board/values.h"
-#include "waffle/drivers/bf70x_cgu.h"
-#include "waffle/drivers/bf70x_dmc.h"
-#include "waffle/drivers/bf70x_rcu.h"
-#include "waffle/drivers/bf70x_spi.h"
+#include "waffle/drivers/bf70x/cgu.h"
+#include "waffle/drivers/bf70x/dmc.h"
+#include "waffle/drivers/bf70x/rcu.h"
+#include "waffle/drivers/bf70x/spi.h"
 
 /* The PLL locked with no error, the DMC idle and calibrated. */
 static bool unit_hook(void *ctx, enum fake_mmr_op op, unsigned width,
@@ -34,7 +34,7 @@ static bool unit_hook(void *ctx, enum fake_mmr_op op, unsigned width,
 	return true;
 }
 
-/* src/front/fr_init.c */
+/* src/front/start/init.c */
 void fr_init_stage(uint32_t rom_config);
 
 static void run(uint32_t bmode)

@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-#include "waffle/drivers/bf70x_pkte.h"
+#include "waffle/drivers/bf70x/pkte.h"
 
 #include <string.h>
 
 #include "waffle/util/bytes.h"
-#include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x/cplb.h"
 #include "waffle/drivers/mmr.h"
 
 static uint32_t at(const void *p)

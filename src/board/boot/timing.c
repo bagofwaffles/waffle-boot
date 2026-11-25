@@ -19,11 +19,11 @@
 #include "waffle/board/values.h"
 #include "waffle/host/devhost.h"
 #include "waffle/display/display.h"
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_cplb.h"
-#include "waffle/drivers/bf70x_msi.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/cplb.h"
+#include "waffle/drivers/bf70x/msi.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/port.h"
 #include "waffle/boot/memmap.h"
 #include "wb_yaffs.h"
 #include "waffle/fs/yaffs.h"
@@ -893,8 +893,8 @@ void opxy_timing_held(struct opxy_master *m)
 
 #elif defined(OPXY_BOOT_TIMING_ON) && defined(OPXY_TEST_OS)
 #include "waffle/boot/timing.h"
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/cplb.h"
 #include "waffle/testos.h"
 
 static uint8_t raw[BOOT_TIME_RECORD];

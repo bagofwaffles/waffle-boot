@@ -24,7 +24,7 @@
  *     heap, the RAM disk and the frame buffers (waffle/board/values.h,
  *     S-01.016). The region's end keeps the image out of them.
  *
- * The frozen front (src/front/fr_handoff.h, front.ld) owns L1 code
+ * The frozen front (src/front/handoff.h, front.ld) owns L1 code
  * 0x11A04000-0x11A0C000, L1 data A 0x11802000-0x11804000 and L2
  * 0x08002000-0x08031000: the regions here stop short of them, and
  * tools/mkldr.py refuses an image that meets them. The front holds the INIT

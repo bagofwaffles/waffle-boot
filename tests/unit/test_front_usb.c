@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Recovery's descriptors (src/front/fr_usb_desc.c): they parse, and they
+ * Recovery's descriptors (src/front/recovery/usb_desc.c): they parse, and they
  * are S-10a's serial set (S-10a.019, libwaffle's s10a_desc_*) in identity,
  * class layout, endpoints and power, with recovery's own product string;
  * the product and its string per device (S-02.093).
@@ -9,7 +9,7 @@
 
 #include "support/check.h"
 
-#include "front/fr_usb.h"
+#include "front/recovery/usb.h"
 #include "waffle/boot/device.h"
 #include "waffle/usb/desc.h"
 

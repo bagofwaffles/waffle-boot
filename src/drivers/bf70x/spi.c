@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* SPI controllers (see waffle/drivers/bf70x_spi.h). */
-#include "waffle/drivers/bf70x_spi.h"
+/* SPI controllers (see waffle/drivers/bf70x/spi.h). */
+#include "waffle/drivers/bf70x/spi.h"
 
-#include "waffle/drivers/bf70x_cplb.h"
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/cplb.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/port.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/testos.h"
 
 #include <string.h>

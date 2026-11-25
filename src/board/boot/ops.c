@@ -5,9 +5,9 @@
 #include "waffle/board/services.h"
 #include "waffle/util/crc.h"
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/port.h"
 #include "waffle/drivers/mmr.h"
 
 /* The test OS (waffle/testos.h) reads the flash and refuses every erase

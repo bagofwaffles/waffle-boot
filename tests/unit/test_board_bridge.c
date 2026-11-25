@@ -9,8 +9,8 @@
 #include "support/fake_core.h"
 
 #include "waffle/board/emmc_bridge.h"
-#include "waffle/drivers/bf70x_spi.h"
-#include "waffle/drivers/bf70x_time.h"
+#include "waffle/drivers/bf70x/spi.h"
+#include "waffle/drivers/bf70x/time.h"
 
 #include <string.h>
 

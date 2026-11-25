@@ -17,8 +17,8 @@
 #include "waffle/board/boot.h"
 
 #if OPXY_BOOT_CRUMBS
-#include "waffle/drivers/bf70x_spiflash.h"
-#include "waffle/drivers/bf70x_start.h"
+#include "waffle/drivers/bf70x/spiflash.h"
+#include "waffle/drivers/bf70x/start.h"
 
 static struct wb_spi crumb_spi;
 /* The marks' sector; 0 on any doubt (crumb_sector()): no marks. */

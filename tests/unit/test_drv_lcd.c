@@ -4,9 +4,9 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_lcd.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/lcd.h"
+#include "waffle/drivers/bf70x/port.h"
 
 static const struct wb_time cclk400 = { 400u };
 

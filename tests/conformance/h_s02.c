@@ -78,10 +78,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "front/fr_draw.h"
-#include "front/fr_logo.h"
-#include "front/fr_proto.h"
-#include "front/fr_startlog.h"
+#include "front/display/draw.h"
+#include "front/display/logo.h"
+#include "front/recovery/proto.h"
+#include "front/slots/startlog.h"
 #include "waffle/boot/memmap.h"
 #include "waffle/flash/layout.h"
 #include "waffle/flash/logo.h"
@@ -400,7 +400,7 @@ static void cmd_recover(const struct h_cmd *c)
 	st.why = FR_WHY_KEYS;
 	st.running.established = run < 2u;
 	st.running.slot = (uint8_t)(run < 2u ? run : 0u);
-	fr_rec_survey(&st, &ff);	/* as fr_recovery.c's start */
+	fr_rec_survey(&st, &ff);	/* as front/recovery/recovery.c's start */
 	rec_in = in;
 	rec_in_n = n;
 	rec_in_at = 0;

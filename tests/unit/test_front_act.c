@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The actions on the image a slot holds (src/front/fr_slots.c,
+ * The actions on the image a slot holds (src/front/slots/slots.c,
  * fr_act_decide(), fr_act_begin(), S-02.084): try, switch, keep and put
  * back, each against the RAM NOR fake. Every erase and program of each
  * case, its offset, bytes and order; what the factory first stage then
@@ -13,9 +13,9 @@
 #include "s02_check.h"
 #include "s02_fake_flash.h"
 
-#include "front/fr.h"
-#include "front/fr_handoff.h"
-#include "front/fr_slots.h"
+#include "front/front.h"
+#include "front/handoff.h"
+#include "front/slots/slots.h"
 #include "waffle/boot/handoff.h"
 
 #define N(a) (sizeof(a) / sizeof((a)[0]))

@@ -16,7 +16,7 @@
 #include "waffle/board/boot.h"
 #include "waffle/board/ops.h"
 #include "waffle/display/display.h"
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/flash/logo.h"
 #include "waffle/flash/logo_png.h"
 #include "waffle/usb/msc.h"

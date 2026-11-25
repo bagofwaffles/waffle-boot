@@ -20,8 +20,8 @@
  * over the board's weak hooks */
 #include "waffle/board/display.h"
 #include "waffle/board/services.h"
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_lcd.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/lcd.h"
 #include "waffle/display/panel.h"
 #include "waffle/ui/lines.h"
 #include "s15_sha256.h"

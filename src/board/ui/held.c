@@ -8,8 +8,8 @@
 #include "waffle/board/boot.h"
 #include "waffle/board/emmc_bridge.h"
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_sec.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/sec.h"
 #include "waffle/board/rtc_hooks.h"
 #include "waffle/util/crc.h"
 

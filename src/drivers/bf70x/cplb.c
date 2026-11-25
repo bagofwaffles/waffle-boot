@@ -2,12 +2,12 @@
 /*
  * Table-driven CPLB and L1 cache set-up (Blackfin+ PRM chapter 7).
  */
-#include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x/cplb.h"
 
 #include <stddef.h>
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_coremmr.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/coremmr.h"
 #include "waffle/drivers/mmr.h"
 
 uint32_t wb_cplb_page_bytes(uint32_t data)

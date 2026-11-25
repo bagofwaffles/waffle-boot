@@ -11,11 +11,11 @@
 #include "support/fake_mmr.h"
 
 #include "waffle/board/boot.h"
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_dmc.h"
-#include "waffle/drivers/bf70x_sec.h"
-#include "waffle/drivers/bf70x_spi.h"
-#include "waffle/drivers/bf70x_usb.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/dmc.h"
+#include "waffle/drivers/bf70x/sec.h"
+#include "waffle/drivers/bf70x/spi.h"
+#include "waffle/drivers/bf70x/usb.h"
 
 /* Every source enabled and pending, with a priority and edge set. */
 #define FOUND (0x300u | SEC_SCTL_ES | SEC_SCTL_SEN | SEC_SCTL_IEN)

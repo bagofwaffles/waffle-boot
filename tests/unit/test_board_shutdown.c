@@ -20,7 +20,7 @@
 
 #include "waffle/board/boot.h"
 #include "waffle/board/services.h"
-#include "waffle/drivers/bf70x_uart.h"
+#include "waffle/drivers/bf70x/uart.h"
 #include "waffle/link/link.h"
 #include "waffle/bridge/master.h"
 #include "waffle/bridge/slave.h"

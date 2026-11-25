@@ -14,12 +14,12 @@
 #include <stdint.h>
 
 #include "waffle/board/values.h"
-#include "waffle/drivers/bf70x_msi.h"
-#include "waffle/drivers/bf70x_otp.h"
-#include "waffle/drivers/bf70x_spi.h"
-#include "waffle/drivers/bf70x_spiflash.h"
-#include "waffle/drivers/bf70x_time.h"
-#include "waffle/drivers/bf70x_uart.h"
+#include "waffle/drivers/bf70x/msi.h"
+#include "waffle/drivers/bf70x/otp.h"
+#include "waffle/drivers/bf70x/spi.h"
+#include "waffle/drivers/bf70x/spiflash.h"
+#include "waffle/drivers/bf70x/time.h"
+#include "waffle/drivers/bf70x/uart.h"
 #include "waffle/flash/layout.h"
 #include "waffle/emmc/emmc.h"
 #include "waffle/link/clock.h"

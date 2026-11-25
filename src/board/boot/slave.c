@@ -6,11 +6,11 @@
 #include <string.h>
 
 #include "waffle/board/emmc_bridge.h"
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_dmc.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/dmc.h"
+#include "waffle/drivers/bf70x/port.h"
 #include "waffle/drivers/mmr.h"
-#include "waffle/drivers/bf70x_sec.h"
+#include "waffle/drivers/bf70x/sec.h"
 #include "waffle/util/bytes.h"
 #include "waffle/bridge/records.h"
 #include "waffle/host/devhost.h"

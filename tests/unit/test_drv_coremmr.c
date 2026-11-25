@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The core MMR addresses of waffle/drivers/bf70x_coremmr.h against S-01.012's
+ * The core MMR addresses of waffle/drivers/bf70x/coremmr.h against S-01.012's
  * table: tests/oracle/S-01-boot-chain/memory_map.json, mmr.core_mmr, read at run
  * time (from the repository root, as make check runs the tests).
  */
@@ -10,7 +10,7 @@
 
 #include "support/check.h"
 
-#include "waffle/drivers/bf70x_coremmr.h"
+#include "waffle/drivers/bf70x/coremmr.h"
 
 #define MAP "tests/oracle/S-01-boot-chain/memory_map.json"
 

@@ -15,7 +15,7 @@
 #include "waffle/board/emmc_bridge.h"
 #include "waffle/board/ops.h"
 #include "waffle/board/services.h"
-#include "waffle/drivers/bf70x_lcd.h"
+#include "waffle/drivers/bf70x/lcd.h"
 #include "waffle/bridge/records.h"
 
 static void test_clocks(void)

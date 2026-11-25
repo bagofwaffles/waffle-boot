@@ -23,9 +23,9 @@
 
 #include <stddef.h>
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/cplb.h"
 #include "waffle/drivers/mmr.h"
 
 static uint8_t *dest(void *ctx, uint32_t addr, uint32_t len)

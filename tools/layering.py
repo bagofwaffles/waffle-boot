@@ -44,9 +44,9 @@ SUFFIXES = ('.c', '.h', '.S', '.inc')
 # (including file, included file), both from the top.
 ALLOWED = {
     # The TinyUSB class adapter's state holds the USB driver's struct.
-    ('src/include/waffle/usb/device.h', 'src/include/waffle/drivers/bf70x_usb.h'),
+    ('src/include/waffle/usb/device.h', 'src/include/waffle/drivers/bf70x/usb.h'),
     # The panel driver's adapter fills the core's S-13c bus struct.
-    ('src/include/waffle/drivers/bf70x_display.h', 'src/include/waffle/display/panel.h'),
+    ('src/include/waffle/drivers/bf70x/display.h', 'src/include/waffle/display/panel.h'),
     # The test OS's hooks, until the test OS leaves the core.
     ('src/drivers/bf70x/spi.c', 'src/include/waffle/testos.h'),
     ('src/include/waffle/boot/flow.h', 'src/include/waffle/testos.h'),

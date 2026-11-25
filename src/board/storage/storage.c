@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include "waffle/board/emmc_bridge.h"
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/bridge/records.h"
 #include "waffle/util/crc.h"
 #include "waffle/bridge/slave_files.h"

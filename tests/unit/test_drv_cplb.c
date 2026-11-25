@@ -4,9 +4,9 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_cplb.h"
-#include "waffle/drivers/bf70x_otp.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/cplb.h"
+#include "waffle/drivers/bf70x/otp.h"
 
 static struct fake_mmr_access want[160];
 static size_t nwant;

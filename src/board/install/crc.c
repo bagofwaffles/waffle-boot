@@ -61,7 +61,7 @@
  */
 #include "waffle/board/boot.h"
 #include "waffle/board/services.h"
-#include "waffle/drivers/bf70x_crc.h"
+#include "waffle/drivers/bf70x/crc.h"
 #include "waffle/install/engine.h"
 #include "waffle/log/log.h"
 #include "waffle/util/crc.h"

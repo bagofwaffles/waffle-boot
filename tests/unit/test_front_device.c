@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's devices (src/front/fr_device.c): its copy of each device's
+ * The front's devices (src/front/start/device.c): its copy of each device's
  * values against src/core/boot/device.c's profiles and
  * tests/oracle/S-18-devices/vectors/{first_stage,profile}.json (S-18.003:
  * one table everywhere; S-18.030), and fr_identify() over every synthetic
@@ -15,13 +15,13 @@
 #include "support/check.h"
 #include "vectors/s18_vectors.h"
 
-#include "front/fr_device.h"
-#include "front/fr_handoff.h"
-#include "front/fr_psoc.h"
-#include "front/fr_slots.h"
-#include "front/fr_usb.h"
+#include "front/start/device.h"
+#include "front/handoff.h"
+#include "front/psoc/psoc.h"
+#include "front/slots/slots.h"
+#include "front/recovery/usb.h"
 #include "waffle/boot/device.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/port.h"
 
 static const struct fr_dev *const frs[2] = { &fr_dev_opxy, &fr_dev_op1f };
 static const struct wb_device *const wbs[2] = { &wb_device_opxy, &wb_device_op1f };

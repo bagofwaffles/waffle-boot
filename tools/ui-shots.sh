@@ -25,9 +25,9 @@ rest=${ver#*.}
 minor=${rest%%.*}
 patch=${rest#*.}
 ${CC:-cc} -std=c11 -O2 -DSHOT_MAJOR="$major" -DSHOT_MINOR="$minor" -DSHOT_PATCH="$patch" \
-	-Isrc -Isrc/include tools/ui_shots.c src/front/fr_draw.c src/front/fr_font.c \
-	src/front/fr_recscreen.c src/front/fr_recui.c src/front/fr_proto.c src/front/fr_slots.c \
-	src/front/fr_image.c src/front/fr_util.c src/front/fr_device.c \
+	-Isrc -Isrc/include tools/ui_shots.c src/front/display/draw.c src/front/display/font.c \
+	src/front/recovery/screen.c src/front/recovery/ui.c src/front/recovery/proto.c src/front/slots/slots.c \
+	src/front/slots/image.c src/front/start/util.c src/front/start/device.c \
 	"$build/host/libwaffle.a" "$build/host/libcrc.a" "$build/host/libzlib.a" -o "$raw/ui-shots"
 "$raw/ui-shots" "$raw"
 python3 -I -B tools/ui_shots.py "$raw" "$out" "$ver"

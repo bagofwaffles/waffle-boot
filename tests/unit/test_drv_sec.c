@@ -4,8 +4,8 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_sec.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/sec.h"
 
 /* The driver's "configured" state lasts for the process, as on hardware. */
 static void reset_fakes(void)

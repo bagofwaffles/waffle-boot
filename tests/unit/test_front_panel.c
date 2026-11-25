@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's panel (src/front/fr_panel.c) against the full bootloader's
+ * The front's panel (src/front/display/panel.c) against the full bootloader's
  * (display/panel.c, display/draw.c) over the same recording bus and clock:
  * the same reset levels, commands, parameter bytes and waits, the
  * identification reads aside (S-13c.011), for each reset path of
@@ -19,8 +19,8 @@
 
 #include "support/check.h"
 
-#include "front/fr_draw.h"
-#include "front/fr_panel.h"
+#include "front/display/draw.h"
+#include "front/display/panel.h"
 #include "waffle/boot/device.h"
 #include "waffle/display/display.h"
 #include "waffle/display/panel.h"

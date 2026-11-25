@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "waffle/util/bytes.h"
-#include "waffle/drivers/bf70x_usb.h"
+#include "waffle/drivers/bf70x/usb.h"
 #include "waffle/host/hostlink.h"
 #include "waffle/emmc/emmc.h"
 #include "waffle/boot/handoff.h"

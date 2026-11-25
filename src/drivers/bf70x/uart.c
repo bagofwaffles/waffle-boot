@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* UARTs (see waffle/drivers/bf70x_uart.h). */
-#include "waffle/drivers/bf70x_uart.h"
+/* UARTs (see waffle/drivers/bf70x/uart.h). */
+#include "waffle/drivers/bf70x/uart.h"
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_cplb.h"
-#include "waffle/drivers/bf70x_dma.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/cplb.h"
+#include "waffle/drivers/bf70x/dma.h"
 #include "waffle/drivers/mmr.h"
 #include "waffle/util/div64.h"
 

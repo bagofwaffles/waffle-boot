@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "fake_mmr.h"
-#include "waffle/drivers/bf70x_sec.h"
+#include "waffle/drivers/bf70x/sec.h"
 
 static uint32_t imask;
 static uint64_t cycles;

@@ -15,8 +15,8 @@
 #include "support/fake_mmr.h"
 #include "waffle/board/boot.h"
 #include "waffle/board/display.h"
-#include "waffle/drivers/bf70x_lcd.h"
-#include "waffle/drivers/bf70x_port.h"
+#include "waffle/drivers/bf70x/lcd.h"
+#include "waffle/drivers/bf70x/port.h"
 #include "waffle/display/panel.h"
 #include "waffle/util/crc.h"
 

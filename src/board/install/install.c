@@ -25,7 +25,7 @@
 #include "waffle/board/boot.h"
 #include "waffle/board/emmc_bridge.h"
 #include "waffle/util/div64.h"
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/psoc/program.h"
 #include "waffle/install/content.h"
 #include "waffle/install/package.h"

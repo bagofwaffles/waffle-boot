@@ -5,10 +5,10 @@
 #include <string.h>
 
 #include "waffle/board/emmc_bridge.h"
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_dmc.h"
-#include "waffle/drivers/bf70x_port.h"
-#include "waffle/drivers/bf70x_sec.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/dmc.h"
+#include "waffle/drivers/bf70x/port.h"
+#include "waffle/drivers/bf70x/sec.h"
 #include "waffle/boot/memmap.h"
 #include "waffle/util/crc.h"
 

@@ -10,7 +10,7 @@
 
 #include <string.h>
 
-#include "front/fr_handoff.h"
+#include "front/handoff.h"
 #include "waffle/util/bytes.h"
 #include "waffle/boot/device.h"
 #include "waffle/flash/layout.h"

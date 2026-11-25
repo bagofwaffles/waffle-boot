@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later AND MIT */
 /*
  * TinyUSB device controller driver for the ADSP-BF70x USB controller
- * (waffle/drivers/bf70x_usb.h, HRM chapter 28).
+ * (waffle/drivers/bf70x/usb.h, HRM chapter 28).
  *
  * The endpoint 0 control-transfer state machine and the endpoint transfer
  * logic follow TinyUSB's portable/mentor/musb/dcd_musb.c (0.21.0), whose
@@ -56,8 +56,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "waffle/drivers/bf70x_sec.h"
-#include "waffle/drivers/bf70x_usb.h"
+#include "waffle/drivers/bf70x/sec.h"
+#include "waffle/drivers/bf70x/usb.h"
 #include "waffle/drivers/mmr.h"
 
 #include "tusb_option.h"

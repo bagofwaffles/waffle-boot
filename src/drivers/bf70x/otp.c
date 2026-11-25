@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* OTP item reads through the ROM (see waffle/drivers/bf70x_otp.h). */
-#include "waffle/drivers/bf70x_otp.h"
+/* OTP item reads through the ROM (see waffle/drivers/bf70x/otp.h). */
+#include "waffle/drivers/bf70x/otp.h"
 
 #include "waffle/drivers/mmr.h"
 

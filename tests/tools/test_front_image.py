@@ -91,18 +91,18 @@ class Boundary(unittest.TestCase):
 
     def test_front_registers_and_compiler_headers_pass(self):
         with tempfile.TemporaryDirectory() as d:
-            p = self.depfile(d, 'src/front/fr_x.c', 'src/front/fr.h',
-                             'src/include/waffle/drivers/mmr.h', CC_INCLUDE + '/stdint.h',
-                             CC_INCLUDE + '/../include/stddef.h')
+            p = self.depfile(d, 'src/front/slots/x.c', 'src/front/front.h', 'src/front/slots/slots.h',
+                             'src/include/waffle/drivers/mmr.h', 'src/include/waffle/drivers/bf70x/usb.h',
+                             CC_INCLUDE + '/stdint.h', CC_INCLUDE + '/../include/stddef.h')
             self.assertEqual(front_image.dep_failures(p, CC_INCLUDE), [])
 
     def test_bad_dependencies_fail(self):
         for path in ('../elsewhere/x.h', 'src/../../x.h', 'src/front/../../../x.h',
-                     'src/include/waffle/flash/layout.h', 'src/s01.c',
+                     'src/include/waffle/flash/layout.h', 'src/s01.c', 'src/core/display/draw.h',
                      '/usr/include/string.h', '/opt/cc/bfin-elf/include/string.h',
                      CC_INCLUDE + '/../include-fixed/limits.h', CC_INCLUDE + '-other/x.h'):
             with tempfile.TemporaryDirectory() as d:
-                p = self.depfile(d, 'src/front/fr_x.c', path)
+                p = self.depfile(d, 'src/front/slots/x.c', path)
                 self.assertEqual(len(front_image.dep_failures(p, CC_INCLUDE)), 1, path)
 
     def tree(self, d, files):
@@ -112,31 +112,57 @@ class Boundary(unittest.TestCase):
             with open(p, 'w') as f:
                 f.write(text)
 
-    BASE = {'src/front/fr.h': '', 'src/front/fr_handoff.h': '', 'src/front/fr_x.c': '#include "fr.h"\n',
+    BASE = {'src/front/front.h': '', 'src/front/handoff.h': '', 'src/front/slots/slots.h': '',
+            'src/front/display/draw.h': '', 'src/front/slots/x.c': '#include "front/front.h"\n',
             'src/include/waffle/s01.h': ''}
 
     def test_shared_header_and_others_pass(self):
         with tempfile.TemporaryDirectory() as d:
             self.tree(d, dict(self.BASE, **{
-                'src/board/a.c': '#include "front/fr_handoff.h"\n#include "waffle/s01.h"\n'
+                'src/board/a.c': '#include "front/handoff.h"\n#include "waffle/s01.h"\n'
                                  '#include <stdint.h>\n',
-                'src/b.c': '#include <front/fr_handoff.h>\n#include "fr_handoff.h"\n',
-                'src/include/c.h': '#include "fr.h"\n', 'src/include/fr.h': ''}))
+                'src/b.c': '#include <front/handoff.h>\n#include "handoff.h"\n',
+                'src/include/c.h': '#include "front.h"\n', 'src/include/front.h': ''}))
+            self.assertEqual(front_image.include_failures(d), [])
+
+    def test_same_file_name_elsewhere_passes(self):
+        """Headers outside the front that share a file name with a front header: an include
+        that resolves to them is not the front's."""
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, dict(self.BASE, **{
+                'src/include/waffle/display/draw.h': '', 'src/core/display/draw.h': '',
+                'src/core/display/draw.c': '#include "draw.h"\n#include "waffle/display/draw.h"\n',
+                'src/core/a.c': '#include "display/draw.h"\n#include <waffle/display/draw.h>\n',
+                'src/core/slots/slots.h': '', 'src/core/slots/slots.c': '#include "slots.h"\n'}))
             self.assertEqual(front_image.include_failures(d), [])
 
     def test_front_headers_fail_in_any_form(self):
-        for inc in ('"front/fr.h"', '<front/fr.h>', '"../front/fr.h"', '<../front/fr.h>',
-                    '"fr.h"', '"src/front/fr.h"', '"../../src/front/fr.h"',
-                    '"front/../front/fr.h"', '"front/fr_x.c"'):
+        for inc in ('"front/front.h"', '<front/front.h>', '"../front/front.h"', '<../front/front.h>',
+                    '"front.h"', '"src/front/front.h"', '"../../src/front/front.h"',
+                    '"front/../front/front.h"', '"front/slots/x.c"', '"front/slots/slots.h"',
+                    '<front/slots/slots.h>', '"../front/display/draw.h"', '"slots/slots.h"',
+                    '"slots.h"', '"display/draw.h"', '"draw.h"'):
             with tempfile.TemporaryDirectory() as d:
                 self.tree(d, dict(self.BASE, **{'src/board/a.c': ' #  include %s\n' % inc}))
                 bad = front_image.include_failures(d)
                 self.assertEqual(len(bad), 1, inc)
                 self.assertIn('src/board/a.c', bad[0])
 
+    def test_front_header_fails_beside_a_namesake(self):
+        """front/slots/slots.h from outside the front fails even where a header of the same
+        file name sits beside the including file."""
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, dict(self.BASE, **{
+                'src/core/slots/slots.h': '',
+                'src/core/slots/slots.c': '#include "slots.h"\n#include "front/slots/slots.h"\n'}))
+            bad = front_image.include_failures(d)
+            self.assertEqual(bad, ['src/core/slots/slots.c includes "front/slots/slots.h"'])
+
     def test_front_may_include_itself(self):
         with tempfile.TemporaryDirectory() as d:
-            self.tree(d, dict(self.BASE, **{'src/front/fr_y.c': '#include "front/fr.h"\n'}))
+            self.tree(d, dict(self.BASE, **{
+                'src/front/display/y.c': '#include "front/front.h"\n#include "front/slots/slots.h"\n'
+                                         '#include "draw.h"\n'}))
             self.assertEqual(front_image.include_failures(d), [])
 
 
@@ -145,9 +171,9 @@ class Stack(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             p = os.path.join(d, 'a.su')
             with open(p, 'w') as f:
-                f.write('fr_a.c:10:5:fr_a\t48\tstatic\nfr_a.c:20:13:helper\t0\tstatic\n')
+                f.write('a.c:10:5:fr_a\t48\tstatic\na.c:20:13:helper\t0\tstatic\n')
             self.assertEqual(front_image.stack_usage(p),
-                             [('fr_a.c:10:5:fr_a', 48, 'static'), ('fr_a.c:20:13:helper', 0, 'static')])
+                             [('a.c:10:5:fr_a', 48, 'static'), ('a.c:20:13:helper', 0, 'static')])
 
     def test_static_frames_within_limit_pass(self):
         bad, total = front_image.stack_failures([('a', 48, 'static'), ('b', 1024, 'static')], 0x4000)

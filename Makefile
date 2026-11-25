@@ -211,8 +211,8 @@ ifneq ($(YAFFS_ZERO_ERASE),)
 TARGET_CFLAGS += -DOPXY_YAFFS_ZERO_ERASE=1
 endif
 # The frozen front (src/front/, CONTRIBUTING.md): its own flags, so that no build
-# option of the image changes its bytes.
-FRONT_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -g -fdebug-prefix-map=$(CURDIR)=. \
+# option of the image changes its bytes. -Isrc: its includes are rooted at src/.
+FRONT_CFLAGS := -std=c11 $(WARNINGS) -Isrc/include -Isrc -g -fdebug-prefix-map=$(CURDIR)=. \
 	-mcpu=bf703-none -mlong-calls -Os -ffreestanding -fno-common \
 	-ffunction-sections -fdata-sections -fno-tree-loop-distribute-patterns
 HOST_LIB_CFLAGS  := $(COMMON) -O2 -ffreestanding -fno-common -DOPXY_BOOT_PROMPT=1 -DOPXY_BOOT_LINK_FC=1
@@ -490,9 +490,9 @@ LAYOUT_ARGS := --ld $(LDSCRIPT) --board src/include/waffle/board/values.h \
 FIRST_STAGE_STACK := 0x11807000:0x11808000
 # S-01.007: what the INIT block runs on the ROM's entry SP, against the
 # 0xE8 budget (check_stack.py). S-01.020's BCODE is check_stream.py's.
-INIT_STACK := src/front/fr_entry.stack.json
+INIT_STACK := src/front/start/entry.stack.json
 
-# The frozen front (src/front/fr_handoff.h): linked alone by front.ld from
+# The frozen front (src/front/handoff.h): linked alone by front.ld from
 # its own objects and libgcc, so that a reference to anything else or a
 # section front.ld does not place fails the link. Checked by
 # tools/front_image.py: its includes (boundary; -MD lists the compiler's

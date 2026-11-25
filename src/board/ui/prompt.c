@@ -16,7 +16,7 @@
 
 #if OPXY_BOOT_PROMPT
 
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/util/version.h"
 #include "waffle/ui/prompt.h"
 

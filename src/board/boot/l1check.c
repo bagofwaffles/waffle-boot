@@ -7,9 +7,9 @@
 #include "waffle/board/boot.h"
 
 #if OPXY_BOOT_L1_CHECK && !defined(OPXY_TEST_OS)
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_cplb.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/cplb.h"
 #include "waffle/drivers/mmr.h"
 #include "waffle/boot/memmap.h"
 #include "waffle/util/crc.h"

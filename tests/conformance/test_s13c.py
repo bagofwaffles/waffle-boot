@@ -295,7 +295,7 @@ def line_block(lines):
 
 
 class Front(Base):
-    """The front's panel (src/front/fr_panel.c) from its entry into recovery: fr_start_run() and
+    """The front's panel (src/front/display/panel.c) from its entry into recovery: fr_start_run() and
     fr_recovery_run() whole, over h_s13cf's bus, PSoC, flash and image models; check_trace --expect
     recovery."""
 

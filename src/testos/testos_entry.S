@@ -84,7 +84,7 @@
  * Unlike start.S, RDCHK is kept: the loading bootloader's L1 pass is done
  * and read parity checking stays on (S-13a.040, S-05.014).
  * tests/unit/test_drv_start.c checks them against
- * waffle/drivers/bf70x_cplb.h. */
+ * waffle/drivers/bf70x/cplb.h. */
 #define CTL_HI      0x1FC0
 #define DCTL_LO     0x0004
 #define ICTL_LO     0x1004
@@ -92,7 +92,7 @@
 #define DCTL_KEEP_L 0xFFF1
 #define ICTL_KEEP_H 0xFFFF
 #define ICTL_KEEP_L 0xFFF9
-/* L1DM_DCTL.ENX (waffle/drivers/bf70x_cplb.h L1DM_DCTL_ENX), bit 16. */
+/* L1DM_DCTL.ENX (waffle/drivers/bf70x/cplb.h L1DM_DCTL_ENX), bit 16. */
 #define DCTL_ENX_BIT 16
 
 /* BP_CFG, its clear value and SYSCFG.BPEN, as start.S has them. */

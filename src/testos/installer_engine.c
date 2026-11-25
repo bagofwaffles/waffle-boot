@@ -46,7 +46,7 @@
 
 #include "waffle/testos/installer.h"
 #include "waffle/board/boot.h"
-#include "waffle/drivers/bf70x_spiflash.h"
+#include "waffle/drivers/bf70x/spiflash.h"
 #include "waffle/boot/memmap.h"
 #include "waffle/flash/layout.h"
 #include "waffle/flash/settings.h"

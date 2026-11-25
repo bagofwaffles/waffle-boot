@@ -347,7 +347,7 @@ int s02_meta_restore(const struct s02_env *env, bool *restored);
  * Whether the bytes read through read from base on hold waffle-boot: LDR
  * block headers (S-05) up to FINAL within max bytes, one of them the image
  * descriptor at FR_DESC_ADDR whose magic, version, size and CRC hold
- * (S-01.023, front/fr_handoff.h). Reads headers and the descriptor alone.
+ * (S-01.023, front/handoff.h). Reads headers and the descriptor alone.
  * Recovery's WB kind (S-02.106 rule 1), the installer's slot test (S-02.108)
  * and S-11.091's test of a package's bootloader image.
  */

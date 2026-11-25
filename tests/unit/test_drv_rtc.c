@@ -10,7 +10,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "waffle/drivers/bf70x_rtc.h"
+#include "waffle/drivers/bf70x/rtc.h"
 #include "waffle/board/rtc_hooks.h"
 
 /* As waffle/board/services.h declares them. */

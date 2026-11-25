@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The stored boot logo (the format in front/fr_handoff.h; tools/wblogo.py
+ * The stored boot logo (the format in front/handoff.h; tools/wblogo.py
  * is the reference): its header, the room a slot leaves it, its drawing,
  * the conversion of a picture to it, and its save and removal in the
  * running slot. A PNG file's decoding is waffle/flash/logo_png.h's.
@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "front/fr_handoff.h"
+#include "front/handoff.h"
 #include "waffle/flash/layout.h"
 #include "waffle/flash/settings.h"
 

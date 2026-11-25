@@ -12,16 +12,16 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "front/fr_proto.h"
+#include "front/recovery/proto.h"
 #include "waffle/board/boot.h"
 #include "waffle/host/devhost.h"
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_dma.h"
-#include "waffle/drivers/bf70x_dmc.h"
-#include "waffle/drivers/bf70x_msi.h"
-#include "waffle/drivers/bf70x_port.h"
-#include "waffle/drivers/bf70x_spi.h"
-#include "waffle/drivers/bf70x_sec.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/dma.h"
+#include "waffle/drivers/bf70x/dmc.h"
+#include "waffle/drivers/bf70x/msi.h"
+#include "waffle/drivers/bf70x/port.h"
+#include "waffle/drivers/bf70x/spi.h"
+#include "waffle/drivers/bf70x/sec.h"
 
 #define CRC1_CTL 0x200B1000u
 

@@ -10,7 +10,7 @@
  * the driver's functions places the test OS image's code.
  */
 
-/* SPI_STAT read into seen[] (bf70x_spi.h): fin is TF for a send, RF for a receive. */
+/* SPI_STAT read into seen[] (waffle/drivers/bf70x/spi.h): fin is TF for a send, RF for a receive. */
 static uint32_t testos_seen(const struct wb_spi *s, uint32_t t0, uint32_t fin,
 			    uint32_t *seen)
 {

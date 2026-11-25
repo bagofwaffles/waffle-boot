@@ -390,7 +390,7 @@ class Upgrade(unittest.TestCase):
                 sector_erases = [o for o in ops if o.startswith('e:') and
                                  spiflash.SLOT_OFF[0] <= int(o[2:], 16) < spiflash.SLOT_OFF[0] + spiflash.SLOT_MAX]
                 # S-02.045: the image's sectors, and the last sector when the image leaves it free; then the
-                # boot logo's header sector (src/front/fr_handoff.h) and S-02.103's settings sector when the
+                # boot logo's header sector (src/front/handoff.h) and S-02.103's settings sector when the
                 # image leaves them free too
                 last = n <= spiflash.SLOT_MAX - 0x1000
                 settings = n <= spiflash.SLOT_MAX - 0x2000
@@ -2252,7 +2252,7 @@ class RecoveryActions(unittest.TestCase):
 
 
 class StartLog(unittest.TestCase):
-    """SC-STARTLOG on the logic: the front's step for the start log (src/front/fr_startlog.c, fr_log_start())
+    """SC-STARTLOG on the logic: the front's step for the start log (src/front/slots/startlog.c, fr_log_start())
     through h_s02's flash, against vectors/start_log.csv. The hand-off record, the main image's program and
     the ways in that skip the step (run 5) are the unit tests' (test_front_startlog, test_front_start)."""
 
@@ -2811,7 +2811,7 @@ def logo_pattern(n, p):
 
 class BootLogo(unittest.TestCase):
     """The stored boot logo: src/core/flash/logo.c (wb_logo_parse(), wb_logo_room(), wb_logo_read(), wb_logo_save(),
-    wb_logo_remove()) and the front's check and read (src/front/fr_logo.c) through h_s02's flash, against
+    wb_logo_remove()) and the front's check and read (src/front/display/logo.c) through h_s02's flash, against
     vectors/boot_logo.json, for both slots; the slot upgrade's erase of the header through s02_slot_upgrade().
     System's Boot logo screen, the PNG's conversion and the factory reset's screen are not driven here."""
 

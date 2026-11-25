@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The front's hand-off record as the full bootloader takes it (S-01.023,
- * front/fr_handoff.h), and the INIT stage's values it carries.
+ * front/handoff.h), and the INIT stage's values it carries.
  */
 #include "waffle/board/boot.h"
 

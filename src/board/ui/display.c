@@ -12,7 +12,7 @@
  * (s07_shutdown_reports() follows the power-off hook).
  */
 #include "waffle/board/display.h"
-#include "waffle/drivers/bf70x_display.h"
+#include "waffle/drivers/bf70x/display.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -20,7 +20,7 @@
 #include "waffle/board/values.h"
 #include "waffle/board/boot.h"
 #include "waffle/board/services.h"
-#include "waffle/drivers/bf70x_dma.h"
+#include "waffle/drivers/bf70x/dma.h"
 #include "waffle/drivers/mmr.h"
 #include "waffle/boot/memmap.h"
 #include "waffle/testos.h"

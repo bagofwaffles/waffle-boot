@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""The stored boot logo (src/front/fr_handoff.h) and its conversion from a PNG file: the reference for the
+"""The stored boot logo (src/front/handoff.h) and its conversion from a PNG file: the reference for the
 main image's code (src/core/flash/logo.c, src/core/flash/logo_png.c), which must give the same bytes. Standard library only.
 
     python3 -I -B tools/wblogo.py encode IMAGE.png OUT.bin [--room BYTES] [--image-crc CRC]

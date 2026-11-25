@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's view of the SPI flash (src/front/fr_slots.c): S-02.091's
+ * The front's view of the SPI flash (src/front/slots/slots.c): S-02.091's
  * rules on a slot image against bootable_images.json and libwaffle's
  * s01_stream_check(), the front's own condition on an image, the selector
  * and record readers and the slot check against records.json's states
@@ -16,9 +16,9 @@
 #include "s02_fake_flash.h"
 #include "vectors/s02_vectors.h"
 
-#include "front/fr.h"
-#include "front/fr_handoff.h"
-#include "front/fr_slots.h"
+#include "front/front.h"
+#include "front/handoff.h"
+#include "front/slots/slots.h"
 #include "waffle/boot/memmap.h"
 #include "waffle/boot/handoff.h"
 
@@ -265,7 +265,7 @@ static void test_rules_agree_random(void)
 	CHECK(passed > 0u);
 }
 
-/* --- The front's condition (fr_slots.h) --- */
+/* --- The front's condition (front/slots/slots.h) --- */
 
 static void test_front_condition(void)
 {

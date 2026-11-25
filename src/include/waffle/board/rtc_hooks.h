@@ -7,7 +7,7 @@
 #ifndef WAFFLE_BOARD_RTC_HOOKS_H
 #define WAFFLE_BOARD_RTC_HOOKS_H
 
-#include "waffle/drivers/bf70x_rtc.h"
+#include "waffle/drivers/bf70x/rtc.h"
 
 /*
  * S-13a.071, called once as held mode starts; t is the board's time base,

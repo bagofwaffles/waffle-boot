@@ -7,7 +7,7 @@
  * the bits wb_cplb_disable() clears; the cycle counter is started before
  * any time use (S-13a.030). Before all of that the branch predictor is
  * emptied and switched off (S-13a.042); the front's entry
- * (src/front/fr_entry.S) is held to the same, and to S-01.024's mask.
+ * (src/front/start/entry.S) is held to the same, and to S-01.024's mask.
  */
 #include <ctype.h>
 #include <stdio.h>
@@ -16,12 +16,12 @@
 
 #include "support/check.h"
 
-#include "waffle/drivers/bf70x_coremmr.h"
-#include "waffle/drivers/bf70x_cplb.h"
-#include "waffle/drivers/bf70x_rcu.h"
+#include "waffle/drivers/bf70x/coremmr.h"
+#include "waffle/drivers/bf70x/cplb.h"
+#include "waffle/drivers/bf70x/rcu.h"
 
 #define START_S "src/drivers/bf70x/start.S"
-#define FRONT_S "src/front/fr_entry.S"
+#define FRONT_S "src/front/start/entry.S"
 
 static char src[32 * 1024];
 

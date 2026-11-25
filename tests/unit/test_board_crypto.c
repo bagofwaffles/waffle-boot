@@ -26,7 +26,7 @@
 
 #include "waffle/board/boot.h"
 #include "waffle/board/services.h"
-#include "waffle/drivers/bf70x_pkte.h"
+#include "waffle/drivers/bf70x/pkte.h"
 #include "waffle/install/crypto.h"
 
 #define N 100000u

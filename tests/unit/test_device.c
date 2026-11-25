@@ -10,7 +10,7 @@
 #include "s02_ref_crc.h"
 #include "vectors/s18_vectors.h"
 
-#include "front/fr_handoff.h"
+#include "front/handoff.h"
 #include "waffle/board/values.h"
 #include "waffle/boot/device.h"
 

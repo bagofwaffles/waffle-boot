@@ -21,20 +21,20 @@ CLEAN = {
     'src/include/waffle/boot/core.h': '#include <stdint.h>\n#include "waffle/util/bytes.h"\n',
     'src/include/waffle/util/bytes.h': '#include <stdint.h>\n',
     'src/include/waffle/testos.h': '',
-    'src/include/waffle/board/values.h': '#include "waffle/drivers/bf70x_x.h"\n',
-    'src/include/waffle/drivers/bf70x_x.h': '#include "waffle/drivers/mmr.h"\n',
+    'src/include/waffle/board/values.h': '#include "waffle/drivers/bf70x/x.h"\n',
+    'src/include/waffle/drivers/bf70x/x.h': '#include "waffle/drivers/mmr.h"\n',
     'src/include/waffle/drivers/mmr.h': '',
     'src/include/waffle/testos/check.h': '#include "waffle/board/values.h"\n',
     'src/core/boot/core.c': '#include "waffle/boot/core.h"\n#include "zlib.h"\n',
     'src/board/boot/a.c': ('#include "waffle/board/values.h"\n#include "waffle/boot/core.h"\n'
                            '#include "waffle/testos.h"\n'),
-    'src/drivers/bf70x/x.c': ('#include "waffle/drivers/bf70x_x.h"\n#include "tusb.h"\n'
+    'src/drivers/bf70x/x.c': ('#include "waffle/drivers/bf70x/x.h"\n#include "tusb.h"\n'
                               '#include "waffle/util/bytes.h"\n'),
     'src/testos/a.c': ('#include "waffle/board/values.h"\n#include "waffle/boot/core.h"\n'
                        '#include "waffle/drivers/mmr.h"\n#include "waffle/testos.h"\n'
                        '#include "waffle/testos/check.h"\n'),
-    'src/front/fr_a.c': '#include "waffle/boot/core.h"\n',
-    'src/glue/g.c': '#include "waffle/drivers/bf70x_x.h"\n',
+    'src/front/start/a.c': '#include "waffle/boot/core.h"\n',
+    'src/glue/g.c': '#include "waffle/drivers/bf70x/x.h"\n',
 }
 
 
@@ -65,7 +65,7 @@ class Layering(unittest.TestCase):
                                         'src/include/waffle/board/values.h (board)'])
 
     def test_core_source_includes_driver(self):
-        self.write({'src/core/main.c': '  #  include <waffle/drivers/bf70x_x.h>\n'})
+        self.write({'src/core/main.c': '  #  include <waffle/drivers/bf70x/x.h>\n'})
         self.assertEqual(len(self.fails()), 1)
 
     def test_core_source_includes_testos(self):
@@ -107,7 +107,7 @@ class Layering(unittest.TestCase):
                                         'src/include/waffle/boot/core.h (core)'])
 
     def test_driver_header_includes_board(self):
-        self.write({'src/include/waffle/drivers/bf70x_y.h': '#include "waffle/board/values.h"\n'})
+        self.write({'src/include/waffle/drivers/bf70x/y.h': '#include "waffle/board/values.h"\n'})
         self.assertEqual(len(self.fails()), 1)
 
     def test_neutral_includes_core(self):

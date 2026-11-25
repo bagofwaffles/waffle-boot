@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * The OP-XY master's RTC: the board's RTC hooks over RTC0
- * (waffle/drivers/bf70x_rtc.h). Strong definitions of the board's weak
+ * (waffle/drivers/bf70x/rtc.h). Strong definitions of the board's weak
  * ones; the set-up lives here too, so a link that calls it takes these
  * over the weak ones.
  */

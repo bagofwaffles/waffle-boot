@@ -6,8 +6,8 @@
 
 #include "waffle/util/bytes.h"
 #include "waffle/host/devhost.h"
-#include "waffle/drivers/bf70x_spi.h"
-#include "waffle/drivers/bf70x_time.h"
+#include "waffle/drivers/bf70x/spi.h"
+#include "waffle/drivers/bf70x/time.h"
 #include "waffle/bridge/records.h"
 
 /* S-09.023: the most sectors one 0x12, 0x13 or 0x16 request moves. */
@@ -252,7 +252,7 @@ static void t_rung(struct s14_text *t, unsigned r, bool wire)
 	s14_text_str(t, ")");
 }
 
-/* The SPI driver's stages (WB_SPI_STAGE_..., bf70x_spi.h), short. */
+/* The SPI driver's stages (WB_SPI_STAGE_..., waffle/drivers/bf70x/spi.h), short. */
 static const char *const stage_text[] = {
 	"none", "arg", "tx room", "tx end", "rx word", "dma start", "dma stall",
 	"dma err", "overrun", "master ready", "first word", "next word",

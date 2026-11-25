@@ -22,7 +22,7 @@
 
 #include "bearssl_hash.h"
 #include "waffle/board/boot.h"
-#include "waffle/drivers/bf70x_time.h"
+#include "waffle/drivers/bf70x/time.h"
 #include "waffle/flash/layout.h"
 #include "waffle/link/link.h"
 #include "waffle/usb/device.h"

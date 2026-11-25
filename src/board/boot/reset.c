@@ -2,10 +2,10 @@
 /* The hard reset both roles make (S-04.028, S-04.025). */
 #include "waffle/board/boot.h"
 
-#include "waffle/drivers/bf70x_core.h"
-#include "waffle/drivers/bf70x_rcu.h"
-#include "waffle/drivers/bf70x_sec.h"
-#include "waffle/drivers/bf70x_timer.h"
+#include "waffle/drivers/bf70x/core.h"
+#include "waffle/drivers/bf70x/rcu.h"
+#include "waffle/drivers/bf70x/sec.h"
+#include "waffle/drivers/bf70x/timer.h"
 #include "waffle/drivers/mmr.h"
 
 /*

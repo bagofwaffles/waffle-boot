@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's recovery writer (src/front/fr_slots.c) against the RAM NOR
+ * The front's recovery writer (src/front/slots/slots.c) against the RAM NOR
  * fake: S-02.049's order, S-02.042's footprint, S-02.045's extent with the
  * erases of the slot's last sector and its settings sector, the record and selector bytes
  * (S-02.046, S-02.048), the read-back's place (S-02.047); the four cells of
@@ -23,11 +23,11 @@
 #include "vectors/s02_vectors.h"
 
 #include "bearssl_hash.h"
-#include "front/fr.h"
-#include "front/fr_handoff.h"
-#include "front/fr_proto.h"
-#include "front/fr_slots.h"
-#include "front/fr_startlog.h"
+#include "front/front.h"
+#include "front/handoff.h"
+#include "front/recovery/proto.h"
+#include "front/slots/slots.h"
+#include "front/slots/startlog.h"
 #include "waffle/boot/handoff.h"
 
 #define N(a) (sizeof(a) / sizeof((a)[0]))
@@ -2756,7 +2756,7 @@ static void enum_flash(unsigned a, unsigned ka, unsigned kb)
 	ff_reset(&g_f);
 }
 
-/* What INFO and the hold are decided from (fr_proto.c), over the flash as
+/* What INFO and the hold are decided from (front/recovery/proto.c), over the flash as
  * enum_flash() left it; the selector set per value. */
 static struct fr_rec_status g_est;
 
@@ -3365,7 +3365,7 @@ static void test_settle_every_value(void)
  */
 
 /* The status recovery decides INFO, the hold and RESTART from, over the
- * flash as it is (fr_proto.c). */
+ * flash as it is (front/recovery/proto.c). */
 static struct fr_rec_status status_now(unsigned a)
 {
 	struct fr_rec_status st;
@@ -3871,7 +3871,7 @@ static const uint8_t *ld_map(void *ctx, uint32_t addr, uint32_t len)
  * One start from the flash as it is: the factory first stage's step, its
  * own write uncut (S-02.020-S-02.023), then, where the slot it boots runs
  * to its start log's step (B's front dead or alive; A's always runs), the
- * front's own step, the one fr_start.c makes (fr_log_step()), from that
+ * front's own step, the one front/start/start.c makes (fr_log_step()), from that
  * slot's loaded memory. The slot booted; *trial what the step did of a
  * pending trial (FR_LOG_TRIAL_NONE where no step ran).
  */

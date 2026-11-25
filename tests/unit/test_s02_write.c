@@ -16,7 +16,7 @@
 #include "s02_fake_flash.h"
 #include "vectors/s02_vectors.h"
 #include "waffle/flash/settings.h"
-#include "front/fr_handoff.h"
+#include "front/handoff.h"
 
 #define N(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -115,7 +115,7 @@ static void check_upgrade_log(unsigned t, uint32_t n)
 	uint32_t sectors = (n + S02_SECTOR_SIZE - 1u) / S02_SECTOR_SIZE;
 	bool log_erase = n <= S02_SLOT_CAPACITY - S02_SECTOR_SIZE;
 	bool set_erase = n <= S02_SLOT_CAPACITY - 2u * S02_SECTOR_SIZE;	/* S-02.103 */
-	/* the logo's header sector (front/fr_handoff.h) */
+	/* the logo's header sector (front/handoff.h) */
 	uint32_t logo = base + FR_LOGO_SLOT_OFF;
 	bool logo_erase = n <= FR_LOGO_SLOT_OFF;
 	static uint8_t programmed[S02_SLOT_CAPACITY];

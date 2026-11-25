@@ -11,7 +11,7 @@
 
 #include "support/fake_core.h"
 #include "waffle/util/div64.h"
-#include "waffle/drivers/bf70x_time.h"
+#include "waffle/drivers/bf70x/time.h"
 #include "yaffs_port.h"
 
 static uint64_t rng = 0x9E3779B97F4A7C15u;

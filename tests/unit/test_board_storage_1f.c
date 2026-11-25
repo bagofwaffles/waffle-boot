@@ -25,7 +25,7 @@
 
 #include "waffle/board/boot.h"
 #include "waffle/board/emmc_bridge.h"
-#include "waffle/drivers/bf70x_msi.h"
+#include "waffle/drivers/bf70x/msi.h"
 #include "waffle/bridge/records.h"
 #include "waffle/bridge/files.h"
 #include "waffle/bridge/master.h"

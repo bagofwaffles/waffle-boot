@@ -44,7 +44,7 @@ blocks no longer. The entry, the FIRST and FINAL blocks' target, is the ELF
 entry, which src/testos/bf703_installer.ld puts at 0x11A00000.
 
 With --front, the bootloader's stream carries the frozen front
-(src/front/fr_handoff.h), the stub (src/stub/, waffle/boot/pack.h) and the image,
+(src/front/handoff.h), the stub (src/stub/, waffle/boot/pack.h) and the image,
 packed: the image's runs in L1 as they are, and every other run deflated into
 one packed block (pack()), loaded as data at PACK_AT. The front's blocks, the
 stub's, the L1 runs and the packed block go in the same order (L1 first), the
@@ -181,13 +181,13 @@ def stream(elf, init_symbol, final_argument=None, split=None):
     return header(FIRST | IGNORE, entry, 0, len(body)) + bytes(body)
 
 
-# src/front/fr_handoff.h
+# src/front/handoff.h
 FR_WINDOWS = ((0x11A04000, 0x11A0C000), (0x11802000, 0x11804000), (0x08002000, 0x08030000))
 FR_SHARED = (0x08030000, 0x08031000)
 FR_DESC_ADDR = 0x08030000
 # S-13a.040: L1 instruction memory, which the front does not read as data.
 L1_CODE = (0x11A00000, 0x11A0C000)
-# fr_image.c's fr_mem_readable(): where the front reads the loaded image.
+# front/slots/image.c's fr_mem_readable(): where the front reads the loaded image.
 FR_READABLE = ((0x11800000, 0x11802000), (0x11804000, 0x11807000), (0x11900000, 0x11908000),
                (0x08030000, 0x08030800), (0x08031000, 0x0803DFD4), (0x8803D000, 0x8833D000))
 FR_DESC_MAGIC = 0x4D494257

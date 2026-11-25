@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Generate logo_vectors.h: PNG files made here in code, and what tools/wblogo.py, the reference, gives for
 each: the decode's result and pixels, the conversion's way and stored data, and the screen it draws. The
-unit tests hold src/core/flash/logo_png.c, src/core/flash/logo.c and the front's src/front/fr_logo.c to them.
+unit tests hold src/core/flash/logo_png.c, src/core/flash/logo.c and the front's src/front/display/logo.c to them.
 
 Run from the repository root:  python3 -I -B tests/vectors/logo/gen_logo_vectors.py --out DIR
 """

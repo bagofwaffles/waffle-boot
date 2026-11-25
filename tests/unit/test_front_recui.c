@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Recovery's keys (src/front/fr_recui.c, S-02.084): one reading at a time,
+ * Recovery's keys (src/front/recovery/ui.c, S-02.084): one reading at a time,
  * as fr_keys_one() gives it. No key acts until a reading shows every key
  * up, after entry and after every change of screen; a reading that did not
  * come, or shows two keys, arms nothing and disarms. Key 1 opens the slot
@@ -13,9 +13,9 @@
 
 #include "support/check.h"
 
-#include "front/fr_proto.h"
-#include "front/fr_psoc.h"
-#include "front/fr_start.h"
+#include "front/recovery/proto.h"
+#include "front/psoc/psoc.h"
+#include "front/start/start.h"
 
 #define MS 1000u
 #define GAP (50u * MS)		/* FR_KEYS_GAP_US */

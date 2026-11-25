@@ -22,8 +22,8 @@
 #include "../src/testos/check_logic.c"
 #include "../src/testos/installer_logic.c"
 
-#include "front/fr_draw.h"
-#include "front/fr_start.h"
+#include "front/display/draw.h"
+#include "front/start/start.h"
 #include "waffle/boot/device.h"
 #include "waffle/display/display.h"
 #include "waffle/flash/logo.h"
@@ -307,7 +307,7 @@ static void e_osw(void *c, struct s15_osw_end *end)
 	end->target = 2u;
 }
 
-/* Recovery's own composer (src/front/fr_recscreen.c) over a sample unit:
+/* Recovery's own composer (src/front/recovery/screen.c) over a sample unit:
  * slot 1 running and the boot slot with this version, slot 2 checked with
  * the patch before it, both with the running front, USB connected. ui
  * NULL is the main screen; p the protocol's state. */
@@ -351,7 +351,7 @@ static void recovery_shot(struct fr_screen *s, const struct fr_ui *ui)
 /* A TE slot's version, for the slot line; no TE bytes are used. */
 static const uint16_t te[4] = { 1000, 0, 20, 0 };
 
-/* The logo line over fb, as src/front/fr_start.c's loading_line() paints
+/* The logo line over fb, as src/front/start/start.c's loading_line() paints
  * it under the logo frame (S-13c.025). */
 static void loading_line(void)
 {

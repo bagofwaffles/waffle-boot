@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The front's pins (src/front/fr_hw_port.c, built here for the host since
+ * The front's pins (src/front/hw/port.c, built here for the host since
  * the front links it for the target only): S-13b.004, PB10 and PC4 made
  * inputs before the first MUX write, each by two writes in order, DIR
  * cleared then INEN set, and no INEN of theirs cleared after; S-13b.003's
@@ -16,7 +16,7 @@
 #include "support/fake_core.h"
 #include "support/fake_mmr.h"
 
-#include "front/fr_hw_port.c"
+#include "front/hw/port.c"
 
 /* The index + 1 of the first write to addr with bit set, or 0. */
 static size_t first_write(wb_mmr_addr addr, uint32_t bit)

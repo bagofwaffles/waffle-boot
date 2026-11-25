@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-#include "waffle/drivers/bf70x_core.h"
+#include "waffle/drivers/bf70x/core.h"
 #include "waffle/psoc/cypress.h"
 
 /* S-13a.001-.005 at CLKIN 25 MHz. */

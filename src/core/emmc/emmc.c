@@ -27,7 +27,7 @@ static bool same(const uint8_t *a, const uint8_t *b, uint32_t n)
 /* --- S-03.010: every eMMC operation is retried a bounded number of times. --- */
 
 /* The sector buffers here start on a 32-byte boundary: the bf70x eMMC
- * driver takes no other (S-13b.054, bf70x_msi.h). */
+ * driver takes no other (S-13b.054, waffle/drivers/bf70x/msi.h). */
 
 static int do_select(const struct s03_env *env, unsigned part)
 {
