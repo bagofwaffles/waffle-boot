@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""S-10c.123, S-10c.127, S-10c.135 - S-10c.137: the host link's classes and its approval, as a model
+"""S-10c.123, S-10c.127, S-10c.131, S-10c.135 - S-10c.137: the host link's classes and its approval, as a model
 independent of src/hostlink.c. gen_hostlink.py builds vectors/hostlink_access.json from it."""
 
-SAFE, NEEDS, NEVER, BY_ROOT, HOLD = 'safe', 'needs', 'never', 'by root', 'hold'
+SAFE, NEEDS, NEVER, BY_ROOT, HOLD, WARNED = 'safe', 'needs', 'never', 'by root', 'hold', 'warned'
 
 CALLS = {
     0x00: ('HELLO', SAFE), 0x01: ('SESSION', SAFE), 0x02: ('APPROVE', SAFE), 0x03: ('END', SAFE),
@@ -12,6 +12,10 @@ CALLS = {
     0x17: ('REMOVE', NEEDS), 0x18: ('MKDIR', NEEDS), 0x19: ('RENAME', NEEDS),
     0x20: ('RUN', None),                                    # its action's class
     0x21: ('RAM_OPEN', NEEDS), 0x22: ('RAM_DATA', NEEDS), 0x23: ('RAM_END', NEEDS),   # S-10c.135
+    # S-10c.131: the PSoC calls ask for no approval; the unit warns and counts down instead, in every
+    # session, the Developer item's included
+    0x30: ('PSOC_OPEN', WARNED), 0x31: ('PSOC_DATA', WARNED), 0x32: ('PSOC_CLOSE', WARNED),
+    0x33: ('PSOC_STATE', SAFE), 0x34: ('PSOC_RESET', WARNED),
 }
 
 # S-10c.137: an install can write the SPI flash, so it takes the hold whatever Developer's item says
@@ -43,7 +47,7 @@ def gate(session, cls):
     'approval' (status 2), or 'past' (the call goes on to its own checks)."""
     if cls == NEVER:
         return 'never'
-    if cls == SAFE:
+    if cls in (SAFE, WARNED):
         return 'past'
     if cls == HOLD:
         return 'past' if session == 'approved' else 'approval'

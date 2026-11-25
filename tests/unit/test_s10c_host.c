@@ -1204,7 +1204,7 @@ static void test_gate(void)
 		0xF7 };
 	static const uint8_t unlock[4] = { 0xCA, 0xFE, 0xBA, 0xBE };
 
-	for (int g = S10C_GATE_OFF; g <= S10C_GATE_ASK; g++) {
+	for (int g = S10C_GATE_OFF; g <= S10C_GATE_BUSY; g++) {
 		for (unsigned k = 0; k < 6u; k++) {
 			for (unsigned l = 0; l < 2u; l++) {
 				fake_boot(true, true);

@@ -76,7 +76,7 @@ choice and the restart. DSP2 finds its own copy by the file's length and CRC.
 | 3 Display | The color and the boot logo ([below](#display)) |
 | 5 MTP target | macOS or Windows: which MTP interface the developer menu offers |
 | 6 Start in boot menu | Every start opens this menu |
-| 7 Host link | On by default. On: a computer or a page may use the [host link](Developer-Host-Link) once the unit approves it (1 held on the screen it asks with). Off: it is answered only that the link is off, and nothing over USB changes the unit |
+| 7 Host link | On by default. On: a computer or a page may use the [host link](Developer-Host-Link) once the unit approves it (1 held on the screen it asks with); its two PSoC requests, the backplane link and the backplane reset, need no hold: the unit warns and counts down 15 s instead, and switching it off (or 8 on it) stops them. Off: it is answered only that the link is off, and nothing over USB changes the unit |
 
 ### Where they are kept
 

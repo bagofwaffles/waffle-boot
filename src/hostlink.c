@@ -18,6 +18,10 @@ const struct hl_entry hl_calls[] = {
 	{ HL_RUN, HL_NEEDS },
 	{ HL_RAM_OPEN, HL_NEEDS },  { HL_RAM_DATA, HL_NEEDS },	/* S-10c.135 */
 	{ HL_RAM_END, HL_NEEDS },
+	/* S-10c.131: warned, not approved */
+	{ HL_PSOC_OPEN, HL_WARNED },  { HL_PSOC_DATA, HL_WARNED },
+	{ HL_PSOC_CLOSE, HL_WARNED }, { HL_PSOC_STATE, HL_SAFE },
+	{ HL_PSOC_RESET, HL_WARNED },
 };
 const size_t hl_ncalls = sizeof hl_calls / sizeof hl_calls[0];
 
@@ -150,11 +154,295 @@ static void put_drop(struct hostlink *h)
 	(void)h->ops->remove(h->ops->ctx, &h->put.tmp);
 }
 
+/* ---- the PSoC calls (S-10c.131 - S-10c.134) ---- */
+
+static bool psoc_built(const struct hostlink *h)
+{
+	return h->ops->psoc_warn != NULL;
+}
+
+static bool is_psoc_call(uint8_t op)
+{
+	return op >= HL_PSOC_OPEN && op <= HL_PSOC_RESET;
+}
+
+bool hl_psoc_busy(const struct hostlink *h)
+{
+	const uint8_t s = h->psoc.state;
+
+	return s == HL_PS_COUNTING || s == HL_PS_OPEN || s == HL_PS_RESETTING;
+}
+
+void hl_psoc_record(const struct hostlink *h, uint8_t *out)
+{
+	uint32_t over = h->psoc.dropped;
+
+	if (h->psoc.state == HL_PS_OPEN)
+		over += h->ops->psoc_lost(h->ops->ctx) - h->psoc.lost_at;
+	out[0] = h->psoc.state;
+	out[1] = h->psoc.what;
+	out[2] = h->psoc.seconds;
+	out[3] = h->psoc.flags;
+	wb_put_le32(out + 4, over);
+	wb_put_le16(out + 8, h->psoc.count);
+}
+
+static void psoc_event(struct hostlink *h)
+{
+	uint8_t p[3u + HL_PSOC_REC];
+
+	p[0] = HL_PSOC_EVENT;
+	p[1] = 0u;
+	p[2] = HL_OK;
+	hl_psoc_record(h, p + 3);
+	h->ops->psoc_event(h->ops->ctx, p, sizeof p);
+}
+
+/* S-10c.132: what the PSoC sent, into the ring; a byte it has no room for
+ * is counted, never dropped unsaid. Bounded: at most twice the ring a call. */
+static void psoc_drain(struct hostlink *h)
+{
+	uint8_t b[64];
+
+	if (h->psoc.state != HL_PS_OPEN)
+		return;
+	for (unsigned k = 0; k < 2u * HL_PSOC_RING / sizeof b; k++) {
+		const size_t n = h->ops->psoc_read(h->ops->ctx, b, sizeof b);
+		if (n == 0u)
+			return;
+		for (size_t i = 0; i < n; i++) {
+			const unsigned at = (unsigned)h->psoc.head + (unsigned)h->psoc.count;
+
+			if ((unsigned)h->psoc.count == HL_PSOC_RING) {
+				h->psoc.dropped++;
+				continue;
+			}
+			h->psoc.ring[at % HL_PSOC_RING] = b[i];
+			h->psoc.count = (uint16_t)((unsigned)h->psoc.count + 1u);
+		}
+	}
+}
+
+static size_t psoc_take(struct hostlink *h, uint8_t *d, size_t max)
+{
+	size_t n = 0;
+
+	while (n < max && h->psoc.count != 0u) {
+		d[n++] = h->psoc.ring[h->psoc.head];
+		h->psoc.head = (uint16_t)(((unsigned)h->psoc.head + 1u) % HL_PSOC_RING);
+		h->psoc.count = (uint16_t)((unsigned)h->psoc.count - 1u);
+	}
+	return n;
+}
+
+/*
+ * S-10c.132: a countdown is canceled with its screen taken down; an open
+ * bridge ends with the link framed again and the PSoC greeted. What the
+ * ring still holds is counted as lost.
+ */
+static void psoc_end(struct hostlink *h)
+{
+	const struct hl_ops *o = h->ops;
+
+	if (h->psoc.state == HL_PS_COUNTING) {
+		(void)o->psoc_leave(o->ctx, false);
+		h->psoc.state = HL_PS_CANCELED;
+		h->psoc.seconds = 0;
+		psoc_event(h);
+		return;
+	}
+	if (h->psoc.state != HL_PS_OPEN)
+		return;
+	psoc_drain(h);
+	h->psoc.dropped += o->psoc_lost(o->ctx) - h->psoc.lost_at + (uint32_t)h->psoc.count;
+	h->psoc.head = h->psoc.count = 0;
+	h->psoc.state = HL_PS_ENDED;
+	if (o->psoc_leave(o->ctx, true))
+		h->psoc.flags |= HL_PF_GREETED;
+	psoc_event(h);
+}
+
+/* Whole seconds left of a span of total ms of which el have passed. */
+static uint8_t seconds_left(uint32_t total, uint32_t el)
+{
+	return (uint8_t)((total - el + 999u) / 1000u);
+}
+
+/*
+ * S-10c.133: the reset request sent alone, the unit running on. Whatever
+ * else happens meanwhile, the wait ends at its bound; a unit still running
+ * then was not reset, and says so.
+ */
+static void psoc_reset_wait(struct hostlink *h)
+{
+	const struct hl_ops *o = h->ops;
+	const uint32_t el = o->now_ms(o->ctx) - h->psoc.start_ms;
+
+	if (el < HL_PSOC_RESET_WAIT_MS) {
+		const uint8_t s = seconds_left(HL_PSOC_RESET_WAIT_MS, el);
+
+		if (s != h->psoc.seconds) {
+			h->psoc.seconds = s;
+			psoc_event(h);
+		}
+		return;
+	}
+	h->psoc.seconds = 0;
+	h->psoc.flags |= HL_PF_NOT_RESET;
+	h->psoc.state = HL_PS_ENDED;
+	(void)o->psoc_leave(o->ctx, false);
+	psoc_event(h);
+}
+
+/* S-10c.133: a PSoC that has greeted takes the plain restart's request; one
+ * that has not gets the request alone, the unit not torn down for it. */
+static void psoc_reset_now(struct hostlink *h)
+{
+	const struct hl_ops *o = h->ops;
+
+	h->psoc.state = HL_PS_RESETTING;
+	if (o->psoc_greeted(o->ctx)) {
+		psoc_event(h);
+		o->psoc_reset(o->ctx);
+		return;
+	}
+	h->psoc.flags |= HL_PF_RESET_ALONE;
+	h->psoc.start_ms = o->now_ms(o->ctx);
+	h->psoc.seconds = seconds_left(HL_PSOC_RESET_WAIT_MS, 0);
+	o->psoc_reset_alone(o->ctx);
+	psoc_event(h);
+}
+
+/* S-10c.131: the countdown has run out, or runs on. */
+static void psoc_step(struct hostlink *h)
+{
+	const struct hl_ops *o = h->ops;
+	uint32_t el;
+
+	if (!psoc_built(h))
+		return;
+	if (h->psoc.state == HL_PS_RESETTING &&
+	    (h->psoc.flags & HL_PF_RESET_ALONE) != 0u) {
+		psoc_reset_wait(h);
+		return;
+	}
+	if (h->psoc.state != HL_PS_COUNTING && h->psoc.state != HL_PS_OPEN)
+		return;
+	if (!o->link_on(o->ctx) || o->psoc_gone(o->ctx)) {
+		psoc_end(h);
+		return;
+	}
+	if (h->psoc.state == HL_PS_OPEN) {
+		psoc_drain(h);
+		return;
+	}
+	if (o->psoc_canceled(o->ctx)) {
+		h->psoc.state = HL_PS_CANCELED;
+		h->psoc.seconds = 0;
+		psoc_event(h);
+		return;
+	}
+	el = o->now_ms(o->ctx) - h->psoc.start_ms;
+	if (el < HL_PSOC_COUNT_MS) {
+		const uint8_t s = seconds_left(HL_PSOC_COUNT_MS, el);
+
+		if (s != h->psoc.seconds) {
+			h->psoc.seconds = s;
+			(void)o->psoc_warn(o->ctx, h->psoc.what, s);
+			psoc_event(h);
+		}
+		return;
+	}
+	h->psoc.seconds = 0;
+	if (h->psoc.what == HL_PW_RESET) {
+		psoc_reset_now(h);
+		return;
+	}
+	o->psoc_enter(o->ctx, h->psoc.what == HL_PW_BRIDGE_ENTRY);
+	h->psoc.lost_at = o->psoc_lost(o->ctx);
+	h->psoc.state = HL_PS_OPEN;
+	psoc_event(h);
+}
+
+/* OPEN and RESET: the warning up, then the countdown. */
+static int psoc_ask(struct hostlink *h, uint8_t what)
+{
+	const struct hl_ops *o = h->ops;
+	const bool greeted = o->psoc_greeted(o->ctx);
+	int rc;
+
+	if (hl_psoc_busy(h) || h->job.state == HL_J_QUEUED || h->job.state == HL_J_RUNNING)
+		return HL_E_BUSY;
+	rc = o->psoc_warn(o->ctx, what, (uint8_t)(HL_PSOC_COUNT_MS / 1000u));
+	if (rc != HL_OK)
+		return rc;
+	h->psoc.state = HL_PS_COUNTING;
+	h->psoc.what = what;
+	h->psoc.flags = greeted ? HL_PF_GREETED_AT : 0u;
+	h->psoc.seconds = seconds_left(HL_PSOC_COUNT_MS, 0);
+	h->psoc.start_ms = o->now_ms(o->ctx);
+	h->psoc.dropped = 0;
+	h->psoc.head = h->psoc.count = 0;
+	return HL_OK;
+}
+
+static int psoc_call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
+		     uint8_t *d, size_t *dn)
+{
+	const struct hl_ops *o = h->ops;
+	uint8_t rx[HL_PSOC_RX_MAX];
+	size_t k = 0;
+	int rc = HL_OK;
+
+	switch (op) {
+	case HL_PSOC_OPEN:
+		if (n != 1u || a[0] > 1u)
+			return HL_E_BAD;
+		rc = psoc_ask(h, a[0] != 0u ? HL_PW_BRIDGE_ENTRY : HL_PW_BRIDGE);
+		break;
+	case HL_PSOC_RESET:
+		if (n != 0u)
+			return HL_E_BAD;
+		rc = psoc_ask(h, HL_PW_RESET);
+		break;
+	case HL_PSOC_DATA:
+		if (h->psoc.state != HL_PS_OPEN)
+			return HL_E_NOT_OPEN;
+		/* the computer's bytes first, then what the PSoC has sent */
+		psoc_drain(h);
+		if (n != 0u && !o->psoc_write(o->ctx, a, n))
+			rc = HL_E_BUSY;		/* nothing of them written */
+		psoc_drain(h);
+		k = psoc_take(h, rx, sizeof rx);
+		break;
+	case HL_PSOC_CLOSE:
+		if (n != 0u)
+			return HL_E_BAD;
+		psoc_drain(h);
+		k = psoc_take(h, rx, sizeof rx);
+		psoc_end(h);
+		break;
+	case HL_PSOC_STATE:
+	default:
+		if (n != 0u)
+			return HL_E_BAD;
+		break;
+	}
+	if (rc != HL_OK && op != HL_PSOC_DATA)
+		return rc;
+	hl_psoc_record(h, d);
+	wb_copy(d + HL_PSOC_REC, rx, k);
+	*dn = HL_PSOC_REC + k;
+	return rc;
+}
+
 void hl_end(struct hostlink *h)
 {
 	put_drop(h);
 	hl_ram_drop(h);
 	h->session = HL_S_NONE;
+	if (psoc_built(h))
+		psoc_end(h);
 }
 
 void hl_answer(struct hostlink *h, uint8_t outcome)
@@ -170,6 +458,7 @@ void hl_poll(struct hostlink *h)
 	/* S-10c.137: the item or Developer mode off ends a session it allowed */
 	else if (h->session == HL_S_NO_HOLD && !no_hold(h))
 		hl_end(h);
+	psoc_step(h);
 }
 
 /* ---- jobs ---- */
@@ -246,11 +535,13 @@ static bool list_each(void *arg, const char *name, const struct hl_stat *st)
 	return true;
 }
 
-/* A call this build serves: the RAM calls where the board takes them. */
+/* A call this build serves: the RAM calls where the board takes them, the
+ * PSoC calls where it has the PSoC's. */
 static bool served(const struct hostlink *h, uint8_t op)
 {
-	return (op != HL_RAM_OPEN && op != HL_RAM_DATA && op != HL_RAM_END) ||
-	       ram_served(h);
+	if (op == HL_RAM_OPEN || op == HL_RAM_DATA || op == HL_RAM_END)
+		return ram_served(h);
+	return !is_psoc_call(op) || psoc_built(h);
 }
 
 static size_t hello(struct hostlink *h, uint8_t *d)
@@ -520,6 +811,8 @@ static int run(struct hostlink *h, const uint8_t *a, size_t n, uint8_t *d, size_
 		return HL_E_NEVER;
 	if (a[0] == HL_A_RAM_START && !ram_served(h))
 		return HL_E_UNKNOWN;
+	if (hl_psoc_busy(h))
+		return HL_E_BUSY;		/* S-10c.134 */
 	if (cls == HL_HOLD ? !hl_held(h) : !hl_approved(h))
 		return HL_E_APPROVAL;
 	if (a[0] == HL_A_INSTALL || a[0] == HL_A_RESTART_MODE) {
@@ -570,6 +863,9 @@ static int call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
 
 	if (cls == 0xFFu || !served(h, op))
 		return HL_E_UNKNOWN;
+	/* S-10c.131: the warned class asks for no approval */
+	if (cls == HL_WARNED || is_psoc_call(op))
+		return psoc_call(h, op, a, n, d, dn);
 	/* the path, where the call names one, and the class it gives */
 	switch (op) {
 	case HL_STAT: case HL_HASH: case HL_REMOVE: case HL_MKDIR:
@@ -593,6 +889,10 @@ static int call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
 	if (op == HL_SET && n == 2u &&
 	    hl_class_of(hl_settings, hl_nsettings, a[0]) == HL_NEVER_C)
 		return HL_E_NEVER;
+	/* S-10c.134: while the PSoC is taken, only the session's own calls */
+	if (hl_psoc_busy(h) && op != HL_SESSION && op != HL_END && op != HL_INFO &&
+	    op != HL_JOB)
+		return HL_E_BUSY;
 	if ((cls == HL_NEEDS && !hl_approved(h)) || (cls == HL_HOLD && !hl_held(h)))
 		return HL_E_APPROVAL;
 

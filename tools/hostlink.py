@@ -28,6 +28,25 @@ menu's serial port, and a command line over it.
     restart, continue-os, restart-mode MODE
     host-link-off         turn the host link off for this start
 
+  The PSoC (the backplane) for a computer's own PSoC bootloader tool. These need Host link on but no
+  approval: the unit shows a warning and counts down 15 s first; switching it off, or its key 8 while
+  keys work, stops it. While the bridge is open the unit's keys do not work.
+
+    psoc-open [--no-entry] [S]  give the computer the PSoC link, raw, once the countdown is over: the
+                          unit first sends the PSoC's bootloader-entry message, or with --no-entry
+                          nothing (a PSoC already in its bootloader); wait up to S seconds (default 30)
+    psoc-raw-tx HEX [S]   send the bytes to the PSoC and print what comes back within S seconds
+                          (default 0.5); HEX may hold spaces
+    psoc-close            end the bridge: the link framed again and the PSoC greeted. The unit sends no
+                          exit packet: send the bootloader's own first if the application is to start
+    psoc-state            the bridge's state, its countdown and the bytes lost
+    psoc-reset            reset the PSoC after the countdown, with the plain restart's reset request:
+                          the whole unit is switched off and on, and the session ends. A PSoC that has
+                          not greeted gets the request alone while the unit runs on; if the unit is
+                          still running 10 s later the PSoC did not act on it, and the tool says so
+
+  PsocBridge in this file is the same as a Python interface: open(), send(), recv(), exchange(), close().
+
 Python 3, standard library only. Changes and every read but list and stat on the drive need the
 session's approval: `approve` first. With Developer mode's "4 Host link without hold" on, the unit
 approves at once ("approved, no hold"); an install still asks for the hold.
@@ -51,13 +70,21 @@ HELLO, SESSION, APPROVE, END, INFO, SET, JOB = range(7)
 STAT, LIST, GET, HASH, PUT_OPEN, PUT_DATA, PUT_END, REMOVE, MKDIR, RENAME = range(0x10, 0x1A)
 RUN, EVENT = 0x20, 0x7F
 RAM_OPEN, RAM_DATA, RAM_END = 0x21, 0x22, 0x23
+PSOC_OPEN, PSOC_DATA, PSOC_CLOSE, PSOC_STATE, PSOC_RESET = range(0x30, 0x35)
+PSOC_EVENT = 0x7E
+PSOC_REC = 10
+PSOC_TX_MAX = 247
+PSOC_COUNT_S = 15
+PSOC_RESET_WAIT_S = 10
+PSOC_STATES = ['none', 'counting down', 'open', 'canceled', 'ended', 'resetting']
+PSOC_WHAT = ['none', 'bridge, entry message first', 'bridge', 'reset']
 A_INSTALL, A_OS_WRITE, A_OS_ONCE, A_RESTART, A_CONTINUE_OS, A_RESTART_MODE, A_RAM_START = range(1, 8)
 SET_HOST_LINK = 7
 CHUNK = 224
 STATUS = ['ok', 'host link off', 'not approved: hold 1 on the unit', 'never from a host', 'malformed',
           'not in this build', 'path refused', 'not found', 'exists', 'I/O error', 'busy',
           'checksum mismatch', 'offset', 'volume not answering', 'read only', 'refused by the unit',
-          'volume not readable by this build']
+          'volume not readable by this build', 'the PSoC bridge is not open']
 SESSIONS = ['none', 'pending', 'approved', 'refused', 'timed out', 'approved, no hold']
 APPROVED = ('approved', 'approved, no hold')
 # S-05.024's refusals, as RAM_END names them
@@ -114,6 +141,16 @@ def info_record(b):
             'second_processor': bool(f & 64), 'drive_mounted': bool(f & 128)}
 
 
+def psoc_record(b):
+    """state seconds flags overruns held, and what was asked."""
+    st, what, secs, flags, over, held = struct.unpack_from('<BBBBIH', b)
+    return {'state': PSOC_STATES[st] if st < len(PSOC_STATES) else st,
+            'what': PSOC_WHAT[what] if what < len(PSOC_WHAT) else what, 'seconds': secs,
+            'greeted': bool(flags & 1), 'greeted_when_asked': bool(flags & 2),
+            'reset_alone': bool(flags & 4), 'not_reset': bool(flags & 8), 'overruns': over,
+            'held': held}
+
+
 class Client:
     """Requests and replies on a transport with write(bytes) and read(timeout) -> bytes."""
 
@@ -121,6 +158,8 @@ class Client:
         self.port, self.rx, self.seq, self.tag = port, bytearray(), 0, 0
         self.on_event = None
         self.last_event = None
+        self.on_psoc = None
+        self.last_psoc = None
 
     def _frames(self, end):
         while True:
@@ -143,6 +182,8 @@ class Client:
         for p in self._frames(time.monotonic() + timeout):
             if len(p) >= 3 and p[0] == EVENT:
                 self.event(job_record(p[3:]))
+            elif len(p) >= 3 + PSOC_REC and p[0] == PSOC_EVENT:
+                self.psoc_event(psoc_record(p[3:]))
             elif len(p) >= 3 and p[0] == op and p[1] == self.tag:
                 if p[2] not in ok:
                     raise HostLinkError(op, p[2], bytes(p[3:]))
@@ -153,6 +194,11 @@ class Client:
         self.last_event = rec
         if self.on_event:
             self.on_event(rec)
+
+    def psoc_event(self, rec):
+        self.last_psoc = rec
+        if self.on_psoc:
+            self.on_psoc(rec)
 
     # --- the session
 
@@ -294,6 +340,39 @@ class Client:
         a = bytes([action]) + (bytes([arg]) if arg is not None else b'') + (path.encode() if path else b'')
         return job_record(self.call(RUN, a, 30.0)[1])
 
+    # --- the PSoC (S-10c.131 - S-10c.134): no approval; the unit warns and counts down
+
+    def psoc_state(self):
+        return psoc_record(self.call(PSOC_STATE)[1])
+
+    def psoc_open(self, entry=True):
+        """Asks for the bridge; the record, counting down."""
+        return psoc_record(self.call(PSOC_OPEN, bytes([1 if entry else 0]))[1])
+
+    def psoc_reset(self):
+        """Asks for the PSoC reset; the record, counting down."""
+        return psoc_record(self.call(PSOC_RESET)[1])
+
+    def psoc_data(self, data=b''):
+        """(status, record, the PSoC's bytes): status 10 when the bytes found no room on the
+        unit, which then wrote none of them."""
+        st, d = self.call(PSOC_DATA, data, ok=(0, 10))
+        return st, psoc_record(d), d[PSOC_REC:]
+
+    def psoc_close(self):
+        """(record, the PSoC's last bytes): the link framed again, the greeting in the record."""
+        d = self.call(PSOC_CLOSE, b'', 10.0)[1]
+        return psoc_record(d), d[PSOC_REC:]
+
+    def psoc_wait(self, states, timeout=30.0, every=0.25):
+        """Asks for the state until it is one of states, or the time is up."""
+        end = time.monotonic() + timeout
+        rec = self.psoc_state()
+        while rec['state'] not in states and time.monotonic() < end:
+            time.sleep(every)
+            rec = self.psoc_state()
+        return rec
+
     def wait(self, job, timeout=900.0, gone_ok=False):
         """The job's final record: from its events, or by asking."""
         end = time.monotonic() + timeout
@@ -307,6 +386,85 @@ class Client:
                 if rec['text'] in ('restarting', 'starting') and gone_ok:
                     return rec
         return rec
+
+
+class PsocError(Exception):
+    pass
+
+
+class PsocBridge:
+    """The unit's PSoC link as a byte pipe, for a computer's own PSoC bootloader tool. The unit checks
+    nothing it carries and sends no exit packet of its own.
+
+        b = PsocBridge(Client(SerialPort(port)))
+        b.open(entry=True)      # the unit's warning and countdown first; PsocError if it is stopped
+        reply = b.exchange(packet, timeout=1.0, n=None)
+        greeted = b.close()
+
+    overruns is the count of the PSoC's bytes the unit lost since the bridge opened.
+    """
+
+    def __init__(self, client, every=0.25, poll=0.005):
+        self.c, self.every, self.poll_s = client, every, poll
+        self.rx, self.overruns = bytearray(), 0
+
+    def _took(self, rec, data):
+        self.rx += data
+        self.overruns = rec['overruns']
+        return rec
+
+    def open(self, entry=True, wait=PSOC_COUNT_S + 15.0):
+        rec = self.c.psoc_open(entry)
+        if rec['state'] != 'open':
+            rec = self.c.psoc_wait(('open', 'canceled', 'ended', 'none'), wait, self.every)
+        if rec['state'] != 'open':
+            raise PsocError('the bridge did not open: %s' % rec['state'])
+        self.rx = bytearray()
+        return rec
+
+    def send(self, data, timeout=2.0):
+        """data to the PSoC, as it is, in as many requests as it takes."""
+        end = time.monotonic() + timeout
+        data = bytes(data)
+        while data:
+            st, rec, got = self.c.psoc_data(data[:PSOC_TX_MAX])
+            self._took(rec, got)
+            if st == 0:
+                data = data[PSOC_TX_MAX:]
+            elif time.monotonic() > end:
+                raise PsocError('the unit had no room for the bytes')
+            else:
+                time.sleep(self.poll_s)
+
+    def poll(self):
+        """What the PSoC has sent since the last call, kept in rx."""
+        st, rec, got = self.c.psoc_data()
+        self._took(rec, got)
+        return rec
+
+    def recv(self, timeout=1.0, n=None):
+        """The bytes received: n of them, or what came within timeout with n None."""
+        end = time.monotonic() + timeout
+        while True:
+            rec = self.poll()
+            if n is not None and len(self.rx) >= n:
+                out, self.rx = bytes(self.rx[:n]), self.rx[n:]
+                return out
+            if time.monotonic() >= end:
+                out, self.rx = bytes(self.rx), bytearray()
+                return out
+            if rec['held'] == 0:
+                time.sleep(self.poll_s)
+
+    def exchange(self, data, timeout=1.0, n=None):
+        self.send(data)
+        return self.recv(timeout, n)
+
+    def close(self):
+        """The bridge ended; True when the PSoC greeted after it."""
+        rec, got = self.c.psoc_close()
+        self._took(rec, got)
+        return rec['greeted']
 
 
 def find_port():
@@ -385,10 +543,77 @@ def command(c, a):
         return show_job(c, c.run(A_RESTART_MODE, int(a[0], 0)), gone_ok=True)
     elif cmd == 'host-link-off':
         c.set_host_link(False)
+    elif cmd.startswith('psoc-'):
+        return psoc_command(c, cmd, a)
     else:
         print(__doc__)
         return 2
     return 0
+
+
+def show_psoc(rec):
+    print('%s%s%s, overruns %d, held %d%s' % (
+        rec['state'], '' if rec['what'] == 'none' else ' (%s)' % rec['what'],
+        ', %d s left' % rec['seconds'] if rec['state'] in ('counting down', 'resetting') and
+        rec['seconds'] else '',
+        rec['overruns'], rec['held'],
+        ', the PSoC did not act on the reset' if rec['not_reset'] else
+        ', the PSoC greeted' if rec['state'] == 'ended' and rec['greeted'] else
+        ', no greeting' if rec['state'] == 'ended' and rec['what'] != 'reset' else ''))
+
+
+def psoc_countdown(c, wait, states):
+    print('the unit warns and counts down %d s: switching it off, or 8 on it, stops it' % PSOC_COUNT_S)
+    c.on_psoc = lambda r: print('  %d s' % r['seconds']) if r['state'] == 'counting down' else None
+    return c.psoc_wait(states, wait)
+
+
+def psoc_command(c, cmd, a):
+    if cmd == 'psoc-state':
+        show_psoc(c.psoc_state())
+        return 0
+    if cmd == 'psoc-open':
+        entry = '--no-entry' not in a
+        a = [x for x in a if x != '--no-entry']
+        c.psoc_open(entry)
+        rec = psoc_countdown(c, float(a[0]) if a else PSOC_COUNT_S + 15.0,
+                             ('open', 'canceled', 'ended', 'none'))
+        show_psoc(rec)
+        if rec['state'] == 'open':
+            print('the unit\'s keys do not work until psoc-close')
+        return 0 if rec['state'] == 'open' else 1
+    if cmd == 'psoc-raw-tx':
+        b = PsocBridge(c)
+        data = bytes.fromhex(a[0].replace(' ', '')) if a else b''
+        got = b.exchange(data, float(a[1]) if len(a) > 1 else 0.5)
+        print(got.hex(' ') if got else '(nothing back)')
+        if b.overruns:
+            print('bytes lost on the unit since the bridge opened: %d' % b.overruns)
+        return 0
+    if cmd == 'psoc-close':
+        rec, got = c.psoc_close()
+        if got:
+            print('last bytes: %s' % got.hex(' '))
+        show_psoc(rec)
+        return 0
+    if cmd == 'psoc-reset':
+        print('the PSoC reset switches the whole unit off and on; the session ends')
+        c.psoc_reset()
+        try:
+            rec = psoc_countdown(c, PSOC_COUNT_S + 15.0, ('resetting', 'canceled', 'none'))
+            if rec['state'] == 'resetting' and rec['reset_alone']:
+                print('the PSoC had not greeted: the reset request went alone, and the unit runs on; '
+                      'waiting up to %d s for the PSoC to act on it' % PSOC_RESET_WAIT_S)
+                rec = c.psoc_wait(('ended', 'none'), PSOC_RESET_WAIT_S + 10.0)
+        except SystemExit:
+            print('the unit has gone: resetting')
+            return 0
+        show_psoc(rec)
+        if rec['not_reset']:
+            print('the unit is running and usable: psoc-open reaches a PSoC in its bootloader')
+        return 0 if rec['state'] == 'resetting' else 1
+    print(__doc__)
+    return 2
 
 
 def main(argv):

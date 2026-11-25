@@ -332,6 +332,134 @@ static const struct hl_ops ops_plain = {
 	.remove = o_remove, .mkdir = o_mkdir, .rename = o_rename, .run = o_run, .set = o_set,
 };
 
+/* ---- a PSoC and the unit's screen, behind the PSoC ops ---- */
+
+#define PSOC_BUF 8192
+
+static struct {
+	uint32_t ms;
+	int warn_rc;
+	unsigned warns, enters, leaves, resets, alone, events;
+	uint8_t what, seconds;
+	bool greeted, canceled, gone, entry, left_raw, greets_back, write_ok;
+	/* the PSoC's bytes for the unit, and the unit's for the PSoC */
+	uint8_t rx[PSOC_BUF], tx[PSOC_BUF];
+	size_t rx_r, rx_w, tx_n;
+	uint32_t lost;
+	uint8_t event[3u + HL_PSOC_REC];
+} P;
+
+static uint32_t p_now(void *ctx)
+{
+	(void)ctx;
+	return P.ms;
+}
+
+static int p_warn(void *ctx, uint8_t what, uint8_t seconds)
+{
+	(void)ctx;
+	if (P.warn_rc != HL_OK)
+		return P.warn_rc;
+	P.warns++;
+	P.what = what;
+	P.seconds = seconds;
+	return HL_OK;
+}
+
+static bool p_greeted(void *ctx)
+{
+	(void)ctx;
+	return P.greeted;
+}
+
+static bool p_canceled(void *ctx)
+{
+	const bool c = P.canceled;
+
+	(void)ctx;
+	P.canceled = false;
+	return c;
+}
+
+static bool p_gone(void *ctx)
+{
+	(void)ctx;
+	return P.gone;
+}
+
+static void p_enter(void *ctx, bool entry)
+{
+	(void)ctx;
+	P.enters++;
+	P.entry = entry;
+}
+
+static bool p_leave(void *ctx, bool raw)
+{
+	(void)ctx;
+	P.leaves++;
+	P.left_raw = raw;
+	return raw && P.greets_back;
+}
+
+static size_t p_read(void *ctx, uint8_t *buf, size_t max)
+{
+	size_t n = 0;
+
+	(void)ctx;
+	while (n < max && P.rx_r < P.rx_w)
+		buf[n++] = P.rx[P.rx_r++];
+	return n;
+}
+
+static bool p_write(void *ctx, const uint8_t *b, size_t n)
+{
+	(void)ctx;
+	if (!P.write_ok || P.tx_n + n > PSOC_BUF)
+		return false;
+	memcpy(P.tx + P.tx_n, b, n);
+	P.tx_n += n;
+	return true;
+}
+
+static uint32_t p_lost(void *ctx)
+{
+	(void)ctx;
+	return P.lost;
+}
+
+static void p_reset(void *ctx)
+{
+	(void)ctx;
+	P.resets++;
+}
+
+static void p_reset_alone(void *ctx)
+{
+	(void)ctx;
+	P.alone++;
+}
+
+static void p_event(void *ctx, const uint8_t *payload, size_t n)
+{
+	(void)ctx;
+	CHECK(n == sizeof P.event);
+	memcpy(P.event, payload, sizeof P.event);
+	P.events++;
+}
+
+static const struct hl_ops pops = {
+	.link_on = o_on, .approve_open = o_approve, .info = o_info, .root_ok = o_root_ok,
+	.stat = o_stat, .list = o_list, .read = o_read, .hash = o_hash,
+	.create = o_create, .write = o_write, .finish = o_finish, .abandon = o_abandon,
+	.remove = o_remove, .mkdir = o_mkdir, .rename = o_rename, .run = o_run, .set = o_set,
+	.now_ms = p_now, .psoc_warn = p_warn, .psoc_greeted = p_greeted,
+	.psoc_canceled = p_canceled, .psoc_gone = p_gone, .psoc_enter = p_enter,
+	.psoc_leave = p_leave, .psoc_read = p_read, .psoc_write = p_write,
+	.psoc_lost = p_lost, .psoc_reset = p_reset, .psoc_reset_alone = p_reset_alone,
+	.psoc_event = p_event,
+};
+
 static struct hostlink H;
 static uint8_t out[HL_PAYLOAD];
 static size_t out_n;
@@ -440,7 +568,10 @@ static void test_table(void)
 					 HL_RUN, HL_SET, HL_RAM_OPEN, HL_RAM_DATA,
 					 HL_RAM_END };
 	static const uint8_t safe[] = { HL_HELLO, HL_SESSION, HL_APPROVE, HL_END,
-					HL_INFO, HL_JOB };
+					HL_INFO, HL_JOB, HL_PSOC_STATE };
+	/* S-10c.131: no approval; the unit warns and counts down */
+	static const uint8_t warned[] = { HL_PSOC_OPEN, HL_PSOC_DATA, HL_PSOC_CLOSE,
+					  HL_PSOC_RESET };
 
 	/* every id once in each table */
 	for (size_t i = 0; i < hl_ncalls; i++)
@@ -452,9 +583,12 @@ static void test_table(void)
 	for (size_t i = 0; i < hl_nsettings; i++)
 		for (size_t j = i + 1u; j < hl_nsettings; j++)
 			CHECK(hl_settings[i].id != hl_settings[j].id);
-	CHECK(hl_ncalls == ARRAY_LEN(needs) + ARRAY_LEN(safe) + 2u);
+	CHECK(hl_ncalls == ARRAY_LEN(needs) + ARRAY_LEN(safe) + ARRAY_LEN(warned) + 2u);
 	for (size_t i = 0; i < ARRAY_LEN(needs); i++)
 		CHECK(hl_class_of(hl_calls, hl_ncalls, needs[i]) == HL_NEEDS);
+	for (size_t i = 0; i < ARRAY_LEN(warned); i++)
+		CHECK(hl_class_of(hl_calls, hl_ncalls, warned[i]) == HL_WARNED);
+	CHECK(hl_class_of(hl_calls, hl_ncalls, HL_PSOC_EVENT) == 0xFFu);
 	for (size_t i = 0; i < ARRAY_LEN(safe); i++)
 		CHECK(hl_class_of(hl_calls, hl_ncalls, safe[i]) == HL_SAFE);
 	CHECK(hl_class_of(hl_calls, hl_ncalls, HL_STAT) == HL_BY_ROOT);
@@ -486,7 +620,11 @@ static void test_hello_and_off(void)
 	CHECK(out[3] == 0x57 && out[4] == 0x42 && out[5] == 0x48 && out[6] == 0x4C &&
 	      out[7] == HL_VERSION && out[8] == HL_MIN_CLIENT && out[9] == 1u &&
 	      out[10] == HL_S_NONE && out[11] == HL_PAYLOAD && out[12] == HL_CHUNK);
-	CHECK(out[13 + HL_INFO_LEN] == hl_ncalls);
+	/* a build without the PSoC calls does not list them */
+	CHECK(out[13 + HL_INFO_LEN] == hl_ncalls - 5u);
+	for (size_t i = 0; i < out[13 + HL_INFO_LEN]; i++)
+		CHECK(out[14 + HL_INFO_LEN + i] < HL_PSOC_OPEN ||
+		      out[14 + HL_INFO_LEN + i] > HL_PSOC_RESET);
 	/* the roots this build offers: without user, two */
 	CHECK(out[out_n - 1u] == '\0' && holds("yaffs2", 7) &&
 	      !holds("user", 5));
@@ -494,7 +632,7 @@ static void test_hello_and_off(void)
 	CHECK(req(HL_HELLO, NULL, 0) == HL_OK && holds("user", 5));
 	/* the actions listed leave the never ones out */
 	{
-		const size_t a = 13u + HL_INFO_LEN + 1u + hl_ncalls;
+		const size_t a = 13u + HL_INFO_LEN + 1u + out[13 + HL_INFO_LEN];
 
 		CHECK(out[a] == 7u);
 		for (size_t i = 0; i < out[a]; i++)
@@ -516,11 +654,11 @@ static void test_hello_and_off(void)
 	CHECK(req(0x6E, NULL, 0) == HL_E_UNKNOWN);
 	CHECK(req(HL_EVENT, NULL, 0) == HL_E_UNKNOWN);
 	/* a build with no RAM image lists neither its calls nor its action
-	 * (S-10c.135) and serves neither */
+	 * (S-10c.135) and serves neither; it has no PSoC calls either */
 	hl_init(&H, &ops_plain);
-	CHECK(req(HL_HELLO, NULL, 0) == HL_OK && out[13 + HL_INFO_LEN] == hl_ncalls - 3u);
+	CHECK(req(HL_HELLO, NULL, 0) == HL_OK && out[13 + HL_INFO_LEN] == hl_ncalls - 8u);
 	{
-		const size_t a = 13u + HL_INFO_LEN + 1u + hl_ncalls - 3u;
+		const size_t a = 13u + HL_INFO_LEN + 1u + hl_ncalls - 8u;
 
 		CHECK(out[a] == 6u);
 		for (size_t i = 0; i < out[a]; i++)
@@ -1009,6 +1147,396 @@ static void test_no_hold(void)
 	CHECK(req(HL_APPROVE, NULL, 0) == HL_OK && out[3] == HL_S_PENDING);
 }
 
+/* ---- the PSoC calls (S-10c.131 - S-10c.134) ---- */
+
+static void pfresh(void)
+{
+	fresh();
+	memset(&P, 0, sizeof(P));
+	P.greeted = true;
+	P.write_ok = true;
+	P.greets_back = true;
+	P.ms = 1000u;
+	hl_init(&H, &pops);
+}
+
+static void psoc_sends(const uint8_t *b, size_t n)
+{
+	memcpy(P.rx + P.rx_w, b, n);
+	P.rx_w += n;
+}
+
+static void tick(uint32_t ms)
+{
+	P.ms += ms;
+	hl_poll(&H);
+}
+
+static uint32_t rec_over(void)
+{
+	return (uint32_t)out[7] | (uint32_t)out[8] << 8 | (uint32_t)out[9] << 16 |
+	       (uint32_t)out[10] << 24;
+}
+
+static unsigned rec_held(void)
+{
+	return (unsigned)out[11] | (unsigned)out[12] << 8;
+}
+
+static size_t rec_data(void)
+{
+	return out_n - 3u - HL_PSOC_REC;
+}
+
+static void open_bridge(bool entry)
+{
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ entry ? 1u : 0u }, 1) == HL_OK);
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(H.psoc.state == HL_PS_OPEN && P.enters == 1u && P.entry == entry);
+}
+
+/* S-10c.131: Host link on, no approval, the warning always. */
+static void test_psoc_gate(void)
+{
+	pfresh();
+	/* every call but the three RAM ones, which these ops do not take */
+	CHECK(req(HL_HELLO, NULL, 0) == HL_OK && out[13 + HL_INFO_LEN] == hl_ncalls - 3u);
+	V.on = false;
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_E_OFF && P.warns == 0u);
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_E_OFF && P.warns == 0u);
+	V.on = true;
+	CHECK(req(HL_PSOC_OPEN, NULL, 0) == HL_E_BAD);
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 2 }, 1) == HL_E_BAD);
+	CHECK(req(HL_PSOC_RESET, (const uint8_t[]){ 0 }, 1) == HL_E_BAD);
+	CHECK(req(HL_PSOC_STATE, (const uint8_t[]){ 0 }, 1) == HL_E_BAD);
+	CHECK(P.warns == 0u && H.psoc.state == HL_PS_NONE);
+	/* not approved, and no hold asked for: the warning */
+	CHECK(!hl_approved(&H));
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_OK);
+	CHECK(V.screens == 0u && P.warns == 1u && P.what == HL_PW_BRIDGE_ENTRY &&
+	      P.seconds == HL_PSOC_COUNT_MS / 1000u);
+	CHECK(out_n == 3u + HL_PSOC_REC && out[3] == HL_PS_COUNTING &&
+	      out[4] == HL_PW_BRIDGE_ENTRY && out[5] == 15u && out[6] == HL_PF_GREETED_AT &&
+	      rec_over() == 0u && rec_held() == 0u);
+	CHECK(H.session == HL_S_NONE);
+	/* an approved session is warned all the same */
+	pfresh();
+	approve();
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK && P.warns == 1u && P.what == HL_PW_RESET &&
+	      out[3] == HL_PS_COUNTING && out[4] == HL_PW_RESET);
+	/* a PSoC that has not greeted: asked all the same, the flag says so */
+	pfresh();
+	P.greeted = false;
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 0 }, 1) == HL_OK && out[4] == HL_PW_BRIDGE &&
+	      out[6] == 0u);
+	/* the unit busy (an install, a scan, a screen with something under way) */
+	pfresh();
+	P.warn_rc = HL_E_BUSY;
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_E_BUSY && out_n == 3u &&
+	      H.psoc.state == HL_PS_NONE);
+	P.warn_rc = HL_E_REFUSED;
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_E_REFUSED && H.psoc.state == HL_PS_NONE);
+	/* a job queued or running */
+	pfresh();
+	approve();
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RESTART }, 1) == HL_OK);
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_E_BUSY && P.warns == 0u);
+	(void)hl_job_set(&H, HL_J_RUNNING, 0, HL_PERCENT_NONE, HL_OK, "");
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_E_BUSY && P.warns == 0u);
+	(void)hl_job_set(&H, HL_J_DONE, 0, 100u, HL_OK, "");
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK && P.warns == 1u);
+	/* a build without them */
+	fresh();
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_E_UNKNOWN);
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_E_UNKNOWN);
+	hl_poll(&H);
+	hl_end(&H);
+}
+
+/* S-10c.131: 15 s, the seconds on the screen and in events; only the
+ * session's own calls meanwhile. */
+static void test_psoc_countdown(void)
+{
+	pfresh();
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_OK);
+	tick(0);
+	tick(999);
+	CHECK(P.events == 0u && P.warns == 1u);
+	tick(1);
+	CHECK(P.events == 1u && P.warns == 2u && P.seconds == 14u &&
+	      P.event[0] == HL_PSOC_EVENT && P.event[1] == 0u && P.event[2] == HL_OK &&
+	      P.event[3] == HL_PS_COUNTING && P.event[5] == 14u);
+	CHECK(hl_psoc_busy(&H));
+	CHECK(req(HL_PSOC_DATA, (const uint8_t[]){ 1 }, 1) == HL_E_NOT_OPEN && P.tx_n == 0u);
+	CHECK(req(HL_SESSION, NULL, 0) == HL_OK);
+	CHECK(req(HL_INFO, NULL, 0) == HL_OK);
+	CHECK(req(HL_JOB, (const uint8_t[]){ 1 }, 1) == HL_E_NOT_FOUND);
+	CHECK(req(HL_APPROVE, NULL, 0) == HL_E_BUSY && V.screens == 0u);
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_E_BUSY);
+	CHECK(req(HL_SET, (const uint8_t[]){ HL_SET_HOST_LINK, 0 }, 2) == HL_E_BUSY);
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_RESTART }, 1) == HL_E_BUSY && V.runs == 0u);
+	CHECK(req(HL_RUN, (const uint8_t[]){ HL_A_FACTORY_RESET }, 1) == HL_E_NEVER);
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 0 }, 1) == HL_E_BUSY);
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_E_BUSY && P.warns == 2u);
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK && out_n == 3u + HL_PSOC_REC &&
+	      out[3] == HL_PS_COUNTING && out[5] == 14u);
+	P.ms = 1000u + HL_PSOC_COUNT_MS - 1u;
+	hl_poll(&H);
+	CHECK(P.seconds == 1u && P.enters == 0u && H.psoc.state == HL_PS_COUNTING);
+	P.ms++;
+	hl_poll(&H);
+	CHECK(P.enters == 1u && P.entry && H.psoc.state == HL_PS_OPEN &&
+	      P.event[3] == HL_PS_OPEN && P.event[5] == 0u);
+	/* without the entry message; the clock wrapping on the way */
+	pfresh();
+	P.ms = 0xFFFFF000u;
+	open_bridge(false);
+}
+
+/* S-10c.131, S-10c.132: canceled before the countdown ends, every way. */
+static void test_psoc_cancel(void)
+{
+	/* the unit's 8 */
+	pfresh();
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_OK);
+	tick(2000);
+	P.canceled = true;
+	tick(10);
+	CHECK(H.psoc.state == HL_PS_CANCELED && P.event[3] == HL_PS_CANCELED &&
+	      !hl_psoc_busy(&H) && P.leaves == 0u);
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.enters == 0u);
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK && out[3] == HL_PS_CANCELED && out[5] == 0u);
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_OK);
+	/* asked again: a new countdown; the computer's CLOSE cancels it */
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_OK && out[3] == HL_PS_COUNTING &&
+	      out[5] == 15u);
+	CHECK(req(HL_PSOC_CLOSE, NULL, 0) == HL_OK && out[3] == HL_PS_CANCELED &&
+	      P.leaves == 1u && !P.left_raw && rec_data() == 0u);
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.enters == 0u);
+	/* the host gone: USB unplugged */
+	pfresh();
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 0 }, 1) == HL_OK);
+	P.gone = true;
+	tick(10);
+	CHECK(H.psoc.state == HL_PS_CANCELED && P.leaves == 1u && !P.left_raw);
+	P.gone = false;
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.enters == 0u);
+	/* Host link turned off */
+	pfresh();
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK);
+	V.on = false;
+	tick(10);
+	V.on = true;
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(H.psoc.state == HL_PS_CANCELED && P.resets == 0u);
+	/* the session's END */
+	pfresh();
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_OK);
+	CHECK(req(HL_END, NULL, 0) == HL_OK && H.psoc.state == HL_PS_CANCELED);
+	/* a restart keeps nothing */
+	hl_init(&H, &pops);
+	CHECK(H.psoc.state == HL_PS_NONE && !hl_psoc_busy(&H));
+}
+
+/* S-10c.132: the bytes both ways, unchanged; what one reply does not hold
+ * waits for the next; a write with no room. */
+static void test_psoc_tunnel(void)
+{
+	static const uint8_t cmd[7] = { 0x01, 0x38, 0x06, 0x00, 0xC1, 0xFE, 0x17 };
+	static const uint8_t reply[9] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x00, 0x17 };
+	static uint8_t big[600];
+	size_t got;
+
+	for (size_t i = 0; i < sizeof big; i++)
+		big[i] = (uint8_t)(i * 7u);
+	pfresh();
+	open_bridge(true);
+	CHECK(req(HL_PSOC_DATA, cmd, sizeof cmd) == HL_OK && P.tx_n == sizeof cmd &&
+	      memcmp(P.tx, cmd, sizeof cmd) == 0);
+	CHECK(out_n == 3u + HL_PSOC_REC && out[3] == HL_PS_OPEN && rec_held() == 0u);
+	psoc_sends(reply, sizeof reply);
+	tick(1);
+	CHECK(H.psoc.count == sizeof reply);
+	CHECK(req(HL_PSOC_DATA, NULL, 0) == HL_OK && rec_data() == sizeof reply &&
+	      memcmp(out + 3 + HL_PSOC_REC, reply, sizeof reply) == 0 && rec_held() == 0u);
+	/* a reply already come is in the same call's answer */
+	psoc_sends(reply, sizeof reply);
+	CHECK(req(HL_PSOC_DATA, cmd, sizeof cmd) == HL_OK && rec_data() == sizeof reply &&
+	      P.tx_n == 2u * sizeof cmd);
+	/* more than one answer holds: the rest waits, in order */
+	psoc_sends(big, sizeof big);
+	CHECK(req(HL_PSOC_DATA, NULL, 0) == HL_OK && rec_data() == HL_PSOC_RX_MAX &&
+	      memcmp(out + 3 + HL_PSOC_REC, big, HL_PSOC_RX_MAX) == 0 &&
+	      rec_held() == sizeof big - HL_PSOC_RX_MAX);
+	got = HL_PSOC_RX_MAX;
+	while (got < sizeof big) {
+		CHECK(req(HL_PSOC_DATA, NULL, 0) == HL_OK && rec_data() != 0u);
+		CHECK(memcmp(out + 3 + HL_PSOC_REC, big + got, rec_data()) == 0);
+		got += rec_data();
+	}
+	CHECK(got == sizeof big && rec_held() == 0u && rec_over() == 0u);
+	/* no room for a write: busy and nothing written; the PSoC's bytes given */
+	P.write_ok = false;
+	psoc_sends(reply, 2);
+	CHECK(req(HL_PSOC_DATA, cmd, sizeof cmd) == HL_E_BUSY && P.tx_n == 2u * sizeof cmd &&
+	      rec_data() == 2u && out[3] == HL_PS_OPEN);
+	P.write_ok = true;
+	/* the most one request carries */
+	CHECK(req(HL_PSOC_DATA, big, HL_PSOC_TX_MAX) == HL_OK &&
+	      P.tx_n == 2u * sizeof cmd + HL_PSOC_TX_MAX);
+	/* the open bridge keeps the rest of the link out */
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_E_BUSY && req(HL_APPROVE, NULL, 0) == HL_E_BUSY);
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_E_BUSY && P.enters == 1u);
+}
+
+/* S-10c.132: a byte the ring has no room for, or the board lost, is counted. */
+static void test_psoc_overrun(void)
+{
+	static uint8_t lots[HL_PSOC_RING + 100u];
+
+	for (size_t i = 0; i < sizeof lots; i++)
+		lots[i] = (uint8_t)(i ^ (i >> 8));
+	pfresh();
+	open_bridge(false);
+	psoc_sends(lots, sizeof lots);
+	tick(1);
+	CHECK(H.psoc.count == HL_PSOC_RING);
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK && rec_over() == 100u &&
+	      rec_held() == HL_PSOC_RING);
+	P.lost += 5u;
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK && rec_over() == 105u);
+	CHECK(req(HL_PSOC_DATA, NULL, 0) == HL_OK && rec_over() == 105u &&
+	      memcmp(out + 3 + HL_PSOC_REC, lots, HL_PSOC_RX_MAX) == 0);
+	/* the count stays once the bridge has ended, with what was left */
+	CHECK(req(HL_PSOC_CLOSE, NULL, 0) == HL_OK && out[3] == HL_PS_ENDED &&
+	      rec_over() == 105u + HL_PSOC_RING - 2u * HL_PSOC_RX_MAX);
+	P.lost += 7u;
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK &&
+	      rec_over() == 105u + HL_PSOC_RING - 2u * HL_PSOC_RX_MAX);
+}
+
+/* S-10c.132: the end: framed again, the greeting reported, no exit packet
+ * of the unit's own (the board's), every way it ends. */
+static void test_psoc_end(void)
+{
+	static const uint8_t reply[9] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x00, 0x17 };
+	static uint8_t big[300];
+
+	pfresh();
+	open_bridge(true);
+	psoc_sends(reply, sizeof reply);
+	CHECK(req(HL_PSOC_CLOSE, NULL, 0) == HL_OK);
+	CHECK(P.leaves == 1u && P.left_raw && out[3] == HL_PS_ENDED &&
+	      (out[6] & HL_PF_GREETED) != 0u && rec_data() == sizeof reply &&
+	      memcmp(out + 3 + HL_PSOC_REC, reply, sizeof reply) == 0 && rec_over() == 0u);
+	CHECK(P.event[3] == HL_PS_ENDED && !hl_psoc_busy(&H));
+	CHECK(req(HL_PSOC_DATA, reply, 2) == HL_E_NOT_OPEN && P.tx_n == 0u);
+	CHECK(req(HL_PSOC_CLOSE, NULL, 0) == HL_OK && out[3] == HL_PS_ENDED && P.leaves == 1u);
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_OK);
+	/* no greeting: said so */
+	pfresh();
+	P.greets_back = false;
+	open_bridge(true);
+	CHECK(req(HL_PSOC_CLOSE, NULL, 0) == HL_OK && (out[6] & HL_PF_GREETED) == 0u);
+	/* more than the reply holds: the rest counted */
+	pfresh();
+	open_bridge(false);
+	psoc_sends(big, sizeof big);
+	CHECK(req(HL_PSOC_CLOSE, NULL, 0) == HL_OK && rec_data() == HL_PSOC_RX_MAX &&
+	      rec_over() == sizeof big - HL_PSOC_RX_MAX);
+	/* USB unplugged */
+	pfresh();
+	open_bridge(true);
+	P.gone = true;
+	tick(1);
+	CHECK(H.psoc.state == HL_PS_ENDED && P.leaves == 1u && P.left_raw);
+	/* Host link turned off */
+	pfresh();
+	open_bridge(true);
+	V.on = false;
+	tick(1);
+	V.on = true;
+	CHECK(H.psoc.state == HL_PS_ENDED && P.leaves == 1u && P.left_raw);
+	/* the session's END */
+	pfresh();
+	open_bridge(true);
+	CHECK(req(HL_END, NULL, 0) == HL_OK && H.psoc.state == HL_PS_ENDED && P.leaves == 1u);
+	/* another may follow */
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_OK && out[3] == HL_PS_COUNTING &&
+	      rec_over() == 0u && out[6] == HL_PF_GREETED_AT);
+}
+
+/* S-10c.133: the reset after its countdown; nothing else meanwhile. */
+static void test_psoc_reset(void)
+{
+	pfresh();
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK && out[4] == HL_PW_RESET);
+	tick(HL_PSOC_COUNT_MS - 1u);
+	CHECK(P.resets == 0u && P.seconds == 1u);
+	tick(1);
+	CHECK(P.resets == 1u && P.alone == 0u && P.enters == 0u &&
+	      H.psoc.state == HL_PS_RESETTING && P.event[3] == HL_PS_RESETTING &&
+	      P.event[4] == HL_PW_RESET && (P.event[6] & HL_PF_RESET_ALONE) == 0u);
+	CHECK(hl_psoc_busy(&H));
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 1 }, 1) == HL_E_BUSY);
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_E_BUSY);
+	CHECK(req(HL_PSOC_DATA, NULL, 0) == HL_E_NOT_OPEN);
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.resets == 1u);
+	/* canceled: no reset */
+	pfresh();
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK);
+	tick(3000);
+	P.canceled = true;
+	tick(1);
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.resets == 0u && H.psoc.state == HL_PS_CANCELED);
+
+	/* a PSoC that has not greeted: asked all the same, the request alone,
+	 * the unit running on for the wait, then said not done */
+	pfresh();
+	P.greeted = false;
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK && out[3] == HL_PS_COUNTING &&
+	      (out[6] & HL_PF_GREETED_AT) == 0u);
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.alone == 1u && P.resets == 0u && H.psoc.state == HL_PS_RESETTING &&
+	      P.event[3] == HL_PS_RESETTING && (P.event[6] & HL_PF_RESET_ALONE) != 0u &&
+	      P.event[5] == HL_PSOC_RESET_WAIT_MS / 1000u && P.leaves == 0u);
+	/* meanwhile: the state served, the rest of the link busy, nothing ends it */
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK && out[3] == HL_PS_RESETTING);
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_E_BUSY);
+	CHECK(req(HL_PSOC_CLOSE, NULL, 0) == HL_OK && out[3] == HL_PS_RESETTING &&
+	      P.leaves == 0u);
+	CHECK(req(HL_END, NULL, 0) == HL_OK && H.psoc.state == HL_PS_RESETTING);
+	P.gone = true;
+	V.on = false;
+	tick(1000);
+	CHECK(H.psoc.state == HL_PS_RESETTING && P.event[5] == 9u && P.leaves == 0u);
+	P.gone = false;
+	V.on = true;
+	tick(HL_PSOC_RESET_WAIT_MS - 1001u);
+	CHECK(H.psoc.state == HL_PS_RESETTING && P.event[5] == 1u);
+	tick(1);
+	CHECK(H.psoc.state == HL_PS_ENDED && !hl_psoc_busy(&H) && P.leaves == 1u &&
+	      !P.left_raw && P.alone == 1u && P.resets == 0u &&
+	      P.event[3] == HL_PS_ENDED && (P.event[6] & HL_PF_NOT_RESET) != 0u &&
+	      P.event[5] == 0u);
+	CHECK(req(HL_PSOC_STATE, NULL, 0) == HL_OK && (out[6] & HL_PF_NOT_RESET) != 0u);
+	CHECK(req_str(HL_STAT, "/yaffs2") == HL_OK);
+	/* the bridge may follow; its record starts clean */
+	CHECK(req(HL_PSOC_OPEN, (const uint8_t[]){ 0 }, 1) == HL_OK && out[6] == 0u);
+	/* a PSoC that greets during the countdown takes the plain restart */
+	pfresh();
+	P.greeted = false;
+	CHECK(req(HL_PSOC_RESET, NULL, 0) == HL_OK);
+	P.greeted = true;
+	tick(HL_PSOC_COUNT_MS);
+	CHECK(P.resets == 1u && P.alone == 0u);
+}
+
 int main(void)
 {
 	RUN(test_paths);
@@ -1022,5 +1550,12 @@ int main(void)
 	RUN(test_jobs);
 	RUN(test_ram);
 	RUN(test_no_hold);
+	RUN(test_psoc_gate);
+	RUN(test_psoc_countdown);
+	RUN(test_psoc_cancel);
+	RUN(test_psoc_tunnel);
+	RUN(test_psoc_overrun);
+	RUN(test_psoc_end);
+	RUN(test_psoc_reset);
 	return check_summary("test_hostlink");
 }

@@ -14,14 +14,20 @@
  * from there, and the approval with no hold that Developer mode can allow.
  *
  * Every call has one class (hl_calls): safe, needs the session's approval,
- * or never from a host; the file calls take theirs from the path's root.
- * With the Host link setting off the unit answers HELLO, saying it is off,
- * and HL_E_OFF to everything else. One hold on the unit approves the host
- * for the session, which ends at a restart, when Host link is turned off, or
- * on HL_END. With Developer mode on and its "Host link without hold" item on
- * (S-10c.137), APPROVE is answered at once with HL_S_NO_HOLD, which serves
- * every call a hold would but those of class HL_HOLD; that session ends too
- * when the item or Developer mode is turned off.
+ * never from a host, or warned; the file calls take theirs from the path's
+ * root. With the Host link setting off the unit answers HELLO, saying it is
+ * off, and HL_E_OFF to everything else. One hold on the unit approves the
+ * host for the session, which ends at a restart, when Host link is turned
+ * off, or on HL_END. With Developer mode on and its "Host link without hold"
+ * item on (S-10c.137), APPROVE is answered at once with HL_S_NO_HOLD, which
+ * serves every call a hold would but those of class HL_HOLD; that session
+ * ends too when the item or Developer mode is turned off.
+ *
+ * S-10c.131 - S-10c.134: the PSoC calls (the raw bridge and the reset) are
+ * the warned class: keys come from the PSoC, so a dead one could approve
+ * nothing. They need no approval, and the item above does not change them;
+ * the unit shows a warning and counts down HL_PSOC_COUNT_MS first, and its
+ * key 8 cancels.
  *
  * This file is portable: the board gives the volumes, the approval screen
  * and the actions through struct hl_ops (src/board/opxy_hostlink.c).
@@ -50,6 +56,9 @@ enum hl_call {
 	HL_REMOVE = 0x17, HL_MKDIR = 0x18, HL_RENAME = 0x19,
 	HL_RUN = 0x20,
 	HL_RAM_OPEN = 0x21, HL_RAM_DATA = 0x22, HL_RAM_END = 0x23,
+	HL_PSOC_OPEN = 0x30, HL_PSOC_DATA = 0x31, HL_PSOC_CLOSE = 0x32,
+	HL_PSOC_STATE = 0x33, HL_PSOC_RESET = 0x34,
+	HL_PSOC_EVENT = 0x7E,		/* unit to host only */
 	HL_EVENT = 0x7F,		/* unit to host only */
 };
 
@@ -71,12 +80,14 @@ enum hl_status {
 	HL_E_READ_ONLY = 14,	/* the root takes no write */
 	HL_E_REFUSED = 15,	/* the unit's own checks refused it */
 	HL_E_FS = 16,		/* no volume this build reads there (exFAT, say) */
+	HL_E_NOT_OPEN = 17,	/* the PSoC bridge is not open */
 };
 
 /* HL_HOLD: needs an approval given by the hold on the unit; a session the
- * Developer item approved (HL_S_NO_HOLD) is not enough (S-10c.137). */
+ * Developer item approved (HL_S_NO_HOLD) is not enough (S-10c.137).
+ * HL_WARNED: no approval; the unit warns and counts down (S-10c.131). */
 enum hl_class { HL_SAFE = 0, HL_NEEDS = 1, HL_NEVER_C = 2, HL_BY_ROOT = 3,
-		HL_HOLD = 4 };
+		HL_HOLD = 4, HL_WARNED = 5 };
 
 struct hl_entry {
 	uint8_t id;
@@ -166,6 +177,38 @@ struct hl_stat {
 };
 typedef bool (*hl_each_fn)(void *arg, const char *name, const struct hl_stat *st);
 
+/*
+ * The PSoC calls (S-10c.131 - S-10c.134). OPEN takes entry:1 (1: the
+ * bootloader-entry message first, 0: raw at once); RESET takes nothing;
+ * DATA takes the bytes for the PSoC (at most HL_PSOC_TX_MAX); CLOSE and
+ * STATE take nothing. Each reply's data is the PSoC record, and DATA's and
+ * CLOSE's then the PSoC's bytes waiting, at most HL_PSOC_RX_MAX:
+ *
+ *   state:1 what:1 seconds:1 flags:1 overruns:4 held:2
+ *
+ * seconds: whole seconds left of the countdown, or of a reset's wait, else
+ * 0; overruns: the
+ * PSoC's bytes lost since the bridge opened; held: those still waiting
+ * after this reply. The unit sends HL_PSOC_EVENT frames on its own, status
+ * 0 and the record, at each change of state and of seconds.
+ */
+enum hl_psoc_state { HL_PS_NONE = 0, HL_PS_COUNTING = 1, HL_PS_OPEN = 2,
+		     HL_PS_CANCELED = 3, HL_PS_ENDED = 4, HL_PS_RESETTING = 5 };
+enum hl_psoc_what { HL_PW_NONE = 0, HL_PW_BRIDGE_ENTRY = 1, HL_PW_BRIDGE = 2,
+		    HL_PW_RESET = 3 };
+#define HL_PF_GREETED      0x01u	/* the bridge ended: the PSoC greeted */
+#define HL_PF_GREETED_AT   0x02u	/* the PSoC had greeted when it was asked */
+#define HL_PF_RESET_ALONE  0x04u	/* the reset request went alone: the unit waits */
+#define HL_PF_NOT_RESET    0x08u	/* the PSoC did not act on the reset request */
+#define HL_PSOC_REC        10u
+#define HL_PSOC_TX_MAX     (HL_PAYLOAD - 2u)
+#define HL_PSOC_RX_MAX     (HL_PAYLOAD - 3u - HL_PSOC_REC)
+#define HL_PSOC_RING       2048u	/* the PSoC's bytes the unit holds */
+#define HL_PSOC_COUNT_MS   15000u	/* the warning's countdown */
+/* How long the unit runs on after the reset request alone before it holds
+ * the reset not done: above the about 7 s a reset takes to come back. */
+#define HL_PSOC_RESET_WAIT_MS 10000u
+
 /* The board's side. Every int is an enum hl_status. */
 struct hl_ops {
 	void *ctx;
@@ -206,6 +249,39 @@ struct hl_ops {
 	int (*ram_write)(void *ctx, uint32_t off, const uint8_t *b, uint32_t n);
 	int (*ram_end)(void *ctx, uint32_t size, uint8_t sha[32], uint8_t *why);
 	void (*ram_drop)(void *ctx);
+
+	/*
+	 * The PSoC calls (S-10c.131 - S-10c.134); psoc_warn NULL: not in this
+	 * build. now_ms: a millisecond clock. psoc_warn: the warning for what
+	 * with seconds left, opened on the first call; HL_OK, HL_E_BUSY when it
+	 * cannot show now, or HL_E_REFUSED. psoc_greeted: the PSoC has greeted
+	 * in this start. psoc_canceled: the unit's 8 canceled the warning,
+	 * whose screen is gone; read once. psoc_gone: the host has gone (USB
+	 * not configured). psoc_enter: the bridge's screen, then the link raw,
+	 * the bootloader-entry message first with entry. psoc_leave: the link
+	 * framed again when it was raw, then the greeting (true when the PSoC
+	 * greeted), and the covered screen back. psoc_read, psoc_write: the raw
+	 * bytes, a write whole or not at all. psoc_lost: the PSoC's bytes the
+	 * board lost below this layer, a running count. psoc_reset: the reset of
+	 * a PSoC that has greeted, the plain restart's; on a unit it does not
+	 * return. psoc_reset_alone: the reset request alone, for a PSoC that has
+	 * not, the unit running on, and the screen saying so; psoc_leave(false)
+	 * takes the screen down when the wait runs out. psoc_event: an HL_PSOC_EVENT payload
+	 * for the host that asked.
+	 */
+	uint32_t (*now_ms)(void *ctx);
+	int (*psoc_warn)(void *ctx, uint8_t what, uint8_t seconds);
+	bool (*psoc_greeted)(void *ctx);
+	bool (*psoc_canceled)(void *ctx);
+	bool (*psoc_gone)(void *ctx);
+	void (*psoc_enter)(void *ctx, bool entry);
+	bool (*psoc_leave)(void *ctx, bool raw);
+	size_t (*psoc_read)(void *ctx, uint8_t *buf, size_t max);
+	bool (*psoc_write)(void *ctx, const uint8_t *b, size_t n);
+	uint32_t (*psoc_lost)(void *ctx);
+	void (*psoc_reset)(void *ctx);
+	void (*psoc_reset_alone)(void *ctx);
+	void (*psoc_event)(void *ctx, const uint8_t *payload, size_t n);
 };
 
 struct hostlink {
@@ -224,6 +300,14 @@ struct hostlink {
 		uint32_t size, have;
 		uint8_t sha[32];
 	} ram;
+	struct {
+		uint8_t state, what, flags, seconds;	/* the record's */
+		uint32_t start_ms;		/* the countdown's start */
+		uint32_t dropped;		/* bytes the ring had no room for */
+		uint32_t lost_at;		/* psoc_lost() at the open */
+		uint16_t head, count;
+		uint8_t ring[HL_PSOC_RING];
+	} psoc;
 };
 
 void hl_init(struct hostlink *h, const struct hl_ops *ops);
@@ -231,10 +315,16 @@ void hl_init(struct hostlink *h, const struct hl_ops *ops);
 size_t hl_request(struct hostlink *h, const uint8_t *req, size_t n, uint8_t *out);
 /* The approval screen's answer: HL_S_APPROVED, HL_S_REFUSED or HL_S_TIMEOUT. */
 void hl_answer(struct hostlink *h, uint8_t outcome);
-/* The session ends; a put under way is abandoned and its file removed. */
+/* The session ends; a put under way is abandoned and its file removed, and
+ * a PSoC countdown canceled or a bridge ended. */
 void hl_end(struct hostlink *h);
-/* Once a pass: with the setting off the session ends. */
+/* Once a pass: with the setting off the session ends; a PSoC countdown runs
+ * on, and an open bridge's bytes are read into the unit's ring. */
 void hl_poll(struct hostlink *h);
+/* A PSoC countdown, bridge or reset holds the unit (S-10c.134). */
+bool hl_psoc_busy(const struct hostlink *h);
+/* The PSoC record (HL_PSOC_REC bytes). */
+void hl_psoc_record(const struct hostlink *h, uint8_t *out);
 bool hl_approved(const struct hostlink *h);
 /* Approved by the hold on the unit, as HL_HOLD needs. */
 bool hl_held(const struct hostlink *h);

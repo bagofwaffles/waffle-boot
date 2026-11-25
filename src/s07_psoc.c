@@ -1058,3 +1058,59 @@ int s07_backplane(struct s07_psoc *p, const struct s07_cyacd *f,
 	*ok = res.ok;
 	return return_wait(p, res.ok, (uint32_t)res.at << 8 | res.why);
 }
+
+/* ---- the host link's raw bridge (S-07.087) ---- */
+
+int s07_bridge_enter(struct s07_psoc *p, bool entry)
+{
+	const int rc = s07_poll(p);
+
+	if (rc)
+		return rc;
+	if (entry)
+		send(p, ID_BOOTLOADER, 0, 0);	/* as S-07.080 step 1 */
+	s06_set_raw(p->node, p->link, true);
+	return S07_OK;
+}
+
+bool s07_bridge_write(struct s07_psoc *p, const uint8_t *d, size_t n)
+{
+	return n == 0u || raw_put(p, d, n);
+}
+
+size_t s07_bridge_read(struct s07_psoc *p, uint8_t *buf, size_t max)
+{
+	return s06_raw_read(p->node, p->link, buf, max);
+}
+
+/*
+ * The computer ends its own session with the PSoC's bootloader: unlike the
+ * return wait (S-07.085), no exit packet is written here.
+ */
+int s07_bridge_leave(struct s07_psoc *p, bool *greeted)
+{
+	const bool started = p->started;
+	bool ours = false;
+	uint32_t start;
+	int rc;
+
+	*greeted = false;
+	s06_set_raw(p->node, p->link, false);
+	rc = s07_greet(p, &ours);
+	start = now(p);
+	while (rc == S07_OK && !p->greeted && !p->off &&
+	       now(p) - start < RETURN_GIVE_UP_US) {
+		s07_sleep(p, RETURN_GAP_US);
+		rc = s07_poll(p);
+	}
+	if (rc)
+		return rc;
+	*greeted = p->greeted;
+	/* a greeting S-07.024 answered on a started link reported and
+	 * subscribed itself */
+	if (p->greeted && (ours || !started)) {
+		s07_report(p, S07_REPORT_HELD);
+		s07_subscribe(p);
+	}
+	return S07_OK;
+}

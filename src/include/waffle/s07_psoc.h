@@ -242,4 +242,20 @@ void s07_key_test_stop(struct s07_psoc *p);
 int s07_backplane(struct s07_psoc *p, const struct s07_cyacd *f,
 		  const uint8_t unlock[S07_CY_UNLOCK_LEN], bool *ok);
 
+/*
+ * S-07.087: the host link's raw bridge (S-10c.132). Enter: the pending
+ * messages handled, 0xEE {} as a plain message when entry, then the link
+ * raw; nothing of the master's is transmitted on it after that (S-16.147).
+ * Write: bytes as given, whole or not at all, waiting a bounded time for
+ * room. Read: the bytes received, unchanged. Leave: the link framed again,
+ * no exit packet, then S-07.020's greeting and, without an answer, a wait
+ * of S-07.085's length for the PSoC's own; a greeting answered then
+ * reports held mode and subscribes again (S-07.024, S-07.025). *greeted
+ * says whether the PSoC greeted.
+ */
+int s07_bridge_enter(struct s07_psoc *p, bool entry);
+bool s07_bridge_write(struct s07_psoc *p, const uint8_t *d, size_t n);
+size_t s07_bridge_read(struct s07_psoc *p, uint8_t *buf, size_t max);
+int s07_bridge_leave(struct s07_psoc *p, bool *greeted);
+
 #endif

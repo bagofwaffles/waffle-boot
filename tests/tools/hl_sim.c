@@ -443,6 +443,114 @@ static int o_ram_end(void *c, uint32_t size, uint8_t sha[32], uint8_t *why)
 	return *why == 0u ? HL_OK : HL_E_REFUSED;
 }
 
+/* ---- a PSoC that sends back what it is sent, and the warning's screen ---- */
+
+#define PS_BUF 8192
+#define PS_EVENTS 32
+
+static struct {
+	uint32_t ms;
+	int warn_rc, greeted, canceled, entered, left, resets, alone;
+	uint8_t buf[PS_BUF];
+	size_t r, w;
+	uint8_t ev[PS_EVENTS][3u + HL_PSOC_REC];
+	unsigned ev_r, ev_w;
+} PS;
+
+static uint32_t p_now(void *c)
+{
+	(void)c;
+	return PS.ms;
+}
+
+static int p_warn(void *c, uint8_t what, uint8_t seconds)
+{
+	(void)c;
+	(void)what;
+	(void)seconds;
+	return PS.warn_rc;
+}
+
+static bool p_greeted(void *c)
+{
+	(void)c;
+	return PS.greeted != 0;
+}
+
+static bool p_canceled(void *c)
+{
+	const int k = PS.canceled;
+
+	(void)c;
+	PS.canceled = 0;
+	return k != 0;
+}
+
+static bool p_gone(void *c)
+{
+	(void)c;
+	return false;
+}
+
+static void p_enter(void *c, bool entry)
+{
+	(void)c;
+	PS.entered = entry ? 2 : 1;
+}
+
+static bool p_leave(void *c, bool raw)
+{
+	(void)c;
+	PS.left++;
+	return raw && PS.greeted;
+}
+
+static size_t p_read(void *c, uint8_t *b, size_t max)
+{
+	size_t n = 0;
+
+	(void)c;
+	while (n < max && PS.r < PS.w)
+		b[n++] = PS.buf[PS.r++];
+	return n;
+}
+
+static bool p_write(void *c, const uint8_t *b, size_t n)
+{
+	(void)c;
+	if (PS.w + n > PS_BUF)
+		return false;
+	memcpy(PS.buf + PS.w, b, n);
+	PS.w += n;
+	return true;
+}
+
+static uint32_t p_lost(void *c)
+{
+	(void)c;
+	return 0;
+}
+
+static void p_reset(void *c)
+{
+	(void)c;
+	PS.resets++;
+}
+
+/* The request alone: this PSoC never acts on it. */
+static void p_reset_alone(void *c)
+{
+	(void)c;
+	PS.alone++;
+}
+
+static void p_event(void *c, const uint8_t *p, size_t n)
+{
+	(void)c;
+	if (PS.ev_w - PS.ev_r < PS_EVENTS && n == sizeof PS.ev[0])
+		memcpy(PS.ev[PS.ev_w++ % PS_EVENTS], p, n);
+}
+
 static const struct hl_ops ops = {
 	.link_on = o_on, .approve_open = o_approve, .info = o_info, .root_ok = o_root_ok,
 	.stat = o_stat, .list = o_list, .read = o_read, .hash = o_hash,
@@ -450,6 +558,11 @@ static const struct hl_ops ops = {
 	.remove = o_remove, .mkdir = o_mkdir, .rename = o_rename, .run = o_run, .set = o_set,
 	.no_hold = o_no_hold, .ram_open = o_ram_open, .ram_write = o_ram_write,
 	.ram_end = o_ram_end, .ram_drop = o_ram_drop,
+	.now_ms = p_now, .psoc_warn = p_warn, .psoc_greeted = p_greeted,
+	.psoc_canceled = p_canceled, .psoc_gone = p_gone, .psoc_enter = p_enter,
+	.psoc_leave = p_leave, .psoc_read = p_read, .psoc_write = p_write,
+	.psoc_lost = p_lost, .psoc_reset = p_reset, .psoc_reset_alone = p_reset_alone,
+	.psoc_event = p_event,
 };
 
 /* ---- what the tests call ---- */
@@ -469,8 +582,11 @@ void sim_fail_next(void);
 int sim_last_run(uint8_t *action, uint8_t *arg, char *path, size_t cap);
 int sim_session(void);
 void sim_no_hold(int on);
-void sim_poll(void);
 long sim_ram(uint8_t *buf, size_t cap);
+size_t sim_poll(uint32_t ms, uint8_t *out);
+void sim_psoc(int warn_rc, int greeted);
+void sim_psoc_cancel(void);
+int sim_psoc_state(int what);
 
 void sim_reset(int on, int user)
 {
@@ -481,6 +597,8 @@ void sim_reset(int on, int user)
 	S.on = on;
 	S.user = user;
 	S.writing = -1;
+	memset(&PS, 0, sizeof(PS));
+	PS.greeted = 1;
 	hl_init(&H, &ops);
 	(void)make("/yaffs2/lost+found", 1);
 }
@@ -625,7 +743,46 @@ long sim_ram(uint8_t *buf, size_t cap)
 	return (long)S.ram_size;
 }
 
-void sim_poll(void)
+/* The loop's pass after ms more; then one PSoC event payload, or 0. */
+size_t sim_poll(uint32_t ms, uint8_t *out)
 {
-	hl_poll(&H);
+	if (ms != 0u) {
+		PS.ms += ms;
+		hl_poll(&H);
+	}
+	if (PS.ev_r == PS.ev_w)
+		return 0;
+	memcpy(out, PS.ev[PS.ev_r++ % PS_EVENTS], sizeof PS.ev[0]);
+	return sizeof PS.ev[0];
+}
+
+/* The warning's answer (a status) and whether the PSoC greets. */
+void sim_psoc(int warn_rc, int greeted)
+{
+	PS.warn_rc = warn_rc;
+	PS.greeted = greeted;
+}
+
+/* The unit's 8 during a countdown. */
+void sim_psoc_cancel(void)
+{
+	PS.canceled = 1;
+}
+
+/* 0: the record's state; 1: entered (1 raw, 2 with the entry message);
+ * 2: leaves; 3: resets; 4: requests sent alone. */
+int sim_psoc_state(int what)
+{
+	switch (what) {
+	case 0:
+		return H.psoc.state;
+	case 1:
+		return PS.entered;
+	case 2:
+		return PS.left;
+	case 4:
+		return PS.alone;
+	default:
+		return PS.resets;
+	}
 }

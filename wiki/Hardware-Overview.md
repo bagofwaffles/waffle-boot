@@ -31,7 +31,9 @@ The PSoC reports 72 keys and knob clicks by number. The bootloader uses few:
 
 The power switch is handled by the PSoC. Every wait in the start-up serves the PSoC, so switching off works
 at any point, recovery included. The one exception: recovery holds the power-off back while a write leaves
-no slot that starts ([Flash Layout and Write Safety](Flash-Layout-and-Write-Safety)). On USB power with
+no slot that starts ([Flash Layout and Write Safety](Flash-Layout-and-Write-Safety)). While a computer has
+the PSoC's link through the [host link's bridge](Developer-Host-Link#the-psoc-bridge-and-reset), the
+bootloader reads nothing from the PSoC, so what the switch does then is up to the PSoC. On USB power with
 the switch off, the unit only charges; the screen stays dark.
 
 ## Read more
