@@ -55,6 +55,7 @@ void boot_master(const struct boot_master_ops *ops)
 		 * one start after Continue to the OS (S-04.013) or after Start
 		 * /os.ldr once (S-04.014). */
 		if (reason != S04_REASON_OS_ONCE && reason != S04_REASON_OS_FILE &&
+		    !S04_REASON_IS_OS_LIST(reason) &&		/* S-04.072 */
 		    ops->start_in_menu != NULL && ops->start_in_menu(ops->ctx)) {
 			ops->held(ops->ctx, &master_held);
 			return;
@@ -72,7 +73,8 @@ void boot_master(const struct boot_master_ops *ops)
 		m.staging = ops->staging;
 		m.config_addr = ops->config_addr;
 		m.sw_version_nonzero = nonzero;
-		m.file = reason == S04_REASON_OS_FILE;	/* S-05.035 */
+		/* S-05.035; S-05.044 */
+		m.file = reason == S04_REASON_OS_FILE || S04_REASON_IS_OS_LIST(reason);
 		m.dev = ops->dev;
 		s05_master_handoff(ops->handoff, &m);
 		return;

@@ -25,6 +25,9 @@ REASON_UPGRADE_MIDI = 40          # stay, upgrade screen over USB MIDI
 REASON_HOST_MODE4 = 50            # boots the OS
 REASON_STAY_MAIN = 60             # stay, main menu
 STAY_REASONS = frozenset({10, 30, 40, 60})
+# S-04.072: a start of an OS file of /yaffs2/os, 100 + its list place; boots the OS
+REASON_OS_LIST = 100
+OS_LIST_PLACES = 7
 
 
 @dataclass
@@ -136,17 +139,24 @@ WRITERS = {
     'W12': dict(event='Start /os.ldr once, the slave present', reason=90, reset='hard', nordic='exit',
                 shutdown=True, psoc_reset=False, min_delay_ms=0,
                 slave_off=True),
+    # S-04.072: 100 + the OS file's list place, 0 to 6; another place writes 20
+    'W13': dict(event='Boot once of an OS file of /os, the slave present', reason='list', reset='hard',
+                nordic='exit', shutdown=True, psoc_reset=False, min_delay_ms=0,
+                slave_off=True),
     'W9': dict(event='slave power-off request, sent by every master shutdown (slave record)', reason=0,
                reset='hard', nordic='none', shutdown=None, psoc_reset=False, min_delay_ms=0,
                slave_off=None),
 }
 
 
-def writer_reason(writer_id, taken=REASON_DEFAULT, mode_payload=b''):
-    """The reason writer `writer_id` stores, given the reason this boot took and, for W1, the mode bytes."""
+def writer_reason(writer_id, taken=REASON_DEFAULT, mode_payload=b'', place=0):
+    """The reason writer `writer_id` stores, given the reason this boot took, for W1 the mode bytes and
+    for W13 the OS file's list place."""
     r = WRITERS[writer_id]['reason']
     if r == 'host_mode':
         return host_mode_reason(mode_payload)
+    if r == 'list':
+        return REASON_OS_LIST + place if 0 <= place < OS_LIST_PLACES else REASON_BOOT_OS
     if r == 'taken':
         return taken & 0xFFFF
     return r

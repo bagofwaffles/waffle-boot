@@ -1778,7 +1778,12 @@ def start_reason(v):
     elif w == 'REFUSED':
         t = CHECK_REASON[CHECKS.index(v.get('check', 'LENGTH'))]
     elif w == 'SLAVE_NO_OS':
-        t = 'DSP2 could not load the same /os.ldr' if v.get('file') else 'DSP2 could not load the OS'
+        t = ('DSP2 could not load the same OS file' if v.get('listed') else
+             'DSP2 could not load the same /os.ldr' if v.get('file') else 'DSP2 could not load the OS')
+    elif w == 'FILE' and v.get('listed'):
+        # S-05.044: an OS file of /os (s15_file_reason())
+        t = {'MISSING': 'the file is not on the drive',
+             'DIRECTORY': 'the name is a directory'}.get(v.get('file_why'), file_reason(v))
     elif w == 'FILE':
         t = file_reason(v)
     elif w == 'NO_REPLY':
@@ -1819,9 +1824,10 @@ def start_info(v):
     elif w == 'REFUSED':
         t = 'Hand-over check: ' + CHECK_INFO[CHECKS.index(v.get('check', 'LENGTH'))]
     elif w == 'SLAVE_NO_OS':
-        t = ('DSP2 refused /os.ldr, reply %d' if v.get('file') else 'DSP2 answered no OS, reply %d') % value
+        t = ('DSP2 refused the OS file, reply %d' if v.get('listed') else
+             'DSP2 refused /os.ldr, reply %d' if v.get('file') else 'DSP2 answered no OS, reply %d') % value
     elif w == 'FILE':
-        t = '/os.ldr ' + {'MISSING': 'not on the drive', 'DIRECTORY': 'is a directory',
+        t = ('OS file ' if v.get('listed') else '/os.ldr ') + {'MISSING': 'not on the drive', 'DIRECTORY': 'is a directory',
                           'REFUSED': "on a drive that can't be read"}.get(v.get('file_why'), file_reason(v))
     elif w == 'NO_REPLY':
         t = 'Release' if lost else 'No reply to the release'

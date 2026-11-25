@@ -96,7 +96,7 @@ H_s11_SRCS := $(sort $(wildcard src/s11_*.c)) src/s17_revisions.c src/wire_crc.c
 	src/s02_flash.c \
 	src/wire_package.c src/wire_zip.c src/wire_yaffs.c src/wire_ckpt.c src/wire_fat.c \
 	src/s09_files.c src/s09_master.c src/s09_slave.c src/s09_bridge.c src/wire_s09.c src/s15_settings.c \
-	src/s06_frame.c src/s06_rx.c src/s06_link.c src/s03_emmc.c src/s04_records.c \
+	src/s15_osfiles.c src/s06_frame.c src/s06_rx.c src/s06_link.c src/s03_emmc.c src/s04_records.c \
 	src/s10c_text.c src/div64.c
 H_s12_SRCS := src/s04_records.c src/div64.c src/s10c_text.c src/s11_common.c src/s11_version.c \
 	src/s11_content.c src/s14_export.c src/wire_fat.c src/wire_package.c src/wire_yaffs.c src/wire_ckpt.c \

@@ -1,4 +1,5 @@
-# S-04.020, S-04.027, S-08.048, S-04.063, S-04.065, S-04.025, S-04.032
+# S-04.020, S-04.027, S-08.048, S-04.063, S-04.065, S-04.025, S-04.032, S-04.072
+# reason list: 100 + the OS file's list place (0 to 6); a place past them writes 20
 id	event	reason	reset	nordic	nordic_no_app	shutdown	psoc_reset	min_delay_ms	slave_off
 W1	host reboot request with a mode byte	host_modes.tsv	hard	enter	enter	yes	no	0	yes
 W2	host reboot-to-OS request, or Continue to the OS while the slave is absent or not answering (S-05.033)	20	soft	exit	none	yes	yes	0	yes
@@ -9,4 +10,5 @@ W7	developer menu's restart, digit 6 (S-15.095)	taken	hard	none	none	yes	no	0	ye
 W10	developer request for a calibrated start (S-10c.110)	70	hard	none	none	yes	no	0	yes
 W11	Continue to the OS, the slave present (S-05.033, S-15.190, S-10c.076)	80	hard	exit	none	yes	no	0	yes
 W12	Start /os.ldr once, the slave present (S-04.014, S-15.194)	90	hard	exit	none	yes	no	0	yes
+W13	Boot once of an OS file of /os, the slave present (S-04.072, S-15.200)	list	hard	exit	none	yes	no	0	yes
 W9	slave power-off request, sent by every master shutdown (slave record)	0	hard	none	none	n/a	no	0	n/a

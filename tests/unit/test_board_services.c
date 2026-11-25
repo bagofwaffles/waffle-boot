@@ -1082,6 +1082,34 @@ static void test_os_once_restart(void)
 	CHECK(rs_at[0] - t0 >= (uint64_t)OPXY_RESTART_HOLD_MS * 1000u * 400u);
 	fake_core_set_cycle_step(1u);
 	opxy_usb_stop();
+
+	/* S-04.072, S-15.200: an OS file of /os named by the menu: W13 with
+	 * its list place; let go, W12 again */
+	held_setup();
+	m.slave_present = true;
+	m.bridge.absent = false;
+	m.sv.reboot.shutdown = rs_shutdown;
+	m.sv.reboot.write_record = rs_write;
+	m.sv.reboot.hard_reset = rs_hard;
+	m.sv.reboot.psoc_reset_request = rs_psoc;
+	m.sv.reboot.nordic_enter_dfu = rs_other;
+	m.sv.reboot.nordic_exit_dfu = rs_exit;
+	m.sv.reboot.wait_for_psoc = rs_wait;
+	CHECK(m.sv.env.os_files != NULL && m.sv.env.os_file != NULL);
+	if (m.sv.env.os_file == NULL)
+		return;
+	m.sv.env.os_file(m.sv.env.ctx, "/yaffs2/os/b.ldr", 3u);
+	CHECK(strcmp(opxy_osw_path, "/yaffs2/os/b.ldr") == 0 && opxy_os_place == 3u);
+	rs_n = 0;
+	m.sv.env.os_once(m.sv.env.ctx);
+	CHECK(rs_n == 4u && memcmp(rs_ev, "SXRH", 4) == 0);
+	CHECK(rs_reason == S04_REASON_OS_LIST + 3u);
+	m.sv.env.os_file(m.sv.env.ctx, NULL, 0u);
+	CHECK(strcmp(opxy_osw_path, OPXY_OS_LDR) == 0 && opxy_os_place == OPXY_OS_PLACE_NONE);
+	rs_n = 0;
+	m.sv.env.os_once(m.sv.env.ctx);
+	CHECK(rs_reason == S04_REASON_OS_FILE);
+	opxy_usb_stop();
 }
 
 /*

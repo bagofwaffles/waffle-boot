@@ -491,6 +491,29 @@ static void test_start_in_menu(void)
 	boot_master(&menu_prompt_ops);
 	CHECK(strcmp(trace, "BDMRKSQPGLTkVJ") == 0 && mf.menu_asks == 0u);
 
+	/* S-04.072: the start after an OS file's Boot once, any list place:
+	 * the setting is not asked, held keys still hold */
+	for (uint16_t r = S04_REASON_OS_LIST; r < S04_REASON_OS_LIST + S04_OS_LIST_PLACES; r++) {
+		master_reset();
+		mf.reason = r;
+		mf.start_menu = true;
+		boot_master(&menu_ops);
+		CHECK(strcmp(trace, "BDMRKSPGLTkVJ") == 0 && !mf.held && mf.menu_asks == 0u);
+	}
+	master_reset();
+	mf.reason = S04_REASON_OS_LIST + 2u;
+	mf.start_menu = true;
+	mf.keys = S05_KEYS_HELD;
+	boot_master(&menu_ops);
+	CHECK(strcmp(trace, "BDMRKSH") == 0 && mf.held && mf.menu_asks == 0u &&
+	      mf.h.reason == S04_REASON_OS_LIST + 2u);
+	/* a reason past the places is any other start's */
+	master_reset();
+	mf.reason = S04_REASON_OS_LIST + S04_OS_LIST_PLACES;
+	mf.start_menu = true;
+	boot_master(&menu_ops);
+	CHECK(mf.held && mf.menu_asks == 1u);
+
 	/* S-04.014: the start after Start /os.ldr once is treated as the one
 	 * after Continue: the setting is not asked, held keys still hold, and
 	 * a build with the boot prompt still asks. */

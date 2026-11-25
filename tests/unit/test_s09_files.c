@@ -3981,6 +3981,40 @@ static void os_stream(uint8_t *d, size_t n, uint32_t seed)
 }
 
 /* S-15.094 through S-03's OS write and the eMMC commands */
+/* S-15.199: the OS files of /yaffs2/os, sized, in byte order; no /os is an
+ * empty list; a refused volume is not read. S-05.044: a listed file read
+ * by its path. */
+static void test_os_files(void)
+{
+	static struct s15_os_files l;
+	static uint8_t buf[12000];
+	struct s15_os_file of;
+	uint32_t len = 0;
+
+	t_case = "os files";
+	fresh();
+	CHECK(s09_files_os_files(&F, &l) && l.n == 0u && l.more == 0u);
+	CHECK(s09_files_mkdir(&F, "/yaffs2/os") == 0);
+	memset(buf, 0x5a, sizeof buf);
+	CHECK(put("/yaffs2/os/b.ldr", buf, 10000u));
+	CHECK(put("/yaffs2/os/a.LDR", buf, 50u));
+	CHECK(put("/yaffs2/os/notes.txt", buf, 10u));
+	CHECK(put("/yaffs2/os/.x.ldr", buf, 10u));
+	CHECK(s09_files_mkdir(&F, "/yaffs2/os/dir.ldr") == 0);
+	CHECK(s09_files_os_files(&F, &l));
+	CHECK(l.n == 2u && l.more == 0u && strcmp(l.name[0], "a.LDR") == 0 &&
+	      l.size[0] == 50u && strcmp(l.name[1], "b.ldr") == 0 && l.size[1] == 10000u);
+	CHECK(s09_files_os_read_at(&F, "/yaffs2/os/b.ldr", buf, sizeof buf, &of, &len) &&
+	      len == 10000u);
+	CHECK(!s09_files_os_read_at(&F, "/yaffs2/os/a.LDR", buf, sizeof buf, &of, &len) &&
+	      of.why == S15_OSW_WHY_TOO_SMALL);	/* S-05.041 */
+	CHECK(!s09_files_os_read_at(&F, "/yaffs2/os/c.ldr", buf, sizeof buf, &of, &len) &&
+	      of.why == S15_OSW_WHY_MISSING);
+	F.mount_sent = F.mount_failed = true;
+	CHECK(!s09_files_os_files(&F, &l) && l.n == 0u);
+	F.mount_failed = false;
+}
+
 static void test_os_write(void)
 {
 	struct s03_emmc_ops cops;
@@ -4286,6 +4320,7 @@ int main(void)
 		test_check_zip();
 		test_menus();
 		test_format();
+		test_os_files();
 		test_os_write();
 		test_absent();
 	}

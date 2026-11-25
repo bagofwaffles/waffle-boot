@@ -571,6 +571,7 @@ void s15_reason_line(struct s15_buf *out, const char *reason)
 
 const char s15_start_failed[] = "The OS could not be started.";
 const char s15_start_failed_file[] = "/os.ldr could not be started.";
+const char s15_start_failed_listed[] = "The OS file could not be started.";
 
 static void buf_hex8(struct s15_buf *b, uint32_t v)
 {
@@ -683,11 +684,15 @@ void s15_start_reason(struct s15_buf *out, const struct s15_start *s)
 		break;
 	case S15_START_SLAVE_NO_OS:
 		/* S-15.195: DSP2's copy unread, or not the master's */
-		s15_buf_str(out, s->file ? "DSP2 could not load the same /os.ldr" :
+		s15_buf_str(out, s->listed ? "DSP2 could not load the same OS file" :
+				 s->file ? "DSP2 could not load the same /os.ldr" :
 					   "DSP2 could not load the OS");
 		break;
 	case S15_START_FILE:
-		s15_osw_reason(out, s->file_why, 0u, s->value, s->limit);
+		if (s->listed)
+			s15_file_reason(out, s->file_why, s->value, s->limit);
+		else
+			s15_osw_reason(out, s->file_why, 0u, s->value, s->limit);
 		break;
 	case S15_START_NO_REPLY:
 		s15_buf_str(out, lost ? "at the release" :
@@ -719,7 +724,7 @@ static void file_info(struct s15_buf *out, const struct s15_start *s)
 {
 	struct s15_buf why;
 
-	s15_buf_str(out, "/os.ldr ");
+	s15_buf_str(out, s->listed ? "OS file " : "/os.ldr ");
 	if (s->file_why == S15_OSW_WHY_MISSING) {
 		s15_buf_str(out, "not on the drive");
 	} else if (s->file_why == S15_OSW_WHY_DIRECTORY) {
@@ -804,7 +809,8 @@ void s15_start_info(struct s15_buf *out, const struct s15_start *s)
 					    (unsigned)s->check : 0u]);
 		break;
 	case S15_START_SLAVE_NO_OS:
-		s15_buf_str(out, s->file ? "DSP2 refused /os.ldr, reply " :
+		s15_buf_str(out, s->listed ? "DSP2 refused the OS file, reply " :
+				 s->file ? "DSP2 refused /os.ldr, reply " :
 					   "DSP2 answered no OS, reply ");
 		s15_buf_dec(out, s->value);
 		break;
@@ -1055,5 +1061,59 @@ void s15_osw_emmc_line(struct s15_buf *out, enum s15_style *style,
 		*style = S15_ST_TEXT;
 		s15_buf_str(out, "   Nothing written.");
 		break;
+	}
+}
+
+/* ---- S-15.199 - S-15.201: the OS files of /yaffs2/os ---------------- */
+
+const char s15_os_files_item[] = "6 OS files";
+const char s15_os_files_where[] = "/os on the internal drive";
+const char s15_os_files_none[] = "No OS files in /os.";
+const char s15_os_files_how[] = "Copy .ldr files there with MTP or the host link.";
+const char s15_os_files_unread[] = "Can't read /os on the drive";
+const char s15_os_install_item[] = "1 Install\tReplaces the OS at restart";
+const char s15_os_once_item[] = "2 Boot once\tWrites nothing";
+const char s15_os_remove_item[] = "5 Remove";
+const char s15_os_kept[] = "The OS on the unit is not changed.";
+
+void s15_size_text(struct s15_buf *out, uint32_t bytes)
+{
+	const uint32_t unit = bytes >= 1024u * 1024u ? 1024u * 1024u : 1024u;
+	/* tenths of the unit, to the nearest */
+	const uint32_t t = (uint32_t)(((uint64_t)bytes * 10u + unit / 2u) / unit);
+
+	s15_buf_init(out);
+	s15_buf_dec(out, t / 10u);
+	s15_buf_str(out, ".");
+	s15_buf_dec(out, t % 10u);
+	s15_buf_str(out, unit == 1024u ? " KiB" : " MiB");
+}
+
+void s15_name_text(struct s15_buf *out, const char *name, size_t max)
+{
+	size_t n = 0;
+
+	s15_buf_init(out);
+	while (name[n] != '\0')
+		n++;
+	if (n <= max || max < 4u) {
+		s15_buf_strn(out, name, n <= max ? n : max);
+		return;
+	}
+	s15_buf_strn(out, name, max - 3u);
+	s15_buf_str(out, "...");
+}
+
+void s15_file_reason(struct s15_buf *out, enum s15_osw_why why, uint32_t value,
+		     uint32_t limit)
+{
+	if (why == S15_OSW_WHY_MISSING) {
+		s15_buf_init(out);
+		s15_buf_str(out, "the file is not on the drive");
+	} else if (why == S15_OSW_WHY_DIRECTORY) {
+		s15_buf_init(out);
+		s15_buf_str(out, "the name is a directory");
+	} else {
+		s15_osw_reason(out, why, 0u, value, limit);
 	}
 }

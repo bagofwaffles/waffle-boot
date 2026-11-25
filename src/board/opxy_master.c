@@ -745,16 +745,18 @@ static struct s15_os_file stage_file;
 static uint32_t stage_file_crc;
 static bool stage_crc_peripheral;	/* stage_file_crc is the CRC peripheral's */
 
-/* S-04.014: this start reads the OS from /yaffs2/os.ldr */
+/* S-04.014: this start reads the OS from /yaffs2/os.ldr; S-04.072, from an
+ * OS file of /yaffs2/os */
 static bool file_start(const struct opxy_master *m)
 {
-	return m->boot_reason == S04_REASON_OS_FILE;
+	return m->boot_reason == S04_REASON_OS_FILE || S04_REASON_IS_OS_LIST(m->boot_reason);
 }
 
 #if !defined(OPXY_TEST_OS)
 /*
- * S-05.035: /yaffs2/os.ldr whole into the staging area over the bridge's
- * file commands, the volume mounted first (0x08, S-09.018), the link
+ * S-05.035: /yaffs2/os.ldr (S-05.044: an OS file of /yaffs2/os) whole into
+ * the staging area over the bridge's file commands, the volume mounted
+ * first (0x08, S-09.018), the link
  * raised for the bytes (S-09.075) and plain again after them; no boot
  * partition is selected or read. Only the length bounds are checked here:
  * S-05.024's check follows, and the slave compares its own copy with this
@@ -762,7 +764,10 @@ static bool file_start(const struct opxy_master *m)
  */
 static enum s05_fail stage_os_file(struct opxy_master *m, uint32_t *length)
 {
+	static struct s15_os_files list;
+	static char path[sizeof S15_OS_DIR + S15_OS_NAME_MAX];
 	uint8_t *staging = (uint8_t *)(uintptr_t)OPXY_STAGING;
+	const char *from = OPXY_OS_LDR;
 	struct s14_text t;
 	uint32_t len = 0;
 	bool ok;
@@ -770,7 +775,21 @@ static enum s05_fail stage_os_file(struct opxy_master *m, uint32_t *length)
 	memset(&stage_load, 0, sizeof stage_load);
 	s09_files_init(&m->sv.files, &m->bridge);
 	opxy_bridge_fast(m);
-	ok = s09_files_os_read(&m->sv.files, staging, S03_OS_MAX, &stage_file, &len);
+	/* S-05.044: the file at the list place the reason names, the list
+	 * made as the boot menu made it; a place past the list is a missing
+	 * file */
+	if (S04_REASON_IS_OS_LIST(m->boot_reason)) {
+		from = path;
+		path[0] = '\0';
+		if (!s09_files_os_files(&m->sv.files, &list) ||
+		    !s15_os_file_path(&list, m->boot_reason - S04_REASON_OS_LIST, path,
+				      sizeof path)) {
+			stage_file.why = S15_OSW_WHY_MISSING;
+			stage_file.value = stage_file.limit = 0;
+		}
+	}
+	ok = from[0] != '\0' &&
+	     s09_files_os_read_at(&m->sv.files, from, staging, S03_OS_MAX, &stage_file, &len);
 	opxy_bridge_plain(m);
 	/* the slave judges its copy by this value, known to nothing here: the
 	 * CRC peripheral's where it serves, the software's after any fault of
@@ -782,7 +801,8 @@ static enum s05_fail stage_os_file(struct opxy_master *m, uint32_t *length)
 	if (!ok)
 		return S05_FAIL_FILE;	/* logged with the account (load_failed()) */
 	s14_text_init(&t);
-	s14_text_str(&t, "/os.ldr read for this start: ");
+	s14_text_str(&t, from + sizeof "/yaffs2" - 1u);
+	s14_text_str(&t, " read for this start: ");
 	s14_text_dec(&t, len);
 	s14_text_str(&t, " bytes, crc ");
 	s14_text_hex(&t, stage_file_crc, 8u);
@@ -908,6 +928,7 @@ static void load_failed(void *ctx, enum s05_fail cause)
 	st.lost = cause != S05_FAIL_SLAVE_START &&
 		  s09_master_lost(&m->bridge, &st.why);
 	st.file = file_start(m);		/* S-05.035 */
+	st.listed = S04_REASON_IS_OS_LIST(m->boot_reason);	/* S-05.044 */
 	st.os_file = stage_file;
 	st.file_crc = stage_file_crc;
 	opxy_start_log(m, cause, &st);

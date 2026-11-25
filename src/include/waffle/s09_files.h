@@ -38,6 +38,7 @@
 #include "waffle/s09_master.h"
 #include "waffle/s11_staging.h"
 #include "waffle/s15_menu.h"
+#include "waffle/s15_osfiles.h"
 
 /* The longest path sent, NUL included: /yaffs2/, a pack's directory and
  * its manifest, or an S-11 path. */
@@ -237,6 +238,19 @@ bool s09_files_os_check(struct s09_files *f, uint32_t cap, struct s15_os_file *o
  * was read, with *len its length. */
 bool s09_files_os_read(struct s09_files *f, uint8_t *buf, uint32_t cap,
 		       struct s15_os_file *out, uint32_t *len);
+/* S-05.044, S-15.200: the same of the file at path. */
+bool s09_files_os_check_at(struct s09_files *f, const char *path, uint32_t cap,
+			   struct s15_os_file *out, uint32_t *len);
+bool s09_files_os_read_at(struct s09_files *f, const char *path, uint8_t *buf, uint32_t cap,
+			  struct s15_os_file *out, uint32_t *len);
+/*
+ * S-15.199: the OS files of /yaffs2/os (s15_os_files_offer()'s list), each
+ * listed one's size read by its stat; a listed name that is a directory or
+ * whose stat fails is dropped. A missing directory is an empty list. False
+ * when the volume is refused or the directory cannot be read. A volume not
+ * mounted is mounted first. Nothing is written.
+ */
+bool s09_files_os_files(struct s09_files *f, struct s15_os_files *out);
 /*
  * S-15.094: read /yaffs2/os.ldr whole into image (cap bytes, at least
  * S03_OS_MAX: a longer file is one S-03.051 refuses) and write it with

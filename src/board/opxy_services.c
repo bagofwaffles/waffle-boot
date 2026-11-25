@@ -1007,6 +1007,7 @@ void opxy_start_view(enum s05_fail cause, const struct boot_start *st,
 		break;
 	}
 	out->file = cause != S05_FAIL_NONE && st->file;	/* S-15.195 */
+	out->listed = out->file && st->listed;		/* S-05.044 */
 }
 
 /* The boot partition's load, as a failed start's line gives it. */
@@ -1224,6 +1225,9 @@ void opxy_held_screen(struct opxy_master *m, const struct boot_held *h)
 	if (h->reason == S04_REASON_OS_FILE && !h->load_attempted)
 		s14_log_str(&m->sv.log, S14_WARNING, S14_TAG("boot"),
 			    "/os.ldr not started: this start opened the boot menu");
+	if (S04_REASON_IS_OS_LIST(h->reason) && !h->load_attempted)	/* S-04.072 */
+		s14_log_str(&m->sv.log, S14_WARNING, S14_TAG("boot"),
+			    "OS file not started: this start opened the boot menu");
 	boot_info(m, h);
 	opxy_display_held_start(m);
 	/* S-14.025: level-0 lines reach the screen once the display is up;
@@ -1421,7 +1425,8 @@ static void osw_done(void *ctx, uint32_t a, uint32_t b)
  * The image is read whole first, into the heap: S-01.016's staging area
  * lies under the RAM disk's second part.
  */
-const char *opxy_osw_path = "/yaffs2/os.ldr";
+const char *opxy_osw_path = OPXY_OS_LDR;
+unsigned opxy_os_place = OPXY_OS_PLACE_NONE;
 
 static void os_write(struct opxy_master *m, struct s15_osw_end *end)
 {
@@ -1562,7 +1567,7 @@ static enum s15_once env_os_once_check(void *ctx, struct s15_os_file *file)
 
 	if (!m->slave_present || m->bridge.absent)
 		return S15_ONCE_SLAVE;
-	if (!s09_files_os_check(&m->sv.files, S03_OS_MAX, file, &len))
+	if (!s09_files_os_check_at(&m->sv.files, opxy_osw_path, S03_OS_MAX, file, &len))
 		return m->bridge.absent ? S15_ONCE_SLAVE : S15_ONCE_FILE;
 	return S15_ONCE_STARTED;
 }
@@ -1573,11 +1578,38 @@ static void env_os_once(void *ctx)
 {
 	struct opxy_master *m = ctx;
 
-	s14_log_str(&m->sv.log, S14_INFO, S14_TAG("boot"),
-		    "restarting to start /os.ldr once, writing nothing");
+	const bool listed = opxy_os_place < S04_OS_LIST_PLACES;
+	struct s14_text t;
+
+	s14_text_init(&t);
+	s14_text_str(&t, "restarting to start ");
+	s14_text_str(&t, opxy_osw_path);
+	s14_text_str(&t, " once, writing nothing");
+	s14_log_text(&m->sv.log, S14_INFO, S14_TAG("boot"), &t);
 	opxy_menu_show_now(m);
 	wb_delay_us(&m->hw.time, OPXY_RESTART_HOLD_MS * 1000u);
-	opxy_reboot(m, S04_W12, 0u);
+	/* S-04.072: an OS file's start names its list place */
+	if (listed)
+		opxy_reboot(m, S04_W13, (uint16_t)opxy_os_place);
+	else
+		opxy_reboot(m, S04_W12, 0u);
+}
+
+/* S-15.199: the OS files of /yaffs2/os. */
+static bool env_os_files(void *ctx, struct s15_os_files *out)
+{
+	struct opxy_master *m = ctx;
+
+	return s09_files_os_files(&m->sv.files, out);
+}
+
+/* S-15.200: the file the OS write and the start once take. The path is
+ * the menu's, kept while it is set. */
+static void env_os_file(void *ctx, const char *path, unsigned place)
+{
+	(void)ctx;
+	opxy_osw_path = path != NULL ? path : OPXY_OS_LDR;
+	opxy_os_place = path != NULL ? place : OPXY_OS_PLACE_NONE;
 }
 
 /* S-15.172, S-02.098: the running slot's settings sector; nothing of the
@@ -1643,6 +1675,9 @@ void opxy_menu_env(struct opxy_master *m, struct s15_env_ops *env)
 	/* S-15.194: the test OS (waffle/testos.h) hands over to no OS */
 	env->os_once_check = OPXY_TESTOS_OR(NULL, env_os_once_check);
 	env->os_once = OPXY_TESTOS_OR(NULL, env_os_once);
+	/* S-15.199: the test OS starts no OS and writes none */
+	env->os_files = OPXY_TESTOS_OR(NULL, env_os_files);
+	env->os_file = OPXY_TESTOS_OR(NULL, env_os_file);
 	opxy_logo_env(m, env);
 }
 

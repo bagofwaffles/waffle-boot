@@ -218,7 +218,9 @@ A description of the screens as they are now, free to change within the rules ab
 
 | Screen | Items |
 | --- | --- |
-| Main Menu | 1 Install firmware, 2 Settings, 3 Developer menu (while developer mode is on), 4 and the help key Device Info, 5 System; then 7 Continue to OS at the bottom, set apart by a blank row or by the failed-start notice. 6 is no item |
+| Main Menu | 1 Install firmware, 2 Settings, 3 Developer menu (while developer mode is on), 4 and the help key Device Info, 5 System, 6 OS files (no item where the board lists none, as in the test OS); then 7 Continue to OS at the bottom, set apart by a blank row or by the failed-start notice. With the developer menu and a notice the blank row over the items goes, so that nine rows hold them |
+| OS Files | 1 to 7 the OS files of `/os`, each with its size, in name order (a header says when there are more), 8 Back to Main Menu; an empty or unreadable folder says so |
+| OS File | 1 Install (hold to select), 2 Boot once, 5 Remove (hold to select), 8 Back to OS Files; Install is the OS write, and 8 on its result goes back to OS Files; a removal's result is a view left with 8 alone |
 | Settings | 1 Developer mode, 2 Protected writes, 3 Display, 5 MTP target (with mtp-two-items), 6 Start in boot menu, 7 Host link |
 | Display | 3 Color, 6 Boot logo (its state as the hint: `Built-in`, `Custom`, `No room`, `Unavailable`; the last two open nothing; no item without the logo's store, as in the test OS), 8 Back to Settings; Color is saved with Settings' items |
 | Protected Writes | 2 Turn on (hold to select), 8 Back to Settings; off again after every restart; while it is on, Settings' 2 turns it off at once |
@@ -232,8 +234,8 @@ A description of the screens as they are now, free to change within the rules ab
 ## Behavior
 
 - Start in boot menu is off by default. On, every start that would boot the OS opens the boot menu
-  instead (S-15.175), but the one start after Continue to the OS or after the developer menu's start
-  of `/os.ldr` once. It is kept with the other settings in the running slot's settings sector in the SPI
+  instead (S-15.175), but the one start after Continue to the OS, after the developer menu's start
+  of `/os.ldr` once, or after an OS file's Boot once. It is kept with the other settings in the running slot's settings sector in the SPI
   flash; when it cannot be saved, Settings says so and the item shows what the next start will read.
 - Continue to the OS restarts the unit, and that one start boots the OS even with Start in boot menu on
   (S-15.190). The main screen's 7, the 6 Restart offered after an install that completed, after a
@@ -245,6 +247,9 @@ A description of the screens as they are now, free to change within the rules ab
   even with Start in boot menu on (S-15.194, S-04.014); it writes nothing to the eMMC. Like Continue
   to the OS it opens no screen of its own: a line under the screen it was chosen on (for a host's
   request, the screen showing) says that the unit is restarting to start it, and from then no key acts.
+- An OS file's Boot once is Start `/os.ldr` once for that file (S-15.200): the restart names the file's
+  place in the list (S-04.072), the next start lists `/os` again and loads the file at that place
+  (S-05.044), and DSP2 finds its copy among the files of `/os` by its length and CRC (S-09.083).
 - The OS write has its own screen: its steps and their progress, and on a failure the reason and what
   the eMMC was left with. 8 goes back to where it began (the developer menu, or for a host's write the
   screen it began on); after a success 6 restarts into the OS.
@@ -336,6 +341,8 @@ newer), and each PNG carries it: after `make bump-version`, redraw them, or
 | Write OS (developer menu, 5), the write running | Continue to the OS: the restarting line under the screen it was chosen on |
 | <img src="../docs/ui/oswrite-done.png" width="480" alt="Write OS done"> | <img src="../docs/ui/oswrite-failed.png" width="480" alt="Write OS failed"> |
 | the OS written, 8 back to the developer menu | the OS write failed: the step, the reason, what the eMMC was left with |
+| <img src="../docs/ui/os-files.png" width="480" alt="OS Files"> | <img src="../docs/ui/os-file-held.png" width="480" alt="OS File, Install held"> |
+| OS Files, from the main screen's 6 | an OS file, its Install held for 2 of the 5 s |
 | <img src="../docs/ui/info2.png" width="480" alt="Device Info 2"> | <img src="../docs/ui/recovery-loading.png" width="480" alt="Loading recovery menu..."> |
 | Device Info 2, from Device Info's 1: the start log | the line under the logo on the way into recovery |
 | <img src="../docs/ui/recovery.png" width="480" alt="Recovery"> | <img src="../docs/ui/recovery-slots.png" width="480" alt="Recovery: slots"> |
