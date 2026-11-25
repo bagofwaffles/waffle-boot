@@ -90,6 +90,9 @@ TOOLCHAIN_PREFIX := $(shell tools/toolchain/build.sh --print-prefix)
 CROSS_COMPILE ?= $(if $(wildcard $(TOOLCHAIN_PREFIX)/bin/bfin-elf-gcc),$(TOOLCHAIN_PREFIX)/bin/)bfin-elf-
 CROSS_CC := $(CROSS_COMPILE)gcc
 CROSS_AR := $(CROSS_COMPILE)ar
+# The host's archives: D writes them the same on every run, where the host's
+# ar has it (macOS's does not).
+HOST_ARFLAGS := qcs$(shell $(AR) --version 2>/dev/null | grep -q 'GNU\|LLVM' && echo D)
 CROSS_SIZE := $(CROSS_COMPILE)size
 
 # Warnings shared by every compiler we use (GCC 8 for the target, current
@@ -818,7 +821,7 @@ $(BUILD)/host/obj/%.o: src/%.c
 
 $(HOST_LIB): $(HOST_OBJS)
 	@rm -f $@
-	$(AR) qcsD $@ $^
+	$(AR) $(HOST_ARFLAGS) $@ $^
 
 $(BUILD)/host/front/%.o: src/front/%.c
 	@mkdir -p $(@D)
@@ -826,7 +829,7 @@ $(BUILD)/host/front/%.o: src/front/%.c
 
 $(FRONT_HOST_LIB): $(FRONT_HOST_OBJS)
 	@rm -f $@
-	$(AR) qcsD $@ $^
+	$(AR) $(HOST_ARFLAGS) $@ $^
 
 $(BUILD)/host/tests/support/%.o: tests/unit/support/%.c
 	@mkdir -p $(@D)
@@ -834,7 +837,7 @@ $(BUILD)/host/tests/support/%.o: tests/unit/support/%.c
 
 $(TEST_SUPPORT_LIB): $(TEST_SUPPORT_OBJS)
 	@rm -f $@
-	$(AR) qcsD $@ $^
+	$(AR) $(HOST_ARFLAGS) $@ $^
 
 # Driver, board and boot-flow tests need neither picolibc nor the vectors,
 # so they also build where those do not (macOS cannot build picolibc's
