@@ -157,7 +157,7 @@ $(BUILD)/bf703/lib$(1).a: $$(TP_$(1)_TARGET_OBJS)
 ifneq ($(1),picolibc)
 $(BUILD)/host/lib$(1).a: $$(TP_$(1)_HOST_OBJS)
 	@rm -f $$@
-	$$(AR) qcsD $$@ $$^
+	$$(AR) $$(HOST_ARFLAGS) $$@ $$^
 endif
 endef
 
@@ -183,7 +183,7 @@ $(BUILD)/host/libpicolibc.a: $(TP_picolibc_HOST_OBJS)
 	@rm -f $@ $(@:.a=.o)
 	$(LD) -r -o $(@:.a=.o) $^
 	$(OBJCOPY) --prefix-symbols=pl_ $(@:.a=.o)
-	$(AR) qcsD $@ $(@:.a=.o)
+	$(AR) $(HOST_ARFLAGS) $@ $(@:.a=.o)
 
 $(BUILD)/host/obj/%.o: %.c
 	@mkdir -p $(@D)
