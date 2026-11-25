@@ -35,6 +35,7 @@ GENERATORS = [
     ('tests/oracle/S-10a-usb-msc/gen_vectors.py', []),
     ('tests/oracle/S-10b-mtp/gen_vectors.py', []),
     ('tests/oracle/S-10c-host-commands/gen_vectors.py', ['--write']),
+    ('tests/oracle/S-10c-host-commands/gen_hostlink.py', ['--write']),
     ('tests/oracle/S-11-packages/gen_vectors.py', []),
     ('tests/oracle/S-12-filesystems/gen_vectors.py', []),
     ('tests/oracle/S-13b-buses-and-pins/gen_vectors.py', []),

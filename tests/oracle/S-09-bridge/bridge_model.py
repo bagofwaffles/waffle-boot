@@ -11,6 +11,7 @@ LINK_TEST = 0x1A
 LINK_STATUS = 0x1B                       # S-09.079
 STATUS_LEN = 36                          # S-09.079: its reply session's bytes
 QUAD_TEST = 0x1C                         # S-09.080: a developer's quad reply test
+STAGE_WRITE = 0x1D                       # S-09.084: bytes into the slave's staging area
 IMMEDIATE = {0x01, 0x03, 0x05, 0x07, 0x0A, LINK_MODE, LINK_TEST, LINK_STATUS, QUAD_TEST}
 PUSH = {0x1E, 0x1F}
 PULL = 0x20
@@ -20,7 +21,7 @@ WRITE = 0x2B
 READ = 0x2A
 CLOCK_SYNC = 0x0B
 DEFINED = ({0x01, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x11, 0x12, 0x13, 0x14, 0x15,
-            0x16, 0x18, LINK_MODE, LINK_TEST, LINK_STATUS, QUAD_TEST, 0x1E, 0x1F, 0x20} | set(range(0x21, 0x33)) |
+            0x16, 0x18, LINK_MODE, LINK_TEST, LINK_STATUS, QUAD_TEST, STAGE_WRITE, 0x1E, 0x1F, 0x20} | set(range(0x21, 0x33)) |
            {0x34, 0x35, 0x36})
 TEST_MAX = 0x10000                       # S-09.071: a link test's most bytes, the largest request's
 GATE_TIMES = 3                           # S-09.075: the gate's timed tests of TEST_MAX bytes
@@ -104,8 +105,8 @@ def slave_payload_len(hdr12):
         return length                   # S-09.037
     if cmd in (0x15, 0x1E, 0x1F, 0x24) or cmd in PATH_CMDS:
         return length
-    if cmd == WRITE:
-        return a1                       # S-09.023
+    if cmd in (WRITE, STAGE_WRITE):
+        return a1                       # S-09.023, S-09.084
     if cmd == LINK_TEST:
         return a1 if 4 <= a1 <= TEST_MAX else 0     # S-09.071, S-09.037
     if cmd in DEFINED:

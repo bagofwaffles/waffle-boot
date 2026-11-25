@@ -43,6 +43,7 @@
 #define S09_LINK_TEST 0x1Au	/* S-09.071 */
 #define S09_LINK_STATUS 0x1Bu	/* S-09.079 */
 #define S09_QUAD_TEST 0x1Cu	/* S-09.080: a developer's quad reply test */
+#define S09_STAGE_WRITE 0x1Du	/* S-09.084: bytes into the slave's staging area */
 #define S09_PUSH0 0x1Eu
 #define S09_PUSH1 0x1Fu
 #define S09_PULL 0x20u

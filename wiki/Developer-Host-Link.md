@@ -11,6 +11,8 @@ The developer requests (memory, the second processor, hand-overs) are [below](#d
 - **Safe reads need no approval**; changes and the reads of files' contents need it.
 - **Never from a computer**, approved or not: the factory reset and Protected writes. Protected writes
   applies to what a computer asks for exactly as at the unit.
+- **An OS image can go straight into RAM** and start from there, with nothing written: [below](#an-os-image-from-ram).
+- **For fast testing, Developer mode can skip the hold**: [below](#host-link-without-hold).
 
 ## The approval
 
@@ -30,6 +32,21 @@ Only the unit's own keys answer it: **1 held** allows, **8** refuses, and 60 s w
 a timeout. A knob click starts no hold. The screen it covered comes back after the answer. The computer
 reads the answer with SESSION. Until then every call that needs approval answers status 2, so a page can
 say "hold 1 on the unit".
+
+### Host link without hold
+
+With Developer mode on, **3 Developer menu → 4 Host link without hold** turns the hold off for this
+start (S-10c.137, S-15.202). While it is on, APPROVE is allowed at once, with no screen, and the session
+state is 5 (approved, no hold). Settings shows `7 Host link  On, no hold` in red, and so does the
+Developer item, so a unit in this state is easy to spot.
+
+- It covers every call and action the hold covers **but an install**: a package can write the SPI flash
+  (the bootloader's slots), so `install` still answers status 2 until the hold is given. A computer asks
+  with APPROVE again, and the unit shows its usual screen. The factory reset and Protected writes stay
+  never.
+- It is the unit's own key alone: a computer's key (`dev-key`) does not turn it. It is not saved: every
+  start begins with it off. Turning Developer mode off turns it off, and ends a session it allowed; so
+  does turning the item off.
 
 ## Framing
 
@@ -51,7 +68,9 @@ with no NUL, to the end of the request.
 ## Versions
 
 HELLO always answers, with the protocol's version and the oldest client version the unit serves. A
-client whose version is outside that range stops there. A newer client finds out what this unit has from
+client whose version is outside that range stops there. Version 2 adds the RAM calls, the RAM start and
+session state 5; a unit of version 2 still serves clients from version 1, and the two clients here work
+with a unit of version 1 (it lists no RAM calls). A newer client finds out what this unit has from
 HELLO's lists of calls, actions and roots; a call it does not have answers status 5.
 
 ## Calls
@@ -76,6 +95,9 @@ HELLO's lists of calls, actions and roots; a call it does not have answers statu
 | MKDIR | `18` | `path` | | needs approval |
 | RENAME | `19` | `from`, `00`, `to` (one root; no name in the way) | | needs approval |
 | RUN | `20` | `action:1`, its arguments | a job record | by its action |
+| RAM_OPEN | `21` | `size:4 sha256:32` | `have:4` | needs approval |
+| RAM_DATA | `22` | `offset:4`, up to 224 bytes | `have:4` | needs approval |
+| RAM_END | `23` | | refused: `why:1` | needs approval |
 | EVENT | `7F` | (the unit's own) | `status 0`, a job record | |
 
 Never from a host: the actions `10` (factory reset) and `11` (Protected writes), and SET's setting 2
@@ -97,7 +119,8 @@ the running slot (0 Slot 1, 1 Slot 2, `FF` not established), this start's reason
 Protected writes, 2 developer mode, 4 color, 8 MTP target macOS, 16 Start in boot menu, 32 Host link, 64
 the second processor answering, 128 the drive mounted), and the OS version in the metadata (4 × u16).
 
-**Session** states: 0 none, 1 pending, 2 approved, 3 refused, 4 timed out.
+**Session** states: 0 none, 1 pending, 2 approved, 3 refused, 4 timed out, 5 approved with no hold
+([Host link without hold](#host-link-without-hold)).
 
 ## Status codes
 
@@ -161,6 +184,7 @@ not files on a drive (MTP's writes to the drive do not look at it either), so it
 | restart | `04` | | the plain restart |
 | continue to OS | `05` | | Continue to the OS (as 7 on the main screen) |
 | restart into a mode | `06` | `mode:1` | as the firmware command's `EE`: 1 the upgrade screen's disk, 2 the serial port, 4 reason 50, else the upgrade screen over MIDI |
+| RAM start | `07` | | the image RAM_END accepted, started from RAM with no restart and nothing written ([below](#an-os-image-from-ram)) |
 | factory reset | `10` | | never |
 | Protected writes | `11` | | never |
 
@@ -177,6 +201,33 @@ during a job are answered after it. JOB asks for the record at any time.
 **Job record**: `id:1 action:1 state:1 step:1 percent:1 error:1`, then a short text and `00`. States: 1
 queued, 2 running, 3 done, 4 failed. Percent `FF`: not known. Error: a status code. A restart's record is
 done with the text `restarting` just before the unit goes.
+
+## An OS image from RAM
+
+To try a build of the OS without touching the drive, the boot partitions or the SPI flash (S-10c.135,
+S-10c.136, S-05.045):
+
+```
+tools/hostlink.py approve
+tools/hostlink.py ram-boot build/os.ldr
+```
+
+1. **RAM_OPEN** `size:4 sha256:32` makes room in the unit's memory (at most 8 MiB, the staging area's
+   size). The same size and hash again resume where the unit stands.
+2. **RAM_DATA** sends the bytes in order, as PUT_DATA does.
+3. **RAM_END** checks the whole: its size and SHA-256 (status 11), then the image check a start makes
+   (S-05.024: status 15, with `why:1`: 1 too long, 2 not an LDR stream, 3 refused flags, 4 a
+   destination outside L1, L2 and DDR, 5 to 8 over the staging area, the reserves or the record). An
+   image that passes stays in RAM until the session ends or another RAM_OPEN.
+4. **RUN `07`** starts it. On the OP-XY the image goes first to the second processor's staging area over
+   the bridge (S-09.084, the job at `to the second processor` with its percent), which checks its copy's
+   length and CRC-32 at the release, as a file start does. Then the job says `starting` and the unit
+   hands over to the OS from where it is, without a restart. The port goes away with that.
+
+Nothing is written: no file, no boot partition, no metadata, and not the start log (the start that
+opened the boot menu made its marks). A start that comes back (the second processor refused it, or its
+OS did not start) fails the job with the reason, draws the boot menu again, and the image is gone: send
+it again. After the second processor's OS did not start, restart the unit before the next try.
 
 ## The older paths
 

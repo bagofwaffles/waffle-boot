@@ -726,6 +726,14 @@ int s09_master_release(struct s09_master *m);
  * CRC-32 of the master's copy as its arguments; returns as above. */
 int s09_master_release_file(struct s09_master *m, uint32_t len, uint32_t crc);
 
+/*
+ * S-09.084: n bytes (1 to s09_master_write_max()) at off in the slave's
+ * staging area, for a release that names the master's copy of an image
+ * held in RAM. 0, or -1 and *err.
+ */
+int32_t s09_master_stage_write(struct s09_master *m, uint32_t off, const uint8_t *p,
+			       uint32_t n, uint32_t *err);
+
 /* The CPU link's port (S-09.045): an S-06 link over channel 0 of the tunnel. */
 extern const struct s06_port_ops s09_tunnel_port;
 

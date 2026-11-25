@@ -157,5 +157,6 @@ unit. To erase everything instead, use **5 Format drive**.
 | --- | --- |
 | 2 MTP file transfer | Shares the internal drive with the computer, which can copy, delete, move and rename files and folders on it. 8 turns it off |
 | 3 Start /os.ldr once (does not write) | Restarts the unit, and that one start loads the OS from the file `os.ldr` on the drive instead of the eMMC's boot partition, also with Start in boot menu on. Nothing is written to the eMMC; the start after it loads from the boot partition as before. Without a usable file, or with DSP2 not answering, it does not restart and says why; a file that fails at the start opens the boot menu with the reason |
+| 4 Host link without hold | Off at every start. On (shown in red, and on Settings' Host link row), a computer's host link session is allowed with no hold on 1, for quick testing; an install still asks for the hold. Only this key turns it; Developer mode off turns it off. See [Developer Host Link](Developer-Host-Link#host-link-without-hold) |
 | 5 Write /os.ldr to boot partition | Writes the file `os.ldr` from the drive to the eMMC's inactive boot partition. After a success, 6 restarts into the OS |
 | 6 Restart | Restarts the unit |

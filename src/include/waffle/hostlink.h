@@ -10,14 +10,18 @@
  * sends HL_EVENT frames on its own: a job's record whenever it changes.
  *
  * S-10c.120 - S-10c.129: the protocol, its calls, its classes and its
- * approval.
+ * approval. S-10c.135 - S-10c.137: an OS image sent into RAM and started
+ * from there, and the approval with no hold that Developer mode can allow.
  *
  * Every call has one class (hl_calls): safe, needs the session's approval,
  * or never from a host; the file calls take theirs from the path's root.
  * With the Host link setting off the unit answers HELLO, saying it is off,
  * and HL_E_OFF to everything else. One hold on the unit approves the host
  * for the session, which ends at a restart, when Host link is turned off, or
- * on HL_END.
+ * on HL_END. With Developer mode on and its "Host link without hold" item on
+ * (S-10c.137), APPROVE is answered at once with HL_S_NO_HOLD, which serves
+ * every call a hold would but those of class HL_HOLD; that session ends too
+ * when the item or Developer mode is turned off.
  *
  * This file is portable: the board gives the volumes, the approval screen
  * and the actions through struct hl_ops (src/board/opxy_hostlink.c).
@@ -29,7 +33,7 @@
 
 #define HL_FRAME_ID   0x7Cu
 #define HL_MAGIC      0x4C484257u	/* "WBHL" little-endian */
-#define HL_VERSION    1u		/* this protocol's version */
+#define HL_VERSION    2u		/* this protocol's version: 2 adds S-10c.135 - S-10c.137 */
 #define HL_MIN_CLIENT 1u		/* the oldest client version served */
 #define HL_PAYLOAD    249u		/* S06_MAX_PAYLOAD */
 #define HL_CHUNK      224u		/* data bytes in GET's reply and PUT_DATA */
@@ -45,6 +49,7 @@ enum hl_call {
 	HL_PUT_OPEN = 0x14, HL_PUT_DATA = 0x15, HL_PUT_END = 0x16,
 	HL_REMOVE = 0x17, HL_MKDIR = 0x18, HL_RENAME = 0x19,
 	HL_RUN = 0x20,
+	HL_RAM_OPEN = 0x21, HL_RAM_DATA = 0x22, HL_RAM_END = 0x23,
 	HL_EVENT = 0x7F,		/* unit to host only */
 };
 
@@ -68,7 +73,10 @@ enum hl_status {
 	HL_E_FS = 16,		/* no volume this build reads there (exFAT, say) */
 };
 
-enum hl_class { HL_SAFE = 0, HL_NEEDS = 1, HL_NEVER_C = 2, HL_BY_ROOT = 3 };
+/* HL_HOLD: needs an approval given by the hold on the unit; a session the
+ * Developer item approved (HL_S_NO_HOLD) is not enough (S-10c.137). */
+enum hl_class { HL_SAFE = 0, HL_NEEDS = 1, HL_NEVER_C = 2, HL_BY_ROOT = 3,
+		HL_HOLD = 4 };
 
 struct hl_entry {
 	uint8_t id;
@@ -83,6 +91,7 @@ enum hl_action {
 	HL_A_RESTART = 0x04,		/* the plain restart */
 	HL_A_CONTINUE_OS = 0x05,	/* restart into the OS */
 	HL_A_RESTART_MODE = 0x06,	/* mode:1, as the firmware command's EE */
+	HL_A_RAM_START = 0x07,		/* start the image RAM_END accepted */
 	HL_A_FACTORY_RESET = 0x10,	/* never */
 	HL_A_PROTECTED_WRITES = 0x11,	/* never */
 };
@@ -130,7 +139,17 @@ int hl_path_parse(const uint8_t *p, size_t n, struct hl_path *out);
 
 /* The session (enum hl_session); a refusal or timeout is kept to be read. */
 enum hl_session { HL_S_NONE = 0, HL_S_PENDING = 1, HL_S_APPROVED = 2,
-		  HL_S_REFUSED = 3, HL_S_TIMEOUT = 4 };
+		  HL_S_REFUSED = 3, HL_S_TIMEOUT = 4, HL_S_NO_HOLD = 5 };
+
+/*
+ * S-10c.135: an OS image into the unit's RAM, never to a file. RAM_OPEN
+ * size:4 sha256:32 makes room for it (the same size and hash again resume:
+ * have:4); RAM_DATA off:4 and up to HL_CHUNK bytes at the offset the unit
+ * holds; RAM_END checks the whole: its size and SHA-256 (HL_E_CHECKSUM),
+ * then S-05.024's check (HL_E_REFUSED, data why:1, enum s05_refusal). An
+ * image that passes is kept for HL_A_RAM_START until the session ends,
+ * another RAM_OPEN or the unit needs the memory.
+ */
 
 /* A job's record: one shape for every action. */
 enum hl_job_state { HL_J_NONE = 0, HL_J_QUEUED = 1, HL_J_RUNNING = 2,
@@ -176,6 +195,17 @@ struct hl_ops {
 	/* Checks an action and queues it (p NULL when it names no file). */
 	int (*run)(void *ctx, uint8_t action, uint8_t arg, const struct hl_path *p);
 	int (*set)(void *ctx, uint8_t setting, uint8_t value);
+	/* S-10c.137: Developer mode and its Host link without hold item both
+	 * on. NULL: never. */
+	bool (*no_hold)(void *ctx);
+	/* S-10c.135: room for size bytes (any held image dropped first); the
+	 * bytes at off; the whole checked, its SHA-256 out and *why S-05.024's
+	 * refusal (HL_E_REFUSED); dropped. ram_open NULL: no RAM image in this
+	 * build (HL_E_UNKNOWN). */
+	int (*ram_open)(void *ctx, uint32_t size);
+	int (*ram_write)(void *ctx, uint32_t off, const uint8_t *b, uint32_t n);
+	int (*ram_end)(void *ctx, uint32_t size, uint8_t sha[32], uint8_t *why);
+	void (*ram_drop)(void *ctx);
 };
 
 struct hostlink {
@@ -189,6 +219,11 @@ struct hostlink {
 		uint32_t size, have;
 		uint8_t sha[32];
 	} put;
+	struct {
+		bool open, ready;	/* being sent; checked, for RAM_START */
+		uint32_t size, have;
+		uint8_t sha[32];
+	} ram;
 };
 
 void hl_init(struct hostlink *h, const struct hl_ops *ops);
@@ -201,6 +236,11 @@ void hl_end(struct hostlink *h);
 /* Once a pass: with the setting off the session ends. */
 void hl_poll(struct hostlink *h);
 bool hl_approved(const struct hostlink *h);
+/* Approved by the hold on the unit, as HL_HOLD needs. */
+bool hl_held(const struct hostlink *h);
+/* The RAM image is gone (the board took its memory): a later RAM_START
+ * finds none. */
+void hl_ram_drop(struct hostlink *h);
 /* The job record changed: true when it differs from the one held. */
 bool hl_job_set(struct hostlink *h, uint8_t state, uint8_t step, uint8_t percent,
 		uint8_t error, const char *text);

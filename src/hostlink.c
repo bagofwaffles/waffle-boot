@@ -16,13 +16,18 @@ const struct hl_entry hl_calls[] = {
 	{ HL_PUT_END, HL_NEEDS },   { HL_REMOVE, HL_NEEDS },
 	{ HL_MKDIR, HL_NEEDS },     { HL_RENAME, HL_NEEDS },
 	{ HL_RUN, HL_NEEDS },
+	{ HL_RAM_OPEN, HL_NEEDS },  { HL_RAM_DATA, HL_NEEDS },	/* S-10c.135 */
+	{ HL_RAM_END, HL_NEEDS },
 };
 const size_t hl_ncalls = sizeof hl_calls / sizeof hl_calls[0];
 
+/* S-10c.137: an install can write the SPI flash, so it takes the hold
+ * even when the Developer item lets the rest go without one. */
 const struct hl_entry hl_actions[] = {
-	{ HL_A_INSTALL, HL_NEEDS },        { HL_A_OS_WRITE, HL_NEEDS },
+	{ HL_A_INSTALL, HL_HOLD },         { HL_A_OS_WRITE, HL_NEEDS },
 	{ HL_A_OS_ONCE, HL_NEEDS },        { HL_A_RESTART, HL_NEEDS },
 	{ HL_A_CONTINUE_OS, HL_NEEDS },    { HL_A_RESTART_MODE, HL_NEEDS },
+	{ HL_A_RAM_START, HL_NEEDS },					/* S-10c.136 */
 	{ HL_A_FACTORY_RESET, HL_NEVER_C }, { HL_A_PROTECTED_WRITES, HL_NEVER_C },
 };
 const size_t hl_nactions = sizeof hl_actions / sizeof hl_actions[0];
@@ -105,7 +110,35 @@ void hl_init(struct hostlink *h, const struct hl_ops *ops)
 
 bool hl_approved(const struct hostlink *h)
 {
+	return (h->session == HL_S_APPROVED || h->session == HL_S_NO_HOLD) &&
+	       h->ops->link_on(h->ops->ctx);
+}
+
+bool hl_held(const struct hostlink *h)
+{
 	return h->session == HL_S_APPROVED && h->ops->link_on(h->ops->ctx);
+}
+
+static bool no_hold(const struct hostlink *h)
+{
+	return h->ops->no_hold != NULL && h->ops->no_hold(h->ops->ctx);
+}
+
+/* S-10c.135: whether this build takes an image into RAM. */
+static bool ram_served(const struct hostlink *h)
+{
+	return h->ops->ram_open != NULL;
+}
+
+void hl_ram_drop(struct hostlink *h)
+{
+	const bool held = h->ram.open || h->ram.ready;
+
+	h->ram.open = false;
+	h->ram.ready = false;
+	h->ram.have = 0;
+	if (held && ram_served(h))
+		h->ops->ram_drop(h->ops->ctx);
 }
 
 static void put_drop(struct hostlink *h)
@@ -120,6 +153,7 @@ static void put_drop(struct hostlink *h)
 void hl_end(struct hostlink *h)
 {
 	put_drop(h);
+	hl_ram_drop(h);
 	h->session = HL_S_NONE;
 }
 
@@ -132,6 +166,9 @@ void hl_answer(struct hostlink *h, uint8_t outcome)
 void hl_poll(struct hostlink *h)
 {
 	if (h->session != HL_S_NONE && !h->ops->link_on(h->ops->ctx))
+		hl_end(h);
+	/* S-10c.137: the item or Developer mode off ends a session it allowed */
+	else if (h->session == HL_S_NO_HOLD && !no_hold(h))
 		hl_end(h);
 }
 
@@ -209,6 +246,13 @@ static bool list_each(void *arg, const char *name, const struct hl_stat *st)
 	return true;
 }
 
+/* A call this build serves: the RAM calls where the board takes them. */
+static bool served(const struct hostlink *h, uint8_t op)
+{
+	return (op != HL_RAM_OPEN && op != HL_RAM_DATA && op != HL_RAM_END) ||
+	       ram_served(h);
+}
+
 static size_t hello(struct hostlink *h, uint8_t *d)
 {
 	const struct hl_ops *o = h->ops;
@@ -225,12 +269,15 @@ static size_t hello(struct hostlink *h, uint8_t *d)
 	d[9] = HL_CHUNK;
 	o->info(o->ctx, d + 10);
 	n = 10u + HL_INFO_LEN;
-	d[n++] = (uint8_t)hl_ncalls;
+	d[n] = 0;
 	for (size_t i = 0; i < hl_ncalls; i++)
-		d[n++] = hl_calls[i].id;
+		if (served(h, hl_calls[i].id))
+			d[n + 1u + d[n]++] = hl_calls[i].id;
+	n += 1u + d[n];
 	d[n] = 0;
 	for (size_t i = 0; i < hl_nactions; i++)
-		if (hl_actions[i].cls != HL_NEVER_C)
+		if (hl_actions[i].cls != HL_NEVER_C &&
+		    (hl_actions[i].id != HL_A_RAM_START || ram_served(h)))
 			d[n + 1u + d[n]++] = hl_actions[i].id;
 	n += 1u + d[n];
 	d[n] = 0;
@@ -367,6 +414,95 @@ static int put_end(struct hostlink *h, uint8_t *d, size_t *dn)
 	return rc;
 }
 
+/* ---- S-10c.135: an image into RAM ---- */
+
+static int ram_open(struct hostlink *h, const uint8_t *a, size_t n, uint8_t *d, size_t *dn)
+{
+	const struct hl_ops *o = h->ops;
+	uint32_t size;
+	int rc;
+
+	if (n != 36u)
+		return HL_E_BAD;
+	size = wb_get_le32(a);
+	if (size == 0u)
+		return HL_E_BAD;
+	if (h->job.state == HL_J_QUEUED || h->job.state == HL_J_RUNNING)
+		return HL_E_BUSY;
+	/* the same image again: resumed where it stands */
+	if (h->ram.open && h->ram.size == size && wb_equal(h->ram.sha, a + 4, 32)) {
+		wb_put_le32(d, h->ram.have);
+		*dn = 4u;
+		return HL_OK;
+	}
+	hl_ram_drop(h);
+	rc = o->ram_open(o->ctx, size);
+	if (rc != HL_OK)
+		return rc;
+	h->ram.open = true;
+	h->ram.size = size;
+	h->ram.have = 0;
+	wb_copy(h->ram.sha, a + 4, 32);
+	wb_put_le32(d, 0u);
+	*dn = 4u;
+	return HL_OK;
+}
+
+static int ram_data(struct hostlink *h, const uint8_t *a, size_t n, uint8_t *d, size_t *dn)
+{
+	const uint32_t k = n >= 4u ? (uint32_t)(n - 4u) : 0u;
+	int rc;
+
+	if (!h->ram.open || n < 4u || k > HL_CHUNK)
+		return HL_E_BAD;
+	wb_put_le32(d, h->ram.have);
+	*dn = 4u;
+	if (wb_get_le32(a) != h->ram.have)
+		return HL_E_OFFSET;
+	if (k > h->ram.size - h->ram.have)
+		return HL_E_BAD;
+	rc = h->ops->ram_write(h->ops->ctx, h->ram.have, a + 4, k);
+	if (rc != HL_OK) {
+		hl_ram_drop(h);
+		*dn = 0;
+		return rc;
+	}
+	h->ram.have += k;
+	wb_put_le32(d, h->ram.have);
+	return HL_OK;
+}
+
+/* The whole checked: its hash, then S-05.024's check on the unit. An image
+ * that fails either is dropped. */
+static int ram_end(struct hostlink *h, uint8_t *d, size_t *dn)
+{
+	const struct hl_ops *o = h->ops;
+	uint8_t sha[32], why = 0;
+	int rc;
+
+	if (!h->ram.open)
+		return HL_E_BAD;
+	if (h->ram.have != h->ram.size) {
+		wb_put_le32(d, h->ram.have);
+		*dn = 4u;
+		return HL_E_OFFSET;
+	}
+	rc = o->ram_end(o->ctx, h->ram.size, sha, &why);
+	if (rc == HL_OK && !wb_equal(sha, h->ram.sha, 32))
+		rc = HL_E_CHECKSUM;
+	if (rc != HL_OK) {
+		hl_ram_drop(h);
+		if (rc == HL_E_REFUSED) {
+			d[0] = why;
+			*dn = 1u;
+		}
+		return rc;
+	}
+	h->ram.open = false;
+	h->ram.ready = true;
+	return HL_OK;
+}
+
 static int run(struct hostlink *h, const uint8_t *a, size_t n, uint8_t *d, size_t *dn)
 {
 	struct hl_path p;
@@ -382,7 +518,9 @@ static int run(struct hostlink *h, const uint8_t *a, size_t n, uint8_t *d, size_
 		return HL_E_UNKNOWN;
 	if (cls == HL_NEVER_C)
 		return HL_E_NEVER;
-	if (!hl_approved(h))
+	if (a[0] == HL_A_RAM_START && !ram_served(h))
+		return HL_E_UNKNOWN;
+	if (cls == HL_HOLD ? !hl_held(h) : !hl_approved(h))
 		return HL_E_APPROVAL;
 	if (a[0] == HL_A_INSTALL || a[0] == HL_A_RESTART_MODE) {
 		if (n < 2u)
@@ -402,9 +540,15 @@ static int run(struct hostlink *h, const uint8_t *a, size_t n, uint8_t *d, size_
 	}
 	if (h->job.state == HL_J_QUEUED || h->job.state == HL_J_RUNNING)
 		return HL_E_BUSY;
+	/* S-10c.136: the image RAM_END accepted, and only that */
+	if (a[0] == HL_A_RAM_START && !h->ram.ready)
+		return HL_E_NOT_FOUND;
 	rc = h->ops->run(h->ops->ctx, a[0], arg, pp);
 	if (rc != HL_OK)
 		return rc;
+	/* a start that comes back has no image to start again */
+	if (a[0] == HL_A_RAM_START)
+		h->ram.ready = false;
 	h->job.id = ++h->next_job == 0u ? ++h->next_job : h->next_job;
 	h->job.action = a[0];
 	(void)hl_job_set(h, HL_J_QUEUED, 0, HL_PERCENT_NONE, HL_OK, "");
@@ -424,7 +568,7 @@ static int call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
 
 	p.root = HL_ROOT_DRIVE;
 
-	if (cls == 0xFFu)
+	if (cls == 0xFFu || !served(h, op))
 		return HL_E_UNKNOWN;
 	/* the path, where the call names one, and the class it gives */
 	switch (op) {
@@ -449,7 +593,7 @@ static int call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
 	if (op == HL_SET && n == 2u &&
 	    hl_class_of(hl_settings, hl_nsettings, a[0]) == HL_NEVER_C)
 		return HL_E_NEVER;
-	if (cls == HL_NEEDS && !hl_approved(h))
+	if ((cls == HL_NEEDS && !hl_approved(h)) || (cls == HL_HOLD && !hl_held(h)))
 		return HL_E_APPROVAL;
 
 	switch (op) {
@@ -458,7 +602,12 @@ static int call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
 		*dn = 1;
 		break;
 	case HL_APPROVE:
-		if (h->session != HL_S_APPROVED && h->session != HL_S_PENDING) {
+		/* S-10c.137: with the Developer item on, allowed at once; a
+		 * session allowed so asks again for the hold an install needs */
+		if (h->session != HL_S_APPROVED && h->session != HL_S_PENDING &&
+		    h->session != HL_S_NO_HOLD && no_hold(h)) {
+			h->session = HL_S_NO_HOLD;
+		} else if (h->session != HL_S_APPROVED && h->session != HL_S_PENDING) {
 			if (!o->approve_open(o->ctx))
 				return HL_E_BUSY;
 			h->session = HL_S_PENDING;
@@ -539,6 +688,15 @@ static int call(struct hostlink *h, uint8_t op, const uint8_t *a, size_t n,
 		break;
 	case HL_PUT_END:
 		rc = put_end(h, d, dn);
+		break;
+	case HL_RAM_OPEN:
+		rc = ram_open(h, a, n, d, dn);
+		break;
+	case HL_RAM_DATA:
+		rc = ram_data(h, a, n, d, dn);
+		break;
+	case HL_RAM_END:
+		rc = n != 0u ? HL_E_BAD : ram_end(h, d, dn);
 		break;
 	case HL_REMOVE:
 	case HL_MKDIR:

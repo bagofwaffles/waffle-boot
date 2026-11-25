@@ -367,6 +367,7 @@ struct s15_menu {
 	bool mtp_macos;            /* S-15.174 */
 	bool start_menu;           /* S-15.175 */
 	bool host_link;            /* the host link answers */
+	bool host_no_hold;         /* S-15.202: approved with no hold, this start */
 
 	/* the host link's approval screen */
 	enum s15_approve approve;

@@ -99,12 +99,26 @@ static uint32_t f_os(void *c, uint32_t len, uint32_t crc)
 	st.os_crc = crc;
 	return st.os;
 }
+/* S-09.084: the slave's staging area, as the board's op keeps it */
+static uint8_t staged[0x20000];
+static uint32_t staged_calls, staged_off, staged_n;
+static int32_t f_stage(void *c, uint32_t off, const uint8_t *d, uint32_t n)
+{
+	(void)c;
+	staged_calls++;
+	staged_off = off;
+	staged_n = n;
+	if (off > sizeof staged || n > sizeof staged - off)
+		return -1;
+	memcpy(staged + off, d, n);
+	return 0;
+}
 static uint64_t f_cycles(void *c) { (void)c; return 78187493530ull; }
 static void f_adjust(void *c, int64_t d) { (void)c; st.adjusted = d; }
 
 static const struct s09_store_ops store = {
 	0, f_erase_group, f_boot_size, NULL /* dev_cmd */, f_emmc, f_file, f_read, f_os, f_cycles,
-	f_adjust,
+	f_adjust, f_stage,
 };
 
 static struct s09_slave sl;
@@ -891,6 +905,82 @@ static void test_release(void)
 }
 
 /*
+ * S-09.084: an image the master holds goes to the slave's staging area in
+ * writes of up to the write's most bytes, each acknowledged; a release
+ * then names it as a file start's would. On the plain link a piece is at
+ * most the tunnel's; a store on the master's own CPU has no staging area
+ * of another CPU.
+ */
+static void test_stage_write(void)
+{
+	static uint8_t img[3u * S09_WRITE_MAX + 100u];
+	uint32_t err = 0, at = 0;
+
+	for (size_t i = 0; i < sizeof img; i++)
+		img[i] = (uint8_t)(i * 13u + 5u);
+	t_case = "stage_write";
+	CHECK_EQ(s09_kind(S09_STAGE_WRITE), S09_K_DEFERRED);
+	CHECK(!s09_plain_safe(S09_STAGE_WRITE));
+	{
+		const struct s09_req r = { S09_STAGE_WRITE, 0, 0x1000, 0, 0x9000 };
+
+		CHECK_EQ(s09_payload_len(&r), 0x9000u);	/* arg1, as 0x2B's */
+	}
+	fresh_pair();
+	memset(staged, 0, sizeof staged);
+	staged_calls = 0;
+	CHECK(s09_master_start(&ms));
+	/* the plain link: a piece of more than the tunnel's is refused here */
+	CHECK_EQ(s09_master_write_max(&ms), S09_TUNNEL_MAX);
+	CHECK_EQ(s09_master_stage_write(&ms, 0, img, S09_TUNNEL_MAX + 1u, &err), -1);
+	CHECK_EQ(err, S09_EINVAL);
+	CHECK_EQ(s09_master_stage_write(&ms, 0, img, 0, &err), -1);
+	CHECK_EQ(staged_calls, 0u);
+	while (at < sizeof img) {
+		const uint32_t k = sizeof img - at < S09_TUNNEL_MAX ? (uint32_t)sizeof img - at :
+								     S09_TUNNEL_MAX;
+
+		CHECK_EQ(s09_master_stage_write(&ms, at, img + at, k, &err), 0);
+		CHECK(staged_off == at && staged_n == k);
+		at += k;
+	}
+	CHECK(memcmp(staged, img, sizeof img) == 0);
+	CHECK(!ms.absent);
+	/* the release names the copy by its length and CRC */
+	st.os = 0;
+	CHECK_EQ(s09_master_release_file(&ms, (uint32_t)sizeof img, 0x0BADC0DEu), 0);
+	CHECK(st.os_len == sizeof img && st.os_crc == 0x0BADC0DEu);
+
+	/* a slave with no staging op refuses the write with EINVAL */
+	t_case = "stage_write_none";
+	fresh_slave();
+	{
+		static const struct s09_store_ops none = {
+			0, f_erase_group, f_boot_size, NULL, f_emmc, f_file, f_read, f_os,
+			f_cycles, f_adjust, NULL,
+		};
+		const uint8_t *d;
+		size_t n;
+
+		s09_slave_init(&sl, &none);
+		sl.linked = true;
+		request(S09_STAGE_WRITE, 1, 8, 0, 8, img, 8);
+		poll_slave(2);
+		CHECK(s09_slave_reply(&sl, &d, &n));
+		CHECK(n >= 12u && wb_get_le32(d + 4) == 0xFFFFFFFFu && wb_get_le32(d + 8) == S09_EINVAL);
+	}
+	/* the same on a store with no link: there is no other CPU */
+	t_case = "stage_write_local";
+	{
+		const struct s09_req r = { S09_STAGE_WRITE, 0, 8, 0, 8 };
+		uint32_t got = 0;
+
+		CHECK_EQ(s09_store_call(&store, &r, img, 8, NULL, 0, &got, &err), -1);
+		CHECK_EQ(err, S09_EINVAL);
+	}
+}
+
+/*
  * A driver reading request sessions from one byte stream, as the bus gives
  * them: each header's s09_slave_rx_len() bytes, of which the leading
  * s09_slave_rx_keep() go to the slave and the rest are discarded in pieces
@@ -1049,5 +1139,6 @@ int main(void)
 	test_file_reads();
 	test_tunnel();
 	test_release();
+	test_stage_write();
 	return t_finish("test_s09_bridge");
 }

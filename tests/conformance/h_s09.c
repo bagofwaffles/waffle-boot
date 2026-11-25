@@ -238,7 +238,8 @@ static void st_adjust(void *ctx, int64_t delta)
 }
 
 static const struct s09_store_ops store = {
-	NULL, st_erase_group, st_boot_size, NULL /* dev_cmd */, st_emmc, st_file, st_read, st_os_status, st_cycles, st_adjust
+	NULL, st_erase_group, st_boot_size, NULL /* dev_cmd */, st_emmc, st_file, st_read, st_os_status, st_cycles, st_adjust,
+	NULL /* stage_write */
 };
 
 /* --- the bus: one session at a time, full duplex, logged --- */

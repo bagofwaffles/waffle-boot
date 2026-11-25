@@ -23,11 +23,14 @@ menu's serial port, and a command line over it.
                           on the unit, its job's text ending in "(signature invalid)"
     os-write PATH         write the OS image PATH from the drive to the inactive boot partition
     os-once               restart once into /yaffs2/os.ldr (writes nothing)
+    ram-boot FILE         send the OS image FILE into the unit's RAM, checked whole, and start it
+                          from there: no file, boot partition or flash is written
     restart, continue-os, restart-mode MODE
     host-link-off         turn the host link off for this start
 
 Python 3, standard library only. Changes and every read but list and stat on the drive need the
-session's approval: `approve` first.
+session's approval: `approve` first. With Developer mode's "4 Host link without hold" on, the unit
+approves at once ("approved, no hold"); an install still asks for the hold.
 """
 import glob
 import hashlib
@@ -42,18 +45,25 @@ sys.path.insert(0, HERE)
 from testos_mon import frame, unframe  # noqa: E402
 
 ID = 0x7C
-VERSION = 1
+VERSION = 2
+OLDEST_UNIT = 1     # a unit of version 1 has no RAM calls; the rest is the same
 HELLO, SESSION, APPROVE, END, INFO, SET, JOB = range(7)
 STAT, LIST, GET, HASH, PUT_OPEN, PUT_DATA, PUT_END, REMOVE, MKDIR, RENAME = range(0x10, 0x1A)
 RUN, EVENT = 0x20, 0x7F
-A_INSTALL, A_OS_WRITE, A_OS_ONCE, A_RESTART, A_CONTINUE_OS, A_RESTART_MODE = range(1, 7)
+RAM_OPEN, RAM_DATA, RAM_END = 0x21, 0x22, 0x23
+A_INSTALL, A_OS_WRITE, A_OS_ONCE, A_RESTART, A_CONTINUE_OS, A_RESTART_MODE, A_RAM_START = range(1, 8)
 SET_HOST_LINK = 7
 CHUNK = 224
 STATUS = ['ok', 'host link off', 'not approved: hold 1 on the unit', 'never from a host', 'malformed',
           'not in this build', 'path refused', 'not found', 'exists', 'I/O error', 'busy',
           'checksum mismatch', 'offset', 'volume not answering', 'read only', 'refused by the unit',
           'volume not readable by this build']
-SESSIONS = ['none', 'pending', 'approved', 'refused', 'timed out']
+SESSIONS = ['none', 'pending', 'approved', 'refused', 'timed out', 'approved, no hold']
+APPROVED = ('approved', 'approved, no hold')
+# S-05.024's refusals, as RAM_END names them
+REFUSALS = ['accepted', 'longer than the staging area', 'not an LDR stream', 'refused flags',
+            'a destination outside L1, L2 and DDR', 'over the staging area', 'over the reserve',
+            'over the record', "over the ROM's boot reserve"]
 JOB_STATES = ['none', 'queued', 'running', 'done', 'failed']
 DEVICES = {0: 'OP-XY', 1: 'OP-1 Field'}
 ROOT_FLAGS = ((1, 'read'), (2, 'write'), (4, 'open list'))
@@ -152,12 +162,12 @@ class Client:
         if magic != 0x4C484257:
             raise SystemExit('not a waffle-boot host link')
         out = {'version': version, 'oldest_client': oldest, 'host_link': bool(on)}
-        if version < VERSION or oldest > VERSION:
+        if version < OLDEST_UNIT or oldest > VERSION:
             raise SystemExit('the unit speaks host link version %d (clients from %d); this tool %d'
                              % (version, oldest, VERSION))
         if not on:
             return out
-        out['session'] = SESSIONS[d[7]]
+        out['session'] = SESSIONS[d[7]] if d[7] < len(SESSIONS) else d[7]
         out['max_payload'], out['chunk'] = d[8], d[9]
         out['info'] = info_record(d[10:34])
         at = 34
@@ -176,9 +186,12 @@ class Client:
     def session(self):
         return SESSIONS[self.call(SESSION)[1][0]]
 
-    def approve(self, wait=70.0):
-        """Asks the unit, then waits for its answer: 'approved', 'refused' or 'timed out'."""
+    def approve(self, wait=70.0, asked=None):
+        """Asks the unit, then waits for its answer: 'approved', 'refused' or 'timed out'; at once
+        'approved, no hold' when Developer mode's item allows it (asked again, the hold)."""
         state = SESSIONS[self.call(APPROVE)[1][0]]
+        if state == 'pending' and asked:
+            asked()
         end = time.monotonic() + wait
         while state == 'pending' and time.monotonic() < end:
             time.sleep(0.25)
@@ -187,6 +200,27 @@ class Client:
 
     def end(self):
         self.call(END)
+
+    # --- an OS image into RAM
+
+    def ram(self, data, progress=None):
+        """data into the unit's RAM, from where the unit stands, then checked whole there: its hash,
+        then the unit's own check of the image. Nothing is written to a file."""
+        digest = hashlib.sha256(data).digest()
+        have = struct.unpack('<I', self.call(RAM_OPEN, struct.pack('<I', len(data)) + digest, 30.0)[1])[0]
+        while have < len(data):
+            st, d = self.call(RAM_DATA, struct.pack('<I', have) + data[have:have + CHUNK], 15.0,
+                              ok=(0, 12))
+            have = struct.unpack('<I', d[:4])[0]	# offset: resumed from the unit's
+            if progress:
+                progress(have)
+        try:
+            self.call(RAM_END, b'', 60.0)
+        except HostLinkError as e:
+            if e.status == 15 and e.data:
+                why = REFUSALS[e.data[0]] if e.data[0] < len(REFUSALS) else e.data[0]
+                raise SystemExit('the unit refused the image: %s' % why)
+            raise
 
     def info(self):
         return info_record(self.call(INFO)[1])
@@ -270,7 +304,7 @@ class Client:
                     self.event(job_record(p[3:]))
             if self.last_event and self.last_event['id'] == job['id']:
                 rec = self.last_event
-                if rec['text'] == 'restarting' and gone_ok:
+                if rec['text'] in ('restarting', 'starting') and gone_ok:
                     return rec
         return rec
 
@@ -301,10 +335,10 @@ def command(c, a):
     elif cmd == 'session':
         print(c.session())
     elif cmd == 'approve':
-        print('hold 1 on the unit to allow, 8 to cancel')
-        state = c.approve(float(a[0]) if a else 70.0)
+        state = c.approve(float(a[0]) if a else 70.0,
+                          asked=lambda: print('hold 1 on the unit to allow, 8 to cancel'))
         print(state)
-        return 0 if state == 'approved' else 1
+        return 0 if state in APPROVED else 1
     elif cmd == 'end':
         c.end()
     elif cmd == 'ls':
@@ -339,6 +373,14 @@ def command(c, a):
     elif cmd in ('os-once', 'restart', 'continue-os'):
         action = {'os-once': A_OS_ONCE, 'restart': A_RESTART, 'continue-os': A_CONTINUE_OS}[cmd]
         return show_job(c, c.run(action), gone_ok=True)
+    elif cmd == 'ram-boot':
+        if RAM_OPEN not in c.hello().get('calls', []):
+            raise SystemExit('this unit takes no OS image into RAM: update waffle-boot')
+        with open(a[0], 'rb') as f:
+            data = f.read()
+        c.ram(data)
+        print('%d bytes in RAM, sha256 %s: checked' % (len(data), hashlib.sha256(data).hexdigest()))
+        return show_job(c, c.run(A_RAM_START), gone_ok=True)
     elif cmd == 'restart-mode':
         return show_job(c, c.run(A_RESTART_MODE, int(a[0], 0)), gone_ok=True)
     elif cmd == 'host-link-off':

@@ -7,6 +7,7 @@ own code (src/hostlink.c) built with volumes in memory (hl_sim.py). Python 3, st
     test_hostlink_tool.py
 """
 import hashlib
+import json
 import os
 import socket
 import struct
@@ -40,12 +41,13 @@ class Tool(unittest.TestCase):
         c = self.client(user=True)
         h = c.hello()
         self.assertEqual((h['version'], h['oldest_client'], h['host_link'], h['session']),
-                         (1, 1, True, 'none'))
+                         (2, 1, True, 'none'))
         self.assertEqual(h['info']['bootloader'], '0.9.49+0')
         self.assertEqual(h['info']['device'], 'OP-XY')
         self.assertEqual(h['info']['running_slot'], 2)
         self.assertIn(hl.RUN, h['calls'])
-        self.assertEqual(sorted(h['actions']), [1, 2, 3, 4, 5, 6])
+        self.assertEqual(sorted(h['actions']), [1, 2, 3, 4, 5, 6, 7])
+        self.assertTrue({hl.RAM_OPEN, hl.RAM_DATA, hl.RAM_END} <= set(h['calls']))
         self.assertEqual([(r['name'], r['flags']) for r in h['roots']],
                          [('yaffs2', ['read', 'write', 'open list']), ('os', ['read']), ('user', ['read', 'write'])])
         # without the user drive, two roots
@@ -53,7 +55,7 @@ class Tool(unittest.TestCase):
 
     def test_off(self):
         c = self.client(on=False)
-        self.assertEqual(c.hello(), {'version': 1, 'oldest_client': 1, 'host_link': False})
+        self.assertEqual(c.hello(), {'version': 2, 'oldest_client': 1, 'host_link': False})
         with self.assertRaises(hl.HostLinkError) as e:
             c.ls('/yaffs2')
         self.assertEqual(e.exception.status, 1)
@@ -77,6 +79,96 @@ class Tool(unittest.TestCase):
         self.assertEqual([x['name'] for x in c.ls('/os')], ['boot1', 'boot2'])
         c.end()
         self.assertEqual(c.session(), 'none')
+
+    def test_no_hold(self):
+        """S-10c.137: Developer mode's item on: approved at once, an install still asking for the hold."""
+        c = self.client(answer=None)
+        LIB.sim_no_hold(1)
+        self.assertEqual(c.approve(0.3), 'approved, no hold')
+        self.assertEqual(c.hello()['session'], 'approved, no hold')
+        c.mkdir('/yaffs2/d')
+        self.unit.put_file('/yaffs2/pkg.bin', b'package')
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.run(hl.A_INSTALL, 0xFF, '/yaffs2/pkg.bin')
+        self.assertEqual(e.exception.status, 2)
+        # asked again: the hold
+        self.assertEqual(c.approve(0.3), 'pending')
+        LIB.sim_answer(2)
+        self.assertEqual(c.session(), 'approved')
+        self.assertEqual(c.run(hl.A_INSTALL, 0xFF, '/yaffs2/pkg.bin')['state'], 'queued')
+
+    def test_ram_boot(self):
+        """S-10c.135, S-10c.136: an image into RAM, checked, then started; no file is written."""
+        c = self.client()
+        c.approve(1.0)
+        img = b'\xad' + bytes((i * 7) & 0xFF for i in range(5000))
+        before = sorted(x['name'] for x in c.ls('/yaffs2'))
+        seen = []
+        c.ram(img, progress=seen.append)
+        self.assertEqual(self.unit.ram(), img)
+        self.assertEqual(seen[-1], len(img))
+        self.assertEqual(sorted(x['name'] for x in c.ls('/yaffs2')), before)
+        rec = c.run(hl.A_RAM_START)
+        self.assertEqual((rec['state'], rec['action']), ('queued', hl.A_RAM_START))
+        self.assertEqual(self.unit.last_run()[0], hl.A_RAM_START)
+        # once: a start that comes back has no image to start again
+        c.wait(rec, 5.0)
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.run(hl.A_RAM_START)
+        self.assertEqual(e.exception.status, 7)
+        # a byte wrong on the way: refused, nothing kept
+        LIB.sim_corrupt()
+        with self.assertRaises(hl.HostLinkError) as e:
+            c.ram(img)
+        self.assertEqual(e.exception.status, 11)
+        self.assertIsNone(self.unit.ram())
+        # the unit's own check of the image: refused with its reason
+        with self.assertRaises(SystemExit) as x:
+            c.ram(b'not an image')
+        self.assertIn('not an LDR stream', str(x.exception))
+        # the command line, end to end
+        with tempfile.NamedTemporaryFile(suffix='.ldr', delete=False) as f:
+            f.write(img)
+        try:
+            self.assertEqual(hl.command(c, ['ram-boot', f.name]), 0)
+        finally:
+            os.unlink(f.name)
+        self.assertEqual(self.unit.last_run()[0], hl.A_RAM_START)
+
+    def test_access_vectors(self):
+        """tests/oracle/S-10c-host-commands/vectors/hostlink_access.json on src/hostlink.c: each call's
+        gate in each session, APPROVE's outcome with Developer's item on and off, and the pass's."""
+        with open(os.path.join(TOP, 'tests', 'oracle', 'S-10c-host-commands', 'vectors',
+                               'hostlink_access.json')) as f:
+            v = json.load(f)
+        names = {int(k): n for k, n in v['sessions'].items()}
+        codes = {n: k for k, n in names.items()}
+
+        def into(session, no_hold=False):
+            self.unit = hl_sim.Unit(LIB, answer=None, jobs=False)
+            LIB.sim_no_hold(1 if session == 'approved, no hold' else 0)
+            if session != 'none':
+                self.unit.request(bytes([2, 0]))
+                if session != 'approved, no hold':
+                    LIB.sim_answer(codes[session])
+            LIB.sim_no_hold(1 if no_hold else 0)
+            self.assertEqual(names[LIB.sim_session()], session)
+
+        for case in v['access']:
+            for session, want in case['gate'].items():
+                into(session)
+                st = self.unit.request(bytes([bytes.fromhex(case['request'])[0], 9]) +
+                                       bytes.fromhex(case['request'])[1:])[2]
+                got = {2: 'approval', 3: 'never'}.get(st, 'past')
+                self.assertEqual(got, want, '%s in %s: status %d' % (case['name'], session, st))
+        for case in v['approve']:
+            into(case['session'], case['no_hold'])
+            self.unit.request(bytes([2, 0]))
+            self.assertEqual(names[LIB.sim_session()], case['after'], case)
+        for case in v['poll']:
+            into(case['session'], case['no_hold'])
+            LIB.sim_poll()
+            self.assertEqual(names[LIB.sim_session()], case['after'], case)
 
     def test_files(self):
         c = self.client()

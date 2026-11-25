@@ -370,6 +370,11 @@ enum s15_once {
 };
 
 extern const char s15_once_item[];		/* S15_ST_ITEM, digit 3 */
+/* S-15.202: the Developer screen's digit 4, and Settings' digit 7 while it
+ * is on with Developer mode (S15_ST_ITEM_ON) */
+extern const char s15_no_hold_item_off[];
+extern const char s15_no_hold_item_on[];
+extern const char s15_host_link_no_hold[];
 extern const char s15_once_not_started[];	/* S15_ST_ERROR */
 extern const char s15_once_restarting[];	/* S15_ST_WARN */
 /* The reason, for s15_reason_line(); file with S15_ONCE_FILE. */

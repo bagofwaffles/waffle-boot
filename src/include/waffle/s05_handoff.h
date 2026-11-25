@@ -185,6 +185,16 @@ struct s05_master {
  */
 void s05_master_handoff(const struct s05_master_ops *ops, const struct s05_master *m);
 
+/*
+ * S-05.045: a RAM start from held mode, of an image a host sent into RAM
+ * (S-10c.136): S-05.018's steps (S-05.036's on a device without
+ * second-cpu) on what stage() copies from it, with nothing written: no
+ * accepted op (the start log's mark and erase), no software-version reset.
+ * A failure returns its cause to held mode, which goes on; the held op is
+ * not called. Returns only on a failure, or with test ops.
+ */
+enum s05_fail s05_master_ram_start(const struct s05_master_ops *ops, const struct s05_master *m);
+
 struct s05_slave_ops {
 	void *ctx;
 	enum s05_fail (*stage)(void *ctx, uint32_t *length);	/* own eMMC, no bridge */

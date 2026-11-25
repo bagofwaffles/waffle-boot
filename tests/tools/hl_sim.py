@@ -52,6 +52,8 @@ def build(d):
     lib.sim_get.restype = ctypes.c_long
     lib.sim_get.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t]
     lib.sim_os.argtypes = [ctypes.c_uint, ctypes.c_char_p, ctypes.c_size_t]
+    lib.sim_ram.restype = ctypes.c_long
+    lib.sim_ram.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
     lib.sim_last_run.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.POINTER(ctypes.c_uint8),
                                  ctypes.c_char_p, ctypes.c_size_t]
     return lib
@@ -105,6 +107,12 @@ class Unit:
     def file(self, path):
         buf = ctypes.create_string_buffer(1 << 20)
         n = self.lib.sim_get(path.encode(), buf, len(buf))
+        return None if n < 0 else buf.raw[:n]
+
+    def ram(self):
+        """The image held in RAM, or None."""
+        buf = ctypes.create_string_buffer(1 << 20)
+        n = self.lib.sim_ram(buf, len(buf))
         return None if n < 0 else buf.raw[:n]
 
     def last_run(self):

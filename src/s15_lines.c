@@ -859,6 +859,10 @@ const char s15_osw_back[] = "8 Back to Developer";
 /* ---- S-15.194: Start /os.ldr once (does not write) ----------- */
 
 const char s15_once_item[] = "3 Start /os.ldr once (does not write)";
+/* S-15.202 */
+const char s15_no_hold_item_off[] = "4 Host link without hold\tOff";
+const char s15_no_hold_item_on[] = "4 Host link without hold\tOn";
+const char s15_host_link_no_hold[] = "7 Host link\tOn, no hold";
 const char s15_once_not_started[] = "/os.ldr was not started";
 const char s15_once_restarting[] = "Restarting into /os.ldr once";
 

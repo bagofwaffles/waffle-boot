@@ -62,6 +62,9 @@ struct s09_store_ops {
 	/* S-09.036: the cycle counter, and an adjustment of it. */
 	uint64_t (*cycles)(void *ctx);
 	void (*adjust)(void *ctx, int64_t delta);
+	/* S-09.084: n bytes of an image the master holds, at off in the
+	 * staging area; 0, or nonzero when refused. NULL: refused (EINVAL). */
+	int32_t (*stage_write)(void *ctx, uint32_t off, const uint8_t *data, uint32_t n);
 };
 
 /*

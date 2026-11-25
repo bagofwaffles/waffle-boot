@@ -44,6 +44,7 @@ int s09_kind(uint8_t cmd)
 	case S09_WRITE_SECTOR:
 	case S09_WRITE_SECTORS:
 	case S09_SELECT:
+	case S09_STAGE_WRITE:
 		return S09_K_DEFERRED;
 	default:
 		if ((cmd >= S09_ACCESS && cmd <= S09_TOTAL_SPACE) ||
@@ -321,6 +322,7 @@ uint32_t s09_payload_len(const struct s09_req *r)
 	case S09_UTIME:
 		return r->len;
 	case S09_WRITE:
+	case S09_STAGE_WRITE:	/* S-09.084: as a file write */
 		return r->arg1;
 	case S09_LINK_TEST:
 		/* S-09.037: a length outside 4-S09_TEST_MAX has no payload */

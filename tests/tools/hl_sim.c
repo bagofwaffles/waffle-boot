@@ -5,7 +5,10 @@
  * drive (/yaffs2, read-write), the installed OS's two copies (/os/boot1
  * and boot2) and the OS's FAT volume (/user, when turned on: src/hl_fat.c
  * on a FAT volume sim_user() builds in memory with f_mkfs), an approval
- * the test answers, and jobs the test moves on.
+ * the test answers, and jobs the test moves on; an image into RAM
+ * (S-10c.135) up to 8 MiB, checked by a stand-in for S-05.024 that refuses
+ * one not starting with the LDR signature, and the approval with no hold
+ * (S-10c.137) the test turns on.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +35,9 @@ static struct {
 	uint8_t run_action, run_arg, fail_next;
 	char run_path[HL_PATH_MAX + 16];
 	unsigned steps;
+	int no_hold;
+	uint8_t *ram;
+	uint32_t ram_size;
 } S;
 
 static struct hostlink H;
@@ -384,11 +390,66 @@ static int o_set(void *c, uint8_t setting, uint8_t value)
 	return HL_OK;
 }
 
+static bool o_no_hold(void *c)
+{
+	(void)c;
+	return S.no_hold != 0;
+}
+
+#define RAM_MAX 0x800000u
+
+static void o_ram_drop(void *c)
+{
+	(void)c;
+	free(S.ram);
+	S.ram = NULL;
+	S.ram_size = 0;
+}
+
+static int o_ram_open(void *c, uint32_t size)
+{
+	o_ram_drop(c);
+	if (size > RAM_MAX)
+		return HL_E_REFUSED;
+	S.ram = malloc(size);
+	if (S.ram == NULL)
+		return HL_E_IO;
+	S.ram_size = size;
+	return HL_OK;
+}
+
+static int o_ram_write(void *c, uint32_t off, const uint8_t *b, uint32_t n)
+{
+	(void)c;
+	if (S.ram == NULL || off + n > S.ram_size)
+		return HL_E_BAD;
+	memcpy(S.ram + off, b, n);
+	if (S.corrupt && n > 0u) {
+		S.ram[off + n - 1u] ^= 1u;	/* not the signature: the hash finds it */
+		S.corrupt = 0;
+	}
+	return HL_OK;
+}
+
+static int o_ram_end(void *c, uint32_t size, uint8_t sha[32], uint8_t *why)
+{
+	br_sha256_context x;
+
+	(void)c;
+	br_sha256_init(&x);
+	br_sha256_update(&x, S.ram, size);
+	br_sha256_out(&x, sha);
+	*why = S.ram[0] == 0xADu ? 0u : 2u;	/* S05_REFUSE_PARSE */
+	return *why == 0u ? HL_OK : HL_E_REFUSED;
+}
+
 static const struct hl_ops ops = {
 	.link_on = o_on, .approve_open = o_approve, .info = o_info, .root_ok = o_root_ok,
 	.stat = o_stat, .list = o_list, .read = o_read, .hash = o_hash,
 	.create = o_create, .write = o_write, .finish = o_finish, .abandon = o_abandon,
 	.remove = o_remove, .mkdir = o_mkdir, .rename = o_rename, .run = o_run, .set = o_set,
+	.no_hold = o_no_hold, .ram_open = o_ram_open, .ram_write = o_ram_write,
+	.ram_end = o_ram_end, .ram_drop = o_ram_drop,
 };
 
 /* ---- what the tests call ---- */
@@ -407,11 +468,15 @@ unsigned sim_user_flushes(void);
 void sim_fail_next(void);
 int sim_last_run(uint8_t *action, uint8_t *arg, char *path, size_t cap);
 int sim_session(void);
+void sim_no_hold(int on);
+void sim_poll(void);
+long sim_ram(uint8_t *buf, size_t cap);
 
 void sim_reset(int on, int user)
 {
 	for (int i = 0; i < NFILES; i++)
 		free(S.f[i].data);
+	free(S.ram);
 	memset(&S, 0, sizeof(S));
 	S.on = on;
 	S.user = user;
@@ -543,4 +608,24 @@ int sim_last_run(uint8_t *action, uint8_t *arg, char *path, size_t cap)
 	strncpy(path, S.run_path, cap - 1u);
 	path[cap - 1u] = '\0';
 	return S.run_action != 0u;
+}
+
+void sim_no_hold(int on)
+{
+	S.no_hold = on;
+}
+
+/* The image held in RAM: its length (-1 when none), copied when it fits. */
+long sim_ram(uint8_t *buf, size_t cap)
+{
+	if (S.ram == NULL)
+		return -1;
+	if (S.ram_size <= cap)
+		memcpy(buf, S.ram, S.ram_size);
+	return (long)S.ram_size;
+}
+
+void sim_poll(void)
+{
+	hl_poll(&H);
 }
